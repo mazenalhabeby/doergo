@@ -36,6 +36,12 @@ interface LocationPickerSheetProps {
   getDistance: (location: CompanyLocation) => number | null;
   confirmLabel?: string;
   confirmDisabled?: boolean;
+  /** When true, offer a "Remote" option (member has allowRemote). */
+  allowRemote?: boolean;
+  /** Whether the Remote option is currently selected. */
+  remoteSelected?: boolean;
+  /** Called when the Remote option is picked. */
+  onSelectRemote?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +69,9 @@ export function LocationPickerSheet({
   getDistance,
   confirmLabel,
   confirmDisabled = false,
+  allowRemote = false,
+  remoteSelected = false,
+  onSelectRemote,
 }: LocationPickerSheetProps) {
   const { colors, isDark } = useTheme();
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -94,8 +103,12 @@ export function LocationPickerSheet({
 
   if (!visible) return null;
 
+  const canConfirm = remoteSelected || !!selectedLocation;
   const label =
-    confirmLabel || `Clock In at ${selectedLocation?.name || 'Selected Location'}`;
+    confirmLabel ||
+    (remoteSelected
+      ? 'Clock in remotely'
+      : `Clock In at ${selectedLocation?.name || 'Selected Location'}`);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -125,6 +138,44 @@ export function LocationPickerSheet({
 
           {/* Location list */}
           <ScrollView style={styles.list}>
+            {/* Remote option (members with allowRemote) — no location / geofence */}
+            {allowRemote && (
+              <TouchableOpacity
+                style={[
+                  styles.locationItem,
+                  { borderColor: colors.border },
+                  remoteSelected && [
+                    styles.locationItemSelected,
+                    { backgroundColor: colors.primaryLight },
+                  ],
+                ]}
+                onPress={() => onSelectRemote?.()}
+              >
+                <View style={styles.locationInfo}>
+                  <View style={styles.distanceRow}>
+                    <Ionicons name="home-outline" size={16} color={colors.textPrimary} />
+                    <Text style={[styles.locationName, { color: colors.textPrimary }]}>
+                      Work remotely
+                    </Text>
+                  </View>
+                  <Text
+                    style={[styles.locationAddress, { color: colors.textMuted }]}
+                    numberOfLines={1}
+                  >
+                    Clock in from anywhere — no location needed
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.radio,
+                    { borderColor: colors.borderLight },
+                    remoteSelected && styles.radioSelected,
+                  ]}
+                >
+                  {remoteSelected && <View style={styles.radioInner} />}
+                </View>
+              </TouchableOpacity>
+            )}
             {locations.map((location) => {
               const distance = getDistance(location);
               const isWithinGeofence =
@@ -201,11 +252,10 @@ export function LocationPickerSheet({
           <TouchableOpacity
             style={[
               styles.confirmButton,
-              (!selectedLocation || confirmDisabled) &&
-                styles.confirmButtonDisabled,
+              (!canConfirm || confirmDisabled) && styles.confirmButtonDisabled,
             ]}
             onPress={onConfirm}
-            disabled={!selectedLocation || confirmDisabled}
+            disabled={!canConfirm || confirmDisabled}
           >
             <Text style={styles.confirmButtonText}>{label}</Text>
           </TouchableOpacity>

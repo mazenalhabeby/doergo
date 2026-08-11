@@ -167,7 +167,10 @@ export interface BreakSummary {
 // ============================================================================
 
 export interface ClockInInput {
-  locationId: string;
+  // On-site clock-in supplies a locationId; a remote-eligible member instead
+  // sends isRemote:true with no locationId (geofence-exempt). Exactly one applies.
+  locationId?: string;
+  isRemote?: boolean;
   lat: number;
   lng: number;
   accuracy?: number;

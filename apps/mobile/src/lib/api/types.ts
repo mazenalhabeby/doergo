@@ -66,6 +66,9 @@ export interface User {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  // When true the member may clock in remotely (WFH / anywhere), geofence-exempt.
+  // Sent in the login/validateToken payload; drives the mobile clock-in choice.
+  allowRemote?: boolean;
   // Billing tier the org is on — gates premium features (custom fields, etc.).
   // Server-authoritative; sent in the login/validateToken payload.
   planTier?: 'starter' | 'professional' | 'business' | 'enterprise' | null;

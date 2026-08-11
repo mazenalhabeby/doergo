@@ -86,6 +86,8 @@ export default function AttendanceScreen() {
   // Modal state
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
+  // Remote clock-in selection (only offered when the member has allowRemote).
+  const [isRemoteSelected, setIsRemoteSelected] = useState(false);
   const [breakModalVisible, setBreakModalVisible] = useState(false);
   const [pendingBreakType, setPendingBreakType] = useState<BreakType | null>(null);
   const [breakNotes, setBreakNotes] = useState('');
@@ -371,30 +373,45 @@ export default function AttendanceScreen() {
     openLocationModal();
   };
 
-  // Confirm clock in at selected location
+  // Confirm clock in — remote (geofence-exempt) or on-site at the chosen location
   const confirmClockIn = async () => {
-    if (!selectedLocation || !currentLocation) return;
+    if (!currentLocation || (!selectedLocation && !isRemoteSelected)) return;
 
     setIsActionLoading(true);
     closeLocationModal();
 
     try {
-      await attendanceApi.clockIn({
-        locationId: selectedLocation.id,
-        lat: currentLocation.lat,
-        lng: currentLocation.lng,
-        accuracy: currentLocation.accuracy,
-      });
+      await attendanceApi.clockIn(
+        isRemoteSelected
+          ? {
+              isRemote: true,
+              lat: currentLocation.lat,
+              lng: currentLocation.lng,
+              accuracy: currentLocation.accuracy,
+            }
+          : {
+              locationId: selectedLocation!.id,
+              lat: currentLocation.lat,
+              lng: currentLocation.lng,
+              accuracy: currentLocation.accuracy,
+            },
+      );
       await fetchAttendanceData();
       // Start background heartbeat for geofence monitoring
       await startBackgroundHeartbeat();
-      toast.success(t('common.success'), t('attendance.clockedInAt', { location: selectedLocation.name }));
+      toast.success(
+        t('common.success'),
+        isRemoteSelected
+          ? t('attendance.clockedInRemotely', 'Clocked in remotely')
+          : t('attendance.clockedInAt', { location: selectedLocation!.name }),
+      );
     } catch (err) {
       console.error('Clock in error:', err);
       toast.error(t('common.error'), err instanceof Error ? err.message : t('attendance.failedToClockIn'));
     } finally {
       setIsActionLoading(false);
       setSelectedLocation(null);
+      setIsRemoteSelected(false);
     }
   };
 
@@ -1070,10 +1087,13 @@ export default function AttendanceScreen() {
         visible={locationModalVisible}
         locations={assignedLocations}
         selectedLocation={selectedLocation}
-        onSelect={setSelectedLocation}
+        onSelect={(loc) => { setSelectedLocation(loc); setIsRemoteSelected(false); }}
         onConfirm={confirmClockIn}
         onClose={closeLocationModal}
         getDistance={getDistanceToLocation}
+        allowRemote={!!user?.allowRemote}
+        remoteSelected={isRemoteSelected}
+        onSelectRemote={() => { setIsRemoteSelected(true); setSelectedLocation(null); }}
       />
 
       <ClockOutSheet
