@@ -411,8 +411,8 @@ export class AttendanceService {
    */
   async clockOut(data: {
     userId: string;
-    lat: number;
-    lng: number;
+    lat?: number;
+    lng?: number;
     accuracy?: number;
     notes?: string;
     organizationId: string;
@@ -435,14 +435,28 @@ export class AttendanceService {
       throw new BadRequestException('You are not currently clocked in');
     }
 
-    // Calculate distance to location for clock-out (no coords → no geofence)
-    const distance =
-      entry.location.lat == null || entry.location.lng == null
-        ? 0
-        : haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
+    // Geofence is only evaluable when BOTH the device and the location have
+    // coords. A clock-out with no GPS fix (indoors / permission revoked) skips
+    // the check entirely instead of feeding (0,0) into Haversine and faking a
+    // huge distance → bogus OUTSIDE_GEOFENCE_OUT flag. (Sec audit H13.)
+    const hasDeviceCoords = data.lat != null && data.lng != null;
+    const hasLocationCoords = entry.location.lat != null && entry.location.lng != null;
+    const geofenceEvaluable = hasDeviceCoords && hasLocationCoords;
+
+    const distance = geofenceEvaluable
+      ? haversineDistance(
+          data.lat as number,
+          data.lng as number,
+          entry.location.lat as number,
+          entry.location.lng as number,
+        )
+      : 0;
 
     // Accuracy-aware geofence (matches clock-in): tolerate the GPS error margin.
-    const withinGeofence = distance <= entry.location.geofenceRadius + (data.accuracy ?? 0);
+    // Non-evaluable → treated as within (no violation flag / alert).
+    const withinGeofence = geofenceEvaluable
+      ? distance <= entry.location.geofenceRadius + (data.accuracy ?? 0)
+      : true;
 
     // Calculate total minutes worked
     const clockOutTime = new Date();
@@ -482,8 +496,12 @@ export class AttendanceService {
     const uniqueFlags = [...new Set(flagReasons)];
     const approvalStatus = uniqueFlags.length === 0 ? 'AUTO' : 'PENDING';
 
-    // Remote shifts capture a coarse place on clock-out too.
-    const clockOutPlace = entry.isRemote ? await this.reverseGeocode(data.lat, data.lng) : undefined;
+    // Remote shifts capture a coarse place on clock-out too — only when we have
+    // a fix to reverse-geocode.
+    const clockOutPlace =
+      entry.isRemote && hasDeviceCoords
+        ? await this.reverseGeocode(data.lat as number, data.lng as number)
+        : undefined;
 
     // Update time entry
     const updatedEntry = await this.prisma.timeEntry.update({
@@ -491,10 +509,12 @@ export class AttendanceService {
       data: {
         status: TimeEntryStatus.CLOCKED_OUT,
         clockOutAt: clockOutTime,
-        clockOutLat: data.lat,
-        clockOutLng: data.lng,
+        clockOutLat: data.lat ?? null,
+        clockOutLng: data.lng ?? null,
         clockOutAccuracy: data.accuracy,
-        clockOutWithinGeofence: withinGeofence,
+        // null (not false) when the geofence couldn't be evaluated — records
+        // "unknown", not "outside".
+        clockOutWithinGeofence: geofenceEvaluable ? withinGeofence : null,
         totalMinutes,
         notes: data.notes,
         flagReasons: uniqueFlags,

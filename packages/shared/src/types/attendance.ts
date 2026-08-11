@@ -174,8 +174,11 @@ export interface ClockInInput {
 }
 
 export interface ClockOutInput {
-  lat: number;
-  lng: number;
+  // Optional: a device with no GPS fix (indoors, permission just revoked) can
+  // still clock OUT — the geofence check is simply skipped, coords stored null,
+  // rather than falling back to (0,0) which faked an OUTSIDE_GEOFENCE_OUT flag.
+  lat?: number;
+  lng?: number;
   accuracy?: number;
   notes?: string;
 }

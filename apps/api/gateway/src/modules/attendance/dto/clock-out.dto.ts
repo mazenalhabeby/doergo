@@ -1,16 +1,18 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class ClockOutDto {
-  @ApiProperty({ description: 'Current latitude' })
+  // Optional: clock-out is allowed without a GPS fix. When absent the geofence
+  // check is skipped and coords are stored null (no spurious (0,0) point).
+  @ApiPropertyOptional({ description: 'Current latitude' })
   @IsNumber()
-  @IsNotEmpty()
-  lat: number;
+  @IsOptional()
+  lat?: number;
 
-  @ApiProperty({ description: 'Current longitude' })
+  @ApiPropertyOptional({ description: 'Current longitude' })
   @IsNumber()
-  @IsNotEmpty()
-  lng: number;
+  @IsOptional()
+  lng?: number;
 
   @ApiPropertyOptional({ description: 'GPS accuracy in meters' })
   @IsNumber()
