@@ -201,26 +201,27 @@ export class LocationService {
         let prevLng = lastPoint?.lng ?? null;
         let totalIncrement = 0;
 
-        const creates = valid.map((p) => {
+        // Build the rows in one pass (accumulating route distance), then insert
+        // them with a single createMany instead of N individual INSERTs in the
+        // transaction — this is the hottest write path (burst flush). (Audit P7.)
+        const rows = valid.map((p) => {
           if (prevLat !== null && prevLng !== null) {
             totalIncrement += haversineDistance(prevLat, prevLng, p.lat, p.lng);
           }
           prevLat = p.lat;
           prevLng = p.lng;
-          return this.prisma.locationHistory.create({
-            data: {
-              userId,
-              taskId,
-              lat: p.lat,
-              lng: p.lng,
-              accuracy: p.accuracy,
-              ...(p.timestamp ? { timestamp: new Date(p.timestamp) } : {}),
-            },
-          });
+          return {
+            userId,
+            taskId,
+            lat: p.lat,
+            lng: p.lng,
+            accuracy: p.accuracy,
+            ...(p.timestamp ? { timestamp: new Date(p.timestamp) } : {}),
+          };
         });
 
         await this.prisma.$transaction([
-          ...creates,
+          this.prisma.locationHistory.createMany({ data: rows }),
           ...(totalIncrement > 0
             ? [
                 this.prisma.task.update({

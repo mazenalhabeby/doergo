@@ -388,22 +388,42 @@ export class AttendanceService {
    * e.g. "Vienna, AT", or null on failure. zoom=10 keeps it to city/area
    * granularity (never a precise street) for privacy.
    */
+  // ~1km-rounded coord → resolved place. Place names are stable, so caching keeps
+  // us far under Nominatim's 1 req/s policy and avoids re-querying for repeated
+  // clock-ins at the same site. Only successful lookups are cached (a transient
+  // failure retries next time). (Audit P2.)
+  private readonly geocodeCache = new Map<string, string>();
+
   private async reverseGeocode(lat: number, lng: number): Promise<string | null> {
+    const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+    const cached = this.geocodeCache.get(key);
+    if (cached !== undefined) return cached;
+
+    let place: string | null = null;
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+      // Hard 1.5s timeout so a slow/blocked Nominatim can't stall the (shared)
+      // attendance queue slot, including the reminder/no-show sweep.
       const res = await fetch(url, {
         headers: { 'User-Agent': 'HBCField/1.0 (attendance clock-in)' },
+        signal: AbortSignal.timeout(1500),
       });
-      if (!res.ok) return null;
-      const j: any = await res.json();
-      const a = j?.address ?? {};
-      const city = a.city || a.town || a.village || a.municipality || a.county || a.state;
-      const country = (a.country_code || '').toUpperCase();
-      if (!city) return null;
-      return country ? `${city}, ${country}` : city;
+      if (res.ok) {
+        const j: any = await res.json();
+        const a = j?.address ?? {};
+        const city = a.city || a.town || a.village || a.municipality || a.county || a.state;
+        const country = (a.country_code || '').toUpperCase();
+        if (city) place = country ? `${city}, ${country}` : city;
+      }
     } catch {
-      return null;
+      place = null; // timeout / network — don't cache, let it retry later
     }
+
+    if (place !== null) {
+      if (this.geocodeCache.size > 2000) this.geocodeCache.clear();
+      this.geocodeCache.set(key, place);
+    }
+    return place;
   }
 
   /**
