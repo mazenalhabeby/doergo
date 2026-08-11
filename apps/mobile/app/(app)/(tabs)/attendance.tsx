@@ -43,11 +43,11 @@ import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
+import { useClockIn } from '../../../src/hooks/useClockIn';
 import { TourTarget } from '../../../src/components/tour';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
 import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
-  haversineDistance,
   formatDurationMinutes as formatDuration,
 } from '../../../src/lib/utils';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
@@ -74,20 +74,7 @@ export default function AttendanceScreen() {
   const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
   const [isBreakLoading, setIsBreakLoading] = useState(false);
 
-  // Location state
-  const [currentLocation, setCurrentLocation] = useState<{
-    lat: number;
-    lng: number;
-    accuracy: number;
-  } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-
-  // Modal state
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
-  // Remote clock-in selection (only offered when the member has allowRemote).
-  const [isRemoteSelected, setIsRemoteSelected] = useState(false);
+  // Clock-in location/remote state lives in the shared useClockIn hook (below).
   const [breakModalVisible, setBreakModalVisible] = useState(false);
   const [pendingBreakType, setPendingBreakType] = useState<BreakType | null>(null);
   const [breakNotes, setBreakNotes] = useState('');
@@ -109,8 +96,6 @@ export default function AttendanceScreen() {
   const breakSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const breakOverlayAnim = useRef(new Animated.Value(0)).current;
 
-  const openLocationModal = useCallback(() => setLocationModalVisible(true), []);
-  const closeLocationModal = useCallback(() => setLocationModalVisible(false), []);
 
   const openBreakModal = useCallback(() => {
     setBreakModalVisible(true);
@@ -313,107 +298,12 @@ export default function AttendanceScreen() {
     setIsRefreshing(false);
   };
 
-  // Get current GPS location
-  const getCurrentLocation = async () => {
-    setIsGettingLocation(true);
-    setLocationError(null);
-
-    try {
-      const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-      if (permStatus !== 'granted') {
-        setLocationError(t('attendance.locationPermissionDenied'));
-        setIsGettingLocation(false);
-        return null;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      const coords = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-        accuracy: location.coords.accuracy || 0,
-      };
-      setCurrentLocation(coords);
-      setIsGettingLocation(false);
-      return coords;
-    } catch (err) {
-      console.error('Location error:', err);
-      // Fresh fix failed (weak signal/timeout). Fall back to the OS's last known
-      // position (no GPS activation) so we record a REAL recent location instead
-      // of Null Island (0,0), which falsifies the attendance audit + geofence
-      // math on clock-out. (Sec audit mobile-H13.)
-      try {
-        const last = await Location.getLastKnownPositionAsync();
-        if (last) {
-          const coords = {
-            lat: last.coords.latitude,
-            lng: last.coords.longitude,
-            accuracy: last.coords.accuracy || 0,
-          };
-          setCurrentLocation(coords);
-          setIsGettingLocation(false);
-          return coords;
-        }
-      } catch { /* fall through */ }
-      setLocationError(t('attendance.failedToGetLocation'));
-      setIsGettingLocation(false);
-      return null;
-    }
-  };
-
-  // Handle clock in button press
-  const handleClockInPress = async () => {
-    const location = await getCurrentLocation();
-    if (!location) {
-      toast.warning(t('attendance.locationRequired'), t('attendance.enableLocationServices'));
-      return;
-    }
-    openLocationModal();
-  };
-
-  // Confirm clock in — remote (geofence-exempt) or on-site at the chosen location
-  const confirmClockIn = async () => {
-    if (!currentLocation || (!selectedLocation && !isRemoteSelected)) return;
-
-    setIsActionLoading(true);
-    closeLocationModal();
-
-    try {
-      await attendanceApi.clockIn(
-        isRemoteSelected
-          ? {
-              isRemote: true,
-              lat: currentLocation.lat,
-              lng: currentLocation.lng,
-              accuracy: currentLocation.accuracy,
-            }
-          : {
-              locationId: selectedLocation!.id,
-              lat: currentLocation.lat,
-              lng: currentLocation.lng,
-              accuracy: currentLocation.accuracy,
-            },
-      );
-      await fetchAttendanceData();
-      // Start background heartbeat for geofence monitoring
-      await startBackgroundHeartbeat();
-      toast.success(
-        t('common.success'),
-        isRemoteSelected
-          ? t('attendance.clockedInRemotely', 'Clocked in remotely')
-          : t('attendance.clockedInAt', { location: selectedLocation!.name }),
-      );
-    } catch (err) {
-      console.error('Clock in error:', err);
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('attendance.failedToClockIn'));
-    } finally {
-      setIsActionLoading(false);
-      setSelectedLocation(null);
-      setIsRemoteSelected(false);
-    }
-  };
+  // Shared clock-in flow (GPS + location/remote picker) — one implementation
+  // across the attendance tab and both home screens. (DRY)
+  const clockIn = useClockIn({
+    assignedLocations: status?.assignedLocations || [],
+    onClockedIn: () => fetchAttendanceData(),
+  });
 
   // Handle clock out
   const handleClockOut = () => {
@@ -424,7 +314,7 @@ export default function AttendanceScreen() {
     setShowClockOutConfirm(false);
     setIsActionLoading(true);
     try {
-      const location = await getCurrentLocation();
+      const location = await clockIn.getCurrentLocation();
       await attendanceApi.clockOut({
         lat: location?.lat || 0,
         lng: location?.lng || 0,
@@ -534,16 +424,8 @@ export default function AttendanceScreen() {
     }
   };
 
-  // Calculate distance to a location
-  const getDistanceToLocation = (location: CompanyLocation): number | null => {
-    if (!currentLocation) return null;
-    return haversineDistance(
-      currentLocation.lat,
-      currentLocation.lng,
-      location.lat,
-      location.lng
-    );
-  };
+  // Distance helper for the on-screen assigned-locations list (from the hook).
+  const getDistanceToLocation = clockIn.getDistanceToLocation;
 
   // Format distance
   const formatDistance = (meters: number): string => {
@@ -862,10 +744,10 @@ export default function AttendanceScreen() {
               styles.actionButton,
               { backgroundColor: isClockedIn ? COLORS.primaryDark : COLORS.primary },
             ]}
-            onPress={isClockedIn ? handleClockOut : handleClockInPress}
-            disabled={isActionLoading || isGettingLocation}
+            onPress={isClockedIn ? handleClockOut : clockIn.openClockInModal}
+            disabled={isActionLoading || clockIn.isBusy}
           >
-            {isActionLoading || isGettingLocation ? (
+            {isActionLoading || clockIn.isBusy ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
               <>
@@ -881,10 +763,6 @@ export default function AttendanceScreen() {
             )}
           </TouchableOpacity>
           </TourTarget>
-
-          {!!locationError && (
-            <Text style={styles.locationErrorText}>{locationError}</Text>
-          )}
         </View>
 
         {/* Assigned Locations */}
@@ -1084,16 +962,8 @@ export default function AttendanceScreen() {
 
       {/* Location Selection Bottom Sheet */}
       <LocationPickerSheet
-        visible={locationModalVisible}
-        locations={assignedLocations}
-        selectedLocation={selectedLocation}
-        onSelect={(loc) => { setSelectedLocation(loc); setIsRemoteSelected(false); }}
-        onConfirm={confirmClockIn}
-        onClose={closeLocationModal}
-        getDistance={getDistanceToLocation}
-        allowRemote={!!user?.allowRemote}
-        remoteSelected={isRemoteSelected}
-        onSelectRemote={() => { setIsRemoteSelected(true); setSelectedLocation(null); }}
+        {...clockIn.pickerProps}
+        confirmDisabled={clockIn.isClockingIn}
       />
 
       <ClockOutSheet
