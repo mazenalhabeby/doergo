@@ -1,19 +1,16 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useAuth } from "@/contexts/auth-context"
 
 const ClientDashboard = dynamic(
   () => import("./_components").then((m) => ({ default: m.ClientDashboard })),
 )
-const DispatcherDashboard = dynamic(
-  () =>
-    import("./_components").then((m) => ({ default: m.DispatcherDashboard })),
-)
 
+// One dashboard for everyone. ClientDashboard branches internally on
+// isAdminOrDispatcher (role === "ADMIN" || canViewAllTasks): admins AND managers
+// get the full view; plain employees get the scoped spaces/tasks (or task-only)
+// view. The old bespoke DispatcherDashboard is retired — managers now see the
+// exact same screen as admins.
 export default function DashboardPage() {
-  const { user } = useAuth()
-  const isDispatcher = user?.role !== "ADMIN" && !!user?.canViewAllTasks
-
-  return isDispatcher ? <DispatcherDashboard /> : <ClientDashboard />
+  return <ClientDashboard />
 }
