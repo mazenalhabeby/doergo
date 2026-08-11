@@ -49,13 +49,15 @@ import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
-  formatDateRelative as formatDate,
 } from '../../../src/lib/utils';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
-  const { formatTime } = useTimeFormat();
+  // formatDateRelative is locale- and timezone-aware: the history date label
+  // resolves its calendar day in the ENTRY's zone, so it always agrees with the
+  // zoned time shown beside it (a night shift no longer straddles two dates).
+  const { formatTime, formatDateRelative: formatDate } = useTimeFormat();
   const router = useRouter();
   const toast = useToast();
   const { colors, isDark } = useTheme();
@@ -336,6 +338,23 @@ export default function AttendanceScreen() {
       return coords;
     } catch (err) {
       console.error('Location error:', err);
+      // Fresh fix failed (weak signal/timeout). Fall back to the OS's last known
+      // position (no GPS activation) so we record a REAL recent location instead
+      // of Null Island (0,0), which falsifies the attendance audit + geofence
+      // math on clock-out. (Sec audit mobile-H13.)
+      try {
+        const last = await Location.getLastKnownPositionAsync();
+        if (last) {
+          const coords = {
+            lat: last.coords.latitude,
+            lng: last.coords.longitude,
+            accuracy: last.coords.accuracy || 0,
+          };
+          setCurrentLocation(coords);
+          setIsGettingLocation(false);
+          return coords;
+        }
+      } catch { /* fall through */ }
       setLocationError(t('attendance.failedToGetLocation'));
       setIsGettingLocation(false);
       return null;
@@ -961,7 +980,7 @@ export default function AttendanceScreen() {
             history.map((entry) => (
               <View key={entry.id} style={[styles.historyCard, { backgroundColor: colors.card }]}>
                 <View style={styles.historyHeader}>
-                  <Text style={[styles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt)}</Text>
+                  <Text style={[styles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}</Text>
                   <View
                     style={[
                       styles.historyStatusBadge,

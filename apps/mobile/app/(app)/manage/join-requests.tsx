@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -15,6 +16,8 @@ import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components
 export default function JoinRequestsScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  // Dates follow the active language rather than a hardcoded en-US locale.
+  const { formatDate } = useTimeFormat();
   const toast = useToast();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +95,7 @@ export default function JoinRequestsScreen() {
             </Text>
             <Text style={[s.email, { color: colors.textMuted }]}>{item.user.email}</Text>
             <Text style={[s.date, { color: colors.textMuted }]}>
-              {t('manage.joinRequestsScreen.requested', { date: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })}
+              {t('manage.joinRequestsScreen.requested', { date: formatDate(item.createdAt) })}
             </Text>
           </View>
         </View>

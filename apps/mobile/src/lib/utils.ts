@@ -20,7 +20,11 @@ export function formatTimeRange(dueDate: string | Date, durationHours: number = 
   const endHours = hours + durationHours;
   const endTime = formatClock(endHours, minutes, hour12);
 
-  return `${startTime} - ${endTime}`;
+  // A slot that runs past midnight wraps to the next day (23:00 + 2h -> 01:00);
+  // mark it so "23:00 - 01:00" doesn't read as a 22-hour backwards range.
+  const nextDay = endHours >= 24 ? ' (+1)' : '';
+
+  return `${startTime} - ${endTime}${nextDay}`;
 }
 
 /** Format hour+minute honoring the 12h/24h preference. */
@@ -92,6 +96,109 @@ export function formatTime(
   }
 }
 
+// Date formatters are cached per (locale, timeZone) for the same reason as the
+// time ones: attendance/task lists call them once per row.
+const _dateDtfCache = new Map<string, Intl.DateTimeFormat>();
+function getDateDtf(locale: string, timeZone?: string | null, withYear = false): Intl.DateTimeFormat {
+  const key = `${locale}|${timeZone || ''}|${withYear ? 'y' : ''}`;
+  let fmt = _dateDtfCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, {
+      month: 'short',
+      day: 'numeric',
+      ...(withYear ? { year: 'numeric' as const } : {}),
+      ...(timeZone ? { timeZone } : {}),
+    });
+    _dateDtfCache.set(key, fmt);
+  }
+  return fmt;
+}
+
+/**
+ * Calendar day (YYYY-MM-DD) of an instant AS SEEN IN `timeZone`.
+ *
+ * Comparing these strings is how "is this today?" stays correct across zones —
+ * a device in Vienna must not decide the day for an entry stamped in New York.
+ * `en-CA` is used purely because it yields ISO-ordered output.
+ */
+function dayKeyInZone(d: Date, timeZone?: string | null): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      ...(timeZone ? { timeZone } : {}),
+    }).format(d);
+  } catch {
+    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  }
+}
+
+/**
+ * Format a date (e.g. "15. Jan." / "Jan 15"), locale- AND timezone-aware.
+ *
+ * Pass the entry's zone so a date label agrees with the zoned time rendered
+ * next to it (otherwise a night shift can show the neighbouring day).
+ */
+export function formatDateOf(
+  input: string | number | Date,
+  locale: string = 'en-US',
+  timeZone?: string | null,
+  withYear = false,
+): string {
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return '';
+  try {
+    return getDateDtf(locale, timeZone, withYear).format(d);
+  } catch {
+    return getDateDtf(locale, undefined, withYear).format(d);
+  }
+}
+
+/**
+ * Due-date label: "Today" / "Tomorrow" (caller-supplied, translated) else a
+ * locale date. A due date is a calendar date the worker reads on-site, so the
+ * day is resolved in the device zone — only the wording is localized here.
+ */
+export function formatDueDateOf(
+  input: string | number | Date,
+  locale: string = 'en-US',
+  labels: { today: string; tomorrow: string },
+): string {
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  if (target.getTime() === today.getTime()) return labels.today;
+  if (target.getTime() === tomorrow.getTime()) return labels.tomorrow;
+  return formatDateOf(d, locale);
+}
+
+/**
+ * "Today" / "Yesterday" (caller-supplied, translated) else a locale date.
+ * The day comparison happens IN `timeZone`, so the label matches the entry's
+ * own calendar day rather than the device's.
+ */
+export function formatDateRelativeOf(
+  input: string | number | Date,
+  locale: string = 'en-US',
+  timeZone: string | null | undefined,
+  labels: { today: string; yesterday: string },
+): string {
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const key = dayKeyInZone(d, timeZone);
+  if (key === dayKeyInZone(now, timeZone)) return labels.today;
+  if (key === dayKeyInZone(yesterday, timeZone)) return labels.yesterday;
+  return formatDateOf(d, locale, timeZone);
+}
+
 /**
  * Format a raw "HH:MM" schedule string honoring the 12h/24h preference.
  * "17:30" -> "5:30 PM" (12h) or "17:30" (24h).
@@ -106,34 +213,10 @@ export function formatClockString(hhmm: string | null | undefined, hour12: boole
 }
 
 /**
- * Format a date as relative time (e.g., "Today", "Tomorrow", "Jan 15")
- */
-export function formatRelativeDate(date: string | Date): string {
-  const d = new Date(date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const targetDate = new Date(d);
-  targetDate.setHours(0, 0, 0, 0);
-
-  if (targetDate.getTime() === today.getTime()) {
-    return 'Today';
-  }
-  if (targetDate.getTime() === tomorrow.getTime()) {
-    return 'Tomorrow';
-  }
-
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-/**
  * Format a date as short date string (e.g., "Jan 15")
  */
-export function formatShortDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
+export function formatShortDate(date: string | Date, locale: string = 'en-US'): string {
+  return new Date(date).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
   });
@@ -248,35 +331,6 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
-/**
- * Format a date as time (e.g., "02:30 PM")
- */
-export function formatTimeString(dateString: string | Date, hour12: boolean = false): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString(hour12 ? 'en-US' : 'en-GB', {
-    hour: hour12 ? 'numeric' : '2-digit',
-    minute: '2-digit',
-    hour12,
-  });
-}
-
-/**
- * Format a date with relative labels (Today, Yesterday, or short date)
- */
-export function formatDateRelative(dateString: string | Date): string {
-  const date = new Date(dateString);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-}
 
 // =============================================================================
 // RELATIVE TIME AGO
@@ -286,7 +340,7 @@ export function formatDateRelative(dateString: string | Date): string {
  * Format a date as time ago (e.g., "Just now", "5m ago", "2h ago", "3d ago")
  * Used for comment timestamps, activity feeds, etc.
  */
-export function formatTimeAgo(date: string | Date): string {
+export function formatTimeAgo(date: string | Date, locale: string = 'en-US'): string {
   const now = Date.now();
   const then = new Date(date).getTime();
   const diffMs = now - then;
@@ -306,10 +360,7 @@ export function formatTimeAgo(date: string | Date): string {
   if (days < 7) return `${days}d ago`;
 
   // Older than a week — show short date
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatShortDate(date, locale);
 }
 
 // =============================================================================

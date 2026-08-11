@@ -37,6 +37,7 @@ import {
 } from '../../../src/lib/constants';
 import { getTimeOffStatusStyle } from '../../../src/lib/styles';
 import { formatShortDate, isSameDay } from '../../../src/lib/utils';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { FilterChip } from '../../../src/components/filter-chip';
 
 // =============================================================================
@@ -76,8 +77,8 @@ function toDateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function formatLongDate(d: Date): string {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function formatLongDate(d: Date, locale: string): string {
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 /** Build a grid of 6 rows x 7 columns for a month calendar (Mon-start). */
@@ -127,6 +128,8 @@ export default function TimeOffScreen() {
   const { colors, isDark } = useTheme();
   const toast = useToast();
   const { t } = useTranslation();
+  // Dates follow the active language rather than a hardcoded en-US locale.
+  const { locale } = useTimeFormat();
 
   // Data - fetched via useFetchData
   const fetcher = useCallback(async () => {
@@ -719,7 +722,7 @@ export default function TimeOffScreen() {
                   {t('timeOff.teamAvailability.techsAvailable', { available: availabilityInsights.worstAvailable, total: availabilityInsights.worstTotal })}
                   {availabilityInsights.worstDay && (
                     <Text style={[styles.insightMuted, { color: colors.textMuted }]}>
-                      {' '}{t('timeOff.teamAvailability.worst', { date: formatShortDate(availabilityInsights.worstDay) })}
+                      {' '}{t('timeOff.teamAvailability.worst', { date: formatShortDate(availabilityInsights.worstDay, locale) })}
                     </Text>
                   )}
                 </Text>
@@ -728,7 +731,7 @@ export default function TimeOffScreen() {
                   <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
                     <Ionicons name="warning" size={16} color={COLORS.amber} />
                     <Text style={styles.warningText}>
-                      {t('timeOff.teamAvailability.lowCoverage', { date: formatShortDate(availabilityInsights.worstDay) })}
+                      {t('timeOff.teamAvailability.lowCoverage', { date: formatShortDate(availabilityInsights.worstDay, locale) })}
                     </Text>
                   </View>
                 )}
@@ -775,7 +778,7 @@ export default function TimeOffScreen() {
             <View style={[styles.formDateRow, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
               <Text style={styles.formDateText}>
-                {formatLongDate(rangeStart!)} – {formatLongDate(rangeEnd!)} ({rangeDays} {rangeDays > 1 ? t('common.days') : t('common.day')})
+                {formatLongDate(rangeStart!, locale)} – {formatLongDate(rangeEnd!, locale)} ({rangeDays} {rangeDays > 1 ? t('common.days') : t('common.day')})
               </Text>
             </View>
 
@@ -893,8 +896,8 @@ export default function TimeOffScreen() {
                     <View style={styles.detailRow}>
                       <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
                       <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                        {formatShortDate(request.startDate)}
-                        {request.startDate !== request.endDate && ` – ${formatShortDate(request.endDate)}`}
+                        {formatShortDate(request.startDate, locale)}
+                        {request.startDate !== request.endDate && ` – ${formatShortDate(request.endDate, locale)}`}
                       </Text>
                     </View>
                     <View style={styles.detailRow}>

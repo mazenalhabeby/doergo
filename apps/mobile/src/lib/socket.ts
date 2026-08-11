@@ -34,5 +34,9 @@ export function getSocketUrl(): string {
     return `http://${host}:4001`;
   }
 
-  return 'http://localhost:4001';
+  // Never point a SHIPPED build at localhost — an `eas update` can publish a
+  // bundle whose EXPO_PUBLIC_* env wasn't inlined, which would otherwise land
+  // here and kill chat/presence/live updates. Mirror client.ts's prod fallback:
+  // hbcfield.com, where nginx proxies /socket.io/ to :4001. (Sec audit H10.)
+  return __DEV__ ? 'http://localhost:4001' : 'https://hbcfield.com';
 }

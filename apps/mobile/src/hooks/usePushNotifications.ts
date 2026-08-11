@@ -154,7 +154,12 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
 
   // Unregister push token (call on logout)
   const unregisterPushToken = useCallback(async () => {
-    const token = currentTokenRef.current;
+    // Read the token from AsyncStorage, NOT the per-hook ref. Registration
+    // happens in the layout's hook instance while logout calls this from a fresh
+    // instance (profile/auth-context) where the ref is always null — so the
+    // removeToken call never fired and a shared device kept receiving the
+    // previous user's push. (Sec audit H11.)
+    const token = currentTokenRef.current || (await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY));
     if (!token) {
       return;
     }
@@ -258,4 +263,21 @@ export function getNotificationType(
     : (notification.request.content.data as NotificationData);
 
   return data?.type ?? null;
+}
+
+/**
+ * Remove this device's push registration from the server — a plain (non-hook)
+ * helper so logout paths that don't render usePushNotifications (e.g. the
+ * auth-context session teardown) can still unregister. Reads the cached token
+ * from AsyncStorage; best-effort (a dead session can't authenticate the removal).
+ * (Sec audit H11.)
+ */
+export async function purgePushTokenRegistration(): Promise<void> {
+  try {
+    const token = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
+    if (token) await pushApi.removeToken(token);
+  } catch {
+    // best-effort — ignore (offline / expired session)
+  }
+  await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY).catch(() => undefined);
 }

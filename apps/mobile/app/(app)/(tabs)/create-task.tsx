@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { router } from 'expo-router';
 import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, locationsApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
@@ -54,6 +55,8 @@ export default function CreateTaskScreen() {
   const { user } = useAuth();
   const toast = useToast();
   const { t } = useTranslation();
+  // Dates follow the active language rather than a hardcoded en-US locale.
+  const { locale } = useTimeFormat();
   const { pickFromGallery, takePhoto } = useImagePicker();
   const canAssign = user?.canAssignTasks ?? false;
   const [photos, setPhotos] = useState<PickedImage[]>([]);
@@ -251,7 +254,7 @@ export default function CreateTaskScreen() {
             <Ionicons name="calendar-outline" size={20} color={dueDate ? COLORS.primary : colors.textMuted} />
             <Text style={[styles.dateText, { flex: 1, color: dueDate ? colors.textPrimary : colors.textMuted }]}>
               {dueDate
-                ? dueDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+                ? dueDate.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
                 : t('createTask.dueDatePlaceholder')}
             </Text>
             {dueDate && (

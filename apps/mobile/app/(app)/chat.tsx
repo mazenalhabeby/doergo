@@ -40,8 +40,17 @@ function presenceLabel(p: string | null | undefined, t: import('i18next').TFunct
   if (p === 'AWAY') return t('chat.presence.away', 'Away');
   return t('chat.presence.offline', 'Offline');
 }
+/** Map the active i18n language to an IETF locale (all supported languages). */
+function localeOf(lang?: string): string {
+  const l = lang || 'en';
+  if (l.startsWith('de')) return 'de-DE';
+  if (l.startsWith('es')) return 'es-ES';
+  if (l.startsWith('it')) return 'it-IT';
+  if (l.startsWith('fr')) return 'fr-FR';
+  return 'en-US';
+}
 function timeHM(iso: string, lang: string, hour12?: boolean) {
-  return new Date(iso).toLocaleTimeString(lang?.startsWith('de') ? 'de-DE' : 'en-US', {
+  return new Date(iso).toLocaleTimeString(localeOf(lang), {
     hour: hour12 ? 'numeric' : '2-digit',
     minute: '2-digit',
     ...(hour12 === undefined ? {} : { hour12 }),
@@ -57,7 +66,7 @@ function dayLabel(iso: string, lang: string, t: import('i18next').TFunction) {
   yest.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return t('chat.today', 'Today');
   if (d.toDateString() === yest.toDateString()) return t('chat.yesterday', 'Yesterday');
-  return d.toLocaleDateString(lang?.startsWith('de') ? 'de-DE' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(localeOf(lang), { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export default function ChatScreen() {

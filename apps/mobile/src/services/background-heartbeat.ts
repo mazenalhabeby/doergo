@@ -15,8 +15,14 @@ TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
 
   if (!data?.locations?.length) return;
 
-  // Check if user is still authenticated
-  const token = await getAccessToken();
+  // Stop only on a genuine logout (token absent). A transient keychain read
+  // error must NOT deregister the heartbeat. (Sec audit H12.)
+  let token: string | null;
+  try {
+    token = await getAccessToken();
+  } catch {
+    return; // transient read failure — skip this tick, keep the heartbeat alive
+  }
   if (!token) {
     console.log('[Heartbeat] No auth token, stopping background tracking');
     await stopBackgroundHeartbeat();

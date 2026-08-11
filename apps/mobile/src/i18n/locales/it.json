@@ -28,6 +28,8 @@
     "all": "Tutti",
     "none": "Nessuno",
     "today": "Oggi",
+    "yesterday": "Ieri",
+    "tomorrow": "Domani",
     "required": "Obbligatorio",
     "optional": "Facoltativo",
     "uploading": "Caricamento in corso...",

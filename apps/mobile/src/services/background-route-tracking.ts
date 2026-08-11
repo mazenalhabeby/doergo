@@ -94,8 +94,15 @@ TaskManager.defineTask(ROUTE_TASK, async ({ data, error }: any) => {
   const locations: RawLocation[] | undefined = data?.locations;
   if (!locations?.length) return;
 
-  // Stop if the session ended (logged out) — never leak background GPS.
-  const token = await getAccessToken();
+  // Stop ONLY on a genuine logout (token absent). A keychain read ERROR (e.g. a
+  // transient failure) must NOT deregister the tracker — that would permanently
+  // stop background GPS with no way to recover until the app is reopened. (H12.)
+  let token: string | null;
+  try {
+    token = await getAccessToken();
+  } catch {
+    return; // transient read failure — skip this burst, keep tracking
+  }
   if (!token) {
     await stopRouteTracking();
     return;

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -22,6 +23,8 @@ const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
 export default function InvitationsScreen() {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  // Dates follow the active language rather than a hardcoded en-US locale.
+  const { formatDate } = useTimeFormat();
   const toast = useToast();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,8 +117,8 @@ export default function InvitationsScreen() {
               {item.specialty && <Text style={[s.specialty, { color: colors.textMuted }]}> · {item.specialty}</Text>}
             </View>
             <Text style={[s.date, { color: colors.textMuted }]}>
-              {t('manage.invitationsScreen.created', { date: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })}
-              {' · '}{t('manage.invitationsScreen.expires', { date: new Date(item.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })}
+              {t('manage.invitationsScreen.created', { date: formatDate(item.createdAt) })}
+              {' · '}{t('manage.invitationsScreen.expires', { date: formatDate(item.expiresAt) })}
             </Text>
             {item.acceptedBy && (
               <Text style={[s.acceptedBy, { color: colors.textSecondary }]}>

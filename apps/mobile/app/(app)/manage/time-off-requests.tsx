@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -24,6 +25,8 @@ const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 export default function TimeOffRequestsScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  // Dates follow the active language rather than a hardcoded en-US locale.
+  const { locale } = useTimeFormat();
   const toast = useToast();
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,7 +107,7 @@ export default function TimeOffRequestsScreen() {
 
   const filtered = useMemo(() => filter === 'ALL' ? requests : requests.filter(r => r.status === filter), [requests, filter]);
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatDate = (d: string) => new Date(d).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 
   const renderItem = ({ item }: { item: any }) => {
     const statusStyle = getTimeOffStatusStyle(item.status);

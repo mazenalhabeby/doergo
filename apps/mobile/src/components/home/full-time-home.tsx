@@ -26,7 +26,6 @@ import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenCon
 import {
   haversineDistance,
   formatDurationMinutes as formatDuration,
-  formatDateRelative as formatDate,
 } from '../../lib/utils';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { countryFromTz } from '@hbcfield/shared/client';
@@ -35,7 +34,8 @@ import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT
 
 export function FullTimeHome() {
   const { user } = useAuth();
-  const { formatTime } = useTimeFormat();
+  // Locale- + timezone-aware, so the date agrees with the entry's own zone.
+  const { formatTime, formatDateRelative: formatDate } = useTimeFormat();
   const { colors } = useTheme();
   const { t, i18n } = useTranslation();
   const toast = useToast();
@@ -425,7 +425,7 @@ export function FullTimeHome() {
             {history.slice(0, 3).map((entry) => (
               <View key={entry.id} style={[ftStyles.historyCard, { backgroundColor: colors.card }]}>
                 <View style={ftStyles.historyLeft}>
-                  <Text style={[ftStyles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt)}</Text>
+                  <Text style={[ftStyles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}</Text>
                   <Text style={[ftStyles.historyLocation, { color: colors.textSecondary }]}>{entry.location?.name || t('common.unknown')}</Text>
                   {!!countryFromTz((entry.timezone ?? entry.location?.timezone), i18n.language) && (
                     <Text style={[ftStyles.historyLocation, { color: colors.textMuted }]}>

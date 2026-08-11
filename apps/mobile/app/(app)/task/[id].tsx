@@ -38,7 +38,8 @@ import { TourTarget } from '../../../src/components/tour';
 import { useResponsive } from '../../../src/lib/responsive';
 import { CustomFieldsCard } from '../../../src/components/custom-fields-card';
 import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
-import { getJobId, formatRelativeDate, formatTimeAgo } from '../../../src/lib/utils';
+import { getJobId, formatTimeAgo } from '../../../src/lib/utils';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import {
   styles,
   adminDetailStyles,
@@ -76,6 +77,8 @@ export function TaskDetailPane({
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  // Dates follow the active language instead of a hardcoded en-US locale.
+  const { formatDateFull, formatDueDate: formatRelativeDate } = useTimeFormat();
   const toast = useToast();
   const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
 
@@ -1362,9 +1365,7 @@ export function TaskDetailPane({
                   {task.createdBy.firstName} {task.createdBy.lastName}
                 </Text>
                 <Text style={[styles.infoSubValue, { color: colors.textSecondary }]}>
-                  {new Date(task.createdAt).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric',
-                  })}
+                  {formatDateFull(task.createdAt)}
                 </Text>
               </View>
             </View>
@@ -1691,7 +1692,7 @@ export function TaskDetailPane({
                 <View style={styles.futureDateBanner}>
                   <Ionicons name="calendar-outline" size={20} color={COLORS.amber} />
                   <Text style={styles.futureDateText}>
-                    {t('taskDetail.futureTask.scheduledFor', { date: new Date(task.dueDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })} {task.status === TaskStatus.ASSIGNED ? t('taskDetail.futureTask.canAcceptOnDueDate') : t('taskDetail.futureTask.canStartOnDueDate')}
+                    {t('taskDetail.futureTask.scheduledFor', { date: formatDateFull(task.dueDate!) })} {task.status === TaskStatus.ASSIGNED ? t('taskDetail.futureTask.canAcceptOnDueDate') : t('taskDetail.futureTask.canStartOnDueDate')}
                   </Text>
                 </View>
               )}

@@ -28,6 +28,8 @@
     "all": "All",
     "none": "None",
     "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
     "required": "Required",
     "optional": "Optional",
     "uploading": "Uploading...",

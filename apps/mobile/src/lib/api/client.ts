@@ -80,9 +80,15 @@ export async function getRefreshToken(): Promise<string | null> {
 }
 
 export async function saveTokens(accessToken: string, refreshToken: string): Promise<void> {
+  // AFTER_FIRST_UNLOCK: the keychain item stays readable while the phone is
+  // LOCKED (after the first unlock post-boot). The default (WHEN_UNLOCKED) throws
+  // errSecInteractionNotAllowed in headless background tasks on a locked device,
+  // so the background GPS/heartbeat task couldn't read the token → route gaps and
+  // a permanent tracker deregister. (Sec audit H12.)
+  const opts = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK };
   await Promise.all([
-    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
-    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken, opts),
+    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken, opts),
   ]);
 }
 
@@ -180,7 +186,11 @@ export function refreshAccessToken(): Promise<string | null> {
 
       return data.accessToken;
     } catch (error) {
-      await clearTokens();
+      // Network error / timeout / abort — NOT proof the session is invalid. A
+      // field worker in poor coverage must not be logged out and lose their
+      // clocked-in context; only an explicit non-2xx / unsuccessful refresh above
+      // clears the tokens. Return null so the caller's request fails and retries.
+      // (Sec audit mobile-H2.)
       return null;
     } finally {
       refreshPromise = null;

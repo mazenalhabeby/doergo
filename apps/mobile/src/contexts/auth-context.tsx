@@ -14,6 +14,7 @@ import {
 } from '../lib/api';
 import { stopRouteTracking } from '../services/background-route-tracking';
 import { stopBackgroundHeartbeat } from '../services/background-heartbeat';
+import { purgePushTokenRegistration } from '../hooks/usePushNotifications';
 
 const USER_KEY = 'hbcfield_user';
 
@@ -127,6 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([
       stopRouteTracking().catch(() => undefined),
       stopBackgroundHeartbeat().catch(() => undefined),
+      // Unregister this device's push token while the session token is still
+      // valid, so a shared device stops receiving the previous user's push. (H11.)
+      purgePushTokenRegistration().catch(() => undefined),
     ]);
     await Promise.all([
       clearTokens(),

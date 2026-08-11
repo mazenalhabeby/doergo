@@ -31,6 +31,16 @@ export function useSocket(user?: SocketUser | null) {
   const connect = useCallback(async () => {
     if (socketRef.current?.connected) return;
 
+    // Tear down any lingering socket (disconnected but still auto-reconnecting
+    // after a connect_error). The old `connected`-only guard let a foreground
+    // transition spin up a SECOND io() while the first kept retrying → duplicate
+    // managers accumulating across background/foreground cycles. (Sec audit H9.)
+    if (socketRef.current) {
+      socketRef.current.removeAllListeners();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+
     const currentUser = userRef.current;
     const token = await getAccessToken();
     if (!token || !currentUser) return;
@@ -38,7 +48,12 @@ export function useSocket(user?: SocketUser | null) {
     const url = getSocketUrl();
 
     socketRef.current = io(url, {
-      auth: { token },
+      // Function form: re-invoked on every (re)connect, so a reconnect after the
+      // ~15-min access-token refresh sends the CURRENT token instead of the stale
+      // one captured at connect — otherwise all reconnects fail auth. (H9.)
+      auth: (cb: (data: { token: string | null }) => void) => {
+        getAccessToken().then((t) => cb({ token: t }));
+      },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
