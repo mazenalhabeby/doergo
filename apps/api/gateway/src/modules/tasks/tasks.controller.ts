@@ -271,6 +271,7 @@ export class TasksController {
       canViewAllTasks: req.user.canViewAllTasks,
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
+      access: req.user.access, // server-authoritative; task-service enforces the real space for foreign tasks
     });
   }
 

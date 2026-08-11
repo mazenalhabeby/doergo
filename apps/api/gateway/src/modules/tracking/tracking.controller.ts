@@ -52,6 +52,7 @@ export class TrackingController {
       this.trackingClient.send({ cmd: 'update_location' }, {
         ...updateLocationDto,
         userId: req.user.id, // Always use authenticated user's ID
+        organizationId: req.user.organizationId, // for org-scoped live-map broadcast
       }),
     );
   }
@@ -62,6 +63,7 @@ export class TrackingController {
   async updateLocationBatch(@Body() batchDto: BatchTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'update_location_batch' }, {
+        organizationId: req.user.organizationId, // for org-scoped live-map broadcast
         taskId: batchDto.taskId,
         points: batchDto.points,
         userId: req.user.id, // Always use authenticated user's ID

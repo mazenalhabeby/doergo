@@ -1181,6 +1181,9 @@ export class TasksService {
     reason?: string;
     lat?: number;
     lng?: number;
+    // Server-authoritative cross-org grant map (forwarded from the gateway).
+    // Used to allow a guest org to move a task in a space explicitly shared to it.
+    access?: unknown;
   }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -1233,6 +1236,16 @@ export class TasksService {
       if (!isAssignedUser && !hasManageAuthority) {
         this.logger.warn(`Authorization denied: non-assigned user attempted status update`, { userId: data.userId, taskId: data.id, status: data.status });
         throw new ForbiddenException('You can only update execution status of tasks assigned to you');
+      }
+      // Cross-org isolation (C2): the authority checks above never compared the
+      // task's org to the caller's, so an ADMIN / canViewAllTasks holder in one
+      // tenant could drive a task in ANOTHER tenant. A foreign task may only be
+      // moved with a CONTRIBUTE/CONTROL (canCreateTasks) grant for its real space
+      // — mirroring update() (:943) and assign() (:1036). Own-org tasks skip this.
+      if (task.organizationId !== data.organizationId) {
+        if (!task.spaceId || !accessAllowsInSpace((data as any).access, 'canCreateTasks', task.spaceId)) {
+          throw new ForbiddenException('You can only update the status of tasks in your organization');
+        }
       }
     }
 

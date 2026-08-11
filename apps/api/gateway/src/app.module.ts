@@ -59,7 +59,15 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    // Rate limiting: 10 requests per 60 seconds per IP
+    // Rate limiting. The three global tiers below always apply per IP. The
+    // FOURTH throttler MUST be named 'default': every per-route @Throttle()
+    // decorator writes its override under the 'default' key, and @nestjs/throttler
+    // only reads an override for a throttler whose name matches. Without a
+    // throttler literally named 'default', all @Throttle overrides (login 5/min,
+    // forgot/reset-password, invitation validate/accept, operator endpoints) are
+    // silently ignored and fall back to the 200/min 'long' tier. Its base limit
+    // here matches 'long' so undecorated routes are unaffected; decorated routes
+    // tighten it to their own value.
     ThrottlerModule.forRoot([
       {
         name: 'short',
@@ -75,6 +83,11 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
         name: 'long',
         ttl: 60000, // 1 minute
         limit: 200, // 200 requests per minute
+      },
+      {
+        name: 'default',
+        ttl: 60000, // 1 minute
+        limit: 200, // fallback for undecorated routes; @Throttle() overrides this
       },
     ]),
     // BullMQ for reliable job processing

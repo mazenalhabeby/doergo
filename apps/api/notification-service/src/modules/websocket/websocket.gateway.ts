@@ -333,9 +333,11 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     client.join(`org:${organizationId}`);
     clientInfo.rooms.push(`org:${organizationId}`);
 
-    // Join role-specific room
-    client.join(`role:${role}`);
-    clientInfo.rooms.push(`role:${role}`);
+    // Join role-specific room — ORG-NAMESPACED. A bare `role:ADMIN` room is
+    // global across all tenants, so worker-GPS and attendance-escalation
+    // broadcasts targeting it leaked into every org's admins (sec audit C5).
+    client.join(`role:${organizationId}:${role}`);
+    clientInfo.rooms.push(`role:${organizationId}:${role}`);
 
     // Join user-specific room
     client.join(`user:${userId}`);
@@ -671,7 +673,10 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.server.to(`task:${taskId}`).emit(SocketEvents.TASK_ATTACHMENT_ADDED, { taskId, attachment });
   }
 
-  emitWorkerLocationUpdated(workerId: string, location: any) {
+  emitWorkerLocationUpdated(organizationId: string, workerId: string, location: any) {
+    // Without an org, we cannot scope the broadcast — drop it rather than leak
+    // it platform-wide (the old global `role:ADMIN` room was the C5 leak).
+    if (!organizationId) return;
     // Throttle: GPS points can arrive every few seconds — the live map only
     // needs ~1 update / 3s per worker, so we drop the in-between broadcasts.
     const now = Date.now();
@@ -680,9 +685,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
     this.logger.debug(`[EMIT] worker.locationUpdated for worker ${workerId}`);
     this.messagesSent++;
-    // Live-map viewers = admins (role room). Historical points are still stored
-    // by tracking-service regardless of this throttle.
-    this.server.to('role:ADMIN').emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
+    // Live-map viewers = admins of THIS org only. Historical points are still
+    // stored by tracking-service regardless of this throttle.
+    this.server.to(`role:${organizationId}:ADMIN`).emit(SocketEvents.WORKER_LOCATION_UPDATED, { workerId, location });
   }
 
   // =========================================================================
@@ -805,9 +810,11 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   /**
    * Emit an event to all clients with a specific role
    */
-  emitToRole(role: string, event: string, data: any) {
-    this.logger.log(`[EMIT] ${event} to role:${role}`);
+  emitToRole(organizationId: string, role: string, event: string, data: any) {
+    // Org-scoped: never broadcast to a global role room (sec audit C5).
+    if (!organizationId) return;
+    this.logger.log(`[EMIT] ${event} to role:${organizationId}:${role}`);
     this.messagesSent++;
-    this.server.to(`role:${role}`).emit(event, data);
+    this.server.to(`role:${organizationId}:${role}`).emit(event, data);
   }
 }

@@ -131,9 +131,11 @@ export class InvoicesController {
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'invoice_update' }, {
+        ...body,
+        // id + org LAST so a malicious body cannot override the tenant scope
+        // (body is untyped, so ValidationPipe's whitelist doesn't strip them).
         id,
         organizationId: user.organizationId,
-        ...body,
       }),
     );
 

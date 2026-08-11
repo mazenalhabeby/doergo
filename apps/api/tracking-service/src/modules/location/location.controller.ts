@@ -13,16 +13,16 @@ export class LocationController {
 
   @MessagePattern({ cmd: 'update_location' })
   async updateLocation(
-    @Payload() data: { userId: string; lat: number; lng: number; accuracy?: number; taskId?: string },
+    @Payload() data: { userId: string; lat: number; lng: number; accuracy?: number; taskId?: string; organizationId?: string },
   ) {
-    return this.locationService.updateLocation(data.userId, data.lat, data.lng, data.accuracy, data.taskId);
+    return this.locationService.updateLocation(data.userId, data.lat, data.lng, data.accuracy, data.taskId, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'update_location_batch' })
   async updateLocationBatch(
-    @Payload() data: { userId: string; taskId?: string; points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[] },
+    @Payload() data: { userId: string; taskId?: string; organizationId?: string; points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[] },
   ) {
-    return this.locationService.updateLocationBatch(data.userId, data.taskId, data.points);
+    return this.locationService.updateLocationBatch(data.userId, data.taskId, data.points, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_active_workers' })

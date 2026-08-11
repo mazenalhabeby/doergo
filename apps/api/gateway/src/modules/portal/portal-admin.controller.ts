@@ -87,14 +87,28 @@ export class PortalAdminController {
   ) {
     if (!file) throw new BadRequestException('No file provided');
     if (file.size > 8 * 1024 * 1024) throw new BadRequestException('File too large (max 8MB)');
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.mimetype)) {
+    // Validate the portal id BEFORE it enters a filesystem path. Express decodes
+    // %2e%2e%2f in path params, so an unvalidated id (e.g. "../../../app") would
+    // let mkdir/writeFile escape the uploads root → arbitrary file write. (Sec
+    // audit C4.) A cuid/uuid is alphanumeric with optional -/_; nothing else.
+    if (!/^[a-zA-Z0-9_-]{8,64}$/.test(id)) {
+      throw new BadRequestException('Invalid portal id');
+    }
+    // Extension derived from the validated MIME, never the client filename — the
+    // dir is served by express.static (Content-Type follows the extension), so a
+    // filename-derived .html/.svg would be stored XSS on the app origin. (C3.)
+    const MIME_EXT: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const ext = MIME_EXT[file.mimetype];
+    if (!ext) {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
     }
     // Ownership: the setter below is org-scoped, but write into a portal-scoped dir.
     const dir = join(process.cwd(), 'uploads', 'portals', id);
     await mkdir(dir, { recursive: true });
-    const ext = file.originalname.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}.${ext}`;
     await writeFile(join(dir, fileName), file.buffer);
     const coverImageUrl = `/uploads/portals/${id}/${fileName}`;

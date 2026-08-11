@@ -62,6 +62,7 @@ export class LocationService {
     lng: number,
     accuracy?: number,
     taskId?: string,
+    organizationId?: string,
   ) {
     // Validate coordinate bounds — reject garbage before it pollutes the map/route.
     if (
@@ -121,6 +122,7 @@ export class LocationService {
     // Emit location update event to notification service (fire-and-forget with error handling)
     this.notificationClient
       .emit('worker_location_updated', {
+        organizationId,
         workerId: userId,
         taskId,
         location: { lat, lng, accuracy, timestamp: new Date() },
@@ -149,6 +151,7 @@ export class LocationService {
     userId: string,
     taskId: string | undefined,
     points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[],
+    organizationId?: string,
   ) {
     if (!Array.isArray(points) || points.length === 0) {
       return success(null);
@@ -233,6 +236,7 @@ export class LocationService {
     // Emit only the latest point to the live map (no need to replay the burst).
     this.notificationClient
       .emit('worker_location_updated', {
+        organizationId,
         workerId: userId,
         taskId,
         location: { lat: latest.lat, lng: latest.lng, accuracy: latest.accuracy, timestamp: new Date() },

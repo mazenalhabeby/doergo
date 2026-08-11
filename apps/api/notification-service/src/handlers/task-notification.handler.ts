@@ -213,6 +213,6 @@ export class TaskNotificationHandler {
 
   @EventPattern('worker_location_updated')
   async handleWorkerLocationUpdated(@Payload() data: any) {
-    this.websocketGateway.emitWorkerLocationUpdated(data.workerId, data.location);
+    this.websocketGateway.emitWorkerLocationUpdated(data.organizationId, data.workerId, data.location);
   }
 }

@@ -166,7 +166,7 @@ export class AttendanceNotificationHandler {
         this.websocketGateway.emitToUser(id, 'attendance_shift_escalation', payload);
       }
     } else {
-      this.websocketGateway.emitToRole('ADMIN', 'attendance_shift_escalation', payload);
+      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_shift_escalation', payload);
     }
 
     // Persist to the in-app inbox for the resolved leaders.
@@ -244,7 +244,7 @@ export class AttendanceNotificationHandler {
     if (leaderIds.length) {
       for (const id of leaderIds) this.websocketGateway.emitToUser(id, 'attendance_noshow_escalation', payload);
     } else {
-      this.websocketGateway.emitToRole('ADMIN', 'attendance_noshow_escalation', payload);
+      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_noshow_escalation', payload);
     }
     await this.store.record({
       recipientIds: leaderIds,
@@ -293,7 +293,7 @@ export class AttendanceNotificationHandler {
         this.websocketGateway.emitToUser(id, 'attendance_overtime_request', payload);
       }
     } else {
-      this.websocketGateway.emitToRole('ADMIN', 'attendance_overtime_request', payload);
+      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_overtime_request', payload);
     }
 
     await this.store.record({
@@ -446,7 +446,7 @@ export class AttendanceNotificationHandler {
         this.websocketGateway.emitToUser(id, 'attendance_pending_approval', payload);
       }
     } else {
-      this.websocketGateway.emitToRole('ADMIN', 'attendance_pending_approval', payload);
+      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_pending_approval', payload);
     }
 
     // Persist to the in-app inbox for the approvers.

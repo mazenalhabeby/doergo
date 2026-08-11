@@ -52,7 +52,19 @@ export class SpaceSharingController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a share (level / visibility scope)' })
   updateShare(@Param('shareId') shareId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
-    return this.send('space_share_update', { ownerOrgId: u.organizationId, shareId, ...body });
+    // Whitelist mutable fields explicitly — never spread the untyped body, which
+    // would let a malicious `ownerOrgId`/`shareId` override the tenant scope
+    // (body is `any`, so ValidationPipe's whitelist doesn't apply). Mirrors createShare.
+    return this.send('space_share_update', {
+      ownerOrgId: u.organizationId,
+      shareId,
+      level: body.level,
+      showWorkers: body.showWorkers,
+      showAttendance: body.showAttendance,
+      showTracking: body.showTracking,
+      showReports: body.showReports,
+      allowRequests: body.allowRequests,
+    });
   }
 
   @Delete('locations/:spaceId/shares/:shareId')

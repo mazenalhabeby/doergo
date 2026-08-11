@@ -200,8 +200,18 @@ export class UsersController {
     if (file.size > 5 * 1024 * 1024) {
       throw new BadRequestException('File too large (max 5MB)');
     }
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.mimetype)) {
+    // The on-disk extension is derived from the validated MIME type, NOT from
+    // the client-supplied filename. `uploads/` is served by express.static, which
+    // sets Content-Type from the extension — deriving it from `originalname` would
+    // let an attacker upload `x.html` (with an image mimetype header) and have it
+    // served as text/html → stored XSS on the app origin. (Sec audit C3.)
+    const MIME_EXT: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const ext = MIME_EXT[file.mimetype];
+    if (!ext) {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
     }
 
@@ -209,7 +219,6 @@ export class UsersController {
     const uploadDir = join(process.cwd(), 'uploads', 'avatars', user.id);
     await mkdir(uploadDir, { recursive: true });
 
-    const ext = file.originalname.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}.${ext}`;
     const filePath = join(uploadDir, fileName);
     await writeFile(filePath, file.buffer);
