@@ -362,6 +362,10 @@ export class OrganizationsController {
       );
     }
 
+    // Drop the removed user's cached session so their access token stops passing
+    // the guard chain immediately, not after the cache TTL. (Sec audit H6.)
+    await this.authCache.invalidateUser(memberId);
+
     // Force-disconnect removed user's active socket connections
     this.notificationClient.emit('user_removed', {
       userId: memberId,

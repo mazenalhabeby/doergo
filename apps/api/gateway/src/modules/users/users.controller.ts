@@ -189,7 +189,7 @@ export class UsersController {
   @Post('avatar/upload')
   @ApiOperation({ summary: 'Upload avatar image (multipart/form-data)' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
   async avatarUpload(
     @CurrentUser() user: CurrentUserData,
     @UploadedFile() file: Express.Multer.File,

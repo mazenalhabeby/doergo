@@ -19,6 +19,18 @@ import {
   paginated,
 } from '@hbcfield/shared';
 
+// Report attachments are before/after photos + signatures only — an image
+// allow-list keeps active content (html/svg) out of the report gallery + PDF.
+const REPORT_ALLOWED_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/heic',
+  'image/heif',
+];
+const REPORT_MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
@@ -507,6 +519,20 @@ export class ReportsService {
       throw new ForbiddenException('You can only add attachments to reports in your organization');
     }
 
+    // The confirmed URL must be the presigned object for THIS report — never an
+    // arbitrary client URL (would be stored XSS/phishing in the report + PDF).
+    // Bound the size and name too. (Sec audit H5, mirrors attachments.service.)
+    const expectedPrefix = `${this.s3Endpoint}/${this.s3Bucket}/reports/${data.reportId}/`;
+    if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(expectedPrefix)) {
+      throw new BadRequestException('Invalid file URL');
+    }
+    if (typeof data.fileSize !== 'number' || data.fileSize <= 0 || data.fileSize > REPORT_MAX_FILE_SIZE) {
+      throw new BadRequestException('Invalid file size');
+    }
+    if (!data.fileName || data.fileName.length > 255) {
+      throw new BadRequestException('Invalid file name');
+    }
+
     const attachment = await this.prisma.reportAttachment.create({
       data: {
         reportId: data.reportId,
@@ -594,6 +620,19 @@ export class ReportsService {
     }
     if (report.organizationId !== data.organizationId) {
       throw new ForbiddenException('You can only upload attachments to reports in your organization');
+    }
+
+    // Validate content type BEFORE signing — a presigned PUT for text/html or
+    // image/svg+xml under reports/ would be stored XSS on the bucket origin.
+    // Report attachments are photos/signatures only. (Sec audit H5.)
+    if (!data.fileType || !/^[a-z]+\/[a-z0-9\-.+]+$/i.test(data.fileType)) {
+      throw new BadRequestException('Invalid file type format');
+    }
+    if (!REPORT_ALLOWED_TYPES.includes(data.fileType.toLowerCase())) {
+      throw new BadRequestException('File type not allowed. Report attachments must be images.');
+    }
+    if (!data.fileName || data.fileName.length > 255) {
+      throw new BadRequestException('Invalid file name');
     }
 
     // Sanitize filename: remove path separators and special chars

@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
@@ -28,6 +29,7 @@ export class AuthController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   @Public()
@@ -170,6 +172,10 @@ export class AuthController {
       this.authClient.send({ cmd: 'logout' }, { refreshToken }),
     );
 
+    // Kill the cached session immediately so a still-valid access token can't be
+    // replayed after logout (access tokens aren't otherwise revocable). (Sec audit H6.)
+    if (result?.userId) await this.authCache.invalidateUser(result.userId);
+
     // Signing out clears the user's lastActiveAt (done in auth-service), so they
     // read as offline immediately. Broadcast a presence event so teammates'
     // dashboards move them to "Off Duty" in real time instead of waiting for the
@@ -251,6 +257,9 @@ export class AuthController {
         newPassword: dto.newPassword,
       }),
     );
+
+    // Password change → drop the cached session (Sec audit H6).
+    if (result?.success !== false) await this.authCache.invalidateUser(user.id);
 
     if (result && result.success === false) {
       throw new HttpException(
@@ -340,6 +349,9 @@ export class AuthController {
         password: dto.password,
       }),
     );
+
+    // Account deleted → drop the cached session (Sec audit H6).
+    if (result?.success !== false) await this.authCache.invalidateUser(user.id);
 
     if (result && result.success === false) {
       throw new HttpException(

@@ -83,7 +83,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     this.validateFrequencyFields(data.frequency, data);
 
     // Validate space + task type belong to this org (if provided)
-    await this.assertSpaceAndWorkflow(data.organizationId, data.spaceId, data.workflowId);
+    await this.assertSpaceAndWorkflow(data.organizationId, data.spaceId, data.workflowId, data.assigneeIds);
 
     const startDate = new Date(data.startDate);
 
@@ -182,6 +182,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       data.organizationId,
       data.spaceId === undefined ? undefined : data.spaceId ?? undefined,
       data.workflowId === undefined ? undefined : data.workflowId ?? undefined,
+      data.assigneeIds,
     );
 
     // If frequency changed, validate and recalculate nextRunAt
@@ -432,6 +433,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     organizationId: string,
     spaceId?: string,
     workflowId?: string,
+    assigneeIds?: string[],
   ) {
     if (spaceId) {
       const space = await this.prisma.companyLocation.findFirst({
@@ -446,6 +448,19 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         select: { id: true },
       });
       if (!wf) throw new BadRequestException('Task Type not found in this organization');
+    }
+    // Every assignee must belong to THIS org. Otherwise a foreign user id gains
+    // read+notifications on the generated tasks (checkTaskAccess short-circuits on
+    // assignment before any org compare). (Sec audit H4.)
+    if (assigneeIds && assigneeIds.length > 0) {
+      const unique = [...new Set(assigneeIds)];
+      const found = await this.prisma.user.findMany({
+        where: { id: { in: unique }, organizationId },
+        select: { id: true },
+      });
+      if (found.length !== unique.length) {
+        throw new BadRequestException('One or more assignees are not members of this organization');
+      }
     }
   }
 

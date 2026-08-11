@@ -34,14 +34,20 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
+    // In production nginx proxies /api and /uploads to the gateway BEFORE the
+    // request reaches Next, so these rewrites are a dev/self-host convenience.
+    // Never hardcode localhost into the standalone build: honour an override so a
+    // misconfigured deploy can't route authenticated API traffic (with the auth
+    // cookie) to whatever is on :4000 of the app container. (Sec audit H10.)
+    const apiOrigin = process.env.API_PROXY_ORIGIN || 'http://localhost:4000';
     return [
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:4000/uploads/:path*',
+        destination: `${apiOrigin}/uploads/:path*`,
       },
       {
         source: '/api/:path*',
-        destination: 'http://localhost:4000/api/:path*',
+        destination: `${apiOrigin}/api/:path*`,
       },
     ];
   },

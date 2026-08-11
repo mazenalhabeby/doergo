@@ -79,7 +79,7 @@ export class PortalAdminController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Upload the portal cover/hero image' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 8 * 1024 * 1024, files: 1 } }))
   async uploadCover(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,

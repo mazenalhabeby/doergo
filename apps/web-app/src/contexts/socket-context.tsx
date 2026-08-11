@@ -47,7 +47,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     if (!accessToken) return
 
     const socket = io(SOCKET_URL, {
-      auth: { token: accessToken },
+      // Function form: socket.io re-invokes this on every (re)connect, so a
+      // reconnect after the ~15-min access-token refresh sends the CURRENT token
+      // instead of the stale one captured at mount — otherwise all realtime
+      // updates silently die after the first post-expiry reconnect. (Sec audit H9.)
+      auth: (cb: (data: { token: string | null }) => void) => cb({ token: getAccessToken() }),
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: Infinity,
