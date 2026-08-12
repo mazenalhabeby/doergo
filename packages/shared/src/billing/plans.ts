@@ -101,7 +101,9 @@ const STARTER_CAPS: string[] = [];
 // `shift_scheduling` — define shifts + rota, dynamic per-space sub-roles, and the
 // shift reminder / extra-time approval loop (advanced attendance; Pro+, same tier
 // as overtime which it builds on).
-const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing', 'priority_routing', 'reports_builder', 'shift_scheduling'];
+// `crm` — Sales/CRM module: contacts, leads, deal pipeline, quotes, commissions,
+// and multi-stop visit route optimization (Pro+).
+const PROFESSIONAL_CAPS = [...STARTER_CAPS, 'recurring', 'overtime', 'invoicing', 'priority_routing', 'reports_builder', 'shift_scheduling', 'crm'];
 // NOTE: `multi_org` was removed — the OrganizationAccess delegation flow isn't
 // wired to any billing gate, so advertising it would be a phantom feature.
 // Re-add here (with real enforcement) when multi-org delegation actually ships.

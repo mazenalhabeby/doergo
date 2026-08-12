@@ -17,6 +17,7 @@ export const QUEUE_NAMES = {
   OVERTIME: 'overtime',
   BILLING: 'billing',
   SUPPORT: 'support',
+  CRM: 'crm',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -131,6 +132,50 @@ export const SUPPORT_JOB_TYPES = {
 } as const;
 
 export type SupportJobType = (typeof SUPPORT_JOB_TYPES)[keyof typeof SUPPORT_JOB_TYPES];
+
+// CRM / Sales queue job types (writes; reads go over Redis { cmd } patterns).
+// One queue for the whole CRM domain — job name namespaces the entity.
+export const CRM_JOB_TYPES = {
+  // Contacts
+  CONTACT_CREATE: 'crm.contact.create',
+  CONTACT_UPDATE: 'crm.contact.update',
+  CONTACT_DELETE: 'crm.contact.delete',
+  // Leads
+  LEAD_CREATE: 'crm.lead.create',
+  LEAD_UPDATE: 'crm.lead.update',
+  LEAD_DELETE: 'crm.lead.delete',
+  LEAD_CONVERT: 'crm.lead.convert', // → account (space) + contact + deal
+  // Pipelines & stages
+  PIPELINE_CREATE: 'crm.pipeline.create',
+  PIPELINE_UPDATE: 'crm.pipeline.update',
+  PIPELINE_DELETE: 'crm.pipeline.delete',
+  STAGE_CREATE: 'crm.stage.create',
+  STAGE_UPDATE: 'crm.stage.update',
+  STAGE_DELETE: 'crm.stage.delete',
+  STAGE_REORDER: 'crm.stage.reorder',
+  // Deals
+  DEAL_CREATE: 'crm.deal.create',
+  DEAL_UPDATE: 'crm.deal.update',
+  DEAL_DELETE: 'crm.deal.delete',
+  DEAL_MOVE_STAGE: 'crm.deal.moveStage', // Kanban drag → stage change (+ won/lost)
+  // Activities
+  ACTIVITY_CREATE: 'crm.activity.create',
+  ACTIVITY_UPDATE: 'crm.activity.update',
+  ACTIVITY_DELETE: 'crm.activity.delete',
+  // Quotes
+  QUOTE_CREATE: 'crm.quote.create',
+  QUOTE_UPDATE: 'crm.quote.update',
+  QUOTE_DELETE: 'crm.quote.delete',
+  QUOTE_SET_STATUS: 'crm.quote.setStatus', // send / accept / decline / expire
+  QUOTE_CONVERT_INVOICE: 'crm.quote.convertInvoice', // accepted quote → Ledger invoice
+  // Commissions
+  COMMISSION_RULE_CREATE: 'crm.commission.ruleCreate',
+  COMMISSION_RULE_UPDATE: 'crm.commission.ruleUpdate',
+  COMMISSION_RULE_DELETE: 'crm.commission.ruleDelete',
+  COMMISSION_ENTRY_SET_STATUS: 'crm.commission.entrySetStatus',
+} as const;
+
+export type CrmJobType = (typeof CRM_JOB_TYPES)[keyof typeof CRM_JOB_TYPES];
 
 export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];
 

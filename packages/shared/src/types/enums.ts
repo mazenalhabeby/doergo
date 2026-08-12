@@ -218,3 +218,46 @@ export enum ShiftRecurrence {
   MONTHLY = 'MONTHLY',
   ONE_OFF = 'ONE_OFF',
 }
+
+// ─── Sales / CRM ───────────────────────────────────────────────────────────
+
+// A prospect's progress before it becomes an account.
+export enum LeadStatus {
+  NEW = 'NEW',
+  WORKING = 'WORKING',
+  QUALIFIED = 'QUALIFIED',
+  UNQUALIFIED = 'UNQUALIFIED',
+  CONVERTED = 'CONVERTED',
+}
+
+// Kind of timeline entry logged on a lead / deal / account / contact.
+export enum SalesActivityType {
+  CALL = 'CALL',
+  EMAIL = 'EMAIL',
+  NOTE = 'NOTE',
+  MEETING = 'MEETING',
+  VISIT = 'VISIT', // links a Sales-Visit Task
+}
+
+// Lifecycle of a quote.
+export enum QuoteStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  EXPIRED = 'EXPIRED',
+}
+
+// When a commission is earned.
+export enum CommissionBasis {
+  BOOKED = 'BOOKED', // on deal won
+  PAID = 'PAID',     // on customer invoice paid
+}
+
+// Payout state of a computed commission line.
+export enum CommissionEntryStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  PAID = 'PAID',
+  CANCELED = 'CANCELED',
+}
