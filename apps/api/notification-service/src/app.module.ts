@@ -13,6 +13,7 @@ import { JoinRequestNotificationHandler } from './handlers/join-request-notifica
 import { SupportNotificationHandler } from './handlers/support-notification.handler';
 import { ChatNotificationHandler } from './handlers/chat-notification.handler';
 import { ReportNotificationHandler } from './handlers/report-notification.handler';
+import { CrmNotificationHandler } from './handlers/crm-notification.handler';
 import { NotificationStore } from './common/notification-store.service';
 
 @Module({
@@ -35,6 +36,7 @@ import { NotificationStore } from './common/notification-store.service';
     SupportNotificationHandler,
     ChatNotificationHandler,
     ReportNotificationHandler,
+    CrmNotificationHandler,
   ],
   providers: [NotificationStore, RetentionService],
 })
