@@ -38,44 +38,4 @@ export class AttendanceQueueService extends BaseQueueService {
   async heartbeat(data: Record<string, any>) {
     return this.addJobAndWait(ATTENDANCE_JOB_TYPES.HEARTBEAT, data);
   }
-
-  /**
-   * Trigger auto clock-out for overdue entries
-   */
-  async autoClockOut(type: 'hourly' | 'midnight' = 'hourly') {
-    return this.addJobAndWait(ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT, {
-      type,
-      manual: true,
-      triggeredAt: new Date().toISOString(),
-    });
-  }
-
-  /**
-   * Get scheduler info (repeatable jobs)
-   */
-  async getSchedulerInfo() {
-    const repeatableJobs = await this.queue.getRepeatableJobs();
-    const waiting = await this.queue.getWaitingCount();
-    const active = await this.queue.getActiveCount();
-    const delayed = await this.queue.getDelayedCount();
-    const completed = await this.queue.getCompletedCount();
-    const failed = await this.queue.getFailedCount();
-
-    return {
-      repeatableJobs: repeatableJobs.map((job) => ({
-        name: job.name,
-        id: job.id,
-        pattern: job.pattern,
-        every: job.every,
-        next: job.next ? new Date(job.next).toISOString() : null,
-      })),
-      queueStats: {
-        waiting,
-        active,
-        delayed,
-        completed,
-        failed,
-      },
-    };
-  }
 }

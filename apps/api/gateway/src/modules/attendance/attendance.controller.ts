@@ -165,26 +165,6 @@ export class AttendanceController {
   // ADMIN SCHEDULER ENDPOINTS
   // =========================================================================
 
-  @Get('scheduler/info')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get scheduler info (repeatable jobs and queue stats)' })
-  async getSchedulerInfo() {
-    return this.attendanceQueueService.getSchedulerInfo();
-  }
-
-  @Post('scheduler/trigger')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Manually trigger auto clock-out' })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: ['hourly', 'midnight'],
-    description: 'Type of auto clock-out (default: hourly)',
-  })
-  async triggerAutoClockOut(@Query('type') type: 'hourly' | 'midnight' = 'hourly') {
-    return this.attendanceQueueService.autoClockOut(type);
-  }
-
   @Get('all-entries')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get all time entries for the organization' })

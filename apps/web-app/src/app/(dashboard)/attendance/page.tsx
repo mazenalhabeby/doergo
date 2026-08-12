@@ -161,28 +161,6 @@ export default function AttendancePage() {
       }))
   }, [orgTimeOff, selectedLocationId, page, rangeStart, rangeEnd, debouncedSearch])
 
-  // Fetch scheduler info (ADMIN only)
-  const { data: schedulerInfo } = useQuery({
-    queryKey: ["scheduler-info"],
-    queryFn: () => attendanceApi.getSchedulerInfo(),
-    // Only the Tracking tab renders the scheduler panel — don't fetch otherwise.
-    enabled: isAdmin && activeTab === "tracking",
-    staleTime: 30_000,
-  })
-
-  // Trigger auto clock-out mutation
-  const triggerAutoClockOut = useMutation({
-    mutationFn: (type: "hourly" | "midnight") => attendanceApi.triggerAutoClockOut(type),
-    onSuccess: (data) => {
-      notify.success(data?.data?.message || t('attendance.toast.autoClockOutTriggered'))
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
-      queryClient.invalidateQueries({ queryKey: ["scheduler-info"] })
-    },
-    onError: (error) => {
-      notify.error(error instanceof Error ? error.message : t('attendance.toast.autoClockOutFailed'))
-    },
-  })
-
   // Weekly/monthly reports moved to ReportsTab component
 
   // Fetch pending approvals. Runs whenever the page is open (not just on the
@@ -420,7 +398,7 @@ export default function AttendancePage() {
               endDate={endDate} setEndDate={setEndDate}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               page={page} setPage={setPage} limit={limit} daysOff={daysOff} locations={locations}
-              schedulerInfo={schedulerInfo} triggerAutoClockOut={triggerAutoClockOut} isAdmin={isAdmin}
+              isAdmin={isAdmin}
               sort={sort} onSort={onSort}
             />
           </TabsContent>

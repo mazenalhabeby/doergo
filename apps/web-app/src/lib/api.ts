@@ -2154,51 +2154,6 @@ export const attendanceApi = {
     return response.data;
   },
 
-  // Get scheduler info (ADMIN only)
-  getSchedulerInfo: async () => {
-    const response = await api.get<{
-      repeatableJobs: Array<{
-        name: string;
-        id: string;
-        pattern?: string;
-        every?: number;
-        next: string | null;
-      }>;
-      queueStats: {
-        waiting: number;
-        active: number;
-        delayed: number;
-        completed: number;
-        failed: number;
-      };
-    }>('/attendance/scheduler/info');
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
-  },
-
-  // Manually trigger auto clock-out (ADMIN only)
-  triggerAutoClockOut: async (type: 'hourly' | 'midnight' = 'hourly') => {
-    const response = await api.post<{
-      success: boolean;
-      data: {
-        type: string;
-        processedCount: number;
-        entryIds: string[];
-        message: string;
-      };
-    }>(`/attendance/scheduler/trigger?type=${type}`, {});
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
-  },
-
   // =========================================================================
   // REPORTS
   // =========================================================================

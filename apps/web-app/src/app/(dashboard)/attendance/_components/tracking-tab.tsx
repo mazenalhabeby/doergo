@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
+import { AlertCircle, CheckCircle2, Clock, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { countryFromTz } from "@hbcfield/shared/client"
@@ -52,8 +52,6 @@ interface TrackingTabProps {
   limit: number
   daysOff: DayOffRow[]
   locations: CompanyLocation[]
-  schedulerInfo?: any
-  triggerAutoClockOut: { mutate: (type: "hourly" | "midnight") => void; isPending: boolean }
   isAdmin: boolean
   sort: { key: string; dir: "asc" | "desc" } | null
   onSort: (key: string) => void
@@ -64,11 +62,11 @@ export function TrackingTab({
   isError, error, refetch, meta,
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
-  page, setPage, limit, daysOff, locations, schedulerInfo, triggerAutoClockOut, isAdmin,
+  page, setPage, limit, daysOff, locations, isAdmin,
   sort, onSort,
 }: TrackingTabProps) {
   const { t } = useTranslation()
-  const { hour12, locale, timeToken } = useTimeFormat()
+  const { hour12, locale } = useTimeFormat()
 
   // Days off (org-wide) only load in the "all" view. They get their own sub-tab
   // so the Clock In / Clock Out columns aren't shown for rows that never have
@@ -211,88 +209,6 @@ export function TrackingTab({
               )}
             </div>
           </div>
-        )}
-
-        {/* Scheduler Section (ADMIN only) — compact collapsible */}
-        {isAdmin && schedulerInfo && (
-          <details className="bg-card rounded-2xl border border-border/60 shadow-sm mb-8 group">
-            <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-accent/50 rounded-2xl transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600">
-                  <Settings className="size-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">
-                    {t("attendance.tracking.schedulerTitle")}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {t("attendance.tracking.schedulerStats", {
-                      jobs: schedulerInfo.repeatableJobs?.length || 0,
-                      active: schedulerInfo.queueStats?.active || 0,
-                      failed: schedulerInfo.queueStats?.failed || 0,
-                    })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => { e.preventDefault(); triggerAutoClockOut.mutate("hourly") }}
-                  disabled={triggerAutoClockOut.isPending}
-                  className="rounded-lg h-8 text-xs"
-                >
-                  <Play className="size-3 mr-1" />
-                  {t("attendance.tracking.hourly")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => { e.preventDefault(); triggerAutoClockOut.mutate("midnight") }}
-                  disabled={triggerAutoClockOut.isPending}
-                  className="rounded-lg h-8 text-xs"
-                >
-                  <Timer className="size-3 mr-1" />
-                  {t("attendance.tracking.midnight")}
-                </Button>
-              </div>
-            </summary>
-            <div className="px-4 pb-4 pt-2 border-t border-border">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 bg-muted rounded-xl">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t("attendance.tracking.scheduled")}</p>
-                  <p className="text-lg font-bold text-foreground">{schedulerInfo.repeatableJobs?.length || 0}</p>
-                </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wide mb-1">{t("attendance.tracking.active")}</p>
-                  <p className="text-lg font-bold text-blue-700">{schedulerInfo.queueStats?.active || 0}</p>
-                </div>
-                <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide mb-1">{t("attendance.tracking.completed")}</p>
-                  <p className="text-lg font-bold text-green-700">{schedulerInfo.queueStats?.completed || 0}</p>
-                </div>
-                <div className="p-3 bg-red-50 dark:bg-red-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-red-600 uppercase tracking-wide mb-1">{t("attendance.tracking.failed")}</p>
-                  <p className="text-lg font-bold text-red-700">{schedulerInfo.queueStats?.failed || 0}</p>
-                </div>
-              </div>
-              {schedulerInfo.repeatableJobs && schedulerInfo.repeatableJobs.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {schedulerInfo.repeatableJobs.map((job: any, index: number) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-xs rounded-lg"
-                    >
-                      <Clock className="size-3" />
-                      {job.next
-                        ? format(new Date(job.next), `MMM d, ${timeToken}`)
-                        : job.pattern || t("attendance.tracking.everyMinutes", { minutes: Math.round((job.every || 0) / 60000) })}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </details>
         )}
 
         {/* Filters */}
