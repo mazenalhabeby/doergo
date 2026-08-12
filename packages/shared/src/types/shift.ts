@@ -28,6 +28,7 @@ export interface Shift {
   graceMin: number; // Minutes after end before the first reminder fires
   reminderIntervalMin: number; // Gap between subsequent reminders
   maxReminders: number; // Reminders before escalating to a space leader
+  flagToleranceMin: number; // Grace before LATE_ARRIVAL / EARLY_DEPARTURE / OVERTIME
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,6 +45,7 @@ export interface CreateShiftInput {
   graceMin?: number;
   reminderIntervalMin?: number;
   maxReminders?: number;
+  flagToleranceMin?: number;
 }
 
 export type UpdateShiftInput = Partial<CreateShiftInput> & { isActive?: boolean };

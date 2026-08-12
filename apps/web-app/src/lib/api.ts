@@ -3598,6 +3598,7 @@ export interface CreateShiftInput {
   graceMin?: number;
   reminderIntervalMin?: number;
   maxReminders?: number;
+  flagToleranceMin?: number;
 }
 
 export interface CreateRotaInput {

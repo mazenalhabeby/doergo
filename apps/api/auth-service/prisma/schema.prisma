@@ -1787,6 +1787,7 @@ model Shift {
   graceMin            Int @default(5) // Minutes after end before the first reminder fires
   reminderIntervalMin Int @default(5) // Gap between subsequent reminders
   maxReminders        Int @default(3) // Reminders before escalating to a space leader
+  flagToleranceMin    Int @default(10) // Grace before flagging LATE_ARRIVAL / EARLY_DEPARTURE / OVERTIME (was a hardcoded 30)
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

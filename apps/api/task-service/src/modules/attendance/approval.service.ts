@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, ApprovalStatus, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
+import { success, paginated, ApprovalStatus, computeScheduleFlags, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else
@@ -240,31 +240,31 @@ export class ApprovalService {
     // (expectedClockOutAt) minus the bound shift's duration; non-time flags stay.
     if (data.clockInAt || data.clockOutAt) {
       const preserved = (entry.flagReasons || []).filter((f) => !TIME_BASED_FLAGS.has(f));
-      const recomputed: string[] = [];
+      let recomputed: string[] = [];
 
       if (entry.expectedClockOutAt) {
         const expEnd = new Date(entry.expectedClockOutAt);
         let expStart: Date | null = null;
+        let toleranceMin = SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
         if (entry.shiftId) {
           const shift = await this.prisma.shift.findUnique({
             where: { id: entry.shiftId },
-            select: { startLocal: true, endLocal: true, crossesMidnight: true },
+            select: { startLocal: true, endLocal: true, crossesMidnight: true, flagToleranceMin: true },
           });
           if (shift) {
             const dur = this.shiftDurationMinutes(shift.startLocal, shift.endLocal, shift.crossesMidnight);
             expStart = new Date(expEnd.getTime() - dur * 60_000);
+            toleranceMin = shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
           }
         }
-        if (expStart) {
-          const lateMin = (new Date(newClockIn).getTime() - expStart.getTime()) / 60_000;
-          if (lateMin > ATTENDANCE_CONSTANTS.LATE_ARRIVAL_THRESHOLD_MINUTES) recomputed.push('LATE_ARRIVAL');
-        }
-        if (newClockOut) {
-          const earlyMin = (expEnd.getTime() - new Date(newClockOut).getTime()) / 60_000;
-          if (earlyMin > ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) recomputed.push('EARLY_DEPARTURE');
-          const otMin = (new Date(newClockOut).getTime() - expEnd.getTime()) / 60_000;
-          if (otMin > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) recomputed.push('OVERTIME');
-        }
+        // Same shared logic as clock-in / clock-out — no duplicated thresholds.
+        recomputed = computeScheduleFlags({
+          clockInAt: new Date(newClockIn),
+          clockOutAt: newClockOut ? new Date(newClockOut) : null,
+          expectedClockInAt: expStart,
+          expectedClockOutAt: expEnd,
+          toleranceMin,
+        });
       }
       updateData.flagReasons = [...preserved, ...recomputed];
     }

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { computeScheduleFlags } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { BreakService } from '../break.service';
 import { ApprovalService } from '../approval.service';
@@ -1202,6 +1203,52 @@ describe('AttendanceService', () => {
       // failures are intentionally swallowed so the rejection still stands).
       expect(mockPrismaService.timeEntry.findFirst).toHaveBeenCalled();
       expect(res.success).toBe(true);
+    });
+  });
+
+  // Shared schedule-flag logic (used by clock-in, clock-out, and edit).
+  describe('computeScheduleFlags (dynamic tolerance)', () => {
+    const start = new Date('2026-08-10T22:00:00Z'); // 6 PM EDT shift start
+    const end = new Date('2026-08-11T10:00:00Z'); // 6 AM EDT shift end
+
+    it('does not flag late within the tolerance', () => {
+      const flags = computeScheduleFlags({
+        clockInAt: new Date('2026-08-10T22:08:00Z'), // 8 min late
+        expectedClockInAt: start,
+        toleranceMin: 10,
+      });
+      expect(flags).not.toContain('LATE_ARRIVAL');
+    });
+
+    it('flags late past the tolerance', () => {
+      const flags = computeScheduleFlags({
+        clockInAt: new Date('2026-08-10T22:15:00Z'), // 15 min late
+        expectedClockInAt: start,
+        toleranceMin: 10,
+      });
+      expect(flags).toContain('LATE_ARRIVAL');
+    });
+
+    it('respects a per-shift tolerance (25 min → 15 min late is fine)', () => {
+      const flags = computeScheduleFlags({
+        clockInAt: new Date('2026-08-10T22:15:00Z'),
+        expectedClockInAt: start,
+        toleranceMin: 25,
+      });
+      expect(flags).not.toContain('LATE_ARRIVAL');
+    });
+
+    it('flags overtime and early departure off the expected end', () => {
+      expect(
+        computeScheduleFlags({ clockOutAt: new Date('2026-08-11T10:30:00Z'), expectedClockOutAt: end, toleranceMin: 10 }),
+      ).toContain('OVERTIME');
+      expect(
+        computeScheduleFlags({ clockOutAt: new Date('2026-08-11T09:30:00Z'), expectedClockOutAt: end, toleranceMin: 10 }),
+      ).toContain('EARLY_DEPARTURE');
+    });
+
+    it('returns nothing when the matching expected time is absent', () => {
+      expect(computeScheduleFlags({ clockInAt: start, toleranceMin: 10 })).toEqual([]);
     });
   });
 });

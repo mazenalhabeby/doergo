@@ -237,6 +237,7 @@ function ShiftDialog({
   const [graceMin, setGraceMin] = useState(String(shift?.graceMin ?? 15))
   const [reminderIntervalMin, setReminderIntervalMin] = useState(String(shift?.reminderIntervalMin ?? 15))
   const [maxReminders, setMaxReminders] = useState(String(shift?.maxReminders ?? 3))
+  const [flagToleranceMin, setFlagToleranceMin] = useState(String(shift?.flagToleranceMin ?? 10))
 
   const crosses = shiftCrossesMidnight(startLocal, endLocal)
 
@@ -269,6 +270,7 @@ function ShiftDialog({
       graceMin: toInt(graceMin),
       reminderIntervalMin: toInt(reminderIntervalMin, 15),
       maxReminders: toInt(maxReminders, 3),
+      flagToleranceMin: toInt(flagToleranceMin, 10),
     })
   }
 
@@ -343,8 +345,13 @@ function ShiftDialog({
               <Label htmlFor="shift-max">{t("scheduling.shifts.fields.maxReminders")}</Label>
               <Input id="shift-max" type="number" min={0} value={maxReminders} onChange={(e) => setMaxReminders(e.target.value)} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="shift-tolerance">{t("scheduling.shifts.fields.flagToleranceMin", "Late/overtime tolerance (min)")}</Label>
+              <Input id="shift-tolerance" type="number" min={0} value={flagToleranceMin} onChange={(e) => setFlagToleranceMin(e.target.value)} />
+            </div>
           </div>
           <p className="text-[11px] text-muted-foreground">{t("scheduling.shifts.reminderHint")}</p>
+          <p className="text-[11px] text-muted-foreground">{t("scheduling.shifts.toleranceHint", "Grace before an entry is flagged Late Arrival, Early Departure or Overtime.")}</p>
         </div>
 
         <DialogFooter>

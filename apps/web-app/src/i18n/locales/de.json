@@ -3098,6 +3098,11 @@
       "noneHint": "Genehmigte Abwesenheiten für die gewählten Daten erscheinen hier.",
       "type": "Art",
       "dates": "Zeitraum"
+    },
+    "edited": {
+      "badge": "Bearbeitet",
+      "by": "Bearbeitet von {{name}}",
+      "reason": "Grund"
     }
   },
   "auditLog": {
@@ -5509,7 +5514,8 @@
         "breakMinutes": "Pause (Minuten)",
         "graceMin": "Karenzzeit (Minuten)",
         "reminderIntervalMin": "Erinnerungsintervall (Min.)",
-        "maxReminders": "Max. Erinnerungen"
+        "maxReminders": "Max. Erinnerungen",
+        "flagToleranceMin": "Verspätungs-/Überstunden-Toleranz (Min)"
       },
       "toast": {
         "created": "Schicht erstellt",
@@ -5517,7 +5523,8 @@
         "deleted": "Schicht gelöscht",
         "saveFailed": "Schicht konnte nicht gespeichert werden",
         "deleteFailed": "Schicht konnte nicht gelöscht werden"
-      }
+      },
+      "toleranceHint": "Karenz, bevor ein Eintrag als Verspätung, früher Abgang oder Überstunde markiert wird."
     },
     "rota": {
       "heading": "Dienstplan",

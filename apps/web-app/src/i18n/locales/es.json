@@ -3081,6 +3081,11 @@
       "noneHint": "Las ausencias aprobadas para las fechas seleccionadas aparecen aquí.",
       "type": "Tipo",
       "dates": "Fechas"
+    },
+    "edited": {
+      "badge": "Editado",
+      "by": "Editado por {{name}}",
+      "reason": "Motivo"
     }
   },
   "auditLog": {
@@ -5492,7 +5497,8 @@
         "breakMinutes": "Descanso (minutos)",
         "graceMin": "Gracia (minutos)",
         "reminderIntervalMin": "Intervalo de recordatorio (min)",
-        "maxReminders": "Máx. recordatorios"
+        "maxReminders": "Máx. recordatorios",
+        "flagToleranceMin": "Tolerancia de tardanza/horas extra (min)"
       },
       "toast": {
         "created": "Turno creado",
@@ -5500,7 +5506,8 @@
         "deleted": "Turno eliminado",
         "saveFailed": "No se pudo guardar el turno",
         "deleteFailed": "No se pudo eliminar el turno"
-      }
+      },
+      "toleranceHint": "Margen antes de marcar una entrada como Tardanza, Salida anticipada u Horas extra."
     },
     "rota": {
       "heading": "Cuadrante",

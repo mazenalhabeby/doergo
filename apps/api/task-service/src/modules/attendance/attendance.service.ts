@@ -22,6 +22,8 @@ import {
   haversineDistance,
   ATTENDANCE_CONSTANTS,
   GEOFENCE_EXCURSION,
+  computeScheduleFlags,
+  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   SHIFT_REMINDER_DEFAULTS,
   UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
@@ -34,6 +36,9 @@ import {
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
 // (incl. customer-contact fields, config, timestamps) when the clients only read
 // these. Superset of every field the mobile/web attendance UI actually renders.
+// Who edited an entry — surfaced on the "Edited" badge in the attendance table.
+const EDITOR_SELECT = { firstName: true, lastName: true } as const;
+
 const ATTENDANCE_LOCATION_SELECT = {
   id: true,
   name: true,
@@ -92,7 +97,7 @@ export class AttendanceService {
     space: ResolverSpace,
     clockInAt: Date,
     clockInTz?: string,
-  ): Promise<{ shiftId?: string; expectedClockInAt?: Date; expectedClockOutAt?: Date; nextRemindAt?: Date; scheduled: boolean }> {
+  ): Promise<{ shiftId?: string; expectedClockInAt?: Date; expectedClockOutAt?: Date; nextRemindAt?: Date; flagToleranceMin?: number; scheduled: boolean }> {
     try {
       const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt, clockInTz });
       if (!resolved) return { ...this.unscheduledStamp(clockInAt), scheduled: false };
@@ -101,6 +106,7 @@ export class AttendanceService {
         expectedClockInAt: resolved.expectedClockInAt,
         expectedClockOutAt: resolved.expectedClockOutAt,
         nextRemindAt: resolved.nextRemindAt,
+        flagToleranceMin: resolved.flagToleranceMin,
         scheduled: true,
       };
     } catch (err) {
@@ -108,6 +114,20 @@ export class AttendanceService {
       // Even on resolver failure, arm the safety-net so the session can't run silently forever.
       return { ...this.unscheduledStamp(clockInAt), scheduled: false };
     }
+  }
+
+  /**
+   * The per-shift flag tolerance (minutes) for LATE/EARLY/OVERTIME, or the
+   * default when the entry has no bound shift. Used at clock-out (clock-in gets
+   * it straight from the resolver).
+   */
+  private async getShiftFlagTolerance(shiftId?: string | null): Promise<number> {
+    if (!shiftId) return SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
+    const shift = await this.prisma.shift.findUnique({
+      where: { id: shiftId },
+      select: { flagToleranceMin: true },
+    });
+    return shift?.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
   }
 
   /**
@@ -190,7 +210,7 @@ export class AttendanceService {
       // shift to the worker's own timezone.
       // Strip the derived fields (scheduled/expectedClockInAt) — only the DB
       // columns go into the entry.
-      const { scheduled: _s, expectedClockInAt: _ci, ...remoteStamp } = await this.buildShiftStamp(
+      const { scheduled: _s, expectedClockInAt: _ci, flagToleranceMin: _ft, ...remoteStamp } = await this.buildShiftStamp(
         data.userId,
         bucket,
         remoteClockInAt,
@@ -326,22 +346,22 @@ export class AttendanceService {
 
     // Resolve the shift ONCE (rota-aware + timezone-correct) and reuse it for both
     // the flags and the stamp — no separate legacy technicianSchedule query.
-    const { scheduled, expectedClockInAt, ...stampCols } = await this.buildShiftStamp(
+    const { scheduled, expectedClockInAt, flagToleranceMin, ...stampCols } = await this.buildShiftStamp(
       data.userId,
       location,
       clockInTime,
       workerTz ?? undefined,
     );
 
-    // Smart flags: matched shift/rota → LATE_ARRIVAL if well past the start; no
-    // matched shift → UNSCHEDULED_DAY. Both measured against the tz-correct start.
+    // Smart flags: matched shift/rota → LATE_ARRIVAL if past the start beyond the
+    // shift's tolerance; no matched shift → UNSCHEDULED_DAY. Late detection is the
+    // shared computeScheduleFlags (same logic as clock-out + edit).
     if (!scheduled) {
       flagReasons.push('UNSCHEDULED_DAY');
-    } else if (expectedClockInAt) {
-      const lateMinutes = (clockInTime.getTime() - expectedClockInAt.getTime()) / 60000;
-      if (lateMinutes > ATTENDANCE_CONSTANTS.LATE_ARRIVAL_THRESHOLD_MINUTES) {
-        flagReasons.push('LATE_ARRIVAL');
-      }
+    } else {
+      flagReasons.push(
+        ...computeScheduleFlags({ clockInAt: clockInTime, expectedClockInAt, toleranceMin: flagToleranceMin }),
+      );
     }
 
     const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
@@ -522,13 +542,14 @@ export class AttendanceService {
     // wrong day's schedule and produced a false "Early Departure" alongside the
     // "Unscheduled" tag.)
     if (entry.expectedClockOutAt) {
-      const diffMinutes = (clockOutTime.getTime() - entry.expectedClockOutAt.getTime()) / 60000;
-      if (diffMinutes > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) {
-        flagReasons.push('OVERTIME');
-      }
-      if (diffMinutes < -ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) {
-        flagReasons.push('EARLY_DEPARTURE');
-      }
+      const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
+      flagReasons.push(
+        ...computeScheduleFlags({
+          clockOutAt: clockOutTime,
+          expectedClockOutAt: entry.expectedClockOutAt,
+          toleranceMin,
+        }),
+      );
     }
 
     // Deduplicate flags
@@ -1456,6 +1477,7 @@ export class AttendanceService {
               email: true,
             },
           },
+          editedBy: { select: EDITOR_SELECT },
         },
         orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
       }),
@@ -1535,7 +1557,10 @@ export class AttendanceService {
           { status: 'CLOCKED_IN' },
         ],
       },
-      include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        editedBy: { select: EDITOR_SELECT },
+      },
       orderBy: { clockInAt: 'desc' },
       take: 500,
     });
@@ -2098,6 +2123,7 @@ export class AttendanceService {
               timezone: true,
             },
           },
+          editedBy: { select: EDITOR_SELECT },
         },
         orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
       }),

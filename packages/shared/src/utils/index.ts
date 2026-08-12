@@ -7,6 +7,9 @@ export * from './date';
 // Export query utilities
 export * from './query';
 
+// Export schedule-flag helper (LATE_ARRIVAL / EARLY_DEPARTURE / OVERTIME)
+export * from './attendance-flags';
+
 // NOTE: crypto utilities are NOT exported here because they use Node's
 // "crypto" module which is unavailable in React Native / browser runtimes.
 // Import directly: import { hashCode, generateSecureCode } from '@hbcfield/shared/utils/crypto';

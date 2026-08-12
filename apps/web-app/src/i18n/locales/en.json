@@ -3098,6 +3098,11 @@
       "noneHint": "Approved time off for the selected dates shows here.",
       "type": "Type",
       "dates": "Dates"
+    },
+    "edited": {
+      "badge": "Edited",
+      "by": "Edited by {{name}}",
+      "reason": "Reason"
     }
   },
   "auditLog": {
@@ -5509,7 +5514,8 @@
         "breakMinutes": "Break (minutes)",
         "graceMin": "Grace (minutes)",
         "reminderIntervalMin": "Reminder interval (min)",
-        "maxReminders": "Max reminders"
+        "maxReminders": "Max reminders",
+        "flagToleranceMin": "Late/overtime tolerance (min)"
       },
       "toast": {
         "created": "Shift created",
@@ -5517,7 +5523,8 @@
         "deleted": "Shift deleted",
         "saveFailed": "Failed to save shift",
         "deleteFailed": "Failed to delete shift"
-      }
+      },
+      "toleranceHint": "Grace before an entry is flagged Late Arrival, Early Departure or Overtime."
     },
     "rota": {
       "heading": "Rota",

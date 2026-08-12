@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { WorkModel, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
+import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
 
 /**
  * Space (CompanyLocation) fields the resolver needs.
@@ -31,6 +31,7 @@ export interface ResolvedShift {
   graceMin: number;
   reminderIntervalMin: number;
   maxReminders: number;
+  flagToleranceMin: number; // grace before LATE/EARLY/OVERTIME flags (per-shift)
   source: 'assignment' | 'schedule';
 }
 
@@ -133,6 +134,7 @@ export class ShiftResolverService {
         graceMin,
         reminderIntervalMin: shift.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
         maxReminders: shift.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS,
+        flagToleranceMin: shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
         source: 'assignment',
       };
     }
@@ -165,6 +167,7 @@ export class ShiftResolverService {
       graceMin,
       reminderIntervalMin: SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
       maxReminders: SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS,
+      flagToleranceMin: SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, // legacy schedules use the default
       source: 'schedule',
     };
   }

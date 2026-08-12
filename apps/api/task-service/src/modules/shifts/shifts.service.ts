@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
+import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -42,6 +42,7 @@ export class ShiftsService {
     graceMin?: number;
     reminderIntervalMin?: number;
     maxReminders?: number;
+    flagToleranceMin?: number;
   }) {
     const name = (data.name || '').trim();
     if (!name) throw new BadRequestException('Shift name is required');
@@ -63,6 +64,7 @@ export class ShiftsService {
         graceMin: this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120),
         reminderIntervalMin: this.clampInt(data.reminderIntervalMin, SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES, 1, 120),
         maxReminders: this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10),
+        flagToleranceMin: this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240),
       },
     });
     return success(shift, 'Shift created');
@@ -80,6 +82,7 @@ export class ShiftsService {
     graceMin?: number;
     reminderIntervalMin?: number;
     maxReminders?: number;
+    flagToleranceMin?: number;
     isActive?: boolean;
   }) {
     const shift = await this.getOwnedShift(data.organizationId, data.shiftId);
@@ -104,6 +107,7 @@ export class ShiftsService {
     if (data.graceMin !== undefined) patch.graceMin = this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120);
     if (data.reminderIntervalMin !== undefined) patch.reminderIntervalMin = this.clampInt(data.reminderIntervalMin, SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES, 1, 120);
     if (data.maxReminders !== undefined) patch.maxReminders = this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10);
+    if (data.flagToleranceMin !== undefined) patch.flagToleranceMin = this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240);
     if (data.isActive !== undefined) patch.isActive = data.isActive;
 
     // Recompute crossesMidnight if either time changed.

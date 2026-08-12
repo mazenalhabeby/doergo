@@ -86,6 +86,8 @@ export interface TimeEntry {
   originalClockIn: string | null;
   originalClockOut: string | null;
   editReason: string | null;
+  // Populated when an admin edited the entry — drives the "Edited" badge details.
+  editedBy?: { firstName: string; lastName: string } | null;
   // Shift expectation (space-centric attendance). Set at clock-in for shift/fixed
   // spaces; drives the reminder engine. null on task/none spaces.
   shiftId?: string | null;

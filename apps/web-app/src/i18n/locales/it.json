@@ -3081,6 +3081,11 @@
       "noneHint": "Le assenze approvate per le date selezionate compaiono qui.",
       "type": "Tipo",
       "dates": "Date"
+    },
+    "edited": {
+      "badge": "Modificato",
+      "by": "Modificato da {{name}}",
+      "reason": "Motivo"
     }
   },
   "auditLog": {
@@ -5492,7 +5497,8 @@
         "breakMinutes": "Pausa (minuti)",
         "graceMin": "Tolleranza (minuti)",
         "reminderIntervalMin": "Intervallo promemoria (min)",
-        "maxReminders": "Promemoria max"
+        "maxReminders": "Promemoria max",
+        "flagToleranceMin": "Tolleranza ritardo/straordinario (min)"
       },
       "toast": {
         "created": "Turno creato",
@@ -5500,7 +5506,8 @@
         "deleted": "Turno eliminato",
         "saveFailed": "Impossibile salvare il turno",
         "deleteFailed": "Impossibile eliminare il turno"
-      }
+      },
+      "toleranceHint": "Margine prima che una voce sia segnalata come Ritardo, Uscita anticipata o Straordinario."
     },
     "rota": {
       "heading": "Turnazione",

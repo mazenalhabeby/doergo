@@ -3081,6 +3081,11 @@
       "noneHint": "Les congés approuvés pour les dates sélectionnées apparaissent ici.",
       "type": "Type",
       "dates": "Dates"
+    },
+    "edited": {
+      "badge": "Modifié",
+      "by": "Modifié par {{name}}",
+      "reason": "Motif"
     }
   },
   "auditLog": {
@@ -5492,7 +5497,8 @@
         "breakMinutes": "Pause (minutes)",
         "graceMin": "Délai de grâce (minutes)",
         "reminderIntervalMin": "Intervalle de rappel (min)",
-        "maxReminders": "Rappels max."
+        "maxReminders": "Rappels max.",
+        "flagToleranceMin": "Tolérance retard/heures sup. (min)"
       },
       "toast": {
         "created": "Poste créé",
@@ -5500,7 +5506,8 @@
         "deleted": "Poste supprimé",
         "saveFailed": "Impossible d’enregistrer le poste",
         "deleteFailed": "Impossible de supprimer le poste"
-      }
+      },
+      "toleranceHint": "Marge avant qu'une entrée soit marquée Retard, Départ anticipé ou Heures sup."
     },
     "rota": {
       "heading": "Planning",
