@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
+import { remindAlwaysLocationIfNeeded, clearAlwaysLocationReminder } from '../services/always-location-reminder';
 
 const AMBER = '#d97706';
 
@@ -30,11 +31,19 @@ export function AlwaysLocationNudge({ active }: { active: boolean }) {
       const fg = await Location.getForegroundPermissionsAsync();
       const bg = await Location.getBackgroundPermissionsAsync();
       // Foreground granted (they could clock in) but background not "Always".
-      setNeedsAlways(fg.status === 'granted' && bg.status !== 'granted');
+      const gap = fg.status === 'granted' && bg.status !== 'granted';
+      setNeedsAlways(gap);
+      if (gap) {
+        // Smart local notification (cooldown-deduped) so they hear about it even
+        // with the app closed — the banner alone only shows in-app.
+        remindAlwaysLocationIfNeeded({ title: t('attendance.alwaysLocation.title'), body: t('attendance.alwaysLocation.body') });
+      } else {
+        clearAlwaysLocationReminder();
+      }
     } catch {
       setNeedsAlways(false);
     }
-  }, [active]);
+  }, [active, t]);
 
   React.useEffect(() => {
     check();

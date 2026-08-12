@@ -153,6 +153,13 @@ export default function AppLayout() {
       return;
     }
 
+    // Attendance pushes (enable-Always reminder, out-of-ring excursion events,
+    // geofence warnings) → the clock screen, where the banners + actions live.
+    if (type?.startsWith('attendance.')) {
+      router.push('/(app)/(tabs)/attendance' as Href);
+      return;
+    }
+
     if (taskId) {
       // Navigate to task detail
       router.push(`/task/${taskId}` as Href);
