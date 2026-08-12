@@ -3103,6 +3103,16 @@
       "badge": "Bearbeitet",
       "by": "Bearbeitet von {{name}}",
       "reason": "Grund"
+    },
+    "history": {
+      "title": "Änderungsverlauf",
+      "subtitle": "Jede manuelle Änderung an diesem Eintrag.",
+      "none": "Keine Änderungen erfasst.",
+      "when": "Wann",
+      "editor": "Bearbeiter",
+      "change": "Änderung",
+      "viewAll": "Für vollständigen Verlauf klicken →",
+      "timezone": "Zeitzone"
     }
   },
   "auditLog": {

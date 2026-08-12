@@ -1946,6 +1946,20 @@ export interface AttendanceListResponse {
   };
 }
 
+// One row in a time entry's edit history (per-edit audit record).
+export interface EntryEditChange {
+  field: string; // "clockInAt" | "clockOutAt" | "notes" | "timezone"
+  from: string | null;
+  to: string | null;
+}
+export interface EntryEditHistoryItem {
+  id: string;
+  editedAt: string;
+  editor: string | null;
+  reason: string | null;
+  changes: EntryEditChange[];
+}
+
 // Attendance API methods (ADMIN/DISPATCHER only)
 export interface NoShowRow {
   id: string;
@@ -2092,6 +2106,15 @@ export const attendanceApi = {
       throw new Error(response.error);
     }
     return response.data;
+  },
+
+  // Full edit history (per-edit audit rows) for a time entry.
+  getEntryHistory: async (entryId: string) => {
+    const response = await api.get<{ success: boolean; data: EntryEditHistoryItem[] }>(
+      `/attendance/entries/${entryId}/history`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? []
   },
 
   // Get all time entries for the organization (admin view)

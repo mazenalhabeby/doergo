@@ -3086,6 +3086,16 @@
       "badge": "Modifié",
       "by": "Modifié par {{name}}",
       "reason": "Motif"
+    },
+    "history": {
+      "title": "Historique des modifications",
+      "subtitle": "Chaque modification manuelle de cet enregistrement.",
+      "none": "Aucune modification enregistrée.",
+      "when": "Quand",
+      "editor": "Auteur",
+      "change": "Modification",
+      "viewAll": "Cliquez pour voir l'historique complet →",
+      "timezone": "Fuseau horaire"
     }
   },
   "auditLog": {

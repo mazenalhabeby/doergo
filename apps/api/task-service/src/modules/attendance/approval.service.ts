@@ -311,11 +311,69 @@ export class ApprovalService {
       },
     });
 
+    // Append a per-edit row to the shared activity log — reuses the indexed
+    // per-entity audit trail ([resourceId, createdAt]); no dedicated table. This
+    // is what powers the entry's full edit-history table (every edit, from → to).
+    const changes: Array<{ field: string; from: string | null; to: string | null }> = [];
+    const cmp = (field: string, from?: Date | string | null, to?: Date | string | null) => {
+      const f = from instanceof Date ? from.toISOString() : (from ?? null);
+      const t = to instanceof Date ? to.toISOString() : (to ?? null);
+      if (f !== t) changes.push({ field, from: f, to: t });
+    };
+    cmp('clockInAt', entry.clockInAt, updated.clockInAt);
+    cmp('clockOutAt', entry.clockOutAt, updated.clockOutAt);
+    cmp('notes', entry.notes, updated.notes);
+    cmp('timezone', entry.timezone, updated.timezone);
+    try {
+      await this.prisma.activityLog.create({
+        data: {
+          eventType: 'TIME_ENTRY_EDITED',
+          userId: data.editorId,
+          resourceType: 'timeEntry',
+          resourceId: data.entryId,
+          organizationId: data.organizationId,
+          metadata: { reason: data.reason, changes },
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Edit audit-log write failed for entry=${data.entryId}: ${e}`);
+    }
+
     this.logger.log(
       `Entry edited: entry=${data.entryId}, editor=${data.editorId}, reason=${data.reason}`,
     );
 
     return success(updated, 'Time entry updated');
+  }
+
+  /**
+   * Full edit history for an entry — the per-edit audit rows written on each
+   * editEntry (org-scoped, newest-first, served by the [resourceId, createdAt]
+   * index). Drives the "Edit history" table in the UI.
+   */
+  async getEntryHistory(data: { entryId: string; organizationId: string }) {
+    const logs = await this.prisma.activityLog.findMany({
+      where: {
+        resourceId: data.entryId,
+        organizationId: data.organizationId,
+        eventType: 'TIME_ENTRY_EDITED',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { user: { select: { firstName: true, lastName: true } } },
+    });
+    return success(
+      logs.map((l) => {
+        const meta = (l.metadata as { reason?: string; changes?: unknown[] } | null) ?? {};
+        return {
+          id: l.id,
+          editedAt: l.createdAt,
+          editor: l.user ? `${l.user.firstName} ${l.user.lastName}`.trim() : null,
+          reason: meta.reason ?? null,
+          changes: Array.isArray(meta.changes) ? meta.changes : [],
+        };
+      }),
+    );
   }
 
   /** Admin: delete a time entry (its breaks cascade), scoped to the org. */

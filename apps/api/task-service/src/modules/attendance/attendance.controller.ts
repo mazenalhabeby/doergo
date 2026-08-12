@@ -383,6 +383,11 @@ export class AttendanceController {
     return this.approvalService.editEntry(data);
   }
 
+  @MessagePattern({ cmd: 'get_entry_history' })
+  async getEntryHistory(@Payload() data: { entryId: string; organizationId: string }) {
+    return this.approvalService.getEntryHistory(data);
+  }
+
   @MessagePattern({ cmd: 'delete_entry' })
   async deleteEntry(
     @Payload() data: { entryId: string; editorId: string; organizationId: string },

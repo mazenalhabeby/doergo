@@ -3103,6 +3103,16 @@
       "badge": "Edited",
       "by": "Edited by {{name}}",
       "reason": "Reason"
+    },
+    "history": {
+      "title": "Edit history",
+      "subtitle": "Every manual change to this attendance record.",
+      "none": "No edits recorded.",
+      "when": "When",
+      "editor": "Editor",
+      "change": "Change",
+      "viewAll": "Click to view full history →",
+      "timezone": "Timezone"
     }
   },
   "auditLog": {

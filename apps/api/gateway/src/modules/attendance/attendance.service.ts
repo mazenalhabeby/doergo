@@ -360,6 +360,11 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'edit_entry' }, data);
   }
 
+  /** Full edit history (per-edit audit rows) for a time entry. */
+  async getEntryHistory(data: { entryId: string; organizationId: string }) {
+    return this.send({ cmd: 'get_entry_history' }, data);
+  }
+
   async deleteEntry(data: { entryId: string; editorId: string; organizationId: string }) {
     return this.send({ cmd: 'delete_entry' }, data);
   }

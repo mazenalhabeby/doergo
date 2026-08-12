@@ -3086,6 +3086,16 @@
       "badge": "Modificato",
       "by": "Modificato da {{name}}",
       "reason": "Motivo"
+    },
+    "history": {
+      "title": "Cronologia modifiche",
+      "subtitle": "Ogni modifica manuale a questa voce.",
+      "none": "Nessuna modifica registrata.",
+      "when": "Quando",
+      "editor": "Autore",
+      "change": "Modifica",
+      "viewAll": "Clicca per la cronologia completa →",
+      "timezone": "Fuso orario"
     }
   },
   "auditLog": {

@@ -668,6 +668,16 @@ export class AttendanceController {
     });
   }
 
+  @Get('entries/:id/history')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Get the full edit history for a time entry' })
+  async getEntryHistory(@Param('id') entryId: string, @Request() req?: any) {
+    return this.attendanceService.getEntryHistory({
+      entryId,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Delete('entries/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Delete a time entry (admin)' })

@@ -8,6 +8,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { countryFromTz } from "@hbcfield/shared/client"
 import { useTimeFormat } from "@/hooks"
+import { EditHistoryDialog } from "./edit-history-dialog"
 
 // Flag reason badge config for smart auto-approval.
 const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
@@ -215,6 +216,7 @@ export function ApprovalCell({ entry }: { entry: TimeEntry }) {
 export function EditedBadge({ entry }: { entry: TimeEntry }) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
+  const [historyOpen, setHistoryOpen] = React.useState(false)
   if (!entry.isEdited) return null
 
   const tz = entry.timezone ?? entry.location?.timezone
@@ -223,48 +225,54 @@ export function EditedBadge({ entry }: { entry: TimeEntry }) {
   const outChanged = !!entry.originalClockOut && entry.originalClockOut !== entry.clockOutAt
 
   return (
-    <HoverCard openDelay={120} closeDelay={80}>
-      <HoverCardTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 cursor-help"
-        >
-          <Pencil className="size-2.5" />
-          {t("attendance.edited.badge", "Edited")}
-        </button>
-      </HoverCardTrigger>
-      <HoverCardContent align="start" side="top" className="w-72">
-        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Pencil className="size-3 text-amber-600" />
-          {editor
-            ? t("attendance.edited.by", { name: editor, defaultValue: `Edited by ${editor}` })
-            : t("attendance.edited.badge", "Edited")}
-          {entry.editedAt ? ` · ${formatDateInZone(entry.editedAt, tz, locale)}` : ""}
-        </div>
-        <div className="space-y-1.5 text-sm">
-          {inChanged && (
-            <EditedRow
-              label={t("attendance.clockIn")}
-              from={formatTime(entry.originalClockIn, hour12, locale, tz)}
-              to={formatTime(entry.clockInAt, hour12, locale, tz)}
-            />
-          )}
-          {outChanged && (
-            <EditedRow
-              label={t("attendance.clockOut")}
-              from={formatTime(entry.originalClockOut, hour12, locale, tz)}
-              to={formatTime(entry.clockOutAt, hour12, locale, tz)}
-            />
-          )}
-          {entry.editReason && (
-            <p className="pt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{t("attendance.edited.reason", "Reason")}:</span>{" "}
-              {entry.editReason}
-            </p>
-          )}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+    <>
+      <HoverCard openDelay={120} closeDelay={80}>
+        <HoverCardTrigger asChild>
+          {/* Hover = quick peek; click = full history table */}
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500/20 cursor-pointer"
+          >
+            <Pencil className="size-2.5" />
+            {t("attendance.edited.badge", "Edited")}
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent align="start" side="top" className="w-72">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Pencil className="size-3 text-amber-600" />
+            {editor
+              ? t("attendance.edited.by", { name: editor, defaultValue: `Edited by ${editor}` })
+              : t("attendance.edited.badge", "Edited")}
+            {entry.editedAt ? ` · ${formatDateInZone(entry.editedAt, tz, locale)}` : ""}
+          </div>
+          <div className="space-y-1.5 text-sm">
+            {inChanged && (
+              <EditedRow
+                label={t("attendance.clockIn")}
+                from={formatTime(entry.originalClockIn, hour12, locale, tz)}
+                to={formatTime(entry.clockInAt, hour12, locale, tz)}
+              />
+            )}
+            {outChanged && (
+              <EditedRow
+                label={t("attendance.clockOut")}
+                from={formatTime(entry.originalClockOut, hour12, locale, tz)}
+                to={formatTime(entry.clockOutAt, hour12, locale, tz)}
+              />
+            )}
+            {entry.editReason && (
+              <p className="pt-1 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{t("attendance.edited.reason", "Reason")}:</span>{" "}
+                {entry.editReason}
+              </p>
+            )}
+            <p className="pt-1.5 text-[11px] text-brand-600">{t("attendance.history.viewAll", "Click to view full history →")}</p>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+      <EditHistoryDialog entry={entry} open={historyOpen} onOpenChange={setHistoryOpen} />
+    </>
   )
 }
 

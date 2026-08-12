@@ -3086,6 +3086,16 @@
       "badge": "Editado",
       "by": "Editado por {{name}}",
       "reason": "Motivo"
+    },
+    "history": {
+      "title": "Historial de cambios",
+      "subtitle": "Cada cambio manual en este registro.",
+      "none": "No hay cambios registrados.",
+      "when": "Cuándo",
+      "editor": "Editor",
+      "change": "Cambio",
+      "viewAll": "Haz clic para ver el historial completo →",
+      "timezone": "Zona horaria"
     }
   },
   "auditLog": {
