@@ -605,7 +605,19 @@
     "alwaysLocation": {
       "title": "Attiva posizione “Sempre”",
       "body": "Per rilevare quando esci dall'area anche ad app chiusa. Ora funziona solo con l'app aperta.",
-      "cta": "Apri Impostazioni"
+      "cta": "Apri Impostazioni",
+      "sheetTitle": "Attiva posizione “Sempre”",
+      "sheetBody": "Per rilevare quando esci dall'area anche ad app chiusa o con il telefono in tasca.",
+      "chooserLabel": "Autorizzazione posizione",
+      "optAllowAlways": "Consenti sempre",
+      "optWhileUsing": "Consenti solo con app aperta",
+      "optAsk": "Chiedi ogni volta",
+      "optDeny": "Non consentire",
+      "step1": "Tocca “Apri Impostazioni” sotto",
+      "step2": "Apri Autorizzazioni → Posizione",
+      "step3": "Scegli “Consenti sempre”",
+      "openSettings": "Apri Impostazioni",
+      "notNow": "Non ora"
     }
   },
   "overtime": {

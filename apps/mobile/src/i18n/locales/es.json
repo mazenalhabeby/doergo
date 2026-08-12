@@ -605,7 +605,19 @@
     "alwaysLocation": {
       "title": "Activar ubicación “Siempre”",
       "body": "Para detectar cuando sales del área de trabajo incluso con la app cerrada. Ahora solo funciona con la app abierta.",
-      "cta": "Abrir Ajustes"
+      "cta": "Abrir Ajustes",
+      "sheetTitle": "Activar ubicación “Siempre”",
+      "sheetBody": "Para detectar cuando sales del área de trabajo incluso con la app cerrada o el teléfono en el bolsillo.",
+      "chooserLabel": "Permiso de ubicación",
+      "optAllowAlways": "Permitir siempre",
+      "optWhileUsing": "Permitir solo con la app abierta",
+      "optAsk": "Preguntar cada vez",
+      "optDeny": "No permitir",
+      "step1": "Toca “Abrir Ajustes” abajo",
+      "step2": "Abre Permisos → Ubicación",
+      "step3": "Elige “Permitir siempre”",
+      "openSettings": "Abrir Ajustes",
+      "notNow": "Ahora no"
     }
   },
   "overtime": {

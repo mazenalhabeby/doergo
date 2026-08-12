@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, AppState, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { remindAlwaysLocationIfNeeded, clearAlwaysLocationReminder } from '../services/always-location-reminder';
+import { AlwaysLocationSheet } from './always-location-sheet';
 
 const AMBER = '#d97706';
 
@@ -21,6 +22,7 @@ export function AlwaysLocationNudge({ active }: { active: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [needsAlways, setNeedsAlways] = React.useState(false);
+  const [sheetVisible, setSheetVisible] = React.useState(false);
 
   const check = React.useCallback(async () => {
     if (!active) {
@@ -57,27 +59,54 @@ export function AlwaysLocationNudge({ active }: { active: boolean }) {
     return () => sub.remove();
   }, [check]);
 
+  // Tap: try the OS prompt first (Android 10 / iOS can grant "Always" directly);
+  // if that doesn't grant it (later Android opens Settings, or already denied),
+  // open the guided sheet with the exact steps.
+  const handlePress = React.useCallback(async () => {
+    try {
+      const res = await Location.requestBackgroundPermissionsAsync();
+      if (res.status === 'granted') {
+        await check();
+        return;
+      }
+    } catch {
+      // fall through to the guide
+    }
+    setSheetVisible(true);
+  }, [check]);
+
   if (!needsAlways) return null;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => Linking.openSettings()}
-      style={[styles.banner, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}
-    >
-      <Ionicons name="location" size={22} color={AMBER} />
-      <View style={styles.textWrap}>
-        <Text style={[styles.title, { color: AMBER }]} numberOfLines={1}>
-          {t('attendance.alwaysLocation.title')}
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={3}>
-          {t('attendance.alwaysLocation.body')}
-        </Text>
-      </View>
-      <View style={[styles.cta, { backgroundColor: AMBER }]}>
-        <Text style={styles.ctaText}>{t('attendance.alwaysLocation.cta')}</Text>
-      </View>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handlePress}
+        style={[styles.banner, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}
+      >
+        <Ionicons name="location" size={22} color={AMBER} />
+        <View style={styles.textWrap}>
+          <Text style={[styles.title, { color: AMBER }]} numberOfLines={1}>
+            {t('attendance.alwaysLocation.title')}
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={3}>
+            {t('attendance.alwaysLocation.body')}
+          </Text>
+        </View>
+        <View style={[styles.cta, { backgroundColor: AMBER }]}>
+          <Text style={styles.ctaText}>{t('attendance.alwaysLocation.cta')}</Text>
+        </View>
+      </TouchableOpacity>
+
+      <AlwaysLocationSheet
+        visible={sheetVisible}
+        onClose={() => {
+          setSheetVisible(false);
+          // Re-check shortly after (they may have toggled it in Settings).
+          setTimeout(() => check(), 500);
+        }}
+      />
+    </>
   );
 }
 

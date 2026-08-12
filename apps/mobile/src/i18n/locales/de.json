@@ -606,7 +606,19 @@
     "alwaysLocation": {
       "title": "„Immer“-Standort aktivieren",
       "body": "Damit wir erkennen, wenn Sie den Arbeitsbereich verlassen – auch bei geschlossener App. Aktuell funktioniert es nur bei geöffneter App.",
-      "cta": "Einstellungen öffnen"
+      "cta": "Einstellungen öffnen",
+      "sheetTitle": "„Immer“-Standort aktivieren",
+      "sheetBody": "Damit wir erkennen, wenn Sie den Arbeitsbereich verlassen – auch bei geschlossener App oder wenn das Telefon in der Tasche ist.",
+      "chooserLabel": "Standortberechtigung",
+      "optAllowAlways": "Immer zulassen",
+      "optWhileUsing": "Nur bei App-Nutzung zulassen",
+      "optAsk": "Jedes Mal fragen",
+      "optDeny": "Nicht zulassen",
+      "step1": "Unten auf „Einstellungen öffnen“ tippen",
+      "step2": "Berechtigungen → Standort öffnen",
+      "step3": "„Immer zulassen“ wählen",
+      "openSettings": "Einstellungen öffnen",
+      "notNow": "Nicht jetzt"
     }
   },
   "overtime": {

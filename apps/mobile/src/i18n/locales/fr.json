@@ -605,7 +605,19 @@
     "alwaysLocation": {
       "title": "Activer la localisation « Toujours »",
       "body": "Pour détecter votre sortie de la zone même app fermée. Actuellement, cela ne fonctionne que l'app ouverte.",
-      "cta": "Ouvrir les réglages"
+      "cta": "Ouvrir les réglages",
+      "sheetTitle": "Activer la localisation « Toujours »",
+      "sheetBody": "Pour détecter votre sortie de la zone même app fermée ou téléphone dans la poche.",
+      "chooserLabel": "Autorisation de localisation",
+      "optAllowAlways": "Toujours autoriser",
+      "optWhileUsing": "Autoriser uniquement app ouverte",
+      "optAsk": "Demander à chaque fois",
+      "optDeny": "Ne pas autoriser",
+      "step1": "Touchez « Ouvrir les réglages » ci-dessous",
+      "step2": "Ouvrez Autorisations → Localisation",
+      "step3": "Choisissez « Toujours autoriser »",
+      "openSettings": "Ouvrir les réglages",
+      "notNow": "Pas maintenant"
     }
   },
   "overtime": {

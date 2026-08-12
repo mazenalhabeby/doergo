@@ -606,7 +606,19 @@
     "alwaysLocation": {
       "title": "Enable “Always” location",
       "body": "So we detect when you leave your work area even with the app closed. Right now it only works while the app is open.",
-      "cta": "Open Settings"
+      "cta": "Open Settings",
+      "sheetTitle": "Enable “Always” location",
+      "sheetBody": "So we can tell when you leave your work area even when the app is closed or your phone is in your pocket.",
+      "chooserLabel": "Location permission",
+      "optAllowAlways": "Allow all the time",
+      "optWhileUsing": "Allow only while using the app",
+      "optAsk": "Ask every time",
+      "optDeny": "Don't allow",
+      "step1": "Tap “Open Settings” below",
+      "step2": "Open Permissions → Location",
+      "step3": "Choose “Allow all the time”",
+      "openSettings": "Open Settings",
+      "notNow": "Not now"
     }
   },
   "overtime": {
