@@ -283,6 +283,9 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
+      # Route optimizer (CRM). Defaults to the public OSRM demo host (low volume);
+      # point at a self-hosted OSRM in .env.production for production traffic.
+      - OSRM_URL=${OSRM_URL:-https://router.project-osrm.org}
     depends_on:
       auth-service:
         condition: service_healthy

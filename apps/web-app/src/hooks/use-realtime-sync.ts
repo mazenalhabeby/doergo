@@ -49,10 +49,27 @@ const Events = {
   EXCURSION_EXPIRED: "geofence_excursion_expired",
   // Tracking
   WORKER_LOCATION: "worker.locationUpdated",
+  // CRM / Sales — any lead/deal/contact/quote/pipeline mutation
+  CRM_CHANGED: "crm.changed",
   // Future: messaging, calls
   MESSAGE_RECEIVED: "message.received",
   CALL_INCOMING: "call.incoming",
 } as const
+
+// Every CRM query key — refreshed on any crm.changed event.
+const ALL_CRM_KEYS: string[][] = [
+  ["crm-board"],
+  ["crm-forecast"],
+  ["crm-deals"],
+  ["crm-deal"],
+  ["crm-contacts"],
+  ["crm-leads"],
+  ["crm-activities"],
+  ["crm-quotes"],
+  ["crm-pipelines"],
+  ["crm-commission-rules"],
+  ["crm-commission-entries"],
+]
 
 // The /attendance PAGE query keys (Time → tracking / approvals / breaks / no-shows
 // / days-off / availability). Distinct from the DASHBOARD keys below — both must
@@ -123,6 +140,9 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
 
   // Location events → invalidate tracking data
   [Events.WORKER_LOCATION]: [["workerLocations"]],
+
+  // CRM events → refresh every open CRM view (board, lists, forecast).
+  [Events.CRM_CHANGED]: ALL_CRM_KEYS,
 }
 
 export function useRealtimeSync() {

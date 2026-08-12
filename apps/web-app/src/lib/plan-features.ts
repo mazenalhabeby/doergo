@@ -14,6 +14,7 @@ export const MODULE_LABELS: Record<string, string> = {
   overtime: 'Overtime engine',
   shift_scheduling: 'Shift scheduling',
   invoicing: 'Invoicing',
+  crm: 'Sales & CRM',
   sprints: 'Sprints',
   story_points: 'Story points',
   epics: 'Epics',

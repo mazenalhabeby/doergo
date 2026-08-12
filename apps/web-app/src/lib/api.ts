@@ -4907,3 +4907,125 @@ export const searchApi = {
     return res.data ?? empty;
   },
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SALES / CRM
+// ═══════════════════════════════════════════════════════════════════════════
+import type {
+  Contact, Lead, Pipeline, PipelineStage, Deal, SalesActivity, Quote,
+  CommissionRule, CommissionEntry, PipelineForecast,
+  RouteOptimizeRequest, OptimizedRoute,
+} from "@hbcfield/shared/client";
+
+type Paged<T> = { items: T[]; total: number; page: number; limit: number };
+
+function pagedFrom<T>(res: { data?: { data?: T[]; meta?: any } }): Paged<T> {
+  const rows = res.data?.data ?? [];
+  const meta = res.data?.meta ?? {};
+  return { items: rows, total: meta.total ?? rows.length, page: meta.page ?? 1, limit: meta.limit ?? rows.length };
+}
+
+async function crmGet<T>(endpoint: string): Promise<T> {
+  const res = await api.get<{ success: boolean; data: T }>(endpoint);
+  if (res.error) throw new Error(res.error);
+  return res.data?.data as T;
+}
+async function crmSend<T>(method: "post" | "patch" | "delete", endpoint: string, body?: unknown): Promise<T> {
+  const res = await api[method]<{ success: boolean; data: T }>(endpoint, body as any);
+  if (res.error) throw new Error(res.error);
+  return res.data?.data as T;
+}
+
+export interface DealBoard {
+  pipelineId: string;
+  stages: PipelineStage[];
+  deals: Deal[];
+}
+
+export const crmApi = {
+  // Pipelines & stages
+  listPipelines: () => crmGet<Pipeline[]>("/crm/pipelines"),
+  createPipeline: (d: { name: string; isDefault?: boolean }) => crmSend<Pipeline>("post", "/crm/pipelines", d),
+  updatePipeline: (id: string, d: Partial<Pipeline>) => crmSend<Pipeline>("patch", `/crm/pipelines/${id}`, d),
+  deletePipeline: (id: string) => crmSend<{ id: string }>("delete", `/crm/pipelines/${id}`),
+  createStage: (pipelineId: string, d: Partial<PipelineStage>) => crmSend<PipelineStage>("post", `/crm/pipelines/${pipelineId}/stages`, d),
+  updateStage: (id: string, d: Partial<PipelineStage>) => crmSend<PipelineStage>("patch", `/crm/stages/${id}`, d),
+  deleteStage: (id: string) => crmSend<{ id: string }>("delete", `/crm/stages/${id}`),
+  reorderStages: (pipelineId: string, orderedIds: string[]) => crmSend("post", `/crm/pipelines/${pipelineId}/stages/reorder`, { orderedIds }),
+
+  // Deals
+  getBoard: (pipelineId?: string) => crmGet<DealBoard>(buildUrlWithQuery("/crm/board", { pipelineId })),
+  getForecast: (pipelineId?: string) => crmGet<PipelineForecast>(buildUrlWithQuery("/crm/forecast", { pipelineId })),
+  listDeals: async (params?: { pipelineId?: string; stageId?: string; ownerId?: string; open?: boolean; search?: string; page?: number; limit?: number }) => {
+    const res = await api.get<{ success: boolean; data: Deal[]; meta: any }>(buildUrlWithQuery("/crm/deals", params as any));
+    if (res.error) throw new Error(res.error);
+    return pagedFrom<Deal>(res as any);
+  },
+  getDeal: (id: string) => crmGet<Deal & { quotes?: Quote[]; activities?: SalesActivity[] }>(`/crm/deals/${id}`),
+  createDeal: (d: Partial<Deal>) => crmSend<Deal>("post", "/crm/deals", d),
+  updateDeal: (id: string, d: Partial<Deal>) => crmSend<Deal>("patch", `/crm/deals/${id}`, d),
+  moveDeal: (id: string, stageId: string, extra?: { wonReason?: string; lostReason?: string }) => crmSend<Deal>("post", `/crm/deals/${id}/move`, { stageId, ...extra }),
+  deleteDeal: (id: string) => crmSend<{ id: string }>("delete", `/crm/deals/${id}`),
+
+  // Contacts
+  listContacts: async (params?: { spaceId?: string; ownerId?: string; search?: string; page?: number; limit?: number }) => {
+    const res = await api.get<{ success: boolean; data: Contact[]; meta: any }>(buildUrlWithQuery("/crm/contacts", params as any));
+    if (res.error) throw new Error(res.error);
+    return pagedFrom<Contact>(res as any);
+  },
+  getContact: (id: string) => crmGet<Contact & { deals?: Deal[]; activities?: SalesActivity[] }>(`/crm/contacts/${id}`),
+  createContact: (d: Partial<Contact>) => crmSend<Contact>("post", "/crm/contacts", d),
+  updateContact: (id: string, d: Partial<Contact>) => crmSend<Contact>("patch", `/crm/contacts/${id}`, d),
+  deleteContact: (id: string) => crmSend<{ id: string }>("delete", `/crm/contacts/${id}`),
+
+  // Leads
+  listLeads: async (params?: { status?: string; ownerId?: string; search?: string; page?: number; limit?: number }) => {
+    const res = await api.get<{ success: boolean; data: Lead[]; meta: any }>(buildUrlWithQuery("/crm/leads", params as any));
+    if (res.error) throw new Error(res.error);
+    return pagedFrom<Lead>(res as any);
+  },
+  getLead: (id: string) => crmGet<Lead & { activities?: SalesActivity[] }>(`/crm/leads/${id}`),
+  createLead: (d: Partial<Lead>) => crmSend<Lead>("post", "/crm/leads", d),
+  updateLead: (id: string, d: Partial<Lead>) => crmSend<Lead>("patch", `/crm/leads/${id}`, d),
+  convertLead: (id: string, d?: { dealTitle?: string; amountCents?: number; pipelineId?: string }) => crmSend<{ space: any; contact: Contact; deal: Deal }>("post", `/crm/leads/${id}/convert`, d ?? {}),
+  deleteLead: (id: string) => crmSend<{ id: string }>("delete", `/crm/leads/${id}`),
+
+  // Activities
+  listActivities: async (params?: { dealId?: string; leadId?: string; contactId?: string; ownerId?: string; page?: number; limit?: number }) => {
+    const res = await api.get<{ success: boolean; data: SalesActivity[]; meta: any }>(buildUrlWithQuery("/crm/activities", params as any));
+    if (res.error) throw new Error(res.error);
+    return pagedFrom<SalesActivity>(res as any);
+  },
+  createActivity: (d: Partial<SalesActivity>) => crmSend<SalesActivity>("post", "/crm/activities", d),
+  updateActivity: (id: string, d: Partial<SalesActivity>) => crmSend<SalesActivity>("patch", `/crm/activities/${id}`, d),
+  deleteActivity: (id: string) => crmSend<{ id: string }>("delete", `/crm/activities/${id}`),
+
+  // Quotes
+  listQuotes: async (params?: { dealId?: string; status?: string; page?: number; limit?: number }) => {
+    const res = await api.get<{ success: boolean; data: Quote[]; meta: any }>(buildUrlWithQuery("/crm/quotes", params as any));
+    if (res.error) throw new Error(res.error);
+    return pagedFrom<Quote>(res as any);
+  },
+  getQuote: (id: string) => crmGet<Quote>(`/crm/quotes/${id}`),
+  createQuote: (d: Partial<Quote> & { lineItems: any[]; clientName: string }) => crmSend<Quote>("post", "/crm/quotes", d),
+  updateQuote: (id: string, d: Partial<Quote>) => crmSend<Quote>("patch", `/crm/quotes/${id}`, d),
+  setQuoteStatus: (id: string, status: string) => crmSend<Quote>("post", `/crm/quotes/${id}/status`, { status }),
+  convertQuoteToInvoice: (id: string) => crmSend<{ quoteId: string; invoiceId: string; invoiceNumber: string }>("post", `/crm/quotes/${id}/convert-invoice`),
+  deleteQuote: (id: string) => crmSend<{ id: string }>("delete", `/crm/quotes/${id}`),
+
+  // Commissions
+  listCommissionRules: () => crmGet<CommissionRule[]>("/crm/commission-rules"),
+  createCommissionRule: (d: Partial<CommissionRule>) => crmSend<CommissionRule>("post", "/crm/commission-rules", d),
+  updateCommissionRule: (id: string, d: Partial<CommissionRule>) => crmSend<CommissionRule>("patch", `/crm/commission-rules/${id}`, d),
+  deleteCommissionRule: (id: string) => crmSend<{ id: string }>("delete", `/crm/commission-rules/${id}`),
+  listCommissionEntries: (params?: { ownerId?: string; period?: string; status?: string }) => crmGet<CommissionEntry[]>(buildUrlWithQuery("/crm/commission-entries", params as any)),
+  setCommissionEntryStatus: (id: string, status: string) => crmSend<CommissionEntry>("post", `/crm/commission-entries/${id}/status`, { status }),
+};
+
+export const routesApi = {
+  optimize: async (req: RouteOptimizeRequest): Promise<OptimizedRoute> => {
+    const res = await api.post<OptimizedRoute>("/routes/optimize", req);
+    if (res.error) throw new Error(res.error);
+    return res.data as OptimizedRoute;
+  },
+};

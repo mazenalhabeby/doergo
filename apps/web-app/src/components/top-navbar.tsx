@@ -23,6 +23,7 @@ import {
   Sun,
   Moon,
   Menu,
+  TrendingUp,
 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -144,6 +145,10 @@ export function TopNavbar() {
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.
   const showInvoices = user.canManageUsers
+  // Sales / CRM: managers + admins (and sales reps who work on web). Discoverable
+  // like Invoices — the /crm page enforces the Professional+ 'crm' capability and
+  // shows an upgrade panel under-tier.
+  const showCrm = user.canManageUsers || user.canViewAllTasks
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by
@@ -181,6 +186,7 @@ export function TopNavbar() {
         showReports={showReports}
         showInvoices={showInvoices}
         showCustomers={showCustomers}
+        showCrm={showCrm}
         showMyTimeOff={showMyTimeOff}
         showMyAttendance={showMyAttendance}
         showManage={showManage}
@@ -264,6 +270,21 @@ export function TopNavbar() {
             )}
           >
             {t("nav.customerPortal", "Clients Portals")}
+          </Link>
+        )}
+
+        {/* Sales / CRM */}
+        {showCrm && (
+          <Link
+            href="/crm"
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/crm")
+                ? cn(navItemActiveStyle, bottomIndicator)
+                : navItemInactive,
+            )}
+          >
+            {t("nav.sales", "Sales")}
           </Link>
         )}
 
@@ -512,6 +533,7 @@ function MobileMenu({
   showReports,
   showInvoices,
   showCustomers,
+  showCrm,
   showMyTimeOff,
   showMyAttendance,
   showManage,
@@ -524,6 +546,7 @@ function MobileMenu({
   showReports: boolean
   showInvoices: boolean
   showCustomers: boolean
+  showCrm: boolean
   showMyTimeOff: boolean
   showMyAttendance: boolean
   showManage: boolean
@@ -689,6 +712,15 @@ function MobileMenu({
               className={cn(mobileItemBase, isActive(pathname, "/customer-portal") ? mobileItemActiveStyle : mobileItemInactive)}>
               <Building2 className="h-4 w-4" />
               {t("nav.customerPortal", "Clients Portals")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showCrm && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/crm" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/crm") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <TrendingUp className="h-4 w-4" />
+              {t("nav.sales", "Sales")}
             </Link>
           </DropdownMenuItem>
         )}

@@ -822,7 +822,8 @@
     "myTasks": "Mes tâches",
     "tokenTest": "Test de jeton",
     "help": "Aide",
-    "customerPortal": "Portails clients"
+    "customerPortal": "Portails clients",
+    "sales": "Ventes"
   },
   "dashboard": {
     "admin": {
