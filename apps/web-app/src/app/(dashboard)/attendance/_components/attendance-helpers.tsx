@@ -129,6 +129,25 @@ export function WorkerCell({ entry }: { entry: TimeEntry }) {
   )
 }
 
+/**
+ * Short date ("Aug 11") in the ENTRY's own timezone — must match the time cell,
+ * which also renders in the entry zone. Formatting the date in the viewer's
+ * browser zone (the old `format(toDate(at), …)`) rolled it to the next day for a
+ * clock-in whose UTC instant crosses midnight in the browser zone (e.g. 6:08 PM
+ * EDT = 00:08 next-day in Berlin), so the date and time disagreed.
+ */
+function formatDateInZone(at: string, tz?: string | null, locale?: string): string {
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, {
+      timeZone: tz || undefined,
+      month: "short",
+      day: "numeric",
+    }).format(toDate(at))
+  } catch {
+    return format(toDate(at), "MMM d")
+  }
+}
+
 /** Clock-in / clock-out cell: time (in the entry zone) with date + country beneath, or "-". */
 export function ClockCell({
   at,
@@ -147,7 +166,7 @@ export function ClockCell({
     <div>
       <p className="font-medium text-foreground">{formatTime(at, hour12, locale, tz)}</p>
       <p className="text-xs text-muted-foreground">
-        {format(toDate(at), "MMM d")}
+        {formatDateInZone(at, tz, locale)}
         {country ? ` / ${country}` : ""}
       </p>
     </div>
