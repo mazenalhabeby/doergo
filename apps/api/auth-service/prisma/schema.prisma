@@ -188,6 +188,18 @@ enum ShiftRecurrence {
   ONE_OFF // Specific explicit dates
 }
 
+// Lifecycle of a geofence excursion ("out of ring") for one clock-in session.
+// The heartbeat drives the state machine; nothing here force-clocks-out except an
+// approver REJECT. See GeofenceExcursion model.
+enum GeofenceExcursionStatus {
+  OUT_UNREPORTED // Detected outside the ring; employee warned; no reason yet
+  PENDING // Reason + requested minutes submitted; awaiting a decision
+  APPROVED // Approved for grantedMinutes; countdown running
+  REJECTED // Terminal — employee was clocked out
+  RETURNED // Terminal — employee came back inside the ring; kept clocked in
+  EXPIRED // Terminal for this cycle — APPROVED timer lapsed while still outside
+}
+
 // Time-off request status
 enum TimeOffStatus {
   PENDING // Awaiting manager approval
@@ -1623,6 +1635,9 @@ model TimeEntry {
   // Overtime extension
   overtimeRequest OvertimeRequest?
 
+  // Geofence "out of ring" excursions during this session
+  geofenceExcursions GeofenceExcursion[]
+
   @@index([userId, clockInAt])
   @@index([locationId])
   @@index([locationId, clockInAt]) // per-location attendance by day
@@ -1636,6 +1651,44 @@ model TimeEntry {
   @@index([organizationId, reminderState]) // pending extra-time lookups per org
   @@index([organizationId, approvalStatus, clockInAt]) // approval queue (P3): pending, newest-first
   @@map("time_entries")
+}
+
+// One "left the ring" episode for a single clock-in session. The heartbeat drives
+// the state machine; the ONLY automatic clock-out is an approver REJECT.
+// "Active excursion" = latest row for a timeEntryId whose status is one of
+// {OUT_UNREPORTED, PENDING, APPROVED}. At most one active per session (guarded in code).
+model GeofenceExcursion {
+  id             String                  @id @default(cuid())
+  organizationId String
+  timeEntryId    String // the active clock-in session
+  userId         String
+  spaceId        String // the space (CompanyLocation) whose ring was left
+  status         GeofenceExcursionStatus @default(OUT_UNREPORTED)
+
+  reason           String? // employee-provided
+  requestedMinutes Int? // what the employee asked for
+  grantedMinutes   Int? // what the approver granted (may differ)
+
+  leftRingAt DateTime  @default(now()) // detected outside the ring
+  reportedAt DateTime? // reason submitted → PENDING
+  decidedAt  DateTime? // approve/reject timestamp
+  expiresAt  DateTime? // APPROVED countdown end (drives sweep + re-check)
+  resolvedAt DateTime? // RETURNED / EXPIRED / REJECTED
+
+  approvedById  String?
+  timerExpired  Boolean @default(false) // set by the sweep when an APPROVED timer lapses (approver flag)
+  lastDistanceM Int? // distance from ring at detection (context for the approver)
+
+  timeEntry TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, expiresAt]) // sweep: due APPROVED timers
+  @@index([timeEntryId]) // active excursion for a session
+  @@index([organizationId, status]) // approver list per org
+  @@index([userId, status])
+  @@map("geofence_excursions")
 }
 
 // Break records for time entries

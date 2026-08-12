@@ -53,6 +53,25 @@ export const ATTENDANCE_CONSTANTS = {
   SHIFT_MATERIALIZE_INTERVAL_MS: 30 * 60 * 1000,  // Every 30 minutes
   SHIFT_MATERIALIZE_JOB_ID: 'shift-materialize',
   SHIFT_MATERIALIZE_WINDOW_HOURS: 36,
+
+  // Geofence excursion ("out of ring") sweep: flags APPROVED excursions whose
+  // grace timer has lapsed so the approver sees it even if the phone stopped
+  // heart-beating. It NEVER clocks anyone out (no GPS server-side). 1-min cadence.
+  GEOFENCE_EXCURSION_SWEEP_INTERVAL_MS: 60 * 1000,
+  GEOFENCE_EXCURSION_SWEEP_JOB_ID: 'geofence-excursion-sweep',
+} as const;
+
+// Geofence excursion workflow. When a clocked-in worker leaves their space's
+// ring, they submit a reason + how long they'll be out; a responsible person
+// approves (adjustable time) or rejects. Only a REJECT clocks the worker out.
+export const GEOFENCE_EXCURSION = {
+  // Duration presets offered to the employee (minutes) + a custom option.
+  DURATION_PRESETS: [15, 30, 60, 120] as number[],
+  CUSTOM_MAX_MINUTES: 480, // 8h ceiling on a custom request
+  // Hysteresis buffer (meters) added to the ring for the "left" test only, so GPS
+  // noise near the edge doesn't rapidly toggle OUT/RETURNED. Treat as OUT when
+  // distance > radius + buffer; treat as back IN when distance <= radius.
+  RING_HYSTERESIS_M: 15,
 } as const;
 
 // Shift reminder engine defaults (space-centric attendance).

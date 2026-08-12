@@ -110,6 +110,60 @@ export interface AttendanceStatus {
   isClockedIn: boolean;
   currentEntry: TimeEntry | null;
   assignedLocations: CompanyLocation[];
+  // The current session's active "out of ring" excursion, if any (drives the
+  // mobile warning sheet / countdown). Null when inside the ring or not clocked in.
+  activeExcursion?: GeofenceExcursion | null;
+}
+
+// ============================================================================
+// GEOFENCE EXCURSION ("OUT OF RING")
+// ============================================================================
+
+export type GeofenceExcursionStatus =
+  | 'OUT_UNREPORTED'
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'RETURNED'
+  | 'EXPIRED';
+
+export interface GeofenceExcursion {
+  id: string;
+  organizationId: string;
+  timeEntryId: string;
+  userId: string;
+  spaceId: string;
+  status: GeofenceExcursionStatus;
+  reason: string | null;
+  requestedMinutes: number | null;
+  grantedMinutes: number | null;
+  leftRingAt: string;
+  reportedAt: string | null;
+  decidedAt: string | null;
+  expiresAt: string | null;
+  resolvedAt: string | null;
+  approvedById: string | null;
+  timerExpired: boolean;
+  lastDistanceM: number | null;
+  createdAt: string;
+  updatedAt: string;
+  // Populated relations (approver surface)
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
+  space?: Pick<CompanyLocation, 'id' | 'name'> | null;
+}
+
+export interface ReportExcursionInput {
+  reason: string;
+  requestedMinutes: number;
+}
+
+export interface ApproveExcursionInput {
+  grantedMinutes?: number;
 }
 
 // ============================================================================

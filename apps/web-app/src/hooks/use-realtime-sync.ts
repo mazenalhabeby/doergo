@@ -38,6 +38,13 @@ const Events = {
   BREAK_ENDED: "break.ended",
   // Availability status (Available/Busy/Away)
   PRESENCE_CHANGED: "presence.changed",
+  // Geofence excursion ("out of ring") — emitted to the org room by name
+  EXCURSION_OUT: "geofence_excursion_out",
+  EXCURSION_REQUESTED: "geofence_excursion_requested",
+  EXCURSION_APPROVED: "geofence_excursion_approved",
+  EXCURSION_REJECTED: "geofence_excursion_rejected",
+  EXCURSION_RETURNED: "geofence_excursion_returned",
+  EXCURSION_EXPIRED: "geofence_excursion_expired",
   // Tracking
   WORKER_LOCATION: "worker.locationUpdated",
   // Future: messaging, calls
@@ -69,6 +76,16 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
 
   // Availability change → refresh the dashboard roster + contacts (their dot updates)
   [Events.PRESENCE_CHANGED]: [["orgMembers", "dashboard"], ["orgContacts"]],
+
+  // Geofence excursion → refresh the approver panel (["geofence-excursions"]).
+  // out/reported/returned change the pending list; approved/rejected/expired also
+  // touch clock state (reject clocks out) so refresh the dashboard attendance too.
+  [Events.EXCURSION_OUT]: [["geofence-excursions"]],
+  [Events.EXCURSION_REQUESTED]: [["geofence-excursions"]],
+  [Events.EXCURSION_APPROVED]: [["geofence-excursions"]],
+  [Events.EXCURSION_REJECTED]: [["geofence-excursions"], ["attendance-active"], ["locationAttendanceBatch"], ["orgMembers", "dashboard"]],
+  [Events.EXCURSION_RETURNED]: [["geofence-excursions"]],
+  [Events.EXCURSION_EXPIRED]: [["geofence-excursions"]],
 
   // Location events → invalidate tracking data
   [Events.WORKER_LOCATION]: [["workerLocations"]],

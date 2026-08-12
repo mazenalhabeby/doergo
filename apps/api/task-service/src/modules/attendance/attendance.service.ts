@@ -21,6 +21,7 @@ import {
   TimeEntryStatus,
   haversineDistance,
   ATTENDANCE_CONSTANTS,
+  GEOFENCE_EXCURSION,
   SHIFT_REMINDER_DEFAULTS,
   UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
@@ -884,8 +885,20 @@ export class AttendanceService {
   }
 
   /**
-   * Process location heartbeat while clocked in.
-   * Checks geofence distance and auto-clocks out if too far.
+   * Process location heartbeat while clocked in (mobile → server ~every 5 min).
+   *
+   * Drives the geofence-excursion state machine. It NEVER auto-clocks-out (the
+   * old silent 150m auto clock-out is gone). When a clocked-in worker leaves
+   * their space's ring, an OUT_UNREPORTED excursion is opened and the worker is
+   * warned; they then submit a reason + duration (→ PENDING) which a responsible
+   * person approves/rejects. Only a REJECT clocks the worker out. Returning
+   * inside the ring resolves the active excursion (RETURNED). An APPROVED grace
+   * timer that lapses while still outside closes EXPIRED and re-opens a fresh
+   * OUT_UNREPORTED cycle.
+   *
+   * Response keeps `withinGeofence`/`distance` for backward compat with
+   * pre-OTA mobile clients (`autoClockedOut` is now always false) and adds
+   * `inRing` + `activeExcursion` for the new UI.
    */
   async heartbeat(data: {
     userId: string;
@@ -906,59 +919,370 @@ export class AttendanceService {
     });
 
     if (!entry || !entry.location) {
-      return success({ withinGeofence: true, distance: 0, autoClockedOut: false }, 'No active entry');
-    }
-
-    const distance =
-      entry.location.lat == null || entry.location.lng == null
-        ? 0
-        : haversineDistance(data.lat, data.lng, entry.location.lat, entry.location.lng);
-    const withinGeofence = distance <= entry.location.geofenceRadius;
-    const autoClockOutDistance = ATTENDANCE_CONSTANTS.AUTO_CLOCK_OUT_DISTANCE_METERS;
-
-    // Auto clock-out if beyond the maximum distance
-    if (distance >= autoClockOutDistance) {
-      this.logger.warn(
-        `User ${data.userId} is ${Math.round(distance)}m from location (limit: ${autoClockOutDistance}m). Auto-clocking out.`,
-      );
-
-      await this.clockOut({
-        userId: data.userId,
-        lat: data.lat,
-        lng: data.lng,
-        accuracy: data.accuracy,
-        organizationId: data.organizationId,
-        notes: `Auto clock-out: ${Math.round(distance)}m from work area (limit: ${autoClockOutDistance}m)`,
-      });
-
-      // Send push notification
-      this.notificationClient.emit('push_notification', {
-        userId: data.userId,
-        title: 'Auto Clock-Out',
-        body: `You were automatically clocked out because you are ${Math.round(distance)}m away from your work location.`,
-        data: { type: 'attendance.auto_clock_out', distance: Math.round(distance) },
-      });
-
       return success(
-        { withinGeofence: false, distance: Math.round(distance), autoClockedOut: true },
-        'Auto-clocked out due to distance',
+        { withinGeofence: true, inRing: true, distance: 0, autoClockedOut: false, activeExcursion: null },
+        'No active entry',
       );
     }
 
-    // Send warning push notification if outside geofence but within auto-clock-out range
-    if (!withinGeofence) {
-      this.notificationClient.emit('push_notification', {
-        userId: data.userId,
-        title: 'Geofence Warning',
-        body: `You are ${Math.round(distance)}m from your work area. Please return or clock out.`,
-        data: { type: 'attendance.geofence_warning', distance: Math.round(distance) },
+    // A space with no coordinates has no ring → never triggers an excursion.
+    const hasRing =
+      entry.location.lat != null && entry.location.lng != null && entry.location.geofenceRadius > 0;
+    const distance = hasRing
+      ? haversineDistance(data.lat, data.lng, entry.location.lat as number, entry.location.lng as number)
+      : 0;
+    const radius = entry.location.geofenceRadius;
+    const distanceM = Math.round(distance);
+
+    // Hysteresis so GPS scatter at the edge doesn't flap OUT/RETURNED: only count
+    // as "left" past radius + buffer; count as "back" the moment we're <= radius.
+    const isBackInRing = !hasRing || distance <= radius;
+    const isOutPastBuffer = hasRing && distance > radius + GEOFENCE_EXCURSION.RING_HYSTERESIS_M;
+    const inRing = isBackInRing;
+
+    // Latest active excursion for this session (OUT_UNREPORTED / PENDING / APPROVED)
+    const active = await this.getActiveExcursion(entry.id);
+
+    if (active) {
+      if (isBackInRing) {
+        // Came back inside the ring → resolve the excursion, keep clocked in.
+        await this.prisma.geofenceExcursion.updateMany({
+          where: { id: active.id, status: active.status },
+          data: { status: 'RETURNED', resolvedAt: new Date() },
+        });
+        await this.emitExcursionEvent('geofence_excursion_returned', entry, active, { distanceM });
+        return success(
+          { withinGeofence: true, inRing: true, distance: distanceM, autoClockedOut: false, activeExcursion: null },
+          'Back inside ring',
+        );
+      }
+
+      // Still outside. If an APPROVED grace timer lapsed → close EXPIRED and spawn
+      // a fresh OUT_UNREPORTED cycle (the phone is the only source of truth on
+      // whether they're still out).
+      if (active.status === 'APPROVED' && active.expiresAt && active.expiresAt.getTime() <= Date.now()) {
+        await this.prisma.geofenceExcursion.updateMany({
+          where: { id: active.id, status: 'APPROVED' },
+          data: { status: 'EXPIRED', resolvedAt: new Date() },
+        });
+        const fresh = await this.prisma.geofenceExcursion.create({
+          data: {
+            organizationId: entry.organizationId,
+            timeEntryId: entry.id,
+            userId: entry.userId,
+            spaceId: entry.locationId,
+            status: 'OUT_UNREPORTED',
+            lastDistanceM: distanceM,
+          },
+        });
+        await this.emitExcursionEvent('geofence_excursion_expired', entry, active, { distanceM });
+        return success(
+          { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: fresh },
+          'Grace period expired, still outside ring',
+        );
+      }
+
+      // No state change — keep the approver's context distance fresh.
+      if (active.lastDistanceM !== distanceM) {
+        await this.prisma.geofenceExcursion.update({
+          where: { id: active.id },
+          data: { lastDistanceM: distanceM },
+        });
+      }
+      return success(
+        { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: { ...active, lastDistanceM: distanceM } },
+        `Outside ring (${active.status})`,
+      );
+    }
+
+    // No active excursion. Open one only once clearly past the buffer.
+    if (isOutPastBuffer) {
+      const created = await this.prisma.geofenceExcursion.create({
+        data: {
+          organizationId: entry.organizationId,
+          timeEntryId: entry.id,
+          userId: entry.userId,
+          spaceId: entry.locationId,
+          status: 'OUT_UNREPORTED',
+          lastDistanceM: distanceM,
+        },
       });
+      await this.emitExcursionEvent('geofence_excursion_out', entry, created, { distanceM });
+      return success(
+        { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: created },
+        'Left the ring',
+      );
     }
 
     return success(
-      { withinGeofence, distance: Math.round(distance), autoClockedOut: false },
-      withinGeofence ? 'Within geofence' : 'Outside geofence',
+      { withinGeofence: true, inRing: true, distance: distanceM, autoClockedOut: false, activeExcursion: null },
+      'Within ring',
     );
+  }
+
+  /** Latest active excursion for a session (OUT_UNREPORTED / PENDING / APPROVED). */
+  private async getActiveExcursion(timeEntryId: string) {
+    return this.prisma.geofenceExcursion.findFirst({
+      where: { timeEntryId, status: { in: ['OUT_UNREPORTED', 'PENDING', 'APPROVED'] } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Employee submits a reason + how long they'll be out → OUT_UNREPORTED → PENDING.
+   * Notifies the responsible person(s) to approve/reject.
+   */
+  async reportExcursion(data: {
+    userId: string;
+    organizationId: string;
+    reason: string;
+    requestedMinutes: number;
+  }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { userId: data.userId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+      include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
+    });
+    if (!entry) throw new BadRequestException('You are not currently clocked in');
+
+    const active = await this.getActiveExcursion(entry.id);
+    if (!active || active.status !== 'OUT_UNREPORTED') {
+      throw new BadRequestException('No pending out-of-ring warning to report');
+    }
+
+    const minutes = this.clampExcursionMinutes(data.requestedMinutes);
+    // Atomic guard: only flip if it's still OUT_UNREPORTED.
+    const res = await this.prisma.geofenceExcursion.updateMany({
+      where: { id: active.id, status: 'OUT_UNREPORTED' },
+      data: {
+        status: 'PENDING',
+        reason: data.reason?.trim() || null,
+        requestedMinutes: minutes,
+        reportedAt: new Date(),
+      },
+    });
+    if (res.count === 0) throw new BadRequestException('This warning was already handled');
+
+    const updated = await this.prisma.geofenceExcursion.findUnique({ where: { id: active.id } });
+    await this.emitExcursionEvent('geofence_excursion_requested', entry, updated!, {
+      distanceM: updated?.lastDistanceM ?? undefined,
+    });
+    return success(updated, 'Out-of-ring reason submitted');
+  }
+
+  /**
+   * Approver approves an out-of-ring request (optionally adjusting the granted
+   * time) → PENDING → APPROVED with a countdown to expiresAt.
+   */
+  async approveExcursion(data: {
+    excursionId: string;
+    approverId: string;
+    organizationId: string;
+    grantedMinutes?: number;
+  }) {
+    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId);
+    if (excursion.status !== 'PENDING') {
+      throw new BadRequestException('This request is no longer pending');
+    }
+    const minutes = this.clampExcursionMinutes(data.grantedMinutes ?? excursion.requestedMinutes ?? 0);
+    const expiresAt = new Date(Date.now() + minutes * 60_000);
+
+    const res = await this.prisma.geofenceExcursion.updateMany({
+      where: { id: excursion.id, status: 'PENDING' },
+      data: {
+        status: 'APPROVED',
+        grantedMinutes: minutes,
+        expiresAt,
+        decidedAt: new Date(),
+        approvedById: data.approverId,
+        timerExpired: false,
+      },
+    });
+    if (res.count === 0) throw new BadRequestException('This request was already handled');
+
+    const entry = await this.prisma.timeEntry.findUnique({
+      where: { id: excursion.timeEntryId },
+      include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
+    });
+    const updated = await this.prisma.geofenceExcursion.findUnique({ where: { id: excursion.id } });
+    if (entry) await this.emitExcursionEvent('geofence_excursion_approved', entry, updated!, {});
+    return success(updated, 'Out-of-ring request approved');
+  }
+
+  /**
+   * Approver rejects an out-of-ring request → PENDING → REJECTED, then clocks the
+   * worker out (the ONLY automatic clock-out in this workflow).
+   */
+  async rejectExcursion(data: {
+    excursionId: string;
+    approverId: string;
+    organizationId: string;
+  }) {
+    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId);
+    if (excursion.status !== 'PENDING') {
+      throw new BadRequestException('This request is no longer pending');
+    }
+    const res = await this.prisma.geofenceExcursion.updateMany({
+      where: { id: excursion.id, status: 'PENDING' },
+      data: { status: 'REJECTED', decidedAt: new Date(), resolvedAt: new Date(), approvedById: data.approverId },
+    });
+    if (res.count === 0) throw new BadRequestException('This request was already handled');
+
+    const entry = await this.prisma.timeEntry.findUnique({
+      where: { id: excursion.timeEntryId },
+      include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
+    });
+    const updated = await this.prisma.geofenceExcursion.findUnique({ where: { id: excursion.id } });
+    if (entry) await this.emitExcursionEvent('geofence_excursion_rejected', entry, updated!, {});
+
+    // Clock the worker out (geofence-exempt; no GPS available server-side).
+    try {
+      await this.clockOut({
+        userId: excursion.userId,
+        organizationId: data.organizationId,
+        notes: 'Out-of-ring request rejected',
+      });
+    } catch (err) {
+      // Already clocked out (returned / session ended) — the rejection stands.
+      this.logger.warn(`rejectExcursion: clock-out skipped for ${excursion.userId}: ${(err as Error).message}`);
+    }
+    return success(updated, 'Out-of-ring request rejected');
+  }
+
+  /** Approver surface: active (PENDING/APPROVED) excursions for the org. */
+  async listActiveExcursions(data: { organizationId: string; status?: 'active' | 'pending' | 'approved' }) {
+    const statusFilter =
+      data.status === 'pending'
+        ? (['PENDING'] as const)
+        : data.status === 'approved'
+          ? (['APPROVED'] as const)
+          : (['PENDING', 'APPROVED'] as const);
+
+    const rows = await this.prisma.geofenceExcursion.findMany({
+      where: { organizationId: data.organizationId, status: { in: statusFilter as any } },
+      orderBy: [{ status: 'asc' }, { reportedAt: 'desc' }, { leftRingAt: 'desc' }],
+      take: 200,
+    });
+
+    // Hydrate user + space (kept off the model to avoid extra FKs; small N).
+    const userIds = [...new Set(rows.map((r) => r.userId))];
+    const spaceIds = [...new Set(rows.map((r) => r.spaceId))];
+    const [users, spaces] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      }),
+      this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
+    ]);
+    const userById = new Map(users.map((u) => [u.id, u]));
+    const spaceById = new Map(spaces.map((s) => [s.id, s]));
+
+    return success(
+      rows.map((r) => ({ ...r, user: userById.get(r.userId) ?? null, space: spaceById.get(r.spaceId) ?? null })),
+    );
+  }
+
+  private clampExcursionMinutes(minutes: number): number {
+    const n = Math.round(Number(minutes));
+    if (!Number.isFinite(n) || n <= 0) return GEOFENCE_EXCURSION.DURATION_PRESETS[0];
+    return Math.min(n, GEOFENCE_EXCURSION.CUSTOM_MAX_MINUTES);
+  }
+
+  private async loadOrgExcursion(excursionId: string, organizationId: string) {
+    const excursion = await this.prisma.geofenceExcursion.findUnique({ where: { id: excursionId } });
+    if (!excursion || excursion.organizationId !== organizationId) {
+      throw new NotFoundException('Out-of-ring request not found');
+    }
+    return excursion;
+  }
+
+  /**
+   * Resolve recipients and emit an excursion event. "responsible" events route
+   * through resolveWatchers (same set as geofence/pending-approval alerts);
+   * employee-facing events go to the employee. Also fires a push.
+   */
+  private async emitExcursionEvent(
+    event:
+      | 'geofence_excursion_out'
+      | 'geofence_excursion_requested'
+      | 'geofence_excursion_approved'
+      | 'geofence_excursion_rejected'
+      | 'geofence_excursion_returned'
+      | 'geofence_excursion_expired',
+    entry: { userId: string; organizationId: string; locationId: string; location?: { name?: string } | null },
+    excursion: { id: string; status: string; reason?: string | null; requestedMinutes?: number | null; grantedMinutes?: number | null; expiresAt?: Date | null },
+    ctx: { distanceM?: number },
+  ) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: entry.userId },
+        select: { firstName: true, lastName: true, email: true },
+      });
+      const userName = user ? `${user.firstName} ${user.lastName}` : 'A worker';
+      const spaceName = entry.location?.name ?? 'the work area';
+
+      // Responsible-facing events fan out to the employee's watchers.
+      const toResponsible =
+        event === 'geofence_excursion_requested' ||
+        event === 'geofence_excursion_returned' ||
+        event === 'geofence_excursion_expired';
+      let watcherIds: string[] = [];
+      let watcherEmails: string[] = [];
+      if (toResponsible) {
+        const w = await this.notificationRouting.resolveWatchers(entry.userId, entry.organizationId, 'attendance');
+        watcherIds = w.ids;
+        watcherEmails = w.emails;
+      }
+
+      this.notificationClient.emit(event, {
+        excursionId: excursion.id,
+        status: excursion.status,
+        userId: entry.userId,
+        userName,
+        userEmail: user?.email,
+        spaceId: entry.locationId,
+        spaceName,
+        reason: excursion.reason ?? null,
+        requestedMinutes: excursion.requestedMinutes ?? null,
+        grantedMinutes: excursion.grantedMinutes ?? null,
+        expiresAt: excursion.expiresAt ?? null,
+        distanceM: ctx.distanceM ?? null,
+        watcherIds,
+        watcherEmails,
+        organizationId: entry.organizationId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to emit ${event}`, error as Error);
+    }
+  }
+
+  /**
+   * Sweep safety-net: flag APPROVED excursions whose grace timer lapsed so the
+   * approver sees it even if the phone stopped heart-beating. Does NOT clock
+   * anyone out and does NOT decide "still out" (no GPS server-side) — the
+   * authoritative EXPIRED→new-cycle happens on the next heartbeat.
+   */
+  async sweepExpiredExcursions() {
+    const now = new Date();
+    const due = await this.prisma.geofenceExcursion.findMany({
+      where: { status: 'APPROVED', timerExpired: false, expiresAt: { lt: now } },
+      take: 200,
+    });
+    if (due.length === 0) return { flagged: 0 };
+
+    for (const ex of due) {
+      const res = await this.prisma.geofenceExcursion.updateMany({
+        where: { id: ex.id, status: 'APPROVED', timerExpired: false },
+        data: { timerExpired: true },
+      });
+      if (res.count === 0) continue;
+      const entry = await this.prisma.timeEntry.findUnique({
+        where: { id: ex.timeEntryId },
+        include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
+      });
+      if (entry) await this.emitExcursionEvent('geofence_excursion_expired', entry, ex, {});
+    }
+    this.logger.log(`Geofence excursion sweep: flagged ${due.length} lapsed timer(s)`);
+    return { flagged: due.length };
   }
 
   /**
@@ -994,10 +1318,14 @@ export class AttendanceService {
 
     const assignedLocations = assignments.map((a) => a.space);
 
+    // Active out-of-ring excursion for the current session (drives mobile UI).
+    const activeExcursion = currentEntry ? await this.getActiveExcursion(currentEntry.id) : null;
+
     return success({
       isClockedIn: !!currentEntry,
       currentEntry,
       assignedLocations,
+      activeExcursion,
     });
   }
 

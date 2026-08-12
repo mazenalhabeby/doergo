@@ -298,6 +298,39 @@ export class AttendanceController {
     return this.approvalService.rejectEntry(data);
   }
 
+  // ── Geofence excursion ("out of ring") ──
+  @MessagePattern({ cmd: 'report_geofence_excursion' })
+  async reportExcursion(
+    @Payload()
+    data: { userId: string; organizationId: string; reason: string; requestedMinutes: number },
+  ) {
+    return this.attendanceService.reportExcursion(data);
+  }
+
+  @MessagePattern({ cmd: 'approve_geofence_excursion' })
+  async approveExcursion(
+    @Payload()
+    data: { excursionId: string; approverId: string; organizationId: string; grantedMinutes?: number },
+  ) {
+    return this.attendanceService.approveExcursion(data);
+  }
+
+  @MessagePattern({ cmd: 'reject_geofence_excursion' })
+  async rejectExcursion(
+    @Payload()
+    data: { excursionId: string; approverId: string; organizationId: string },
+  ) {
+    return this.attendanceService.rejectExcursion(data);
+  }
+
+  @MessagePattern({ cmd: 'list_geofence_excursions' })
+  async listExcursions(
+    @Payload()
+    data: { organizationId: string; status?: 'active' | 'pending' | 'approved' },
+  ) {
+    return this.attendanceService.listActiveExcursions(data);
+  }
+
   // ── Shift reminder responses (worker actions + leader approval) ──
   @MessagePattern({ cmd: 'resolve_forgot_clock_out' })
   async resolveForgotClockOut(

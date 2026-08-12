@@ -43,6 +43,7 @@ import type {
   SpaceRole,
   SpaceMember,
   SpaceRolePermissions,
+  GeofenceExcursion,
 } from '@hbcfield/shared/client';
 
 // Re-export shared types for convenience
@@ -2292,6 +2293,45 @@ export const attendanceApi = {
       throw new Error(response.error);
     }
 
+    return response.data;
+  },
+
+  // ── Geofence excursions ("out of ring") ──
+  // List active (PENDING/APPROVED) out-of-ring requests for the approver surface.
+  listExcursions: async (status?: "active" | "pending" | "approved") => {
+    const endpoint = buildUrlWithQuery("/attendance/excursions", status ? { status } : {});
+    const response = await api.get<{ success: boolean; data: GeofenceExcursion[] }>(endpoint);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? [];
+  },
+
+  // Approve an out-of-ring request (optionally adjusting the granted minutes).
+  approveExcursion: async (excursionId: string, grantedMinutes?: number) => {
+    const response = await api.patch<{ success: boolean; data: GeofenceExcursion }>(
+      `/attendance/excursions/${excursionId}/approve`,
+      grantedMinutes != null ? { grantedMinutes } : {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // Reject an out-of-ring request → the worker is clocked out.
+  rejectExcursion: async (excursionId: string) => {
+    const response = await api.patch<{ success: boolean; data: GeofenceExcursion }>(
+      `/attendance/excursions/${excursionId}/reject`,
+      {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // Employee reports a reason + duration (used by web clock UI if outside the ring).
+  reportExcursion: async (reason: string, requestedMinutes: number) => {
+    const response = await api.post<{ success: boolean; data: GeofenceExcursion }>(
+      `/attendance/excursions/report`,
+      { reason, requestedMinutes },
+    );
+    if (response.error) throw new Error(response.error);
     return response.data;
   },
 

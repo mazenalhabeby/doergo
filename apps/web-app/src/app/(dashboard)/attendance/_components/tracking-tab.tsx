@@ -14,6 +14,7 @@ import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell
 import { countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
+import { OutOfRingPanel } from "./out-of-ring-panel"
 import { useTimeFormat } from "@/hooks"
 
 // Approved time-off shown inline as a "day off" row in the tracking table.
@@ -126,6 +127,9 @@ export function TrackingTab({
             />
           </div>
         )}
+
+        {/* Out-of-Ring approver panel (geofence excursions) */}
+        <OutOfRingPanel canApprove={isAdmin} />
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (

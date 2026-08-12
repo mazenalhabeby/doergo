@@ -510,6 +510,65 @@ export class AttendanceController {
     });
   }
 
+  // ── Geofence excursion ("out of ring") ────────────────────────────────────
+
+  @Post('excursions/report')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Report a reason + duration for being outside the ring' })
+  async reportExcursion(
+    @Body() body: { reason: string; requestedMinutes: number },
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.reportExcursion({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      reason: body?.reason,
+      requestedMinutes: Number(body?.requestedMinutes),
+    });
+  }
+
+  @Get('excursions')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'List active out-of-ring requests (approver surface)' })
+  @ApiQuery({ name: 'status', required: false, enum: ['active', 'pending', 'approved'] })
+  async listExcursions(
+    @Query('status') status?: 'active' | 'pending' | 'approved',
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.listExcursions({
+      organizationId: req.user.organizationId,
+      status,
+    });
+  }
+
+  @Patch('excursions/:id/approve')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Approve an out-of-ring request (optionally adjust the granted time)' })
+  async approveExcursion(
+    @Param('id') excursionId: string,
+    @Body() body?: { grantedMinutes?: number },
+    @Request() req?: any,
+  ) {
+    return this.attendanceService.approveExcursion({
+      excursionId,
+      approverId: req.user.id,
+      organizationId: req.user.organizationId,
+      grantedMinutes:
+        body?.grantedMinutes != null ? Number(body.grantedMinutes) : undefined,
+    });
+  }
+
+  @Patch('excursions/:id/reject')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Reject an out-of-ring request (clocks the worker out)' })
+  async rejectExcursion(@Param('id') excursionId: string, @Request() req?: any) {
+    return this.attendanceService.rejectExcursion({
+      excursionId,
+      approverId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   // ── Shift reminder responses ──────────────────────────────────────────────
 
   @Post('entries/:id/forgot-clock-out')

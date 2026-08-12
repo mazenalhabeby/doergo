@@ -22,6 +22,8 @@ import type {
   AcceptInvitationInput,
   TechnicianListItem,
   TechniciansListResponse,
+  GeofenceExcursion,
+  GeofenceExcursionStatus,
 } from '@hbcfield/shared/client';
 
 // Re-export shared enums
@@ -42,6 +44,8 @@ export type {
   AcceptInvitationInput,
   TechnicianListItem,
   TechniciansListResponse,
+  GeofenceExcursion,
+  GeofenceExcursionStatus,
 };
 
 // ============================================================================

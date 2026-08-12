@@ -37,12 +37,14 @@ import {
   CompanyLocation,
   BreakStatus,
   BreakType,
+  GeofenceExcursion,
 } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
+import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { useClockIn } from '../../../src/hooks/useClockIn';
 import { TourTarget } from '../../../src/components/tour';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
@@ -86,6 +88,12 @@ export default function AttendanceScreen() {
   // Geofence warning state
   const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
   const [geofenceDistance, setGeofenceDistance] = useState(0);
+
+  // Out-of-ring excursion state (the reason → approval → grace workflow)
+  const [activeExcursion, setActiveExcursion] = useState<GeofenceExcursion | null>(null);
+  const [excursionSheetVisible, setExcursionSheetVisible] = useState(false);
+  const [reportingExcursion, setReportingExcursion] = useState(false);
+  const [excursionCountdown, setExcursionCountdown] = useState('');
 
   // Overtime state
   const [activeOvertime, setActiveOvertime] = useState<OvertimeRequest | null>(null);
@@ -140,7 +148,10 @@ export default function AttendanceScreen() {
       const historyData = results[1].status === 'fulfilled' ? results[1].value : null;
       const breakData = results[2].status === 'fulfilled' ? results[2].value : null;
 
-      if (statusData) setStatus(statusData);
+      if (statusData) {
+        setStatus(statusData);
+        setActiveExcursion(statusData.activeExcursion ?? null);
+      }
       if (historyData) {
         // fetchWithAuth unwraps { data: T } → T, so historyData is already TimeEntry[]
         const entries = Array.isArray(historyData) ? historyData : (historyData as any).data || [];
@@ -204,11 +215,13 @@ export default function AttendanceScreen() {
     }, [fetchAttendanceData])
   );
 
-  // Heartbeat: send location to server every 5 min while clocked in
-  // Server checks geofence and auto-clocks out if >150m away
+  // Heartbeat: send location to server every 5 min while clocked in.
+  // The server NO LONGER auto-clocks-out; instead it drives the out-of-ring
+  // excursion state machine and returns the active excursion (if any).
   const sendHeartbeat = useCallback(async () => {
     if (!status?.isClockedIn) {
       setIsOutsideGeofence(false);
+      setActiveExcursion(null);
       return;
     }
     try {
@@ -222,20 +235,39 @@ export default function AttendanceScreen() {
         accuracy: pos.coords.accuracy || undefined,
       });
 
+      // Legacy safety: a very old client could still see autoClockedOut — but the
+      // server never sets it now. Kept defensively.
       if (result.autoClockedOut) {
-        // Server auto-clocked us out — stop background tracking and refresh
         await stopBackgroundHeartbeat();
-        toast.warning(t('attendance.autoClockOutTitle'), t('attendance.autoClockOutDistance', { distance: result.distance }));
         await fetchAttendanceData();
         return;
       }
 
-      setIsOutsideGeofence(!result.withinGeofence);
+      setIsOutsideGeofence(!result.inRing);
       setGeofenceDistance(result.distance);
+      setActiveExcursion(result.activeExcursion ?? null);
     } catch {
       // Ignore heartbeat errors silently
     }
-  }, [status?.isClockedIn, fetchAttendanceData, toast, t]);
+  }, [status?.isClockedIn, fetchAttendanceData]);
+
+  // Submit an out-of-ring reason + duration (OUT_UNREPORTED → PENDING).
+  const handleReportExcursion = useCallback(
+    async (reason: string, minutes: number) => {
+      setReportingExcursion(true);
+      try {
+        const updated = await attendanceApi.reportExcursion(reason, minutes);
+        setActiveExcursion(updated);
+        setExcursionSheetVisible(false);
+        toast.success(t('attendance.outOfRing.submittedTitle'), t('attendance.outOfRing.submittedBody'));
+      } catch (e: any) {
+        toast.error(t('common.error'), e?.message || t('attendance.outOfRing.submitError'));
+      } finally {
+        setReportingExcursion(false);
+      }
+    },
+    [toast, t],
+  );
 
   // Send heartbeat on tab focus + ensure background tracking is running
   useFocusEffect(
@@ -255,6 +287,27 @@ export default function AttendanceScreen() {
     const interval = setInterval(sendHeartbeat, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [status?.isClockedIn, sendHeartbeat]);
+
+  // Live countdown for an APPROVED out-of-ring grace timer.
+  useEffect(() => {
+    if (activeExcursion?.status !== 'APPROVED' || !activeExcursion.expiresAt) {
+      setExcursionCountdown('');
+      return;
+    }
+    const target = new Date(activeExcursion.expiresAt).getTime();
+    const tick = () => {
+      const ms = Math.max(0, target - Date.now());
+      const total = Math.floor(ms / 1000);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setExcursionCountdown(h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [activeExcursion?.status, activeExcursion?.expiresAt]);
 
   // Update elapsed time every minute
   useEffect(() => {
@@ -512,8 +565,56 @@ export default function AttendanceScreen() {
             </Text>
           </TourTarget>
 
-          {/* Geofence Warning Banner */}
-          {isClockedIn && isOutsideGeofence && (
+          {/* Out-of-ring: needs a reason (OUT_UNREPORTED) */}
+          {isClockedIn && activeExcursion?.status === 'OUT_UNREPORTED' && (
+            <View style={styles.geofenceWarning}>
+              <Ionicons name="navigate" size={20} color={COLORS.amber} />
+              <View style={styles.geofenceWarningTextContainer}>
+                <Text style={styles.geofenceWarningTitle}>
+                  {t('attendance.outOfRing.bannerOutTitle', { space: status?.currentEntry?.location?.name ?? t('attendance.unknownLocation') })}
+                </Text>
+                <Text style={styles.geofenceWarningSubtitle}>
+                  {t('attendance.outOfRing.bannerOutBody')}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.geofenceClockOutButton} onPress={() => setExcursionSheetVisible(true)}>
+                <Text style={styles.geofenceClockOutText}>{t('attendance.outOfRing.tellUsWhy')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Out-of-ring: waiting for approval (PENDING) */}
+          {isClockedIn && activeExcursion?.status === 'PENDING' && (
+            <View style={styles.geofenceWarning}>
+              <Ionicons name="hourglass-outline" size={20} color={COLORS.amber} />
+              <View style={styles.geofenceWarningTextContainer}>
+                <Text style={styles.geofenceWarningTitle}>{t('attendance.outOfRing.bannerPendingTitle')}</Text>
+                <Text style={styles.geofenceWarningSubtitle}>
+                  {t('attendance.outOfRing.bannerPendingBody', { minutes: activeExcursion.requestedMinutes ?? '?' })}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Out-of-ring: approved, live countdown (APPROVED) */}
+          {isClockedIn && activeExcursion?.status === 'APPROVED' && (
+            <View style={[styles.geofenceWarning, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
+              <Ionicons name="timer-outline" size={20} color={COLORS.success} />
+              <View style={styles.geofenceWarningTextContainer}>
+                <Text style={[styles.geofenceWarningTitle, { color: '#065F46' }]}>
+                  {t('attendance.outOfRing.bannerApprovedTitle')}
+                </Text>
+                <Text style={[styles.geofenceWarningSubtitle, { color: '#047857' }]}>
+                  {excursionCountdown
+                    ? t('attendance.outOfRing.bannerApprovedBody', { time: excursionCountdown })
+                    : t('attendance.outOfRing.timeExpired')}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Legacy geofence warning (no ring/excursion but device reports outside) */}
+          {isClockedIn && !activeExcursion && isOutsideGeofence && (
             <View style={styles.geofenceWarning}>
               <Ionicons name="warning" size={20} color={COLORS.amber} />
               <View style={styles.geofenceWarningTextContainer}>
@@ -977,6 +1078,15 @@ export default function AttendanceScreen() {
         notesLabel={t('attendance.shiftNotesLabel')}
         notesPlaceholder={t('attendance.shiftNotesPlaceholder')}
         isLoading={isActionLoading}
+      />
+
+      {/* Out-of-ring reason + duration sheet */}
+      <OutOfRingSheet
+        visible={excursionSheetVisible}
+        spaceName={status?.currentEntry?.location?.name ?? t('attendance.unknownLocation')}
+        onClose={() => setExcursionSheetVisible(false)}
+        onSubmit={handleReportExcursion}
+        isLoading={reportingExcursion}
       />
 
       {/* Forgot-to-clock-out Bottom Sheet — pick actual leave time */}

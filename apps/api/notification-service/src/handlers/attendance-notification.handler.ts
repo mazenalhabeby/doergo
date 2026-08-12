@@ -17,6 +17,25 @@ const FLAG_LABELS: Record<string, string> = {
   UNSCHEDULED_DAY: 'unscheduled day',
 };
 
+// Payload for every geofence_excursion_* event emitted by task-service.
+interface GeofenceExcursionEvent {
+  excursionId: string;
+  status: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  spaceId: string;
+  spaceName: string;
+  reason?: string | null;
+  requestedMinutes?: number | null;
+  grantedMinutes?: number | null;
+  expiresAt?: string | null;
+  distanceM?: number | null;
+  watcherIds?: string[];
+  watcherEmails?: string[];
+  organizationId: string;
+}
+
 @Controller()
 export class AttendanceNotificationHandler {
   private readonly logger = new Logger('AttendanceNotificationHandler');
@@ -458,6 +477,161 @@ export class AttendanceNotificationHandler {
       body: `${data.userName}'s time entry needs review (${flagSummary})`,
       link: '/attendance?tab=approvals',
     });
+  }
+
+  // ── Geofence excursion ("out of ring") ────────────────────────────────────
+  // The heartbeat opened an excursion because the worker left their space's ring.
+  // Warn the employee (push + their own socket). Also live-update the org so the
+  // approver surface reflects the new out-of-ring worker.
+  @EventPattern('geofence_excursion_out')
+  async handleExcursionOut(@Payload() data: GeofenceExcursionEvent) {
+    this.logger.log(`Excursion out: user=${data.userName}, space=${data.spaceName}, ${data.distanceM ?? '?'}m`);
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        'You left the work area',
+        `You're outside ${data.spaceName}. Tell us why and how long — or clock out.`,
+        { type: 'attendance.geofence_excursion_out', excursionId: data.excursionId },
+      );
+    } catch (error) {
+      this.logger.error(`Failed excursion-out push: ${error}`);
+    }
+    this.emitExcursionSockets('geofence_excursion_out', data, { includeEmployee: true });
+  }
+
+  // Employee submitted a reason + duration → notify the responsible person(s).
+  @EventPattern('geofence_excursion_requested')
+  async handleExcursionRequested(@Payload() data: GeofenceExcursionEvent) {
+    const watcherIds = data.watcherIds || [];
+    this.logger.log(`Excursion requested: user=${data.userName}, watchers=${watcherIds.length}`);
+    try {
+      for (const id of watcherIds) {
+        await this.pushService.sendToUser(
+          id,
+          'Out-of-ring request',
+          `${data.userName} left ${data.spaceName}${data.reason ? `: "${data.reason}"` : ''} — approve or reject`,
+          { type: 'attendance.geofence_excursion_requested', excursionId: data.excursionId },
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed excursion-requested push: ${error}`);
+    }
+    this.emitExcursionSockets('geofence_excursion_requested', data, { toWatchers: true });
+    await this.store.record({
+      recipientIds: watcherIds,
+      organizationId: data.organizationId,
+      eventType: 'geofence_excursion_requested',
+      title: 'Out-of-ring request',
+      body: `${data.userName} left ${data.spaceName}${data.reason ? ` — ${data.reason}` : ''} (${data.requestedMinutes ?? '?'} min)`,
+      link: '/attendance?tab=tracking',
+    });
+  }
+
+  // Approver granted time → notify the employee (push + their socket) + org.
+  @EventPattern('geofence_excursion_approved')
+  async handleExcursionApproved(@Payload() data: GeofenceExcursionEvent) {
+    this.logger.log(`Excursion approved: user=${data.userName}, ${data.grantedMinutes ?? '?'} min`);
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        'Out-of-ring approved',
+        `You're approved to be out for ${data.grantedMinutes ?? '?'} min.`,
+        { type: 'attendance.geofence_excursion_approved', excursionId: data.excursionId },
+      );
+    } catch (error) {
+      this.logger.error(`Failed excursion-approved push: ${error}`);
+    }
+    this.emitExcursionSockets('geofence_excursion_approved', data, { includeEmployee: true });
+  }
+
+  // Approver rejected → the worker was clocked out. Notify the employee + org.
+  @EventPattern('geofence_excursion_rejected')
+  async handleExcursionRejected(@Payload() data: GeofenceExcursionEvent) {
+    this.logger.log(`Excursion rejected: user=${data.userName}`);
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        'Out-of-ring rejected',
+        `Your out-of-ring request was rejected and you were clocked out.`,
+        { type: 'attendance.geofence_excursion_rejected', excursionId: data.excursionId },
+      );
+    } catch (error) {
+      this.logger.error(`Failed excursion-rejected push: ${error}`);
+    }
+    this.emitExcursionSockets('geofence_excursion_rejected', data, { includeEmployee: true });
+  }
+
+  // Worker came back inside the ring → clear the responsible person's alert.
+  @EventPattern('geofence_excursion_returned')
+  async handleExcursionReturned(@Payload() data: GeofenceExcursionEvent) {
+    this.logger.log(`Excursion returned: user=${data.userName}`);
+    this.emitExcursionSockets('geofence_excursion_returned', data, { toWatchers: true, includeEmployee: true });
+  }
+
+  // APPROVED grace timer lapsed while still out → alert the responsible person(s).
+  @EventPattern('geofence_excursion_expired')
+  async handleExcursionExpired(@Payload() data: GeofenceExcursionEvent) {
+    const watcherIds = data.watcherIds || [];
+    this.logger.log(`Excursion expired: user=${data.userName}, watchers=${watcherIds.length}`);
+    try {
+      for (const id of watcherIds) {
+        await this.pushService.sendToUser(
+          id,
+          'Out-of-ring time expired',
+          `${data.userName}'s approved time is up and they're still outside ${data.spaceName}.`,
+          { type: 'attendance.geofence_excursion_expired', excursionId: data.excursionId },
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed excursion-expired push: ${error}`);
+    }
+    this.emitExcursionSockets('geofence_excursion_expired', data, { toWatchers: true, includeEmployee: true });
+    await this.store.record({
+      recipientIds: watcherIds,
+      organizationId: data.organizationId,
+      eventType: 'geofence_excursion_expired',
+      title: 'Out-of-ring time expired',
+      body: `${data.userName}'s approved time is up and they're still outside ${data.spaceName}`,
+      link: '/attendance?tab=tracking',
+    });
+  }
+
+  /**
+   * Emit an excursion socket event. Always emits to the org room (drives the web
+   * dashboard + approver list via use-realtime-sync). Optionally targets the
+   * employee (self-facing states) and/or the resolved watchers (fallback ADMIN room).
+   */
+  private emitExcursionSockets(
+    event: string,
+    data: GeofenceExcursionEvent,
+    opts: { includeEmployee?: boolean; toWatchers?: boolean },
+  ) {
+    const payload = {
+      excursionId: data.excursionId,
+      status: data.status,
+      userId: data.userId,
+      userName: data.userName,
+      spaceId: data.spaceId,
+      spaceName: data.spaceName,
+      reason: data.reason ?? null,
+      requestedMinutes: data.requestedMinutes ?? null,
+      grantedMinutes: data.grantedMinutes ?? null,
+      expiresAt: data.expiresAt ?? null,
+      distanceM: data.distanceM ?? null,
+      timestamp: new Date().toISOString(),
+    };
+    this.websocketGateway.emitToOrganization(data.organizationId, event, payload);
+    if (opts.includeEmployee) {
+      this.websocketGateway.emitToUser(data.userId, event, payload);
+    }
+    if (opts.toWatchers) {
+      const ids = data.watcherIds || [];
+      if (ids.length) {
+        for (const id of ids) this.websocketGateway.emitToUser(id, event, payload);
+      } else {
+        this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', event, payload);
+      }
+    }
   }
 
   @EventPattern('attendance_clock_in')

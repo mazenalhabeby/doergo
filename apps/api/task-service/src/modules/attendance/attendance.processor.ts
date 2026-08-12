@@ -42,13 +42,15 @@ export class AttendanceProcessor extends WorkerHost {
       // Route any stray legacy job (queued in Redis before the upgrade) to the
       // reminder engine too, so it never throws "Unknown job type".
       case ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT: {
-        // One tick drives BOTH the forgot-to-clock-out (reminder) sweep and the
-        // no-show sweep — each is a single indexed query returning only due rows.
-        const [clockOut, noShow] = await Promise.all([
+        // One tick drives the forgot-to-clock-out (reminder) sweep, the no-show
+        // sweep, and the geofence-excursion safety-net — each a single indexed
+        // query returning only due rows.
+        const [clockOut, noShow, excursions] = await Promise.all([
           this.attendanceService.runShiftReminders(data),
           this.attendanceService.runNoShowSweep(),
+          this.attendanceService.sweepExpiredExcursions(),
         ]);
-        return { clockOut, noShow };
+        return { clockOut, noShow, excursions };
       }
 
       case ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE:

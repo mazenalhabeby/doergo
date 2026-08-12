@@ -268,6 +268,45 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'reject_entry' }, data);
   }
 
+  // ── Geofence excursion ("out of ring") ──
+
+  /** Employee submits a reason + duration for being outside the ring. */
+  async reportExcursion(data: {
+    userId: string;
+    organizationId: string;
+    reason: string;
+    requestedMinutes: number;
+  }) {
+    return this.send({ cmd: 'report_geofence_excursion' }, data);
+  }
+
+  /** Approver grants time (optionally adjusted) for an out-of-ring request. */
+  async approveExcursion(data: {
+    excursionId: string;
+    approverId: string;
+    organizationId: string;
+    grantedMinutes?: number;
+  }) {
+    return this.send({ cmd: 'approve_geofence_excursion' }, data);
+  }
+
+  /** Approver rejects an out-of-ring request → the worker is clocked out. */
+  async rejectExcursion(data: {
+    excursionId: string;
+    approverId: string;
+    organizationId: string;
+  }) {
+    return this.send({ cmd: 'reject_geofence_excursion' }, data);
+  }
+
+  /** Approver surface: active (PENDING/APPROVED) out-of-ring requests. */
+  async listExcursions(data: {
+    organizationId: string;
+    status?: 'active' | 'pending' | 'approved';
+  }) {
+    return this.send({ cmd: 'list_geofence_excursions' }, data);
+  }
+
   // ── Shift reminder responses (worker actions + leader approval) ──
 
   /** Worker self-reports their leave time after forgetting to clock out. */

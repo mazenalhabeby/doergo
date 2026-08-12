@@ -1,6 +1,6 @@
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
 import { fetchWithAuth } from './client';
-import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, ClockOutInput, AttendanceHistoryParams, PaginatedResponse } from './types';
+import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, ClockOutInput, AttendanceHistoryParams, PaginatedResponse, GeofenceExcursion } from './types';
 import type { BreakType } from './types';
 
 // Attendance API - clock-in/clock-out
@@ -25,12 +25,22 @@ export const attendanceApi = {
 
   heartbeat: async (input: { lat: number; lng: number; accuracy?: number }): Promise<{
     withinGeofence: boolean;
+    inRing: boolean;
     distance: number;
-    autoClockedOut: boolean;
+    autoClockedOut: boolean; // always false now — kept for backward compat
+    activeExcursion: GeofenceExcursion | null;
   }> => {
     return fetchWithAuth('/attendance/heartbeat', {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+  },
+
+  /** Report a reason + how long you'll be outside the ring (OUT_UNREPORTED → PENDING). */
+  reportExcursion: async (reason: string, requestedMinutes: number): Promise<GeofenceExcursion> => {
+    return fetchWithAuth<GeofenceExcursion>('/attendance/excursions/report', {
+      method: 'POST',
+      body: JSON.stringify({ reason, requestedMinutes }),
     });
   },
 

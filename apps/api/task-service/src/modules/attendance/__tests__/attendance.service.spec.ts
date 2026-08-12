@@ -84,6 +84,7 @@ describe('AttendanceService', () => {
     },
     timeEntry: {
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -113,6 +114,15 @@ describe('AttendanceService', () => {
     spaceMember: {
       findMany: jest.fn().mockResolvedValue([]),
       findFirst: jest.fn().mockResolvedValue(null),
+    },
+    // Geofence excursion ("out of ring") workflow.
+    geofenceExcursion: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
 
@@ -1095,6 +1105,103 @@ describe('AttendanceService', () => {
       expect(result.data.mimeType).toBe('text/csv');
       expect(result.data.content).toContain('Date,Technician,Email');
       expect(result.data.recordCount).toBe(1);
+    });
+  });
+
+  // ── Geofence excursion ("out of ring") state machine ──────────────────────
+  describe('geofence excursions', () => {
+    const clockedInEntry = {
+      id: 'entry-1',
+      userId: 'tech-123',
+      organizationId: 'org-123',
+      locationId: 'loc-1',
+      status: 'CLOCKED_IN',
+      location: { id: 'loc-1', name: 'Main Office', lat: 40.0, lng: -74.0, geofenceRadius: 50, isActive: true },
+    };
+
+    it('heartbeat: opens OUT_UNREPORTED when clearly past the ring + buffer, never auto-clocks-out', async () => {
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(clockedInEntry);
+      mockPrismaService.geofenceExcursion.findFirst.mockResolvedValue(null); // no active excursion
+      const created = { id: 'ex-1', status: 'OUT_UNREPORTED' };
+      mockPrismaService.geofenceExcursion.create.mockResolvedValue(created);
+      mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X', email: 'j@x.io' });
+
+      // ~1.4km away → well past radius(50)+hysteresis(15)
+      const res: any = await service.heartbeat({ userId: 'tech-123', lat: 40.01, lng: -74.0, organizationId: 'org-123' });
+
+      expect(mockPrismaService.geofenceExcursion.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'OUT_UNREPORTED', timeEntryId: 'entry-1' }) }),
+      );
+      expect(res.data.inRing).toBe(false);
+      expect(res.data.autoClockedOut).toBe(false);
+      expect(res.data.activeExcursion).toBe(created);
+    });
+
+    it('heartbeat: back inside the ring resolves the active excursion as RETURNED', async () => {
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(clockedInEntry);
+      mockPrismaService.geofenceExcursion.findFirst.mockResolvedValue({ id: 'ex-1', status: 'PENDING' });
+      mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
+
+      const res: any = await service.heartbeat({ userId: 'tech-123', lat: 40.0, lng: -74.0, organizationId: 'org-123' });
+
+      expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'RETURNED' }) }),
+      );
+      expect(res.data.inRing).toBe(true);
+      expect(res.data.activeExcursion).toBeNull();
+    });
+
+    it('reportExcursion: OUT_UNREPORTED → PENDING with clamped minutes', async () => {
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(clockedInEntry);
+      mockPrismaService.geofenceExcursion.findFirst.mockResolvedValue({ id: 'ex-1', status: 'OUT_UNREPORTED' });
+      mockPrismaService.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.geofenceExcursion.findUnique.mockResolvedValue({ id: 'ex-1', status: 'PENDING', reason: 'lunch', requestedMinutes: 30 });
+      mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
+
+      const res: any = await service.reportExcursion({ userId: 'tech-123', organizationId: 'org-123', reason: 'lunch', requestedMinutes: 30 });
+
+      expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ status: 'OUT_UNREPORTED' }), data: expect.objectContaining({ status: 'PENDING', requestedMinutes: 30 }) }),
+      );
+      expect(res.success).toBe(true);
+    });
+
+    it('approveExcursion: PENDING → APPROVED sets expiresAt from granted minutes', async () => {
+      mockPrismaService.geofenceExcursion.findUnique
+        .mockResolvedValueOnce({ id: 'ex-1', organizationId: 'org-123', status: 'PENDING', requestedMinutes: 30, timeEntryId: 'entry-1', userId: 'tech-123' })
+        .mockResolvedValueOnce({ id: 'ex-1', status: 'APPROVED', grantedMinutes: 60 });
+      mockPrismaService.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.timeEntry.findUnique.mockResolvedValue(clockedInEntry);
+      mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
+
+      const res: any = await service.approveExcursion({ excursionId: 'ex-1', approverId: 'mgr-1', organizationId: 'org-123', grantedMinutes: 60 });
+
+      expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'APPROVED', grantedMinutes: 60, expiresAt: expect.any(Date) }) }),
+      );
+      expect(res.success).toBe(true);
+    });
+
+    it('rejectExcursion: PENDING → REJECTED then clocks the worker out', async () => {
+      mockPrismaService.geofenceExcursion.findUnique
+        .mockResolvedValueOnce({ id: 'ex-1', organizationId: 'org-123', status: 'PENDING', timeEntryId: 'entry-1', userId: 'tech-123' })
+        .mockResolvedValueOnce({ id: 'ex-1', status: 'REJECTED' });
+      mockPrismaService.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.timeEntry.findUnique.mockResolvedValue(clockedInEntry);
+      mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
+      // clockOut path: active entry lookup + update
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue({ ...clockedInEntry, breaks: [] });
+      mockPrismaService.timeEntry.update.mockResolvedValue({ ...clockedInEntry, status: 'CLOCKED_OUT' });
+
+      const res: any = await service.rejectExcursion({ excursionId: 'ex-1', approverId: 'mgr-1', organizationId: 'org-123' });
+
+      expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'REJECTED' }) }),
+      );
+      // Reject attempts a clock-out (its own path is covered by clockOut tests;
+      // failures are intentionally swallowed so the rejection still stands).
+      expect(mockPrismaService.timeEntry.findFirst).toHaveBeenCalled();
+      expect(res.success).toBe(true);
     });
   });
 });

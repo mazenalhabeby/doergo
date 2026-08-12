@@ -48,6 +48,8 @@ export type {
   AcceptInvitationInput,
   TechnicianListItem,
   TechniciansListResponse,
+  GeofenceExcursion,
+  GeofenceExcursionStatus,
 } from './types';
 
 // Re-exported enums from @hbcfield/shared
