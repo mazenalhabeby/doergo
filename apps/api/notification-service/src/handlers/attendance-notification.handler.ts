@@ -654,6 +654,17 @@ export class AttendanceNotificationHandler {
     this.websocketGateway.emitClockOut(data.userId, data.organizationId, data.timeEntry);
   }
 
+  // Admin-side attendance mutation (edit/approve/reject/delete/manual-add) →
+  // broadcast so every open attendance view refreshes live, no page reload.
+  @EventPattern('attendance_changed')
+  handleAttendanceChanged(@Payload() data: { organizationId: string; action: string; entryId?: string }) {
+    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', {
+      action: data.action,
+      entryId: data.entryId ?? null,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   @EventPattern('break_started')
   async handleBreakStarted(@Payload() data: {
     userId: string;

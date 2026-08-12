@@ -36,6 +36,8 @@ const Events = {
   CLOCK_OUT: "attendance.clockOut",
   BREAK_STARTED: "break.started",
   BREAK_ENDED: "break.ended",
+  // Admin-side attendance mutation (edit/approve/reject/delete/manual-add)
+  ATTENDANCE_CHANGED: "attendance.changed",
   // Availability status (Available/Busy/Away)
   PRESENCE_CHANGED: "presence.changed",
   // Geofence excursion ("out of ring") — emitted to the org room by name
@@ -51,6 +53,34 @@ const Events = {
   MESSAGE_RECEIVED: "message.received",
   CALL_INCOMING: "call.incoming",
 } as const
+
+// The /attendance PAGE query keys (Time → tracking / approvals / breaks / no-shows
+// / days-off / availability). Distinct from the DASHBOARD keys below — both must
+// refresh on a clock or an admin edit, so keep this list as the single source and
+// spread it into every attendance-affecting event (DRY).
+const ATTENDANCE_PAGE_KEYS: string[][] = [
+  ["attendance"], // main tracking list — ["attendance", loc, status, ...] (prefix match)
+  ["attendance-approvals"],
+  ["attendance-breaks-active"],
+  ["attendance-breaks-history"],
+  ["attendance-breaks-summary"],
+  ["attendance-no-shows"],
+  ["geofence-excursions"],
+  ["orgTimeOff"],
+  ["availability"],
+]
+
+// The DASHBOARD attendance keys (presence tiles + per-location batch + approvals).
+const DASHBOARD_ATTENDANCE_KEYS: string[][] = [
+  ["attendance-active"],
+  ["locationAttendanceBatch"],
+  ["pending-approvals"],
+  ["active-breaks"],
+  ["orgMembers", "dashboard"],
+]
+
+// Everything that must refresh when attendance changes (clock or admin edit).
+const ALL_ATTENDANCE_KEYS: string[][] = [...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
 
 // Query keys that each event should invalidate
 const EVENT_INVALIDATIONS: Record<string, string[][]> = {
@@ -69,10 +99,14 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // (`attendance-today` was a phantom key that matched no query — the reason
   // the dashboard used to need refreshing.) `locationAttendanceBatch` is a
   // prefix — invalidateQueries matches ["locationAttendanceBatch", locKey, date].
-  [Events.CLOCK_IN]: [["attendance-active"], ["locationAttendanceBatch"], ["pending-approvals"], ["active-breaks"], ["orgMembers", "dashboard"]],
-  [Events.CLOCK_OUT]: [["attendance-active"], ["locationAttendanceBatch"], ["pending-approvals"], ["active-breaks"], ["orgMembers", "dashboard"]],
-  [Events.BREAK_STARTED]: [["active-breaks"], ["attendance-active"], ["locationAttendanceBatch"]],
-  [Events.BREAK_ENDED]: [["active-breaks"], ["attendance-active"], ["locationAttendanceBatch"]],
+  // Worker clock/break AND admin edits refresh BOTH the dashboard and the
+  // attendance page (previously only the dashboard keys were invalidated, so the
+  // /attendance tabs needed a manual reload).
+  [Events.CLOCK_IN]: ALL_ATTENDANCE_KEYS,
+  [Events.CLOCK_OUT]: ALL_ATTENDANCE_KEYS,
+  [Events.BREAK_STARTED]: ALL_ATTENDANCE_KEYS,
+  [Events.BREAK_ENDED]: ALL_ATTENDANCE_KEYS,
+  [Events.ATTENDANCE_CHANGED]: ALL_ATTENDANCE_KEYS,
 
   // Availability change → refresh the dashboard roster + contacts (their dot updates)
   [Events.PRESENCE_CHANGED]: [["orgMembers", "dashboard"], ["orgContacts"]],
@@ -83,7 +117,7 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.EXCURSION_OUT]: [["geofence-excursions"]],
   [Events.EXCURSION_REQUESTED]: [["geofence-excursions"]],
   [Events.EXCURSION_APPROVED]: [["geofence-excursions"]],
-  [Events.EXCURSION_REJECTED]: [["geofence-excursions"], ["attendance-active"], ["locationAttendanceBatch"], ["orgMembers", "dashboard"]],
+  [Events.EXCURSION_REJECTED]: [...ALL_ATTENDANCE_KEYS], // reject clocks the worker out
   [Events.EXCURSION_RETURNED]: [["geofence-excursions"]],
   [Events.EXCURSION_EXPIRED]: [["geofence-excursions"]],
 

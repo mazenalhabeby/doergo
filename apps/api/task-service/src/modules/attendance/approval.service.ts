@@ -1,11 +1,13 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, ApprovalStatus, computeScheduleFlags, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
+import { success, paginated, ApprovalStatus, computeScheduleFlags, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else
@@ -16,7 +18,23 @@ const TIME_BASED_FLAGS = new Set(['LATE_ARRIVAL', 'EARLY_DEPARTURE', 'OVERTIME']
 export class ApprovalService {
   private readonly logger = new Logger(ApprovalService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+  ) {}
+
+  /**
+   * Broadcast that an admin mutated attendance (edit/approve/reject/delete/manual
+   * add) so every open attendance view refreshes in real time — same idea as the
+   * clock-in/out events, but for manager-side changes which had no signal before.
+   */
+  private emitChanged(organizationId: string, action: string, entryId?: string) {
+    try {
+      this.notificationClient.emit('attendance_changed', { organizationId, action, entryId });
+    } catch (err) {
+      this.logger.warn(`attendance_changed emit failed (${action}): ${err}`);
+    }
+  }
 
   /**
    * Get entries pending approval
@@ -106,6 +124,7 @@ export class ApprovalService {
       `Entry approved: entry=${data.entryId}, approver=${data.approverId}`,
     );
 
+    this.emitChanged(data.organizationId, 'approve', data.entryId);
     return success(updated, 'Time entry approved');
   }
 
@@ -158,6 +177,7 @@ export class ApprovalService {
       `Entry rejected: entry=${data.entryId}, approver=${data.approverId}, reason=${data.reason}`,
     );
 
+    this.emitChanged(data.organizationId, 'reject', data.entryId);
     return success(updated, 'Time entry rejected');
   }
 
@@ -343,6 +363,7 @@ export class ApprovalService {
       `Entry edited: entry=${data.entryId}, editor=${data.editorId}, reason=${data.reason}`,
     );
 
+    this.emitChanged(data.organizationId, 'edit', data.entryId);
     return success(updated, 'Time entry updated');
   }
 
@@ -388,6 +409,7 @@ export class ApprovalService {
     // Break has onDelete: Cascade, so removing the entry removes its breaks.
     await this.prisma.timeEntry.delete({ where: { id: data.entryId } });
     this.logger.log(`Entry deleted: entry=${data.entryId}, editor=${data.editorId}`);
+    this.emitChanged(data.organizationId, 'delete', data.entryId);
     return success({ id: data.entryId }, 'Time entry removed');
   }
 
@@ -540,6 +562,7 @@ export class ApprovalService {
     this.logger.log(
       `Manual attendance added: user=${data.userId}, editor=${data.editorId}, created=${toCreate.length}, skipped=${skipped}`,
     );
+    if (toCreate.length) this.emitChanged(data.organizationId, 'manual-add');
     return success(
       { created: toCreate.length, skipped },
       `Added ${toCreate.length} ${toCreate.length === 1 ? 'entry' : 'entries'}` +
@@ -596,6 +619,7 @@ export class ApprovalService {
       }
     }
 
+    if (results.approved.length) this.emitChanged(data.organizationId, 'bulk-approve');
     return success(results, `Approved ${results.approved.length} entries`);
   }
 }
