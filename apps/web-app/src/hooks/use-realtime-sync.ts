@@ -51,17 +51,21 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"]],
   [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"]],
   [Events.TASK_ASSIGNED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-today"]],
+  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"]],
   [Events.TASK_COMMENT_ADDED]: [["tasks"]],
   [Events.TASK_ATTACHMENT_ADDED]: [["tasks"]],
   [Events.TASK_DECLINED]: [["tasks"], ["taskStatusCounts"]],
   [Events.TASK_DELETED]: [["tasks"], ["taskStatusCounts"]],
 
-  // Attendance events → invalidate attendance + dashboard roster
-  [Events.CLOCK_IN]: [["attendance-today"], ["active-breaks"], ["orgMembers", "dashboard"]],
-  [Events.CLOCK_OUT]: [["attendance-today"], ["active-breaks"], ["orgMembers", "dashboard"]],
-  [Events.BREAK_STARTED]: [["active-breaks"], ["attendance-today"]],
-  [Events.BREAK_ENDED]: [["active-breaks"], ["attendance-today"]],
+  // Attendance events → invalidate the REAL dashboard attendance queries so a
+  // clock-in/out live-updates the presence labels without a manual refresh.
+  // (`attendance-today` was a phantom key that matched no query — the reason
+  // the dashboard used to need refreshing.) `locationAttendanceBatch` is a
+  // prefix — invalidateQueries matches ["locationAttendanceBatch", locKey, date].
+  [Events.CLOCK_IN]: [["attendance-active"], ["locationAttendanceBatch"], ["pending-approvals"], ["active-breaks"], ["orgMembers", "dashboard"]],
+  [Events.CLOCK_OUT]: [["attendance-active"], ["locationAttendanceBatch"], ["pending-approvals"], ["active-breaks"], ["orgMembers", "dashboard"]],
+  [Events.BREAK_STARTED]: [["active-breaks"], ["attendance-active"], ["locationAttendanceBatch"]],
+  [Events.BREAK_ENDED]: [["active-breaks"], ["attendance-active"], ["locationAttendanceBatch"]],
 
   // Availability change → refresh the dashboard roster + contacts (their dot updates)
   [Events.PRESENCE_CHANGED]: [["orgMembers", "dashboard"], ["orgContacts"]],
