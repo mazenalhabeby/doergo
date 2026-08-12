@@ -29,6 +29,10 @@ import {
 } from '../../lib/api';
 import type { TimeEntry } from '../../lib/api/types';
 import { ErrorState, Skeleton, ScreenContainer } from '../../components';
+import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
+import { AlwaysLocationNudge } from '../always-location-nudge';
+import { useExcursionSync } from '../../hooks/useExcursionSync';
+import type { GeofenceExcursion, CompanyLocation } from '../../lib/api/types';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
 import { hasAccessModule, isFieldWorker } from '@hbcfield/shared/client';
@@ -571,6 +575,26 @@ export function AdminDashboard() {
   const canClock = hasAccessModule(user || {}, 'clock');
   const myClockedIn = !!user && clockedInUserIds.has(user.id);
 
+  // The admin can clock in too, so surface THEIR own out-of-ring state here (the
+  // org-wide entry list has no excursion field). Fetch the admin's own status +
+  // refresh live on excursion socket events.
+  const [myExcursion, setMyExcursion] = useState<GeofenceExcursion | null>(null);
+  const [myEntryLocation, setMyEntryLocation] = useState<Partial<CompanyLocation> | null>(null);
+  const refreshMyStatus = useCallback(async () => {
+    if (!canClock) return;
+    try {
+      const s = await attendanceApi.getStatus();
+      setMyExcursion(s?.activeExcursion ?? null);
+      setMyEntryLocation((s?.currentEntry?.location as Partial<CompanyLocation>) ?? null);
+    } catch {
+      // best-effort
+    }
+  }, [canClock]);
+  useEffect(() => {
+    refreshMyStatus();
+  }, [refreshMyStatus, myClockedIn]);
+  useExcursionSync(refreshMyStatus, user?.id);
+
   return (
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
@@ -625,6 +649,17 @@ export function AdminDashboard() {
               style={{ marginLeft: 'auto' }}
             />
           </TouchableOpacity>
+        )}
+
+        {/* Admin's own out-of-ring state + Always-location nudge */}
+        {canClock && (
+          <View style={{ marginTop: SPACING.md }}>
+            <OutOfRingHomeBanner
+              excursion={myExcursion}
+              onPress={() => router.push(ROUTES.attendance as any)}
+            />
+            <AlwaysLocationNudge active={myClockedIn && myEntryLocation?.lat != null} />
+          </View>
         )}
 
         {/* Workspace cards */}
