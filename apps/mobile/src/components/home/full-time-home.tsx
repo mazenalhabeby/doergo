@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
@@ -22,7 +23,9 @@ import {
   type BreakStatus,
 } from '../../lib/api';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
+import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { useClockIn } from '../../hooks/useClockIn';
+import { useExcursionSync } from '../../hooks/useExcursionSync';
 import {
   formatDurationMinutes as formatDuration,
 } from '../../lib/utils';
@@ -135,6 +138,10 @@ export function FullTimeHome() {
   });
   const getDistanceToLocation = clockIn.getDistanceToLocation;
 
+  // Live out-of-ring updates so the home banner reflects admin decisions /
+  // background detection without a manual pull-to-refresh.
+  useExcursionSync(() => fetchAttendanceData(), user?.id);
+
   // Handle clock out
   const handleClockOut = () => {
     setShowClockOutConfirm(true);
@@ -198,6 +205,12 @@ export function FullTimeHome() {
           </Text>
           <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
         </TourTarget>
+
+        {/* Out-of-ring banner (needs reason / pending / approved countdown) */}
+        <OutOfRingHomeBanner
+          excursion={status?.activeExcursion}
+          onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
+        />
 
         {/* Clock Status Card */}
         <TourTarget name="home-work" style={[ftStyles.statusCard, isClockedIn ? ftStyles.statusCardActive : ftStyles.statusCardInactive, !isClockedIn && { backgroundColor: colors.card }]}>

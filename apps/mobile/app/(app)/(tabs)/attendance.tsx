@@ -45,6 +45,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
+import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
 import { useClockIn } from '../../../src/hooks/useClockIn';
 import { TourTarget } from '../../../src/components/tour';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
@@ -308,6 +309,22 @@ export default function AttendanceScreen() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [activeExcursion?.status, activeExcursion?.expiresAt]);
+
+  // Detect out-of-ring immediately once we know we're clocked in — a heartbeat
+  // is what OPENS an excursion, and getStatus alone never creates one, so without
+  // this the worker had to pull-to-refresh to trigger detection.
+  useEffect(() => {
+    if (status?.isClockedIn) sendHeartbeat();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status?.isClockedIn]);
+
+  // Live updates: when the server changes THIS worker's excursion (e.g. an admin
+  // approves/rejects, or a background heartbeat opens/closes one), refresh the
+  // status so the banner/countdown updates without a manual pull-to-refresh.
+  const onExcursionEvent = useCallback(() => {
+    fetchAttendanceData();
+  }, [fetchAttendanceData]);
+  useExcursionSync(onExcursionEvent, user?.id);
 
   // Update elapsed time every minute
   useEffect(() => {

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
@@ -24,7 +24,9 @@ import {
   type Task,
 } from '../../lib/api';
 import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
+import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { useClockIn } from '../../hooks/useClockIn';
+import { useExcursionSync } from '../../hooks/useExcursionSync';
 import { WeekCalendar } from '../week-calendar';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
@@ -136,6 +138,10 @@ export function HybridHome() {
     onClockedIn: () => fetchData(),
   });
 
+  // Live out-of-ring updates (admin approve/reject, background heartbeat) so the
+  // home banner reflects state changes without a manual pull-to-refresh.
+  useExcursionSync(() => fetchData(), user?.id);
+
   // ── Task Helpers ───────────────────────────────────────────────────
   const toLocalDateStr = useCallback((d: Date) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -224,6 +230,12 @@ export function HybridHome() {
         </Text>
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
       </TourTarget>
+
+      {/* Out-of-ring banner (needs reason / pending / approved countdown) */}
+      <OutOfRingHomeBanner
+        excursion={attendanceStatus?.activeExcursion}
+        onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
+      />
 
       {/* Attendance Card */}
       {isClockedIn ? (
