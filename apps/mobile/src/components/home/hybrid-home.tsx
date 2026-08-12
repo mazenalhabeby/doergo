@@ -27,6 +27,8 @@ import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, Cloc
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
+import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
+import { stopGeofence } from '../../services/background-geofence';
 import { WeekCalendar } from '../week-calendar';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
@@ -204,6 +206,8 @@ export function HybridHome() {
       const location = await clockIn.getCurrentLocation();
       if (!location) { setIsClockLoading(false); return; }
       await attendanceApi.clockOut({ lat: location.lat, lng: location.lng, accuracy: location.accuracy, notes: notes || undefined });
+      await stopBackgroundHeartbeat();
+      await stopGeofence();
       await fetchData();
     } catch (err: any) {
       toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockOut'));

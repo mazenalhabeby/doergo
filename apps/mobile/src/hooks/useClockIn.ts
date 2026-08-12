@@ -5,6 +5,7 @@ import { attendanceApi, CompanyLocation } from '../lib/api';
 import { useAuth } from '../contexts/auth-context';
 import { useToast } from '../contexts/toast-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
+import { startGeofenceForSpace } from '../services/background-geofence';
 import { haversineDistance } from '../lib/utils';
 
 interface Coords {
@@ -109,6 +110,11 @@ export function useClockIn(opts: {
             },
       );
       await startBackgroundHeartbeat();
+      // Best-performance out-of-ring detection: monitor the space's ring natively
+      // so the OS wakes us on exit even when the app is killed (skips for remote
+      // or logical spaces with no coordinates). Runs after the heartbeat grants
+      // the "Always" permission geofencing also needs.
+      if (!isRemoteSelected) await startGeofenceForSpace(selectedLocation);
       await onClockedInRef.current?.();
       toast.success(
         t('common.success'),

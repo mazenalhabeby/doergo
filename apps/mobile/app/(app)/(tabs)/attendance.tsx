@@ -49,6 +49,7 @@ import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
 import { useClockIn } from '../../../src/hooks/useClockIn';
 import { TourTarget } from '../../../src/components/tour';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
+import { startGeofenceForSpace, stopGeofence } from '../../../src/services/background-geofence';
 import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import {
   formatDurationMinutes as formatDuration,
@@ -240,6 +241,7 @@ export default function AttendanceScreen() {
       // server never sets it now. Kept defensively.
       if (result.autoClockedOut) {
         await stopBackgroundHeartbeat();
+        await stopGeofence();
         await fetchAttendanceData();
         return;
       }
@@ -277,8 +279,11 @@ export default function AttendanceScreen() {
       // Resume background tracking if clocked in but tracking stopped (e.g. app restart)
       if (status?.isClockedIn) {
         startBackgroundHeartbeat();
+        // Re-arm native geofencing on the clocked-in space so out-of-ring is
+        // detected instantly even when the app is killed.
+        startGeofenceForSpace(status.currentEntry?.location as any);
       }
-    }, [sendHeartbeat, status?.isClockedIn])
+    }, [sendHeartbeat, status?.isClockedIn, status?.currentEntry?.location])
   );
 
   // Send heartbeat every 5 minutes while clocked in
@@ -391,8 +396,9 @@ export default function AttendanceScreen() {
         accuracy: location?.accuracy,
         notes: notes || undefined,
       });
-      // Stop background heartbeat
+      // Stop background heartbeat + geofence
       await stopBackgroundHeartbeat();
+      await stopGeofence();
       await fetchAttendanceData();
       toast.success(t('common.success'), t('attendance.clockedOutSuccess'));
     } catch (err) {
@@ -416,6 +422,7 @@ export default function AttendanceScreen() {
     try {
       await attendanceApi.resolveForgotClockOut(entry.id, clockOutAt.toISOString());
       await stopBackgroundHeartbeat();
+      await stopGeofence();
       await fetchAttendanceData();
       toast.success(t('common.success'), t('shiftReminder.resolveSuccess'));
     } catch (err) {

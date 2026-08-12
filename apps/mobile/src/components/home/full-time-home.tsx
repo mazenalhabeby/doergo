@@ -26,6 +26,8 @@ import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenCon
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
+import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
+import { stopGeofence } from '../../services/background-geofence';
 import {
   formatDurationMinutes as formatDuration,
 } from '../../lib/utils';
@@ -163,6 +165,8 @@ export function FullTimeHome() {
         accuracy: location.accuracy,
         notes: notes || undefined,
       });
+      await stopBackgroundHeartbeat();
+      await stopGeofence();
       await fetchAttendanceData();
     } catch (err: any) {
       toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockOut'));
