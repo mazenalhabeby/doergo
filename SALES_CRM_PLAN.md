@@ -1,6 +1,9 @@
 # Sales / CRM Module — Plan
 
-> **Status:** draft plan, nothing built. Scope may still change from open questions in §9.
+> **Status:** ✅ **IMPLEMENTED (local, not deployed)** — 2026-08-12. Backend + web
+> built and typechecking clean (auth/gateway/task/notification + web-app). Not yet
+> deployed to prod (batched per the deploy rule) and mobile CRM is deferred
+> (preview-first). Defaults chosen for §9 are recorded in "Build notes" at the end.
 > **Goal:** support a **salesperson** as a first-class persona — accounts, contacts, leads,
 > a deal pipeline, quotes, commissions, activity logging, and (the standout) **smart
 > multi-stop route planning** for customer visits — built **on top of the primitives
@@ -231,3 +234,42 @@ OSRM optimizes on free-flow speeds (no live traffic) — fine, because we optimi
 - OSRM — [the Trip service (TSP solver)](https://medium.com/@imadsaddik/6-osrm-course-the-trip-service-bae381605cbf)
 - Google — [Routes API: optimize the order of stops](https://developers.google.com/maps/documentation/routes/opt-way)
 - Waze — [Deep Links (single-destination)](https://developers.google.com/waze/deeplinks)
+
+---
+
+## Build notes (2026-08-12 implementation)
+
+**What shipped (local branch `feat/shift-scheduling`, 3 commits):**
+- **Schema/migration** `20260812220000_add_sales_crm` — Contact, Lead, Pipeline,
+  PipelineStage, Deal, SalesActivity, Quote, CommissionRule, CommissionEntry.
+  Money = integer cents. Idempotent hand-authored SQL.
+- **Shared** — enums, `types/crm.ts`, `utils/route-nav.ts` (Google/Waze/Apple
+  deep-links + nearest-neighbour fallback), CRM queue + job types, `crm`
+  capability (Professional+), `crm.changed` socket event.
+- **Route optimizer** — gateway `POST /routes/optimize` → OSRM `/trip` (env
+  `OSRM_URL`, defaults to public host) with a nearest-neighbour + haversine
+  fallback. `@RequirePlan('crm')`.
+- **CRM backend** — task-service `CrmService` (pipelines, contacts, leads +
+  convert, deals + board + weighted forecast + move/won-loss + booked commission,
+  activities, quotes + accept→win + convert→Ledger invoice, commissions); gateway
+  `/crm/*` REST with rep-vs-manager owner-scoping; notification relay.
+- **Web** — `/crm` (PlanGate + tabs): pipeline board (drag-drop), route planner,
+  leads/contacts/quotes/commissions; nav item + i18n ×5; `crmApi`/`routesApi`;
+  realtime invalidation.
+
+**Defaults chosen for §9** (change before deploy if desired): field-sales-first;
+flat-% commission, **PAID basis default** (BOOKED books on deal-won); accepted
+quote → won deal, and a manual **Create invoice** action into Ledger; single
+currency per org (field kept), multiple pipelines with one lazy default; route
+start = current GPS or address, default nav = Google, ~25-stop cap; manual lead
+capture (no inbound web form yet).
+
+**Deferred / follow-ups:**
+- **Mobile CRM** (route planner + deal/lead/activity on the technician app) — not
+  built; preview-first when done.
+- **OSRM self-host** — currently the public demo host by default; stand up a
+  self-hosted OSRM container and set `OSRM_URL` for production volume.
+- **Commission PAID basis** entries fire on deal-won only for BOOKED rules; wiring
+  PAID-basis to the invoice-paid event is a follow-up.
+- **Deploy** — additive migration (auto-applies via auth-service entrypoint), then
+  rebuild auth/gateway/task/notification/web; run `next build` before deploy.
