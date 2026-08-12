@@ -6,9 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/crm", label: "Pipeline", exact: true },
-  { href: "/crm/leads", label: "Leads" },
   { href: "/crm/contacts", label: "Contacts" },
-  { href: "/crm/quotes", label: "Quotes" },
   { href: "/crm/route", label: "Route planner" },
   { href: "/crm/commissions", label: "Commissions" },
 ];

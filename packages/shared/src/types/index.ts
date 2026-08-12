@@ -8,7 +8,7 @@ export {
   CustomFieldType, RecurrenceFrequency,
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
   WorkModel, SpaceKind, ShiftReminderState, ShiftRecurrence,
-  LeadStatus, SalesActivityType, QuoteStatus, CommissionBasis, CommissionEntryStatus,
+  CommissionBasis, CommissionEntryStatus,
 } from './enums';
 
 export {

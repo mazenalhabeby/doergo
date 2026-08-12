@@ -220,33 +220,10 @@ export enum ShiftRecurrence {
 }
 
 // ─── Sales / CRM ───────────────────────────────────────────────────────────
-
-// A prospect's progress before it becomes an account.
-export enum LeadStatus {
-  NEW = 'NEW',
-  WORKING = 'WORKING',
-  QUALIFIED = 'QUALIFIED',
-  UNQUALIFIED = 'UNQUALIFIED',
-  CONVERTED = 'CONVERTED',
-}
-
-// Kind of timeline entry logged on a lead / deal / account / contact.
-export enum SalesActivityType {
-  CALL = 'CALL',
-  EMAIL = 'EMAIL',
-  NOTE = 'NOTE',
-  MEETING = 'MEETING',
-  VISIT = 'VISIT', // links a Sales-Visit Task
-}
-
-// Lifecycle of a quote.
-export enum QuoteStatus {
-  DRAFT = 'DRAFT',
-  SENT = 'SENT',
-  ACCEPTED = 'ACCEPTED',
-  DECLINED = 'DECLINED',
-  EXPIRED = 'EXPIRED',
-}
+// A DEAL is a Task and a LEAD is an early-stage deal-task, so there is no
+// LeadStatus / SalesActivityType / QuoteStatus enum — deal stages are the task
+// workflow's statuses, activities are task comments, and a quote is a DRAFT
+// Invoice. Only commissions remain sales-specific.
 
 // When a commission is earned.
 export enum CommissionBasis {

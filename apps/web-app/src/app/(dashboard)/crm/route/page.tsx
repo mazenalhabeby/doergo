@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { crmApi, routesApi } from "@/lib/api";
+import { tasksApi, routesApi } from "@/lib/api";
 import type { OptimizedRoute, RouteStop } from "@hbcfield/shared/client";
 import {
   buildGoogleMapsUrl, buildNavUrl, supportsMultiStop, type NavApp,
@@ -33,19 +33,25 @@ export default function RoutePlannerPage() {
   const [result, setResult] = useState<OptimizedRoute | null>(null);
   const [locating, setLocating] = useState(false);
 
-  // Candidate stops = leads that have coordinates.
-  const leadsQ = useQuery({
-    queryKey: ["crm-leads", "route"],
-    queryFn: () => crmApi.listLeads({ limit: 100 }),
+  // Candidate stops = open tasks that have a location (visits, jobs, deal-visits).
+  const tasksQ = useQuery({
+    queryKey: ["tasks", "route-stops"],
+    queryFn: () => tasksApi.list({ limit: 100 }),
   });
-  const leadStops: Stop[] = useMemo(
-    () => (leadsQ.data?.items ?? [])
-      .filter((l) => l.lat != null && l.lng != null)
-      .map((l) => ({ id: `lead:${l.id}`, lat: l.lat as number, lng: l.lng as number, label: l.company || l.name, address: l.address ?? undefined })),
-    [leadsQ.data],
-  );
+  const taskStops: Stop[] = useMemo(() => {
+    const rows = ((tasksQ.data as any)?.data ?? []) as any[];
+    return rows
+      .map((t) => {
+        const lat = t.locationLat ?? t.location?.lat;
+        const lng = t.locationLng ?? t.location?.lng;
+        return lat != null && lng != null
+          ? { id: `task:${t.id}`, lat, lng, label: t.title, address: t.locationAddress ?? t.location?.address }
+          : null;
+      })
+      .filter(Boolean) as Stop[];
+  }, [tasksQ.data]);
 
-  const allStops = useMemo(() => [...leadStops, ...manualStops], [leadStops, manualStops]);
+  const allStops = useMemo(() => [...taskStops, ...manualStops], [taskStops, manualStops]);
   const chosen = useMemo(() => allStops.filter((s) => selected[s.id]), [allStops, selected]);
 
   const useMyLocation = () => {
@@ -115,7 +121,7 @@ export default function RoutePlannerPage() {
           <div className="mt-3 max-h-[22rem] space-y-1 overflow-y-auto">
             {allStops.length === 0 && (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                No stops yet. Search an address above, or add coordinates to your leads.
+                No stops yet. Search an address above, or add a location to your visit tasks.
               </p>
             )}
             {allStops.map((s) => (

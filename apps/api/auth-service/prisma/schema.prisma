@@ -501,14 +501,9 @@ model Organization {
   subscription  Subscription?
   billingEvents BillingEvent[]
 
-  // Sales / CRM
-  contacts         Contact[]
-  leads            Lead[]
-  pipelines        Pipeline[]
-  deals            Deal[]
-  salesActivities  SalesActivity[]
-  quotes           Quote[]
-  commissionRules  CommissionRule[]
+  // Sales / CRM (merged into Space + Task; only contacts + commissions are new)
+  contacts          Contact[]
+  commissionRules   CommissionRule[]
   commissionEntries CommissionEntry[]
 
   @@map("organizations")
@@ -846,6 +841,12 @@ model Task {
   locationLat     Float?
   locationLng     Float?
   locationAddress String?
+
+  // Sales / CRM: when this task is a "Deal" (its task type is the Deal workflow),
+  // these hold the opportunity value. Null for ordinary tasks (zero overhead).
+  // The pipeline stage = the task's workflow status; owner = an assignee.
+  amountCents Int?    // deal value in integer minor units
+  currency    String? // ISO code, e.g. "EUR" (deal value currency)
 
   // Route tracking fields
   routeStartedAt DateTime? // When EN_ROUTE started
@@ -2497,6 +2498,10 @@ model WorkflowStatus {
   position     Int            @default(0)
   isFinal      Boolean        @default(false) // marks completion states
   isCanceled   Boolean        @default(false) // marks cancellation states
+  // Sales pipeline: win probability (0-100) for the weighted forecast on
+  // deal-type tasks. Null for non-sales workflows (ignored). A final,
+  // non-canceled status = "Won"; a canceled status = "Lost".
+  probability  Int? // 0-100, deal-type workflows only
   transitions  String[] // array of WorkflowStatus keys this status can transition TO
   capabilities String[]       @default([]) // execution widgets active at this step (gps, timer, …)
   createdAt    DateTime       @default(now())
@@ -2594,39 +2599,15 @@ model RecurringTaskTemplate {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SALES / CRM
-//  Field-sales-first CRM built ON TOP of existing primitives: an "account" is a
-//  CUSTOMER-kind CompanyLocation (space); a Sales-Visit is a Task. These models
-//  add the sales-specific layer — contacts, leads, pipelines, deals, activities,
-//  quotes, commissions. All org-scoped + indexed on hot paths. Money is stored as
-//  integer minor units (cents) to avoid float rounding. User references that don't
-//  need cascade (ownerId) are plain-marker ids (no FK), mirroring
-//  SupportTicket.assignedAgentId — org cascade cleans them via organizationId.
+// SALES / CRM  (merged into the Space + Task core)
+//  A DEAL is a Task (of the "Deal" task type) in a CUSTOMER-kind space; the
+//  pipeline is that space/board's task workflow (statuses = stages, with a
+//  `probability` for the weighted forecast); a Sales-Visit is a Task with a
+//  location. The only sales-specific tables are the two things Tasks don't
+//  provide: CONTACTS (many people per customer space) and COMMISSIONS (booked
+//  when a deal-task reaches a Won status). Money is integer cents. ownerId is a
+//  plain-marker User id (no FK), like SupportTicket.assignedAgentId.
 // ═══════════════════════════════════════════════════════════════════════════════
-
-enum LeadStatus {
-  NEW
-  WORKING
-  QUALIFIED
-  UNQUALIFIED
-  CONVERTED
-}
-
-enum SalesActivityType {
-  CALL
-  EMAIL
-  NOTE
-  MEETING
-  VISIT // links a Sales-Visit Task (taskId)
-}
-
-enum QuoteStatus {
-  DRAFT
-  SENT
-  ACCEPTED
-  DECLINED
-  EXPIRED
-}
 
 enum CommissionBasis {
   BOOKED // earned when the deal is won
@@ -2660,209 +2641,9 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deals      Deal[]
-  activities SalesActivity[]
-
   @@index([organizationId, spaceId])
   @@index([organizationId, ownerId])
   @@map("contacts")
-}
-
-// A prospect not yet an account. Converts → Account (CUSTOMER space) + Deal.
-// Carries an optional address+coords so an unconverted lead can still be routed
-// into a day's visit plan.
-model Lead {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  name    String
-  company String?
-  email   String?
-  phone   String?
-  source  String? // "web", "referral", "event"…
-  status  LeadStatus @default(NEW)
-  ownerId String? // sales rep (User id, no FK)
-  notes   String?
-
-  // Optional location for route planning before conversion
-  address String?
-  lat     Float?
-  lng     Float?
-
-  // Conversion provenance (set once, on convert)
-  convertedSpaceId   String?
-  convertedContactId String?
-  convertedDealId    String?
-  convertedAt        DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  activities SalesActivity[]
-
-  @@index([organizationId, status])
-  @@index([organizationId, ownerId, status])
-  @@map("leads")
-}
-
-// Configurable pipeline (a Deal moves through its stages). One org can have many
-// pipelines; exactly one isDefault per org (enforced in service logic).
-model Pipeline {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  name      String
-  isDefault Boolean @default(false)
-  isActive  Boolean @default(true)
-  position  Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  stages PipelineStage[]
-  deals  Deal[]
-
-  @@index([organizationId])
-  @@map("pipelines")
-}
-
-model PipelineStage {
-  id             String   @id @default(cuid())
-  organizationId String // plain scalar for org-scoped queries (cascades via pipeline)
-  pipelineId     String
-  pipeline       Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-
-  name        String
-  position    Int
-  probability Int     @default(0) // 0-100 %, drives the weighted forecast
-  isWon       Boolean @default(false)
-  isLost      Boolean @default(false)
-  color       String? @default("#6b7280")
-
-  deals Deal[]
-
-  @@index([pipelineId, position])
-  @@index([organizationId])
-  @@map("pipeline_stages")
-}
-
-model Deal {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  title    String
-  spaceId  String? // the customer-company space (account)
-  contactId String?
-  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  leadId   String? // provenance if converted from a lead
-  ownerId  String? // sales rep (User id, no FK)
-
-  pipelineId String
-  pipeline   Pipeline @relation(fields: [pipelineId], references: [id])
-  stageId    String
-  stage      PipelineStage @relation(fields: [stageId], references: [id])
-
-  amountCents     Int     @default(0)
-  currency        String  @default("EUR")
-  expectedCloseAt DateTime?
-  closedAt        DateTime? // set when moved to a won/lost stage
-  isWon           Boolean  @default(false)
-  isLost          Boolean  @default(false)
-  wonReason       String?
-  lostReason      String?
-  source          String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  activities SalesActivity[]
-  quotes     Quote[]
-
-  @@index([organizationId, stageId])
-  @@index([organizationId, ownerId])
-  @@index([organizationId, spaceId])
-  @@map("deals")
-}
-
-// Timeline entry on a lead / deal / account / contact. A VISIT can link a
-// Sales-Visit Task (taskId, plain marker).
-model SalesActivity {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  type    SalesActivityType
-  ownerId String? // who logged / owns it (User id, no FK)
-
-  leadId    String?
-  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  dealId    String?
-  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  contactId String?
-  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  spaceId   String? // customer space
-  taskId    String? // Sales-Visit task when type = VISIT (plain marker)
-
-  subject String?
-  body    String?
-  dueAt   DateTime?
-  doneAt  DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([organizationId, dealId])
-  @@index([organizationId, leadId])
-  @@index([organizationId, ownerId, dueAt])
-  @@map("sales_activities")
-}
-
-// A quote built for a deal. Line items are JSON (draft shape); on ACCEPTED it can
-// spawn a real Ledger Invoice (invoiceId marker links the two).
-model Quote {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  quoteNumber String // Auto-generated: QUO-YYYY-XXXX
-  status      QuoteStatus @default(DRAFT)
-
-  dealId    String?
-  deal      Deal?   @relation(fields: [dealId], references: [id], onDelete: SetNull)
-  spaceId   String? // customer space
-  contactId String?
-
-  // Snapshotted client info (stable if the space changes)
-  clientName    String
-  clientEmail   String?
-  clientAddress String?
-
-  lineItems Json  @default("[]") // [{ description, quantity, unitPriceCents, amountCents, taskId? }]
-  subtotalCents Int   @default(0)
-  taxRate       Float? // e.g. 0.20 for 20%
-  taxCents      Int    @default(0)
-  discountCents Int    @default(0)
-  totalCents    Int    @default(0)
-  currency      String @default("EUR")
-
-  validUntil DateTime?
-  sentAt     DateTime?
-  acceptedAt DateTime?
-  notes      String?
-
-  invoiceId   String? // Ledger Invoice created from this quote (plain marker)
-  createdById String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([organizationId, quoteNumber])
-  @@index([organizationId, status])
-  @@index([organizationId, dealId])
-  @@map("quotes")
 }
 
 // A commission rule for a rep (or all reps when userId is null).
@@ -2884,8 +2665,8 @@ model CommissionRule {
   @@map("commission_rules")
 }
 
-// A computed commission line for a rep, tied to a won deal / accepted quote /
-// paid invoice, in a payout period (YYYY-MM).
+// A computed commission line for a rep, booked when a deal-Task reaches a Won
+// status (dealId = the won Task id), in a payout period (YYYY-MM).
 model CommissionEntry {
   id             String       @id @default(cuid())
   organizationId String
@@ -2893,8 +2674,7 @@ model CommissionEntry {
 
   ownerId   String // the rep earning it (User id, no FK)
   ruleId    String?
-  dealId    String?
-  quoteId   String?
+  dealId    String? // the won deal-Task id (plain marker)
   invoiceId String?
 
   baseCents   Int

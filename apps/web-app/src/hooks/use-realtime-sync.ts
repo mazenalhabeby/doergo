@@ -56,20 +56,17 @@ const Events = {
   CALL_INCOMING: "call.incoming",
 } as const
 
-// Every CRM query key — refreshed on any crm.changed event.
+// Every CRM query key — refreshed on any crm.changed event (contacts +
+// commissions). The pipeline board is deal-TYPE tasks, so it also refreshes on
+// task events (see the board keys added to TASK_* invalidations below).
 const ALL_CRM_KEYS: string[][] = [
-  ["crm-board"],
-  ["crm-forecast"],
-  ["crm-deals"],
-  ["crm-deal"],
   ["crm-contacts"],
-  ["crm-leads"],
-  ["crm-activities"],
-  ["crm-quotes"],
-  ["crm-pipelines"],
   ["crm-commission-rules"],
   ["crm-commission-entries"],
 ]
+
+// The sales pipeline board reads deal-type tasks — refresh it whenever tasks change.
+const SALES_BOARD_KEYS: string[][] = [["crm-board"], ["crm-forecast"]]
 
 // The /attendance PAGE query keys (Time → tracking / approvals / breaks / no-shows
 // / days-off / availability). Distinct from the DASHBOARD keys below — both must
@@ -102,10 +99,10 @@ const ALL_ATTENDANCE_KEYS: string[][] = [...DASHBOARD_ATTENDANCE_KEYS, ...ATTEND
 // Query keys that each event should invalidate
 const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // Task events → invalidate task lists, counts, and related
-  [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_ASSIGNED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"]],
+  [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"], ...SALES_BOARD_KEYS],
+  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"], ...SALES_BOARD_KEYS],
+  [Events.TASK_ASSIGNED]: [["tasks"], ["taskStatusCounts"], ...SALES_BOARD_KEYS],
+  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"], ...SALES_BOARD_KEYS],
   [Events.TASK_COMMENT_ADDED]: [["tasks"]],
   [Events.TASK_ATTACHMENT_ADDED]: [["tasks"]],
   [Events.TASK_DECLINED]: [["tasks"], ["taskStatusCounts"]],

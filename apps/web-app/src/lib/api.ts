@@ -692,8 +692,12 @@ export interface CreateTaskInput {
   storyPoints?: number;
   epicId?: string;
   spaceId?: string;
+  assignedToId?: string;
   checklistItems?: { text: string }[];
   customFieldValues?: { definitionId: string; value: string }[];
+  // Sales deal (deal-type tasks): value in integer minor units + currency
+  amountCents?: number;
+  currency?: string;
 }
 
 export interface UpdateTaskInput {
@@ -714,6 +718,8 @@ export interface UpdateTaskInput {
   spaceId?: string | null;
   workflowId?: string | null;
   position?: number;
+  amountCents?: number | null;
+  currency?: string | null;
 }
 
 export interface TasksQueryParams {
@@ -4909,13 +4915,17 @@ export const searchApi = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  SALES / CRM
+//  SALES / CRM (merged into Space + Task)
+//  A DEAL is a Task (of the "Deal" task type) — create/move via tasksApi. CRM
+//  only owns contacts, commissions, and the sales-board READ (deal-type tasks +
+//  weighted forecast).
 // ═══════════════════════════════════════════════════════════════════════════
 import type {
-  Contact, Lead, Pipeline, PipelineStage, Deal, SalesActivity, Quote,
-  CommissionRule, CommissionEntry, PipelineForecast,
+  Contact, CommissionRule, CommissionEntry, SalesForecast,
   RouteOptimizeRequest, OptimizedRoute,
 } from "@hbcfield/shared/client";
+// WorkflowStatus is the local api.ts interface (declared above) — the whole app
+// uses that one; do NOT import the shared type or it conflicts.
 
 type Paged<T> = { items: T[]; total: number; page: number; limit: number };
 
@@ -4936,36 +4946,30 @@ async function crmSend<T>(method: "post" | "patch" | "delete", endpoint: string,
   return res.data?.data as T;
 }
 
-export interface DealBoard {
-  pipelineId: string;
-  stages: PipelineStage[];
-  deals: Deal[];
+// A deal is a Task; the board returns a light projection of deal-type tasks.
+export interface DealTask {
+  id: string;
+  title: string;
+  status: string; // workflow status key = pipeline stage
+  amountCents: number | null;
+  currency: string | null;
+  spaceId: string | null;
+  dueDate: string | null;
+  assignedToId: string | null;
+  space?: { id: string; name: string } | null;
+  assignedTo?: { id: string; firstName: string; lastName: string | null } | null;
+}
+
+export interface SalesBoard {
+  workflow: { id: string; name: string; statuses: WorkflowStatus[] };
+  tasks: DealTask[];
+  forecast: SalesForecast;
 }
 
 export const crmApi = {
-  // Pipelines & stages
-  listPipelines: () => crmGet<Pipeline[]>("/crm/pipelines"),
-  createPipeline: (d: { name: string; isDefault?: boolean }) => crmSend<Pipeline>("post", "/crm/pipelines", d),
-  updatePipeline: (id: string, d: Partial<Pipeline>) => crmSend<Pipeline>("patch", `/crm/pipelines/${id}`, d),
-  deletePipeline: (id: string) => crmSend<{ id: string }>("delete", `/crm/pipelines/${id}`),
-  createStage: (pipelineId: string, d: Partial<PipelineStage>) => crmSend<PipelineStage>("post", `/crm/pipelines/${pipelineId}/stages`, d),
-  updateStage: (id: string, d: Partial<PipelineStage>) => crmSend<PipelineStage>("patch", `/crm/stages/${id}`, d),
-  deleteStage: (id: string) => crmSend<{ id: string }>("delete", `/crm/stages/${id}`),
-  reorderStages: (pipelineId: string, orderedIds: string[]) => crmSend("post", `/crm/pipelines/${pipelineId}/stages/reorder`, { orderedIds }),
-
-  // Deals
-  getBoard: (pipelineId?: string) => crmGet<DealBoard>(buildUrlWithQuery("/crm/board", { pipelineId })),
-  getForecast: (pipelineId?: string) => crmGet<PipelineForecast>(buildUrlWithQuery("/crm/forecast", { pipelineId })),
-  listDeals: async (params?: { pipelineId?: string; stageId?: string; ownerId?: string; open?: boolean; search?: string; page?: number; limit?: number }) => {
-    const res = await api.get<{ success: boolean; data: Deal[]; meta: any }>(buildUrlWithQuery("/crm/deals", params as any));
-    if (res.error) throw new Error(res.error);
-    return pagedFrom<Deal>(res as any);
-  },
-  getDeal: (id: string) => crmGet<Deal & { quotes?: Quote[]; activities?: SalesActivity[] }>(`/crm/deals/${id}`),
-  createDeal: (d: Partial<Deal>) => crmSend<Deal>("post", "/crm/deals", d),
-  updateDeal: (id: string, d: Partial<Deal>) => crmSend<Deal>("patch", `/crm/deals/${id}`, d),
-  moveDeal: (id: string, stageId: string, extra?: { wonReason?: string; lostReason?: string }) => crmSend<Deal>("post", `/crm/deals/${id}/move`, { stageId, ...extra }),
-  deleteDeal: (id: string) => crmSend<{ id: string }>("delete", `/crm/deals/${id}`),
+  // Sales board (deal-type tasks + forecast). Deals are created/moved via tasksApi.
+  getBoard: (workflowId?: string) => crmGet<SalesBoard>(buildUrlWithQuery("/crm/board", { workflowId })),
+  getForecast: (workflowId?: string) => crmGet<SalesForecast>(buildUrlWithQuery("/crm/forecast", { workflowId })),
 
   // Contacts
   listContacts: async (params?: { spaceId?: string; ownerId?: string; search?: string; page?: number; limit?: number }) => {
@@ -4973,45 +4977,10 @@ export const crmApi = {
     if (res.error) throw new Error(res.error);
     return pagedFrom<Contact>(res as any);
   },
-  getContact: (id: string) => crmGet<Contact & { deals?: Deal[]; activities?: SalesActivity[] }>(`/crm/contacts/${id}`),
+  getContact: (id: string) => crmGet<Contact>(`/crm/contacts/${id}`),
   createContact: (d: Partial<Contact>) => crmSend<Contact>("post", "/crm/contacts", d),
   updateContact: (id: string, d: Partial<Contact>) => crmSend<Contact>("patch", `/crm/contacts/${id}`, d),
   deleteContact: (id: string) => crmSend<{ id: string }>("delete", `/crm/contacts/${id}`),
-
-  // Leads
-  listLeads: async (params?: { status?: string; ownerId?: string; search?: string; page?: number; limit?: number }) => {
-    const res = await api.get<{ success: boolean; data: Lead[]; meta: any }>(buildUrlWithQuery("/crm/leads", params as any));
-    if (res.error) throw new Error(res.error);
-    return pagedFrom<Lead>(res as any);
-  },
-  getLead: (id: string) => crmGet<Lead & { activities?: SalesActivity[] }>(`/crm/leads/${id}`),
-  createLead: (d: Partial<Lead>) => crmSend<Lead>("post", "/crm/leads", d),
-  updateLead: (id: string, d: Partial<Lead>) => crmSend<Lead>("patch", `/crm/leads/${id}`, d),
-  convertLead: (id: string, d?: { dealTitle?: string; amountCents?: number; pipelineId?: string }) => crmSend<{ space: any; contact: Contact; deal: Deal }>("post", `/crm/leads/${id}/convert`, d ?? {}),
-  deleteLead: (id: string) => crmSend<{ id: string }>("delete", `/crm/leads/${id}`),
-
-  // Activities
-  listActivities: async (params?: { dealId?: string; leadId?: string; contactId?: string; ownerId?: string; page?: number; limit?: number }) => {
-    const res = await api.get<{ success: boolean; data: SalesActivity[]; meta: any }>(buildUrlWithQuery("/crm/activities", params as any));
-    if (res.error) throw new Error(res.error);
-    return pagedFrom<SalesActivity>(res as any);
-  },
-  createActivity: (d: Partial<SalesActivity>) => crmSend<SalesActivity>("post", "/crm/activities", d),
-  updateActivity: (id: string, d: Partial<SalesActivity>) => crmSend<SalesActivity>("patch", `/crm/activities/${id}`, d),
-  deleteActivity: (id: string) => crmSend<{ id: string }>("delete", `/crm/activities/${id}`),
-
-  // Quotes
-  listQuotes: async (params?: { dealId?: string; status?: string; page?: number; limit?: number }) => {
-    const res = await api.get<{ success: boolean; data: Quote[]; meta: any }>(buildUrlWithQuery("/crm/quotes", params as any));
-    if (res.error) throw new Error(res.error);
-    return pagedFrom<Quote>(res as any);
-  },
-  getQuote: (id: string) => crmGet<Quote>(`/crm/quotes/${id}`),
-  createQuote: (d: Partial<Quote> & { lineItems: any[]; clientName: string }) => crmSend<Quote>("post", "/crm/quotes", d),
-  updateQuote: (id: string, d: Partial<Quote>) => crmSend<Quote>("patch", `/crm/quotes/${id}`, d),
-  setQuoteStatus: (id: string, status: string) => crmSend<Quote>("post", `/crm/quotes/${id}/status`, { status }),
-  convertQuoteToInvoice: (id: string) => crmSend<{ quoteId: string; invoiceId: string; invoiceNumber: string }>("post", `/crm/quotes/${id}/convert-invoice`),
-  deleteQuote: (id: string) => crmSend<{ id: string }>("delete", `/crm/quotes/${id}`),
 
   // Commissions
   listCommissionRules: () => crmGet<CommissionRule[]>("/crm/commission-rules"),
