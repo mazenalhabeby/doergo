@@ -5,7 +5,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, ApprovalStatus } from '@hbcfield/shared';
+import { success, paginated, ApprovalStatus, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
+
+// Flags that depend on the clock TIMES vs the shift expectation — these must be
+// re-evaluated when an admin edits an entry's clock-in/out. Everything else
+// (geofence, unscheduled, missed clock-out) is preserved as-is.
+const TIME_BASED_FLAGS = new Set(['LATE_ARRIVAL', 'EARLY_DEPARTURE', 'OVERTIME']);
 
 @Injectable()
 export class ApprovalService {
@@ -159,6 +164,15 @@ export class ApprovalService {
   /**
    * Edit a time entry (manager correction)
    */
+  /** Duration of a shift window in minutes from its "HH:MM" start/end strings. */
+  private shiftDurationMinutes(startTime: string, endTime: string, crossesMidnight: boolean): number {
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    let dur = eh * 60 + em - (sh * 60 + sm);
+    if (crossesMidnight || dur <= 0) dur += 24 * 60; // overnight window
+    return dur;
+  }
+
   async editEntry(data: {
     entryId: string;
     editorId: string;
@@ -218,6 +232,42 @@ export class ApprovalService {
     // Recalculate total minutes if times changed
     const newClockIn = updateData.clockInAt || entry.clockInAt;
     const newClockOut = updateData.clockOutAt || entry.clockOutAt;
+
+    // Re-evaluate the schedule-relative flags when the times change — otherwise a
+    // corrected clock-in keeps a stale LATE_ARRIVAL (e.g. a "forgot to clock in"
+    // fix from 1:39 AM back to the 6 PM shift start still showed Late Arrival).
+    // The shift START isn't persisted, so derive it from the stored shift END
+    // (expectedClockOutAt) minus the bound shift's duration; non-time flags stay.
+    if (data.clockInAt || data.clockOutAt) {
+      const preserved = (entry.flagReasons || []).filter((f) => !TIME_BASED_FLAGS.has(f));
+      const recomputed: string[] = [];
+
+      if (entry.expectedClockOutAt) {
+        const expEnd = new Date(entry.expectedClockOutAt);
+        let expStart: Date | null = null;
+        if (entry.shiftId) {
+          const shift = await this.prisma.shift.findUnique({
+            where: { id: entry.shiftId },
+            select: { startLocal: true, endLocal: true, crossesMidnight: true },
+          });
+          if (shift) {
+            const dur = this.shiftDurationMinutes(shift.startLocal, shift.endLocal, shift.crossesMidnight);
+            expStart = new Date(expEnd.getTime() - dur * 60_000);
+          }
+        }
+        if (expStart) {
+          const lateMin = (new Date(newClockIn).getTime() - expStart.getTime()) / 60_000;
+          if (lateMin > ATTENDANCE_CONSTANTS.LATE_ARRIVAL_THRESHOLD_MINUTES) recomputed.push('LATE_ARRIVAL');
+        }
+        if (newClockOut) {
+          const earlyMin = (expEnd.getTime() - new Date(newClockOut).getTime()) / 60_000;
+          if (earlyMin > ATTENDANCE_CONSTANTS.EARLY_DEPARTURE_THRESHOLD_MINUTES) recomputed.push('EARLY_DEPARTURE');
+          const otMin = (new Date(newClockOut).getTime() - expEnd.getTime()) / 60_000;
+          if (otMin > ATTENDANCE_CONSTANTS.OVERTIME_THRESHOLD_MINUTES) recomputed.push('OVERTIME');
+        }
+      }
+      updateData.flagReasons = [...preserved, ...recomputed];
+    }
 
     if (newClockOut) {
       updateData.totalMinutes = Math.round(
