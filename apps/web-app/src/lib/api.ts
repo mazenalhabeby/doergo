@@ -692,12 +692,8 @@ export interface CreateTaskInput {
   storyPoints?: number;
   epicId?: string;
   spaceId?: string;
-  assignedToId?: string;
   checklistItems?: { text: string }[];
   customFieldValues?: { definitionId: string; value: string }[];
-  // Sales deal (deal-type tasks): value in integer minor units + currency
-  amountCents?: number;
-  currency?: string;
 }
 
 export interface UpdateTaskInput {
@@ -718,8 +714,6 @@ export interface UpdateTaskInput {
   spaceId?: string | null;
   workflowId?: string | null;
   position?: number;
-  amountCents?: number | null;
-  currency?: string | null;
 }
 
 export interface TasksQueryParams {
@@ -4914,87 +4908,4 @@ export const searchApi = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  SALES / CRM (merged into Space + Task)
-//  A DEAL is a Task (of the "Deal" task type) — create/move via tasksApi. CRM
-//  only owns contacts, commissions, and the sales-board READ (deal-type tasks +
-//  weighted forecast).
-// ═══════════════════════════════════════════════════════════════════════════
-import type {
-  Contact, CommissionRule, CommissionEntry, SalesForecast,
-  RouteOptimizeRequest, OptimizedRoute,
-} from "@hbcfield/shared/client";
-// WorkflowStatus is the local api.ts interface (declared above) — the whole app
-// uses that one; do NOT import the shared type or it conflicts.
 
-type Paged<T> = { items: T[]; total: number; page: number; limit: number };
-
-function pagedFrom<T>(res: { data?: { data?: T[]; meta?: any } }): Paged<T> {
-  const rows = res.data?.data ?? [];
-  const meta = res.data?.meta ?? {};
-  return { items: rows, total: meta.total ?? rows.length, page: meta.page ?? 1, limit: meta.limit ?? rows.length };
-}
-
-async function crmGet<T>(endpoint: string): Promise<T> {
-  const res = await api.get<{ success: boolean; data: T }>(endpoint);
-  if (res.error) throw new Error(res.error);
-  return res.data?.data as T;
-}
-async function crmSend<T>(method: "post" | "patch" | "delete", endpoint: string, body?: unknown): Promise<T> {
-  const res = await api[method]<{ success: boolean; data: T }>(endpoint, body as any);
-  if (res.error) throw new Error(res.error);
-  return res.data?.data as T;
-}
-
-// A deal is a Task; the board returns a light projection of deal-type tasks.
-export interface DealTask {
-  id: string;
-  title: string;
-  status: string; // workflow status key = pipeline stage
-  amountCents: number | null;
-  currency: string | null;
-  spaceId: string | null;
-  dueDate: string | null;
-  assignedToId: string | null;
-  space?: { id: string; name: string } | null;
-  assignedTo?: { id: string; firstName: string; lastName: string | null } | null;
-}
-
-export interface SalesBoard {
-  workflow: { id: string; name: string; statuses: WorkflowStatus[] };
-  tasks: DealTask[];
-  forecast: SalesForecast;
-}
-
-export const crmApi = {
-  // Sales board (deal-type tasks + forecast). Deals are created/moved via tasksApi.
-  getBoard: (workflowId?: string) => crmGet<SalesBoard>(buildUrlWithQuery("/crm/board", { workflowId })),
-  getForecast: (workflowId?: string) => crmGet<SalesForecast>(buildUrlWithQuery("/crm/forecast", { workflowId })),
-
-  // Contacts
-  listContacts: async (params?: { spaceId?: string; ownerId?: string; search?: string; page?: number; limit?: number }) => {
-    const res = await api.get<{ success: boolean; data: Contact[]; meta: any }>(buildUrlWithQuery("/crm/contacts", params as any));
-    if (res.error) throw new Error(res.error);
-    return pagedFrom<Contact>(res as any);
-  },
-  getContact: (id: string) => crmGet<Contact>(`/crm/contacts/${id}`),
-  createContact: (d: Partial<Contact>) => crmSend<Contact>("post", "/crm/contacts", d),
-  updateContact: (id: string, d: Partial<Contact>) => crmSend<Contact>("patch", `/crm/contacts/${id}`, d),
-  deleteContact: (id: string) => crmSend<{ id: string }>("delete", `/crm/contacts/${id}`),
-
-  // Commissions
-  listCommissionRules: () => crmGet<CommissionRule[]>("/crm/commission-rules"),
-  createCommissionRule: (d: Partial<CommissionRule>) => crmSend<CommissionRule>("post", "/crm/commission-rules", d),
-  updateCommissionRule: (id: string, d: Partial<CommissionRule>) => crmSend<CommissionRule>("patch", `/crm/commission-rules/${id}`, d),
-  deleteCommissionRule: (id: string) => crmSend<{ id: string }>("delete", `/crm/commission-rules/${id}`),
-  listCommissionEntries: (params?: { ownerId?: string; period?: string; status?: string }) => crmGet<CommissionEntry[]>(buildUrlWithQuery("/crm/commission-entries", params as any)),
-  setCommissionEntryStatus: (id: string, status: string) => crmSend<CommissionEntry>("post", `/crm/commission-entries/${id}/status`, { status }),
-};
-
-export const routesApi = {
-  optimize: async (req: RouteOptimizeRequest): Promise<OptimizedRoute> => {
-    const res = await api.post<OptimizedRoute>("/routes/optimize", req);
-    if (res.error) throw new Error(res.error);
-    return res.data as OptimizedRoute;
-  },
-};

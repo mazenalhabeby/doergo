@@ -2,7 +2,6 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RoutesService } from './routes.service';
 import { OptimizeRouteDto } from './dto/optimize-route.dto';
-import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 
 @ApiTags('routes')
 @Controller('routes')
@@ -14,11 +13,8 @@ export class RoutesController {
    * passes a start, the stops (already geocoded), and an optional end; we return
    * the best visit order + per-leg ETAs + geometry. The client then hands the
    * ordered stops to Google Maps / Waze / Apple Maps for turn-by-turn nav.
-   *
-   * Gated to the CRM capability (Professional+) via PlanGuard.
    */
   @Post('optimize')
-  @RequirePlan('crm')
   @ApiOperation({ summary: 'Optimize a multi-stop visit route' })
   optimize(@Body() dto: OptimizeRouteDto) {
     return this.routesService.optimize(dto);

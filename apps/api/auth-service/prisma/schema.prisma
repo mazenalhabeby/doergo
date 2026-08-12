@@ -501,11 +501,6 @@ model Organization {
   subscription  Subscription?
   billingEvents BillingEvent[]
 
-  // Sales / CRM (merged into Space + Task; only contacts + commissions are new)
-  contacts          Contact[]
-  commissionRules   CommissionRule[]
-  commissionEntries CommissionEntry[]
-
   @@map("organizations")
 }
 
@@ -841,12 +836,6 @@ model Task {
   locationLat     Float?
   locationLng     Float?
   locationAddress String?
-
-  // Sales / CRM: when this task is a "Deal" (its task type is the Deal workflow),
-  // these hold the opportunity value. Null for ordinary tasks (zero overhead).
-  // The pipeline stage = the task's workflow status; owner = an assignee.
-  amountCents Int?    // deal value in integer minor units
-  currency    String? // ISO code, e.g. "EUR" (deal value currency)
 
   // Route tracking fields
   routeStartedAt DateTime? // When EN_ROUTE started
@@ -2498,10 +2487,6 @@ model WorkflowStatus {
   position     Int            @default(0)
   isFinal      Boolean        @default(false) // marks completion states
   isCanceled   Boolean        @default(false) // marks cancellation states
-  // Sales pipeline: win probability (0-100) for the weighted forecast on
-  // deal-type tasks. Null for non-sales workflows (ignored). A final,
-  // non-canceled status = "Won"; a canceled status = "Lost".
-  probability  Int? // 0-100, deal-type workflows only
   transitions  String[] // array of WorkflowStatus keys this status can transition TO
   capabilities String[]       @default([]) // execution widgets active at this step (gps, timer, …)
   createdAt    DateTime       @default(now())
@@ -2596,99 +2581,6 @@ model RecurringTaskTemplate {
   @@index([spaceId])
   @@index([workflowId])
   @@map("recurring_task_templates")
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SALES / CRM  (merged into the Space + Task core)
-//  A DEAL is a Task (of the "Deal" task type) in a CUSTOMER-kind space; the
-//  pipeline is that space/board's task workflow (statuses = stages, with a
-//  `probability` for the weighted forecast); a Sales-Visit is a Task with a
-//  location. The only sales-specific tables are the two things Tasks don't
-//  provide: CONTACTS (many people per customer space) and COMMISSIONS (booked
-//  when a deal-task reaches a Won status). Money is integer cents. ownerId is a
-//  plain-marker User id (no FK), like SupportTicket.assignedAgentId.
-// ═══════════════════════════════════════════════════════════════════════════════
-
-enum CommissionBasis {
-  BOOKED // earned when the deal is won
-  PAID // earned when the customer invoice is paid
-}
-
-enum CommissionEntryStatus {
-  PENDING
-  APPROVED
-  PAID
-  CANCELED
-}
-
-// A person at an account. The account itself is a CUSTOMER-kind CompanyLocation
-// (spaceId). ownerId = the sales rep who owns the relationship (plain marker id).
-model Contact {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  spaceId   String? // the customer-company space (account) this contact belongs to
-  firstName String
-  lastName  String?
-  title     String?
-  email     String?
-  phone     String?
-  isPrimary Boolean @default(false)
-  ownerId   String? // sales rep who owns the relationship (User id, no FK)
-  notes     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([organizationId, spaceId])
-  @@index([organizationId, ownerId])
-  @@map("contacts")
-}
-
-// A commission rule for a rep (or all reps when userId is null).
-model CommissionRule {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  name     String
-  percent  Float // e.g. 5 = 5%
-  basis    CommissionBasis @default(PAID)
-  userId   String? // null = applies to all reps (plain marker)
-  isActive Boolean         @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([organizationId, isActive])
-  @@map("commission_rules")
-}
-
-// A computed commission line for a rep, booked when a deal-Task reaches a Won
-// status (dealId = the won Task id), in a payout period (YYYY-MM).
-model CommissionEntry {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  ownerId   String // the rep earning it (User id, no FK)
-  ruleId    String?
-  dealId    String? // the won deal-Task id (plain marker)
-  invoiceId String?
-
-  baseCents   Int
-  percent     Float
-  amountCents Int
-  period      String // "YYYY-MM"
-  status      CommissionEntryStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([organizationId, ownerId, period])
-  @@index([organizationId, status])
-  @@map("commission_entries")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

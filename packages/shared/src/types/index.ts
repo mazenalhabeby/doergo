@@ -8,7 +8,6 @@ export {
   CustomFieldType, RecurrenceFrequency,
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
   WorkModel, SpaceKind, ShiftReminderState, ShiftRecurrence,
-  CommissionBasis, CommissionEntryStatus,
 } from './enums';
 
 export {
@@ -93,8 +92,6 @@ export const SocketEvents = {
   CHAT_MESSAGE: 'chat.message', // new message in a conversation
   CHAT_CONVERSATION_UPDATED: 'chat.conversationUpdated', // last message / read / membership
   CHAT_TYPING: 'chat.typing', // typing indicator in a conversation
-  // CRM / Sales events (org-scoped) — any lead/deal/contact/quote mutation
-  CRM_CHANGED: 'crm.changed',
 } as const;
 
 // API Response wrapper
@@ -735,5 +732,5 @@ export * from './invitation';
 // Export onboarding types
 export * from './onboarding';
 
-// Export sales/CRM types
+// Export route-planning types (mobile field feature)
 export * from './crm';

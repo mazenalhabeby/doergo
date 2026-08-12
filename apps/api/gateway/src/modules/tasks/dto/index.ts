@@ -108,18 +108,6 @@ export class CreateTaskDto {
   @Min(0)
   @Max(21)
   storyPoints?: number;
-
-  @ApiPropertyOptional({ description: 'Sales deal value in integer minor units (cents). Deal-type tasks only.', example: 500000 })
-  @IsInt()
-  @IsOptional()
-  @Min(0)
-  amountCents?: number;
-
-  @ApiPropertyOptional({ description: 'Deal value currency (ISO code).', example: 'EUR' })
-  @IsString()
-  @IsOptional()
-  @MaxLength(8)
-  currency?: string;
 }
 
 /**

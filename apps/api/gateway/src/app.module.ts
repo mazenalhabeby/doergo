@@ -27,7 +27,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { RoutesModule } from './modules/routes/routes.module';
-import { CrmModule } from './modules/crm/crm.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { SearchModule } from './modules/search/search.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
@@ -131,7 +130,6 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     SpaceSharingModule,
     GeoModule,
     RoutesModule,
-    CrmModule,
     PortalModule,
     SearchModule,
   ],

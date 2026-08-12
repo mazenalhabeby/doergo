@@ -12,7 +12,6 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
-import { CrmService } from '../crm/crm.service';
 import {
   TaskStatus,
   TaskEventType,
@@ -44,7 +43,6 @@ export class TasksService {
     configService: ConfigService,
     private readonly workflowCache: WorkflowConfigCache,
     private readonly notificationRouting: NotificationRoutingService,
-    private readonly crm: CrmService,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -186,9 +184,6 @@ export class TasksService {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           startDate: data.startDate ? new Date(data.startDate) : null,
           estimatedHours: data.estimatedHours ?? null,
-          // Sales deal value (deal-type tasks only; null for ordinary tasks).
-          amountCents: data.amountCents != null ? Math.max(0, Math.round(Number(data.amountCents))) : null,
-          currency: data.currency ?? null,
           locationLat,
           locationLng,
           locationAddress,
@@ -1008,9 +1003,6 @@ export class TasksService {
         ...(updateData.sprintId !== undefined && { sprintId: updateData.sprintId || null }),
         ...(updateData.epicId !== undefined && { epicId: updateData.epicId || null }),
         ...(updateData.storyPoints !== undefined && { storyPoints: updateData.storyPoints }),
-        // Sales deal value (deal-type tasks)
-        ...(updateData.amountCents !== undefined && { amountCents: updateData.amountCents != null ? Math.max(0, Math.round(Number(updateData.amountCents))) : null }),
-        ...(updateData.currency !== undefined && { currency: updateData.currency || null }),
       },
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
@@ -1393,26 +1385,6 @@ export class TasksService {
       newStatus: data.status,
       reason: data.reason,
     });
-
-    // Sales: if this is a deal-task (carries amountCents) landing on a Won status
-    // (final, non-canceled) of its workflow, book the rep's commission.
-    if ((updatedTask as any).amountCents && effWorkflowId) {
-      const wonStatus = await this.prisma.workflowStatus.findFirst({
-        where: { workflowId: effWorkflowId, key: data.status as string },
-        select: { isFinal: true, isCanceled: true },
-      });
-      if (wonStatus) {
-        await this.crm.onTaskStatusChanged(
-          {
-            id: updatedTask.id,
-            organizationId: updatedTask.organizationId,
-            amountCents: (updatedTask as any).amountCents,
-            assignedToId: updatedTask.assignedToId,
-          },
-          wonStatus,
-        );
-      }
-    }
 
     // Notify about status change
     this.notificationClient.emit('task_status_changed', {

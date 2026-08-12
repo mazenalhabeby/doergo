@@ -17,7 +17,6 @@ export const QUEUE_NAMES = {
   OVERTIME: 'overtime',
   BILLING: 'billing',
   SUPPORT: 'support',
-  CRM: 'crm',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -132,22 +131,6 @@ export const SUPPORT_JOB_TYPES = {
 } as const;
 
 export type SupportJobType = (typeof SUPPORT_JOB_TYPES)[keyof typeof SUPPORT_JOB_TYPES];
-
-// CRM / Sales queue job types. Deals/leads/pipeline are now Tasks (task queue);
-// the only sales-specific writes are contacts + commissions.
-export const CRM_JOB_TYPES = {
-  // Contacts
-  CONTACT_CREATE: 'crm.contact.create',
-  CONTACT_UPDATE: 'crm.contact.update',
-  CONTACT_DELETE: 'crm.contact.delete',
-  // Commissions
-  COMMISSION_RULE_CREATE: 'crm.commission.ruleCreate',
-  COMMISSION_RULE_UPDATE: 'crm.commission.ruleUpdate',
-  COMMISSION_RULE_DELETE: 'crm.commission.ruleDelete',
-  COMMISSION_ENTRY_SET_STATUS: 'crm.commission.entrySetStatus',
-} as const;
-
-export type CrmJobType = (typeof CRM_JOB_TYPES)[keyof typeof CRM_JOB_TYPES];
 
 export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];
 

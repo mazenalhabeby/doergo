@@ -219,22 +219,7 @@ export enum ShiftRecurrence {
   ONE_OFF = 'ONE_OFF',
 }
 
-// ─── Sales / CRM ───────────────────────────────────────────────────────────
-// A DEAL is a Task and a LEAD is an early-stage deal-task, so there is no
-// LeadStatus / SalesActivityType / QuoteStatus enum — deal stages are the task
-// workflow's statuses, activities are task comments, and a quote is a DRAFT
-// Invoice. Only commissions remain sales-specific.
-
-// When a commission is earned.
-export enum CommissionBasis {
-  BOOKED = 'BOOKED', // on deal won
-  PAID = 'PAID',     // on customer invoice paid
-}
-
-// Payout state of a computed commission line.
-export enum CommissionEntryStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  PAID = 'PAID',
-  CANCELED = 'CANCELED',
-}
+// ─── Sales / delivery ────────────────────────────────────────────────────────
+// There is no CRM/sales module. Sales, delivery and service are all just a Space
+// + normal Tasks on a workflow whose steps can capture GPS. No sales-specific
+// enums.
