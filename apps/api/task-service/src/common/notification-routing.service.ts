@@ -27,6 +27,13 @@ function prefEnabled(prefs: unknown, category: string): boolean {
 export class NotificationRoutingService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Short-TTL cache of the resolved recipient set (P13). Every clock-out/task
+  // event fired ~6 uncached queries (watches + resolveMemberRouting + user
+  // lookup); a burst of events about the same subject now reuses one resolution.
+  // 60s tolerance per the audit — a routing change applies within a minute.
+  private readonly cache = new Map<string, { v: { ids: string[]; emails: string[] }; exp: number }>();
+  private static readonly TTL_MS = 60_000;
+
   async resolveWatchers(
     subjectUserId: string,
     organizationId: string,
@@ -35,6 +42,23 @@ export class NotificationRoutingService {
     // explicitly-configured watchers (used for tasks, so a routine assignment
     // doesn't blast every admin; empty result → no watcher notification).
     explicitOnly = false,
+  ): Promise<{ ids: string[]; emails: string[] }> {
+    const cacheKey = `${organizationId}:${subjectUserId}:${category}:${explicitOnly}`;
+    const now = Date.now();
+    const hit = this.cache.get(cacheKey);
+    if (hit && hit.exp > now) return hit.v;
+
+    const result = await this.computeWatchers(subjectUserId, organizationId, category, explicitOnly);
+    if (this.cache.size > 5000) this.cache.clear();
+    this.cache.set(cacheKey, { v: result, exp: now + NotificationRoutingService.TTL_MS });
+    return result;
+  }
+
+  private async computeWatchers(
+    subjectUserId: string,
+    organizationId: string,
+    category: NotificationCategory,
+    explicitOnly: boolean,
   ): Promise<{ ids: string[]; emails: string[] }> {
     // 1. Explicit per-employee watchers override the default routing entirely.
     const watches = await this.prisma.notificationWatch.findMany({

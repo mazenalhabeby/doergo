@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
@@ -16,13 +16,36 @@ export class AttendanceReportService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  // Absolute row cap as a second backstop behind the span clamp.
+  private static readonly MAX_EXPORT_ROWS = 100_000;
+
+  /**
+   * Clamp a caller-supplied range to a hard maximum span (P6). Without this,
+   * `?startDate=2015-01-01` loads 15 years of time entries into memory and OOMs
+   * the pod. Caps at 400 days (matching analytics.service). Returns validated
+   * Date bounds for buildDateRangeFilter.
+   */
+  private clampRange(start: Date | string, end: Date | string): { startDate: Date; endDate: Date } {
+    const endDate = end ? new Date(end) : new Date();
+    let startDate = start ? new Date(start) : new Date(endDate.getTime() - 29 * 864e5);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid date range');
+    }
+    const maxSpan = 400 * 864e5;
+    if (endDate.getTime() - startDate.getTime() > maxSpan) {
+      startDate = new Date(endDate.getTime() - maxSpan);
+    }
+    return { startDate, endDate };
+  }
+
   async getAttendanceSummary(data: {
     organizationId: string;
     userId?: string;
     startDate: Date | string;
     endDate: Date | string;
   }) {
-    const dateFilter = buildDateRangeFilter(data.startDate, data.endDate);
+    const { startDate, endDate } = this.clampRange(data.startDate, data.endDate);
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
 
     const where: any = {
       organizationId: data.organizationId,
@@ -44,6 +67,7 @@ export class AttendanceReportService {
         },
       },
       orderBy: { clockInAt: 'asc' },
+      take: AttendanceReportService.MAX_EXPORT_ROWS,
     });
 
     const totalMinutes = entries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0);
@@ -175,7 +199,8 @@ export class AttendanceReportService {
     endDate: Date | string;
     userId?: string;
   }) {
-    const dateFilter = buildDateRangeFilter(data.startDate, data.endDate);
+    const { startDate, endDate } = this.clampRange(data.startDate, data.endDate);
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
 
     const where: any = {
       organizationId: data.organizationId,
@@ -193,6 +218,7 @@ export class AttendanceReportService {
         location: { select: { name: true, timezone: true } },
       },
       orderBy: [{ clockInAt: 'asc' }],
+      take: AttendanceReportService.MAX_EXPORT_ROWS,
     });
 
     const headers = [
