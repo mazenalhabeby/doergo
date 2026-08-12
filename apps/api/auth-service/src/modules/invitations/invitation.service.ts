@@ -3,7 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
