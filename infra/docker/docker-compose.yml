@@ -72,7 +72,10 @@ services:
   # Postgres's 100-connection limit. Prisma runtime URLs use ?pgbouncer=true;
   # migrations bypass it via DIRECT_DATABASE_URL.
   pgbouncer:
-    image: edoburu/pgbouncer:latest
+    # Pinned to a digest (audit) — pgbouncer sits in the DB path; a floating
+    # :latest could pull a breaking build on a future recreate. Same image
+    # currently running. Bump deliberately when upgrading.
+    image: edoburu/pgbouncer:latest@sha256:4c1ca296ef525f108f5d3552cc337c0c09587cf8dae7f0067fd93349e47dc1cd
     container_name: hbcfield-pgbouncer
     restart: unless-stopped
     logging: *default-logging

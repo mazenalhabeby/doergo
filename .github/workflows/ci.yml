@@ -40,15 +40,12 @@ jobs:
 
       - name: Type check - Gateway
         run: cd apps/api/gateway && npx tsc --noEmit
-        continue-on-error: true
 
       - name: Type check - Auth service
         run: cd apps/api/auth-service && npx tsc --noEmit
-        continue-on-error: true
 
       - name: Type check - Task service
         run: cd apps/api/task-service && npx tsc --noEmit
-        continue-on-error: true
 
   build:
     name: Build
@@ -83,7 +80,6 @@ jobs:
 
       - name: Build gateway
         run: cd apps/api/gateway && npx nest build
-        continue-on-error: true
 
   security:
     name: Security Audit
@@ -105,4 +101,3 @@ jobs:
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
-        continue-on-error: true
