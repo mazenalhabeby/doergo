@@ -73,3 +73,20 @@ TIMEZONE-TODO.md
 # server in /opt/doergo/infra/docker/.env.production (untracked).
 .env.production
 infra/docker/.env.production
+
+# Working scratch at repo root — screenshots, exported PDFs, and audit/planning
+# notes that don't belong in the repo. Globs are root-anchored so nested assets
+# aren't affected; tracked root files are re-included below.
+/*.png
+/*.jpg
+/*.jpeg
+/*.pdf
+!/Doergo.pdf
+/AUDIT_REMEDIATION_PLAN.md
+/AUDIT_REMEDIATION_PROGRESS.md
+/AUDIT_REPORT_2026-08-11.md
+/hbcfield-scalable-architecture.md
+
+# Local backup / scratch directories
+docs/dashboard-spaces-backup/
+emails/
