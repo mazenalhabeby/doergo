@@ -602,6 +602,11 @@
       "statusActive": "Active",
       "statusAuto": "Auto",
       "statusDone": "Done"
+    },
+    "alwaysLocation": {
+      "title": "Enable “Always” location",
+      "body": "So we detect when you leave your work area even with the app closed. Right now it only works while the app is open.",
+      "cta": "Open Settings"
     }
   },
   "overtime": {

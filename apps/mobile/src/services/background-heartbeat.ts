@@ -75,11 +75,20 @@ export async function startBackgroundHeartbeat(): Promise<boolean> {
       return false;
     }
 
+    // Native geofencing (background-geofence.ts) is now the PRIMARY out-of-ring
+    // detector — the OS wakes us instantly on a ring crossing at ~zero battery.
+    // So this continuous poll is trimmed to a light safety net: it only reconciles
+    // state if a geofence event is ever missed and re-checks an APPROVED grace
+    // timer's expiry (geofences fire on crossings, not on "time's up"). Stretching
+    // the interval + distance cuts battery substantially with no loss of the
+    // instant crossing detection geofencing provides.
     await Location.startLocationUpdatesAsync(TASK_NAME, {
       accuracy: Location.Accuracy.Balanced,
-      timeInterval: 5 * 60 * 1000,     // Every 5 minutes
-      distanceInterval: 50,              // Or every 50 meters moved
-      deferredUpdatesInterval: 5 * 60 * 1000,
+      timeInterval: 15 * 60 * 1000,      // Safety-net poll every 15 min (was 5)
+      distanceInterval: 150,             // Or every 150 m moved (was 50)
+      deferredUpdatesInterval: 15 * 60 * 1000,
+      pausesUpdatesAutomatically: true,  // iOS: let the OS pause when stationary
+      activityType: Location.ActivityType.Other,
       showsBackgroundLocationIndicator: true, // iOS blue bar
       foregroundService: {
         notificationTitle: 'HBCField - Clocked In',

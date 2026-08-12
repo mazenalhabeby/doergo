@@ -602,6 +602,11 @@
       "statusActive": "Aktiv",
       "statusAuto": "Auto",
       "statusDone": "Fertig"
+    },
+    "alwaysLocation": {
+      "title": "„Immer“-Standort aktivieren",
+      "body": "Damit wir erkennen, wenn Sie den Arbeitsbereich verlassen – auch bei geschlossener App. Aktuell funktioniert es nur bei geöffneter App.",
+      "cta": "Einstellungen öffnen"
     }
   },
   "overtime": {

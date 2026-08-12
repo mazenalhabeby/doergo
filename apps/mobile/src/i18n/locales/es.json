@@ -601,6 +601,11 @@
       "statusActive": "Activo",
       "statusAuto": "Auto",
       "statusDone": "Listo"
+    },
+    "alwaysLocation": {
+      "title": "Activar ubicación “Siempre”",
+      "body": "Para detectar cuando sales del área de trabajo incluso con la app cerrada. Ahora solo funciona con la app abierta.",
+      "cta": "Abrir Ajustes"
     }
   },
   "overtime": {

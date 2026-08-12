@@ -24,6 +24,7 @@ import {
 } from '../../lib/api';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
+import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
@@ -215,6 +216,7 @@ export function FullTimeHome() {
           excursion={status?.activeExcursion}
           onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
         />
+        <AlwaysLocationNudge active={isClockedIn && status?.currentEntry?.location?.lat != null} />
 
         {/* Clock Status Card */}
         <TourTarget name="home-work" style={[ftStyles.statusCard, isClockedIn ? ftStyles.statusCardActive : ftStyles.statusCardInactive, !isClockedIn && { backgroundColor: colors.card }]}>

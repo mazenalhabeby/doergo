@@ -25,6 +25,7 @@ import {
 } from '../../lib/api';
 import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
+import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
@@ -240,6 +241,7 @@ export function HybridHome() {
         excursion={attendanceStatus?.activeExcursion}
         onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
       />
+      <AlwaysLocationNudge active={isClockedIn && attendanceStatus?.currentEntry?.location?.lat != null} />
 
       {/* Attendance Card */}
       {isClockedIn ? (

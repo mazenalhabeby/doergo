@@ -601,6 +601,11 @@
       "statusActive": "Actif",
       "statusAuto": "Auto",
       "statusDone": "Terminé"
+    },
+    "alwaysLocation": {
+      "title": "Activer la localisation « Toujours »",
+      "body": "Pour détecter votre sortie de la zone même app fermée. Actuellement, cela ne fonctionne que l'app ouverte.",
+      "cta": "Ouvrir les réglages"
     }
   },
   "overtime": {

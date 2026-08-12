@@ -45,6 +45,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
+import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
 import { useClockIn } from '../../../src/hooks/useClockIn';
 import { TourTarget } from '../../../src/components/tour';
@@ -588,6 +589,9 @@ export default function AttendanceScreen() {
               {isClockedIn ? t('attendance.clockedIn') : t('attendance.clockedOut')}
             </Text>
           </TourTarget>
+
+          {/* Nudge to "Always" location — background detection needs it */}
+          <AlwaysLocationNudge active={isClockedIn && status?.currentEntry?.location?.lat != null} />
 
           {/* Out-of-ring: needs a reason (OUT_UNREPORTED) */}
           {isClockedIn && activeExcursion?.status === 'OUT_UNREPORTED' && (

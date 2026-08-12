@@ -601,6 +601,11 @@
       "statusActive": "Attivo",
       "statusAuto": "Automatico",
       "statusDone": "Completato"
+    },
+    "alwaysLocation": {
+      "title": "Attiva posizione “Sempre”",
+      "body": "Per rilevare quando esci dall'area anche ad app chiusa. Ora funziona solo con l'app aperta.",
+      "cta": "Apri Impostazioni"
     }
   },
   "overtime": {
