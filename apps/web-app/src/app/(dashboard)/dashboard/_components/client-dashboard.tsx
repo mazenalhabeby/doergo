@@ -7,7 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Plus, Users } from "lucide-react"
 
-import { getSpaceScope, isFieldWorker } from "@hbcfield/shared/client"
+import { getSpaceScope } from "@hbcfield/shared/client"
 import i18n from "@/i18n"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -60,8 +60,9 @@ function getEmployeeStatus(opts: {
   isOnBreak: boolean
   isOnline: boolean // app-active within the last few minutes
   presence?: string | null // availability status (defaults to Available)
-  isRemote?: boolean // clocked in via remote / WFH (not on-site)
-  isOnRoad?: boolean // field worker (mobile-only access) → in the field
+  isRemote?: boolean // clocked in via remote / WFH
+  isShiftBased?: boolean // their space is shift-based (SHIFT/FIXED) → "On Shift" applies
+  atSpace?: boolean // clocked in INSIDE a geofenced space → confirmed at the space
 }): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
   // Genuinely offline: not app-active AND not on the clock. Their stored
   // availability doesn't apply because they aren't currently reachable.
@@ -79,12 +80,15 @@ function getEmployeeStatus(opts: {
   if (opts.presence === "AWAY") {
     return { status: "away", tag: { text: i18n.t("dashboard.presence.away"), variant: "hrs" } }
   }
-  // On the clock with default availability → label by HOW/WHERE they're working,
-  // so it reads differently from a plain logged-in "Available".
+  // On the clock → label by WHERE they are relative to the space (not their access
+  // type). Remote is its own thing; then shift-based spaces split into On Shift
+  // (confirmed inside the geofence) vs In Field (no location / outside it); an
+  // office / open-hours space (non shift-based) is simply "Working".
   if (opts.isClockedIn) {
-    if (opts.isOnRoad) return { status: "on", tag: { text: i18n.t("dashboard.presence.inField"), variant: "task" } }
     if (opts.isRemote) return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
-    return { status: "on", tag: { text: i18n.t("dashboard.presence.onShift"), variant: "hrs" } }
+    if (!opts.isShiftBased) return { status: "on", tag: { text: i18n.t("dashboard.presence.working", "Working"), variant: "hrs" } }
+    if (opts.atSpace) return { status: "on", tag: { text: i18n.t("dashboard.presence.onShift"), variant: "hrs" } }
+    return { status: "on", tag: { text: i18n.t("dashboard.presence.inField"), variant: "task" } }
   }
   // Logged in / online but not clocked in.
   return { status: "on", tag: { text: i18n.t("dashboard.presence.available"), variant: "hrs" } }
@@ -323,6 +327,49 @@ export function ClientDashboard() {
     return map
   }, [todayEntries])
 
+  // userId -> whether their current clock-in was INSIDE the space geofence.
+  const attendanceGeofenceMap = useMemo(() => {
+    const map = new Map<string, boolean>()
+    const sorted = [...todayEntries].sort(
+      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
+    )
+    for (const entry of sorted) {
+      if (!map.has(entry.userId)) {
+        map.set(entry.userId, !!entry.clockInWithinGeofence)
+      }
+    }
+    return map
+  }, [todayEntries])
+
+  // locationId -> { is this space shift-based, does it have a real geofence }.
+  const spaceMetaByLocation = useMemo(() => {
+    const map = new Map<string, { isShiftBased: boolean; hasLocation: boolean }>()
+    for (const l of allLocations as Array<{ id: string; workModel?: string; lat?: number | null; lng?: number | null }>) {
+      const wm = l.workModel || "NONE"
+      map.set(l.id, {
+        isShiftBased: wm === "SHIFT" || wm === "FIXED",
+        hasLocation: l.lat != null && l.lng != null,
+      })
+    }
+    return map
+  }, [allLocations])
+
+  // Resolve the On Shift / In Field / Working inputs for a worker from their
+  // current clock-in space. "atSpace" is true only when the space has a real
+  // geofence AND they clocked in inside it — no location ⇒ can't confirm ⇒ In Field.
+  const shiftLabelInfo = useCallback(
+    (userId: string): { isShiftBased: boolean; atSpace: boolean } => {
+      const locId = attendanceLocationMap.get(userId)
+      const meta = locId ? spaceMetaByLocation.get(locId) : undefined
+      const within = attendanceGeofenceMap.get(userId) ?? false
+      return {
+        isShiftBased: meta?.isShiftBased ?? false,
+        atSpace: (meta?.hasLocation ?? false) && within === true,
+      }
+    },
+    [attendanceLocationMap, spaceMetaByLocation, attendanceGeofenceMap],
+  )
+
   // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED)
   const activeTaskMap = useMemo(() => {
     const map = new Map<string, Task>()
@@ -465,9 +512,12 @@ export function ClientDashboard() {
         const rosterTask = rosterActiveTaskMap.get(userId)
         const activeTaskTitle = ownTask?.title ?? rosterTask?.title
         const isCurrentlyClockedIn = clockedInUserIds.has(userId)
-        // Field worker = mobile-only access (single source of truth, shared with
-        // billing). Replaces the removed workMode ON_ROAD signal.
-        const onRoad = isFieldWorker(member)
+        // On Shift / In Field / Working is decided by WHERE they clocked in
+        // (space geofence) + whether the space is shift-based — not their access.
+        const { isShiftBased, atSpace } = shiftLabelInfo(userId)
+        const isRemoteHere = attendanceRemoteMap.get(userId) ?? false
+        // "In Field" = clocked in on a shift-based space but not confirmed inside it.
+        const onRoad = isCurrentlyClockedIn && !isRemoteHere && isShiftBased && !atSpace
 
         const isOnBreak = onBreakUserIds.has(userId)
 
@@ -476,8 +526,9 @@ export function ClientDashboard() {
           isOnBreak,
           isOnline: memberOnline(member),
           presence: member.presence,
-          isRemote: attendanceRemoteMap.get(userId) ?? false,
-          isOnRoad: onRoad,
+          isRemote: isRemoteHere,
+          isShiftBased,
+          atSpace,
         })
 
         const node = memberToPersonNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
@@ -582,13 +633,15 @@ export function ClientDashboard() {
       }
       accountedWorkerIds.add(userId)
       const isClockedIn = clockedInUserIds.has(userId)
+      const siTask = shiftLabelInfo(userId)
       const { status, tag } = getEmployeeStatus({
         isClockedIn,
         isOnBreak: onBreakUserIds.has(userId),
         isOnline: memberOnline(member),
         presence: member.presence,
         isRemote: attendanceRemoteMap.get(userId) ?? false,
-        isOnRoad: isFieldWorker(member),
+        isShiftBased: siTask.isShiftBased,
+        atSpace: siTask.atSpace,
       })
       onTaskPeople.push(memberToPersonNode(member, status, tag, task.title, isClockedIn))
     }
@@ -621,13 +674,15 @@ export function ClientDashboard() {
 
       if (isClockedIn) {
         accountedWorkerIds.add(worker.id)
+        const siWorker = shiftLabelInfo(worker.id)
         const { status, tag } = getEmployeeStatus({
           isClockedIn: true,
           isOnBreak: onBreakUserIds.has(worker.id),
           isOnline: online,
           presence: worker.presence,
           isRemote: attendanceRemoteMap.get(worker.id) ?? false,
-          isOnRoad: isFieldWorker(worker),
+          isShiftBased: siWorker.isShiftBased,
+          atSpace: siWorker.atSpace,
         })
         onClockPeople.push(memberToPersonNode(worker, status, tag, undefined, true))
       } else if (!activeTaskMap.has(worker.id)) {

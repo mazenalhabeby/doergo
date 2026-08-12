@@ -951,6 +951,7 @@
       "remote": "Remote",
       "atSpace": "At {{space}}",
       "onShift": "On Shift",
+      "working": "Working",
       "available": "Available",
       "onTheClock": "On the Clock",
       "offDuty": "Off Duty",

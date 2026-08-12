@@ -950,6 +950,7 @@
       "inField": "Sur le terrain",
       "remote": "À distance",
       "onShift": "En service",
+      "working": "Au travail",
       "available": "Disponible",
       "onTheClock": "Pointé",
       "offDuty": "Hors service",
