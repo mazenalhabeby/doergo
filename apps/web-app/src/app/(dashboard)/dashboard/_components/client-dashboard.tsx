@@ -147,7 +147,8 @@ export function ClientDashboard() {
   const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
 
   const handleEditLocation = useCallback((locationId: string) => {
-    router.push(`/locations?edit=${locationId}`)
+    // "Manage Space" → that space's own settings page, not the all-spaces list.
+    router.push(`/locations/${locationId}`)
   }, [router])
 
   const [assignSpaceId, setAssignSpaceId] = useState<string | null>(null)
