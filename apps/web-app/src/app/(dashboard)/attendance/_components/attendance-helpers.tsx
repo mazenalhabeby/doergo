@@ -136,7 +136,7 @@ export function WorkerCell({ entry }: { entry: TimeEntry }) {
  * clock-in whose UTC instant crosses midnight in the browser zone (e.g. 6:08 PM
  * EDT = 00:08 next-day in Berlin), so the date and time disagreed.
  */
-function formatDateInZone(at: string, tz?: string | null, locale?: string): string {
+export function formatDateInZone(at: string, tz?: string | null, locale?: string): string {
   try {
     return new Intl.DateTimeFormat(locale || undefined, {
       timeZone: tz || undefined,

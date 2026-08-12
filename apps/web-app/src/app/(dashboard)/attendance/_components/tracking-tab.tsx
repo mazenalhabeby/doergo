@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertCircle, CheckCircle2, Clock, Settings, Play, Timer, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { StatCard, toDate, formatTime, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
+import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
+import { countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { useTimeFormat } from "@/hooks"
@@ -128,23 +129,23 @@ export function TrackingTab({
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (
-          <div className="bg-card rounded-2xl border border-amber-200/60 shadow-sm mb-8">
-            <div className="p-5 border-b border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5 rounded-t-2xl">
+          <div className="bg-card rounded-2xl border border-amber-200/60 dark:border-amber-500/25 shadow-sm mb-8 overflow-hidden">
+            <div className="p-5 border-b border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
                   <AlertCircle className="size-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-amber-900">
+                  <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
                     {t("attendance.tracking.geofenceAlerts", { count: geofenceViolations.length })}
                   </h2>
-                  <p className="text-sm text-amber-700">
+                  <p className="text-sm text-amber-700 dark:text-amber-300/80">
                     {t("attendance.tracking.geofenceAlertsDesc")}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="divide-y divide-amber-100">
+            <div className="divide-y divide-amber-100 dark:divide-amber-500/15">
               {geofenceViolations.slice(0, 5).map((entry: TimeEntry) => (
                 <div key={entry.id} className="p-4 flex items-center justify-between hover:bg-amber-50/30 dark:hover:bg-amber-500/5">
                   <div className="flex items-center gap-3">
@@ -165,26 +166,36 @@ export function TrackingTab({
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-foreground">
-                        {formatTime(entry.clockInAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}
-                        {entry.clockOutAt && ` - ${formatTime(entry.clockOutAt, hour12, locale, (entry.timezone ?? entry.location?.timezone))}`}
-                      </p>
-                      <div className="flex items-center gap-2 justify-end">
-                        {!entry.clockInWithinGeofence && (
-                          <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                            <MapPin className="size-3" />
-                            {t("attendance.tracking.clockInOutside")}
-                          </span>
-                        )}
-                        {entry.clockOutAt && entry.clockOutWithinGeofence === false && (
-                          <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                            <MapPin className="size-3" />
-                            {t("attendance.tracking.clockOutOutside")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    {(() => {
+                      const tz = entry.timezone ?? entry.location?.timezone
+                      const country = countryFromTz(tz, locale)
+                      return (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-foreground tabular-nums">
+                            {formatTime(entry.clockInAt, hour12, locale, tz)}
+                            {entry.clockOutAt && ` – ${formatTime(entry.clockOutAt, hour12, locale, tz)}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateInZone(entry.clockInAt, tz, locale)}
+                            {country ? ` · ${country}` : ""}
+                          </p>
+                          <div className="mt-1.5 flex items-center gap-1.5 justify-end">
+                            {!entry.clockInWithinGeofence && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                                <MapPin className="size-3" />
+                                {t("attendance.tracking.clockInOutside")}
+                              </span>
+                            )}
+                            {entry.clockOutAt && entry.clockOutWithinGeofence === false && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                                <MapPin className="size-3" />
+                                {t("attendance.tracking.clockOutOutside")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
                     <StatusBadge status={entry.status} />
                   </div>
                 </div>
