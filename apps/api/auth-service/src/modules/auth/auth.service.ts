@@ -10,6 +10,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { BillingService } from '../billing/billing.service';
+import { GraceTokenCache } from './grace-token-cache.service';
 import {
   MAX_SESSIONS_PER_USER,
   MAX_FAILED_ATTEMPTS,
@@ -63,6 +64,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly auditLog: AuditLogService,
     private readonly billing: BillingService,
+    private readonly graceCache: GraceTokenCache,
   ) {
     const smtpHost = this.configService.get('SMTP_HOST');
     if (smtpHost) {
@@ -605,16 +607,11 @@ export class AuthService {
           };
         }
 
-        // Within grace period - check for cached tokens or wait for them
-        if (storedToken.cachedAccessToken && storedToken.cachedRefreshToken) {
+        // Within grace period - check the Redis grace cache or wait for it (H7).
+        const graceHit = await this.graceCache.get(storedToken.id);
+        if (graceHit) {
           this.logger.log(`Token reuse within grace period (${REFRESH_TOKEN_GRACE_PERIOD_SECONDS}s). Returning cached tokens.`);
-          return {
-            success: true,
-            data: {
-              accessToken: storedToken.cachedAccessToken,
-              refreshToken: storedToken.cachedRefreshToken,
-            },
-          };
+          return { success: true, data: graceHit };
         }
 
         // Within grace period but no cached tokens yet - another request is generating them
@@ -624,19 +621,10 @@ export class AuthService {
           const delay = 50 * Math.pow(2, attempt); // 50, 100, 200, 400, 800ms
           await new Promise(resolve => setTimeout(resolve, delay));
 
-          const updatedToken = await this.prisma.refreshToken.findUnique({
-            where: { id: storedToken.id },
-          });
-
-          if (updatedToken?.cachedAccessToken && updatedToken?.cachedRefreshToken) {
+          const graceRetry = await this.graceCache.get(storedToken.id);
+          if (graceRetry) {
             this.logger.log(`Got cached tokens from concurrent request (attempt ${attempt + 1}, ${delay}ms)`);
-            return {
-              success: true,
-              data: {
-                accessToken: updatedToken.cachedAccessToken,
-                refreshToken: updatedToken.cachedRefreshToken,
-              },
-            };
+            return { success: true, data: graceRetry };
           }
           this.logger.debug(`Waiting for cached tokens, attempt ${attempt + 1}/5 (${delay}ms)`);
         }
@@ -674,19 +662,10 @@ export class AuthService {
           const delay = 50 * Math.pow(2, attempt); // 50, 100, 200, 400ms
           await new Promise(resolve => setTimeout(resolve, delay));
 
-          const updatedToken = await this.prisma.refreshToken.findUnique({
-            where: { id: storedToken.id },
-          });
-
-          if (updatedToken?.cachedAccessToken && updatedToken?.cachedRefreshToken) {
+          const graceRetry = await this.graceCache.get(storedToken.id);
+          if (graceRetry) {
             this.logger.log(`Returning cached tokens from concurrent request (attempt ${attempt + 1}, ${delay}ms)`);
-            return {
-              success: true,
-              data: {
-                accessToken: updatedToken.cachedAccessToken,
-                refreshToken: updatedToken.cachedRefreshToken,
-              },
-            };
+            return { success: true, data: graceRetry };
           }
 
           this.logger.debug(`Cached tokens not ready yet, attempt ${attempt + 1}/4 (${delay}ms)`);
@@ -717,14 +696,20 @@ export class AuthService {
       // Find the new refresh token hash (it was just created by generateTokens)
       const newRefreshTokenHash = hashToken(tokens.refreshToken);
 
-      // Update the token with cached values for grace period
-      // Use updateMany to avoid throwing if record was somehow deleted
+      // Publish the rotated pair to the Redis grace cache (TTL = grace window) so
+      // concurrent refreshes within the window get the SAME new tokens — instead
+      // of persisting them in the clear in the DB for up to ~15 min. (H7)
+      await this.graceCache.put(storedToken.id, {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
+
+      // Record the replacement hash for reuse-detection (stays in the DB).
+      // Use updateMany to avoid throwing if the record was somehow deleted.
       const updateResult = await this.prisma.refreshToken.updateMany({
         where: { id: storedToken.id },
         data: {
           replacedByTokenHash: newRefreshTokenHash,
-          cachedAccessToken: tokens.accessToken,
-          cachedRefreshToken: tokens.refreshToken,
         },
       });
 

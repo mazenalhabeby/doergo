@@ -29,6 +29,24 @@ import {
   buildDateRangeFilter,
 } from '@hbcfield/shared';
 
+// Trimmed CompanyLocation projection for the hot attendance polls (P12) —
+// getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
+// (incl. customer-contact fields, config, timestamps) when the clients only read
+// these. Superset of every field the mobile/web attendance UI actually renders.
+const ATTENDANCE_LOCATION_SELECT = {
+  id: true,
+  name: true,
+  address: true,
+  lat: true,
+  lng: true,
+  geofenceRadius: true,
+  timezone: true,
+  workModel: true,
+  kind: true,
+  isActive: true,
+  organizationId: true,
+} as const;
+
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
@@ -884,7 +902,7 @@ export class AttendanceService {
         userId: data.userId,
         status: TimeEntryStatus.CLOCKED_IN,
       },
-      include: { location: true },
+      include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
     });
 
     if (!entry || !entry.location) {
@@ -955,7 +973,7 @@ export class AttendanceService {
         status: TimeEntryStatus.CLOCKED_IN,
       },
       include: {
-        location: true,
+        location: { select: ATTENDANCE_LOCATION_SELECT },
       },
     });
 
@@ -969,7 +987,7 @@ export class AttendanceService {
         ],
       },
       include: {
-        space: true,
+        space: { select: ATTENDANCE_LOCATION_SELECT },
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
@@ -1020,7 +1038,7 @@ export class AttendanceService {
         skip,
         take: limit,
         include: {
-          location: true,
+          location: { select: ATTENDANCE_LOCATION_SELECT },
         },
         orderBy: { clockInAt: 'desc' },
       }),
