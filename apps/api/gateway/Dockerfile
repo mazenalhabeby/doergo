@@ -31,4 +31,9 @@ WORKDIR /app
 COPY --from=build /prod ./
 COPY --from=build /app/apps/api/auth-service/prisma ./prisma
 EXPOSE 4000
+# Run as the built-in non-root `node` user (audit). The uploads dir must be
+# node-owned so avatar/cover writes work; the existing named volume (root-owned)
+# is chowned to uid 1000 once on the host during deploy.
+RUN mkdir -p /app/uploads && chown -R node:node /app
+USER node
 CMD ["node", "dist/main.js"]

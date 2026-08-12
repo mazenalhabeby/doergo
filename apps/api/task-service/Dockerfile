@@ -31,4 +31,8 @@ WORKDIR /app
 COPY --from=build /prod ./
 COPY --from=build /app/apps/api/auth-service/prisma ./prisma
 
+# Run as the built-in non-root `node` user (audit). /app is chown'd so the
+# process reads everything it needs; this service writes no local files (S3 only).
+RUN chown -R node:node /app
+USER node
 CMD ["node", "dist/main.js"]

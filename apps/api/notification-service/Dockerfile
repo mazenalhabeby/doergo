@@ -31,4 +31,7 @@ WORKDIR /app
 COPY --from=build /prod ./
 COPY --from=build /app/apps/api/auth-service/prisma ./prisma
 EXPOSE 4001
+# Run as the built-in non-root `node` user (audit). No local file writes.
+RUN chown -R node:node /app
+USER node
 CMD ["node", "dist/main.js"]

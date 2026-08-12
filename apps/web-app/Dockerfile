@@ -39,4 +39,8 @@ COPY --from=build /app/apps/web-app/.next/static ./apps/web-app/.next/static
 COPY --from=build /app/apps/web-app/public ./apps/web-app/public
 
 EXPOSE 3000
+# Run as the built-in non-root `node` user (audit). /app chown'd so Next can write
+# its .next/cache at runtime if needed.
+RUN chown -R node:node /app
+USER node
 CMD ["node", "apps/web-app/server.js"]

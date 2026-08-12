@@ -30,4 +30,8 @@ COPY --from=build /prod ./apps/api/auth-service
 COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
 COPY infra/docker/scripts/auth-entrypoint.sh /app/auth-entrypoint.sh
 RUN chmod +x /app/auth-entrypoint.sh
+# Run as the built-in non-root `node` user (audit). /app chown'd so the entrypoint
+# (prisma migrate deploy + node) runs; migrations write only to the DB, not disk.
+RUN chown -R node:node /app
+USER node
 ENTRYPOINT ["/app/auth-entrypoint.sh"]
