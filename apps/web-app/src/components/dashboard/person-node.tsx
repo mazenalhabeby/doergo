@@ -60,7 +60,7 @@ export const PersonNode = React.memo(function PersonNode({
       onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onPersonClick!(userId!) } } : undefined}
       className={cn(
         "flex flex-col items-center",
-        "gap-1.5 w-[76px]", // fixed size — no cqw
+        "gap-1.5 w-[84px]", // fixed size — no cqw; wide enough for longer status pills
         dimmed && "opacity-30",
         isClickable && "cursor-pointer hover:opacity-80 transition-opacity",
         className,
@@ -70,11 +70,14 @@ export const PersonNode = React.memo(function PersonNode({
       <span className="text-xs leading-tight text-foreground/70 truncate w-full text-center font-medium">
         {name}
       </span>
-      <div className="min-h-[18px] flex items-center">
+      <div className="min-h-[18px] flex w-full items-center justify-center">
         {tag ? (
           <span
+            title={tag.text}
             className={cn(
-              "text-[10px] font-bold leading-none px-2 py-1 rounded-full uppercase tracking-wide",
+              // Single line, ellipsis if it can't fit the node width — a long
+              // "At {space}" label used to wrap to two lines and look cramped.
+              "block max-w-full truncate text-[10px] font-bold leading-none px-1.5 py-1 rounded-full uppercase tracking-wide",
               TAG_CLASSES[tag.variant],
             )}
           >
