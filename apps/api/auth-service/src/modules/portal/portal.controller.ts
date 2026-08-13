@@ -28,6 +28,21 @@ export class PortalController {
     return this.portalService.ensurePortalForSpace(data);
   }
 
+  @MessagePattern({ cmd: 'portal_get_for_space' })
+  getSpacePortal(@Payload() data: { organizationId: string; spaceId: string }) {
+    return this.portalService.getSpacePortal(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_update_for_space' })
+  updateSpacePortal(@Payload() data: { organizationId: string; spaceId: string; templateKey?: string }) {
+    return this.portalService.updateSpacePortal(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_list_space_units' })
+  listSpaceUnits(@Payload() data: { organizationId: string; spaceId: string }) {
+    return this.portalService.listSpaceUnits(data);
+  }
+
   @MessagePattern({ cmd: 'portal_update' })
   updatePortal(@Payload() data: any) {
     return this.portalService.updatePortal(data);

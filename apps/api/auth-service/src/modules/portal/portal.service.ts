@@ -151,6 +151,45 @@ export class PortalService {
     return { data: { id: portal.id } };
   }
 
+  // ── Per-space portal config + unit catalog (CRM "Portal" tab) ──────────────
+
+  // Entity-type → label for the space's portal (what a "unit" is called there).
+  private static readonly ENTITY_LABELS: Record<string, string> = {
+    rental: 'Apartment', logistics: 'Order', workplace: 'Workspace', custom: 'Unit',
+  };
+
+  /** The space's portal config (ensures one exists). */
+  async getSpacePortal(data: { organizationId: string; spaceId: string }) {
+    const ensured = await this.ensurePortalForSpace({ organizationId: data.organizationId, spaceId: data.spaceId });
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: ensured.data.id, organizationId: data.organizationId },
+      select: { id: true, templateKey: true, entityLabel: true, name: true },
+    });
+    return { data: portal };
+  }
+
+  /** Set the space portal's entity type (templateKey → entityLabel). */
+  async updateSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string }) {
+    const ensured = await this.ensurePortalForSpace({ organizationId: data.organizationId, spaceId: data.spaceId });
+    if (data.templateKey) {
+      await this.prisma.portal.update({
+        where: { id: ensured.data.id },
+        data: { templateKey: data.templateKey, entityLabel: PortalService.ENTITY_LABELS[data.templateKey] ?? 'Unit' },
+      });
+    }
+    return this.getSpacePortal(data);
+  }
+
+  /** The space's unit/apartment catalog (with the assigned customer, if any). */
+  async listSpaceUnits(data: { organizationId: string; spaceId: string }) {
+    const rows = await this.prisma.customerUnit.findMany({
+      where: { organizationId: data.organizationId, spaceId: data.spaceId, isActive: true },
+      orderBy: { name: 'asc' },
+      include: { customer: { select: { id: true, name: true } } },
+    });
+    return { data: rows };
+  }
+
   async getPortal(data: { id: string; organizationId: string }) {
     const portal = await this.prisma.portal.findFirst({
       where: { id: data.id, organizationId: data.organizationId },

@@ -4549,6 +4549,43 @@ export interface CustomerAddress {
   isPrimary: boolean;
 }
 
+// ── Per-space B2C portal (config + unit/apartment catalog) ──
+export interface SpacePortalConfig { id: string; templateKey: string; entityLabel: string; name: string }
+export interface SpaceUnit extends CustomerAddress { customer?: { id: string; name: string } | null }
+
+export const spacePortalApi = {
+  get: async (spaceId: string): Promise<SpacePortalConfig> => {
+    const res = await api.get<{ data: SpacePortalConfig }>(`/spaces/${spaceId}/portal`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  setEntityType: async (spaceId: string, templateKey: string) => {
+    const res = await api.patch<{ data: SpacePortalConfig }>(`/spaces/${spaceId}/portal`, { templateKey });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  units: async (spaceId: string): Promise<SpaceUnit[]> => {
+    const res = await api.get<{ data: SpaceUnit[] }>(`/spaces/${spaceId}/portal/units`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data ?? [];
+  },
+  addUnit: async (spaceId: string, input: { name?: string; address?: string; lat?: number; lng?: number }) => {
+    const res = await api.post<SpaceUnit>(`/spaces/${spaceId}/portal/units`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  deleteUnit: async (spaceId: string, unitId: string) => {
+    const res = await api.delete<{ success: boolean }>(`/spaces/${spaceId}/portal/units/${unitId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  assign: async (spaceId: string, unitId: string, customerId: string) => {
+    const res = await api.post<{ data: { success: boolean } }>(`/spaces/${spaceId}/portal/units/${unitId}/assign`, { customerId });
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+};
+
 export interface CustomerActivity {
   id: string;
   customerId: string;

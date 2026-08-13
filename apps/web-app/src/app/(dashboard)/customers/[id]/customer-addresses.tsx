@@ -4,9 +4,9 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { MapPin, Plus, Star, Trash2, Pencil, ChevronDown, ChevronUp } from "lucide-react"
+import { MapPin, Plus, Star, Trash2, Pencil, ChevronDown, ChevronUp, Home } from "lucide-react"
 
-import { customersApi, type CustomerAddress } from "@/lib/api"
+import { customersApi, spacePortalApi, type CustomerAddress, type SpaceUnit } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -34,18 +34,26 @@ const LocationPicker = dynamic(
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
 ) as unknown as React.ComponentType<LPProps>
 
-/** Addresses panel for a customer record. `entityLabel` renames it (e.g. "Apartments"). */
-export function AddressesPanel({ customerId, entityLabel }: { customerId: string; entityLabel?: string }) {
+/** Addresses panel for a customer record. When the space runs a B2C portal, this
+ *  becomes the portal's entity (e.g. "Apartments") and lets you assign one from
+ *  the space catalog. */
+export function AddressesPanel({ customerId, spaceId, hasPortal }: { customerId: string; spaceId?: string; hasPortal?: boolean }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [showAll, setShowAll] = useState(false)
 
   const q = useQuery({ queryKey: ["customer-addresses", customerId], queryFn: () => customersApi.addresses(customerId) })
+  const portalQ = useQuery({
+    queryKey: ["space-portal", spaceId],
+    queryFn: () => spacePortalApi.get(spaceId!),
+    enabled: !!spaceId && !!hasPortal,
+  })
   const addresses = q.data ?? []
   const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
   const others = addresses.filter((a) => a.id !== primary?.id)
   const invalidate = () => qc.invalidateQueries({ queryKey: ["customer-addresses", customerId] })
-  const label = entityLabel || t("customers.addresses", "Addresses")
+  const entityLabel = portalQ.data?.entityLabel
+  const label = entityLabel ? `${entityLabel}s` : t("customers.addresses", "Addresses")
 
   const setPrimary = useMutation({ mutationFn: (unitId: string) => customersApi.setPrimaryAddress(customerId, unitId), onSuccess: invalidate })
   const remove = useMutation({ mutationFn: (unitId: string) => customersApi.removeAddress(customerId, unitId), onSuccess: () => { notify.success(t("customers.addressRemoved", "Address removed")); invalidate() } })
@@ -54,9 +62,16 @@ export function AddressesPanel({ customerId, entityLabel }: { customerId: string
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
       <div className="flex items-center justify-between px-4 pt-4">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <AddressDialog customerId={customerId} onSaved={invalidate} isFirst={addresses.length === 0} trigger={
-          <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><Plus className="h-3.5 w-3.5" /> {t("customers.addAddress", "Add")}</button>
-        } />
+        <div className="flex items-center gap-3">
+          {entityLabel && spaceId && (
+            <AssignDialog spaceId={spaceId} customerId={customerId} entityLabel={entityLabel} onSaved={invalidate} trigger={
+              <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><Home className="h-3.5 w-3.5" /> {t("customers.assign", "Assign")}</button>
+            } />
+          )}
+          <AddressDialog customerId={customerId} onSaved={invalidate} isFirst={addresses.length === 0} trigger={
+            <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><Plus className="h-3.5 w-3.5" /> {t("customers.addAddress", "Add")}</button>
+          } />
+        </div>
       </div>
 
       {q.isLoading ? (
@@ -171,6 +186,49 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
             {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Assign an existing unit (apartment) from the space catalog to this customer.
+function AssignDialog({ spaceId, customerId, entityLabel, onSaved, trigger }: {
+  spaceId: string; customerId: string; entityLabel: string; onSaved: () => void; trigger: React.ReactNode
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const unitsQ = useQuery({ queryKey: ["space-units", spaceId], queryFn: () => spacePortalApi.units(spaceId), enabled: open })
+  const vacant = (unitsQ.data ?? []).filter((u: SpaceUnit) => !u.customerId)
+
+  const assign = useMutation({
+    mutationFn: (unitId: string) => spacePortalApi.assign(spaceId, unitId, customerId),
+    onSuccess: () => { notify.success(t("customers.assigned", "Assigned")); onSaved(); setOpen(false) },
+    onError: (e: any) => notify.error(e.message || "Could not assign"),
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{t("customers.assignEntity", "Assign {{label}}", { label: entityLabel })}</DialogTitle></DialogHeader>
+        {unitsQ.isLoading ? (
+          <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}</div>
+        ) : vacant.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("customers.noVacant", "No vacant {{label}}. Add one in the space's Client portal tab.", { label: entityLabel.toLowerCase() + "s" })}</p>
+        ) : (
+          <div className="max-h-80 space-y-1.5 overflow-y-auto">
+            {vacant.map((u: SpaceUnit) => (
+              <button key={u.id} disabled={assign.isPending} onClick={() => assign.mutate(u.id)}
+                className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:border-primary hover:bg-muted/50">
+                <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{u.name}</p>
+                  {u.address && u.address !== u.name && <p className="truncate text-xs text-muted-foreground">{u.address}</p>}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

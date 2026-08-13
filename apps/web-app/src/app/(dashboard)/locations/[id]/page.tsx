@@ -31,6 +31,7 @@ import { WorkflowTab } from "./_components/workflow-tab"
 import { MembersTab } from "./_components/members-tab"
 import { InvoicesTab } from "./_components/invoices-tab"
 import { CustomersTab } from "./_components/customers-tab"
+import { PortalTab } from "./_components/portal-tab"
 import { SharingTab } from "./_components/sharing-tab"
 
 export default function SpaceSettingsPage() {
@@ -146,6 +147,13 @@ export default function SpaceSettingsPage() {
                   {t("customers.title", "Customers")}
                 </TabsTrigger>
               )}
+              {/* Portal tab only when the space has the B2C Portal module on. */}
+              {space?.enabledModules?.includes("b2c_portal") && (
+                <TabsTrigger value="portal" className="gap-1.5">
+                  <Building2 className="h-4 w-4" />
+                  {t("portal.title", "Client portal")}
+                </TabsTrigger>
+              )}
               {/* Invoices tab only for CUSTOMER-kind spaces (customer companies). */}
               {space?.kind === "CUSTOMER" && (
                 <TabsTrigger value="invoices" className="gap-1.5">
@@ -183,6 +191,13 @@ export default function SpaceSettingsPage() {
               <TabsContent value="customers" className="mt-6">
                 <PlanGate feature="crm">
                   <CustomersTab space={space} />
+                </PlanGate>
+              </TabsContent>
+            )}
+            {space?.enabledModules?.includes("b2c_portal") && (
+              <TabsContent value="portal" className="mt-6">
+                <PlanGate feature="crm">
+                  <PortalTab spaceId={spaceId} />
                 </PlanGate>
               </TabsContent>
             )}

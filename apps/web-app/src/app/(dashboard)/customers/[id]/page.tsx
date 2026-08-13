@@ -169,7 +169,7 @@ export default function CustomerRecordPage() {
             {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-muted-foreground">{customer.notes}</p>}
           </Panel>
 
-          <AddressesPanel customerId={id} />
+          <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} />
 
           <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />
         </aside>
