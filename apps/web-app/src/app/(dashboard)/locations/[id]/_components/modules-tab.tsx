@@ -7,7 +7,9 @@ import { Blocks, Sparkles } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
-import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS } from "@hbcfield/shared/client"
+import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, moduleRequires, resolveModuleDependencies } from "@hbcfield/shared/client"
+
+const MODULE_LABEL: Record<string, string> = Object.fromEntries(AVAILABLE_MODULES.map((m) => [m.key, m.label]))
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -32,14 +34,21 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) => {
-      const next = prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]
+      let next: string[]
+      if (prev.includes(key)) {
+        // Disabling: also drop anything that depends on it (e.g. crm off → b2c off).
+        next = resolveModuleDependencies(prev.filter((m) => m !== key))
+      } else {
+        // Enabling: pull in its prerequisites too.
+        next = Array.from(new Set([...prev, key, ...moduleRequires(key)]))
+      }
       setHasChanges(true)
       return next
     })
   }
 
   const applyPreset = (modules: string[]) => {
-    setEnabledModules([...modules])
+    setEnabledModules(resolveModuleDependencies([...modules]))
     setHasChanges(true)
   }
 
@@ -97,27 +106,37 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
           </div>
           {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => {
             const isEnabled = enabledModules.includes(mod.key)
+            const unmet = moduleRequires(mod.key).filter((r) => !enabledModules.includes(r))
+            const locked = !isEnabled && unmet.length > 0
             return (
               <label
                 key={mod.key}
-                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-colors",
                   isEnabled
                     ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30"
-                    : "border-border hover:bg-muted/50"
-                }`}
+                    : "border-border hover:bg-muted/50",
+                  locked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+                )}
               >
                 <div className="flex-1 min-w-0 mr-3">
                   <span className="text-sm font-medium text-foreground">{mod.label}</span>
                   <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+                  {locked && (
+                    <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">
+                      🔒 {t("locations.moduleRequires", "Requires {{modules}}", { modules: unmet.map((r) => MODULE_LABEL[r] || r).join(", ") })}
+                    </p>
+                  )}
                 </div>
-                <div className="relative inline-flex items-center cursor-pointer shrink-0">
+                <div className="relative inline-flex items-center shrink-0">
                   <input
                     type="checkbox"
                     checked={isEnabled}
+                    disabled={locked}
                     onChange={() => toggleModule(mod.key)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 peer-disabled:opacity-50 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
                 </div>
               </label>
             )

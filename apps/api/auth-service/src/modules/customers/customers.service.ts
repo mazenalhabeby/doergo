@@ -11,6 +11,8 @@ export interface CustomerInput {
   isActive?: boolean;
   isPortalResident?: boolean;
   portalId?: string | null;
+  spaceId?: string | null; // the space's Customers list this record belongs to (CRM)
+  ownerId?: string | null; // sales rep who owns the relationship
 }
 
 const customerSelect = {
@@ -24,6 +26,8 @@ const customerSelect = {
   isActive: true,
   isPortalResident: true,
   portalId: true,
+  spaceId: true,
+  ownerId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -39,6 +43,7 @@ export class CustomersService {
     status?: 'active' | 'inactive' | 'all';
     portalResident?: boolean; // true = B2C residents only; false = B2B customers only
     portalId?: string; // residents in a specific portal
+    spaceId?: string; // a space's Customers list (CRM)
     page?: number;
     limit?: number;
   }) {
@@ -49,6 +54,7 @@ export class CustomersService {
     else if (data.status === 'inactive') where.isActive = false;
     if (typeof data.portalResident === 'boolean') where.isPortalResident = data.portalResident;
     if (data.portalId) where.portalId = data.portalId;
+    if (data.spaceId) where.spaceId = data.spaceId;
     if (data.search) {
       where.OR = [
         { name: { contains: data.search, mode: 'insensitive' } },
@@ -92,6 +98,8 @@ export class CustomersService {
         notes: dto.notes ?? null,
         isPortalResident: dto.isPortalResident ?? false,
         portalId: dto.portalId ?? null,
+        spaceId: dto.spaceId ?? null,
+        ownerId: dto.ownerId ?? null,
       },
       select: customerSelect,
     });
@@ -107,7 +115,7 @@ export class CustomersService {
       if (!name) throw new BadRequestException('Customer name is required');
       data.name = name;
     }
-    for (const k of ['contactName', 'email', 'phone', 'address', 'notes', 'isActive'] as const) {
+    for (const k of ['contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'ownerId', 'isPortalResident', 'portalId'] as const) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
     const customer = await this.prisma.customer.update({ where: { id }, data, select: customerSelect });

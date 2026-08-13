@@ -1169,6 +1169,15 @@ model Customer {
   portalId String?
   portal   Portal? @relation(fields: [portalId], references: [id], onDelete: SetNull)
 
+  // The Space this customer belongs to (its CRM). A customer is a record in a
+  // space's Customers list; sales works it with tasks. Null = legacy/org-level.
+  // "Invite to app" (B2C module) turns it into a portal resident (login).
+  spaceId String?
+  space   CompanyLocation? @relation("SpaceCustomers", fields: [spaceId], references: [id], onDelete: SetNull)
+
+  // Sales rep who owns the relationship (plain User-id marker, no FK).
+  ownerId String?
+
   tasks          Task[]
   serviceReports ServiceReport[]
 
@@ -1182,6 +1191,7 @@ model Customer {
   @@index([organizationId, isActive])
   @@index([organizationId, name])
   @@index([portalId])
+  @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
 }
 
@@ -1516,6 +1526,9 @@ model CompanyLocation {
   // Customer portal: units & intake categories routing into this space
   customerUnits    CustomerUnit[]
   intakeCategories IntakeCategory[]
+
+  // CRM: customer records belonging to this space's Customers list
+  customers Customer[] @relation("SpaceCustomers")
 
   @@index([organizationId])
   @@index([isActive])

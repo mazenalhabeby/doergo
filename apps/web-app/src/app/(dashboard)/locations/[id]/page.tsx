@@ -10,6 +10,7 @@ import {
   Building2,
   CalendarClock,
   FileText,
+  Contact,
   Loader2,
   Share2,
   ShieldAlert,
@@ -29,6 +30,7 @@ import { ModulesTab } from "./_components/modules-tab"
 import { WorkflowTab } from "./_components/workflow-tab"
 import { MembersTab } from "./_components/members-tab"
 import { InvoicesTab } from "./_components/invoices-tab"
+import { CustomersTab } from "./_components/customers-tab"
 import { SharingTab } from "./_components/sharing-tab"
 
 export default function SpaceSettingsPage() {
@@ -137,6 +139,13 @@ export default function SpaceSettingsPage() {
                 <Share2 className="h-4 w-4" />
                 {t("spaceSharing.tabTitle")}
               </TabsTrigger>
+              {/* Customers tab only when the space has the CRM module on. */}
+              {space?.enabledModules?.includes("crm") && (
+                <TabsTrigger value="customers" className="gap-1.5">
+                  <Contact className="h-4 w-4" />
+                  {t("customers.title", "Customers")}
+                </TabsTrigger>
+              )}
               {/* Invoices tab only for CUSTOMER-kind spaces (customer companies). */}
               {space?.kind === "CUSTOMER" && (
                 <TabsTrigger value="invoices" className="gap-1.5">
@@ -170,6 +179,13 @@ export default function SpaceSettingsPage() {
             <TabsContent value="sharing" className="mt-6">
               <SharingTab spaceId={spaceId} spaceName={space.name} />
             </TabsContent>
+            {space?.enabledModules?.includes("crm") && (
+              <TabsContent value="customers" className="mt-6">
+                <PlanGate feature="crm">
+                  <CustomersTab space={space} />
+                </PlanGate>
+              </TabsContent>
+            )}
             {space?.kind === "CUSTOMER" && (
               <TabsContent value="invoices" className="mt-6">
                 <PlanGate feature="invoicing">

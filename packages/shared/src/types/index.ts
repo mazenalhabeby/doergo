@@ -209,6 +209,9 @@ export const AVAILABLE_MODULES = [
   { key: 'story_points', label: 'Story Points', description: 'Estimate task complexity with fibonacci points', group: 'agile' },
   { key: 'epics', label: 'Epics', description: 'Group related tasks into larger projects', group: 'agile' },
   { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases', group: 'agile' },
+  // Clients (customer records + optional app access)
+  { key: 'crm', label: 'CRM', description: 'Customer records, info & history; sales works them with tasks (calls, visits)', group: 'clients' },
+  { key: 'b2c_portal', label: 'B2C Portal', description: 'Invite a customer to the app to make orders & follow their jobs', group: 'clients' },
 ] as const;
 
 /** Display groups for the module catalog. */
@@ -216,7 +219,42 @@ export const MODULE_GROUPS = [
   { key: 'task', label: 'Task sections', description: 'Extra detail inside a task' },
   { key: 'field', label: 'Field service', description: 'On-site / mobile work' },
   { key: 'agile', label: 'Project / Agile', description: 'Project-style planning' },
+  { key: 'clients', label: 'Clients', description: 'Customers & client-facing portal' },
 ] as const;
+
+/**
+ * Module dependencies: a module can only be enabled if its prerequisites are too
+ * (and disabling a prerequisite auto-disables its dependents). Enforced in the
+ * space Modules tab UI AND server-side when persisting a space's modules.
+ * B2C Portal invites customers, and customers live in CRM — so it requires CRM.
+ */
+export const MODULE_DEPENDENCIES: Record<string, string[]> = {
+  b2c_portal: ['crm'],
+};
+
+/** Prerequisite module keys for a module (empty if none). */
+export function moduleRequires(key: string): string[] {
+  return MODULE_DEPENDENCIES[key] ?? [];
+}
+
+/**
+ * Normalize a set of enabled modules so all dependencies hold: drop any module
+ * whose prerequisites aren't all present. Idempotent; used on save (client+server).
+ */
+export function resolveModuleDependencies(modules: string[]): string[] {
+  const set = new Set(modules);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const key of Array.from(set)) {
+      if (moduleRequires(key).some((req) => !set.has(req))) {
+        set.delete(key);
+        changed = true;
+      }
+    }
+  }
+  return Array.from(set);
+}
 
 /** One-click module bundles by business type. */
 export const MODULE_PRESETS: { key: string; label: string; modules: string[] }[] = [

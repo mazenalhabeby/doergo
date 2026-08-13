@@ -4529,6 +4529,8 @@ export interface Customer {
   isActive: boolean;
   isPortalResident?: boolean;
   portalId?: string | null;
+  spaceId?: string | null; // per-space CRM
+  ownerId?: string | null; // sales owner
   createdAt: string;
   updatedAt: string;
 }
@@ -4536,11 +4538,22 @@ export interface Customer {
 export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
 
 export const customersApi = {
-  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; page?: number; limit?: number }) => {
+  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; page?: number; limit?: number }) => {
     const qs = buildUrlWithQuery("/customers", params || {});
     const res = await api.get<{ data: Customer[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(qs);
     if (res.error) throw new Error(res.error);
     return res.data!;
+  },
+  /** Invite a space customer to the B2C app — returns the invite code. */
+  invite: async (id: string, email?: string) => {
+    const res = await api.post<{ data: { code?: string; email?: string } }>(`/customers/${id}/invite`, { email });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  resendInvite: async (id: string) => {
+    const res = await api.post<{ data?: any }>(`/customers/${id}/resend-invite`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
   },
   get: async (id: string) => {
     const res = await api.get<{ data: Customer }>(`/customers/${id}`);

@@ -113,6 +113,44 @@ export class PortalService {
     return this.getPortal({ id: portal.id, organizationId: data.organizationId });
   }
 
+  /**
+   * The B2C portal for a specific Space (CRM "Invite to app" target). Finds the
+   * space's portal or lazily creates one linked to it. Idempotent.
+   */
+  async ensurePortalForSpace(data: { organizationId: string; spaceId: string; name?: string }) {
+    const existing = await this.prisma.portal.findFirst({
+      where: { organizationId: data.organizationId, spaceId: data.spaceId },
+      select: { id: true },
+    });
+    if (existing) return { data: { id: existing.id } };
+    const template = PORTAL_TEMPLATES.rental;
+    const portal = await this.prisma.portal.create({
+      data: {
+        organizationId: data.organizationId,
+        name: data.name?.trim() || template.vertical,
+        templateKey: template.key,
+        entityLabel: template.entityLabel,
+        contactLabel: template.contactLabel,
+        accent: template.accent,
+        features: template.features as unknown as object,
+        spaceId: data.spaceId,
+      },
+    });
+    await this.prisma.intakeCategory.createMany({
+      data: templateToIntakeCategories(template).map((r) => ({
+        ...r,
+        organizationId: data.organizationId,
+        portalId: portal.id,
+        spaceId: data.spaceId,
+      })),
+    });
+    await this.prisma.organization.update({
+      where: { id: data.organizationId },
+      data: { customerPortalEnabled: true },
+    });
+    return { data: { id: portal.id } };
+  }
+
   async getPortal(data: { id: string; organizationId: string }) {
     const portal = await this.prisma.portal.findFirst({
       where: { id: data.id, organizationId: data.organizationId },

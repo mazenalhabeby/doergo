@@ -23,6 +23,11 @@ export class PortalController {
     return this.portalService.getPortal(data);
   }
 
+  @MessagePattern({ cmd: 'portal_ensure_for_space' })
+  ensurePortalForSpace(@Payload() data: { organizationId: string; spaceId: string; name?: string }) {
+    return this.portalService.ensurePortalForSpace(data);
+  }
+
   @MessagePattern({ cmd: 'portal_update' })
   updatePortal(@Payload() data: any) {
     return this.portalService.updatePortal(data);

@@ -7,7 +7,7 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @MessagePattern({ cmd: 'list_customers' })
-  async list(@Payload() data: { organizationId: string; search?: string; status?: 'active' | 'inactive' | 'all'; page?: number; limit?: number }) {
+  async list(@Payload() data: { organizationId: string; search?: string; status?: 'active' | 'inactive' | 'all'; portalResident?: boolean; portalId?: string; spaceId?: string; page?: number; limit?: number }) {
     return this.customersService.list(data);
   }
 
