@@ -1298,6 +1298,11 @@ model CustomerUnit {
   spaceId String?
   space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: SetNull)
 
+  // Geocoded coordinates (for the map). lat/lng already declared above.
+
+  // The customer's PRIMARY address (one per customer) — shown on the map.
+  isPrimary Boolean @default(false)
+
   isActive Boolean @default(true)
 
   users User[] // portal logins whose default unit is this

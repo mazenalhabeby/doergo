@@ -114,6 +114,41 @@ export class CustomersController {
     return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id });
   }
 
+  // ── Addresses (a customer's units; one is primary → shown on the map) ──
+  @Get(':id/addresses')
+  @RequirePermission('canViewAllTasks')
+  listAddresses(@Param('id') id: string, @Request() req: any) {
+    return this.auth('portal_list_units', { organizationId: req.user.organizationId, customerId: id });
+  }
+
+  @Post(':id/addresses')
+  @RequirePermission('canManageUsers')
+  addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean }, @Request() req: any) {
+    return this.auth('portal_create_unit', {
+      organizationId: req.user.organizationId, customerId: id,
+      name: body.name?.trim() || body.address || 'Address',
+      address: body.address, lat: body.lat, lng: body.lng, isPrimary: body.isPrimary,
+    });
+  }
+
+  @Patch(':id/addresses/:unitId')
+  @RequirePermission('canManageUsers')
+  updateAddress(@Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
+    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, ...body });
+  }
+
+  @Post(':id/addresses/:unitId/primary')
+  @RequirePermission('canManageUsers')
+  setPrimaryAddress(@Param('unitId') unitId: string, @Request() req: any) {
+    return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId });
+  }
+
+  @Delete(':id/addresses/:unitId')
+  @RequirePermission('canManageUsers')
+  deleteAddress(@Param('unitId') unitId: string, @Request() req: any) {
+    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
+  }
+
   // ── CRM activity timeline ──
   @Get(':id/activities')
   @RequirePermission('canViewAllTasks')

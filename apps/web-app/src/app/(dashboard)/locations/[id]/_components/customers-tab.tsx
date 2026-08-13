@@ -146,7 +146,6 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
               <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} />
             </div>
           </div>
-          <Field label={t("customers.address", "Address")} value={form.address} onChange={(v) => set("address", v)} />
           <div className="space-y-1">
             <Label>{t("customers.notes", "Notes")}</Label>
             <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} />

@@ -277,8 +277,24 @@ export class PortalService {
   async listCustomerUnits(data: { organizationId: string; customerId: string }) {
     return this.prisma.customerUnit.findMany({
       where: { organizationId: data.organizationId, customerId: data.customerId, isActive: true },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
+  }
+
+  /** Make a unit the customer's primary address (unsets the siblings). */
+  async setPrimaryUnit(data: { id: string; organizationId: string }) {
+    const unit = await this.prisma.customerUnit.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true, customerId: true },
+    });
+    if (!unit) throw new NotFoundException('Unit not found');
+    await this.prisma.$transaction([
+      ...(unit.customerId
+        ? [this.prisma.customerUnit.updateMany({ where: { customerId: unit.customerId, id: { not: unit.id } }, data: { isPrimary: false } })]
+        : []),
+      this.prisma.customerUnit.update({ where: { id: unit.id }, data: { isPrimary: true } }),
+    ]);
+    return { success: true };
   }
 
   async listUnits(data: { organizationId: string; customerId?: string }) {
@@ -309,18 +325,31 @@ export class PortalService {
     name: string;
     label?: string;
     address?: string;
+    lat?: number | null;
+    lng?: number | null;
+    isPrimary?: boolean;
     spaceId?: string;
   }) {
     const c = await this.assertCustomerInOrg(data.organizationId, data.customerId);
+    // First address for a customer becomes primary automatically.
+    const existing = data.customerId
+      ? await this.prisma.customerUnit.count({ where: { customerId: data.customerId } })
+      : 0;
+    const isPrimary = data.isPrimary ?? existing === 0;
+    if (isPrimary && data.customerId) {
+      await this.prisma.customerUnit.updateMany({ where: { customerId: data.customerId }, data: { isPrimary: false } });
+    }
     return this.prisma.customerUnit.create({
       data: {
         organizationId: data.organizationId,
         customerId: data.customerId || null,
-        // Inherit the portal from the customer if not passed explicitly.
         portalId: data.portalId || c?.portalId || null,
         name: data.name,
         label: data.label || null,
         address: data.address || null,
+        lat: data.lat ?? null,
+        lng: data.lng ?? null,
+        isPrimary,
         spaceId: data.spaceId || null,
       },
     });
@@ -332,21 +361,30 @@ export class PortalService {
     name?: string;
     label?: string | null;
     address?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    isPrimary?: boolean;
     spaceId?: string | null;
     customerId?: string | null;
   }) {
     const existing = await this.prisma.customerUnit.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
-      select: { id: true },
+      select: { id: true, customerId: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');
     await this.assertCustomerInOrg(data.organizationId, data.customerId);
+    if (data.isPrimary && existing.customerId) {
+      await this.prisma.customerUnit.updateMany({ where: { customerId: existing.customerId, id: { not: existing.id } }, data: { isPrimary: false } });
+    }
     return this.prisma.customerUnit.update({
       where: { id: data.id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.label !== undefined ? { label: data.label } : {}),
         ...(data.address !== undefined ? { address: data.address } : {}),
+        ...(data.lat !== undefined ? { lat: data.lat } : {}),
+        ...(data.lng !== undefined ? { lng: data.lng } : {}),
+        ...(data.isPrimary !== undefined ? { isPrimary: data.isPrimary } : {}),
         ...(data.spaceId !== undefined ? { spaceId: data.spaceId } : {}),
         ...(data.customerId !== undefined ? { customerId: data.customerId } : {}),
       },

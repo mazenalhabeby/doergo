@@ -4538,6 +4538,17 @@ export interface Customer {
 
 export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
 
+export interface CustomerAddress {
+  id: string;
+  customerId?: string | null;
+  name: string;
+  label?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  isPrimary: boolean;
+}
+
 export interface CustomerActivity {
   id: string;
   customerId: string;
@@ -4587,6 +4598,32 @@ export const customersApi = {
   },
   removeActivity: async (id: string, activityId: string) => {
     const res = await api.delete<{ success: boolean }>(`/customers/${id}/activities/${activityId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  // ── Addresses (a customer's units; one primary → on the map) ──
+  addresses: async (id: string): Promise<CustomerAddress[]> => {
+    const res = await api.get<CustomerAddress[]>(`/customers/${id}/addresses`);
+    if (res.error) throw new Error(res.error);
+    return res.data ?? [];
+  },
+  addAddress: async (id: string, input: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean }) => {
+    const res = await api.post<CustomerAddress>(`/customers/${id}/addresses`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  updateAddress: async (id: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number }) => {
+    const res = await api.patch<CustomerAddress>(`/customers/${id}/addresses/${unitId}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  setPrimaryAddress: async (id: string, unitId: string) => {
+    const res = await api.post<{ success: boolean }>(`/customers/${id}/addresses/${unitId}/primary`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  removeAddress: async (id: string, unitId: string) => {
+    const res = await api.delete<{ success: boolean }>(`/customers/${id}/addresses/${unitId}`);
     if (res.error) throw new Error(res.error);
     return res.data;
   },

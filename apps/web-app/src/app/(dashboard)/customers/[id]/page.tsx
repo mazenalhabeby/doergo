@@ -24,6 +24,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
+import { AddressesPanel } from "./customer-addresses"
 
 // stage tone → dot color
 const STAGE_DOT: Record<string, string> = {
@@ -162,12 +163,13 @@ export default function CustomerRecordPage() {
               <PropRow label={t("customers.email", "Email")} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
               <PropRow label={t("customers.phone", "Phone")} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
               <PropRow label={t("customers.contactName", "Contact")} value={customer.contactName} />
-              <PropRow label={t("customers.address", "Address")} value={customer.address} />
               <PropRow label={t("customers.added", "Added")} value={fmtDate(customer.createdAt)} />
               <PropRow label={t("customers.stage", "Stage")} value={customerStageLabel(status)} />
             </dl>
             {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-muted-foreground">{customer.notes}</p>}
           </Panel>
+
+          <AddressesPanel customerId={id} />
 
           <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />
         </aside>

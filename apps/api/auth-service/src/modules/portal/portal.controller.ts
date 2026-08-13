@@ -67,6 +67,11 @@ export class PortalController {
     return this.portalService.updateUnit(data);
   }
 
+  @MessagePattern({ cmd: 'portal_set_primary_unit' })
+  setPrimaryUnit(@Payload() data: { id: string; organizationId: string }) {
+    return this.portalService.setPrimaryUnit(data);
+  }
+
   @MessagePattern({ cmd: 'portal_delete_unit' })
   deleteUnit(@Payload() data: { id: string; organizationId: string }) {
     return this.portalService.deleteUnit(data);
