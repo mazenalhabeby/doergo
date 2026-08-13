@@ -252,6 +252,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen name="route-planner" options={{ headerShown: false }} />
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />

@@ -429,6 +429,22 @@ export default function TasksScreen() {
         )}
       </TourTarget>
 
+      {/* Plan route — optimize today's location tasks into a driving route */}
+      <TouchableOpacity
+        onPress={() => router.push('/(app)/route-planner')}
+        activeOpacity={0.85}
+        style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+          marginHorizontal: SPACING.md, marginBottom: SPACING.sm,
+          paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.primary,
+        }}
+      >
+        <Ionicons name="navigate" size={18} color="#fff" />
+        <Text style={{ color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any }}>
+          {t('route.planRoute', 'Plan my route')}
+        </Text>
+      </TouchableOpacity>
+
       {/* Tab Bar */}
       <TourTarget name="tasks-header" style={[styles.tabBar, { borderBottomColor: colors.border }]}>
         {TAB_KEYS.map(tabKey => {

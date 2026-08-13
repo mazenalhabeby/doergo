@@ -1593,5 +1593,23 @@
     "noPendingDesc": "You're all caught up — nothing to approve right now.",
     "loadFailed": "Couldn't load requests. Pull to refresh.",
     "unknownWorker": "Unknown worker"
+  },
+  "route": {
+    "planRoute": "Plan my route",
+    "title": "Plan my route",
+    "myLocation": "My location",
+    "start": "Start",
+    "useMyLocation": "Use my location",
+    "todaysStops": "Today's stops",
+    "selected": "selected",
+    "noStops": "No tasks with a location. Add a location to a task to route to it.",
+    "needStart": "Turn on location to set your start point",
+    "needStops": "Select at least one stop",
+    "optimize": "Optimize route",
+    "distance": "Distance",
+    "driveTime": "Drive time",
+    "stops": "Stops",
+    "openFull": "Open full route",
+    "navigate": "Go"
   }
 }
