@@ -1223,9 +1223,10 @@ model CustomerActivity {
   body     String?
   authorId String? // who logged it (User id, plain marker)
 
-  // REMINDER only: when it's due, and when it was completed.
-  dueAt  DateTime?
-  doneAt DateTime?
+  // REMINDER only: when it's due, when completed, and when we notified the owner.
+  dueAt      DateTime?
+  doneAt     DateTime?
+  notifiedAt DateTime?
 
   metadata Json? // e.g. { from, to } for a STATUS change
 

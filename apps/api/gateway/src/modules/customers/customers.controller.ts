@@ -211,9 +211,13 @@ export class CustomersController {
     // Reuse the portal flow: ensure a portal for the space → unit → invitation.
     const portalRes: any = await this.auth('portal_ensure_for_space', { organizationId: orgId, spaceId: customer.spaceId });
     const portalId = portalRes?.data?.id ?? portalRes?.id;
-    const unit: any = await this.auth('portal_create_unit', {
-      organizationId: orgId, customerId: id, portalId, name: customer.name, address: customer.address,
-    });
+    // Reuse the customer's assigned apartment / primary address as their unit —
+    // don't create a duplicate. Only create one if they have none yet.
+    const units: any[] = (await this.auth('portal_list_units', { organizationId: orgId, customerId: id })) || [];
+    let unit: any = units.find((u) => u.isPrimary) ?? units[0];
+    if (!unit) {
+      unit = await this.auth('portal_create_unit', { organizationId: orgId, customerId: id, portalId, name: customer.name, address: customer.address });
+    }
     const inviteRes: any = await this.auth('create_invitation', {
       targetRole: 'CUSTOMER', organizationId: orgId, createdById: req.user.id, creatorRole: req.user.role,
       customerId: id, unitId: unit.id, portalId, email,
