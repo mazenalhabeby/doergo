@@ -22,12 +22,33 @@ export class CustomersController {
   }
 
   @MessagePattern({ cmd: 'update_customer' })
-  async update(@Payload() data: { id: string; organizationId: string; dto: CustomerInput }) {
-    return this.customersService.update(data.id, data.organizationId, data.dto);
+  async update(@Payload() data: { id: string; organizationId: string; dto: CustomerInput; actorId?: string }) {
+    return this.customersService.update(data.id, data.organizationId, data.dto, data.actorId);
   }
 
   @MessagePattern({ cmd: 'delete_customer' })
   async remove(@Payload() data: { id: string; organizationId: string }) {
     return this.customersService.remove(data.id, data.organizationId);
+  }
+
+  // ── CRM activity timeline ──
+  @MessagePattern({ cmd: 'list_customer_activities' })
+  async listActivities(@Payload() data: { customerId: string; organizationId: string }) {
+    return this.customersService.listActivities(data);
+  }
+
+  @MessagePattern({ cmd: 'add_customer_activity' })
+  async addActivity(@Payload() data: any) {
+    return this.customersService.addActivity(data);
+  }
+
+  @MessagePattern({ cmd: 'update_customer_activity' })
+  async updateActivity(@Payload() data: any) {
+    return this.customersService.updateActivity(data);
+  }
+
+  @MessagePattern({ cmd: 'delete_customer_activity' })
+  async deleteActivity(@Payload() data: { id: string; customerId: string; organizationId: string }) {
+    return this.customersService.deleteActivity(data);
   }
 }

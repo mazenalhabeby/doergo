@@ -4531,11 +4531,25 @@ export interface Customer {
   portalId?: string | null;
   spaceId?: string | null; // per-space CRM
   ownerId?: string | null; // sales owner
+  status?: string; // CRM lifecycle stage
   createdAt: string;
   updatedAt: string;
 }
 
 export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
+
+export interface CustomerActivity {
+  id: string;
+  customerId: string;
+  type: "NOTE" | "CALL" | "EMAIL" | "MEETING" | "REMINDER" | "STATUS" | "SYSTEM";
+  body?: string | null;
+  authorId?: string | null;
+  dueAt?: string | null;
+  doneAt?: string | null;
+  metadata?: { from?: string; to?: string } | null;
+  createdAt: string;
+  author?: { id: string; firstName: string; lastName: string | null } | null;
+}
 
 export const customersApi = {
   list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; page?: number; limit?: number }) => {
@@ -4552,6 +4566,27 @@ export const customersApi = {
   },
   resendInvite: async (id: string) => {
     const res = await api.post<{ data?: any }>(`/customers/${id}/resend-invite`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  // ── CRM activity timeline ──
+  activities: async (id: string) => {
+    const res = await api.get<{ data: CustomerActivity[] }>(`/customers/${id}/activities`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  addActivity: async (id: string, input: { type?: string; body?: string; dueAt?: string }) => {
+    const res = await api.post<{ data: CustomerActivity }>(`/customers/${id}/activities`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  updateActivity: async (id: string, activityId: string, input: { body?: string; dueAt?: string | null; done?: boolean }) => {
+    const res = await api.patch<{ data: CustomerActivity }>(`/customers/${id}/activities/${activityId}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  removeActivity: async (id: string, activityId: string) => {
+    const res = await api.delete<{ success: boolean }>(`/customers/${id}/activities/${activityId}`);
     if (res.error) throw new Error(res.error);
     return res.data;
   },

@@ -237,6 +237,21 @@ export function moduleRequires(key: string): string[] {
   return MODULE_DEPENDENCIES[key] ?? [];
 }
 
+/** CRM customer lifecycle stages (Customer.status). key is stored; label/tone shown. */
+export const CUSTOMER_STAGES = [
+  { key: 'LEAD', label: 'Lead', tone: 'slate' },
+  { key: 'CONTACTED', label: 'Contacted', tone: 'blue' },
+  { key: 'QUALIFIED', label: 'Qualified', tone: 'violet' },
+  { key: 'CUSTOMER', label: 'Customer', tone: 'green' },
+  { key: 'INACTIVE', label: 'Inactive', tone: 'gray' },
+] as const;
+
+export type CustomerStageKey = typeof CUSTOMER_STAGES[number]['key'];
+
+export function customerStageLabel(key: string): string {
+  return CUSTOMER_STAGES.find((s) => s.key === key)?.label ?? key;
+}
+
 /**
  * Normalize a set of enabled modules so all dependencies hold: drop any module
  * whose prerequisites aren't all present. Idempotent; used on save (client+server).

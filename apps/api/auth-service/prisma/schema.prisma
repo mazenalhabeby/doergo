@@ -1178,8 +1178,13 @@ model Customer {
   // Sales rep who owns the relationship (plain User-id marker, no FK).
   ownerId String?
 
+  // CRM lifecycle stage (LEAD | CONTACTED | QUALIFIED | CUSTOMER | INACTIVE).
+  // Free-form String so it stays flexible; labels/colors live in shared.
+  status String @default("LEAD")
+
   tasks          Task[]
   serviceReports ServiceReport[]
+  activities     CustomerActivity[] // CRM timeline: notes, calls, reminders, …
 
   // Customer portal
   portalUsers User[]         @relation("CustomerPortalUsers") // login accounts for this customer
@@ -1193,6 +1198,43 @@ model Customer {
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
+}
+
+// Kind of CRM timeline entry on a customer.
+enum CustomerActivityType {
+  NOTE // free-form note (what happened)
+  CALL // logged phone call
+  EMAIL // logged email
+  MEETING // logged meeting / visit
+  REMINDER // a follow-up task with a due date (what's next)
+  STATUS // lifecycle stage change (auto-logged)
+  SYSTEM // system event (invited to app, created, …)
+}
+
+// One entry in a customer's CRM activity timeline. Notes record what happened;
+// REMINDER entries carry a dueAt/doneAt (what's next). Ordered by createdAt.
+model CustomerActivity {
+  id             String   @id @default(cuid())
+  organizationId String
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  type     CustomerActivityType @default(NOTE)
+  body     String?
+  authorId String? // who logged it (User id, plain marker)
+
+  // REMINDER only: when it's due, and when it was completed.
+  dueAt  DateTime?
+  doneAt DateTime?
+
+  metadata Json? // e.g. { from, to } for a STATUS change
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId, createdAt])
+  @@index([organizationId, dueAt]) // due-reminder sweeps
+  @@map("customer_activities")
 }
 
 // A customer portal — a self-contained B2C flow (type, branding, categories,

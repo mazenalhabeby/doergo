@@ -1,329 +1,304 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Mail, Loader2, AlertTriangle } from "lucide-react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  ArrowLeft, Mail, Phone, MapPin, Contact as ContactIcon, Send, Copy, Check, Trash2,
+  StickyNote, PhoneCall, Mails, Users, Clock, RefreshCw, Settings2, Loader2,
+} from "lucide-react"
 
-import { customersApi, portalAdminApi, invitationsApi, type PortalCustomerUnit } from "@/lib/api"
+import { customersApi, locationsApi, type CustomerActivity } from "@/lib/api"
+import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
+import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
 
-const STATUS_STYLES: Record<string, string> = {
-  NEW: "bg-blue-500/10 text-blue-600 dark:text-blue-400", ASSIGNED: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-  ACCEPTED: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400", IN_PROGRESS: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  BLOCKED: "bg-red-500/10 text-red-600 dark:text-red-400", COMPLETED: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  CLOSED: "bg-slate-500/10 text-slate-500 dark:text-slate-400", CANCELED: "bg-slate-500/10 text-slate-500 dark:text-slate-400",
-}
-const PRIORITY_DOT: Record<string, string> = {
-  URGENT: "bg-red-500", HIGH: "bg-orange-500", MEDIUM: "bg-blue-500", LOW: "bg-slate-400",
+const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "")
+const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString(undefined, { dateStyle: "medium" }) : "")
+
+const COMPOSER = [
+  { type: "NOTE", label: "Note", icon: StickyNote },
+  { type: "CALL", label: "Log call", icon: PhoneCall },
+  { type: "EMAIL", label: "Log email", icon: Mails },
+  { type: "MEETING", label: "Meeting", icon: Users },
+  { type: "REMINDER", label: "Reminder", icon: Clock },
+] as const
+
+const stageTone: Record<string, string> = {
+  slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  blue: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+  violet: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
+  green: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+  gray: "bg-muted text-muted-foreground",
 }
 
-export default function CustomerDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const router = useRouter()
-  const qc = useQueryClient()
+export default function CustomerRecordPage() {
   const { t } = useTranslation()
+  const router = useRouter()
+  const params = useParams()
+  const id = params.id as string
+  const qc = useQueryClient()
 
   const customerQ = useQuery({ queryKey: ["customer", id], queryFn: () => customersApi.get(id) })
-  const unitsQ = useQuery({ queryKey: ["portalUnits", id], queryFn: () => portalAdminApi.listUnits(id) })
-  const requestsQ = useQuery({ queryKey: ["portalRequests", id], queryFn: () => portalAdminApi.requests(id) })
-
-  // Terminology adapts to the client's portal TYPE: rental → Apartment,
-  // logistics → Order, workplace → Workspace (falls back to a generic "Unit").
-  const portalId = customerQ.data?.portalId
-  const portalQ = useQuery({
-    queryKey: ["portal", portalId],
-    queryFn: () => portalAdminApi.getPortal(portalId as string),
-    enabled: !!portalId,
-  })
-  const entity = portalQ.data?.entityLabel || t("portal.entityFallback", "Unit")
-  const entityLower = entity.toLowerCase()
-
-  // Units
-  const [unitOpen, setUnitOpen] = useState(false)
-  const [unitName, setUnitName] = useState("")
-  const [unitAddress, setUnitAddress] = useState("")
-  const addUnitM = useMutation({
-    mutationFn: () => portalAdminApi.createUnit({ customerId: id, name: unitName.trim(), address: unitAddress.trim() || null }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["portalUnits", id] })
-      setUnitOpen(false); setUnitName(""); setUnitAddress("")
-    },
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
-  })
-  const [unitToDelete, setUnitToDelete] = useState<PortalCustomerUnit | null>(null)
-  const delUnitM = useMutation({
-    mutationFn: (uid: string) => portalAdminApi.deleteUnit(uid),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["portalUnits", id] }); setUnitToDelete(null) },
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
-  })
-
-  // Remove client — deactivates the client and revokes their portal login.
-  const [removeClientOpen, setRemoveClientOpen] = useState(false)
-  const removeClientM = useMutation({
-    mutationFn: () => customersApi.remove(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["portalResidents"] })
-      qc.invalidateQueries({ queryKey: ["customer", id] })
-      notify.success(t("portal.clientRemoved", "Client removed"))
-      router.back()
-    },
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
-  })
-
-  // Resend the existing pending invite by email (uses the stored code).
-  const resendM = useMutation({
-    mutationFn: () => portalAdminApi.resendInvite(id),
-    onSuccess: (r: any) => notify.success(t("portal.inviteResent", "Invitation email sent to {{email}}", { email: r?.data?.sentTo ?? "the client" })),
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
-  })
-
-  // Invite
-  const [inviteOpen, setInviteOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteUnit, setInviteUnit] = useState<string>("")
-  const [code, setCode] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const inviteM = useMutation({
-    mutationFn: () =>
-      invitationsApi.create({
-        targetRole: "CUSTOMER",
-        customerId: id,
-        unitId: inviteUnit || undefined,
-        email: inviteEmail.trim() || undefined,
-      }),
-    onSuccess: (res) => {
-      setCode(res.code)
-      notify.success(inviteEmail.trim()
-        ? t("portal.inviteEmailed", "Invitation created & emailed")
-        : t("portal.inviteCreated", "Invitation created"))
-    },
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
-  })
-
+  const activityQ = useQuery({ queryKey: ["customer-activities", id], queryFn: () => customersApi.activities(id) })
   const customer = customerQ.data
+  const spaceQ = useQuery({
+    queryKey: ["location", customer?.spaceId],
+    queryFn: () => locationsApi.getById(customer!.spaceId!),
+    enabled: !!customer?.spaceId,
+  })
+  const hasB2C = !!spaceQ.data?.enabledModules?.includes("b2c_portal")
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["customer", id] })
+    qc.invalidateQueries({ queryKey: ["customer-activities", id] })
+  }
+
+  const setStatus = useMutation({
+    mutationFn: (status: string) => customersApi.update(id, { status }),
+    onSuccess: refresh,
+    onError: (e: any) => notify.error(e.message || "Could not update status"),
+  })
+
+  if (customerQ.isLoading) {
+    return <div className="mx-auto max-w-5xl p-6"><Skeleton className="h-40 w-full rounded-xl" /></div>
+  }
+  if (!customer) {
+    return <div className="mx-auto max-w-5xl p-6 text-center text-muted-foreground">{t("customers.notFound", "Customer not found")}</div>
+  }
+
+  const stage = CUSTOMER_STAGES.find((s) => s.key === (customer.status || "LEAD"))
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="max-w-screen-lg mx-auto px-6 py-8">
-        <Button variant="ghost" size="sm" className="mb-4 -ml-2 gap-1.5 text-muted-foreground" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />{t("common.back", "Back")}
-        </Button>
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      {/* Back */}
+      <button onClick={() => (customer.spaceId ? router.push(`/locations/${customer.spaceId}`) : router.back())}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> {spaceQ.data?.name ?? t("customers.title", "Customers")}
+      </button>
 
-        {/* Header */}
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight truncate">{customer?.name || "…"}</h1>
-            {customer?.email && <p className="mt-1 text-sm text-muted-foreground truncate">{customer.email}</p>}
-            <p className="mt-1 text-sm text-muted-foreground">{t("portal.detailSubtitle", "Portal access, units, and requests for this client.")}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {customer?.email && (
-              <Button variant="outline" className="h-11 rounded-xl gap-1.5" disabled={resendM.isPending} onClick={() => resendM.mutate()}>
-                {resendM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                {t("portal.resendInvite", "Resend invitation")}
-              </Button>
-            )}
-            <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.invite", "Invite to portal")}</Button>
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-5">
+        <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-lg font-semibold text-muted-foreground">{initials(customer.name)}</span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold text-foreground">{customer.name}</h1>
+          <div className="mt-1 flex items-center gap-2">
+            {customer.isPortalResident
+              ? <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><Send className="h-3 w-3" /> {t("customers.appAccess", "App access")}</Badge>
+              : <Badge variant="secondary">{t("customers.crmTag", "CRM")}</Badge>}
+            {customer.contactName && <span className="text-sm text-muted-foreground">{customer.contactName}</span>}
           </div>
         </div>
-
-        {/* Units — labelled by the portal type (Apartments / Orders / Workspaces) */}
-        <Section title={`${entity}s`} action={
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setUnitOpen(true)}><Plus className="h-3.5 w-3.5" />{t("portal.addEntity", "Add {{entity}}", { entity: entityLower })}</Button>
-        }>
-          {unitsQ.isLoading ? (
-            <Empty text={t("common.loading", "Loading…")} />
-          ) : (unitsQ.data?.length ?? 0) === 0 ? (
-            <Empty text={t("portal.noEntities", "No {{entity}}s yet. Add the {{entity}} this client is tied to.", { entity: entityLower })} />
-          ) : (
-            <div className="divide-y divide-border/60">
-              {unitsQ.data!.map((u: PortalCustomerUnit) => (
-                <div key={u.id} className="flex items-center gap-4 px-5 py-3.5">
-                  <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{(u.name || "?").slice(0, 2).toUpperCase()}</div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{u.name}</p>
-                    {u.address && <p className="text-xs text-muted-foreground truncate">{u.address}</p>}
-                  </div>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700" onClick={() => setUnitToDelete(u)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* Requests */}
-        <Section title={t("portal.requests", "Requests")}>
-          {requestsQ.isLoading ? (
-            <Empty text={t("common.loading", "Loading…")} />
-          ) : (requestsQ.data?.length ?? 0) === 0 ? (
-            <Empty text={t("portal.noRequestsOffice", "No requests from this customer yet.")} />
-          ) : (
-            <div className="divide-y divide-border/50">
-              {requestsQ.data!.map((r) => (
-                <button key={r.id} className="w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-accent/40 transition-colors text-left" onClick={() => router.push(`/tasks/${r.id}`)}>
-                  <span className={`h-2 w-2 rounded-full shrink-0 ${PRIORITY_DOT[r.priority] ?? "bg-slate-400"}`} title={r.priority} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5"><span className="font-mono">{r.reference}</span>{r.unitName ? ` · ${r.unitName}` : ""}</p>
-                  </div>
-                  <span className={`text-[11px] font-semibold capitalize rounded-full px-2.5 py-1 shrink-0 ${STATUS_STYLES[r.status] ?? "bg-slate-500/10 text-slate-600 dark:text-slate-400"}`}>
-                    {r.status.replace(/_/g, " ").toLowerCase()}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* Danger zone */}
-        {customer && (
-          <Card className="mt-8 border-destructive/40">
-            <CardHeader className="pb-3">
-              <div className="flex items-start gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-                  <AlertTriangle className="h-[18px] w-[18px]" />
-                </span>
-                <div>
-                  <CardTitle className="text-base text-destructive">{t("portal.dangerTitle", "Danger zone")}</CardTitle>
-                  <CardDescription>{t("portal.clientDangerHint", "Revoke this client's access to the portal.")}</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="pr-4">
-                  <p className="text-sm font-medium text-foreground">{t("portal.removeClient", "Remove client")}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{t("portal.removeClientWarn", "Their portal login is deactivated; request history is kept.")}</p>
-                </div>
-                <Button variant="destructive" className="shrink-0" onClick={() => setRemoveClientOpen(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" />{t("portal.removeClient", "Remove client")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Stage */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{t("customers.stage", "Stage")}</span>
+          <Select value={customer.status || "LEAD"} onValueChange={(v) => setStatus.mutate(v)}>
+            <SelectTrigger className={cn("h-8 w-36 border-0 font-medium", stageTone[stage?.tone ?? "slate"])}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CUSTOMER_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <CustomerForm existing={customer} onSaved={refresh} trigger={<Button variant="outline" size="sm">{t("common.edit", "Edit")}</Button>} />
       </div>
 
-      {/* Delete unit confirm */}
-      <AlertDialog open={!!unitToDelete} onOpenChange={(o) => !o && setUnitToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("portal.deleteUnitTitle", "Remove this {{entity}}?", { entity: entityLower })}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("portal.deleteUnitWarn", "Requests already linked keep their history.")}{unitToDelete?.name ? ` (${unitToDelete.name})` : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => unitToDelete && delUnitM.mutate(unitToDelete.id)} disabled={delUnitM.isPending}>{t("common.remove", "Remove")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        {/* Timeline */}
+        <div>
+          <Composer customerId={id} onAdded={refresh} />
+          <Timeline
+            customerId={id}
+            loading={activityQ.isLoading}
+            activities={activityQ.data ?? []}
+            onChanged={refresh}
+          />
+        </div>
 
-      {/* Remove client confirm */}
-      <AlertDialog open={removeClientOpen} onOpenChange={setRemoveClientOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("portal.removeClientTitle", "Remove this client?")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("portal.removeClientWarn", "Their portal login is deactivated; request history is kept.")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => removeClientM.mutate()} disabled={removeClientM.isPending}>{t("common.remove", "Remove")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Add unit dialog */}
-      <Dialog open={unitOpen} onOpenChange={(o) => !o && setUnitOpen(false)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{t("portal.addEntity", "Add {{entity}}", { entity: entityLower })}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>{t("portal.unitName", "Name")}</Label><Input value={unitName} onChange={(e) => setUnitName(e.target.value)} placeholder={`${entity} 12A`} /></div>
-            <div><Label>{t("portal.unitAddress", "Address")}</Label><Input value={unitAddress} onChange={(e) => setUnitAddress(e.target.value)} placeholder={t("portal.optional", "Optional")} /></div>
+        {/* Rail */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("customers.details", "Details")}</p>
+            <dl className="space-y-2 text-sm">
+              <RailRow icon={Mail} value={customer.email} />
+              <RailRow icon={Phone} value={customer.phone} />
+              <RailRow icon={MapPin} value={customer.address} />
+              <RailRow icon={ContactIcon} value={customer.contactName} />
+            </dl>
+            {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{customer.notes}</p>}
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setUnitOpen(false)}>{t("common.cancel", "Cancel")}</Button>
-            <Button disabled={!unitName.trim() || addUnitM.isPending} onClick={() => addUnitM.mutate()}>{t("common.save", "Save")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Invite dialog */}
-      <Dialog open={inviteOpen} onOpenChange={(o) => { if (!o) { setInviteOpen(false); setCode(null); setInviteEmail(""); setInviteUnit("") } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{t("portal.inviteTitle", "Invite to the portal")}</DialogTitle></DialogHeader>
-          {code ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-3">{t("portal.shareCode", "Share this code with the customer to activate their login:")}</p>
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-2xl font-mono font-bold tracking-widest text-foreground">{code}</span>
-                <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>
-                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <Label>{t("portal.inviteEmail", "Email (optional)")}</Label>
-                <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="resident@example.com" />
-                <p className="mt-1 text-[11px] text-muted-foreground">{t("portal.inviteEmailHint", "If set, the invite code is emailed to the client automatically.")}</p>
-              </div>
-              <div>
-                <Label>{t("portal.defaultEntity", "Default {{entity}} (optional)", { entity: entityLower })}</Label>
-                <select
-                  value={inviteUnit}
-                  onChange={(e) => setInviteUnit(e.target.value)}
-                  className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
-                >
-                  <option value="">{t("portal.none", "None")}</option>
-                  {unitsQ.data?.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            {code ? (
-              <Button onClick={() => { setInviteOpen(false); setCode(null); setInviteEmail(""); setInviteUnit("") }}>{t("common.done", "Done")}</Button>
-            ) : (
-              <>
-                <Button variant="ghost" onClick={() => setInviteOpen(false)}>{t("common.cancel", "Cancel")}</Button>
-                <Button disabled={inviteM.isPending} onClick={() => inviteM.mutate()}>{t("portal.createInvite", "Create invite")}</Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
-
-function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2.5">
-        <h2 className="font-semibold text-foreground">{title}</h2>
-        {action}
+          <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />
+        </div>
       </div>
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">{children}</div>
     </div>
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <div className="px-6 py-10 text-center text-sm text-muted-foreground">{text}</div>
+function RailRow({ icon: Icon, value }: { icon: any; value?: string | null }) {
+  if (!value) return null
+  return <div className="flex items-center gap-2 text-foreground"><Icon className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate">{value}</span></div>
+}
+
+// ── Composer ────────────────────────────────────────────────────────────────
+function Composer({ customerId, onAdded }: { customerId: string; onAdded: () => void }) {
+  const { t } = useTranslation()
+  const [type, setType] = useState<string>("NOTE")
+  const [body, setBody] = useState("")
+  const [dueAt, setDueAt] = useState("")
+
+  const add = useMutation({
+    mutationFn: () => customersApi.addActivity(customerId, { type, body: body.trim() || undefined, dueAt: type === "REMINDER" && dueAt ? new Date(dueAt).toISOString() : undefined }),
+    onSuccess: () => { setBody(""); setDueAt(""); onAdded() },
+    onError: (e: any) => notify.error(e.message || "Could not add"),
+  })
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="mb-2 flex flex-wrap gap-1">
+        {COMPOSER.map((c) => (
+          <button key={c.type} onClick={() => setType(c.type)}
+            className={cn("inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+              type === c.type ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted")}>
+            <c.icon className="h-3.5 w-3.5" /> {t(`customers.act.${c.type.toLowerCase()}`, c.label)}
+          </button>
+        ))}
+      </div>
+      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2}
+        placeholder={type === "REMINDER" ? t("customers.reminderPlaceholder", "What to follow up on…") : t("customers.notePlaceholder", "Write a note…")} />
+      <div className="mt-2 flex items-center justify-between gap-2">
+        {type === "REMINDER" ? (
+          <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="h-8 w-56 text-xs" />
+        ) : <span />}
+        <Button size="sm" disabled={add.isPending || (!body.trim() && type !== "REMINDER")} onClick={() => add.mutate()}>
+          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("customers.log", "Add")}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ── Timeline ────────────────────────────────────────────────────────────────
+const ACT_ICON: Record<string, any> = { NOTE: StickyNote, CALL: PhoneCall, EMAIL: Mails, MEETING: Users, REMINDER: Clock, STATUS: RefreshCw, SYSTEM: Settings2 }
+
+function Timeline({ customerId, loading, activities, onChanged }: {
+  customerId: string; loading: boolean; activities: CustomerActivity[]; onChanged: () => void
+}) {
+  const { t } = useTranslation()
+  const now = Date.now()
+  const openReminders = useMemo(() => activities.filter((a) => a.type === "REMINDER" && !a.doneAt), [activities])
+
+  const toggleDone = useMutation({
+    mutationFn: ({ actId, done }: { actId: string; done: boolean }) => customersApi.updateActivity(customerId, actId, { done }),
+    onSuccess: onChanged,
+  })
+  const del = useMutation({
+    mutationFn: (actId: string) => customersApi.removeActivity(customerId, actId),
+    onSuccess: onChanged,
+  })
+
+  if (loading) return <div className="mt-4 space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
+
+  return (
+    <div className="mt-4">
+      {openReminders.length > 0 && (
+        <p className="mb-2 text-xs font-medium text-amber-600 dark:text-amber-500">
+          ⏰ {t("customers.openReminders", "{{count}} open reminder", { count: openReminders.length })}
+        </p>
+      )}
+      {activities.length === 0 ? (
+        <p className="py-10 text-center text-sm text-muted-foreground">{t("customers.noActivity", "No activity yet. Add a note or log a call above.")}</p>
+      ) : (
+        <ol className="space-y-3">
+          {activities.map((a) => {
+            const Icon = ACT_ICON[a.type] ?? StickyNote
+            const overdue = a.type === "REMINDER" && a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < now
+            const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("customers.system", "System")
+            return (
+              <li key={a.id} className="group flex gap-3">
+                <span className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                  a.type === "REMINDER" ? (a.doneAt ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50" : overdue ? "bg-red-100 text-red-600 dark:bg-red-950/50" : "bg-amber-100 text-amber-600 dark:bg-amber-950/50")
+                    : "bg-muted text-muted-foreground")}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1 rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {a.type === "STATUS"
+                        ? t("customers.stageChanged", "Stage: {{from}} → {{to}}", { from: customerStageLabel(a.metadata?.from || ""), to: customerStageLabel(a.metadata?.to || "") })
+                        : t(`customers.act.${a.type.toLowerCase()}`, a.type)}
+                    </span>
+                    <span>·</span><span>{author}</span><span>·</span><span>{fmt(a.createdAt)}</span>
+                    <button onClick={() => del.mutate(a.id)} className="ml-auto opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {a.body && <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{a.body}</p>}
+                  {a.type === "REMINDER" && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Checkbox checked={!!a.doneAt} onCheckedChange={(v) => toggleDone.mutate({ actId: a.id, done: !!v })} />
+                      <span className={cn("text-xs font-medium", a.doneAt ? "text-emerald-600 line-through" : overdue ? "text-red-600" : "text-amber-600")}>
+                        {a.doneAt ? t("customers.done", "Done") : t("customers.due", "Due {{date}}", { date: fmtDate(a.dueAt) })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+    </div>
+  )
+}
+
+// ── Invite card ──────────────────────────────────────────────────────────────
+function InviteCard({ customer, hasB2C, onChanged }: { customer: any; hasB2C: boolean; onChanged: () => void }) {
+  const { t } = useTranslation()
+  const [code, setCode] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const invite = useMutation({
+    mutationFn: () => customersApi.invite(customer.id),
+    onSuccess: (res) => { setCode(res.code ?? null); notify.success(t("customers.invited", "Invite sent")); onChanged() },
+    onError: (e: any) => notify.error(e.message || "Could not invite"),
+  })
+  const copy = () => { if (code) { navigator.clipboard?.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) } }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("customers.appAccessTitle", "App access")}</p>
+      {customer.isPortalResident ? (
+        <p className="text-sm text-muted-foreground">✓ {t("customers.hasApp", "This customer logs in to order & follow.")}</p>
+      ) : code ? (
+        <div className="space-y-2 text-center">
+          <button onClick={copy} className="mx-auto flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-lg tracking-wider">
+            {code} {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          <p className="text-xs text-muted-foreground">{t("customers.inviteShare", "Share this code (or the emailed link) so they can sign in.")}</p>
+        </div>
+      ) : hasB2C ? (
+        <Button className="w-full" disabled={invite.isPending} onClick={() => invite.mutate()}>
+          <Send className="mr-1.5 h-4 w-4" /> {invite.isPending ? t("common.saving", "Working…") : t("customers.invite", "Invite to app")}
+        </Button>
+      ) : (
+        <>
+          <Button className="w-full" disabled><Send className="mr-1.5 h-4 w-4" /> {t("customers.invite", "Invite to app")}</Button>
+          <p className="mt-2 text-xs text-muted-foreground">🔒 {t("customers.needB2C", "Turn on the B2C Portal module (space Modules tab) to invite customers.")}</p>
+        </>
+      )}
+    </div>
+  )
 }

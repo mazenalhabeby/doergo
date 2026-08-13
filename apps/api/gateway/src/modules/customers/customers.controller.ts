@@ -28,6 +28,7 @@ interface CustomerDto {
   isActive?: boolean;
   spaceId?: string | null; // per-space CRM
   ownerId?: string | null; // sales owner
+  status?: string; // CRM lifecycle stage
 }
 
 /**
@@ -110,7 +111,40 @@ export class CustomersController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a customer' })
   async update(@Param('id') id: string, @Body() dto: CustomerDto, @Request() req: any) {
-    return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto });
+    return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id });
+  }
+
+  // ── CRM activity timeline ──
+  @Get(':id/activities')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: "A customer's CRM timeline (notes, calls, reminders, status)" })
+  listActivities(@Param('id') id: string, @Request() req: any) {
+    return this.auth('list_customer_activities', { customerId: id, organizationId: req.user.organizationId });
+  }
+
+  @Post(':id/activities')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Log an activity / note / reminder on a customer' })
+  addActivity(@Param('id') id: string, @Body() body: { type?: string; body?: string; dueAt?: string }, @Request() req: any) {
+    return this.auth('add_customer_activity', {
+      customerId: id, organizationId: req.user.organizationId, authorId: req.user.id,
+      type: body.type, body: body.body, dueAt: body.dueAt,
+    });
+  }
+
+  @Patch(':id/activities/:activityId')
+  @RequirePermission('canManageUsers')
+  updateActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Body() body: { body?: string; dueAt?: string | null; done?: boolean }, @Request() req: any) {
+    return this.auth('update_customer_activity', {
+      id: activityId, customerId: id, organizationId: req.user.organizationId,
+      body: body.body, dueAt: body.dueAt, done: body.done,
+    });
+  }
+
+  @Delete(':id/activities/:activityId')
+  @RequirePermission('canManageUsers')
+  deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: any) {
+    return this.auth('delete_customer_activity', { id: activityId, customerId: id, organizationId: req.user.organizationId });
   }
 
   @Delete(':id')
