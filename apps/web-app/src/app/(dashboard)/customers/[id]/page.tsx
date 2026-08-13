@@ -114,44 +114,46 @@ export default function CustomerRecordPage() {
         <ArrowLeft className="h-4 w-4" /> {spaceQ.data?.name ?? t("customers.title", "Customers")}
       </button>
 
-      {/* ── HERO: banner + overlapping avatar ── */}
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
-        <div className={cn("h-24 w-full bg-gradient-to-br", grad)} />
-        <div className="px-5 pb-5 sm:px-6">
-          <div className="-mt-9 flex flex-wrap items-end gap-4">
-            <span className={cn("flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-2xl font-bold text-white shadow-lg ring-4 ring-card", grad)}>
-              {initials(customer.name)}
-            </span>
-            <div className="min-w-0 flex-1 pb-0.5">
-              <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{customer.name}</h1>
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                {[customer.contactName, customerStageLabel(status)].filter(Boolean).join(" · ")}
-              </p>
+      {/* ── HERO: clean neutral header (no banner) ── */}
+      <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-start gap-4">
+          <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white shadow-sm", grad)}>
+            {initials(customer.name)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{customer.name}</h1>
+              {customer.isPortalResident
+                ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}</span>
+                : <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">{t("customers.crmTag", "CRM")}</span>}
             </div>
-            <div className="flex flex-wrap items-center gap-2 pb-0.5">
-              {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
-              {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
-              <CustomerForm existing={customer} onSaved={refresh} trigger={
-                <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
-              } />
-            </div>
-          </div>
-
-          {/* ── Pipeline chevron bar ── */}
-          <div className="mt-5">
-            {isInactive ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-4 py-2.5">
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><AlertTriangle className="h-4 w-4" /> {t("customers.inactive", "Inactive")}</span>
-                <Button size="sm" variant="outline" onClick={() => setStatus.mutate("LEAD")}>{t("customers.reactivate", "Reactivate")}</Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <PipelineBar current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
-                <button onClick={() => setStatus.mutate("INACTIVE")}
-                  className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive">{t("customers.markInactive", "Mark inactive")}</button>
-              </div>
+            {customer.contactName && customer.contactName !== customer.name && (
+              <p className="mt-0.5 truncate text-sm text-muted-foreground">{customer.contactName}</p>
             )}
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
+            {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
+            <CustomerForm existing={customer} onSaved={refresh} trigger={
+              <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
+            } />
+          </div>
+        </div>
+
+        {/* ── Pipeline chevron bar ── */}
+        <div className="mt-5">
+          {isInactive ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-4 py-2.5">
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><AlertTriangle className="h-4 w-4" /> {t("customers.inactive", "Inactive")}</span>
+              <Button size="sm" variant="outline" onClick={() => setStatus.mutate("LEAD")}>{t("customers.reactivate", "Reactivate")}</Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <PipelineBar current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
+              <button onClick={() => setStatus.mutate("INACTIVE")}
+                className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive">{t("customers.markInactive", "Mark inactive")}</button>
+            </div>
+          )}
         </div>
       </div>
 
