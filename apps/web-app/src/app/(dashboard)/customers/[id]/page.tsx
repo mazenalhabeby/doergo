@@ -124,36 +124,32 @@ export default function CustomerRecordPage() {
         <ArrowLeft className="h-4 w-4" /> {spaceQ.data?.name ?? t("customers.title", "Customers")}
       </button>
 
-      {/* ── HERO: clean neutral header (no banner) ── */}
+      {/* ── HEADER ── */}
       <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-start gap-4">
-          <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white shadow-sm", grad)}>
-            {initials(customer.name)}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* left: avatar + name (+ app access under) */}
+          <div className="flex min-w-0 items-center gap-3">
+            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-lg font-bold text-white shadow-sm", grad)}>
+              {initials(customer.name)}
+            </span>
+            <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{customer.name}</h1>
-              {customer.isPortalResident
-                ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}</span>
-                : <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">{t("customers.crmTag", "CRM")}</span>}
+              {customer.isPortalResident && (
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
+                </span>
+              )}
             </div>
-            {customer.contactName && customer.contactName !== customer.name && (
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">{customer.contactName}</p>
-            )}
           </div>
+          {/* right: actions + status + edit */}
           <div className="flex flex-wrap items-center gap-2">
             {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
             {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
+            <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
             <CustomerForm existing={customer} onSaved={refresh} trigger={
               <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
             } />
           </div>
-        </div>
-
-        {/* ── Status pill ── */}
-        <div className="mt-4 flex items-center gap-2 border-t border-border/60 pt-4">
-          <span className="text-xs font-medium text-muted-foreground">{t("customers.stage", "Stage")}</span>
-          <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
         </div>
       </div>
 
