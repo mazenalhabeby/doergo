@@ -183,8 +183,9 @@ export class CustomersController {
       targetRole: 'CUSTOMER', organizationId: orgId, createdById: req.user.id, creatorRole: req.user.role,
       customerId: id, unitId: unit.id, portalId, email,
     });
-    // Flip the CRM record into a portal resident.
-    await this.auth('update_customer', { id, organizationId: orgId, dto: { isPortalResident: true, portalId } });
+    // Flip the CRM record into a portal resident + advance the stage to Customer
+    // (an invited app user has converted). Status change is auto-logged.
+    await this.auth('update_customer', { id, organizationId: orgId, actorId: req.user.id, dto: { isPortalResident: true, portalId, status: 'CUSTOMER' } });
     return { data: { code: inviteRes?.data?.code, email } };
   }
 

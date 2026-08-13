@@ -19,7 +19,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ChevronDown } from "lucide-react"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
+
+// stage tone → dot color
+const STAGE_DOT: Record<string, string> = {
+  slate: "bg-slate-400", blue: "bg-blue-500", violet: "bg-violet-500", green: "bg-emerald-500", gray: "bg-gray-400",
+}
+function stageDot(key: string) {
+  return STAGE_DOT[CUSTOMER_STAGES.find((s) => s.key === key)?.tone ?? "slate"] ?? "bg-slate-400"
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -57,7 +69,6 @@ const COMPOSER = [
   { type: "MEETING", label: "Meeting", icon: Users },
   { type: "REMINDER", label: "Reminder", icon: Clock },
 ] as const
-const STAGE_STEPS = CUSTOMER_STAGES.filter((s) => s.key !== "INACTIVE")
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function CustomerRecordPage() {
@@ -98,7 +109,6 @@ export default function CustomerRecordPage() {
   const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
   const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
   const status = customer.status || "LEAD"
-  const isInactive = status === "INACTIVE"
   const grad = gradientFor(customer.name)
 
   const filtered = activities.filter((a) =>
@@ -140,20 +150,10 @@ export default function CustomerRecordPage() {
           </div>
         </div>
 
-        {/* ── Pipeline chevron bar ── */}
-        <div className="mt-5">
-          {isInactive ? (
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-4 py-2.5">
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><AlertTriangle className="h-4 w-4" /> {t("customers.inactive", "Inactive")}</span>
-              <Button size="sm" variant="outline" onClick={() => setStatus.mutate("LEAD")}>{t("customers.reactivate", "Reactivate")}</Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <PipelineBar current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
-              <button onClick={() => setStatus.mutate("INACTIVE")}
-                className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive">{t("customers.markInactive", "Mark inactive")}</button>
-            </div>
-          )}
+        {/* ── Status pill ── */}
+        <div className="mt-4 flex items-center gap-2 border-t border-border/60 pt-4">
+          <span className="text-xs font-medium text-muted-foreground">{t("customers.stage", "Stage")}</span>
+          <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
         </div>
       </div>
 
@@ -210,38 +210,28 @@ export default function CustomerRecordPage() {
   )
 }
 
-// ── Pipeline chevron bar ──────────────────────────────────────────────────────
-function chevronClip(first: boolean, last: boolean) {
-  const n = "12px"
-  if (first) return `polygon(0 0, calc(100% - ${n}) 0, 100% 50%, calc(100% - ${n}) 100%, 0 100%)`
-  if (last) return `polygon(${n} 0, 100% 0, 100% 100%, ${n} 100%, 0 50%)`
-  return `polygon(${n} 0, calc(100% - ${n}) 0, 100% 50%, calc(100% - ${n}) 100%, ${n} 100%, 0 50%)`
-}
-function PipelineBar({ current, onSet, pending }: { current: string; onSet: (s: string) => void; pending: boolean }) {
-  const idx = STAGE_STEPS.findIndex((s) => s.key === current)
+// ── Status pill (clean, Attio-style) ──────────────────────────────────────────
+function StatusPill({ current, onSet, pending }: { current: string; onSet: (s: string) => void; pending: boolean }) {
+  const { t } = useTranslation()
   return (
-    <div className="flex min-w-0 flex-1">
-      {STAGE_STEPS.map((s, i) => {
-        const done = i < idx, active = i === idx, first = i === 0, last = i === STAGE_STEPS.length - 1
-        return (
-          <button
-            key={s.key}
-            disabled={pending}
-            onClick={() => onSet(s.key)}
-            style={{ clipPath: chevronClip(first, last), marginLeft: first ? 0 : -12 }}
-            className={cn(
-              "relative flex h-9 min-w-0 flex-1 items-center justify-center px-3 text-xs font-semibold transition-colors",
-              active ? "bg-primary text-primary-foreground" :
-              done ? "bg-primary/25 text-primary dark:bg-primary/20" :
-              "bg-muted text-muted-foreground hover:bg-muted/70",
-              pending && "opacity-70",
-            )}
-          >
-            <span className="truncate" style={{ paddingLeft: first ? 0 : 8 }}>{s.label}</span>
-          </button>
-        )
-      })}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild disabled={pending}>
+        <button className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
+          <span className={cn("h-2 w-2 rounded-full", stageDot(current))} />
+          {customerStageLabel(current)}
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-44">
+        {CUSTOMER_STAGES.map((s) => (
+          <DropdownMenuItem key={s.key} onClick={() => onSet(s.key)} className="gap-2">
+            <span className={cn("h-2 w-2 rounded-full", stageDot(s.key))} />
+            <span className="flex-1">{t(`customers.stageKey.${s.key.toLowerCase()}`, s.label)}</span>
+            {s.key === current && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
