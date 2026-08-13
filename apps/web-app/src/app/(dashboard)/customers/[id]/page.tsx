@@ -5,19 +5,18 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft, Mail, Phone, MapPin, Contact as ContactIcon, Send, Copy, Check, Trash2,
+  ArrowLeft, Mail, Phone, MapPin, Send, Copy, Check, Trash2,
   StickyNote, PhoneCall, Mails, Users, Clock, RefreshCw, Settings2, Loader2,
-  Smartphone, Sparkles, CheckCircle2, AlertTriangle, CalendarClock,
+  Smartphone, CheckCircle2, AlertTriangle, CalendarClock, Plus,
 } from "lucide-react"
 
-import { customersApi, locationsApi, type CustomerActivity } from "@/lib/api"
+import { customersApi, locationsApi, type CustomerActivity, type Customer } from "@/lib/api"
 import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
@@ -25,8 +24,8 @@ import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
 // ── helpers ───────────────────────────────────────────────────────────────────
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 const AVATAR_GRADIENTS = [
-  "from-blue-500 to-indigo-500", "from-emerald-500 to-teal-500", "from-violet-500 to-purple-500",
-  "from-amber-500 to-orange-500", "from-rose-500 to-pink-500", "from-cyan-500 to-sky-500",
+  "from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600", "from-violet-500 to-purple-600",
+  "from-amber-500 to-orange-600", "from-rose-500 to-pink-600", "from-cyan-500 to-sky-600",
 ]
 function gradientFor(name: string) {
   let h = 0
@@ -41,12 +40,10 @@ function relTime(iso: string) {
   if (s < 604800) return `${Math.floor(s / 86400)}d ago`
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
-function dayKey(iso: string) {
-  const d = new Date(iso); d.setHours(0, 0, 0, 0); return d.getTime()
-}
+const dayKey = (iso: string) => { const d = new Date(iso); d.setHours(0, 0, 0, 0); return d.getTime() }
 function dayLabel(iso: string, t: any) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const k = dayKey(iso); const diff = (today.getTime() - k) / 86400000
+  const diff = (today.getTime() - dayKey(iso)) / 86400000
   if (diff === 0) return t("customers.today", "Today")
   if (diff === 1) return t("customers.yesterday", "Yesterday")
   return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
@@ -60,15 +57,15 @@ const COMPOSER = [
   { type: "MEETING", label: "Meeting", icon: Users },
   { type: "REMINDER", label: "Reminder", icon: Clock },
 ] as const
-
-// stage → the ring/fill tone used across the header pipeline
 const STAGE_STEPS = CUSTOMER_STAGES.filter((s) => s.key !== "INACTIVE")
 
+// ══════════════════════════════════════════════════════════════════════════════
 export default function CustomerRecordPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
   const qc = useQueryClient()
+  const [tab, setTab] = useState<"activity" | "notes" | "reminders">("activity")
 
   const customerQ = useQuery({ queryKey: ["customer", id], queryFn: () => customersApi.get(id) })
   const activityQ = useQuery({ queryKey: ["customer-activities", id], queryFn: () => customersApi.activities(id) })
@@ -91,195 +88,184 @@ export default function CustomerRecordPage() {
   })
 
   if (customerQ.isLoading) {
-    return <div className="mx-auto max-w-5xl p-6 space-y-6"><Skeleton className="h-44 w-full rounded-2xl" /><Skeleton className="h-64 w-full rounded-2xl" /></div>
+    return <div className="mx-auto max-w-6xl p-6 space-y-4"><Skeleton className="h-48 w-full rounded-2xl" /><Skeleton className="h-72 w-full rounded-2xl" /></div>
   }
   if (!customer) {
-    return <div className="mx-auto max-w-5xl p-6 text-center text-muted-foreground">{t("customers.notFound", "Customer not found")}</div>
+    return <div className="mx-auto max-w-6xl p-6 text-center text-muted-foreground">{t("customers.notFound", "Customer not found")}</div>
   }
 
   const activities = activityQ.data ?? []
   const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
   const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
-  const lastActivity = activities[0]?.createdAt
   const status = customer.status || "LEAD"
   const isInactive = status === "INACTIVE"
+  const grad = gradientFor(customer.name)
+
+  const filtered = activities.filter((a) =>
+    tab === "activity" ? true :
+    tab === "reminders" ? a.type === "REMINDER" :
+    ["NOTE", "CALL", "EMAIL", "MEETING"].includes(a.type),
+  )
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
       <button onClick={() => (customer.spaceId ? router.push(`/locations/${customer.spaceId}`) : router.back())}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> {spaceQ.data?.name ?? t("customers.title", "Customers")}
       </button>
 
-      {/* ── HERO ── */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <div className="h-1.5 w-full bg-gradient-to-r from-primary/80 via-primary to-primary/60" />
-        <div className="p-5 sm:p-6">
-          <div className="flex flex-wrap items-start gap-4">
-            <span className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-xl font-bold text-white shadow-md", gradientFor(customer.name))}>
+      {/* ── HERO: banner + overlapping avatar ── */}
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
+        <div className={cn("h-24 w-full bg-gradient-to-br", grad)} />
+        <div className="px-5 pb-5 sm:px-6">
+          <div className="-mt-9 flex flex-wrap items-end gap-4">
+            <span className={cn("flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-2xl font-bold text-white shadow-lg ring-4 ring-card", grad)}>
               {initials(customer.name)}
             </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{customer.name}</h1>
-                {customer.isPortalResident
-                  ? <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300"><Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}</Badge>
-                  : <Badge variant="secondary">{t("customers.crmTag", "CRM")}</Badge>}
-              </div>
-              {customer.contactName && <p className="mt-0.5 text-sm text-muted-foreground">{customer.contactName}</p>}
-              {/* quick actions */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {customer.phone && <QuickAction icon={Phone} label={t("customers.call", "Call")} href={`tel:${customer.phone}`} />}
-                {customer.email && <QuickAction icon={Mail} label={t("customers.email", "Email")} href={`mailto:${customer.email}`} />}
-                <CustomerForm existing={customer} onSaved={refresh} trigger={
-                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted">
-                    <Settings2 className="h-3.5 w-3.5" /> {t("common.edit", "Edit")}
-                  </button>
-                } />
-              </div>
+            <div className="min-w-0 flex-1 pb-0.5">
+              <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{customer.name}</h1>
+              <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                {[customer.contactName, customerStageLabel(status)].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pb-0.5">
+              {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
+              {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
+              <CustomerForm existing={customer} onSaved={refresh} trigger={
+                <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
+              } />
             </div>
           </div>
 
-          {/* ── STAGE PIPELINE ── */}
-          <div className="mt-5 border-t border-border pt-4">
+          {/* ── Pipeline chevron bar ── */}
+          <div className="mt-5">
             {isInactive ? (
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                  <AlertTriangle className="h-4 w-4" /> {t("customers.inactive", "Inactive")}
-                </span>
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-4 py-2.5">
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><AlertTriangle className="h-4 w-4" /> {t("customers.inactive", "Inactive")}</span>
                 <Button size="sm" variant="outline" onClick={() => setStatus.mutate("LEAD")}>{t("customers.reactivate", "Reactivate")}</Button>
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-3">
-                <StagePipeline current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
+              <div className="flex items-center gap-3">
+                <PipelineBar current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
                 <button onClick={() => setStatus.mutate("INACTIVE")}
-                  className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive">
-                  {t("customers.markInactive", "Mark inactive")}
-                </button>
+                  className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive">{t("customers.markInactive", "Mark inactive")}</button>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-        {/* ── LEFT: timeline ── */}
-        <div className="space-y-4">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[300px_1fr]">
+        {/* ── LEFT: About panel ── */}
+        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <Panel>
+            <PanelHead>{t("customers.about", "About")}</PanelHead>
+            <dl className="divide-y divide-border/60 text-sm">
+              <PropRow label={t("customers.email", "Email")} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
+              <PropRow label={t("customers.phone", "Phone")} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
+              <PropRow label={t("customers.contactName", "Contact")} value={customer.contactName} />
+              <PropRow label={t("customers.address", "Address")} value={customer.address} />
+              <PropRow label={t("customers.added", "Added")} value={fmtDate(customer.createdAt)} />
+              <PropRow label={t("customers.stage", "Stage")} value={customerStageLabel(status)} />
+            </dl>
+            {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-muted-foreground">{customer.notes}</p>}
+          </Panel>
+
+          <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />
+        </aside>
+
+        {/* ── MAIN: composer + tabs + timeline ── */}
+        <main className="min-w-0 space-y-4">
           <Composer customerId={id} onAdded={refresh} />
-          {overdue.length > 0 && (
+
+          <div className="flex items-center gap-1 border-b border-border/70">
+            {([
+              ["activity", t("customers.tabActivity", "Activity"), activities.length],
+              ["notes", t("customers.tabNotes", "Notes"), null],
+              ["reminders", t("customers.tabReminders", "Reminders"), openReminders.length || null],
+            ] as const).map(([key, label, count]) => (
+              <button key={key} onClick={() => setTab(key)}
+                className={cn("relative -mb-px flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors",
+                  tab === key ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                {label}
+                {count != null && <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                  key === "reminders" && overdue.length ? "bg-red-100 text-red-600 dark:bg-red-950/50" : "bg-muted text-muted-foreground")}>{count}</span>}
+                {tab === key && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
+              </button>
+            ))}
+          </div>
+
+          {overdue.length > 0 && tab !== "reminders" && (
             <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
               <AlertTriangle className="h-4 w-4" /> {t("customers.overdueCount", "{{count}} overdue follow-up", { count: overdue.length })}
             </div>
           )}
-          <Timeline customerId={id} loading={activityQ.isLoading} activities={activities} onChanged={refresh} />
-        </div>
 
-        {/* ── RIGHT: rail ── */}
-        <div className="space-y-4">
-          {/* snapshot */}
-          <div className="grid grid-cols-2 gap-3">
-            <Stat icon={Sparkles} label={t("customers.activities", "Activities")} value={String(activities.length)} />
-            <Stat icon={CalendarClock} label={t("customers.openReminders2", "Open")} value={String(openReminders.length)} tone={overdue.length ? "red" : "amber"} />
-          </div>
-
-          <RailCard title={t("customers.details", "Details")}>
-            <div className="space-y-2.5 text-sm">
-              <RailRow icon={Mail} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
-              <RailRow icon={Phone} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
-              <RailRow icon={MapPin} value={customer.address} />
-              <RailRow icon={ContactIcon} value={customer.contactName} />
-            </div>
-            {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{customer.notes}</p>}
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
-              <span>{t("customers.added", "Added")} {fmtDate(customer.createdAt)}</span>
-              {lastActivity && <span>{t("customers.lastActivity", "Last")}: {relTime(lastActivity)}</span>}
-            </div>
-          </RailCard>
-
-          <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />
-        </div>
+          <Timeline customerId={id} loading={activityQ.isLoading} activities={filtered} empty={tab} onChanged={refresh} />
+        </main>
       </div>
     </div>
   )
 }
 
-// ── Stage pipeline (visual stepper) ───────────────────────────────────────────
-function StagePipeline({ current, onSet, pending }: { current: string; onSet: (s: string) => void; pending: boolean }) {
+// ── Pipeline chevron bar ──────────────────────────────────────────────────────
+function chevronClip(first: boolean, last: boolean) {
+  const n = "12px"
+  if (first) return `polygon(0 0, calc(100% - ${n}) 0, 100% 50%, calc(100% - ${n}) 100%, 0 100%)`
+  if (last) return `polygon(${n} 0, 100% 0, 100% 100%, ${n} 100%, 0 50%)`
+  return `polygon(${n} 0, calc(100% - ${n}) 0, 100% 50%, calc(100% - ${n}) 100%, ${n} 100%, 0 50%)`
+}
+function PipelineBar({ current, onSet, pending }: { current: string; onSet: (s: string) => void; pending: boolean }) {
   const idx = STAGE_STEPS.findIndex((s) => s.key === current)
   return (
-    <div className="flex min-w-0 flex-1 items-center">
+    <div className="flex min-w-0 flex-1">
       {STAGE_STEPS.map((s, i) => {
-        const done = i < idx, active = i === idx
+        const done = i < idx, active = i === idx, first = i === 0, last = i === STAGE_STEPS.length - 1
         return (
-          <div key={s.key} className="flex min-w-0 flex-1 items-center">
-            <button
-              disabled={pending}
-              onClick={() => onSet(s.key)}
-              className={cn(
-                "group flex min-w-0 flex-1 flex-col items-center gap-1 transition-opacity",
-                pending && "opacity-60",
-              )}
-            >
-              <span className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full border-2 text-[11px] font-bold transition-colors",
-                active ? "border-primary bg-primary text-primary-foreground" :
-                done ? "border-primary bg-primary/15 text-primary" :
-                "border-border bg-background text-muted-foreground group-hover:border-primary/40",
-              )}>
-                {done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
-              </span>
-              <span className={cn("truncate text-[11px] font-medium", active ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
-            </button>
-            {i < STAGE_STEPS.length - 1 && (
-              <span className={cn("mx-1 h-0.5 flex-1 rounded-full", i < idx ? "bg-primary" : "bg-border")} />
+          <button
+            key={s.key}
+            disabled={pending}
+            onClick={() => onSet(s.key)}
+            style={{ clipPath: chevronClip(first, last), marginLeft: first ? 0 : -12 }}
+            className={cn(
+              "relative flex h-9 min-w-0 flex-1 items-center justify-center px-3 text-xs font-semibold transition-colors",
+              active ? "bg-primary text-primary-foreground" :
+              done ? "bg-primary/25 text-primary dark:bg-primary/20" :
+              "bg-muted text-muted-foreground hover:bg-muted/70",
+              pending && "opacity-70",
             )}
-          </div>
+          >
+            <span className="truncate" style={{ paddingLeft: first ? 0 : 8 }}>{s.label}</span>
+          </button>
         )
       })}
     </div>
   )
 }
 
-function QuickAction({ icon: Icon, label, href }: { icon: any; label: string; href: string }) {
+function IconBtn({ icon: Icon, href, label }: { icon: any; href: string; label: string }) {
   return (
-    <a href={href} className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
-      <Icon className="h-3.5 w-3.5" /> {label}
+    <a href={href} title={label} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
+      <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{label}</span>
     </a>
   )
 }
-
-function Stat({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string; tone?: "amber" | "red" }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <div className={cn("flex items-center gap-1.5 text-xs font-medium",
-        tone === "red" ? "text-red-600" : tone === "amber" ? "text-amber-600" : "text-muted-foreground")}>
-        <Icon className="h-3.5 w-3.5" /> {label}
-      </div>
-      <div className="mt-0.5 text-2xl font-bold tabular-nums text-foreground">{value}</div>
-    </div>
-  )
+function Panel({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-2xl border border-border/70 bg-card p-4">{children}</div>
 }
-
-function RailCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
-      {children}
-    </div>
-  )
+function PanelHead({ children }: { children: React.ReactNode }) {
+  return <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{children}</p>
 }
-
-function RailRow({ icon: Icon, value, href }: { icon: any; value?: string | null; href?: string }) {
+function PropRow({ label, value, href }: { label: string; value?: string | null; href?: string }) {
   if (!value) return null
-  const inner = (
-    <>
-      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <span className="truncate">{value}</span>
-    </>
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-2.5">
+      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
+      {href
+        ? <a href={href} className="truncate text-right font-medium text-foreground transition-colors hover:text-primary">{value}</a>
+        : <dd className="truncate text-right font-medium text-foreground">{value}</dd>}
+    </div>
   )
-  return href
-    ? <a href={href} className="flex items-center gap-2.5 text-foreground transition-colors hover:text-primary">{inner}</a>
-    : <div className="flex items-center gap-2.5 text-foreground">{inner}</div>
 }
 
 // ── Composer ────────────────────────────────────────────────────────────────
@@ -288,20 +274,20 @@ function Composer({ customerId, onAdded }: { customerId: string; onAdded: () => 
   const [type, setType] = useState<string>("NOTE")
   const [body, setBody] = useState("")
   const [dueAt, setDueAt] = useState("")
+  const [focused, setFocused] = useState(false)
 
   const add = useMutation({
     mutationFn: () => customersApi.addActivity(customerId, {
-      type,
-      body: body.trim() || undefined,
+      type, body: body.trim() || undefined,
       dueAt: type === "REMINDER" && dueAt ? new Date(dueAt).toISOString() : undefined,
     }),
-    onSuccess: () => { setBody(""); setDueAt(""); onAdded() },
+    onSuccess: () => { setBody(""); setDueAt(""); setFocused(false); onAdded() },
     onError: (e: any) => notify.error(e.message || "Could not add"),
   })
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-      <div className="mb-2 inline-flex flex-wrap gap-1 rounded-lg bg-muted p-0.5">
+    <div className={cn("rounded-2xl border bg-card p-2.5 transition-shadow", focused ? "border-primary/40 shadow-sm" : "border-border/70")}>
+      <div className="mb-2 inline-flex flex-wrap gap-0.5 rounded-lg bg-muted p-0.5">
         {COMPOSER.map((c) => (
           <button key={c.type} onClick={() => setType(c.type)}
             className={cn("inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
@@ -310,10 +296,10 @@ function Composer({ customerId, onAdded }: { customerId: string; onAdded: () => 
           </button>
         ))}
       </div>
-      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2}
-        className="resize-none border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
-        placeholder={type === "REMINDER" ? t("customers.reminderPlaceholder", "What to follow up on…") : t("customers.notePlaceholder", "Write a note…")} />
-      <div className="mt-1 flex items-center justify-between gap-2 border-t border-border pt-2">
+      <Textarea value={body} onFocus={() => setFocused(true)} onChange={(e) => setBody(e.target.value)} rows={focused || body ? 3 : 1}
+        className="resize-none border-0 bg-transparent px-1.5 text-sm shadow-none focus-visible:ring-0"
+        placeholder={type === "REMINDER" ? t("customers.reminderPlaceholder", "What to follow up on…") : t("customers.notePlaceholder", "Write a note, log a call…")} />
+      <div className="mt-1 flex items-center justify-between gap-2 px-1.5">
         {type === "REMINDER" ? (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <CalendarClock className="h-4 w-4" />
@@ -321,7 +307,7 @@ function Composer({ customerId, onAdded }: { customerId: string; onAdded: () => 
           </div>
         ) : <span />}
         <Button size="sm" disabled={add.isPending || (!body.trim() && type !== "REMINDER")} onClick={() => add.mutate()}>
-          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("customers.log", "Add")}
+          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("customers.log", "Add")}</>}
         </Button>
       </div>
     </div>
@@ -338,45 +324,41 @@ const ACT_META: Record<string, { icon: any; tone: string }> = {
   STATUS: { icon: RefreshCw, tone: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300" },
   SYSTEM: { icon: Settings2, tone: "bg-muted text-muted-foreground" },
 }
-
-function Timeline({ customerId, loading, activities, onChanged }: {
-  customerId: string; loading: boolean; activities: CustomerActivity[]; onChanged: () => void
+function Timeline({ customerId, loading, activities, empty, onChanged }: {
+  customerId: string; loading: boolean; activities: CustomerActivity[]; empty: string; onChanged: () => void
 }) {
   const { t } = useTranslation()
   const now = Date.now()
-
-  const toggleDone = useMutation({
-    mutationFn: ({ actId, done }: { actId: string; done: boolean }) => customersApi.updateActivity(customerId, actId, { done }),
-    onSuccess: onChanged,
-  })
+  const toggleDone = useMutation({ mutationFn: ({ actId, done }: { actId: string; done: boolean }) => customersApi.updateActivity(customerId, actId, { done }), onSuccess: onChanged })
   const del = useMutation({ mutationFn: (actId: string) => customersApi.removeActivity(customerId, actId), onSuccess: onChanged })
 
   const groups = useMemo(() => {
     const m = new Map<number, CustomerActivity[]>()
-    for (const a of activities) {
-      const k = dayKey(a.createdAt)
-      if (!m.has(k)) m.set(k, [])
-      m.get(k)!.push(a)
-    }
+    for (const a of activities) { const k = dayKey(a.createdAt); if (!m.has(k)) m.set(k, []); m.get(k)!.push(a) }
     return Array.from(m.entries()).sort((a, b) => b[0] - a[0])
   }, [activities])
 
   if (loading) return <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
   if (activities.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border py-14 text-center">
-        <StickyNote className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">{t("customers.noActivity", "No activity yet. Add a note or log a call above.")}</p>
+      <div className="rounded-2xl border border-dashed border-border/70 py-16 text-center">
+        <StickyNote className="mx-auto mb-2 h-7 w-7 text-muted-foreground/60" />
+        <p className="text-sm text-muted-foreground">
+          {empty === "reminders" ? t("customers.noReminders", "No reminders. Add one above to follow up.") : t("customers.noActivity", "No activity yet. Add a note or log a call above.")}
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {groups.map(([k, items]) => (
         <div key={k}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{dayLabel(items[0].createdAt, t)}</p>
-          <ol className="relative space-y-3 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+          <div className="mb-3 flex items-center gap-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{dayLabel(items[0].createdAt, t)}</p>
+            <div className="h-px flex-1 bg-border/60" />
+          </div>
+          <ol className="relative space-y-2.5 pl-1 before:absolute before:left-[15px] before:top-1 before:bottom-1 before:w-px before:bg-border/70">
             {items.map((a) => {
               const meta = ACT_META[a.type] ?? ACT_META.NOTE
               const Icon = meta.icon
@@ -389,19 +371,18 @@ function Timeline({ customerId, loading, activities, onChanged }: {
                     overdue ? "bg-red-100 text-red-600 dark:bg-red-950/50" : meta.tone)}>
                     <Icon className="h-4 w-4" />
                   </span>
-                  <div className="min-w-0 flex-1 rounded-xl border border-border bg-card p-3 transition-colors group-hover:border-border/80">
+                  <div className="min-w-0 flex-1 rounded-xl border border-border/60 bg-card px-3.5 py-2.5 transition-colors hover:border-border">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <span className="font-semibold text-foreground">
                         {a.type === "STATUS"
                           ? t("customers.stageChanged", "Stage: {{from}} → {{to}}", { from: customerStageLabel(a.metadata?.from || ""), to: customerStageLabel(a.metadata?.to || "") })
                           : t(`customers.act.${a.type.toLowerCase()}`, a.type)}
                       </span>
-                      <span>·</span><span className="truncate">{author}</span><span>·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
-                      <button onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <span className="text-muted-foreground/50">·</span><span className="truncate">{author}</span>
+                      <span className="text-muted-foreground/50">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
+                      <button onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
-                    {a.body && <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{a.body}</p>}
+                    {a.body && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{a.body}</p>}
                     {a.type === "REMINDER" && (
                       <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-2.5 py-1.5">
                         <Checkbox checked={!!a.doneAt} onCheckedChange={(v) => toggleDone.mutate({ actId: a.id, done: !!v })} />
@@ -422,7 +403,7 @@ function Timeline({ customerId, loading, activities, onChanged }: {
 }
 
 // ── Invite card ──────────────────────────────────────────────────────────────
-function InviteCard({ customer, hasB2C, onChanged }: { customer: any; hasB2C: boolean; onChanged: () => void }) {
+function InviteCard({ customer, hasB2C, onChanged }: { customer: Customer; hasB2C: boolean; onChanged: () => void }) {
   const { t } = useTranslation()
   const [code, setCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -434,15 +415,13 @@ function InviteCard({ customer, hasB2C, onChanged }: { customer: any; hasB2C: bo
   const copy = () => { if (code) { navigator.clipboard?.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) } }
 
   return (
-    <div className={cn("overflow-hidden rounded-xl border p-4",
-      customer.isPortalResident ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20" : "border-border bg-card")}>
-      <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className={cn("rounded-2xl border p-4",
+      customer.isPortalResident ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/20" : "border-border/70 bg-card")}>
+      <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         <Smartphone className="h-3.5 w-3.5" /> {t("customers.appAccessTitle", "App access")}
       </p>
       {customer.isPortalResident ? (
-        <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" /> {t("customers.hasApp", "This customer logs in to order & follow.")}
-        </p>
+        <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-4 w-4" /> {t("customers.hasApp", "This customer logs in to order & follow.")}</p>
       ) : code ? (
         <div className="space-y-2 text-center">
           <button onClick={copy} className="mx-auto flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-lg font-semibold tracking-widest">
@@ -452,7 +431,7 @@ function InviteCard({ customer, hasB2C, onChanged }: { customer: any; hasB2C: bo
         </div>
       ) : hasB2C ? (
         <>
-          <p className="mb-3 text-sm text-muted-foreground">{t("customers.inviteIntro", "Give this customer a login to order & follow their jobs.")}</p>
+          <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">{t("customers.inviteIntro", "Give this customer a login to order & follow their jobs.")}</p>
           <Button className="w-full" disabled={invite.isPending} onClick={() => invite.mutate()}>
             <Send className="mr-1.5 h-4 w-4" /> {invite.isPending ? t("common.saving", "Working…") : t("customers.invite", "Invite to app")}
           </Button>
@@ -460,7 +439,7 @@ function InviteCard({ customer, hasB2C, onChanged }: { customer: any; hasB2C: bo
       ) : (
         <>
           <Button className="w-full" disabled><Send className="mr-1.5 h-4 w-4" /> {t("customers.invite", "Invite to app")}</Button>
-          <p className="mt-2 text-xs text-muted-foreground">🔒 {t("customers.needB2C", "Turn on the B2C Portal module (space Modules tab) to invite customers.")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">🔒 {t("customers.needB2C", "Turn on the B2C Portal module (space Modules tab) to invite customers.")}</p>
         </>
       )}
     </div>
