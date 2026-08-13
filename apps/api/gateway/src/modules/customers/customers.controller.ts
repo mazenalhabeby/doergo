@@ -28,7 +28,16 @@ interface CustomerDto {
   isActive?: boolean;
   spaceId?: string | null; // per-space CRM
   ownerId?: string | null; // sales owner
+  managerIds?: string[] | null; // assigned sales managers
   status?: string; // CRM lifecycle stage
+  // Person vs Company + B2B company fields
+  type?: string; // PERSON | COMPANY
+  legalName?: string | null;
+  website?: string | null;
+  industry?: string | null;
+  vatId?: string | null;
+  regNumber?: string | null;
+  details?: { label: string; value: string }[] | null;
 }
 
 /**
@@ -111,6 +120,9 @@ export class CustomersController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a customer' })
   async update(@Param('id') id: string, @Body() dto: CustomerDto, @Request() req: any) {
+    // Moving a customer into a space requires that space to have the CRM module
+    // (parity with create; the service also validates the space belongs to org).
+    if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');
     return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id });
   }
 
@@ -123,30 +135,34 @@ export class CustomersController {
 
   @Post(':id/addresses')
   @RequirePermission('canManageUsers')
-  addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean }, @Request() req: any) {
+  addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string; contactPhone?: string }, @Request() req: any) {
     return this.auth('portal_create_unit', {
       organizationId: req.user.organizationId, customerId: id,
       name: body.name?.trim() || body.address || 'Address',
       address: body.address, lat: body.lat, lng: body.lng, isPrimary: body.isPrimary,
+      contactName: body.contactName, contactPhone: body.contactPhone,
     });
   }
 
   @Patch(':id/addresses/:unitId')
   @RequirePermission('canManageUsers')
-  updateAddress(@Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
-    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, ...body });
+  updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
+    // scopeCustomerId binds the unit to THIS customer (no cross-customer edits);
+    // strip any client-sent scope override before forwarding.
+    const { scopeCustomerId: _drop, ...rest } = body ?? {};
+    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, scopeCustomerId: id, ...rest });
   }
 
   @Post(':id/addresses/:unitId/primary')
   @RequirePermission('canManageUsers')
-  setPrimaryAddress(@Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId });
+  setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
+    return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
   }
 
   @Delete(':id/addresses/:unitId')
   @RequirePermission('canManageUsers')
-  deleteAddress(@Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
+  deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
+    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
   }
 
   // ── CRM activity timeline ──
@@ -160,19 +176,23 @@ export class CustomersController {
   @Post(':id/activities')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Log an activity / note / reminder on a customer' })
-  addActivity(@Param('id') id: string, @Body() body: { type?: string; body?: string; dueAt?: string }, @Request() req: any) {
+  addActivity(@Param('id') id: string, @Body() body: { type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
     return this.auth('add_customer_activity', {
       customerId: id, organizationId: req.user.organizationId, authorId: req.user.id,
       type: body.type, body: body.body, dueAt: body.dueAt,
+      reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
+      reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
     });
   }
 
   @Patch(':id/activities/:activityId')
   @RequirePermission('canManageUsers')
-  updateActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Body() body: { body?: string; dueAt?: string | null; done?: boolean }, @Request() req: any) {
+  updateActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Body() body: { body?: string; dueAt?: string | null; done?: boolean; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
     return this.auth('update_customer_activity', {
       id: activityId, customerId: id, organizationId: req.user.organizationId,
       body: body.body, dueAt: body.dueAt, done: body.done,
+      reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
+      reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
     });
   }
 

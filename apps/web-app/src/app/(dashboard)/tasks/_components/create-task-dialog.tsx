@@ -147,12 +147,14 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void
   defaultSprintId?: string | null
   defaultSpaceId?: string | null
+  /** Link the new task to a CRM customer (locks the space to the customer's). */
+  defaultCustomerId?: string | null
 }
 
 // ---------------------------------------------------------------------------
 // CreateTaskDialog
 // ---------------------------------------------------------------------------
-export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId }: CreateTaskDialogProps) {
   const { t } = useTranslation()
   const { user, hasModule: orgHasModule, hasPlanFeature } = useAuth()
   const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
@@ -475,6 +477,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       epicId: epicId !== "none" ? epicId : undefined,
       parentId: parentTaskId !== "none" ? parentTaskId : undefined,
       spaceId: spaceId !== "none" ? spaceId : undefined,
+      customerId: defaultCustomerId ?? undefined,
       // Task type: explicit pick, else omit so the backend inherits the space's.
       workflowId: workflowId !== "inherit" ? workflowId : undefined,
       checklistItems: checklistItems.length > 0
@@ -585,7 +588,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           {hasSpaces && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("tasks.groupBy.space")}</Label>
-              <Select value={spaceId} onValueChange={(v) => { setSpaceId(v); setWorkflowId("inherit") }} disabled={isSubmitting}>
+              <Select value={spaceId} onValueChange={(v) => { setSpaceId(v); setWorkflowId("inherit") }} disabled={isSubmitting || !!defaultCustomerId}>
                 <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                   <SelectValue placeholder={t("tasks.create.selectSpace")} />
                 </SelectTrigger>

@@ -8,10 +8,13 @@ import {
   ArrowLeft, Mail, Phone, MapPin, Send, Copy, Check, Trash2,
   StickyNote, PhoneCall, Mails, Users, Clock, RefreshCw, Settings2, Loader2,
   Smartphone, CheckCircle2, AlertTriangle, CalendarClock, Plus,
+  Building2, Bell,
 } from "lucide-react"
 
-import { customersApi, locationsApi, type CustomerActivity, type Customer } from "@/lib/api"
+import { customersApi, locationsApi, organizationsApi, tasksApi, type CustomerActivity, type Customer } from "@/lib/api"
 import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
+import { CreateTaskDialog } from "../../tasks/_components/create-task-dialog"
+import { CheckSquare, Repeat, ChevronDown as ChevronDownIcon } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
 import { AddressesPanel } from "./customer-addresses"
+import { ManagersPanel } from "./customer-managers"
 
 // stage tone → dot color
 const STAGE_DOT: Record<string, string> = {
@@ -62,14 +66,49 @@ function dayLabel(iso: string, t: any) {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
 }
 const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString(undefined, { dateStyle: "medium" }) : "")
+const fmtDateTime = (d?: string | null) => (d ? new Date(d).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "")
 
 const COMPOSER = [
   { type: "NOTE", label: "Note", icon: StickyNote },
-  { type: "CALL", label: "Call", icon: PhoneCall },
-  { type: "EMAIL", label: "Email", icon: Mails },
-  { type: "MEETING", label: "Meeting", icon: Users },
   { type: "REMINDER", label: "Reminder", icon: Clock },
 ] as const
+
+// What a reminder is for (its "reason"/channel). Meetings are real work → a Task.
+const REMINDER_KINDS = [
+  { key: "CALL", label: "Call", icon: PhoneCall },
+  { key: "EMAIL", label: "Email", icon: Mails },
+  { key: "OTHER", label: "Other", icon: StickyNote },
+] as const
+
+const REPEAT_OPTIONS: { v: string; label: string }[] = [
+  { v: "NONE", label: "Does not repeat" },
+  { v: "DAILY", label: "Daily" },
+  { v: "WEEKLY", label: "Weekly" },
+  { v: "MONTHLY", label: "Monthly" },
+]
+
+// Dynamic lead time — alert this many minutes before the due time.
+const LEAD_OPTIONS: { v: number; label: string }[] = [
+  { v: 0, label: "At time" },
+  { v: 5, label: "5 min before" },
+  { v: 15, label: "15 min before" },
+  { v: 30, label: "30 min before" },
+  { v: 60, label: "1 hour before" },
+  { v: 180, label: "3 hours before" },
+  { v: 1440, label: "1 day before" },
+  { v: 2880, label: "2 days before" },
+  { v: 10080, label: "1 week before" },
+]
+const REMINDER_KIND_META: Record<string, { label: string; icon: any }> = {
+  CALL: { label: "Call", icon: PhoneCall },
+  EMAIL: { label: "Email", icon: Mails },
+  MEETING: { label: "Meeting", icon: Users },
+  OTHER: { label: "Follow-up", icon: StickyNote },
+}
+function leadLabel(min?: number | null) {
+  if (!min) return null
+  return LEAD_OPTIONS.find((o) => o.v === min)?.label ?? `${min} min before`
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function CustomerRecordPage() {
@@ -82,6 +121,11 @@ export default function CustomerRecordPage() {
   const customerQ = useQuery({ queryKey: ["customer", id], queryFn: () => customersApi.get(id) })
   const activityQ = useQuery({ queryKey: ["customer-activities", id], queryFn: () => customersApi.activities(id) })
   const customer = customerQ.data
+  const tasksQ = useQuery({
+    queryKey: ["customer-tasks", id],
+    queryFn: () => tasksApi.list({ customerId: id, limit: 50 }),
+    enabled: !!customer,
+  })
   const spaceQ = useQuery({
     queryKey: ["location", customer?.spaceId],
     queryFn: () => locationsApi.getById(customer!.spaceId!),
@@ -92,6 +136,7 @@ export default function CustomerRecordPage() {
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["customer", id] })
     qc.invalidateQueries({ queryKey: ["customer-activities", id] })
+    qc.invalidateQueries({ queryKey: ["customer-tasks", id] })
   }
   const setStatus = useMutation({
     mutationFn: (status: string) => customersApi.update(id, { status }),
@@ -107,16 +152,30 @@ export default function CustomerRecordPage() {
   }
 
   const activities = activityQ.data ?? []
+  const tasks = tasksQ.data?.data ?? []
   const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
   const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
   const status = customer.status || "LEAD"
   const grad = gradientFor(customer.name)
+  const isCompany = customer.type === "COMPANY"
+  const website = customer.website
+  const websiteHref = website ? (website.startsWith("http") ? website : `https://${website}`) : undefined
 
-  const filtered = activities.filter((a) =>
-    tab === "activity" ? true :
-    tab === "reminders" ? a.type === "REMINDER" :
-    ["NOTE", "CALL", "EMAIL", "MEETING"].includes(a.type),
-  )
+  // Unified feed: activities + this customer's tasks, newest first.
+  const taskItems = tasks.map((tk: any) => ({ id: `task-${tk.id}`, type: "TASK", createdAt: tk.createdAt, task: tk } as any))
+  const feed = [...activities, ...taskItems].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  // Smart nudges (only while sales works the customer — not an app customer).
+  const lastAt = activities[0]?.createdAt ? new Date(activities[0].createdAt).getTime() : 0
+  const staleDays = lastAt ? Math.floor((Date.now() - lastAt) / 86400000) : null
+  const showNoNextStep = !customer.isPortalResident && openReminders.length === 0
+  const showStale = !customer.isPortalResident && staleDays != null && staleDays >= 14
+
+  const filtered = tab === "activity"
+    ? feed
+    : tab === "reminders"
+      ? activities.filter((a) => a.type === "REMINDER")
+      : activities.filter((a) => a.type === "NOTE")
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
@@ -130,23 +189,36 @@ export default function CustomerRecordPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* left: avatar + name (+ app access under) */}
           <div className="flex min-w-0 items-center gap-3">
-            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-lg font-bold text-white shadow-sm", grad)}>
-              {initials(customer.name)}
+            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center bg-gradient-to-br text-lg font-bold text-white shadow-sm",
+              isCompany ? "rounded-xl" : "rounded-full", grad)}>
+              {isCompany ? <Building2 className="h-6 w-6" /> : initials(customer.name)}
             </span>
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{customer.name}</h1>
-              {customer.isPortalResident && (
-                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                  <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                  {isCompany ? <><Building2 className="h-3 w-3" /> {t("customers.typeCompany", "Company")}</> : <><Users className="h-3 w-3" /> {t("customers.typePerson", "Person")}</>}
                 </span>
-              )}
+                {customer.industry && <span className="text-[11px] text-muted-foreground">{customer.industry}</span>}
+                {customer.isPortalResident && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                    <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           {/* right: actions + status + edit */}
           <div className="flex flex-wrap items-center gap-2">
             {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
             {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
-            <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
+            {customer.isPortalResident ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" /> {t("customers.activeCustomer", "Active customer")}
+              </span>
+            ) : (
+              <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
+            )}
             <CustomerForm existing={customer} onSaved={refresh} trigger={
               <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
             } />
@@ -160,14 +232,25 @@ export default function CustomerRecordPage() {
           <Panel>
             <PanelHead>{t("customers.about", "About")}</PanelHead>
             <dl className="divide-y divide-border/60 text-sm">
-              <PropRow label={t("customers.email", "Email")} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
-              <PropRow label={t("customers.phone", "Phone")} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
-              <PropRow label={t("customers.contactName", "Contact")} value={customer.contactName} />
+              <PropRow label={isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
+              <PropRow label={isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
+              {isCompany && <>
+                <PropRow label={t("customers.website", "Website")} value={website?.replace(/^https?:\/\//, "")} href={websiteHref} />
+                <PropRow label={t("customers.legalName", "Legal name")} value={customer.legalName} />
+                <PropRow label={t("customers.industry", "Industry")} value={customer.industry} />
+                <PropRow label={t("customers.vatId", "VAT / UID")} value={customer.vatId} />
+                <PropRow label={t("customers.regNumber", "Register no.")} value={customer.regNumber} />
+              </>}
+              {(customer.details ?? []).filter((d) => d.label && d.value).map((d, i) => (
+                <PropRow key={i} label={d.label} value={d.value} />
+              ))}
               <PropRow label={t("customers.added", "Added")} value={fmtDate(customer.createdAt)} />
-              <PropRow label={t("customers.stage", "Stage")} value={customerStageLabel(status)} />
             </dl>
             {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-muted-foreground">{customer.notes}</p>}
           </Panel>
+
+          {/* Sales managers — only while the customer is worked by sales (no app access). */}
+          {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} />}
 
           <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} />
 
@@ -176,11 +259,25 @@ export default function CustomerRecordPage() {
 
         {/* ── MAIN: composer + tabs + timeline ── */}
         <main className="min-w-0 space-y-4">
-          <Composer customerId={id} onAdded={refresh} />
+          <Composer customer={customer} onAdded={refresh} />
+
+          {/* Smart nudges — keep the relationship moving. */}
+          {showNoNextStep && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+              <Bell className="h-4 w-4 shrink-0" />
+              <span className="flex-1">{t("customers.nudgeNoNext", "No follow-up scheduled.")}{staleDays != null && staleDays > 0 ? ` ${t("customers.lastActivityDays", "Last activity {{d}}d ago.", { d: staleDays })}` : ""}</span>
+              <QuickRemind customerId={id} onAdded={refresh} />
+            </div>
+          )}
+          {showStale && !showNoNextStep && (
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4 shrink-0" /> {t("customers.nudgeStale", "No activity in {{d}} days — time to check in?", { d: staleDays })}
+            </div>
+          )}
 
           <div className="flex items-center gap-1 border-b border-border/70">
             {([
-              ["activity", t("customers.tabActivity", "Activity"), activities.length],
+              ["activity", t("customers.tabActivity", "Activity"), feed.length],
               ["notes", t("customers.tabNotes", "Notes"), null],
               ["reminders", t("customers.tabReminders", "Reminders"), openReminders.length || null],
             ] as const).map(([key, label, count]) => (
@@ -259,48 +356,138 @@ function PropRow({ label, value, href }: { label: string; value?: string | null;
 }
 
 // ── Composer ────────────────────────────────────────────────────────────────
-function Composer({ customerId, onAdded }: { customerId: string; onAdded: () => void }) {
+function Composer({ customer, onAdded }: { customer: Customer; onAdded: () => void }) {
   const { t } = useTranslation()
+  const customerId = customer.id
   const [type, setType] = useState<string>("NOTE")
   const [body, setBody] = useState("")
   const [dueAt, setDueAt] = useState("")
+  const [kind, setKind] = useState<string>("CALL")
+  const [lead, setLead] = useState<number>(0)
+  const [repeat, setRepeat] = useState<string>("NONE")
+  const [assigneeId, setAssigneeId] = useState<string>("")
   const [focused, setFocused] = useState(false)
+  const [taskOpen, setTaskOpen] = useState(false)
+  const isReminder = type === "REMINDER"
+
+  // Assigned managers = who can be picked to receive a reminder.
+  const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }), enabled: isReminder })
+  const managers = (membersQ.data?.data ?? []).filter((m) => (customer.managerIds ?? []).includes(m.id))
 
   const add = useMutation({
     mutationFn: () => customersApi.addActivity(customerId, {
       type, body: body.trim() || undefined,
-      dueAt: type === "REMINDER" && dueAt ? new Date(dueAt).toISOString() : undefined,
+      dueAt: isReminder && dueAt ? new Date(dueAt).toISOString() : undefined,
+      reminderKind: isReminder ? kind : undefined,
+      remindBeforeMin: isReminder ? lead : undefined,
+      reminderAssigneeId: isReminder ? (assigneeId || null) : undefined,
+      repeat: isReminder ? repeat : undefined,
     }),
-    onSuccess: () => { setBody(""); setDueAt(""); setFocused(false); onAdded() },
+    onSuccess: () => { setBody(""); setDueAt(""); setRepeat("NONE"); setAssigneeId(""); setFocused(false); onAdded() },
     onError: (e: any) => notify.error(e.message || "Could not add"),
   })
 
+  const selectCls = "h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+
   return (
-    <div className={cn("rounded-2xl border bg-card p-2.5 transition-shadow", focused ? "border-primary/40 shadow-sm" : "border-border/70")}>
-      <div className="mb-2 inline-flex flex-wrap gap-0.5 rounded-lg bg-muted p-0.5">
-        {COMPOSER.map((c) => (
-          <button key={c.type} onClick={() => setType(c.type)}
-            className={cn("inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-              type === c.type ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-            <c.icon className="h-3.5 w-3.5" /> {t(`customers.act.${c.type.toLowerCase()}`, c.label)}
-          </button>
-        ))}
+    <div className={cn("rounded-2xl border bg-card p-2.5 transition-shadow", focused || isReminder ? "border-primary/40 shadow-sm" : "border-border/70")}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="inline-flex flex-wrap gap-0.5 rounded-lg bg-muted p-0.5">
+          {COMPOSER.map((c) => (
+            <button key={c.type} onClick={() => setType(c.type)}
+              className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                type === c.type ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              <c.icon className="h-3.5 w-3.5" /> {t(`customers.act.${c.type.toLowerCase()}`, c.label)}
+            </button>
+          ))}
+        </div>
+        {customer.spaceId && (
+          <Button variant="outline" size="sm" onClick={() => setTaskOpen(true)}>
+            <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> {t("customers.newTask", "Task")}
+          </Button>
+        )}
       </div>
-      <Textarea value={body} onFocus={() => setFocused(true)} onChange={(e) => setBody(e.target.value)} rows={focused || body ? 3 : 1}
+      <Textarea value={body} onFocus={() => setFocused(true)} onChange={(e) => setBody(e.target.value)} rows={focused || body || isReminder ? 3 : 1}
         className="resize-none border-0 bg-transparent px-1.5 text-sm shadow-none focus-visible:ring-0"
-        placeholder={type === "REMINDER" ? t("customers.reminderPlaceholder", "What to follow up on…") : t("customers.notePlaceholder", "Write a note, log a call…")} />
-      <div className="mt-1 flex items-center justify-between gap-2 px-1.5">
-        {type === "REMINDER" ? (
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <CalendarClock className="h-4 w-4" />
-            <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="h-8 w-52 text-xs" />
+        placeholder={isReminder ? t("customers.reminderPlaceholder", "What to follow up on…") : t("customers.notePlaceholder", "Write a note…")} />
+
+      {isReminder && (
+        <div className="mt-1.5 space-y-2.5 rounded-xl bg-muted/40 p-2.5">
+          {/* Reason / channel */}
+          <div>
+            <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">{t("customers.reminderReason", "Reason")}</p>
+            <div className="inline-flex flex-wrap gap-1">
+              {REMINDER_KINDS.map((k) => (
+                <button key={k.key} onClick={() => setKind(k.key)}
+                  className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    kind === k.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:text-foreground")}>
+                  <k.icon className="h-3.5 w-3.5" /> {t(`customers.reminderKind.${k.key.toLowerCase()}`, k.label)}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : <span />}
-        <Button size="sm" disabled={add.isPending || (!body.trim() && type !== "REMINDER")} onClick={() => add.mutate()}>
-          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("customers.log", "Add")}</>}
+          {/* When + lead + repeat + assignee */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+              <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="h-8 w-[13.5rem] text-xs" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Bell className="h-4 w-4 text-muted-foreground" />
+              <select value={lead} onChange={(e) => setLead(Number(e.target.value))} className={selectCls}>
+                {LEAD_OPTIONS.map((o) => <option key={o.v} value={o.v}>{t(`customers.lead.${o.v}`, o.label)}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Repeat className="h-4 w-4 text-muted-foreground" />
+              <select value={repeat} onChange={(e) => setRepeat(e.target.value)} className={selectCls}>
+                {REPEAT_OPTIONS.map((o) => <option key={o.v} value={o.v}>{t(`customers.repeat.${o.v.toLowerCase()}`, o.label)}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} className={selectCls}>
+                <option value="">{t("customers.allManagers", "All managers")}</option>
+                {managers.map((m) => <option key={m.id} value={m.id}>{`${m.firstName} ${m.lastName}`.trim()}</option>)}
+              </select>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {assigneeId
+              ? t("customers.reminderWhoOne", "Notifies the selected manager, everywhere.")
+              : t("customers.reminderWho", "Notifies every manager assigned to this customer, everywhere.")}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-1.5 flex items-center justify-end gap-2 px-1.5">
+        <Button size="sm" disabled={add.isPending || (isReminder ? !dueAt : !body.trim())} onClick={() => add.mutate()}>
+          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {isReminder ? t("customers.setReminder", "Set reminder") : t("customers.log", "Add")}</>}
         </Button>
       </div>
+
+      {customer.spaceId && (
+        <CreateTaskDialog open={taskOpen} onOpenChange={(o) => { setTaskOpen(o); if (!o) onAdded() }} defaultSpaceId={customer.spaceId} defaultCustomerId={customer.id} />
+      )}
     </div>
+  )
+}
+
+// A one-click "remind me in 3 days" used by the no-next-step nudge.
+function QuickRemind({ customerId, onAdded }: { customerId: string; onAdded: () => void }) {
+  const { t } = useTranslation()
+  const add = useMutation({
+    mutationFn: () => {
+      const d = new Date(); d.setDate(d.getDate() + 3); d.setHours(9, 0, 0, 0)
+      return customersApi.addActivity(customerId, { type: "REMINDER", reminderKind: "CALL", dueAt: d.toISOString(), remindBeforeMin: 0 })
+    },
+    onSuccess: onAdded,
+    onError: (e: any) => notify.error(e.message || "Could not add"),
+  })
+  return (
+    <Button size="sm" variant="outline" disabled={add.isPending} onClick={() => add.mutate()}>
+      {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Bell className="mr-1.5 h-3.5 w-3.5" /> {t("customers.remindIn3", "Remind in 3 days")}</>}
+    </Button>
   )
 }
 
@@ -315,15 +502,21 @@ const ACT_META: Record<string, { icon: any; tone: string }> = {
   SYSTEM: { icon: Settings2, tone: "bg-muted text-muted-foreground" },
 }
 function Timeline({ customerId, loading, activities, empty, onChanged }: {
-  customerId: string; loading: boolean; activities: CustomerActivity[]; empty: string; onChanged: () => void
+  customerId: string; loading: boolean; activities: any[]; empty: string; onChanged: () => void
 }) {
   const { t } = useTranslation()
+  const router = useRouter()
   const now = Date.now()
   const toggleDone = useMutation({ mutationFn: ({ actId, done }: { actId: string; done: boolean }) => customersApi.updateActivity(customerId, actId, { done }), onSuccess: onChanged })
   const del = useMutation({ mutationFn: (actId: string) => customersApi.removeActivity(customerId, actId), onSuccess: onChanged })
+  const snooze = useMutation({ mutationFn: ({ actId, dueAt }: { actId: string; dueAt: string }) => customersApi.updateActivity(customerId, actId, { dueAt }), onSuccess: onChanged })
+  const doSnooze = (a: any, addMin: number) => {
+    const base = a.dueAt && new Date(a.dueAt).getTime() > now ? new Date(a.dueAt) : new Date()
+    snooze.mutate({ actId: a.id, dueAt: new Date(base.getTime() + addMin * 60000).toISOString() })
+  }
 
   const groups = useMemo(() => {
-    const m = new Map<number, CustomerActivity[]>()
+    const m = new Map<number, any[]>()
     for (const a of activities) { const k = dayKey(a.createdAt); if (!m.has(k)) m.set(k, []); m.get(k)!.push(a) }
     return Array.from(m.entries()).sort((a, b) => b[0] - a[0])
   }, [activities])
@@ -348,38 +541,103 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{dayLabel(items[0].createdAt, t)}</p>
             <div className="h-px flex-1 bg-border/60" />
           </div>
-          <ol className="relative space-y-2.5 pl-1 before:absolute before:left-[15px] before:top-1 before:bottom-1 before:w-px before:bg-border/70">
+          <ol className="relative space-y-1.5 pl-1 before:absolute before:left-[13px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
             {items.map((a) => {
               const meta = ACT_META[a.type] ?? ACT_META.NOTE
               const Icon = meta.icon
               const overdue = a.type === "REMINDER" && a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < now
               const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("customers.system", "System")
+              const isSystem = a.type === "STATUS" || a.type === "SYSTEM"
+
+              // Task item (from the customer's task feed) — clickable card.
+              if (a.type === "TASK") {
+                const tk = a.task
+                const done = ["COMPLETED", "CLOSED"].includes(tk.status)
+                return (
+                  <li key={a.id} className="group relative flex gap-3 py-1">
+                    <span className="z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 ring-4 ring-background dark:bg-indigo-950/50 dark:text-indigo-300">
+                      <CheckSquare className="h-3.5 w-3.5" />
+                    </span>
+                    <button onClick={() => router.push(`/tasks/${tk.id}`)}
+                      className="min-w-0 flex-1 rounded-xl border border-border/70 bg-card px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-primary/40">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="font-semibold text-foreground">{t("customers.task", "Task")}</span>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold", done ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" : "bg-muted text-muted-foreground")}>{tk.status}</span>
+                        <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
+                        <ChevronDownIcon className="ml-auto h-3.5 w-3.5 -rotate-90 text-muted-foreground" />
+                      </div>
+                      <p className={cn("mt-1 truncate text-sm font-medium text-foreground", done && "line-through opacity-70")}>{tk.title}</p>
+                      {tk.dueDate && <p className="mt-0.5 text-xs text-muted-foreground">{t("customers.dueAt", "Due {{date}}", { date: fmtDate(tk.dueDate) })}</p>}
+                    </button>
+                  </li>
+                )
+              }
+
+              // System events (stage changes, invites) = subtle inline lines, no card.
+              if (isSystem) {
+                return (
+                  <li key={a.id} className="group relative flex items-center gap-3 py-0.5">
+                    <span className="z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-4 ring-background">
+                      <Icon className="h-3.5 w-3.5" />
+                    </span>
+                    <p className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="truncate">
+                        {a.type === "STATUS"
+                          ? <>{t("customers.movedTo", "moved to")} <span className="font-semibold text-foreground">{customerStageLabel(a.metadata?.to || "")}</span></>
+                          : (a.body || t("customers.act.system", "System"))}
+                      </span>
+                      <span className="text-muted-foreground/40">·</span><span className="truncate">{author}</span>
+                      <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
+                      <button onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
+                    </p>
+                  </li>
+                )
+              }
+
+              // Content activities (note / call / email / meeting / reminder) = cards.
               return (
-                <li key={a.id} className="group relative flex gap-3">
-                  <span className={cn("z-10 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-background",
+                <li key={a.id} className="group relative flex gap-3 py-1">
+                  <span className={cn("z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-background",
                     a.type === "REMINDER" && a.doneAt ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50" :
                     overdue ? "bg-red-100 text-red-600 dark:bg-red-950/50" : meta.tone)}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3.5 w-3.5" />
                   </span>
-                  <div className="min-w-0 flex-1 rounded-xl border border-border/60 bg-card px-3.5 py-2.5 transition-colors hover:border-border">
+                  <div className="min-w-0 flex-1 rounded-xl border border-border/70 bg-card px-3.5 py-2.5 shadow-sm transition-colors hover:border-border">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <span className="font-semibold text-foreground">
-                        {a.type === "STATUS"
-                          ? t("customers.stageChanged", "Stage: {{from}} → {{to}}", { from: customerStageLabel(a.metadata?.from || ""), to: customerStageLabel(a.metadata?.to || "") })
-                          : t(`customers.act.${a.type.toLowerCase()}`, a.type)}
+                        {a.type === "REMINDER"
+                          ? `${t("customers.act.reminder", "Reminder")} · ${(REMINDER_KIND_META[(a.reminderKind || "OTHER").toUpperCase()] ?? REMINDER_KIND_META.OTHER).label}`
+                          : t(`customers.act.${String(a.type).toLowerCase()}`, String(a.type))}
                       </span>
-                      <span className="text-muted-foreground/50">·</span><span className="truncate">{author}</span>
-                      <span className="text-muted-foreground/50">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
+                      <span className="text-muted-foreground/40">·</span><span className="truncate">{author}</span>
+                      <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
                       <button onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                     {a.body && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{a.body}</p>}
                     {a.type === "REMINDER" && (
-                      <label className="mt-2 flex w-fit cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-2.5 py-1.5">
-                        <Checkbox checked={!!a.doneAt} onCheckedChange={(v) => toggleDone.mutate({ actId: a.id, done: !!v })} />
-                        <span className={cn("text-xs font-medium", a.doneAt ? "text-emerald-600 line-through" : overdue ? "text-red-600" : "text-amber-600")}>
-                          {a.doneAt ? t("customers.done", "Done") : t("customers.due", "Due {{date}}", { date: fmtDate(a.dueAt) })}
-                        </span>
-                      </label>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-2.5 py-1.5">
+                          <Checkbox checked={!!a.doneAt} onCheckedChange={(v) => toggleDone.mutate({ actId: a.id, done: !!v })} />
+                          <span className={cn("text-xs font-medium", a.doneAt ? "text-emerald-600 line-through" : overdue ? "text-red-600" : "text-amber-600")}>
+                            {a.doneAt ? t("customers.done", "Done") : t("customers.dueAt", "Due {{date}}", { date: fmtDateTime(a.dueAt) })}
+                          </span>
+                          {!a.doneAt && leadLabel(a.remindBeforeMin) && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Bell className="h-3 w-3" /> {leadLabel(a.remindBeforeMin)}</span>
+                          )}
+                          {a.repeat && a.repeat !== "NONE" && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Repeat className="h-3 w-3" /> {t(`customers.repeat.${String(a.repeat).toLowerCase()}`, String(a.repeat))}</span>
+                          )}
+                        </label>
+                        {!a.doneAt && (
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <span>{t("customers.snooze", "Snooze")}:</span>
+                            <button onClick={() => doSnooze(a, 60)} className="rounded-md border border-border px-1.5 py-0.5 hover:bg-muted">1h</button>
+                            <button onClick={() => doSnooze(a, 1440)} className="rounded-md border border-border px-1.5 py-0.5 hover:bg-muted">{t("customers.snoozeDay", "1d")}</button>
+                            <button onClick={() => doSnooze(a, 10080)} className="rounded-md border border-border px-1.5 py-0.5 hover:bg-muted">{t("customers.snoozeWeek", "1w")}</button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </li>

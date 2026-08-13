@@ -186,6 +186,7 @@ export class PortalService {
       where: { organizationId: data.organizationId, spaceId: data.spaceId, isActive: true },
       orderBy: { name: 'asc' },
       include: { customer: { select: { id: true, name: true } } },
+      take: 500,
     });
     return { data: rows };
   }
@@ -317,13 +318,14 @@ export class PortalService {
     return this.prisma.customerUnit.findMany({
       where: { organizationId: data.organizationId, customerId: data.customerId, isActive: true },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+      take: 200,
     });
   }
 
   /** Make a unit the customer's primary address (unsets the siblings). */
-  async setPrimaryUnit(data: { id: string; organizationId: string }) {
+  async setPrimaryUnit(data: { id: string; organizationId: string; customerId?: string }) {
     const unit = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...(data.customerId ? { customerId: data.customerId } : {}) },
       select: { id: true, customerId: true },
     });
     if (!unit) throw new NotFoundException('Unit not found');
@@ -344,6 +346,7 @@ export class PortalService {
         ...(data.customerId ? { customerId: data.customerId } : {}),
       },
       orderBy: { createdAt: 'asc' },
+      take: 500,
     });
   }
 
@@ -368,6 +371,8 @@ export class PortalService {
     lng?: number | null;
     isPrimary?: boolean;
     spaceId?: string;
+    contactName?: string | null;
+    contactPhone?: string | null;
   }) {
     const c = await this.assertCustomerInOrg(data.organizationId, data.customerId);
     // First address for a customer becomes primary automatically.
@@ -390,6 +395,8 @@ export class PortalService {
         lng: data.lng ?? null,
         isPrimary,
         spaceId: data.spaceId || null,
+        contactName: data.contactName || null,
+        contactPhone: data.contactPhone || null,
       },
     });
   }
@@ -405,9 +412,12 @@ export class PortalService {
     isPrimary?: boolean;
     spaceId?: string | null;
     customerId?: string | null;
+    contactName?: string | null;
+    contactPhone?: string | null;
+    scopeCustomerId?: string; // when set, the unit must belong to this customer
   }) {
     const existing = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}) },
       select: { id: true, customerId: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');
@@ -426,13 +436,15 @@ export class PortalService {
         ...(data.isPrimary !== undefined ? { isPrimary: data.isPrimary } : {}),
         ...(data.spaceId !== undefined ? { spaceId: data.spaceId } : {}),
         ...(data.customerId !== undefined ? { customerId: data.customerId } : {}),
+        ...(data.contactName !== undefined ? { contactName: data.contactName } : {}),
+        ...(data.contactPhone !== undefined ? { contactPhone: data.contactPhone } : {}),
       },
     });
   }
 
-  async deleteUnit(data: { id: string; organizationId: string }) {
+  async deleteUnit(data: { id: string; organizationId: string; customerId?: string }) {
     const existing = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...(data.customerId ? { customerId: data.customerId } : {}) },
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');

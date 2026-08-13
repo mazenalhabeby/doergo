@@ -4,7 +4,7 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { MapPin, Plus, Star, Trash2, Pencil, ChevronDown, ChevronUp, Home } from "lucide-react"
+import { MapPin, Plus, Star, Trash2, Pencil, ChevronDown, ChevronUp, Home, User, Phone } from "lucide-react"
 
 import { customersApi, spacePortalApi, type CustomerAddress, type SpaceUnit } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -125,6 +125,16 @@ function AddressRow({ addr, isPrimary, customerId, onSaved, onMakePrimary, onRem
           {isPrimary && <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"><Star className="h-2.5 w-2.5 fill-current" /> {t("customers.primary", "Primary")}</span>}
         </div>
         {addr.address && addr.address !== addr.name && <p className="truncate text-xs text-muted-foreground">{addr.address}</p>}
+        {addr.contactName && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><User className="h-3 w-3" /> {addr.contactName}</span>
+            {addr.contactPhone && (
+              <a href={`tel:${addr.contactPhone}`} className="inline-flex items-center gap-1 hover:text-primary">
+                <Phone className="h-3 w-3" /> {addr.contactPhone}
+              </a>
+            )}
+          </p>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {onMakePrimary && <button title={t("customers.makePrimary", "Make primary")} onClick={onMakePrimary} className="rounded p-1 text-muted-foreground hover:text-primary"><Star className="h-3.5 w-3.5" /></button>}
@@ -146,15 +156,18 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
   const [address, setAddress] = useState(existing?.address ?? "")
   const [lat, setLat] = useState<number | null>(existing?.lat ?? null)
   const [lng, setLng] = useState<number | null>(existing?.lng ?? null)
+  const [contactName, setContactName] = useState(existing?.contactName ?? "")
+  const [contactPhone, setContactPhone] = useState(existing?.contactPhone ?? "")
   const [makePrimary, setMakePrimary] = useState(existing?.isPrimary ?? !!isFirst)
 
   const save = useMutation({
     mutationFn: async () => {
+      const contact = { contactName: contactName.trim() || null, contactPhone: contactPhone.trim() || null }
       if (existing) {
-        await customersApi.updateAddress(customerId, existing.id, { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined })
+        await customersApi.updateAddress(customerId, existing.id, { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, ...contact })
         if (makePrimary && !existing.isPrimary) await customersApi.setPrimaryAddress(customerId, existing.id)
       } else {
-        await customersApi.addAddress(customerId, { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, isPrimary: makePrimary })
+        await customersApi.addAddress(customerId, { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, isPrimary: makePrimary, ...contact })
       }
     },
     onSuccess: () => { notify.success(existing ? t("customers.addressUpdated", "Address updated") : t("customers.addressAdded", "Address added")); onSaved(); setOpen(false) },
@@ -174,6 +187,16 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
           <div className="space-y-1">
             <Label>{t("customers.address", "Address")}</Label>
             <LocationPicker address={address} lat={lat} lng={lng} onLocationChange={(a, la, ln) => { setAddress(a); setLat(la); setLng(ln) }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>{t("customers.contactPerson", "Contact person")}</Label>
+              <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder={t("customers.contactPersonPh", "On-site contact")} />
+            </div>
+            <div className="space-y-1">
+              <Label>{t("customers.contactPhone", "Contact phone")}</Label>
+              <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+43 …" />
+            </div>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={makePrimary} onCheckedChange={(v) => setMakePrimary(!!v)} disabled={existing?.isPrimary} />

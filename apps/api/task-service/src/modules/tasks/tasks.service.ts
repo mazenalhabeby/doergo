@@ -173,6 +173,18 @@ export class TasksService {
       if (!ownUnit) effUnitId = null;
     }
 
+    // Cross-tenant guard: a client-supplied customerId (internal "+ Task" flow)
+    // MUST belong to the caller's org — otherwise a task could reference another
+    // org's customer (dangling FK + analytics join leak). Drop it if it doesn't.
+    let effCustomerId: string | null = data.customerId || null;
+    if (effCustomerId) {
+      const ownCustomer = await this.prisma.customer.findFirst({
+        where: { id: effCustomerId, organizationId: effectiveOrgId },
+        select: { id: true },
+      });
+      if (!ownCustomer) effCustomerId = null;
+    }
+
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
         data: {
@@ -200,7 +212,7 @@ export class TasksService {
           // Customer link + origin (portal requests carry these; internal tasks
           // default to source=INTERNAL and no customer/unit). unitId is validated
           // above for portal requests.
-          customerId: data.customerId || null,
+          customerId: effCustomerId,
           unitId: effUnitId,
           source: data.source === 'CUSTOMER_PORTAL' ? 'CUSTOMER_PORTAL' : 'INTERNAL',
           // Portal requests are born un-triaged; everything else is born routed.
@@ -725,6 +737,9 @@ export class TasksService {
         where.spaceId = spaceId;
       }
     }
+
+    // Customer filter (CRM record → its tasks). Composes with org/visibility.
+    if (query.customerId) where.customerId = query.customerId;
 
     // Build AND conditions for date range and search
     const andConditions: any[] = [];

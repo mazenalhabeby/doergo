@@ -692,6 +692,7 @@ export interface CreateTaskInput {
   storyPoints?: number;
   epicId?: string;
   spaceId?: string;
+  customerId?: string;
   checklistItems?: { text: string }[];
   customFieldValues?: { definitionId: string; value: string }[];
 }
@@ -723,6 +724,8 @@ export interface TasksQueryParams {
   limit?: number;
   /** Scope tasks to a single space. Used by the guest shared-space view. */
   spaceId?: string;
+  /** Scope tasks to a single CRM customer (their record's task feed). */
+  customerId?: string;
 }
 
 // Suggested employee response types
@@ -907,6 +910,7 @@ export const tasksApi = {
       limit: params?.limit,
       // The server scopes to this space (incl. cross-org shared spaces).
       spaceId: params?.spaceId,
+      customerId: params?.customerId,
     });
 
     const response = await api.get<TasksListResponse>(endpoint);
@@ -4531,10 +4535,21 @@ export interface Customer {
   portalId?: string | null;
   spaceId?: string | null; // per-space CRM
   ownerId?: string | null; // sales owner
+  managerIds?: string[]; // assigned sales managers
   status?: string; // CRM lifecycle stage
+  // Person vs Company + B2B company fields
+  type?: string; // PERSON | COMPANY
+  legalName?: string | null;
+  website?: string | null;
+  industry?: string | null;
+  vatId?: string | null;
+  regNumber?: string | null;
+  details?: CustomerDetail[] | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CustomerDetail { label: string; value: string }
 
 export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
 
@@ -4547,6 +4562,8 @@ export interface CustomerAddress {
   lat?: number | null;
   lng?: number | null;
   isPrimary: boolean;
+  contactName?: string | null;
+  contactPhone?: string | null;
 }
 
 // ── Per-space B2C portal (config + unit/apartment catalog) ──
@@ -4594,6 +4611,11 @@ export interface CustomerActivity {
   authorId?: string | null;
   dueAt?: string | null;
   doneAt?: string | null;
+  reminderKind?: string | null; // CALL | EMAIL | MEETING | OTHER
+  remindBeforeMin?: number | null;
+  notifyAt?: string | null;
+  reminderAssigneeId?: string | null;
+  repeat?: string | null; // NONE | DAILY | WEEKLY | MONTHLY
   metadata?: { from?: string; to?: string } | null;
   createdAt: string;
   author?: { id: string; firstName: string; lastName: string | null } | null;
@@ -4623,12 +4645,12 @@ export const customersApi = {
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },
-  addActivity: async (id: string, input: { type?: string; body?: string; dueAt?: string }) => {
+  addActivity: async (id: string, input: { type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }) => {
     const res = await api.post<{ data: CustomerActivity }>(`/customers/${id}/activities`, input);
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },
-  updateActivity: async (id: string, activityId: string, input: { body?: string; dueAt?: string | null; done?: boolean }) => {
+  updateActivity: async (id: string, activityId: string, input: { body?: string; dueAt?: string | null; done?: boolean; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }) => {
     const res = await api.patch<{ data: CustomerActivity }>(`/customers/${id}/activities/${activityId}`, input);
     if (res.error) throw new Error(res.error);
     return res.data!.data;
@@ -4644,12 +4666,12 @@ export const customersApi = {
     if (res.error) throw new Error(res.error);
     return res.data ?? [];
   },
-  addAddress: async (id: string, input: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean }) => {
+  addAddress: async (id: string, input: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string | null; contactPhone?: string | null }) => {
     const res = await api.post<CustomerAddress>(`/customers/${id}/addresses`, input);
     if (res.error) throw new Error(res.error);
     return res.data;
   },
-  updateAddress: async (id: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number }) => {
+  updateAddress: async (id: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null }) => {
     const res = await api.patch<CustomerAddress>(`/customers/${id}/addresses/${unitId}`, input);
     if (res.error) throw new Error(res.error);
     return res.data;

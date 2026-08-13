@@ -1158,6 +1158,21 @@ model Customer {
   notes        String?
   isActive     Boolean  @default(true)
 
+  // Person vs Company. A COMPANY unlocks the B2B fields below (legal name, VAT,
+  // register number, website, industry) + a flexible custom-details list.
+  type String @default("PERSON") // PERSON | COMPANY
+
+  // ── Company (B2B) fields — only meaningful when type = COMPANY ──
+  legalName String? // registered/legal entity name if different from display name
+  website   String?
+  industry  String?
+  vatId     String? // VAT / UID number (EU) — e.g. ATU12345678
+  regNumber String? // company register number (e.g. Firmenbuchnummer FN 123456x)
+
+  // Flexible extra attributes the office adds themselves: [{ label, value }].
+  // Keeps the record open-ended without a schema change per new field.
+  details Json?
+
   // Distinguishes a customer-portal RESIDENT (an end-user who logs into the app,
   // e.g. a tenant renting an apartment) from a B2B customer (a company you do
   // field-service work for). The office "Customers" list shows B2B; the Customer
@@ -1177,6 +1192,12 @@ model Customer {
 
   // Sales rep who owns the relationship (plain User-id marker, no FK).
   ownerId String?
+
+  // Sales managers assigned to work this CRM relationship (User ids; no FK, so
+  // removing a member never blocks). Empty once the customer gets app access —
+  // an app customer is self-serve, so sales stops working them (handoff). See
+  // the smart transition in CustomersService.update().
+  managerIds String[] @default([])
 
   // CRM lifecycle stage (LEAD | CONTACTED | QUALIFIED | CUSTOMER | INACTIVE).
   // Free-form String so it stays flexible; labels/colors live in shared.
@@ -1223,10 +1244,25 @@ model CustomerActivity {
   body     String?
   authorId String? // who logged it (User id, plain marker)
 
-  // REMINDER only: when it's due, when completed, and when we notified the owner.
+  // REMINDER only: when it's due, when completed, and when we notified.
   dueAt      DateTime?
   doneAt     DateTime?
   notifiedAt DateTime?
+
+  // REMINDER dynamics:
+  //  reminderKind    — what to do (CALL | EMAIL | MEETING | OTHER)
+  //  remindBeforeMin — lead time; alert this many minutes before dueAt
+  //  notifyAt        — computed fire time (dueAt − remindBeforeMin); the sweep
+  //                    keys off this so "remind 1h before" just works.
+  reminderKind    String?
+  remindBeforeMin Int?      @default(0)
+  notifyAt        DateTime?
+
+  // Target ONE manager for this reminder (else all assigned managers are pinged).
+  reminderAssigneeId String?
+  // Recurrence: NONE | DAILY | WEEKLY | MONTHLY. On complete, the next
+  // occurrence is auto-created so periodic check-ins never fall off.
+  repeat String? @default("NONE")
 
   metadata Json? // e.g. { from, to } for a STATUS change
 
@@ -1234,7 +1270,7 @@ model CustomerActivity {
   updatedAt DateTime @updatedAt
 
   @@index([customerId, createdAt])
-  @@index([organizationId, dueAt]) // due-reminder sweeps
+  @@index([notifyAt]) // due-reminder sweeps
   @@map("customer_activities")
 }
 
@@ -1293,6 +1329,11 @@ model CustomerUnit {
   address String?
   lat     Float?
   lng     Float?
+
+  // On-site contact person for THIS address (a company customer can have a
+  // different contact at each site). Shown on the address row.
+  contactName  String?
+  contactPhone String?
 
   // Requests about this unit route into this space (→ its workflow). Optional:
   // falls back to the org default space at task creation.

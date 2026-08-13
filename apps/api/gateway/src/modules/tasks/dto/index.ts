@@ -97,6 +97,11 @@ export class CreateTaskDto {
   @IsOptional()
   spaceId?: string;
 
+  @ApiPropertyOptional({ description: 'Customer (CRM) ID this task is for' })
+  @IsString()
+  @IsOptional()
+  customerId?: string;
+
   @ApiPropertyOptional({ description: 'Workflow (task type) ID — overrides the space default' })
   @IsString()
   @IsOptional()

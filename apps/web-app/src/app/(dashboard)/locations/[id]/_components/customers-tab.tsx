@@ -4,10 +4,10 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Contact, Plus, Smartphone, ChevronRight } from "lucide-react"
+import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import { customersApi, type Customer, type CompanyLocation } from "@/lib/api"
+import { customersApi, type Customer, type CompanyLocation, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,14 @@ import { PhoneInput } from "@/components/ui/phone-input"
 import { SectionHeader, EmptyState } from "./section-header"
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+
+// Common industries for the datalist (smart suggestions, still free-text).
+const INDUSTRIES = [
+  "Construction", "Real Estate", "Property Management", "Facility Management",
+  "Manufacturing", "Retail", "Hospitality", "Healthcare", "Logistics",
+  "Energy & Utilities", "Telecommunications", "Automotive", "Agriculture",
+  "Education", "Public Sector", "Professional Services", "Technology",
+]
 
 type Filter = "all" | "crm" | "app"
 
@@ -111,17 +119,38 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const [type, setType] = useState<"PERSON" | "COMPANY">((existing?.type as any) === "COMPANY" ? "COMPANY" : "PERSON")
   const [form, setForm] = useState({
-    name: existing?.name ?? "", contactName: existing?.contactName ?? "", email: existing?.email ?? "",
-    phone: existing?.phone ?? "", address: existing?.address ?? "", notes: existing?.notes ?? "",
+    name: existing?.name ?? "", email: existing?.email ?? "",
+    phone: existing?.phone ?? "", notes: existing?.notes ?? "",
+    legalName: existing?.legalName ?? "", website: existing?.website ?? "",
+    industry: existing?.industry ?? "", vatId: existing?.vatId ?? "", regNumber: existing?.regNumber ?? "",
   })
+  const [details, setDetails] = useState<CustomerDetail[]>(existing?.details ?? [])
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
   const emailInvalid = !!form.email && !isEmail(form.email)
+  const isCompany = type === "COMPANY"
+
+  const setDetail = (i: number, k: "label" | "value", v: string) =>
+    setDetails((d) => d.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)))
+  const addDetail = () => setDetails((d) => [...d, { label: "", value: "" }])
+  const removeDetail = (i: number) => setDetails((d) => d.filter((_, idx) => idx !== i))
 
   const save = useMutation({
-    mutationFn: () => existing
-      ? customersApi.update(existing.id, form)
-      : customersApi.create({ ...form, spaceId }),
+    mutationFn: () => {
+      const cleanDetails = details.map((d) => ({ label: d.label.trim(), value: d.value.trim() })).filter((d) => d.label)
+      const payload = {
+        ...form, type,
+        // Company-only fields are cleared when the record is a person.
+        legalName: isCompany ? form.legalName : "",
+        website: isCompany ? form.website : "",
+        industry: isCompany ? form.industry : "",
+        vatId: isCompany ? form.vatId : "",
+        regNumber: isCompany ? form.regNumber : "",
+        details: cleanDetails,
+      }
+      return existing ? customersApi.update(existing.id, payload) : customersApi.create({ ...payload, spaceId })
+    },
     onSuccess: () => { notify.success(existing ? t("customers.updated", "Customer updated") : t("customers.created", "Customer added")); onSaved(); setOpen(false) },
     onError: (e: any) => notify.error(e.message || "Could not save"),
   })
@@ -129,23 +158,79 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader><DialogTitle>{existing ? t("customers.edit", "Edit customer") : t("customers.add", "Add customer")}</DialogTitle></DialogHeader>
         <div className="grid gap-3">
-          <Field label={t("customers.name", "Name")} required value={form.name} onChange={(v) => set("name", v)} />
-          <Field label={t("customers.contactName", "Contact person")} value={form.contactName} onChange={(v) => set("contactName", v)} />
+          {/* Person / Company segmented toggle */}
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            {([["PERSON", User, t("customers.typePerson", "Person")], ["COMPANY", Building2, t("customers.typeCompany", "Company")]] as const).map(([val, Icon, label]) => (
+              <button key={val} type="button" onClick={() => setType(val as any)}
+                className={cn("inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  type === val ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                <Icon className="h-4 w-4" /> {label}
+              </button>
+            ))}
+          </div>
+
+          <Field label={isCompany ? t("customers.companyName", "Company name") : t("customers.name", "Name")} required value={form.name} onChange={(v) => set("name", v)} />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label>{t("customers.email", "Email")}</Label>
+              <Label>{isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")}</Label>
               <Input type="email" inputMode="email" value={form.email} onChange={(e) => set("email", e.target.value)}
                 aria-invalid={emailInvalid} className={cn(emailInvalid && "border-destructive focus-visible:ring-destructive")} />
               {emailInvalid && <p className="text-[11px] text-destructive">{t("customers.emailInvalid", "Enter a valid email")}</p>}
             </div>
             <div className="space-y-1">
-              <Label>{t("customers.phone", "Phone")}</Label>
+              <Label>{isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")}</Label>
               <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} />
             </div>
           </div>
+
+          {/* Company-only fields */}
+          {isCompany && (
+            <div className="space-y-3 rounded-xl border border-border/70 bg-muted/30 p-3">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Building2 className="h-3.5 w-3.5" /> {t("customers.companyInfo", "Company info")}
+              </p>
+              <IconField icon={Landmark} label={t("customers.legalName", "Legal name")} placeholder={t("customers.legalNamePh", "Registered entity name")} value={form.legalName} onChange={(v) => set("legalName", v)} />
+              <div className="grid grid-cols-2 gap-3">
+                <IconField icon={Globe} label={t("customers.website", "Website")} placeholder="example.com" value={form.website} onChange={(v) => set("website", v)} />
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-muted-foreground" /> {t("customers.industry", "Industry")}</Label>
+                  <Input list="crm-industries" value={form.industry} onChange={(e) => set("industry", e.target.value)} placeholder={t("customers.industryPh", "e.g. Construction")} />
+                  <datalist id="crm-industries">{INDUSTRIES.map((i) => <option key={i} value={i} />)}</datalist>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <IconField icon={Hash} label={t("customers.vatId", "VAT / UID no.")} placeholder="ATU12345678" value={form.vatId} onChange={(v) => set("vatId", v)} />
+                <IconField icon={Landmark} label={t("customers.regNumber", "Register no.")} placeholder={t("customers.regNumberPh", "FN 123456x")} value={form.regNumber} onChange={(v) => set("regNumber", v)} />
+              </div>
+            </div>
+          )}
+
+          {/* Flexible custom details */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>{t("customers.moreInfo", "Additional info")}</Label>
+              <button type="button" onClick={addDetail} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
+              </button>
+            </div>
+            {details.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t("customers.moreInfoHint", "Add anything else — payment terms, preferred contact, account manager…")}</p>
+            ) : (
+              <div className="space-y-2">
+                {details.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input value={d.label} onChange={(e) => setDetail(i, "label", e.target.value)} placeholder={t("customers.fieldLabel", "Label")} className="w-2/5" />
+                    <Input value={d.value} onChange={(e) => setDetail(i, "value", e.target.value)} placeholder={t("customers.fieldValue", "Value")} className="flex-1" />
+                    <button type="button" onClick={() => removeDetail(i)} className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1">
             <Label>{t("customers.notes", "Notes")}</Label>
             <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} />
@@ -159,6 +244,15 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function IconField({ icon: Icon, label, value, onChange, placeholder }: { icon: any; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="flex items-center gap-1.5"><Icon className="h-3.5 w-3.5 text-muted-foreground" /> {label}</Label>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </div>
   )
 }
 

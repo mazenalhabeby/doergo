@@ -5,8 +5,10 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 
 /**
- * Sweeps due customer reminders and notifies their owner (the rep who set them).
- * Runs every 5 minutes; each reminder is notified once (notifiedAt guard).
+ * Sweeps due customer reminders and notifies every manager assigned to the
+ * customer (falling back to the owner / the rep who set it). Fires at `notifyAt`
+ * (dueAt − lead time), so "remind me 1h before" just works. Runs every minute;
+ * each reminder is notified once (notifiedAt guard).
  */
 @Injectable()
 export class CustomerReminderScheduler {
@@ -17,32 +19,58 @@ export class CustomerReminderScheduler {
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
-  @Cron('*/5 * * * *')
+  @Cron('* * * * *')
   async sweep() {
     const now = new Date();
     const due = await this.prisma.customerActivity.findMany({
-      where: { type: 'REMINDER', doneAt: null, notifiedAt: null, dueAt: { lte: now } },
+      where: { type: 'REMINDER', doneAt: null, notifiedAt: null, notifyAt: { lte: now } },
       take: 100,
-      include: { customer: { select: { name: true } } },
+      include: { customer: { select: { name: true, managerIds: true, ownerId: true } } },
     });
     if (due.length === 0) return;
 
+    let notified = 0;
     for (const r of due) {
-      if (r.authorId) {
+      // Atomically CLAIM the reminder before emitting: only the instance whose
+      // update flips notifiedAt from null → now proceeds. Prevents duplicate
+      // sends across multiple auth-service instances / overlapping sweeps.
+      const claim = await this.prisma.customerActivity.updateMany({
+        where: { id: r.id, notifiedAt: null },
+        data: { notifiedAt: new Date() },
+      });
+      if (claim.count !== 1) continue;
+      notified++;
+
+      const customer: any = (r as any).customer;
+      // Recipients: a specific assignee if set, else every assigned manager,
+      // else the owner, else whoever set it.
+      const recipients = (r as any).reminderAssigneeId
+        ? [(r as any).reminderAssigneeId as string]
+        : Array.from(
+            new Set(
+              [
+                ...(Array.isArray(customer?.managerIds) ? customer.managerIds : []),
+                customer?.ownerId,
+                r.authorId,
+              ].filter(Boolean) as string[],
+            ),
+          );
+      if (recipients.length > 0) {
         try {
           this.notificationClient.emit('customer_reminder_due', {
             organizationId: r.organizationId,
-            userId: r.authorId,
+            userIds: recipients,
             customerId: r.customerId,
-            customerName: (r as any).customer?.name ?? 'a customer',
+            customerName: customer?.name ?? 'a customer',
             body: r.body ?? '',
+            reminderKind: r.reminderKind ?? 'OTHER',
+            dueAt: r.dueAt ? r.dueAt.toISOString() : null,
           });
         } catch (e) {
           this.logger.warn(`reminder emit failed (${r.id}): ${e}`);
         }
       }
-      await this.prisma.customerActivity.update({ where: { id: r.id }, data: { notifiedAt: new Date() } });
     }
-    this.logger.log(`Notified ${due.length} due customer reminder(s)`);
+    if (notified > 0) this.logger.log(`Notified ${notified} due customer reminder(s)`);
   }
 }
