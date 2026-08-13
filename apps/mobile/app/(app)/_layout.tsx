@@ -253,6 +253,8 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen name="route-planner" options={{ headerShown: false }} />
+        <Stack.Screen name="customers" options={{ headerShown: false }} />
+        <Stack.Screen name="customer/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />

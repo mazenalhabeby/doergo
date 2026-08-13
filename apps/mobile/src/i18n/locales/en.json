@@ -933,6 +933,10 @@
     },
     "titles": {
       "timeOffRequests": "Time Off Requests"
+    },
+    "customers": {
+      "label": "Customers",
+      "desc": "Leads, calls, reminders & follow-ups"
     }
   },
   "components": {
