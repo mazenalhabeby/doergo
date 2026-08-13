@@ -4,22 +4,32 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Building2, Plus, Trash2, Home, UserCheck } from "lucide-react"
+import { Building2, Plus, Trash2, Home, UserCheck, Users, ListChecks, Check } from "lucide-react"
 
 import { spacePortalApi, type SpaceUnit } from "@/lib/api"
+import { portalTile } from "@/lib/portal-ui"
 import { notify } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
 import { SectionHeader, EmptyState } from "./section-header"
+
+// Same portal-type language as the Clients Portals page (03): badge, entity
+// label, blurb, accent — so a space's portal reads identically.
+const TEMPLATES = [
+  { key: "rental", label: "Rental / Property", badge: "Rental", entity: "Apartment", blurb: "Tenants report maintenance issues (AC, plumbing…).", accent: "emerald" },
+  { key: "logistics", label: "Logistics / Delivery", badge: "Logistics", entity: "Order", blurb: "Recipients report delivery problems (not arrived, damaged…).", accent: "orange" },
+  { key: "workplace", label: "Workplace / Facilities", badge: "Workplace", entity: "Workspace", blurb: "Employees report facility issues (HVAC, lighting, IT…).", accent: "cyan" },
+  { key: "custom", label: "Units (generic)", badge: "Units", entity: "Unit", blurb: "Generic units your clients are tied to.", accent: "slate" },
+] as const
+const BY_KEY = Object.fromEntries(TEMPLATES.map((x) => [x.key, x]))
+const portalInitials = (n?: string) => (n || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("") || "?"
 
 const LocationPicker = dynamic(
   () => import("../../_components/location-picker"),
@@ -29,21 +39,17 @@ const LocationPicker = dynamic(
   onLocationChange: (address: string, lat: number | null, lng: number | null) => void
 }>
 
-const ENTITY_TYPES = [
-  { key: "rental", label: "Apartments (rental)" },
-  { key: "logistics", label: "Orders (delivery)" },
-  { key: "workplace", label: "Workspaces" },
-  { key: "custom", label: "Units (generic)" },
-]
-
 export function PortalTab({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
 
   const portalQ = useQuery({ queryKey: ["space-portal", spaceId], queryFn: () => spacePortalApi.get(spaceId) })
   const unitsQ = useQuery({ queryKey: ["space-units", spaceId], queryFn: () => spacePortalApi.units(spaceId) })
-  const entityLabel = portalQ.data?.entityLabel || "Unit"
+  const portal = portalQ.data
+  const meta = BY_KEY[portal?.templateKey || "custom"] ?? BY_KEY.custom
+  const entityLabel = portal?.entityLabel || "Unit"
   const units = unitsQ.data ?? []
+  const clientCount = units.filter((u: SpaceUnit) => u.customer).length
 
   const setType = useMutation({
     mutationFn: (templateKey: string) => spacePortalApi.setEntityType(spaceId, templateKey),
@@ -65,18 +71,51 @@ export function PortalTab({ spaceId }: { spaceId: string }) {
         description={t("portal.intro", "This space's B2C portal. Clients you invite log in to order & follow. Pick what an entity is called, then list them.")}
       />
 
-      {/* Entity type */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      {/* Portal identity card — same visual language as the Clients Portals cards */}
+      {portalQ.isLoading ? (
+        <Skeleton className="h-32 w-full rounded-2xl" />
+      ) : (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold", portalTile(meta.accent))}>
+              {portalInitials(portal?.name)}
+            </div>
+            <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium", portalTile(meta.accent))}>
+              {t(`portal.type.${meta.key}`, meta.badge)}
+            </span>
+          </div>
+          <p className="mt-4 truncate font-semibold text-foreground">{portal?.name || t("portal.title", "Client portal")}</p>
+          <p className="truncate text-xs text-muted-foreground">{t("portal.entityIs", "Entity: {{e}}", { e: entityLabel })}</p>
+          <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /><span className="font-medium text-foreground tabular-nums">{clientCount}</span> {t("portal.residents", "clients")}</span>
+            <span className="inline-flex items-center gap-1"><ListChecks className="h-3.5 w-3.5" /><span className="font-medium text-foreground tabular-nums">{units.length}</span> {t("portal.catalogCount", "{{label}}", { label: entityLabel.toLowerCase() + "s" })}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Portal type — radio-card picker (same structure as the Create-portal dialog) */}
+      <div>
         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("portal.entityType", "Portal type")}</Label>
-        <div className="mt-2 max-w-xs">
-          {portalQ.isLoading ? <Skeleton className="h-9 w-full" /> : (
-            <Select value={portalQ.data?.templateKey || "custom"} onValueChange={(v) => setType.mutate(v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ENTITY_TYPES.map((e) => <SelectItem key={e.key} value={e.key}>{e.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {TEMPLATES.map((x) => {
+            const active = (portal?.templateKey || "custom") === x.key
+            return (
+              <button key={x.key} type="button" disabled={setType.isPending} onClick={() => !active && setType.mutate(x.key)}
+                className={cn("flex items-start gap-3 rounded-xl border p-3 text-left transition-colors",
+                  active ? "border-primary bg-primary/5 ring-1 ring-inset ring-primary/20" : "border-border hover:border-border/80 hover:bg-accent/30")}>
+                <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold", portalTile(x.accent))}>
+                  {t(`portal.type.${x.key}`, x.badge).slice(0, 2)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    {t(`portal.tpl.${x.key}`, x.label)}
+                    {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{t(`portal.blurb.${x.key}`, x.blurb)}</span>
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -99,8 +138,10 @@ export function PortalTab({ spaceId }: { spaceId: string }) {
         ) : (
           <div className="space-y-2">
             {units.map((u: SpaceUnit) => (
-              <div key={u.id} className="group flex items-center gap-3 rounded-xl border border-border p-3">
-                <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div key={u.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-border/80">
+                <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", portalTile(meta.accent))}>
+                  <Home className="h-4 w-4" />
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{u.name}</p>
                   {u.address && u.address !== u.name && <p className="truncate text-xs text-muted-foreground">{u.address}</p>}
