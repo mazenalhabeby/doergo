@@ -228,13 +228,17 @@ export class CustomersController {
     const email = body.email?.trim() || customer.email;
     if (!email) throw new BadRequestException('An email is required to invite this customer');
 
-    // Reuse the portal flow: ensure a portal for the space → unit → invitation.
-    const portalRes: any = await this.auth('portal_ensure_for_space', { organizationId: orgId, spaceId: customer.spaceId });
-    const portalId = portalRes?.data?.id ?? portalRes?.id;
-    // Reuse the customer's assigned apartment / primary address as their unit —
-    // don't create a duplicate. Only create one if they have none yet.
+    // A space may run several portals now. Prefer the customer's assigned unit's
+    // OWN portal (the apartment they were assigned decides which portal they log
+    // into). Only fall back to ensuring the space's default portal if they have
+    // no unit yet.
     const units: any[] = (await this.auth('portal_list_units', { organizationId: orgId, customerId: id })) || [];
     let unit: any = units.find((u) => u.isPrimary) ?? units[0];
+    let portalId: string | undefined = unit?.portalId ?? undefined;
+    if (!portalId) {
+      const portalRes: any = await this.auth('portal_ensure_for_space', { organizationId: orgId, spaceId: customer.spaceId });
+      portalId = portalRes?.data?.id ?? portalRes?.id;
+    }
     if (!unit) {
       unit = await this.auth('portal_create_unit', { organizationId: orgId, customerId: id, portalId, name: customer.name, address: customer.address });
     }

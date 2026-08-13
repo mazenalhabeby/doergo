@@ -4571,6 +4571,17 @@ export interface SpacePortalConfig { id: string; templateKey: string; entityLabe
 export interface SpaceUnit extends CustomerAddress { customer?: { id: string; name: string } | null }
 
 export const spacePortalApi = {
+  /** All client portals bound to this space (a space can run several). */
+  listPortals: async (spaceId: string): Promise<PortalSummary[]> => {
+    const res = await api.get<PortalSummary[]>(`/spaces/${spaceId}/portal/portals`);
+    if (res.error) throw new Error(res.error);
+    return res.data ?? [];
+  },
+  createPortal: async (spaceId: string, templateKey: string, name?: string): Promise<{ id: string }> => {
+    const res = await api.post<{ id: string }>(`/spaces/${spaceId}/portal/portals`, { templateKey, name });
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
   get: async (spaceId: string): Promise<SpacePortalConfig> => {
     const res = await api.get<{ data: SpacePortalConfig }>(`/spaces/${spaceId}/portal`);
     if (res.error) throw new Error(res.error);

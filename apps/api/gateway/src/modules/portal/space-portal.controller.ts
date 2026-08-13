@@ -31,6 +31,22 @@ export class SpacePortalController {
     }
   }
 
+  @Get('portals')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "List the space's client portals (a space can run several)" })
+  async listPortals(@Param('spaceId') spaceId: string, @Request() req: any) {
+    await this.requirePortalModule(spaceId, req.user.organizationId);
+    return this.auth('portal_list', { organizationId: req.user.organizationId, spaceId });
+  }
+
+  @Post('portals')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Create a new client portal for this space' })
+  async createPortal(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string; name?: string }, @Request() req: any) {
+    await this.requirePortalModule(spaceId, req.user.organizationId);
+    return this.auth('portal_create_space', { organizationId: req.user.organizationId, spaceId, templateKey: body.templateKey, name: body.name });
+  }
+
   @Get()
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: "The space's portal config (entity type)" })

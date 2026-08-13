@@ -55,9 +55,13 @@ export class PortalService {
 
   // ── Portals (office) ──
 
-  async listPortals(data: { organizationId: string }) {
+  async listPortals(data: { organizationId: string; spaceId?: string }) {
     const portals = await this.prisma.portal.findMany({
-      where: { organizationId: data.organizationId, isActive: true },
+      where: {
+        organizationId: data.organizationId,
+        isActive: true,
+        ...(data.spaceId ? { spaceId: data.spaceId } : {}),
+      },
       orderBy: { createdAt: 'asc' },
     });
     if (portals.length === 0) return [];
@@ -106,6 +110,42 @@ export class PortalService {
       })),
     });
     // Org flag = "has at least one portal" (kept for guards/back-compat).
+    await this.prisma.organization.update({
+      where: { id: data.organizationId },
+      data: { customerPortalEnabled: true },
+    });
+    return this.getPortal({ id: portal.id, organizationId: data.organizationId });
+  }
+
+  /** Create a portal bound to a space (a space can run several). Mirrors
+   *  createPortal but stamps spaceId on the portal + its seeded categories. */
+  async createSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
+    const space = await this.prisma.companyLocation.findFirst({
+      where: { id: data.spaceId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!space) throw new NotFoundException('Space not found');
+    const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
+    const portal = await this.prisma.portal.create({
+      data: {
+        organizationId: data.organizationId,
+        spaceId: data.spaceId,
+        name: data.name?.trim() || template.vertical,
+        templateKey: template.key,
+        entityLabel: template.entityLabel,
+        contactLabel: template.contactLabel,
+        accent: template.accent,
+        features: template.features as unknown as object,
+      },
+    });
+    await this.prisma.intakeCategory.createMany({
+      data: templateToIntakeCategories(template).map((r) => ({
+        ...r,
+        organizationId: data.organizationId,
+        portalId: portal.id,
+        spaceId: data.spaceId,
+      })),
+    });
     await this.prisma.organization.update({
       where: { id: data.organizationId },
       data: { customerPortalEnabled: true },

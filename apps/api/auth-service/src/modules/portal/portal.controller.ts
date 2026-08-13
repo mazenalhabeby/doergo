@@ -9,13 +9,18 @@ export class PortalController {
   // ── Portals (office) ──
 
   @MessagePattern({ cmd: 'portal_list' })
-  listPortals(@Payload() data: { organizationId: string }) {
+  listPortals(@Payload() data: { organizationId: string; spaceId?: string }) {
     return this.portalService.listPortals(data);
   }
 
   @MessagePattern({ cmd: 'portal_create' })
   createPortal(@Payload() data: { organizationId: string; templateKey?: string; name?: string }) {
     return this.portalService.createPortal(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_create_space' })
+  createSpacePortal(@Payload() data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
+    return this.portalService.createSpacePortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_get' })
