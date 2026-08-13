@@ -19,7 +19,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
+import { PhoneInput } from "@/components/ui/phone-input"
 import { SectionHeader, EmptyState } from "./section-header"
+
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
 type Filter = "all" | "crm" | "app"
 
@@ -113,6 +116,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
     phone: existing?.phone ?? "", address: existing?.address ?? "", notes: existing?.notes ?? "",
   })
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
+  const emailInvalid = !!form.email && !isEmail(form.email)
 
   const save = useMutation({
     mutationFn: () => existing
@@ -131,8 +135,16 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
           <Field label={t("customers.name", "Name")} required value={form.name} onChange={(v) => set("name", v)} />
           <Field label={t("customers.contactName", "Contact person")} value={form.contactName} onChange={(v) => set("contactName", v)} />
           <div className="grid grid-cols-2 gap-3">
-            <Field label={t("customers.email", "Email")} value={form.email} onChange={(v) => set("email", v)} />
-            <Field label={t("customers.phone", "Phone")} value={form.phone} onChange={(v) => set("phone", v)} />
+            <div className="space-y-1">
+              <Label>{t("customers.email", "Email")}</Label>
+              <Input type="email" inputMode="email" value={form.email} onChange={(e) => set("email", e.target.value)}
+                aria-invalid={emailInvalid} className={cn(emailInvalid && "border-destructive focus-visible:ring-destructive")} />
+              {emailInvalid && <p className="text-[11px] text-destructive">{t("customers.emailInvalid", "Enter a valid email")}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label>{t("customers.phone", "Phone")}</Label>
+              <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} />
+            </div>
           </div>
           <Field label={t("customers.address", "Address")} value={form.address} onChange={(v) => set("address", v)} />
           <div className="space-y-1">
@@ -142,7 +154,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
-          <Button disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>
+          <Button disabled={!form.name.trim() || emailInvalid || save.isPending} onClick={() => save.mutate()}>
             {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}
           </Button>
         </DialogFooter>
