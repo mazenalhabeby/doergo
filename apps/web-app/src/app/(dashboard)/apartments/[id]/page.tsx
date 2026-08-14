@@ -38,6 +38,7 @@ export default function ApartmentDetailPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
+  const [tab, setTab] = useState<"activity" | "history">("activity")
 
   const unitQ = useQuery({ queryKey: ["unit", id], queryFn: () => spaceUnitsApi.get(id) })
   const unit = unitQ.data
@@ -155,21 +156,30 @@ export default function ApartmentDetailPage() {
           )}
         </aside>
 
-        {/* Main: activity (what happened to the unit) + history (the tasks) */}
-        <main className="min-w-0 space-y-6">
-          {/* Activity */}
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">{t("apartments.activity", "Activity")}</h2>
-            <NoteComposer unitId={id} onAdded={() => qc.invalidateQueries({ queryKey: ["unit-activities", id] })} />
-            <ActivityTimeline loading={actQ.isLoading} activities={actQ.data ?? []} />
-          </section>
-
-          {/* History (tasks) */}
-          <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-foreground">{t("apartments.history", "History")}</h2>
-            {openCount > 0 && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">{t("apartments.openCount", "{{n}} open", { n: openCount })}</span>}
+        {/* Main: Activity (what happened to the unit) + History (the tasks) as tabs */}
+        <main className="min-w-0 space-y-4">
+          <div className="flex items-center gap-1 border-b border-border/70">
+            {([
+              ["activity", t("apartments.activity", "Activity"), (actQ.data ?? []).length],
+              ["history", t("apartments.history", "History"), openCount || null],
+            ] as const).map(([key, label, count]) => (
+              <button key={key} onClick={() => setTab(key)}
+                className={cn("relative -mb-px flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors",
+                  tab === key ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                {label}
+                {count != null && count > 0 && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">{count}</span>}
+                {tab === key && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
+              </button>
+            ))}
           </div>
+
+          {tab === "activity" ? (
+            <section className="space-y-3">
+              <NoteComposer unitId={id} onAdded={() => qc.invalidateQueries({ queryKey: ["unit-activities", id] })} />
+              <ActivityTimeline loading={actQ.isLoading} activities={actQ.data ?? []} />
+            </section>
+          ) : (
+          <section className="space-y-3">
 
           {tasksQ.isLoading ? (
             <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
@@ -210,6 +220,7 @@ export default function ApartmentDetailPage() {
             </div>
           )}
           </section>
+          )}
         </main>
       </div>
     </div>
