@@ -353,6 +353,16 @@ export class PortalService {
 
   // ── Units ──
 
+  /** A single unit (apartment) with its resident — for the apartment detail page. */
+  async getUnit(data: { id: string; organizationId: string }) {
+    const unit = await this.prisma.customerUnit.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      include: { customer: { select: { id: true, name: true, email: true, phone: true } } },
+    });
+    if (!unit) throw new NotFoundException('Unit not found');
+    return { data: unit };
+  }
+
   /** Units a specific customer is bound to (customer-scoped). */
   async listCustomerUnits(data: { organizationId: string; customerId: string }) {
     return this.prisma.customerUnit.findMany({

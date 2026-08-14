@@ -43,6 +43,11 @@ export class PortalController {
     return this.portalService.updateSpacePortal(data);
   }
 
+  @MessagePattern({ cmd: 'portal_get_unit' })
+  getUnit(@Payload() data: { id: string; organizationId: string }) {
+    return this.portalService.getUnit(data);
+  }
+
   @MessagePattern({ cmd: 'portal_list_space_units' })
   listSpaceUnits(@Payload() data: { organizationId: string; spaceId: string }) {
     return this.portalService.listSpaceUnits(data);

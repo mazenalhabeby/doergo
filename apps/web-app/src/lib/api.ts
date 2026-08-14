@@ -726,6 +726,8 @@ export interface TasksQueryParams {
   spaceId?: string;
   /** Scope tasks to a single CRM customer (their record's task feed). */
   customerId?: string;
+  /** Scope tasks to a single apartment/unit (the apartment's history). */
+  unitId?: string;
 }
 
 // Suggested employee response types
@@ -911,6 +913,7 @@ export const tasksApi = {
       // The server scopes to this space (incl. cross-org shared spaces).
       spaceId: params?.spaceId,
       customerId: params?.customerId,
+      unitId: params?.unitId,
     });
 
     const response = await api.get<TasksListResponse>(endpoint);
@@ -4568,9 +4571,15 @@ export interface CustomerAddress {
 
 // ── Per-space B2C portal (config + unit/apartment catalog) ──
 export interface SpacePortalConfig { id: string; templateKey: string; entityLabel: string; name: string }
-export interface SpaceUnit extends CustomerAddress { customer?: { id: string; name: string } | null; workerIds?: string[] }
+export interface SpaceUnit extends CustomerAddress { customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null; workerIds?: string[]; spaceId?: string | null }
 
 export const spaceUnitsApi = {
+  /** One apartment/unit by id (org-scoped) — for the apartment detail page. */
+  get: async (unitId: string): Promise<SpaceUnit> => {
+    const res = await api.get<{ data: SpaceUnit }>(`/units/${unitId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
   list: async (spaceId: string): Promise<SpaceUnit[]> => {
     const res = await api.get<{ data: SpaceUnit[] }>(`/spaces/${spaceId}/units`);
     if (res.error) throw new Error(res.error);

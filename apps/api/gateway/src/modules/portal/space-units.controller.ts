@@ -70,3 +70,18 @@ export class SpaceUnitsController {
     return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
   }
 }
+
+/** A single apartment/unit by id (org-scoped) — for the apartment detail page. */
+@ApiTags('units')
+@ApiBearerAuth()
+@Controller('units')
+export class UnitDetailController {
+  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
+
+  @Get(':id')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Get one apartment / unit with its resident' })
+  get(@Param('id') id: string, @Request() req: any) {
+    return firstValueFrom(this.authClient.send({ cmd: 'portal_get_unit' }, { id, organizationId: req.user.organizationId }));
+  }
+}

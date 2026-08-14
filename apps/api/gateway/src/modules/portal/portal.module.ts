@@ -4,11 +4,11 @@ import { TasksModule } from '../tasks/tasks.module';
 import { PortalController } from './portal.controller';
 import { PortalAdminController } from './portal-admin.controller';
 import { SpacePortalController } from './space-portal.controller';
-import { SpaceUnitsController } from './space-units.controller';
+import { SpaceUnitsController, UnitDetailController } from './space-units.controller';
 
 @Module({
   imports: [TasksModule], // reuse TasksQueueService (exported) for request creation
-  controllers: [PortalController, PortalAdminController, SpacePortalController, SpaceUnitsController],
+  controllers: [PortalController, PortalAdminController, SpacePortalController, SpaceUnitsController, UnitDetailController],
   providers: [CustomerScopeGuard],
 })
 export class PortalModule {}

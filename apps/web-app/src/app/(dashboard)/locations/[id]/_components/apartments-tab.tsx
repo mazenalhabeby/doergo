@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Home, Plus, Trash2, Pencil, UserCheck, Users, Check, HardHat, X } from "lucide-react"
@@ -38,6 +39,7 @@ const memberInitials = (m: OrgMember) => `${m.firstName?.[0] ?? ""}${m.lastName?
 
 export function ApartmentsTab({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
+  const router = useRouter()
   const qc = useQueryClient()
   const unitsQ = useQuery({ queryKey: ["space-units-dir", spaceId], queryFn: () => spaceUnitsApi.list(spaceId) })
   const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }) })
@@ -72,12 +74,14 @@ export function ApartmentsTab({ spaceId }: { spaceId: string }) {
           {units.map((u: SpaceUnit) => {
             const workers = (u.workerIds ?? []).map((id) => memberById.get(id)).filter(Boolean) as OrgMember[]
             return (
-              <div key={u.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-border/80">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"><Home className="h-4 w-4" /></span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{u.name}</p>
-                  {u.address && u.address !== u.name && <p className="truncate text-xs text-muted-foreground">{u.address}</p>}
-                </div>
+              <div key={u.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
+                <button onClick={() => router.push(`/apartments/${u.id}`)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"><Home className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{u.name}</p>
+                    {u.address && u.address !== u.name && <p className="truncate text-xs text-muted-foreground">{u.address}</p>}
+                  </div>
+                </button>
                 {/* Workers */}
                 {workers.length > 0 && (
                   <div className="hidden items-center -space-x-1.5 sm:flex" title={workers.map(memberName).join(", ")}>

@@ -740,6 +740,8 @@ export class TasksService {
 
     // Customer filter (CRM record → its tasks). Composes with org/visibility.
     if (query.customerId) where.customerId = query.customerId;
+    // Unit filter (apartment → its tasks/requests, the apartment history).
+    if (query.unitId) where.unitId = query.unitId;
 
     // Build AND conditions for date range and search
     const andConditions: any[] = [];
