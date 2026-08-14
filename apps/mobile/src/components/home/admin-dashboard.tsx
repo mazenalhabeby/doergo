@@ -556,28 +556,11 @@ export function AdminDashboard() {
   }, [setFab]);
   const fabTranslate = fabAnim.interpolate({ inputRange: [0, 1], outputRange: [96, 0] });
 
-  // ── Render ───────────────────────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
-        <Skeleton.Dashboard />
-      </View>
-    );
-  }
-  if (error) return <ErrorState message={error} onRetry={() => load()} />;
-
-  const hasFixed = boxes.some((b) => b.type === 'fixed');
-
-  // Admin/owner clock control — shown when the admin has the `clock` module
-  // (optional, module-driven). Their own clocked-in state comes free from the
-  // org-wide active entries already loaded; the button opens the full clock
-  // screen (GPS/geofence flow lives there — no duplication).
+  // Admin/owner clock control + their own out-of-ring state. These hooks MUST
+  // run on every render — i.e. BEFORE the isLoading/error early returns below —
+  // or React throws "rendered more hooks than during the previous render".
   const canClock = hasAccessModule(user || {}, 'clock');
   const myClockedIn = !!user && clockedInUserIds.has(user.id);
-
-  // The admin can clock in too, so surface THEIR own out-of-ring state here (the
-  // org-wide entry list has no excursion field). Fetch the admin's own status +
-  // refresh live on excursion socket events.
   const [myExcursion, setMyExcursion] = useState<GeofenceExcursion | null>(null);
   const [myEntryLocation, setMyEntryLocation] = useState<Partial<CompanyLocation> | null>(null);
   const refreshMyStatus = useCallback(async () => {
@@ -594,6 +577,18 @@ export function AdminDashboard() {
     refreshMyStatus();
   }, [refreshMyStatus, myClockedIn]);
   useExcursionSync(refreshMyStatus, user?.id);
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
+        <Skeleton.Dashboard />
+      </View>
+    );
+  }
+  if (error) return <ErrorState message={error} onRetry={() => load()} />;
+
+  const hasFixed = boxes.some((b) => b.type === 'fixed');
 
   return (
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
