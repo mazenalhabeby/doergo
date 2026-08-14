@@ -48,6 +48,16 @@ export class PortalController {
     return this.portalService.getUnit(data);
   }
 
+  @MessagePattern({ cmd: 'portal_list_unit_activities' })
+  listUnitActivities(@Payload() data: { id: string; organizationId: string }) {
+    return this.portalService.listUnitActivities(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_add_unit_activity' })
+  addUnitActivity(@Payload() data: { id: string; organizationId: string; body?: string; authorId?: string }) {
+    return this.portalService.addUnitActivity(data);
+  }
+
   @MessagePattern({ cmd: 'portal_list_space_units' })
   listSpaceUnits(@Payload() data: { organizationId: string; spaceId: string }) {
     return this.portalService.listSpaceUnits(data);

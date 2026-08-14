@@ -1353,8 +1353,14 @@ model CustomerUnit {
 
   isActive Boolean @default(true)
 
-  users User[] // portal logins whose default unit is this
-  tasks Task[] // requests submitted about this unit
+  // Flexible property attributes the office adds: [{ label, value }] — floor,
+  // rooms, size, rent, lease dates, access code, meters… Open-ended, no schema
+  // churn per new field (mirrors Customer.details).
+  details Json?
+
+  users      User[]         // portal logins whose default unit is this
+  tasks      Task[]         // requests submitted about this unit
+  activities UnitActivity[] // apartment activity timeline (notes + system events)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1364,6 +1370,26 @@ model CustomerUnit {
   @@index([spaceId])
   @@index([portalId])
   @@map("customer_units")
+}
+
+// Apartment activity timeline — free-text notes the office logs + auto system
+// events (created, resident set/changed). Mirrors CustomerActivity; the work
+// itself lives in tasks (History), this is the "what happened to the unit" feed.
+model UnitActivity {
+  id             String       @id @default(cuid())
+  organizationId String
+  unitId         String
+  unit           CustomerUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  type     String  @default("NOTE") // NOTE | SYSTEM
+  body     String?
+  authorId String? // who logged it (User id, plain marker)
+  metadata Json? // e.g. { resident: "Anna Müller" }
+
+  createdAt DateTime @default(now())
+
+  @@index([unitId, createdAt])
+  @@map("unit_activities")
 }
 
 // Dynamic request-intake config (per org). The category tree the portal shows

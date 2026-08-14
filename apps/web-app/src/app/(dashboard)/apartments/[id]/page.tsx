@@ -1,16 +1,20 @@
 "use client"
 
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   ArrowLeft, Home, MapPin, UserCheck, User, Smartphone, Mail, Phone, ClipboardList, ChevronRight, Settings2,
+  StickyNote, RefreshCw, Plus, Loader2, ListChecks,
 } from "lucide-react"
 
 import { spaceUnitsApi, tasksApi, locationsApi } from "@/lib/api"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ApartmentDialog } from "../../locations/[id]/_components/apartment-dialog"
 
@@ -38,9 +42,11 @@ export default function ApartmentDetailPage() {
   const unitQ = useQuery({ queryKey: ["unit", id], queryFn: () => spaceUnitsApi.get(id) })
   const unit = unitQ.data
   const tasksQ = useQuery({ queryKey: ["unit-tasks", id], queryFn: () => tasksApi.list({ unitId: id, limit: 50 }), enabled: !!unit })
+  const actQ = useQuery({ queryKey: ["unit-activities", id], queryFn: () => spaceUnitsApi.activities(id), enabled: !!unit })
   const spaceQ = useQuery({ queryKey: ["location", unit?.spaceId], queryFn: () => locationsApi.getById(unit!.spaceId!), enabled: !!unit?.spaceId })
   const qc = useQueryClient()
   const hasB2C = !!spaceQ.data?.enabledModules?.includes("b2c_portal")
+  const refreshUnit = () => { qc.invalidateQueries({ queryKey: ["unit", id] }); qc.invalidateQueries({ queryKey: ["unit-activities", id] }) }
 
   if (unitQ.isLoading) {
     return <div className="mx-auto max-w-5xl p-6 space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-72 w-full rounded-2xl" /></div>
@@ -86,7 +92,7 @@ export default function ApartmentDetailPage() {
               <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground">{t("apartments.vacant", "Vacant")}</span>
             )}
             {unit.spaceId && (
-              <ApartmentDialog spaceId={unit.spaceId} hasB2C={hasB2C} existing={unit} onSaved={() => qc.invalidateQueries({ queryKey: ["unit", id] })} trigger={
+              <ApartmentDialog spaceId={unit.spaceId} hasB2C={hasB2C} existing={unit} onSaved={refreshUnit} trigger={
                 <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
               } />
             )}
@@ -130,10 +136,36 @@ export default function ApartmentDetailPage() {
               </p>
             )}
           </div>
+
+          {/* More info — flexible property attributes */}
+          {(unit.details ?? []).filter((d) => d.label && d.value).length > 0 && (
+            <div className="rounded-2xl border border-border/70 bg-card p-4">
+              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <ListChecks className="h-3.5 w-3.5" /> {t("apartments.moreInfo", "More info")}
+              </p>
+              <dl className="divide-y divide-border/60 text-sm">
+                {(unit.details ?? []).filter((d) => d.label && d.value).map((d, i) => (
+                  <div key={i} className="flex items-baseline justify-between gap-3 py-2">
+                    <dt className="shrink-0 text-xs text-muted-foreground">{d.label}</dt>
+                    <dd className="truncate text-right font-medium text-foreground">{d.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
         </aside>
 
-        {/* Main: history — the work is the tasks */}
-        <main className="min-w-0 space-y-3">
+        {/* Main: activity (what happened to the unit) + history (the tasks) */}
+        <main className="min-w-0 space-y-6">
+          {/* Activity */}
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">{t("apartments.activity", "Activity")}</h2>
+            <NoteComposer unitId={id} onAdded={() => qc.invalidateQueries({ queryKey: ["unit-activities", id] })} />
+            <ActivityTimeline loading={actQ.isLoading} activities={actQ.data ?? []} />
+          </section>
+
+          {/* History (tasks) */}
+          <section className="space-y-3">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-foreground">{t("apartments.history", "History")}</h2>
             {openCount > 0 && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">{t("apartments.openCount", "{{n}} open", { n: openCount })}</span>}
@@ -177,8 +209,72 @@ export default function ApartmentDetailPage() {
               })}
             </div>
           )}
+          </section>
         </main>
       </div>
     </div>
+  )
+}
+
+// ── Activity: note composer + timeline ──────────────────────────────────────
+function NoteComposer({ unitId, onAdded }: { unitId: string; onAdded: () => void }) {
+  const { t } = useTranslation()
+  const [body, setBody] = useState("")
+  const add = useMutation({
+    mutationFn: () => spaceUnitsApi.addNote(unitId, body.trim()),
+    onSuccess: () => { setBody(""); onAdded() },
+    onError: (e: any) => notify.error(e.message || "Could not add note"),
+  })
+  return (
+    <div className="rounded-2xl border border-border/70 bg-card p-2.5">
+      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2}
+        className="resize-none border-0 bg-transparent px-1.5 text-sm shadow-none focus-visible:ring-0"
+        placeholder={t("apartments.notePh", "Add a note — inspection, access, incident…")} />
+      <div className="flex justify-end px-1.5">
+        <Button size="sm" disabled={!body.trim() || add.isPending} onClick={() => add.mutate()}>
+          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("apartments.addNote", "Add note")}</>}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function ActivityTimeline({ loading, activities }: { loading: boolean; activities: any[] }) {
+  const { t } = useTranslation()
+  if (loading) return <div className="space-y-2">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
+  if (activities.length === 0) return <p className="py-4 text-center text-sm text-muted-foreground">{t("apartments.noActivity", "No activity yet.")}</p>
+  return (
+    <ol className="relative space-y-1.5 pl-1 before:absolute before:left-[13px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
+      {activities.map((a) => {
+        const isNote = a.type === "NOTE"
+        const Icon = isNote ? StickyNote : RefreshCw
+        const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("customers.system", "System")
+        if (!isNote) {
+          return (
+            <li key={a.id} className="relative flex items-center gap-3 py-0.5">
+              <span className="z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-4 ring-background"><Icon className="h-3.5 w-3.5" /></span>
+              <p className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="truncate text-foreground">{a.body}</span>
+                <span className="text-muted-foreground/40">·</span><span className="truncate">{author}</span>
+                <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
+              </p>
+            </li>
+          )
+        }
+        return (
+          <li key={a.id} className="relative flex gap-3 py-1">
+            <span className="z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 ring-4 ring-background dark:bg-slate-800 dark:text-slate-300"><Icon className="h-3.5 w-3.5" /></span>
+            <div className="min-w-0 flex-1 rounded-xl border border-border/70 bg-card px-3.5 py-2.5 shadow-sm">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{t("apartments.note", "Note")}</span>
+                <span className="text-muted-foreground/40">·</span><span className="truncate">{author}</span>
+                <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
+              </div>
+              {a.body && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{a.body}</p>}
+            </div>
+          </li>
+        )
+      })}
+    </ol>
   )
 }

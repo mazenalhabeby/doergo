@@ -42,7 +42,7 @@ export class SpaceUnitsController {
   @Post()
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Add an apartment / unit to this space' })
-  async create(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null }, @Request() req: any) {
+  async create(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null; details?: any[] }, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
     return this.auth('portal_create_unit', {
       organizationId: req.user.organizationId, spaceId,
@@ -50,17 +50,18 @@ export class SpaceUnitsController {
       address: body.address, lat: body.lat, lng: body.lng,
       contactName: body.contactName, contactPhone: body.contactPhone,
       residentUserId: body.residentUserId, customerId: body.customerId,
+      details: body.details, actorId: req.user.id,
     });
   }
 
   @Patch(':unitId')
   @RequirePermission('canManageUsers')
-  @ApiOperation({ summary: 'Update an apartment (name/address, workers, resident)' })
+  @ApiOperation({ summary: 'Update an apartment (name/address, resident, details)' })
   async update(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
     // scopeCustomerId is a customer-record concern; strip any client override.
     const { scopeCustomerId: _drop, ...rest } = body ?? {};
-    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, ...rest });
+    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, actorId: req.user.id, ...rest });
   }
 
   @Delete(':unitId')
@@ -84,5 +85,19 @@ export class UnitDetailController {
   @ApiOperation({ summary: 'Get one apartment / unit with its resident' })
   get(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(this.authClient.send({ cmd: 'portal_get_unit' }, { id, organizationId: req.user.organizationId }));
+  }
+
+  @Get(':id/activities')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: "An apartment's activity timeline (notes + system events)" })
+  activities(@Param('id') id: string, @Request() req: any) {
+    return firstValueFrom(this.authClient.send({ cmd: 'portal_list_unit_activities' }, { id, organizationId: req.user.organizationId }));
+  }
+
+  @Post(':id/activities')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Add a note to an apartment' })
+  addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: any) {
+    return firstValueFrom(this.authClient.send({ cmd: 'portal_add_unit_activity' }, { id, organizationId: req.user.organizationId, body: body.body, authorId: req.user.id }));
   }
 }

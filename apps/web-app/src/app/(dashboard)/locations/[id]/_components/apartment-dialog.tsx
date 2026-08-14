@@ -4,7 +4,7 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Check, User, Smartphone, Search, Ban } from "lucide-react"
+import { Check, User, Smartphone, Search, Ban, Plus, Trash2 } from "lucide-react"
 
 import { spaceUnitsApi, customersApi, organizationsApi, type SpaceUnit, type OrgMember } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -42,6 +42,8 @@ export function ApartmentDialog({ spaceId, hasB2C, existing, onSaved, trigger }:
   const [resident, setResident] = useState<string>(encodeResident(existing))
   const [tab, setTab] = useState<"members" | "clients">("members")
   const [q, setQ] = useState("")
+  const [details, setDetails] = useState<{ label: string; value: string }[]>(existing?.details ?? [])
+  const setDetail = (i: number, k: "label" | "value", v: string) => setDetails((d) => d.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)))
 
   const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }), enabled: open })
   const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
@@ -57,7 +59,8 @@ export function ApartmentDialog({ spaceId, hasB2C, existing, onSaved, trigger }:
     mutationFn: () => {
       const residentUserId = resident.startsWith("u:") ? resident.slice(2) : null
       const customerId = resident.startsWith("c:") ? resident.slice(2) : null
-      const base = { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, residentUserId, customerId }
+      const cleanDetails = details.map((d) => ({ label: d.label.trim(), value: d.value.trim() })).filter((d) => d.label)
+      const base = { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, residentUserId, customerId, details: cleanDetails }
       return existing ? spaceUnitsApi.update(spaceId, existing.id, base) : spaceUnitsApi.create(spaceId, base)
     },
     onSuccess: () => { notify.success(existing ? t("apartments.updated", "Apartment updated") : t("apartments.added", "Apartment added")); onSaved(); setOpen(false) },
@@ -133,6 +136,29 @@ export function ApartmentDialog({ spaceId, hasB2C, existing, onSaved, trigger }:
                 })}
               </div>
             </div>
+          </div>
+
+          {/* More info — flexible property attributes (floor, size, rent, access…). */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>{t("apartments.moreInfo", "More info")}</Label>
+              <button type="button" onClick={() => setDetails((d) => [...d, { label: "", value: "" }])} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
+              </button>
+            </div>
+            {details.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t("apartments.moreInfoHint", "Floor, rooms, size, rent, access code, meter numbers…")}</p>
+            ) : (
+              <div className="space-y-2">
+                {details.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input value={d.label} onChange={(e) => setDetail(i, "label", e.target.value)} placeholder={t("customers.fieldLabel", "Label")} className="w-2/5" />
+                    <Input value={d.value} onChange={(e) => setDetail(i, "value", e.target.value)} placeholder={t("customers.fieldValue", "Value")} className="flex-1" />
+                    <button type="button" onClick={() => setDetails((arr) => arr.filter((_, idx) => idx !== i))} className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>

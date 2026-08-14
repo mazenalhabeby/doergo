@@ -4577,6 +4577,18 @@ export interface SpaceUnit extends CustomerAddress {
   residentUserId?: string | null;
   residentUser?: { id: string; firstName: string; lastName: string; avatarUrl?: string | null } | null;
   spaceId?: string | null;
+  details?: { label: string; value: string }[] | null;
+  createdAt?: string;
+}
+
+export interface UnitActivity {
+  id: string;
+  type: "NOTE" | "SYSTEM";
+  body?: string | null;
+  authorId?: string | null;
+  metadata?: { resident?: string } | null;
+  createdAt: string;
+  author?: { id: string; firstName: string; lastName: string } | null;
 }
 
 export const spaceUnitsApi = {
@@ -4591,12 +4603,12 @@ export const spaceUnitsApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data ?? [];
   },
-  create: async (spaceId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null }): Promise<SpaceUnit> => {
+  create: async (spaceId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null; details?: { label: string; value: string }[] }): Promise<SpaceUnit> => {
     const res = await api.post<SpaceUnit>(`/spaces/${spaceId}/units`, input);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
-  update: async (spaceId: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null; residentUserId?: string | null; customerId?: string | null }): Promise<SpaceUnit> => {
+  update: async (spaceId: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null; residentUserId?: string | null; customerId?: string | null; details?: { label: string; value: string }[] }): Promise<SpaceUnit> => {
     const res = await api.patch<SpaceUnit>(`/spaces/${spaceId}/units/${unitId}`, input);
     if (res.error) throw new Error(res.error);
     return res.data!;
@@ -4605,6 +4617,17 @@ export const spaceUnitsApi = {
     const res = await api.delete<{ success: boolean }>(`/spaces/${spaceId}/units/${unitId}`);
     if (res.error) throw new Error(res.error);
     return res.data;
+  },
+  // ── Apartment activity timeline (notes + system events) ──
+  activities: async (unitId: string): Promise<UnitActivity[]> => {
+    const res = await api.get<{ data: UnitActivity[] }>(`/units/${unitId}/activities`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  addNote: async (unitId: string, body: string): Promise<UnitActivity> => {
+    const res = await api.post<{ data: UnitActivity }>(`/units/${unitId}/activities`, { body });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
   },
 };
 

@@ -6,6 +6,16 @@ import {
   DEFAULT_PORTAL_FEATURES,
 } from '@hbcfield/shared';
 
+// Keep only well-formed { label, value } detail rows (trimmed, capped).
+function sanitizeUnitDetails(details: unknown): any[] | undefined {
+  if (!Array.isArray(details)) return undefined;
+  return details
+    .filter((d: any) => d && typeof d.label === 'string' && typeof d.value === 'string')
+    .map((d: any) => ({ label: d.label.trim().slice(0, 80), value: d.value.trim().slice(0, 500) }))
+    .filter((d: any) => d.label.length > 0)
+    .slice(0, 40);
+}
+
 // Per-portal TTL cache for the intake config (read on every customer submit +
 // GET config, which the mobile fans out across screens). Keyed by portalId.
 const CONFIG_TTL_MS = 30_000;
@@ -375,6 +385,57 @@ export class PortalService {
     return units.map((u) => ({ ...u, residentUser: u.residentUserId ? byId.get(u.residentUserId) ?? null : null }));
   }
 
+  // ── Apartment activity timeline (notes + auto system events) ──
+
+  private logUnitActivity(data: { unitId: string; organizationId: string; type: string; body?: string; authorId?: string | null; metadata?: any }) {
+    return this.prisma.unitActivity.create({
+      data: {
+        organizationId: data.organizationId,
+        unitId: data.unitId,
+        type: data.type,
+        body: data.body ?? null,
+        authorId: data.authorId ?? null,
+        metadata: data.metadata ?? undefined,
+      },
+    }).catch(() => undefined); // activity logging is best-effort, never blocks the write
+  }
+
+  /** Resolve a resident's display name (member or client) for a system log. */
+  private async residentDisplayName(residentUserId: string | null, customerId: string | null, organizationId: string): Promise<string | null> {
+    if (residentUserId) {
+      const u = await this.prisma.user.findFirst({ where: { id: residentUserId, organizationId }, select: { firstName: true, lastName: true } });
+      return u ? `${u.firstName} ${u.lastName}`.trim() : null;
+    }
+    if (customerId) {
+      const c = await this.prisma.customer.findFirst({ where: { id: customerId, organizationId }, select: { name: true } });
+      return c?.name ?? null;
+    }
+    return null;
+  }
+
+  async listUnitActivities(data: { id: string; organizationId: string }) {
+    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId }, select: { id: true } });
+    if (!unit) throw new NotFoundException('Unit not found');
+    const rows = await this.prisma.unitActivity.findMany({ where: { unitId: data.id }, orderBy: { createdAt: 'desc' }, take: 200 });
+    const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];
+    const authors = authorIds.length
+      ? await this.prisma.user.findMany({ where: { id: { in: authorIds } }, select: { id: true, firstName: true, lastName: true } })
+      : [];
+    const byId = new Map(authors.map((a) => [a.id, a]));
+    return { data: rows.map((r) => ({ ...r, author: r.authorId ? byId.get(r.authorId) ?? null : null })) };
+  }
+
+  async addUnitActivity(data: { id: string; organizationId: string; body?: string; authorId?: string }) {
+    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId }, select: { id: true } });
+    if (!unit) throw new NotFoundException('Unit not found');
+    const body = (data.body ?? '').trim().slice(0, 5000);
+    if (!body) throw new NotFoundException('Note body required');
+    const activity = await this.prisma.unitActivity.create({
+      data: { organizationId: data.organizationId, unitId: data.id, type: 'NOTE', body, authorId: data.authorId ?? null },
+    });
+    return { data: activity };
+  }
+
   /** Units a specific customer is bound to (customer-scoped). */
   async listCustomerUnits(data: { organizationId: string; customerId: string }) {
     return this.prisma.customerUnit.findMany({
@@ -446,6 +507,8 @@ export class PortalService {
     contactName?: string | null;
     contactPhone?: string | null;
     residentUserId?: string | null;
+    details?: any[];
+    actorId?: string;
   }) {
     // Resident is a MEMBER or a CLIENT, never both. A valid member wins.
     const residentUserId = data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null;
@@ -460,7 +523,7 @@ export class PortalService {
     if (isPrimary && data.customerId) {
       await this.prisma.customerUnit.updateMany({ where: { customerId: data.customerId }, data: { isPrimary: false } });
     }
-    return this.prisma.customerUnit.create({
+    const created = await this.prisma.customerUnit.create({
       data: {
         organizationId: data.organizationId,
         customerId: data.customerId || null,
@@ -475,8 +538,14 @@ export class PortalService {
         contactName: data.contactName || null,
         contactPhone: data.contactPhone || null,
         residentUserId,
+        details: (sanitizeUnitDetails(data.details) ?? undefined) as any,
       },
     });
+    // Activity: created + initial resident (best-effort, never blocks).
+    await this.logUnitActivity({ unitId: created.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: 'Apartment created' });
+    const rn = await this.residentDisplayName(residentUserId, clientId, data.organizationId);
+    if (rn) await this.logUnitActivity({ unitId: created.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: `Resident set to ${rn}`, metadata: { resident: rn } });
+    return created;
   }
 
   async updateUnit(data: {
@@ -493,11 +562,13 @@ export class PortalService {
     contactName?: string | null;
     contactPhone?: string | null;
     residentUserId?: string | null;
+    details?: any[];
+    actorId?: string;
     scopeCustomerId?: string; // when set, the unit must belong to this customer
   }) {
     const existing = await this.prisma.customerUnit.findFirst({
       where: { id: data.id, organizationId: data.organizationId, ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}) },
-      select: { id: true, customerId: true },
+      select: { id: true, customerId: true, residentUserId: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');
     await this.assertCustomerInOrg(data.organizationId, data.customerId);
@@ -508,7 +579,7 @@ export class PortalService {
     if (data.isPrimary && existing.customerId) {
       await this.prisma.customerUnit.updateMany({ where: { customerId: existing.customerId, id: { not: existing.id } }, data: { isPrimary: false } });
     }
-    return this.prisma.customerUnit.update({
+    const updated = await this.prisma.customerUnit.update({
       where: { id: data.id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
@@ -523,8 +594,18 @@ export class PortalService {
         // Member resident → clear client; client resident → clear member.
         ...(residentUserId !== undefined ? { residentUserId, ...(residentUserId ? { customerId: null } : {}) } : {}),
         ...(data.customerId !== undefined ? { customerId: data.customerId, ...(data.customerId ? { residentUserId: null } : {}) } : {}),
+        ...(data.details !== undefined ? { details: (sanitizeUnitDetails(data.details) ?? []) as any } : {}),
       },
     });
+    // Activity: log a resident change (best-effort).
+    if (updated.residentUserId !== existing.residentUserId || updated.customerId !== existing.customerId) {
+      const rn = await this.residentDisplayName(updated.residentUserId, updated.customerId, data.organizationId);
+      await this.logUnitActivity({
+        unitId: updated.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId,
+        body: rn ? `Resident set to ${rn}` : 'Resident removed', metadata: rn ? { resident: rn } : undefined,
+      });
+    }
+    return updated;
   }
 
   async deleteUnit(data: { id: string; organizationId: string; customerId?: string }) {
