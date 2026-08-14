@@ -23,11 +23,12 @@ const AddressMap = dynamic(() => import("./address-map"), {
   loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 })
 type LPProps = {
-  address: string
   lat: number | null
   lng: number | null
-  onLocationChange: (address: string, lat: number | null, lng: number | null) => void
-  disabled?: boolean
+  radius: number
+  address: string
+  onLocationChange: (lat: number, lng: number) => void
+  onAddressChange: (address: string) => void
 }
 const LocationPicker = dynamic(
   () => import("../../locations/_components/location-picker"),
@@ -186,7 +187,9 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
           </div>
           <div className="space-y-1">
             <Label>{t("customers.address", "Address")}</Label>
-            <LocationPicker address={address} lat={lat} lng={lng} onLocationChange={(a, la, ln) => { setAddress(a); setLat(la); setLng(ln) }} />
+            <LocationPicker lat={lat} lng={lng} radius={0} address={address}
+              onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
+              onAddressChange={(a) => setAddress(a)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">

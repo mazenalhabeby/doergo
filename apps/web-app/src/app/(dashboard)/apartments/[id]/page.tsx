@@ -3,14 +3,16 @@
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft, Home, MapPin, UserCheck, User, Smartphone, Mail, Phone, ClipboardList, ChevronRight,
+  ArrowLeft, Home, MapPin, UserCheck, User, Smartphone, Mail, Phone, ClipboardList, ChevronRight, Settings2,
 } from "lucide-react"
 
 import { spaceUnitsApi, tasksApi, locationsApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ApartmentDialog } from "../../locations/[id]/_components/apartment-dialog"
 
 const AddressMap = dynamic(() => import("../../customers/[id]/address-map"), {
   ssr: false,
@@ -37,6 +39,8 @@ export default function ApartmentDetailPage() {
   const unit = unitQ.data
   const tasksQ = useQuery({ queryKey: ["unit-tasks", id], queryFn: () => tasksApi.list({ unitId: id, limit: 50 }), enabled: !!unit })
   const spaceQ = useQuery({ queryKey: ["location", unit?.spaceId], queryFn: () => locationsApi.getById(unit!.spaceId!), enabled: !!unit?.spaceId })
+  const qc = useQueryClient()
+  const hasB2C = !!spaceQ.data?.enabledModules?.includes("b2c_portal")
 
   if (unitQ.isLoading) {
     return <div className="mx-auto max-w-5xl p-6 space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-72 w-full rounded-2xl" /></div>
@@ -72,14 +76,21 @@ export default function ApartmentDetailPage() {
               )}
             </div>
           </div>
-          {residentName ? (
-            <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium",
-              member ? "border-border bg-background text-foreground" : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400")}>
-              {member ? <User className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />} {residentName}
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground">{t("apartments.vacant", "Vacant")}</span>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {residentName ? (
+              <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium",
+                member ? "border-border bg-background text-foreground" : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400")}>
+                {member ? <User className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />} {residentName}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground">{t("apartments.vacant", "Vacant")}</span>
+            )}
+            {unit.spaceId && (
+              <ApartmentDialog spaceId={unit.spaceId} hasB2C={hasB2C} existing={unit} onSaved={() => qc.invalidateQueries({ queryKey: ["unit", id] })} trigger={
+                <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
+              } />
+            )}
+          </div>
         </div>
       </div>
 
