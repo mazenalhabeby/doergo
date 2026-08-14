@@ -11,6 +11,7 @@ import {
   CalendarClock,
   FileText,
   Contact,
+  Home,
   Loader2,
   Share2,
   ShieldAlert,
@@ -32,6 +33,7 @@ import { MembersTab } from "./_components/members-tab"
 import { InvoicesTab } from "./_components/invoices-tab"
 import { CustomersTab } from "./_components/customers-tab"
 import { PortalTab } from "./_components/portal-tab"
+import { ApartmentsTab } from "./_components/apartments-tab"
 import { SharingTab } from "./_components/sharing-tab"
 
 export default function SpaceSettingsPage() {
@@ -147,6 +149,13 @@ export default function SpaceSettingsPage() {
                   {t("customers.title", "Customers")}
                 </TabsTrigger>
               )}
+              {/* Apartments tab only when the space has the Apartments module on. */}
+              {space?.enabledModules?.includes("apartments") && (
+                <TabsTrigger value="apartments" className="gap-1.5">
+                  <Home className="h-4 w-4" />
+                  {t("apartments.title", "Apartments")}
+                </TabsTrigger>
+              )}
               {/* Portal tab only when the space has the B2C Portal module on. */}
               {space?.enabledModules?.includes("b2c_portal") && (
                 <TabsTrigger value="portal" className="gap-1.5">
@@ -191,6 +200,13 @@ export default function SpaceSettingsPage() {
               <TabsContent value="customers" className="mt-6">
                 <PlanGate feature="crm">
                   <CustomersTab space={space} />
+                </PlanGate>
+              </TabsContent>
+            )}
+            {space?.enabledModules?.includes("apartments") && (
+              <TabsContent value="apartments" className="mt-6">
+                <PlanGate feature="crm">
+                  <ApartmentsTab spaceId={spaceId} />
                 </PlanGate>
               </TabsContent>
             )}

@@ -1335,6 +1335,11 @@ model CustomerUnit {
   contactName  String?
   contactPhone String?
 
+  // Staff (User ids) responsible for this apartment/unit — caretaker, maintenance,
+  // cleaner. Plain marker ids (no FK, so removing a member never blocks). Powers
+  // the Apartments module + task-assign suggestions + a worker's "my apartments".
+  workerIds String[] @default([])
+
   // Requests about this unit route into this space (→ its workflow). Optional:
   // falls back to the org default space at task creation.
   spaceId String?

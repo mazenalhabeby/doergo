@@ -400,6 +400,16 @@ export class PortalService {
     return c;
   }
 
+  /** Keep only ids that are real users in this org (drops cross-tenant/stale ids
+   *  so unit worker assignment never points out-of-org). Deduped, capped. */
+  private async keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
+    const clean = Array.from(new Set((ids || []).filter((x) => typeof x === 'string' && x.trim()))).slice(0, 20);
+    if (!clean.length) return [];
+    const rows = await this.prisma.user.findMany({ where: { id: { in: clean }, organizationId }, select: { id: true } });
+    const ok = new Set(rows.map((r) => r.id));
+    return clean.filter((id) => ok.has(id));
+  }
+
   async createUnit(data: {
     organizationId: string;
     customerId?: string;
@@ -413,8 +423,10 @@ export class PortalService {
     spaceId?: string;
     contactName?: string | null;
     contactPhone?: string | null;
+    workerIds?: string[];
   }) {
     const c = await this.assertCustomerInOrg(data.organizationId, data.customerId);
+    const workerIds = data.workerIds !== undefined ? await this.keepOrgUserIds(data.workerIds, data.organizationId) : [];
     // First address for a customer becomes primary automatically.
     const existing = data.customerId
       ? await this.prisma.customerUnit.count({ where: { customerId: data.customerId } })
@@ -437,6 +449,7 @@ export class PortalService {
         spaceId: data.spaceId || null,
         contactName: data.contactName || null,
         contactPhone: data.contactPhone || null,
+        workerIds,
       },
     });
   }
@@ -454,6 +467,7 @@ export class PortalService {
     customerId?: string | null;
     contactName?: string | null;
     contactPhone?: string | null;
+    workerIds?: string[];
     scopeCustomerId?: string; // when set, the unit must belong to this customer
   }) {
     const existing = await this.prisma.customerUnit.findFirst({
@@ -462,6 +476,7 @@ export class PortalService {
     });
     if (!existing) throw new NotFoundException('Unit not found');
     await this.assertCustomerInOrg(data.organizationId, data.customerId);
+    const workerIds = data.workerIds !== undefined ? await this.keepOrgUserIds(data.workerIds, data.organizationId) : undefined;
     if (data.isPrimary && existing.customerId) {
       await this.prisma.customerUnit.updateMany({ where: { customerId: existing.customerId, id: { not: existing.id } }, data: { isPrimary: false } });
     }
@@ -478,6 +493,7 @@ export class PortalService {
         ...(data.customerId !== undefined ? { customerId: data.customerId } : {}),
         ...(data.contactName !== undefined ? { contactName: data.contactName } : {}),
         ...(data.contactPhone !== undefined ? { contactPhone: data.contactPhone } : {}),
+        ...(workerIds !== undefined ? { workerIds } : {}),
       },
     });
   }
