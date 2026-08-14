@@ -53,6 +53,15 @@ export default function ApartmentDetailPage() {
   const tasks = (tasksQ.data?.data ?? []) as any[]
   const openCount = tasks.filter((tk) => !DONE.includes(tk.status)).length
 
+  // Team derived from the history: the distinct people assigned to this
+  // apartment's tasks (single-assignee + multi-assignees). No stored field.
+  const workedBy = new Map<string, { id: string; firstName: string; lastName: string; avatarUrl?: string | null }>()
+  for (const tk of tasks) {
+    if (tk.assignedTo) workedBy.set(tk.assignedTo.id, tk.assignedTo)
+    for (const a of (tk.assignees ?? [])) if (a?.user) workedBy.set(a.user.id, a.user)
+  }
+  const team = Array.from(workedBy.values())
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
       <button onClick={() => (unit.spaceId ? router.push(`/locations/${unit.spaceId}`) : router.back())}
@@ -108,9 +117,9 @@ export default function ApartmentDetailPage() {
             )}
           </Panel>
 
-          <Panel title={t("apartments.workers", "Responsible workers")}>
+          <Panel title={t("apartments.workers", "Team")}>
             {workers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("apartments.noWorkers", "No workers assigned yet.")}</p>
+              <p className="text-sm text-muted-foreground">{t("apartments.noWorkers", "No workers assigned.")}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {workers.map((m) => (
@@ -122,6 +131,26 @@ export default function ApartmentDetailPage() {
                 ))}
               </div>
             )}
+            {/* Derived from tasks: people who worked here but aren't standing-assigned. */}
+            {(() => {
+              const assigned = new Set(unit.workerIds ?? [])
+              const extra = team.filter((u) => !assigned.has(u.id))
+              if (extra.length === 0) return null
+              return (
+                <div className="mt-2 border-t border-border/60 pt-2">
+                  <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{t("apartments.workedOnIt", "Also worked on it")}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {extra.map((u) => (
+                      <button key={u.id} onClick={() => router.push(`/members/${u.id}`)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-muted py-0.5 pl-0.5 pr-2 text-xs text-muted-foreground hover:text-foreground">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-background text-[10px] font-semibold">{`${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase()}</span>
+                        <span className="max-w-[9rem] truncate">{`${u.firstName} ${u.lastName}`.trim()}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </Panel>
         </aside>
 
@@ -143,6 +172,7 @@ export default function ApartmentDetailPage() {
             <div className="space-y-2">
               {tasks.map((tk) => {
                 const done = DONE.includes(tk.status)
+                const who = tk.assignedTo || tk.assignees?.[0]?.user || null
                 return (
                   <button key={tk.id} onClick={() => router.push(`/tasks/${tk.id}`)}
                     className="group flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors hover:border-primary/40">
@@ -157,6 +187,12 @@ export default function ApartmentDetailPage() {
                         <span className="text-muted-foreground/40">·</span>{relTime(tk.createdAt)}
                       </p>
                     </div>
+                    {who && (
+                      <span className="hidden items-center gap-1.5 rounded-full bg-muted py-0.5 pl-0.5 pr-2 text-xs text-muted-foreground sm:inline-flex" title={`${who.firstName} ${who.lastName}`.trim()}>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary">{`${who.firstName?.[0] ?? ""}${who.lastName?.[0] ?? ""}`.toUpperCase()}</span>
+                        <span className="max-w-[7rem] truncate">{`${who.firstName} ${who.lastName}`.trim()}</span>
+                      </span>
+                    )}
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                   </button>
                 )

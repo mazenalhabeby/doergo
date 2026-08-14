@@ -37,7 +37,7 @@ const LocationPicker = dynamic(
 const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
 const memberInitials = (m: OrgMember) => `${m.firstName?.[0] ?? ""}${m.lastName?.[0] ?? ""}`.toUpperCase() || "?"
 
-export function ApartmentsTab({ spaceId }: { spaceId: string }) {
+export function ApartmentsTab({ spaceId, hasB2C }: { spaceId: string; hasB2C?: boolean }) {
   const { t } = useTranslation()
   const router = useRouter()
   const qc = useQueryClient()
@@ -60,7 +60,7 @@ export function ApartmentsTab({ spaceId }: { spaceId: string }) {
         accent="sky"
         title={t("apartments.title", "Apartments / Units")}
         description={t("apartments.intro", "The apartments in this space. Assign the resident who lives in each and the workers responsible for it.")}
-        action={<ApartmentDialog spaceId={spaceId} members={members} onSaved={invalidate} trigger={
+        action={<ApartmentDialog spaceId={spaceId} members={members} hasB2C={hasB2C} onSaved={invalidate} trigger={
           <Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("apartments.add", "Add apartment")}</Button>
         } />}
       />
@@ -97,7 +97,7 @@ export function ApartmentsTab({ spaceId }: { spaceId: string }) {
                 ) : (
                   <Badge variant="outline" className="text-muted-foreground">{t("apartments.vacant", "Vacant")}</Badge>
                 )}
-                <ApartmentDialog spaceId={spaceId} members={members} existing={u} onSaved={invalidate} trigger={
+                <ApartmentDialog spaceId={spaceId} members={members} hasB2C={hasB2C} existing={u} onSaved={invalidate} trigger={
                   <button className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"><Pencil className="h-4 w-4" /></button>
                 } />
                 <button onClick={() => del.mutate(u.id)} className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
@@ -110,8 +110,8 @@ export function ApartmentsTab({ spaceId }: { spaceId: string }) {
   )
 }
 
-function ApartmentDialog({ spaceId, members, existing, onSaved, trigger }: {
-  spaceId: string; members: OrgMember[]; existing?: SpaceUnit; onSaved: () => void; trigger: React.ReactNode
+function ApartmentDialog({ spaceId, members, hasB2C, existing, onSaved, trigger }: {
+  spaceId: string; members: OrgMember[]; hasB2C?: boolean; existing?: SpaceUnit; onSaved: () => void; trigger: React.ReactNode
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -122,13 +122,15 @@ function ApartmentDialog({ spaceId, members, existing, onSaved, trigger }: {
   const [workerIds, setWorkerIds] = useState<string[]>(existing?.workerIds ?? [])
   const [residentId, setResidentId] = useState<string>(existing?.customer?.id ?? "")
 
-  // Customers of this space = candidate residents.
-  const customersQ = useQuery({
-    queryKey: ["space-customers-lite", spaceId],
-    queryFn: () => customersApi.list({ spaceId, limit: 100 }),
-    enabled: open,
+  // A resident is a customer with APP ACCESS (a portal resident) — so the pool
+  // only exists when the space runs a B2C portal. Without it, an apartment has
+  // workers only.
+  const residentsQ = useQuery({
+    queryKey: ["space-app-residents", spaceId],
+    queryFn: () => customersApi.list({ spaceId, portalResident: true, limit: 100 }),
+    enabled: open && !!hasB2C,
   })
-  const customers = customersQ.data?.data ?? []
+  const residents = residentsQ.data?.data ?? []
 
   const save = useMutation({
     mutationFn: async () => {
@@ -162,17 +164,21 @@ function ApartmentDialog({ spaceId, members, existing, onSaved, trigger }: {
             <LocationPicker address={address} lat={lat} lng={lng} onLocationChange={(a, la, ln) => { setAddress(a); setLat(la); setLng(ln) }} />
           </div>
 
-          {/* Resident */}
-          <div className="space-y-1">
-            <Label className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-muted-foreground" /> {t("apartments.resident", "Resident (lives here)")}</Label>
-            <Select value={residentId || "none"} onValueChange={(v) => setResidentId(v === "none" ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder={t("apartments.noResident", "No resident")} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t("apartments.noResident", "No resident")}</SelectItem>
-                {customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Resident — only when the space runs a B2C portal (app-access customers). */}
+          {hasB2C && (
+            <div className="space-y-1">
+              <Label className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-muted-foreground" /> {t("apartments.resident", "Resident (app access)")}</Label>
+              <Select value={residentId || "none"} onValueChange={(v) => setResidentId(v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder={t("apartments.noResident", "No resident")} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t("apartments.noResident", "No resident")}</SelectItem>
+                  {residents.length === 0
+                    ? <div className="px-2 py-2 text-center text-xs text-muted-foreground">{t("apartments.noAppResidents", "No app residents yet — invite a customer from the portal.")}</div>
+                    : residents.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Workers */}
           <div className="space-y-1.5">

@@ -206,7 +206,7 @@ export default function SpaceSettingsPage() {
             {space?.enabledModules?.includes("apartments") && (
               <TabsContent value="apartments" className="mt-6">
                 <PlanGate feature="crm">
-                  <ApartmentsTab spaceId={spaceId} />
+                  <ApartmentsTab spaceId={spaceId} hasB2C={!!space?.enabledModules?.includes("b2c_portal")} />
                 </PlanGate>
               </TabsContent>
             )}
