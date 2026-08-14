@@ -228,7 +228,7 @@ export class PortalService {
       include: { customer: { select: { id: true, name: true } } },
       take: 500,
     });
-    return { data: rows };
+    return { data: await this.withResidentUsers(rows) };
   }
 
   async getPortal(data: { id: string; organizationId: string }) {
@@ -360,7 +360,19 @@ export class PortalService {
       include: { customer: { select: { id: true, name: true, email: true, phone: true } } },
     });
     if (!unit) throw new NotFoundException('Unit not found');
-    return { data: unit };
+    const [enriched] = await this.withResidentUsers([unit]);
+    return { data: enriched };
+  }
+
+  /** Resolve residentUserId → member (staff resident) in one batched query. The
+   *  id has no FK (removing a member never blocks), so we join it here. DRY: used
+   *  by both getUnit and listSpaceUnits. */
+  private async withResidentUsers<T extends { residentUserId?: string | null }>(units: T[]) {
+    const ids = Array.from(new Set(units.map((u) => u.residentUserId).filter(Boolean) as string[]));
+    if (!ids.length) return units.map((u) => ({ ...u, residentUser: null }));
+    const users = await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true, avatarUrl: true } });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return units.map((u) => ({ ...u, residentUser: u.residentUserId ? byId.get(u.residentUserId) ?? null : null }));
   }
 
   /** Units a specific customer is bound to (customer-scoped). */
@@ -433,10 +445,13 @@ export class PortalService {
     spaceId?: string;
     contactName?: string | null;
     contactPhone?: string | null;
-    workerIds?: string[];
+    residentUserId?: string | null;
   }) {
-    const c = await this.assertCustomerInOrg(data.organizationId, data.customerId);
-    const workerIds = data.workerIds !== undefined ? await this.keepOrgUserIds(data.workerIds, data.organizationId) : [];
+    // Resident is a MEMBER or a CLIENT, never both. A valid member wins.
+    const residentUserId = data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null;
+    const clientId = residentUserId ? null : (data.customerId || null);
+    const c = await this.assertCustomerInOrg(data.organizationId, clientId || undefined);
+    data.customerId = clientId || undefined;
     // First address for a customer becomes primary automatically.
     const existing = data.customerId
       ? await this.prisma.customerUnit.count({ where: { customerId: data.customerId } })
@@ -459,7 +474,7 @@ export class PortalService {
         spaceId: data.spaceId || null,
         contactName: data.contactName || null,
         contactPhone: data.contactPhone || null,
-        workerIds,
+        residentUserId,
       },
     });
   }
@@ -477,7 +492,7 @@ export class PortalService {
     customerId?: string | null;
     contactName?: string | null;
     contactPhone?: string | null;
-    workerIds?: string[];
+    residentUserId?: string | null;
     scopeCustomerId?: string; // when set, the unit must belong to this customer
   }) {
     const existing = await this.prisma.customerUnit.findFirst({
@@ -486,7 +501,10 @@ export class PortalService {
     });
     if (!existing) throw new NotFoundException('Unit not found');
     await this.assertCustomerInOrg(data.organizationId, data.customerId);
-    const workerIds = data.workerIds !== undefined ? await this.keepOrgUserIds(data.workerIds, data.organizationId) : undefined;
+    // Resident is a MEMBER or a CLIENT, never both — setting one clears the other.
+    const residentUserId = data.residentUserId !== undefined
+      ? (data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null)
+      : undefined;
     if (data.isPrimary && existing.customerId) {
       await this.prisma.customerUnit.updateMany({ where: { customerId: existing.customerId, id: { not: existing.id } }, data: { isPrimary: false } });
     }
@@ -500,10 +518,11 @@ export class PortalService {
         ...(data.lng !== undefined ? { lng: data.lng } : {}),
         ...(data.isPrimary !== undefined ? { isPrimary: data.isPrimary } : {}),
         ...(data.spaceId !== undefined ? { spaceId: data.spaceId } : {}),
-        ...(data.customerId !== undefined ? { customerId: data.customerId } : {}),
         ...(data.contactName !== undefined ? { contactName: data.contactName } : {}),
         ...(data.contactPhone !== undefined ? { contactPhone: data.contactPhone } : {}),
-        ...(workerIds !== undefined ? { workerIds } : {}),
+        // Member resident → clear client; client resident → clear member.
+        ...(residentUserId !== undefined ? { residentUserId, ...(residentUserId ? { customerId: null } : {}) } : {}),
+        ...(data.customerId !== undefined ? { customerId: data.customerId, ...(data.customerId ? { residentUserId: null } : {}) } : {}),
       },
     });
   }

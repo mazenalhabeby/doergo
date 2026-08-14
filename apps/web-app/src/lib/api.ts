@@ -4572,7 +4572,12 @@ export interface CustomerAddress {
 
 // ── Per-space B2C portal (config + unit/apartment catalog) ──
 export interface SpacePortalConfig { id: string; templateKey: string; entityLabel: string; name: string }
-export interface SpaceUnit extends CustomerAddress { customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null; workerIds?: string[]; spaceId?: string | null }
+export interface SpaceUnit extends CustomerAddress {
+  customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null;
+  residentUserId?: string | null;
+  residentUser?: { id: string; firstName: string; lastName: string; avatarUrl?: string | null } | null;
+  spaceId?: string | null;
+}
 
 export const spaceUnitsApi = {
   /** One apartment/unit by id (org-scoped) — for the apartment detail page. */
@@ -4586,12 +4591,12 @@ export const spaceUnitsApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data ?? [];
   },
-  create: async (spaceId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; workerIds?: string[] }): Promise<SpaceUnit> => {
+  create: async (spaceId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null }): Promise<SpaceUnit> => {
     const res = await api.post<SpaceUnit>(`/spaces/${spaceId}/units`, input);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
-  update: async (spaceId: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null; workerIds?: string[]; customerId?: string | null }): Promise<SpaceUnit> => {
+  update: async (spaceId: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null; residentUserId?: string | null; customerId?: string | null }): Promise<SpaceUnit> => {
     const res = await api.patch<SpaceUnit>(`/spaces/${spaceId}/units/${unitId}`, input);
     if (res.error) throw new Error(res.error);
     return res.data!;

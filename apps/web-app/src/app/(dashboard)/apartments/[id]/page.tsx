@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import {
-  ArrowLeft, Home, MapPin, UserCheck, HardHat, Mail, Phone, ClipboardList, ChevronRight,
+  ArrowLeft, Home, MapPin, UserCheck, User, Smartphone, Mail, Phone, ClipboardList, ChevronRight,
 } from "lucide-react"
 
-import { spaceUnitsApi, tasksApi, locationsApi, organizationsApi, type SpaceUnit, type OrgMember } from "@/lib/api"
+import { spaceUnitsApi, tasksApi, locationsApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -17,8 +17,6 @@ const AddressMap = dynamic(() => import("../../customers/[id]/address-map"), {
   loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 })
 
-const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
-const memberInitials = (m: OrgMember) => `${m.firstName?.[0] ?? ""}${m.lastName?.[0] ?? ""}`.toUpperCase() || "?"
 const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString(undefined, { dateStyle: "medium" }) : "")
 function relTime(iso: string) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
@@ -27,6 +25,7 @@ function relTime(iso: string) {
   if (s < 604800) return `${Math.floor(s / 86400)}d ago`
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
+const initials = (a?: string, b?: string) => `${a?.[0] ?? ""}${b?.[0] ?? ""}`.toUpperCase() || "?"
 const DONE = ["COMPLETED", "CLOSED"]
 
 export default function ApartmentDetailPage() {
@@ -38,7 +37,6 @@ export default function ApartmentDetailPage() {
   const unit = unitQ.data
   const tasksQ = useQuery({ queryKey: ["unit-tasks", id], queryFn: () => tasksApi.list({ unitId: id, limit: 50 }), enabled: !!unit })
   const spaceQ = useQuery({ queryKey: ["location", unit?.spaceId], queryFn: () => locationsApi.getById(unit!.spaceId!), enabled: !!unit?.spaceId })
-  const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }) })
 
   if (unitQ.isLoading) {
     return <div className="mx-auto max-w-5xl p-6 space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-72 w-full rounded-2xl" /></div>
@@ -47,20 +45,11 @@ export default function ApartmentDetailPage() {
     return <div className="mx-auto max-w-5xl p-6 text-center text-muted-foreground">{t("apartments.notFound", "Apartment not found")}</div>
   }
 
-  const members = membersQ.data?.data ?? []
-  const memberById = new Map(members.map((m) => [m.id, m]))
-  const workers = (unit.workerIds ?? []).map((wid) => memberById.get(wid)).filter(Boolean) as OrgMember[]
   const tasks = (tasksQ.data?.data ?? []) as any[]
   const openCount = tasks.filter((tk) => !DONE.includes(tk.status)).length
-
-  // Team derived from the history: the distinct people assigned to this
-  // apartment's tasks (single-assignee + multi-assignees). No stored field.
-  const workedBy = new Map<string, { id: string; firstName: string; lastName: string; avatarUrl?: string | null }>()
-  for (const tk of tasks) {
-    if (tk.assignedTo) workedBy.set(tk.assignedTo.id, tk.assignedTo)
-    for (const a of (tk.assignees ?? [])) if (a?.user) workedBy.set(a.user.id, a.user)
-  }
-  const team = Array.from(workedBy.values())
+  const member = unit.residentUser        // staff resident
+  const client = unit.customer            // app-access client resident
+  const residentName = member ? `${member.firstName} ${member.lastName}`.trim() : client?.name
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
@@ -83,9 +72,10 @@ export default function ApartmentDetailPage() {
               )}
             </div>
           </div>
-          {unit.customer ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400">
-              <UserCheck className="h-4 w-4" /> {unit.customer.name}
+          {residentName ? (
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium",
+              member ? "border-border bg-background text-foreground" : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400")}>
+              {member ? <User className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />} {residentName}
             </span>
           ) : (
             <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground">{t("apartments.vacant", "Vacant")}</span>
@@ -102,59 +92,36 @@ export default function ApartmentDetailPage() {
             </div>
           )}
 
-          <Panel title={t("apartments.resident", "Resident")}>
-            {unit.customer ? (
+          <div className="rounded-2xl border border-border/70 bg-card p-4">
+            <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <UserCheck className="h-3.5 w-3.5" /> {t("apartments.resident", "Resident")}
+            </p>
+            {member ? (
+              <button onClick={() => router.push(`/members/${member.id}`)} className="flex w-full items-center gap-2 text-left">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">{initials(member.firstName, member.lastName)}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium text-foreground hover:text-primary">{residentName}</span>
+                  <span className="text-xs text-muted-foreground">{t("apartments.memberTag", "Member (staff)")}</span>
+                </span>
+              </button>
+            ) : client ? (
               <div className="space-y-1.5">
-                <button onClick={() => router.push(`/customers/${unit.customer!.id}`)} className="text-sm font-medium text-foreground hover:text-primary">{unit.customer.name}</button>
-                {unit.customer.email && <a href={`mailto:${unit.customer.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"><Mail className="h-3 w-3" /> {unit.customer.email}</a>}
-                {unit.customer.phone && <a href={`tel:${unit.customer.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"><Phone className="h-3 w-3" /> {unit.customer.phone}</a>}
+                <button onClick={() => router.push(`/customers/${client.id}`)} className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary">
+                  {client.name} <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><Smartphone className="h-2.5 w-2.5" /> {t("customers.appAccess", "App access")}</span>
+                </button>
+                {client.email && <a href={`mailto:${client.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"><Mail className="h-3 w-3" /> {client.email}</a>}
+                {client.phone && <a href={`tel:${client.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"><Phone className="h-3 w-3" /> {client.phone}</a>}
               </div>
-            ) : <p className="text-sm text-muted-foreground">{t("apartments.noResident", "No resident")}</p>}
+            ) : <p className="text-sm text-muted-foreground">{t("apartments.noResident", "Vacant — no resident assigned.")}</p>}
             {unit.contactName && (
               <p className="mt-2 flex items-center gap-1.5 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                 <UserCheck className="h-3 w-3" /> {unit.contactName}{unit.contactPhone ? ` · ${unit.contactPhone}` : ""}
               </p>
             )}
-          </Panel>
-
-          <Panel title={t("apartments.workers", "Team")}>
-            {workers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("apartments.noWorkers", "No workers assigned.")}</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {workers.map((m) => (
-                  <button key={m.id} onClick={() => router.push(`/members/${m.id}`)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background py-0.5 pl-0.5 pr-2 text-xs font-medium text-foreground hover:border-primary/40">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{memberInitials(m)}</span>
-                    <span className="max-w-[9rem] truncate">{memberName(m)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* Derived from tasks: people who worked here but aren't standing-assigned. */}
-            {(() => {
-              const assigned = new Set(unit.workerIds ?? [])
-              const extra = team.filter((u) => !assigned.has(u.id))
-              if (extra.length === 0) return null
-              return (
-                <div className="mt-2 border-t border-border/60 pt-2">
-                  <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{t("apartments.workedOnIt", "Also worked on it")}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {extra.map((u) => (
-                      <button key={u.id} onClick={() => router.push(`/members/${u.id}`)}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-muted py-0.5 pl-0.5 pr-2 text-xs text-muted-foreground hover:text-foreground">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-background text-[10px] font-semibold">{`${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase()}</span>
-                        <span className="max-w-[9rem] truncate">{`${u.firstName} ${u.lastName}`.trim()}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-          </Panel>
+          </div>
         </aside>
 
-        {/* Main: history */}
+        {/* Main: history — the work is the tasks */}
         <main className="min-w-0 space-y-3">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-foreground">{t("apartments.history", "History")}</h2>
@@ -189,7 +156,7 @@ export default function ApartmentDetailPage() {
                     </div>
                     {who && (
                       <span className="hidden items-center gap-1.5 rounded-full bg-muted py-0.5 pl-0.5 pr-2 text-xs text-muted-foreground sm:inline-flex" title={`${who.firstName} ${who.lastName}`.trim()}>
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary">{`${who.firstName?.[0] ?? ""}${who.lastName?.[0] ?? ""}`.toUpperCase()}</span>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary">{initials(who.firstName, who.lastName)}</span>
                         <span className="max-w-[7rem] truncate">{`${who.firstName} ${who.lastName}`.trim()}</span>
                       </span>
                     )}
@@ -201,17 +168,6 @@ export default function ApartmentDetailPage() {
           )}
         </main>
       </div>
-    </div>
-  )
-}
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-card p-4">
-      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {title === "Responsible workers" || title.toLowerCase().includes("worker") ? <HardHat className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />} {title}
-      </p>
-      {children}
     </div>
   )
 }

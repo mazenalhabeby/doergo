@@ -42,13 +42,14 @@ export class SpaceUnitsController {
   @Post()
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Add an apartment / unit to this space' })
-  async create(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; workerIds?: string[] }, @Request() req: any) {
+  async create(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null }, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
     return this.auth('portal_create_unit', {
       organizationId: req.user.organizationId, spaceId,
       name: body.name?.trim() || body.address || 'Unit',
       address: body.address, lat: body.lat, lng: body.lng,
-      contactName: body.contactName, contactPhone: body.contactPhone, workerIds: body.workerIds,
+      contactName: body.contactName, contactPhone: body.contactPhone,
+      residentUserId: body.residentUserId, customerId: body.customerId,
     });
   }
 
