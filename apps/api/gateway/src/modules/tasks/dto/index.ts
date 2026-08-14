@@ -102,6 +102,11 @@ export class CreateTaskDto {
   @IsOptional()
   customerId?: string;
 
+  @ApiPropertyOptional({ description: 'Apartment / unit ID this task is about' })
+  @IsString()
+  @IsOptional()
+  unitId?: string;
+
   @ApiPropertyOptional({ description: 'Workflow (task type) ID — overrides the space default' })
   @IsString()
   @IsOptional()

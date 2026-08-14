@@ -693,6 +693,7 @@ export interface CreateTaskInput {
   epicId?: string;
   spaceId?: string;
   customerId?: string;
+  unitId?: string;
   checklistItems?: { text: string }[];
   customFieldValues?: { definitionId: string; value: string }[];
 }

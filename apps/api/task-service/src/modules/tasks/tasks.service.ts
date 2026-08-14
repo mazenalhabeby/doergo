@@ -171,6 +171,14 @@ export class TasksService {
         select: { id: true },
       });
       if (!ownUnit) effUnitId = null;
+    } else if (effUnitId) {
+      // Internal task tied to an apartment: the unit MUST belong to the org
+      // (cross-tenant guard, like customerId). Drop it if it doesn't.
+      const ownUnit = await this.prisma.customerUnit.findFirst({
+        where: { id: effUnitId, organizationId: effectiveOrgId },
+        select: { id: true },
+      });
+      if (!ownUnit) effUnitId = null;
     }
 
     // Cross-tenant guard: a client-supplied customerId (internal "+ Task" flow)
