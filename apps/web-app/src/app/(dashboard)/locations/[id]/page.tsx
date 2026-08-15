@@ -71,7 +71,7 @@ export default function SpaceSettingsPage() {
     { value: "modules", label: t("locations.tabs.modules"), icon: Blocks, show: true },
     { value: "workflow", label: t("locations.tabs.workflow"), icon: Workflow, show: true },
     { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
-    { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: true },
+    { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
     { value: "customers", label: t("customers.title", "Customers"), icon: Contact, show: mods.includes("crm") },
     { value: "apartments", label: t("apartments.title", "Apartments"), icon: Home, show: mods.includes("apartments") },
     { value: "portal", label: t("portal.title", "Client portal"), icon: Building2, show: mods.includes("b2c_portal") },

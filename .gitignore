@@ -90,3 +90,4 @@ infra/docker/.env.production
 # Local backup / scratch directories
 docs/dashboard-spaces-backup/
 emails/
+apps/api/gateway/uploads/

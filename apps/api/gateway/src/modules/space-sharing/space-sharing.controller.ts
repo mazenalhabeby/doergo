@@ -18,7 +18,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @Controller()
 @ApiBearerAuth()
 export class SpaceSharingController {
-  constructor(@Inject('AUTH_SERVICE') private readonly auth: ClientProxy) {}
+  constructor(
+    @Inject('AUTH_SERVICE') private readonly auth: ClientProxy,
+    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+  ) {}
 
   private async send(cmd: string, payload: any) {
     const res = await firstValueFrom(this.auth.send({ cmd }, payload));
@@ -28,11 +31,22 @@ export class SpaceSharingController {
     return res;
   }
 
+  /** Sharing a space is a paid module — the OWNER space must have it enabled. */
+  private async requireModule(spaceId: string, organizationId: string | null | undefined) {
+    if (!organizationId) throw new HttpException({ message: 'No organization' }, HttpStatus.FORBIDDEN);
+    const res: any = await firstValueFrom(this.taskClient.send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId }));
+    const mods: string[] = res?.data?.enabledModules ?? res?.enabledModules ?? [];
+    if (!mods.includes('space_sharing')) {
+      throw new HttpException({ message: 'Enable the Space Sharing module for this space first.' }, HttpStatus.FORBIDDEN);
+    }
+  }
+
   // ── OWNER ──────────────────────────────────────────────────────────────────
   @Post('locations/:spaceId/shares')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Share this space with another org (invite)' })
-  createShare(@Param('spaceId') spaceId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
+  async createShare(@Param('spaceId') spaceId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
+    await this.requireModule(spaceId, u.organizationId);
     return this.send('space_share_create', {
       ownerOrgId: u.organizationId, createdById: u.id, spaceId,
       guestOrgCode: body.guestOrgCode, level: body.level,

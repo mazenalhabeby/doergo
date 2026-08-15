@@ -213,6 +213,8 @@ export const AVAILABLE_MODULES = [
   { key: 'crm', label: 'CRM', description: 'Customer records, info & history; sales works them with tasks (calls, visits)', group: 'clients' },
   { key: 'apartments', label: 'Apartments / Units', description: 'A directory of apartments/units in this space — assign a member or a client as resident; work is handled by tasks', group: 'clients' },
   { key: 'b2c_portal', label: 'B2C Portal', description: 'Invite a customer to the app to make orders & follow their jobs', group: 'clients' },
+  // Collaboration
+  { key: 'space_sharing', label: 'Space Sharing', description: 'Share this space with another organisation (view / contribute / control)', group: 'collaboration' },
 ] as const;
 
 /** Display groups for the module catalog. */
@@ -221,6 +223,7 @@ export const MODULE_GROUPS = [
   { key: 'field', label: 'Field service', description: 'On-site / mobile work' },
   { key: 'agile', label: 'Project / Agile', description: 'Project-style planning' },
   { key: 'clients', label: 'Clients', description: 'Customers & client-facing portal' },
+  { key: 'collaboration', label: 'Collaboration', description: 'Work across teams & organisations' },
 ] as const;
 
 /**
