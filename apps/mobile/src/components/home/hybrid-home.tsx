@@ -24,6 +24,7 @@ import {
   type Task,
 } from '../../lib/api';
 import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
+import { WorkLogSheet } from '../worklog-sheet';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
@@ -52,6 +53,7 @@ export function HybridHome() {
 
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  const [worklogOpen, setWorklogOpen] = useState(false);
 
   // Attendance state
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
@@ -276,6 +278,15 @@ export function HybridHome() {
               )}
             </TouchableOpacity>
           </View>
+          {attendanceStatus?.currentEntry?.id && (
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: SPACING.sm, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: 'rgba(255,255,255,0.15)' }}
+              onPress={() => setWorklogOpen(true)}
+            >
+              <Ionicons name="list-outline" size={16} color={COLORS.white} />
+              <Text style={hStyles.clockBtnText}>{t('worklog.button', 'Work log')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <TouchableOpacity
@@ -426,6 +437,16 @@ export function HybridHome() {
         notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
         isLoading={isClockLoading}
       />
+
+      {attendanceStatus?.currentEntry?.id && (
+        <WorkLogSheet
+          visible={worklogOpen}
+          onClose={() => setWorklogOpen(false)}
+          timeEntryId={attendanceStatus.currentEntry.id}
+          title={t('worklog.title', 'Work log')}
+          hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
+        />
+      )}
     </View>
   );
 }

@@ -1,0 +1,265 @@
+import { useState, useCallback, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../contexts/theme-context';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
+import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
+import { worklogApi, type WorkLogNote } from '../lib/api/worklog';
+import { uploadToPresignedUrl } from '../lib/api/attachments';
+
+const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+const isImg = (m: string) => m.startsWith('image/');
+const pendingKey = (entryId: string) => `worklog_pending_${entryId}`;
+
+interface Props {
+  visible: boolean;
+  onClose: () => void;
+  timeEntryId: string;
+  title: string;
+  hint: string;
+}
+
+/**
+ * Session work-log sheet: add timestamped notes (+ photos) during a shift. Notes
+ * post immediately; if offline they queue in AsyncStorage and batch-flush next
+ * time the sheet opens. Photos upload phone→S3 direct (presign → PUT → confirm).
+ */
+export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Props) {
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { pickFromGallery, takePhoto } = useImagePicker();
+
+  const [notes, setNotes] = useState<WorkLogNote[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [picked, setPicked] = useState<PickedImage[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const flushPending = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
+      const queued: Array<{ body: string; at: string }> = raw ? JSON.parse(raw) : [];
+      if (queued.length) {
+        await worklogApi.addNotesBatch(timeEntryId, queued);
+        await AsyncStorage.removeItem(pendingKey(timeEntryId));
+      }
+    } catch {
+      /* still offline — keep the queue for next time */
+    }
+  }, [timeEntryId]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      await flushPending();
+      setNotes(await worklogApi.list(timeEntryId));
+    } catch {
+      /* leave whatever we have */
+    } finally {
+      setLoading(false);
+    }
+  }, [timeEntryId, flushPending]);
+
+  useEffect(() => {
+    if (visible) load();
+  }, [visible, load]);
+
+  const queueOffline = useCallback(async (note: { body: string; at: string }) => {
+    try {
+      const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
+      const q = raw ? JSON.parse(raw) : [];
+      q.push(note);
+      await AsyncStorage.setItem(pendingKey(timeEntryId), JSON.stringify(q));
+    } catch {
+      /* best effort */
+    }
+  }, [timeEntryId]);
+
+  const add = useCallback(async () => {
+    const body = draft.trim();
+    if (!body && picked.length === 0) return;
+    setBusy(true);
+    const at = new Date().toISOString();
+    try {
+      const note = await worklogApi.addNote(timeEntryId, { body: body || '(photo)', at });
+      // Upload each photo direct to S3 (best-effort per photo — never lose the note).
+      for (const img of picked) {
+        try {
+          const pre = await worklogApi.presignAttachment(note.id, img.fileName, img.mimeType);
+          await uploadToPresignedUrl(pre.uploadUrl, img.uri, img.mimeType);
+          await worklogApi.confirmAttachment(note.id, {
+            fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: img.fileName,
+            fileSize: img.fileSize, mimeType: img.mimeType, width: img.width, height: img.height,
+          });
+        } catch {
+          /* photo failed — note is already saved */
+        }
+      }
+    } catch {
+      // Offline: keep the note text so nothing is lost; it flushes on next open.
+      await queueOffline({ body: body || '(photo)', at });
+    } finally {
+      setDraft('');
+      setPicked([]);
+      setBusy(false);
+      load();
+    }
+  }, [draft, picked, timeEntryId, queueOffline, load]);
+
+  const remove = useCallback(async (id: string) => {
+    setNotes((p) => p.filter((n) => n.id !== id));
+    try { await worklogApi.deleteNote(id); } catch { load(); }
+  }, [load]);
+
+  const addFromGallery = useCallback(async () => {
+    const imgs = await pickFromGallery();
+    if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5));
+  }, [pickFromGallery]);
+
+  const addFromCamera = useCallback(async () => {
+    const img = await takePhoto();
+    if (img) setPicked((p) => [...p, img].slice(0, 5));
+  }, [takePhoto]);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md }]}>
+          <View style={[styles.handle, { backgroundColor: isDark ? '#4b5563' : '#d1d5db' }]} />
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>{hint}</Text>
+
+          <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {loading ? (
+              <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={colors.textSecondary} />
+            ) : notes.length === 0 ? (
+              <Text style={[styles.empty, { color: colors.textMuted }]}>Nothing logged yet.</Text>
+            ) : (
+              notes.map((n) => (
+                <View key={n.id} style={styles.noteRow}>
+                  <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(n.at)}</Text>
+                  <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
+                    <Text style={[styles.noteBody, { color: colors.textPrimary }]}>{n.body}</Text>
+                    {n.attachments.length > 0 && (
+                      <View style={styles.thumbs}>
+                        {n.attachments.map((a) =>
+                          isImg(a.mimeType) ? (
+                            <Image key={a.id} source={{ uri: a.url ?? a.fileUrl }} style={styles.thumb} />
+                          ) : (
+                            <View key={a.id} style={[styles.fileChip, { borderColor: colors.border }]}>
+                              <Ionicons name="document-outline" size={14} color={colors.textSecondary} />
+                              <Text style={[styles.fileName, { color: colors.textSecondary }]} numberOfLines={1}>{a.fileName}</Text>
+                            </View>
+                          ),
+                        )}
+                      </View>
+                    )}
+                  </View>
+                  <TouchableOpacity onPress={() => remove(n.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          {/* Composer */}
+          {picked.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickedRow}>
+              {picked.map((p, i) => (
+                <View key={i} style={styles.pickedItem}>
+                  <Image source={{ uri: p.uri }} style={styles.pickedThumb} />
+                  <TouchableOpacity style={styles.pickedRemove} onPress={() => setPicked((prev) => prev.filter((_, idx) => idx !== i))}>
+                    <Ionicons name="close-circle" size={18} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          <View style={styles.composer}>
+            <TextInput
+              style={[styles.input, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
+              placeholder="What did you just do?"
+              placeholderTextColor={colors.textMuted}
+              value={draft}
+              onChangeText={setDraft}
+              multiline
+              maxLength={2000}
+            />
+          </View>
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.iconBtn} onPress={addFromCamera} disabled={picked.length >= 5}>
+              <Ionicons name="camera-outline" size={22} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn} onPress={addFromGallery} disabled={picked.length >= 5}>
+              <Ionicons name="images-outline" size={22} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity
+              style={[styles.addBtn, (busy || (!draft.trim() && picked.length === 0)) && { opacity: 0.5 }]}
+              onPress={add}
+              disabled={busy || (!draft.trim() && picked.length === 0)}
+            >
+              {busy ? <ActivityIndicator size="small" color={COLORS.white} /> : (
+                <>
+                  <Ionicons name="add" size={20} color={COLORS.white} />
+                  <Text style={styles.addText}>Add</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.xl, maxHeight: '85%' },
+  handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: SPACING.md },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold },
+  hint: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.md },
+  list: { maxHeight: 320 },
+  empty: { fontSize: FONT_SIZE.base, textAlign: 'center', marginVertical: SPACING.lg },
+  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
+  noteTime: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold, paddingTop: 6, width: 44 },
+  noteBubble: { flex: 1, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm },
+  noteBody: { fontSize: FONT_SIZE.base, lineHeight: 20 },
+  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.sm },
+  thumb: { width: 56, height: 56, borderRadius: RADIUS.sm },
+  fileChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: RADIUS.sm, paddingHorizontal: 8, paddingVertical: 6, maxWidth: 140 },
+  fileName: { fontSize: FONT_SIZE.xs, flexShrink: 1 },
+  pickedRow: { marginTop: SPACING.sm },
+  pickedItem: { marginRight: SPACING.sm },
+  pickedThumb: { width: 56, height: 56, borderRadius: RADIUS.sm },
+  pickedRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10 },
+  composer: { marginTop: SPACING.sm },
+  input: { borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZE.base, minHeight: 44, maxHeight: 120 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
+  iconBtn: { padding: SPACING.sm },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2563eb', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderRadius: RADIUS.md },
+  addText: { color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.base },
+});

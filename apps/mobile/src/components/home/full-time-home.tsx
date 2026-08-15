@@ -23,6 +23,7 @@ import {
   type BreakStatus,
 } from '../../lib/api';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
+import { WorkLogSheet } from '../worklog-sheet';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
@@ -56,6 +57,7 @@ export function FullTimeHome() {
 
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  const [worklogOpen, setWorklogOpen] = useState(false);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -282,6 +284,17 @@ export function FullTimeHome() {
               </>
             )}
           </TouchableOpacity>
+
+          {/* Work log — jot down what you do through the shift (→ clock-out summary). */}
+          {isClockedIn && status?.currentEntry?.id && (
+            <TouchableOpacity
+              style={[ftStyles.clockButton, { marginTop: SPACING.sm, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+              onPress={() => setWorklogOpen(true)}
+            >
+              <Ionicons name="list-outline" size={20} color={colors.textPrimary} />
+              <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('worklog.button', 'Work log')}</Text>
+            </TouchableOpacity>
+          )}
         </TourTarget>
 
         {/* Quick Stats */}
@@ -410,6 +423,16 @@ export function FullTimeHome() {
         notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
         isLoading={isActionLoading}
       />
+
+      {status?.currentEntry?.id && (
+        <WorkLogSheet
+          visible={worklogOpen}
+          onClose={() => setWorklogOpen(false)}
+          timeEntryId={status.currentEntry.id}
+          title={t('worklog.title', 'Work log')}
+          hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
+        />
+      )}
     </View>
   );
 }
