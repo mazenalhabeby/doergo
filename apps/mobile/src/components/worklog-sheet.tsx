@@ -61,6 +61,8 @@ interface Props {
   timeEntryId: string;
   title: string;
   hint: string;
+  /** Only the active (clocked-in) session can be edited; a closed session is read-only. */
+  editable?: boolean;
 }
 
 /**
@@ -68,7 +70,7 @@ interface Props {
  * post immediately; if offline they queue in AsyncStorage and batch-flush next
  * time the sheet opens. Photos upload phone→S3 direct (presign → PUT → confirm).
  */
-export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Props) {
+export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, editable = true }: Props) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { pickFromGallery, takePhoto } = useImagePicker();
@@ -79,6 +81,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
   const [draft, setDraft] = useState('');
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
+  const [viewer, setViewer] = useState<string | null>(null); // full-screen image preview
 
   const flushPending = useCallback(async () => {
     let items: PendingItem[] = [];
@@ -229,7 +232,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>{hint}</Text>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>{editable ? hint : 'This session is closed — activity is read-only.'}</Text>
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {loading ? (
@@ -247,7 +250,9 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
                       <View style={styles.thumbs}>
                         {n.attachments.map((a) =>
                           isImg(a.mimeType) ? (
-                            <Image key={a.id} source={{ uri: a.url ?? a.fileUrl }} style={styles.thumb} />
+                            <TouchableOpacity key={a.id} activeOpacity={0.8} onPress={() => setViewer(a.url ?? a.fileUrl)}>
+                              <Image source={{ uri: a.url ?? a.fileUrl }} style={styles.thumb} />
+                            </TouchableOpacity>
                           ) : (
                             <View key={a.id} style={[styles.fileChip, { borderColor: colors.border }]}>
                               <Ionicons name="document-outline" size={14} color={colors.textSecondary} />
@@ -258,9 +263,11 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
                       </View>
                     )}
                   </View>
-                  <TouchableOpacity onPress={() => remove(n.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
-                  </TouchableOpacity>
+                  {editable && (
+                    <TouchableOpacity onPress={() => remove(n.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
               {/* Queued (offline) notes — shown so you always see what you added,
@@ -286,7 +293,9 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
             )}
           </ScrollView>
 
-          {/* Composer */}
+          {/* Composer — only for the active (clocked-in) session */}
+          {editable && (
+          <>
           {picked.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickedRow}>
               {picked.map((p, i) => (
@@ -331,8 +340,20 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
               )}
             </TouchableOpacity>
           </View>
+          </>
+          )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen image preview */}
+      <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
+        <Pressable style={styles.viewerBackdrop} onPress={() => setViewer(null)}>
+          {viewer && <Image source={{ uri: viewer }} style={styles.viewerImage} resizeMode="contain" />}
+          <TouchableOpacity style={[styles.viewerClose, { top: insets.top + SPACING.md }]} onPress={() => setViewer(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
@@ -364,4 +385,7 @@ const styles = StyleSheet.create({
   iconBtn: { padding: SPACING.sm },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2563eb', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderRadius: RADIUS.md },
   addText: { color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.base },
+  viewerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  viewerImage: { width: '100%', height: '100%' },
+  viewerClose: { position: 'absolute', right: SPACING.lg, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
 });

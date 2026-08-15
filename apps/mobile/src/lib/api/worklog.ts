@@ -29,27 +29,27 @@ export interface WorkLogNote {
  * during a clock-in session; at clock-out they compose "what I did today".
  * Photos upload phone→S3 direct via presign→PUT→confirm.
  */
+// NOTE: fetchWithAuth already unwraps the `{ data: T }` envelope (returns
+// `data.data ?? data`), so these methods must NOT unwrap `.data` again.
 export const worklogApi = {
   list: async (entryId: string): Promise<WorkLogNote[]> => {
-    const res = await fetchWithAuth<{ data: WorkLogNote[] }>(`/attendance/entries/${entryId}/worklog`);
-    return res?.data ?? [];
+    const res = await fetchWithAuth<WorkLogNote[]>(`/attendance/entries/${entryId}/worklog`);
+    return res ?? [];
   },
 
   addNote: async (entryId: string, input: { body: string; at?: string; taskId?: string }): Promise<WorkLogNote> => {
-    const res = await fetchWithAuth<{ data: WorkLogNote }>(`/attendance/entries/${entryId}/worklog`, {
+    return fetchWithAuth<WorkLogNote>(`/attendance/entries/${entryId}/worklog`, {
       method: 'POST',
       body: JSON.stringify(input),
     });
-    return res.data;
   },
 
   /** Offline flush: many notes in one round-trip. */
   addNotesBatch: async (entryId: string, notes: Array<{ body: string; at?: string; taskId?: string }>): Promise<{ inserted: number }> => {
-    const res = await fetchWithAuth<{ data: { inserted: number } }>(`/attendance/entries/${entryId}/worklog/batch`, {
+    return fetchWithAuth<{ inserted: number }>(`/attendance/entries/${entryId}/worklog/batch`, {
       method: 'POST',
       body: JSON.stringify({ notes }),
     });
-    return res.data;
   },
 
   deleteNote: async (noteId: string): Promise<void> => {
@@ -57,22 +57,20 @@ export const worklogApi = {
   },
 
   presignAttachment: async (noteId: string, fileName: string, mimeType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }> => {
-    const res = await fetchWithAuth<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>(
+    return fetchWithAuth<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }>(
       `/attendance/worklog/${noteId}/attachments/presign`,
       { method: 'POST', body: JSON.stringify({ fileName, mimeType }) },
     );
-    return res.data;
   },
 
   confirmAttachment: async (
     noteId: string,
     data: { fileKey: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number },
   ): Promise<WorkLogAttachment> => {
-    const res = await fetchWithAuth<{ data: WorkLogAttachment }>(`/attendance/worklog/${noteId}/attachments`, {
+    return fetchWithAuth<WorkLogAttachment>(`/attendance/worklog/${noteId}/attachments`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return res.data;
   },
 
   deleteAttachment: async (attachmentId: string): Promise<void> => {

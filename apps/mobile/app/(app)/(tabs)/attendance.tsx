@@ -88,7 +88,8 @@ export default function AttendanceScreen() {
 
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
-  const [worklogOpen, setWorklogOpen] = useState(false);
+  // Which session's activity sheet is open (active session OR a history row).
+  const [worklogEntryId, setWorklogEntryId] = useState<string | null>(null);
 
   // Geofence warning state
   const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
@@ -996,7 +997,7 @@ export default function AttendanceScreen() {
         {/* Activity — log what you did today (opens the work-log sheet) */}
         {isClockedIn && currentEntry?.id && (
           <TouchableOpacity
-            onPress={() => setWorklogOpen(true)}
+            onPress={() => setWorklogEntryId(currentEntry.id)}
             activeOpacity={0.8}
             style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
           >
@@ -1022,7 +1023,12 @@ export default function AttendanceScreen() {
             </View>
           ) : (
             history.map((entry) => (
-              <View key={entry.id} style={[styles.historyCard, { backgroundColor: colors.card }]}>
+              <TouchableOpacity
+                key={entry.id}
+                activeOpacity={0.8}
+                onPress={() => setWorklogEntryId(entry.id)}
+                style={[styles.historyCard, { backgroundColor: colors.card }]}
+              >
                 <View style={styles.historyHeader}>
                   <Text style={[styles.historyDate, { color: colors.textPrimary }]}>{formatDate(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))}</Text>
                   <View
@@ -1099,7 +1105,13 @@ export default function AttendanceScreen() {
                     </Text>
                   </View>
                 )}
-              </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <Ionicons name="list-outline" size={15} color={COLORS.primary} />
+                  <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.primary }}>{t('worklog.viewActivity', 'View activity')}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </View>
+              </TouchableOpacity>
             ))
           )}
         </TourTarget>
@@ -1128,12 +1140,13 @@ export default function AttendanceScreen() {
         isLoading={isActionLoading}
       />
 
-      {currentEntry?.id && (
+      {worklogEntryId && (
         <WorkLogSheet
-          visible={worklogOpen}
-          onClose={() => setWorklogOpen(false)}
-          timeEntryId={currentEntry.id}
-          title={t('worklog.title', 'What I did today')}
+          visible={!!worklogEntryId}
+          onClose={() => setWorklogEntryId(null)}
+          timeEntryId={worklogEntryId}
+          editable={worklogEntryId === currentEntry?.id && isClockedIn}
+          title={worklogEntryId === currentEntry?.id ? t('worklog.title', 'What I did today') : t('worklog.titlePast', 'Activity for this session')}
           hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
         />
       )}

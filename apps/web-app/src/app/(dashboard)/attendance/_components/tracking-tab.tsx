@@ -539,7 +539,8 @@ export function TrackingTab({
                           <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>
-                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} />
+                          {/* Read-only: the activity log is the member's own record. */}
+                          <WorkLogTimeline entryId={entry.id} editable={false} />
                         </TableCell>
                       </TableRow>
                     )}
