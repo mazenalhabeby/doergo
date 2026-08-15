@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Loader2, Plus, ImagePlus, Trash2, FileText, X } from "lucide-react"
+import { Loader2, Plus, ImagePlus, Trash2, FileText, X, LogOut } from "lucide-react"
 
 import { worklogApi, uploadToS3, type WorkLogNote } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -21,7 +21,7 @@ const MAX_FILES = 5
  * composer (own active session / manager) that creates the note then uploads
  * each photo direct to S3 (presign → PUT → confirm).
  */
-export function WorkLogTimeline({ entryId, editable, memberName }: { entryId: string; editable?: boolean; memberName?: string }) {
+export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }: { entryId: string; editable?: boolean; memberName?: string; clockOutNote?: string | null }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: ["worklog", entryId], queryFn: () => worklogApi.list(entryId) })
@@ -62,9 +62,9 @@ export function WorkLogTimeline({ entryId, editable, memberName }: { entryId: st
     <div className="space-y-3">
       {q.isLoading ? (
         <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {t("common.loading", "Loading…")}</div>
-      ) : notes.length === 0 ? (
-        <p className="py-2 text-sm text-muted-foreground">{t("worklog.empty", "Nothing logged yet.")}</p>
       ) : (
+        <>
+        {notes.length > 0 && (
         <ol className="relative">
           {notes.map((n: WorkLogNote, i) => (
             <li key={n.id} className="group relative flex gap-3 pb-3 last:pb-0">
@@ -115,6 +115,27 @@ export function WorkLogTimeline({ entryId, editable, memberName }: { entryId: st
             </li>
           ))}
         </ol>
+        )}
+
+        {/* The clock-out summary — always last, framed as the end-of-shift note. */}
+        {clockOutNote && (
+          <div className="flex gap-3">
+            <div className="relative flex w-2 flex-col items-center pt-2">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/70 ring-4 ring-muted" />
+            </div>
+            <div className="min-w-0 flex-1 rounded-xl border border-border bg-muted/40 p-3">
+              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <LogOut className="h-3.5 w-3.5" /> {t("worklog.clockOutNote", "Clock-out note")}
+              </div>
+              <p className="whitespace-pre-wrap break-words text-sm text-foreground">{clockOutNote}</p>
+            </div>
+          </div>
+        )}
+
+        {notes.length === 0 && !clockOutNote && (
+          <p className="py-2 text-sm text-muted-foreground">{t("worklog.empty", "Nothing logged yet.")}</p>
+        )}
+        </>
       )}
 
       {editable && (

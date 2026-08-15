@@ -491,7 +491,7 @@ export function TrackingTab({
                     <SortHead label={t("attendance.clockOut")} active={sort?.key === "clockOut"} dir={sort?.dir ?? "asc"} onClick={() => onSort("clockOut")} />
                     <SortHead label={t("common.duration")} active={sort?.key === "duration"} dir={sort?.dir ?? "asc"} onClick={() => onSort("duration")} />
                     <SortHead label={t("attendance.approval")} active={sort?.key === "approval"} dir={sort?.dir ?? "asc"} onClick={() => onSort("approval")} />
-                    <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
+                    <TableHead className="font-semibold text-muted-foreground">{t("worklog.column", "Activity")}</TableHead>
                     {isAdmin && <TableHead className="w-10 text-right" />}
                   </TableRow>
                 </TableHeader>
@@ -522,8 +522,9 @@ export function TrackingTab({
                         <ApprovalCell entry={entry} />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <NoteCell note={entry.notes} />
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <ListChecks className="h-4 w-4 shrink-0" />
+                          <span>{t("worklog.view", "View")}</span>
                           <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
                         </div>
                       </TableCell>
@@ -540,7 +541,7 @@ export function TrackingTab({
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>
                           {/* Managers/admins can add & edit a member's activity (with photos). */}
-                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} memberName={`${entry.user?.firstName ?? ""} ${entry.user?.lastName ?? ""}`.trim() || undefined} />
+                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} memberName={`${entry.user?.firstName ?? ""} ${entry.user?.lastName ?? ""}`.trim() || undefined} clockOutNote={entry.notes} />
                         </TableCell>
                       </TableRow>
                     )}
