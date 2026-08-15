@@ -143,8 +143,8 @@ export function AttendanceTab({
                         <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                           <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "Activity — what they did")}
                         </div>
-                        {/* Read-only: the activity log is the member's own record. */}
-                        <WorkLogTimeline entryId={entry.id} editable={false} />
+                        {/* Managers/admins responsible for this member can add & edit their activity. */}
+                        <WorkLogTimeline entryId={entry.id} editable={canManage} />
                       </td>
                     </tr>
                   )}

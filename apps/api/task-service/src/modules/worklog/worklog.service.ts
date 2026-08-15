@@ -113,8 +113,8 @@ export class WorklogService {
   // ── Notes ──────────────────────────────────────────────────────────────────
 
   async addNote(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean; body: string; at?: string; taskId?: string }) {
-    // Writes are OWNER-ONLY: the activity log is the member's own record, so admins are view-only.
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, false);
+    // Writable by the session owner (the member) OR a manager/responsible party (canManage).
+    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage);
     const note = await this.prisma.timeEntryNote.create({
       data: {
         timeEntryId: te.id,
@@ -130,7 +130,7 @@ export class WorklogService {
 
   /** Offline flush: many notes in one round-trip. Session validated once. */
   async addNotesBatch(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean; notes: Array<{ body: string; at?: string; taskId?: string }> }) {
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, false); // owner-only
+    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
     const items = Array.isArray(data.notes) ? data.notes.slice(0, BATCH_MAX) : [];
     const rows = [];
     for (const n of items) {
@@ -170,7 +170,7 @@ export class WorklogService {
   }
 
   async deleteNote(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean }) {
-    const { note } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, false); // owner-only
+    const { note } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
     const atts = await this.prisma.timeEntryNoteAttachment.findMany({ where: { noteId: note.id }, select: { fileKey: true } });
     await this.prisma.timeEntryNote.delete({ where: { id: note.id } }); // cascades attachment rows
     for (const a of atts) void this.deleteObject(a.fileKey);
@@ -180,7 +180,7 @@ export class WorklogService {
   // ── Attachments (S3) ────────────────────────────────────────────────────────
 
   async presignAttachment(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean; fileName: string; mimeType: string }) {
-    const { te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, false); // owner-only
+    const { te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
     if (!data.mimeType || !/^[a-z]+\/[a-z0-9\-.+]+$/i.test(data.mimeType) || !ALLOWED_FILE_TYPES.includes(data.mimeType)) {
       throw new BadRequestException('File type not allowed');
     }
@@ -196,7 +196,7 @@ export class WorklogService {
     organizationId: string; noteId: string; callerUserId: string; canManage?: boolean;
     fileKey?: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number;
   }) {
-    const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, false); // owner-only
+    const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
     // The confirmed object MUST live under THIS session's prefix (anti-IDOR / cross-tenant).
     if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(this.sessionPrefix(te))) {
       throw new BadRequestException('Invalid file URL');
@@ -232,7 +232,7 @@ export class WorklogService {
       select: { id: true, fileKey: true, noteId: true },
     });
     if (!att) throw new NotFoundException('Attachment not found');
-    await this.sessionForNote(att.noteId, data.organizationId, data.callerUserId, false); // owner-only access check
+    await this.sessionForNote(att.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
     await this.prisma.timeEntryNoteAttachment.delete({ where: { id: att.id } });
     void this.deleteObject(att.fileKey);
     return success({ success: true });
