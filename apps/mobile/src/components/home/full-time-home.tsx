@@ -24,6 +24,7 @@ import {
 } from '../../lib/api';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
 import { WorkLogSheet } from '../worklog-sheet';
+import { ReportIssueSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
@@ -58,6 +59,8 @@ export function FullTimeHome() {
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
   const [worklogOpen, setWorklogOpen] = useState(false);
+  const [reportIssueOpen, setReportIssueOpen] = useState(false);
+  const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -295,6 +298,17 @@ export function FullTimeHome() {
               <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('worklog.button', 'Activity')}</Text>
             </TouchableOpacity>
           )}
+
+          {/* Report an issue — a blocker the member can't fix during the shift */}
+          {isClockedIn && status?.currentEntry?.id && (
+            <TouchableOpacity
+              style={[ftStyles.clockButton, { marginTop: SPACING.sm, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+              onPress={() => setReportIssueOpen(true)}
+            >
+              <Ionicons name="warning-outline" size={20} color="#dc2626" />
+              <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('issues.report', 'Report an issue')}</Text>
+            </TouchableOpacity>
+          )}
         </TourTarget>
 
         {/* Quick Stats */}
@@ -433,6 +447,21 @@ export function FullTimeHome() {
           hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
         />
       )}
+
+      <ReportIssueSheet
+        visible={reportIssueOpen}
+        onClose={() => setReportIssueOpen(false)}
+        timeEntryId={status?.currentEntry?.id}
+        spaceId={status?.currentEntry?.location?.id}
+        onCreated={(id) => { setReportIssueOpen(false); setIssueThreadId(id); }}
+      />
+      <ShiftIssueThreadSheet
+        visible={!!issueThreadId}
+        onClose={() => setIssueThreadId(null)}
+        issueId={issueThreadId}
+        canManage={!!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)}
+        currentUserId={(user as any)?.id}
+      />
     </View>
   );
 }
