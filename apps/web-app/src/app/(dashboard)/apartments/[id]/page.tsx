@@ -10,7 +10,7 @@ import {
   StickyNote, RefreshCw, Plus, Loader2, ListChecks,
 } from "lucide-react"
 
-import { spaceUnitsApi, tasksApi, locationsApi } from "@/lib/api"
+import { spaceUnitsApi, spacePortalApi, isApartmentPortal, tasksApi, locationsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,10 @@ export default function ApartmentDetailPage() {
   const spaceQ = useQuery({ queryKey: ["location", unit?.spaceId], queryFn: () => locationsApi.getById(unit!.spaceId!), enabled: !!unit?.spaceId })
   const qc = useQueryClient()
   const hasB2C = !!spaceQ.data?.enabledModules?.includes("b2c_portal")
+  const portalsQ = useQuery({ queryKey: ["space-portals", unit?.spaceId], queryFn: () => spacePortalApi.listPortals(unit!.spaceId!), enabled: !!unit?.spaceId && hasB2C })
+  // Guard on hasB2C — React Query retains cached portals after the query is
+  // disabled, which would otherwise keep the Clients option after B2C is off.
+  const apartmentPortalIds = hasB2C ? (portalsQ.data ?? []).filter((p) => p.isActive && isApartmentPortal(p)).map((p) => p.id) : []
   const refreshUnit = () => { qc.invalidateQueries({ queryKey: ["unit", id] }); qc.invalidateQueries({ queryKey: ["unit-activities", id] }) }
 
   if (unitQ.isLoading) {
@@ -93,7 +97,7 @@ export default function ApartmentDetailPage() {
               <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground">{t("apartments.vacant", "Vacant")}</span>
             )}
             {unit.spaceId && (
-              <ApartmentDialog spaceId={unit.spaceId} hasB2C={hasB2C} existing={unit} onSaved={refreshUnit} trigger={
+              <ApartmentDialog spaceId={unit.spaceId} apartmentPortalIds={apartmentPortalIds} existing={unit} onSaved={refreshUnit} trigger={
                 <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
               } />
             )}

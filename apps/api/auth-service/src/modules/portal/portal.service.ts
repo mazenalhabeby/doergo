@@ -483,6 +483,18 @@ export class PortalService {
     return c;
   }
 
+  /** One home per member per space: when a member is set as an apartment's
+   *  resident, clear them from every OTHER unit in the same space so a member
+   *  never appears to live in two apartments at once. Single source of truth,
+   *  called from createUnit / updateUnit / setMemberApartment. */
+  private async clearMemberElsewhere(userId: string, spaceId: string | null | undefined, organizationId: string, exceptUnitId?: string) {
+    if (!userId || !spaceId) return;
+    await this.prisma.customerUnit.updateMany({
+      where: { organizationId, spaceId, residentUserId: userId, ...(exceptUnitId ? { id: { not: exceptUnitId } } : {}) },
+      data: { residentUserId: null },
+    });
+  }
+
   /** Keep only ids that are real users in this org (drops cross-tenant/stale ids
    *  so unit worker assignment never points out-of-org). Deduped, capped. */
   private async keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
@@ -541,6 +553,8 @@ export class PortalService {
         details: (sanitizeUnitDetails(data.details) ?? undefined) as any,
       },
     });
+    // A member lives in exactly one apartment per space — vacate any prior one.
+    if (residentUserId) await this.clearMemberElsewhere(residentUserId, data.spaceId, data.organizationId, created.id);
     // Activity: created + initial resident (best-effort, never blocks).
     await this.logUnitActivity({ unitId: created.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: 'Apartment created' });
     const rn = await this.residentDisplayName(residentUserId, clientId, data.organizationId);
@@ -568,7 +582,7 @@ export class PortalService {
   }) {
     const existing = await this.prisma.customerUnit.findFirst({
       where: { id: data.id, organizationId: data.organizationId, ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}) },
-      select: { id: true, customerId: true, residentUserId: true },
+      select: { id: true, customerId: true, residentUserId: true, spaceId: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');
     await this.assertCustomerInOrg(data.organizationId, data.customerId);
@@ -597,6 +611,9 @@ export class PortalService {
         ...(data.details !== undefined ? { details: (sanitizeUnitDetails(data.details) ?? []) as any } : {}),
       },
     });
+    // A member lives in exactly one apartment per space — vacate any prior one
+    // (spaceId may move in the same call, so prefer the new one).
+    if (residentUserId) await this.clearMemberElsewhere(residentUserId, data.spaceId ?? existing.spaceId, data.organizationId, updated.id);
     // Activity: log a resident change (best-effort).
     if (updated.residentUserId !== existing.residentUserId || updated.customerId !== existing.customerId) {
       const rn = await this.residentDisplayName(updated.residentUserId, updated.customerId, data.organizationId);
@@ -606,6 +623,47 @@ export class PortalService {
       });
     }
     return updated;
+  }
+
+  /** Assign (or clear) a MEMBER's apartment from the member side — the reverse
+   *  of picking a resident on the apartment. `unitId=null` vacates the member.
+   *  Atomic + one-home-per-member-per-space; mirrors the apartment-side write so
+   *  both surfaces agree on `residentUserId`. */
+  async setMemberApartment(data: { organizationId: string; spaceId: string; userId: string; unitId?: string | null; actorId?: string }) {
+    const [uid] = await this.keepOrgUserIds([data.userId], data.organizationId);
+    if (!uid) throw new NotFoundException('Member not found in this organization');
+
+    // Validate the target apartment belongs to this org + space.
+    let targetId: string | null = null;
+    if (data.unitId) {
+      const target = await this.prisma.customerUnit.findFirst({
+        where: { id: data.unitId, organizationId: data.organizationId, spaceId: data.spaceId, isActive: true },
+        select: { id: true },
+      });
+      if (!target) throw new NotFoundException('Apartment not found in this space');
+      targetId = target.id;
+    }
+
+    // Where does the member live now (in this space)?
+    const current = await this.prisma.customerUnit.findMany({
+      where: { organizationId: data.organizationId, spaceId: data.spaceId, residentUserId: uid },
+      select: { id: true },
+    });
+    const currentIds = current.map((u) => u.id);
+    const toClear = currentIds.filter((id) => id !== targetId);
+
+    const ops: any[] = [];
+    if (toClear.length) ops.push(this.prisma.customerUnit.updateMany({ where: { id: { in: toClear } }, data: { residentUserId: null } }));
+    if (targetId && !currentIds.includes(targetId)) ops.push(this.prisma.customerUnit.update({ where: { id: targetId }, data: { residentUserId: uid, customerId: null } }));
+    if (ops.length) await this.prisma.$transaction(ops);
+
+    // Activity (best-effort, never blocks the write).
+    for (const id of toClear) void this.logUnitActivity({ unitId: id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: 'Resident removed' });
+    if (targetId && !currentIds.includes(targetId)) {
+      const rn = await this.residentDisplayName(uid, null, data.organizationId);
+      void this.logUnitActivity({ unitId: targetId, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: rn ? `Resident set to ${rn}` : 'Resident set', metadata: rn ? { resident: rn } : undefined });
+    }
+    return { data: { success: true, unitId: targetId } };
   }
 
   async deleteUnit(data: { id: string; organizationId: string; customerId?: string }) {

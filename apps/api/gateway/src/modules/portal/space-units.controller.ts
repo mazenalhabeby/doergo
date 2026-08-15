@@ -6,9 +6,9 @@ import { RequirePermission } from '@hbcfield/shared';
 
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
- * is the hub: a resident (customerId) can live in it and workers (workerIds) are
- * responsible for it. Independent of the B2C portal — a space can run the units
- * directory for internal ops without exposing a customer portal.
+ * is the hub: a resident lives in it — a MEMBER (residentUserId) for staff
+ * housing, or a CLIENT (customerId) when the space runs an Apartment-entity B2C
+ * portal. Work on the unit is handled by tasks (no standing worker list).
  */
 @ApiTags('space-units')
 @ApiBearerAuth()
@@ -70,6 +70,19 @@ export class SpaceUnitsController {
   async remove(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
     return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
+  }
+
+  /** Reverse-direction assignment: give a MEMBER an apartment from the member
+   *  side (Members tab). `unitId: null` vacates them. One home per member. */
+  @Post('assign-member')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Set a member's apartment in this space (unitId null = vacate)" })
+  async assignMember(@Param('spaceId') spaceId: string, @Body() body: { userId: string; unitId?: string | null }, @Request() req: any) {
+    await this.requireModule(spaceId, req.user.organizationId);
+    return this.auth('portal_set_member_apartment', {
+      organizationId: req.user.organizationId, spaceId,
+      userId: body.userId, unitId: body.unitId ?? null, actorId: req.user.id,
+    });
   }
 }
 

@@ -4618,6 +4618,12 @@ export const spaceUnitsApi = {
     if (res.error) throw new Error(res.error);
     return res.data;
   },
+  /** Set (or clear, unitId=null) a member's apartment from the member side. */
+  assignMember: async (spaceId: string, input: { userId: string; unitId: string | null }) => {
+    const res = await api.post<{ data: { success: boolean; unitId: string | null } }>(`/spaces/${spaceId}/units/assign-member`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
   // ── Apartment activity timeline (notes + system events) ──
   activities: async (unitId: string): Promise<UnitActivity[]> => {
     const res = await api.get<{ data: UnitActivity[] }>(`/units/${unitId}/activities`);
@@ -4630,6 +4636,12 @@ export const spaceUnitsApi = {
     return res.data!.data;
   },
 };
+
+/** A portal whose entity is an Apartment (rental vertical). This is the switch
+ *  that links apartments ↔ clients: only when a space runs one of these can an
+ *  apartment host a CLIENT resident (vs. member-only housing). */
+export const isApartmentPortal = (p: PortalSummary): boolean =>
+  p.templateKey === "rental" || (p.entityLabel || "").toLowerCase().startsWith("apartment")
 
 export const spacePortalApi = {
   /** All client portals bound to this space (a space can run several). */

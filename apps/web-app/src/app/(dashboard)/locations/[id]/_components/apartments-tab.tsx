@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Home, Plus, Trash2, Pencil, User, Smartphone } from "lucide-react"
 
-import { spaceUnitsApi, type SpaceUnit } from "@/lib/api"
+import { spaceUnitsApi, spacePortalApi, isApartmentPortal, type SpaceUnit } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,11 @@ export function ApartmentsTab({ spaceId, hasB2C }: { spaceId: string; hasB2C?: b
   const qc = useQueryClient()
   const unitsQ = useQuery({ queryKey: ["space-units-dir", spaceId], queryFn: () => spaceUnitsApi.list(spaceId) })
   const units = unitsQ.data ?? []
+  // Active portals whose entity is Apartment → a unit can host a client resident.
+  // Guard on hasB2C: React Query keeps the cached list after the query is
+  // disabled, so without this the Clients tab would linger once B2C is turned off.
+  const portalsQ = useQuery({ queryKey: ["space-portals", spaceId], queryFn: () => spacePortalApi.listPortals(spaceId), enabled: !!hasB2C })
+  const apartmentPortalIds = hasB2C ? (portalsQ.data ?? []).filter((p) => p.isActive && isApartmentPortal(p)).map((p) => p.id) : []
   const invalidate = () => qc.invalidateQueries({ queryKey: ["space-units-dir", spaceId] })
 
   const del = useMutation({
@@ -33,7 +38,7 @@ export function ApartmentsTab({ spaceId, hasB2C }: { spaceId: string; hasB2C?: b
         accent="sky"
         title={t("apartments.title", "Apartments / Units")}
         description={t("apartments.introHousing", "Apartments this space owns. Give one to a member to live in — or, with a client portal, to a client. Work on them is handled by tasks.")}
-        action={<ApartmentDialog spaceId={spaceId} hasB2C={hasB2C} onSaved={invalidate} trigger={
+        action={<ApartmentDialog spaceId={spaceId} apartmentPortalIds={apartmentPortalIds} onSaved={invalidate} trigger={
           <Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("apartments.add", "Add apartment")}</Button>
         } />}
       />
@@ -54,7 +59,7 @@ export function ApartmentsTab({ spaceId, hasB2C }: { spaceId: string; hasB2C?: b
                 </div>
               </button>
               <ResidentBadge unit={u} />
-              <ApartmentDialog spaceId={spaceId} hasB2C={hasB2C} existing={u} onSaved={invalidate} trigger={
+              <ApartmentDialog spaceId={spaceId} apartmentPortalIds={apartmentPortalIds} existing={u} onSaved={invalidate} trigger={
                 <button className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"><Pencil className="h-4 w-4" /></button>
               } />
               <button onClick={() => del.mutate(u.id)} className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>

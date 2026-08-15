@@ -3,11 +3,11 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, Lock, SlidersHorizontal, ChevronDown } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, Lock, SlidersHorizontal, ChevronDown, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
-import { spaceRolesApi, spaceMembersApi, employeesApi } from "@/lib/api"
+import { spaceRolesApi, spaceMembersApi, employeesApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
 import {
   SPACE_ROLE_PERMISSION_SCHEMA,
   type SpaceRole,
@@ -54,6 +54,7 @@ import { MemberRoutingEditor } from "./member-routing-editor"
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
+const NO_APT = "__vacant__"
 
 const emptyPermissions = (): SpaceRolePermissions =>
   SPACE_ROLE_PERMISSION_SCHEMA.reduce((acc, p) => {
@@ -61,12 +62,12 @@ const emptyPermissions = (): SpaceRolePermissions =>
     return acc
   }, {} as SpaceRolePermissions)
 
-export function MembersTab({ spaceId }: { spaceId: string }) {
+export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApartments?: boolean }) {
   return (
     <div className="space-y-8">
       <SubRolesSection />
       <Separator />
-      <SpaceMembersSection spaceId={spaceId} />
+      <SpaceMembersSection spaceId={spaceId} hasApartments={hasApartments} />
       <Separator />
       <RoutingSection spaceId={spaceId} />
     </div>
@@ -324,7 +325,7 @@ function RoleDialog({
 
 // ── Section (b): Space members ──────────────────────────────────────────────
 
-function SpaceMembersSection({ spaceId }: { spaceId: string }) {
+function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasApartments?: boolean }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [selectedUserId, setSelectedUserId] = useState("")
@@ -336,6 +337,13 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
     queryKey: ["space-members", spaceId],
     queryFn: () => spaceMembersApi.list(spaceId),
   })
+  // Apartments this space owns — for the per-member "lives in" control.
+  const { data: unitData } = useQuery({
+    queryKey: ["space-member-units", spaceId],
+    queryFn: () => spaceUnitsApi.list(spaceId),
+    enabled: !!hasApartments,
+  })
+  const units = unitData ?? []
   const { data: employeeData } = useQuery({
     queryKey: ["employees-for-space-members"],
     queryFn: () => employeesApi.list({ limit: 100, status: "active" }),
@@ -426,6 +434,14 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {hasApartments && (
+                    <MemberApartmentControl
+                      spaceId={spaceId}
+                      userId={m.userId}
+                      units={units}
+                      currentUnitId={units.find((u) => u.residentUserId === m.userId)?.id ?? null}
+                    />
+                  )}
                   <Button
                     variant={routingOpen === m.id ? "secondary" : "ghost"}
                     size="sm"
@@ -544,5 +560,56 @@ function SpaceMembersSection({ spaceId }: { spaceId: string }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+// ── Per-member apartment picker (the "assign apartment in the user" surface) ──
+// Reverse of the apartment-side resident picker; writes the same residentUserId
+// via one backend path (one home per member per space, enforced server-side).
+
+function MemberApartmentControl({ spaceId, userId, units, currentUnitId }: {
+  spaceId: string; userId: string; units: SpaceUnit[]; currentUnitId: string | null
+}) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+
+  const unitResident = (u: SpaceUnit) =>
+    u.residentUser ? `${u.residentUser.firstName} ${u.residentUser.lastName}`.trim() : u.customer?.name || ""
+
+  const assign = useMutation({
+    mutationFn: (unitId: string | null) => spaceUnitsApi.assignMember(spaceId, { userId, unitId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space-member-units", spaceId] })
+      queryClient.invalidateQueries({ queryKey: ["space-units-dir", spaceId] })
+      notify.success(t("apartments.residentUpdated", "Apartment updated"))
+    },
+    onError: (err: Error) => notify.error(err.message || t("common.error", "Something went wrong")),
+  })
+
+  return (
+    <Select
+      value={currentUnitId ?? NO_APT}
+      onValueChange={(v) => assign.mutate(v === NO_APT ? null : v)}
+      disabled={assign.isPending}
+    >
+      <SelectTrigger className="h-8 w-[150px] text-xs" aria-label={t("apartments.assign", "Assign apartment")}>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {assign.isPending ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Home className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <SelectValue placeholder={t("apartments.assign", "Assign apartment")} />
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NO_APT}>{t("apartments.vacant", "Vacant")}</SelectItem>
+        {units.map((u) => {
+          const occupiedByOther = !!(u.residentUserId && u.residentUserId !== userId) || !!u.customer
+          return (
+            <SelectItem key={u.id} value={u.id}>
+              {u.name}
+              {occupiedByOther && <span className="text-muted-foreground"> · {unitResident(u)}</span>}
+            </SelectItem>
+          )
+        })}
+      </SelectContent>
+    </Select>
   )
 }

@@ -30,9 +30,13 @@ const encodeResident = (u?: SpaceUnit) => u?.residentUserId ? `u:${u.residentUse
 const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
-export function ApartmentDialog({ spaceId, hasB2C, existing, onSaved, trigger }: {
-  spaceId: string; hasB2C?: boolean; existing?: SpaceUnit; onSaved: () => void; trigger: React.ReactNode
+export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved, trigger }: {
+  // apartmentPortalIds = ids of this space's B2C portals whose entity is
+  // Apartment. Non-empty ⇒ the apartment can host a CLIENT resident, and the
+  // client candidates are scoped to those portals. Empty ⇒ members only.
+  spaceId: string; apartmentPortalIds?: string[]; existing?: SpaceUnit; onSaved: () => void; trigger: React.ReactNode
 }) {
+  const hasApartmentPortal = (apartmentPortalIds?.length ?? 0) > 0
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(existing?.name ?? "")
@@ -47,13 +51,14 @@ export function ApartmentDialog({ spaceId, hasB2C, existing, onSaved, trigger }:
 
   const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }), enabled: open })
   const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
-  // Clients = this SPACE's app-access customers only.
+  // Clients = this SPACE's app-access customers, scoped to the Apartment-entity
+  // portals (a rental+logistics space won't offer logistics clients as residents).
   const clientsQ = useQuery({
     queryKey: ["space-app-residents", spaceId],
     queryFn: () => customersApi.list({ spaceId, portalResident: true, limit: 100 }),
-    enabled: open && !!hasB2C,
+    enabled: open && hasApartmentPortal,
   })
-  const clients = clientsQ.data?.data ?? []
+  const clients = (clientsQ.data?.data ?? []).filter((c) => c.portalId && apartmentPortalIds!.includes(c.portalId))
 
   const save = useMutation({
     mutationFn: () => {
@@ -98,7 +103,7 @@ export function ApartmentDialog({ spaceId, hasB2C, existing, onSaved, trigger }:
               {/* Tabs */}
               <div className="flex items-center gap-1 border-b border-border p-1">
                 <TabBtn active={tab === "members"} onClick={() => { setTab("members"); setQ("") }} icon={User} label={t("apartments.members", "Members")} />
-                {hasB2C && <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }} icon={Smartphone} label={t("apartments.clients", "Clients")} />}
+                {hasApartmentPortal && <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }} icon={Smartphone} label={t("apartments.clients", "Clients")} />}
                 <button type="button" onClick={() => setResident("none")}
                   className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
                     resident === "none" ? "text-primary" : "text-muted-foreground hover:text-foreground")}>

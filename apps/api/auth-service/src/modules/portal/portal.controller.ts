@@ -107,6 +107,11 @@ export class PortalController {
     return this.portalService.setPrimaryUnit(data);
   }
 
+  @MessagePattern({ cmd: 'portal_set_member_apartment' })
+  setMemberApartment(@Payload() data: { organizationId: string; spaceId: string; userId: string; unitId?: string | null; actorId?: string }) {
+    return this.portalService.setMemberApartment(data);
+  }
+
   @MessagePattern({ cmd: 'portal_delete_unit' })
   deleteUnit(@Payload() data: { id: string; organizationId: string }) {
     return this.portalService.deleteUnit(data);
