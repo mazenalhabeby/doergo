@@ -25,6 +25,11 @@ import { uploadToPresignedUrl } from '../lib/api/attachments';
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 const isImg = (m: string) => m.startsWith('image/');
 const pendingKey = (entryId: string) => `worklog_pending_${entryId}`;
+const localId = () => `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+// A queued (offline) note — text + the picked photos (their local URIs + metadata)
+// so photos re-upload on flush, not just the text.
+type PendingItem = { id: string; body: string; at: string; photos?: PickedImage[] };
 
 interface Props {
   visible: boolean;
@@ -51,15 +56,51 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
   const [busy, setBusy] = useState(false);
 
   const flushPending = useCallback(async () => {
+    let items: PendingItem[] = [];
     try {
       const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
-      const queued: Array<{ body: string; at: string }> = raw ? JSON.parse(raw) : [];
-      if (queued.length) {
-        await worklogApi.addNotesBatch(timeEntryId, queued);
-        await AsyncStorage.removeItem(pendingKey(timeEntryId));
-      }
+      items = raw ? JSON.parse(raw) : [];
     } catch {
-      /* still offline — keep the queue for next time */
+      return;
+    }
+    if (!items.length) return;
+
+    const done = new Set<string>();
+    // Text-only notes → one batch request.
+    const textOnly = items.filter((i) => !i.photos || i.photos.length === 0);
+    if (textOnly.length) {
+      try {
+        await worklogApi.addNotesBatch(timeEntryId, textOnly.map((i) => ({ body: i.body, at: i.at })));
+        textOnly.forEach((i) => done.add(i.id));
+      } catch {
+        /* still offline */
+      }
+    }
+    // Notes with photos → recreate the note, then re-upload each queued photo.
+    for (const item of items.filter((i) => i.photos && i.photos.length)) {
+      try {
+        const note = await worklogApi.addNote(timeEntryId, { body: item.body, at: item.at });
+        for (const p of item.photos!) {
+          const pre = await worklogApi.presignAttachment(note.id, p.fileName, p.mimeType);
+          await uploadToPresignedUrl(pre.uploadUrl, p.uri, p.mimeType);
+          await worklogApi.confirmAttachment(note.id, {
+            fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: p.fileName,
+            fileSize: p.fileSize, mimeType: p.mimeType, width: p.width, height: p.height,
+          });
+        }
+        done.add(item.id);
+      } catch {
+        /* keep for next flush — note text isn't lost */
+      }
+    }
+
+    // Persist only what still didn't make it.
+    try {
+      const remaining = items.filter((i) => !done.has(i.id));
+      if (remaining.length) await AsyncStorage.setItem(pendingKey(timeEntryId), JSON.stringify(remaining));
+      else await AsyncStorage.removeItem(pendingKey(timeEntryId));
+    } catch {
+      /* best effort */
     }
   }, [timeEntryId]);
 
@@ -79,11 +120,11 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
     if (visible) load();
   }, [visible, load]);
 
-  const queueOffline = useCallback(async (note: { body: string; at: string }) => {
+  const queueOffline = useCallback(async (item: PendingItem) => {
     try {
       const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
-      const q = raw ? JSON.parse(raw) : [];
-      q.push(note);
+      const q: PendingItem[] = raw ? JSON.parse(raw) : [];
+      q.push(item);
       await AsyncStorage.setItem(pendingKey(timeEntryId), JSON.stringify(q));
     } catch {
       /* best effort */
@@ -111,8 +152,9 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
         }
       }
     } catch {
-      // Offline: keep the note text so nothing is lost; it flushes on next open.
-      await queueOffline({ body: body || '(photo)', at });
+      // Offline: queue the note AND its photos (local URIs) so both re-upload
+      // on the next flush — nothing is lost.
+      await queueOffline({ id: localId(), body: body || '(photo)', at, photos: picked });
     } finally {
       setDraft('');
       setPicked([]);
