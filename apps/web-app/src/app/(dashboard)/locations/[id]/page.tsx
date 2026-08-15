@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -49,7 +49,9 @@ export default function SpaceSettingsPage() {
     (user as any)?.access?.org?.canManageUsers === true ||
     (user as any)?.access?.perSpace?.[spaceId]?.canManageUsers === true
 
-  const [activeTab, setActiveTab] = useState("general")
+  // Honor ?tab=… so returning from a portal detail lands back on the Portal tab.
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general")
 
   const { data: space, isLoading } = useQuery({
     queryKey: ["location", spaceId],
@@ -191,7 +193,7 @@ export default function SpaceSettingsPage() {
               <WorkflowTab space={space} />
             </TabsContent>
             <TabsContent value="members" className="mt-6">
-              <MembersTab spaceId={spaceId} />
+              <MembersTab spaceId={spaceId} hasApartments={!!space?.enabledModules?.includes("apartments")} />
             </TabsContent>
             <TabsContent value="sharing" className="mt-6">
               <SharingTab spaceId={spaceId} spaceName={space.name} />

@@ -63,7 +63,7 @@ export function PortalTab({ spaceId }: { spaceId: string }) {
           {portals.map((p: PortalSummary) => {
             const meta = BY_KEY[p.templateKey] ?? BY_KEY.custom
             return (
-              <button key={p.id} onClick={() => router.push(`/customer-portal/${p.id}`)}
+              <button key={p.id} onClick={() => router.push(`/locations/${spaceId}/portals/${p.id}`)}
                 className="group rounded-2xl border border-border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                 <div className="flex items-start justify-between gap-3">
                   <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold", portalTile(meta.accent))}>{portalInitials(p.name)}</div>
@@ -85,7 +85,7 @@ export function PortalTab({ spaceId }: { spaceId: string }) {
       )}
 
       <CreatePortalDialog spaceId={spaceId} open={createOpen} onOpenChange={setCreateOpen}
-        onCreated={(id) => { qc.invalidateQueries({ queryKey: ["space-portals", spaceId] }); router.push(`/customer-portal/${id}`) }} />
+        onCreated={(id) => { qc.invalidateQueries({ queryKey: ["space-portals", spaceId] }); router.push(`/locations/${spaceId}/portals/${id}`) }} />
     </div>
   )
 }

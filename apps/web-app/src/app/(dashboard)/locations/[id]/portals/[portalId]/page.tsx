@@ -40,14 +40,19 @@ const PRIORITY_DOT: Record<string, string> = {
 }
 
 export default function PortalDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const params = useParams<{ id: string; portalId: string }>()
+  const spaceId = params.id
+  const portalId = params.portalId
   const qc = useQueryClient()
   const router = useRouter()
   const { t } = useTranslation()
+  // Back button + post-delete return land on THIS space's portal tab (not a
+  // navbar route — the standalone Clients Portals page was removed).
+  const backToSpace = () => router.push(`/locations/${spaceId}?tab=portal`)
 
-  const portalQ = useQuery({ queryKey: ["portal", id], queryFn: () => portalAdminApi.getPortal(String(id)) })
-  const residentsQ = useQuery({ queryKey: ["portalResidents", id], queryFn: () => portalAdminApi.residents(String(id)) })
-  const requestsQ = useQuery({ queryKey: ["portalAllRequests", id], queryFn: () => portalAdminApi.portalRequests(String(id)) })
+  const portalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId) })
+  const residentsQ = useQuery({ queryKey: ["portalResidents", portalId], queryFn: () => portalAdminApi.residents(portalId) })
+  const requestsQ = useQuery({ queryKey: ["portalAllRequests", portalId], queryFn: () => portalAdminApi.portalRequests(portalId) })
   // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
   const spacesQ = useQuery({ queryKey: ["triageSpaces"], queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
   const flowsQ = useQuery({ queryKey: ["triageFlows"], queryFn: () => workflowsApi.list(), staleTime: 60000 })
@@ -56,19 +61,19 @@ export default function PortalDetailPage() {
   const portal = portalQ.data
   const categories = portal?.categories ?? []
   const meta = TPL_BY_KEY[portal?.templateKey ?? ""] ?? TPL_BY_KEY.rental
-  const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, id] })
+  const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, portalId] })
 
   // Switch type / delete portal
   const [typePickerOpen, setTypePickerOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState<string | null>(null)
   const switchM = useMutation({
-    mutationFn: (templateKey: string) => portalAdminApi.updatePortal(String(id), { templateKey, reseed: true }),
+    mutationFn: (templateKey: string) => portalAdminApi.updatePortal(portalId, { templateKey, reseed: true }),
     onSuccess: () => { inv("portal"); setSwitchOpen(null); notify.success(t("portal.switched", "Type switched")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const delPortalM = useMutation({
-    mutationFn: () => portalAdminApi.deletePortal(String(id)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["portals"] }); notify.success(t("portal.deleted", "Portal deleted")); router.push("/customer-portal") },
+    mutationFn: () => portalAdminApi.deletePortal(portalId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["space-portals", spaceId] }); notify.success(t("portal.deleted", "Portal deleted")); backToSpace() },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const [delPortalOpen, setDelPortalOpen] = useState(false)
@@ -83,7 +88,7 @@ export default function PortalDetailPage() {
   const openEditCat = (c: PortalIntakeCategory) => { setCatForm({ label: c.label, icon: c.icon ?? "plus", color: c.color ?? "slate", urgent: c.urgent, team: c.team ?? "", issues: c.issues ?? [] }); setCatEdit(c) }
   const saveCatM = useMutation({
     mutationFn: () => catEdit === "new"
-      ? portalAdminApi.createCategory({ ...catForm, portalId: String(id), key: catForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_") })
+      ? portalAdminApi.createCategory({ ...catForm, portalId, key: catForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_") })
       : portalAdminApi.updateCategory((catEdit as PortalIntakeCategory).id, catForm),
     onSuccess: () => { inv("portal"); setCatEdit(null) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
@@ -113,7 +118,7 @@ export default function PortalDetailPage() {
   const spaceWorkers = spaceMembersQ.data ?? []
   // Changing the space invalidates a previously-picked worker (may not be on the
   // new roster) — clear it so we never submit a cross-space assignee.
-  const setTriageSpace = (spaceId: string) => setTriageForm((f) => ({ ...f, spaceId, assignedToId: "" }))
+  const setTriageSpace = (sid: string) => setTriageForm((f) => ({ ...f, spaceId: sid, assignedToId: "" }))
   const triageM = useMutation({
     mutationFn: () => portalAdminApi.triageRequest(triageReq!.id, {
       spaceId: triageForm.spaceId,
@@ -130,19 +135,19 @@ export default function PortalDetailPage() {
   // Cover image (client-home background)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const uploadCoverM = useMutation({
-    mutationFn: (file: File) => portalAdminApi.uploadCover(String(id), file),
+    mutationFn: (file: File) => portalAdminApi.uploadCover(portalId, file),
     onSuccess: () => { inv("portal"); notify.success(t("portal.coverUpdated", "Cover image updated")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const removeCoverM = useMutation({
-    mutationFn: () => portalAdminApi.removeCover(String(id)),
+    mutationFn: () => portalAdminApi.removeCover(portalId),
     onSuccess: () => { inv("portal"); notify.success(t("portal.coverRemoved", "Cover image removed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
   // Route-to-space link: which space this portal's requests pre-route to.
   const linkSpaceM = useMutation({
-    mutationFn: (spaceId: string | null) => portalAdminApi.updatePortal(String(id), { spaceId }),
+    mutationFn: (sid: string | null) => portalAdminApi.updatePortal(portalId, { spaceId: sid }),
     onSuccess: () => { inv("portal"); notify.success(t("portal.spaceLinked", "Routing updated")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
@@ -154,7 +159,7 @@ export default function PortalDetailPage() {
   const [copied, setCopied] = useState(false)
   const resetInvite = () => { setInviteOpen(false); setCode(null); setRes({ name: "", email: "", unitName: "", unitAddress: "" }) }
   const inviteM = useMutation({
-    mutationFn: () => portalAdminApi.inviteResident(String(id), { name: res.name.trim() || undefined, email: res.email.trim() || undefined, unitName: res.unitName.trim(), unitAddress: res.unitAddress.trim() || undefined }),
+    mutationFn: () => portalAdminApi.inviteResident(portalId, { name: res.name.trim() || undefined, email: res.email.trim() || undefined, unitName: res.unitName.trim(), unitAddress: res.unitAddress.trim() || undefined }),
     onSuccess: (r) => { setCode(r.code ?? null); inv("portalResidents"); notify.success(t("portal.inviteCreated", "Invitation created")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
@@ -166,8 +171,8 @@ export default function PortalDetailPage() {
   return (
     <div className="min-h-full bg-background">
       <div className="max-w-screen-lg mx-auto px-6 py-8">
-        <Button variant="ghost" size="sm" className="mb-4 -ml-2 gap-1.5 text-muted-foreground" onClick={() => router.push("/customer-portal")}>
-          <ArrowLeft className="h-4 w-4" />{t("portal.pageTitle", "Clients Portals")}
+        <Button variant="ghost" size="sm" className="mb-4 -ml-2 gap-1.5 text-muted-foreground" onClick={backToSpace}>
+          <ArrowLeft className="h-4 w-4" />{t("portal.title", "Client portals")}
         </Button>
 
         {/* Header */}

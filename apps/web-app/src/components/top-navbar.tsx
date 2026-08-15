@@ -11,7 +11,6 @@ import {
   LogOut,
   Settings,
   BarChart3,
-  Building2,
   Shield,
   FileText,
   CreditCard,
@@ -139,7 +138,6 @@ export function TopNavbar() {
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
-  const showCustomers = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher/manager
   // Invoices: admins bill their customers. Shown for admins regardless of tier —
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.
@@ -180,7 +178,6 @@ export function TopNavbar() {
         showAttendance={showAttendance}
         showReports={showReports}
         showInvoices={showInvoices}
-        showCustomers={showCustomers}
         showMyTimeOff={showMyTimeOff}
         showMyAttendance={showMyAttendance}
         showManage={showManage}
@@ -250,22 +247,8 @@ export function TopNavbar() {
         )}
 
         {/* B2B "Customers" directory retired — a customer is now a Space of kind
-            CUSTOMER (see Spaces). Clients Portals (B2C) stays below. */}
-
-        {/* Customer Portal (B2C) */}
-        {showCustomers && (
-          <Link
-            href="/customer-portal"
-            className={cn(
-              navItemBase,
-              isActive(pathname, "/customer-portal")
-                ? cn(navItemActiveStyle, bottomIndicator)
-                : navItemInactive,
-            )}
-          >
-            {t("nav.customerPortal", "Clients Portals")}
-          </Link>
-        )}
+            CUSTOMER (see Spaces). Client portals are managed per-space (Spaces →
+            a space → Client portal tab), so there's no top-level nav item. */}
 
         {/* Ledger — Reports + Invoices grouped. Reports = analytics/builder;
             Invoices = customer billing (enforces Professional+ tier on its page).
@@ -511,7 +494,6 @@ function MobileMenu({
   showAttendance,
   showReports,
   showInvoices,
-  showCustomers,
   showMyTimeOff,
   showMyAttendance,
   showManage,
@@ -523,7 +505,6 @@ function MobileMenu({
   showAttendance: boolean
   showReports: boolean
   showInvoices: boolean
-  showCustomers: boolean
   showMyTimeOff: boolean
   showMyAttendance: boolean
   showManage: boolean
@@ -682,16 +663,8 @@ function MobileMenu({
             </Link>
           </DropdownMenuItem>
         )}
-        {/* B2B "Customers" directory retired → a customer is now a Space (kind CUSTOMER). */}
-        {showCustomers && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/customer-portal" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/customer-portal") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <Building2 className="h-4 w-4" />
-              {t("nav.customerPortal", "Clients Portals")}
-            </Link>
-          </DropdownMenuItem>
-        )}
+        {/* B2B "Customers" directory retired → a customer is now a Space (kind
+            CUSTOMER); client portals are managed per-space (no top-level item). */}
         {showReports && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
             <Link href="/reports" onClick={() => setOpen(false)}
