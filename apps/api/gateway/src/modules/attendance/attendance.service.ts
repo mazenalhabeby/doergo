@@ -31,6 +31,15 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_attendance_history' }, data);
   }
 
+  // ── Session work-log ("what I did today") ──────────────────────────────────
+  worklogAddNote(data: any) { return this.send({ cmd: 'worklog_add_note' }, data); }
+  worklogAddNotesBatch(data: any) { return this.send({ cmd: 'worklog_add_notes_batch' }, data); }
+  worklogList(data: any) { return this.send({ cmd: 'worklog_list' }, data); }
+  worklogDeleteNote(data: any) { return this.send({ cmd: 'worklog_delete_note' }, data); }
+  worklogPresignAttachment(data: any) { return this.send({ cmd: 'worklog_presign_attachment' }, data); }
+  worklogConfirmAttachment(data: any) { return this.send({ cmd: 'worklog_confirm_attachment' }, data); }
+  worklogDeleteAttachment(data: any) { return this.send({ cmd: 'worklog_delete_attachment' }, data); }
+
   /**
    * Get time entries for a location (admin view)
    */

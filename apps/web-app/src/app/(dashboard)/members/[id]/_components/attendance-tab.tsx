@@ -1,11 +1,14 @@
 "use client"
 
-import { Clock } from "lucide-react"
+import { Fragment, useState } from "react"
+import { Clock, ChevronRight, ListChecks } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { type TimeEntry } from "@/lib/api"
 import { AddAttendanceDialog } from "./add-attendance-dialog"
+import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTimeFormat } from "@/hooks"
+import { cn } from "@/lib/utils"
 import { countryFromTz } from "@hbcfield/shared/client"
 
 interface AttendanceTabProps {
@@ -26,6 +29,7 @@ export function AttendanceTab({
 }: AttendanceTabProps) {
   const { t } = useTranslation()
   const { formatTime, formatDate, locale } = useTimeFormat()
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
@@ -75,6 +79,9 @@ export function AttendanceTab({
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t('technicians.attendanceTab.statusColumn')}
                 </th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('worklog.column', 'Work log')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -85,10 +92,12 @@ export function AttendanceTab({
                 const statusLabel = entry.clockInWithinGeofence
                   ? t('technicians.attendanceTab.inZone')
                   : t('technicians.attendanceTab.outOfZone')
+                const isOpen = expanded === entry.id
                 return (
+                  <Fragment key={entry.id}>
                   <tr
-                    key={entry.id}
-                    className="border-b border-border/60 last:border-0 hover:bg-accent/40 transition-colors"
+                    onClick={() => setExpanded(isOpen ? null : entry.id)}
+                    className="cursor-pointer border-b border-border/60 hover:bg-accent/40 transition-colors"
                   >
                     <td className="px-5 py-3 text-foreground">
                       {formatDate(entry.clockInAt, tz)}
@@ -124,7 +133,21 @@ export function AttendanceTab({
                         {statusLabel}
                       </span>
                     </td>
+                    <td className="px-5 py-3">
+                      <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
+                    </td>
                   </tr>
+                  {isOpen && (
+                    <tr className="border-b border-border/60 bg-muted/20">
+                      <td colSpan={7} className="px-5 py-4">
+                        <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "What they did (work log)")}
+                        </div>
+                        <WorkLogTimeline entryId={entry.id} editable={canManage} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 )
               })}
             </tbody>

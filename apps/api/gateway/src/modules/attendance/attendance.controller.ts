@@ -76,6 +76,82 @@ export class AttendanceController {
     });
   }
 
+  // ── Session work-log ("what I did today") ──────────────────────────────────
+  // Ownership is enforced in the service (a member manages their OWN session's
+  // log; managers with canManage may view/manage any session in their org).
+  private canManage(req: any): boolean {
+    return !!(req.user?.canManageUsers || req.user?.canViewAllTasks);
+  }
+
+  @Post('entries/:entryId/worklog')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Add a work-log note to an attendance session' })
+  async worklogAdd(@Param('entryId') entryId: string, @Body() body: { body: string; at?: string; taskId?: string }, @Request() req: any) {
+    return this.attendanceService.worklogAddNote({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      timeEntryId: entryId, body: body?.body, at: body?.at, taskId: body?.taskId,
+    });
+  }
+
+  @Post('entries/:entryId/worklog/batch')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Batch-add work-log notes (offline flush)' })
+  async worklogBatch(@Param('entryId') entryId: string, @Body() body: { notes: any[] }, @Request() req: any) {
+    return this.attendanceService.worklogAddNotesBatch({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      timeEntryId: entryId, notes: body?.notes ?? [],
+    });
+  }
+
+  @Get('entries/:entryId/worklog')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: "An attendance session's work-log (notes + photos)" })
+  async worklogList(@Param('entryId') entryId: string, @Request() req: any) {
+    return this.attendanceService.worklogList({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      timeEntryId: entryId,
+    });
+  }
+
+  @Delete('worklog/:noteId')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Delete a work-log note' })
+  async worklogDelete(@Param('noteId') noteId: string, @Request() req: any) {
+    return this.attendanceService.worklogDeleteNote({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), noteId,
+    });
+  }
+
+  @Post('worklog/:noteId/attachments/presign')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Presigned upload URL for a work-log photo/file' })
+  async worklogPresign(@Param('noteId') noteId: string, @Body() body: { fileName: string; mimeType: string }, @Request() req: any) {
+    return this.attendanceService.worklogPresignAttachment({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      noteId, fileName: body?.fileName, mimeType: body?.mimeType,
+    });
+  }
+
+  @Post('worklog/:noteId/attachments')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Confirm a work-log photo/file upload' })
+  async worklogConfirm(@Param('noteId') noteId: string, @Body() body: any, @Request() req: any) {
+    return this.attendanceService.worklogConfirmAttachment({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      noteId, fileKey: body?.fileKey, fileUrl: body?.fileUrl, fileName: body?.fileName,
+      fileSize: body?.fileSize, mimeType: body?.mimeType, width: body?.width, height: body?.height,
+    });
+  }
+
+  @Delete('worklog/attachments/:attachmentId')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Delete a work-log attachment' })
+  async worklogDeleteAttachment(@Param('attachmentId') attachmentId: string, @Request() req: any) {
+    return this.attendanceService.worklogDeleteAttachment({
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), attachmentId,
+    });
+  }
+
   @Get('history')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get own attendance history' })

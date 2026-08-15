@@ -1176,6 +1176,50 @@ export const taskAttachmentsApi = {
   },
 };
 
+// ── Session work-log ("what I did today") ──────────────────────────────────
+export interface WorkLogAttachment {
+  id: string; fileKey: string; fileUrl: string; url?: string; fileName: string;
+  fileSize: number; mimeType: string; width?: number | null; height?: number | null; createdAt: string;
+}
+export interface WorkLogNote {
+  id: string; timeEntryId: string; userId: string; body: string; at: string; taskId?: string | null;
+  attachments: WorkLogAttachment[]; createdAt: string;
+}
+
+export const worklogApi = {
+  list: async (entryId: string): Promise<WorkLogNote[]> => {
+    const res = await api.get<{ data: WorkLogNote[] }>(`/attendance/entries/${entryId}/worklog`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  addNote: async (entryId: string, input: { body: string; at?: string; taskId?: string }): Promise<WorkLogNote> => {
+    const res = await api.post<{ data: WorkLogNote }>(`/attendance/entries/${entryId}/worklog`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  deleteNote: async (noteId: string) => {
+    const res = await api.delete<{ data: { success: boolean } }>(`/attendance/worklog/${noteId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  presignAttachment: async (noteId: string, fileName: string, mimeType: string) => {
+    const res = await api.post<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>(
+      `/attendance/worklog/${noteId}/attachments/presign`, { fileName, mimeType });
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  confirmAttachment: async (noteId: string, data: { fileKey: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number }): Promise<WorkLogAttachment> => {
+    const res = await api.post<{ data: WorkLogAttachment }>(`/attendance/worklog/${noteId}/attachments`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data!.data;
+  },
+  deleteAttachment: async (attachmentId: string) => {
+    const res = await api.delete<{ data: { success: boolean } }>(`/attendance/worklog/attachments/${attachmentId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+};
+
 // Upload file to S3 presigned URL (browser)
 export function uploadToS3(
   url: string,

@@ -31,6 +31,7 @@ import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.
 import { SupportModule } from './modules/support/support.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { WorklogModule } from './modules/worklog/worklog.module';
 import { RetentionService } from './common/retention/retention.service';
 
 @Module({
@@ -86,6 +87,7 @@ import { RetentionService } from './common/retention/retention.service';
     SupportModule,
     ChatModule,
     AnalyticsModule,
+    WorklogModule,
   ],
   providers: [RetentionService],
 })

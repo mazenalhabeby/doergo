@@ -1772,6 +1772,9 @@ model TimeEntry {
   // Geofence "out of ring" excursions during this session
   geofenceExcursions GeofenceExcursion[]
 
+  // Timestamped work-log ("what I did today") captured during the shift.
+  workLog TimeEntryNote[]
+
   @@index([userId, clockInAt])
   @@index([locationId])
   @@index([locationId, clockInAt]) // per-location attendance by day
@@ -1785,6 +1788,54 @@ model TimeEntry {
   @@index([organizationId, reminderState]) // pending extra-time lookups per org
   @@index([organizationId, approvalStatus, clockInAt]) // approval queue (P3): pending, newest-first
   @@map("time_entries")
+}
+
+/// A timestamped work-log entry a member adds DURING a clock-in session
+/// ("11:00 finished with the computer"). These compose the "what I did today"
+/// report at clock-out. `userId` = the session's worker (the log belongs to them).
+model TimeEntryNote {
+  id          String    @id @default(cuid())
+  timeEntryId String
+  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+
+  userId         String // the worker whose session this is
+  organizationId String
+
+  body   String // the note text
+  at     DateTime @default(now()) // when the work happened (device time / now)
+  taskId String? // optional link to a task (fk-less; validated in the service)
+
+  attachments TimeEntryNoteAttachment[]
+
+  createdAt DateTime @default(now())
+
+  @@index([timeEntryId, at])
+  @@index([organizationId])
+  @@map("time_entry_notes")
+}
+
+/// A photo/file attached to a work-log note. Stored on S3 (Hetzner) under
+/// {orgId}/attendance/{YYYY}/{MM}/{DD}/{userId}/{timeEntryId}/{uuid}.{ext};
+/// the DB holds only the key + metadata (no blobs).
+model TimeEntryNoteAttachment {
+  id     String        @id @default(cuid())
+  noteId String
+  note   TimeEntryNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  organizationId String
+
+  fileKey  String // S3 object key
+  fileUrl  String // {endpoint}/{bucket}/{fileKey}
+  fileName String // original filename (display)
+  fileSize Int
+  mimeType String
+  width    Int?
+  height   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([noteId])
+  @@map("time_entry_note_attachments")
 }
 
 // One "left the ring" episode for a single clock-in session. The heartbeat drives

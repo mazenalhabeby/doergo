@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat } from "@/hooks"
 import { toast } from "sonner"
-import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home } from "lucide-react"
+import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home, ListChecks } from "lucide-react"
+import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
 import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
@@ -211,6 +212,17 @@ export default function MyAttendancePage() {
           <p className="mt-2 text-lg font-semibold text-foreground">{totalH}h {totalM}m</p>
         </div>
       </div>
+
+      {/* Active-session work log — jot down what you do; becomes the clock-out summary. */}
+      {clockedIn && activeEntry?.id && (
+        <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+          <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <ListChecks className="h-4 w-4 text-primary" /> {t("worklog.myTitle", "What I'm doing today")}
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">{t("worklog.myHint", "Note what you finish through the shift (add a photo if useful) — it becomes your clock-out summary.")}</p>
+          <WorkLogTimeline entryId={activeEntry.id} editable />
+        </div>
+      )}
 
       {/* History */}
       <h2 data-tour="my-attn-history" className="text-sm font-semibold text-foreground mb-3">{t("attendance.my.recentEntries")}</h2>
