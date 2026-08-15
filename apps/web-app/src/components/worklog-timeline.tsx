@@ -21,7 +21,7 @@ const MAX_FILES = 5
  * composer (own active session / manager) that creates the note then uploads
  * each photo direct to S3 (presign → PUT → confirm).
  */
-export function WorkLogTimeline({ entryId, editable }: { entryId: string; editable?: boolean }) {
+export function WorkLogTimeline({ entryId, editable, memberName }: { entryId: string; editable?: boolean; memberName?: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: ["worklog", entryId], queryFn: () => worklogApi.list(entryId) })
@@ -120,7 +120,10 @@ export function WorkLogTimeline({ entryId, editable }: { entryId: string; editab
       {editable && (
         <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-2.5">
           <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={2}
-            placeholder={t("worklog.placeholder", "What did you just do? e.g. finished with the machine")} className="resize-none bg-background" />
+            placeholder={memberName
+              ? t("worklog.placeholderFor", { name: memberName, defaultValue: "What did {{name}} do? e.g. finished with the machine" })
+              : t("worklog.placeholder", "What did you just do? e.g. finished with the machine")}
+            className="resize-none bg-background" />
           {files.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {files.map((f, i) => (

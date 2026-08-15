@@ -144,7 +144,7 @@ export function AttendanceTab({
                           <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "Activity — what they did")}
                         </div>
                         {/* Managers/admins responsible for this member can add & edit their activity. */}
-                        <WorkLogTimeline entryId={entry.id} editable={canManage} />
+                        <WorkLogTimeline entryId={entry.id} editable={canManage} memberName={employeeName} />
                       </td>
                     </tr>
                   )}

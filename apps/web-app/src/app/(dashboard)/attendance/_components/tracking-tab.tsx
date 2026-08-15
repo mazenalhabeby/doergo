@@ -540,7 +540,7 @@ export function TrackingTab({
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>
                           {/* Managers/admins can add & edit a member's activity (with photos). */}
-                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} />
+                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} memberName={`${entry.user?.firstName ?? ""} ${entry.user?.lastName ?? ""}`.trim() || undefined} />
                         </TableCell>
                       </TableRow>
                     )}
