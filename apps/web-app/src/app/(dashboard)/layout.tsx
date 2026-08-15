@@ -20,6 +20,8 @@ import { TokenDebugPanel } from '@/components/token-debug';
 import { useRealtimeSync } from '@/hooks/use-realtime-sync';
 import { ChatProvider } from '@/components/chat/chat-drawer';
 import { TourProvider } from '@/components/tour';
+import { MobileAppInterstitial } from '@/components/mobile-app-interstitial';
+import { StoreBadges } from '@/app/_home/StoreBadges';
 import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
@@ -116,6 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <p className="max-w-sm text-sm text-muted-foreground">
           {t('common.mobileOnlyAccountBody')}
         </p>
+        <StoreBadges size="sm" className="mt-2 justify-center" />
         <Button variant="outline" className="mt-2" onClick={() => logout()}>
           <LogOut className="mr-2 h-4 w-4" />
           {t('nav.userMenu.signOut')}
@@ -146,6 +149,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <CommandPalette />
+      {/* Nudge phone users toward the native app (dismissible, remembered). */}
+      <MobileAppInterstitial />
       {/* Debug-only token countdown — hidden everywhere by default; opt in with
           NEXT_PUBLIC_SHOW_TOKEN_MONITOR=true (dev or prod). */}
       {process.env.NEXT_PUBLIC_SHOW_TOKEN_MONITOR === 'true' && <TokenDebugPanel />}
