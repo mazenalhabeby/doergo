@@ -263,7 +263,7 @@ function OvertimePageInner() {
 
         {/* Approve Dialog */}
         <Dialog open={!!approveTarget} onOpenChange={(open) => { if (!open) setApproveTarget(null) }}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>{t("overtime.approveTitle")}</DialogTitle>
               <DialogDescription>
@@ -325,7 +325,7 @@ function OvertimePageInner() {
 
         {/* Reject Dialog */}
         <Dialog open={!!rejectTarget} onOpenChange={(open) => { if (!open) setRejectTarget(null) }}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>{t("overtime.rejectTitle")}</DialogTitle>
               <DialogDescription>

@@ -10,30 +10,20 @@ import { cn } from "@/lib/utils"
  */
 export type SectionAccent = "primary" | "blue" | "indigo" | "violet" | "emerald" | "amber" | "sky"
 
-const ACCENT_CHIP: Record<SectionAccent, string> = {
-  primary: "bg-primary/10 text-primary",
-  blue: "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-300",
-  indigo: "bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300",
-  violet: "bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300",
-  emerald: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300",
-  amber: "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-300",
-  sky: "bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-300",
-}
-
 /**
- * Consistent section header used across every space-settings tab: a colored
- * icon chip + title + one-line muted description, with an optional trailing
- * slot (usually the primary "New …" action).
+ * Consistent section header used across every space-settings tab: title +
+ * one-line muted description, with an optional trailing slot (usually the
+ * primary "New …" action). No icon chip — the section headers stay flat to
+ * match the rest of the page. `icon`/`accent` are accepted but ignored (kept so
+ * existing call sites don't need touching).
  */
 export function SectionHeader({
-  icon: Icon,
   title,
   description,
-  accent = "primary",
   action,
   className,
 }: {
-  icon: LucideIcon
+  icon?: LucideIcon
   title: string
   description?: string
   accent?: SectionAccent
@@ -42,14 +32,9 @@ export function SectionHeader({
 }) {
   return (
     <div className={cn("flex items-start justify-between gap-4", className)}>
-      <div className="flex items-start gap-3 min-w-0">
-        <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", ACCENT_CHIP[accent])}>
-          <Icon className="h-[18px] w-[18px]" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-foreground leading-tight">{title}</h2>
-          {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
-        </div>
+      <div className="min-w-0">
+        <h2 className="text-base font-semibold text-foreground leading-tight">{title}</h2>
+        {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

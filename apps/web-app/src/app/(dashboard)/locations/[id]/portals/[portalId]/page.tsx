@@ -4,10 +4,11 @@ import { useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat, Upload, ImageIcon } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat, Upload, ImageIcon, Building2 } from "lucide-react"
 
 import { portalAdminApi, locationsApi, workflowsApi, spaceMembersApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ApartmentDialog } from "../../_components/apartment-dialog"
+import { CustomerForm } from "../../_components/customers-tab"
 
 const TEMPLATES = [
   { key: "rental", label: "Rental / Property", badge: "Rental", accent: "emerald" },
@@ -49,6 +52,9 @@ export default function PortalDetailPage() {
   // Back button + post-delete return land on THIS space's portal tab (not a
   // navbar route — the standalone Clients Portals page was removed).
   const backToSpace = () => router.push(`/locations/${spaceId}?tab=portal`)
+  // The Apartment (rental) entity needs the space's Apartments module.
+  const { hasModule } = useSpaceModules(spaceId)
+  const spaceHasApartments = hasModule("apartments")
 
   const portalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId) })
   const residentsQ = useQuery({ queryKey: ["portalResidents", portalId], queryFn: () => portalAdminApi.residents(portalId) })
@@ -58,6 +64,9 @@ export default function PortalDetailPage() {
   const flowsQ = useQuery({ queryKey: ["triageFlows"], queryFn: () => workflowsApi.list(), staleTime: 60000 })
   const spaces = spacesQ.data?.data ?? []
   const flows = flowsQ.data ?? []
+  // This portal belongs to the space in the URL (the list that led here is
+  // filtered by it), so requests route here — no cross-space re-pointing.
+  const ownerSpaceName = spaces.find((s) => s.id === spaceId)?.name
   const portal = portalQ.data
   const categories = portal?.categories ?? []
   const meta = TPL_BY_KEY[portal?.templateKey ?? ""] ?? TPL_BY_KEY.rental
@@ -145,22 +154,34 @@ export default function PortalDetailPage() {
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
-  // Route-to-space link: which space this portal's requests pre-route to.
-  const linkSpaceM = useMutation({
-    mutationFn: (sid: string | null) => portalAdminApi.updatePortal(portalId, { spaceId: sid }),
-    onSuccess: () => { inv("portal"); notify.success(t("portal.spaceLinked", "Routing updated")) },
+  // Remove a client from the portal (revoke access + detach)
+  const [clientToRemove, setClientToRemove] = useState<Customer | null>(null)
+  const removeClientM = useMutation({
+    mutationFn: (cid: string) => portalAdminApi.removeResident(cid),
+    onSuccess: () => { inv("portalResidents"); setClientToRemove(null); notify.success(t("portal.clientRemoved", "Client removed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
-  // Invite client
+  // Invite client — pick an existing customer + apartment, or create either using
+  // the SAME models (CustomerForm / ApartmentDialog) so nothing is re-implemented.
   const [inviteOpen, setInviteOpen] = useState(false)
-  const [res, setRes] = useState({ name: "", email: "", unitName: "", unitAddress: "" })
+  const [unitChoice, setUnitChoice] = useState("")
+  const [customerChoice, setCustomerChoice] = useState("")
   const [code, setCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const resetInvite = () => { setInviteOpen(false); setCode(null); setRes({ name: "", email: "", unitName: "", unitAddress: "" }) }
+  const availUnitsQ = useQuery({ queryKey: ["portal-available-units", portalId], queryFn: () => portalAdminApi.availableUnits(portalId), enabled: inviteOpen })
+  const availUnits = availUnitsQ.data ?? []
+  const availCustomersQ = useQuery({ queryKey: ["portal-available-customers", portalId], queryFn: () => portalAdminApi.availableCustomers(portalId), enabled: inviteOpen })
+  const availCustomers = availCustomersQ.data ?? []
+  const resetInvite = () => { setInviteOpen(false); setCode(null); setUnitChoice(""); setCustomerChoice("") }
   const inviteM = useMutation({
-    mutationFn: () => portalAdminApi.inviteResident(portalId, { name: res.name.trim() || undefined, email: res.email.trim() || undefined, unitName: res.unitName.trim(), unitAddress: res.unitAddress.trim() || undefined }),
-    onSuccess: (r) => { setCode(r.code ?? null); inv("portalResidents"); notify.success(t("portal.inviteCreated", "Invitation created")) },
+    mutationFn: () => portalAdminApi.inviteResident(portalId, { customerId: customerChoice, unitId: unitChoice }),
+    onSuccess: (r) => {
+      setCode(r.code ?? null); inv("portalResidents")
+      qc.invalidateQueries({ queryKey: ["portal-available-units", portalId] })
+      qc.invalidateQueries({ queryKey: ["portal-available-customers", portalId] })
+      notify.success(t("portal.inviteCreated", "Invitation created"))
+    },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -238,23 +259,17 @@ export default function PortalDetailPage() {
           <p className="mt-1.5 text-xs text-muted-foreground">{t("portal.coverHint", "Shown as the background on the client's home screen. Landscape works best.")}</p>
         </div>
 
-        {/* Routing — the space this portal's requests pre-route to */}
-        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">{t("portal.routingTitle", "Routes to space")}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t("portal.routingHint", "New requests pre-route to this space (inheriting its flow). Leave unset to pick the space manually per request.")}</p>
-            </div>
-            <select
-              value={portal?.spaceId ?? ""}
-              disabled={linkSpaceM.isPending}
-              onChange={(e) => linkSpaceM.mutate(e.target.value || null)}
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm min-w-[220px]"
-            >
-              <option value="">{t("portal.routingNone", "Manual triage (no space)")}</option>
-              {spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
+        {/* This portal belongs to its space — requests route here automatically
+            (inheriting the space's flow). No cross-space re-pointing. */}
+        <div className="mb-6 flex items-center gap-2.5 rounded-2xl border border-border bg-muted/30 px-4 py-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Building2 className="h-4 w-4" />
+          </span>
+          <p className="min-w-0 text-sm text-muted-foreground">
+            {t("portal.routesToThisSpace", "Requests route to")}{" "}
+            <span className="font-medium text-foreground">{ownerSpaceName || t("portal.thisSpace", "this space")}</span>
+            {" "}{t("portal.andItsFlow", "and inherit its workflow.")}
+          </p>
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
@@ -309,11 +324,20 @@ export default function PortalDetailPage() {
               ) : (
                 <div className="divide-y divide-border/60">
                   {residentsQ.data!.map((r: Customer) => (
-                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => router.push(`/customers/${r.id}`)}>
-                      <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{initials(r.name)}</div>
-                      <div className="min-w-0 flex-1"><p className="text-sm font-medium text-foreground truncate">{r.name}</p>{r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}</div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </button>
+                    <div key={r.id} className="group flex items-center gap-2 px-5 py-3.5 hover:bg-accent/30 transition-colors">
+                      <button className="flex min-w-0 flex-1 items-center gap-4 text-left" onClick={() => router.push(`/customers/${r.id}`)}>
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{initials(r.name)}</div>
+                        <div className="min-w-0 flex-1"><p className="text-sm font-medium text-foreground truncate">{r.name}</p>{r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}</div>
+                      </button>
+                      <button
+                        onClick={() => setClientToRemove(r)}
+                        aria-label={t("portal.removeClient", "Remove client")}
+                        className="shrink-0 rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+                    </div>
                   ))}
                 </div>
               )}
@@ -383,25 +407,29 @@ export default function PortalDetailPage() {
       {/* Change type picker — shows the current type; picking another flows into
           the reseed confirm below. */}
       <Dialog open={typePickerOpen} onOpenChange={setTypePickerOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader><DialogTitle>{t("portal.changeType", "Change type")}</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             {TEMPLATES.map((x) => {
               const isCurrent = x.key === meta.key
+              const locked = x.key === "rental" && !spaceHasApartments && !isCurrent
               return (
                 <button
                   key={x.key}
-                  disabled={isCurrent}
+                  disabled={isCurrent || locked}
                   onClick={() => { setTypePickerOpen(false); setSwitchOpen(x.key) }}
-                  className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent ? "border-primary/40 bg-primary/5 cursor-default" : "border-border hover:bg-accent/40"}`}
+                  className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent ? "border-primary/40 bg-primary/5 cursor-default" : locked ? "cursor-not-allowed border-border opacity-60" : "border-border hover:bg-accent/40"}`}
                 >
                   <span className="flex items-center gap-2.5 min-w-0">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(x.accent)}`}>{x.badge}</span>
-                    <span className="text-sm text-foreground truncate">{x.label}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm text-foreground truncate">{x.label}</span>
+                      {locked && <span className="block text-[11px] text-muted-foreground">{t("portal.apartmentModuleRequired", "Enable the Apartments module for this space to use this type.")}</span>}
+                    </span>
                   </span>
                   {isCurrent
                     ? <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"><Check className="h-3.5 w-3.5" />{t("portal.currentType", "Current")}</span>
-                    : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                    : !locked && <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                 </button>
               )
             })}
@@ -448,7 +476,7 @@ export default function PortalDetailPage() {
 
       {/* Category add/edit */}
       <Dialog open={!!catEdit} onOpenChange={(o) => !o && setCatEdit(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader><DialogTitle>{catEdit === "new" ? t("portal.addCategory", "Add category") : t("portal.editCategory", "Edit category")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>{t("portal.catLabel", "Label")}</Label><Input value={catForm.label} onChange={(e) => setCatForm({ ...catForm, label: e.target.value })} placeholder="Air Conditioning" /></div>
@@ -473,7 +501,7 @@ export default function PortalDetailPage() {
 
       {/* Triage a pending request → live task */}
       <Dialog open={!!triageReq} onOpenChange={(o) => !o && setTriageReq(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("portal.triageTitle", "Route request")}</DialogTitle>
             <DialogDescription>{t("portal.triageHint", "Send this request into a space and choose how it should flow, then assign a worker.")}</DialogDescription>
@@ -530,9 +558,25 @@ export default function PortalDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Remove client from the portal */}
+      <AlertDialog open={!!clientToRemove} onOpenChange={(o) => !o && setClientToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("portal.removeClientTitle", "Remove {{name}} from this portal?", { name: clientToRemove?.name })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("portal.removeClientWarn", "They immediately lose app access and are detached from this portal (any apartment they held is freed). Their record and history are kept — you can invite them again later.")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeClientM.isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={(e) => { e.preventDefault(); if (clientToRemove) removeClientM.mutate(clientToRemove.id) }} disabled={removeClientM.isPending}>
+              {removeClientM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t("portal.removeClientConfirm", "Remove client")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Invite client */}
       <Dialog open={inviteOpen} onOpenChange={(o) => { if (!o) resetInvite() }}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader><DialogTitle>{t("portal.inviteResident", "Invite client")}</DialogTitle></DialogHeader>
           {code ? (
             <div className="text-center py-4">
@@ -544,19 +588,72 @@ export default function PortalDetailPage() {
               <p className="text-xs text-muted-foreground mt-3">{t("portal.codeHint", "In the app: register → Use Invitation → enter this code.")}</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">{t("portal.inviteHint", "Just set the {{entity}} and share the code — the client fills in their own name when they register.", { entity: (portal?.entityLabel || "unit").toLowerCase() })}</p>
-              <div><Label>{t("portal.resUnit", "{{entity}} / reference", { entity: portal?.entityLabel || "Unit" })}</Label><Input value={res.unitName} onChange={(e) => setRes({ ...res, unitName: e.target.value })} placeholder="Apartment 12A" /></div>
-              <div><Label>{t("portal.resAddress", "Address (optional)")}</Label><Input value={res.unitAddress} onChange={(e) => setRes({ ...res, unitAddress: e.target.value })} placeholder="Landstraße 24, 4020 Linz" /></div>
-              <div><Label>{t("portal.resNameOpt", "Client name (optional)")}</Label><Input value={res.name} onChange={(e) => setRes({ ...res, name: e.target.value })} placeholder={t("portal.resNamePlaceholder", "Leave blank — they set it on sign-up")} /></div>
-              <div><Label>{t("portal.resEmail", "Email (optional)")}</Label><Input value={res.email} onChange={(e) => setRes({ ...res, email: e.target.value })} placeholder="maria.gruber@gmail.com" /></div>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">{t("portal.inviteHint2", "Pick the client and their {{entity}} — or create either — then share the code. The client sets their own name on sign-up.", { entity: (portal?.entityLabel || "unit").toLowerCase() })}</p>
+
+              {/* Client — pick an existing CRM customer, or create one with the
+                  same customer model (＋ New). */}
+              <div className="space-y-1.5">
+                <Label>{t("portal.pickCustomer", "Client")}</Label>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={customerChoice}
+                    onChange={(e) => setCustomerChoice(e.target.value)}
+                    className="h-10 flex-1 rounded-md border border-border bg-background px-3 text-sm"
+                  >
+                    <option value="">{t("portal.pickCustomerPh", "Choose a customer…")}</option>
+                    {availCustomers.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}{c.email ? ` · ${c.email}` : ""}</option>
+                    ))}
+                  </select>
+                  <CustomerForm
+                    spaceId={portal?.spaceId ?? undefined}
+                    personOnly
+                    onSaved={(c) => { availCustomersQ.refetch(); if (c) setCustomerChoice(c.id) }}
+                    trigger={<Button type="button" variant="outline" className="shrink-0 gap-1.5"><Plus className="h-4 w-4" />{t("portal.newShort", "New")}</Button>}
+                  />
+                </div>
+              </div>
+
+              {/* Entity (apartment / order / workspace…) — pick a vacant one (with
+                  its location), or create one with the same model, minus the
+                  Resident picker (＋ New). Copy follows the portal's entity label. */}
+              <div className="space-y-1.5">
+                <Label>{portal?.entityLabel || t("portal.pickApartment", "Apartment")}</Label>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={unitChoice}
+                    onChange={(e) => setUnitChoice(e.target.value)}
+                    className="h-10 flex-1 rounded-md border border-border bg-background px-3 text-sm"
+                  >
+                    <option value="">{t("portal.pickEntityPh", "Choose an available {{entity}}…", { entity: (portal?.entityLabel || "unit").toLowerCase() })}</option>
+                    {availUnits.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}{u.address ? ` · ${u.address}` : ""}</option>
+                    ))}
+                  </select>
+                  {portal?.spaceId && (
+                    <ApartmentDialog
+                      spaceId={portal.spaceId}
+                      hideResident
+                      entityLabel={portal?.entityLabel || undefined}
+                      onSaved={(u) => { availUnitsQ.refetch(); if (u) setUnitChoice(u.id) }}
+                      trigger={<Button type="button" variant="outline" className="shrink-0 gap-1.5"><Plus className="h-4 w-4" />{t("portal.newShort", "New")}</Button>}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
             {code ? <Button onClick={resetInvite}>{t("common.done", "Done")}</Button> : (
               <>
                 <Button variant="ghost" onClick={() => setInviteOpen(false)}>{t("common.cancel", "Cancel")}</Button>
-                <Button disabled={!res.unitName.trim() || inviteM.isPending} onClick={() => inviteM.mutate()}>{t("portal.createInvite", "Create invite")}</Button>
+                <Button
+                  disabled={inviteM.isPending || !customerChoice || !unitChoice}
+                  onClick={() => inviteM.mutate()}
+                >
+                  {t("portal.createInvite", "Create invite")}
+                </Button>
               </>
             )}
           </DialogFooter>

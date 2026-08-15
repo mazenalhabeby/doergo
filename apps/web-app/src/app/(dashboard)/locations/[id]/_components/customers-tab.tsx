@@ -114,12 +114,14 @@ export function CustomersTab({ space }: { space: CompanyLocation }) {
 }
 
 // Add / edit dialog — exported for reuse on the full customer record page.
-export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
-  spaceId?: string; existing?: Customer; onSaved: () => void; trigger: React.ReactNode
+export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }: {
+  // personOnly = hide the Person/Company toggle and lock to Person (e.g. a
+  // portal client / apartment resident is always a person).
+  spaceId?: string; existing?: Customer; onSaved: (customer?: Customer) => void; trigger: React.ReactNode; personOnly?: boolean
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<"PERSON" | "COMPANY">((existing?.type as any) === "COMPANY" ? "COMPANY" : "PERSON")
+  const [type, setType] = useState<"PERSON" | "COMPANY">(personOnly ? "PERSON" : ((existing?.type as any) === "COMPANY" ? "COMPANY" : "PERSON"))
   const [form, setForm] = useState({
     name: existing?.name ?? "", email: existing?.email ?? "",
     phone: existing?.phone ?? "", notes: existing?.notes ?? "",
@@ -151,17 +153,18 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
       }
       return existing ? customersApi.update(existing.id, payload) : customersApi.create({ ...payload, spaceId })
     },
-    onSuccess: () => { notify.success(existing ? t("customers.updated", "Customer updated") : t("customers.created", "Customer added")); onSaved(); setOpen(false) },
+    onSuccess: (customer) => { notify.success(existing ? t("customers.updated", "Customer updated") : t("customers.created", "Customer added")); onSaved(customer); setOpen(false) },
     onError: (e: any) => notify.error(e.message || "Could not save"),
   })
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[88vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{existing ? t("customers.edit", "Edit customer") : t("customers.add", "Add customer")}</DialogTitle></DialogHeader>
         <div className="grid gap-3">
-          {/* Person / Company segmented toggle */}
+          {/* Person / Company segmented toggle (hidden when locked to Person) */}
+          {!personOnly && (
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
             {([["PERSON", User, t("customers.typePerson", "Person")], ["COMPANY", Building2, t("customers.typeCompany", "Company")]] as const).map(([val, Icon, label]) => (
               <button key={val} type="button" onClick={() => setType(val as any)}
@@ -171,6 +174,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger }: {
               </button>
             ))}
           </div>
+          )}
 
           <Field label={isCompany ? t("customers.companyName", "Company name") : t("customers.name", "Name")} required value={form.name} onChange={(v) => set("name", v)} />
           <div className="grid grid-cols-2 gap-3">

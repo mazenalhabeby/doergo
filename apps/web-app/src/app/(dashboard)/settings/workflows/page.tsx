@@ -429,7 +429,7 @@ function CreateWorkflowDialog({
         onOpenChange(o)
       }}
     >
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("workflows.page.createTaskType")}</DialogTitle>
           <DialogDescription>
@@ -644,7 +644,7 @@ function StatusDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditing ? t("workflows.page.editStatus") : t("workflows.builder.addStatus")}</DialogTitle>
           <DialogDescription>

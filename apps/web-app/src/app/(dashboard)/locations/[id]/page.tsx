@@ -9,6 +9,7 @@ import {
   Blocks,
   Building2,
   CalendarClock,
+  ChevronRight as ChevronRightNav,
   FileText,
   Contact,
   Home,
@@ -24,6 +25,7 @@ import { locationsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlanGate } from "@/components/plan-gate"
+import { cn } from "@/lib/utils"
 
 import { GeneralTab } from "./_components/general-tab"
 import { AttendanceTab } from "./_components/attendance-tab"
@@ -58,6 +60,23 @@ export default function SpaceSettingsPage() {
     queryFn: () => locationsApi.getById(spaceId),
     enabled: !!spaceId && canManage,
   })
+
+  // Settings sections (config-driven). Conditional ones follow the space's
+  // enabled modules / kind. Rendered as a vertical rail on desktop, a scrollable
+  // row on mobile.
+  const mods = space?.enabledModules ?? []
+  const SECTIONS = [
+    { value: "general", label: t("locations.tabs.general"), icon: Building2, show: true },
+    { value: "attendance", label: t("scheduling.tabs.attendance"), icon: CalendarClock, show: true },
+    { value: "modules", label: t("locations.tabs.modules"), icon: Blocks, show: true },
+    { value: "workflow", label: t("locations.tabs.workflow"), icon: Workflow, show: true },
+    { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
+    { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: true },
+    { value: "customers", label: t("customers.title", "Customers"), icon: Contact, show: mods.includes("crm") },
+    { value: "apartments", label: t("apartments.title", "Apartments"), icon: Home, show: mods.includes("apartments") },
+    { value: "portal", label: t("portal.title", "Client portal"), icon: Building2, show: mods.includes("b2c_portal") },
+    { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" },
+  ].filter((s) => s.show)
 
   // Gate the whole page on the user-management permission (mirrors other admin pages).
   if (!canManage) {
@@ -117,115 +136,101 @@ export default function SpaceSettingsPage() {
             <p className="text-sm text-muted-foreground mt-2">{t("scheduling.notFound.description")}</p>
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="inline-flex h-auto flex-wrap justify-start gap-1">
-              <TabsTrigger value="general" className="gap-1.5">
-                <Building2 className="h-4 w-4" />
-                {t("locations.tabs.general")}
-              </TabsTrigger>
-              <TabsTrigger value="attendance" className="gap-1.5">
-                <CalendarClock className="h-4 w-4" />
-                {t("scheduling.tabs.attendance")}
-              </TabsTrigger>
-              <TabsTrigger value="modules" className="gap-1.5">
-                <Blocks className="h-4 w-4" />
-                {t("locations.tabs.modules")}
-              </TabsTrigger>
-              <TabsTrigger value="workflow" className="gap-1.5">
-                <Workflow className="h-4 w-4" />
-                {t("locations.tabs.workflow")}
-              </TabsTrigger>
-              <TabsTrigger value="members" className="gap-1.5">
-                <UserCog className="h-4 w-4" />
-                {t("scheduling.tabs.members")}
-              </TabsTrigger>
-              {/* Cross-org space sharing — available to anyone who can manage the space. */}
-              <TabsTrigger value="sharing" className="gap-1.5">
-                <Share2 className="h-4 w-4" />
-                {t("spaceSharing.tabTitle")}
-              </TabsTrigger>
-              {/* Customers tab only when the space has the CRM module on. */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="lg:flex lg:items-start lg:gap-7">
+            {/* Section nav — sticky framed rail on desktop, scrollable row on mobile. */}
+            <div className="mb-5 lg:sticky lg:top-4 lg:mb-0 lg:w-60 lg:shrink-0 lg:self-start">
+              <p className="hidden px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 lg:block">
+                {t("locations.settingsNav", "Settings")}
+              </p>
+              <TabsList
+                className={cn(
+                  "flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/40 p-1",
+                  "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                  "lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card/80 lg:p-2 lg:shadow-sm lg:backdrop-blur",
+                )}
+              >
+                {SECTIONS.map((s) => (
+                  <TabsTrigger
+                    key={s.value}
+                    value={s.value}
+                    className={cn(
+                      "group shrink-0 gap-2 whitespace-nowrap",
+                      "lg:relative lg:w-full lg:justify-start lg:rounded-xl lg:px-3 lg:py-2.5 lg:text-[13px] lg:font-medium lg:text-muted-foreground lg:transition-all lg:duration-150",
+                      "lg:hover:bg-muted/70 lg:hover:text-foreground",
+                      "lg:data-[state=active]:bg-primary/10 lg:data-[state=active]:font-semibold lg:data-[state=active]:text-primary lg:data-[state=active]:shadow-none",
+                      // Active left-accent bar.
+                      "lg:before:absolute lg:before:left-0 lg:before:top-1/2 lg:before:h-5 lg:before:w-[3px] lg:before:-translate-y-1/2 lg:before:rounded-r-full lg:before:bg-primary lg:before:opacity-0 lg:before:transition-opacity lg:data-[state=active]:before:opacity-100",
+                    )}
+                  >
+                    {/* Icon in a soft tile that tints to primary on the active item. */}
+                    <span className="hidden h-6 w-6 items-center justify-center rounded-md bg-muted/70 text-muted-foreground transition-colors group-hover:text-foreground group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary lg:flex">
+                      <s.icon className="h-3.5 w-3.5" />
+                    </span>
+                    {/* Inline icon on mobile (no tile). */}
+                    <s.icon className="h-4 w-4 shrink-0 lg:hidden" />
+                    {s.label}
+                    {/* Trailing chevron hints the active section. */}
+                    <ChevronRightNav className="ml-auto hidden h-3.5 w-3.5 opacity-0 transition-opacity group-data-[state=active]:opacity-60 lg:block" />
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            {/* Content column */}
+            <div className="min-w-0 flex-1">
+              <TabsContent value="general" className="mt-0">
+                <GeneralTab space={space} />
+              </TabsContent>
+
+              {/* Attendance / scheduling is a Professional+ capability. Under-tier
+                  orgs see an upgrade panel here; the API enforces the same 402. */}
+              <TabsContent value="attendance" className="mt-0">
+                <PlanGate feature="shift_scheduling">
+                  <AttendanceTab space={space} />
+                </PlanGate>
+              </TabsContent>
+
+              <TabsContent value="modules" className="mt-0">
+                <ModulesTab space={space} />
+              </TabsContent>
+              <TabsContent value="workflow" className="mt-0">
+                <WorkflowTab space={space} />
+              </TabsContent>
+              <TabsContent value="members" className="mt-0">
+                <MembersTab spaceId={spaceId} hasApartments={!!space?.enabledModules?.includes("apartments")} />
+              </TabsContent>
+              <TabsContent value="sharing" className="mt-0">
+                <SharingTab spaceId={spaceId} spaceName={space.name} />
+              </TabsContent>
               {space?.enabledModules?.includes("crm") && (
-                <TabsTrigger value="customers" className="gap-1.5">
-                  <Contact className="h-4 w-4" />
-                  {t("customers.title", "Customers")}
-                </TabsTrigger>
+                <TabsContent value="customers" className="mt-0">
+                  <PlanGate feature="crm">
+                    <CustomersTab space={space} />
+                  </PlanGate>
+                </TabsContent>
               )}
-              {/* Apartments tab only when the space has the Apartments module on. */}
               {space?.enabledModules?.includes("apartments") && (
-                <TabsTrigger value="apartments" className="gap-1.5">
-                  <Home className="h-4 w-4" />
-                  {t("apartments.title", "Apartments")}
-                </TabsTrigger>
+                <TabsContent value="apartments" className="mt-0">
+                  <PlanGate feature="crm">
+                    <ApartmentsTab spaceId={spaceId} hasB2C={!!space?.enabledModules?.includes("b2c_portal")} />
+                  </PlanGate>
+                </TabsContent>
               )}
-              {/* Portal tab only when the space has the B2C Portal module on. */}
               {space?.enabledModules?.includes("b2c_portal") && (
-                <TabsTrigger value="portal" className="gap-1.5">
-                  <Building2 className="h-4 w-4" />
-                  {t("portal.title", "Client portal")}
-                </TabsTrigger>
+                <TabsContent value="portal" className="mt-0">
+                  <PlanGate feature="crm">
+                    <PortalTab spaceId={spaceId} hasApartments={!!space?.enabledModules?.includes("apartments")} onOpenModules={() => setActiveTab("modules")} />
+                  </PlanGate>
+                </TabsContent>
               )}
-              {/* Invoices tab only for CUSTOMER-kind spaces (customer companies). */}
               {space?.kind === "CUSTOMER" && (
-                <TabsTrigger value="invoices" className="gap-1.5">
-                  <FileText className="h-4 w-4" />
-                  {t("invoices.title")}
-                </TabsTrigger>
+                <TabsContent value="invoices" className="mt-0">
+                  <PlanGate feature="invoicing">
+                    <InvoicesTab spaceId={spaceId} spaceName={space.name} />
+                  </PlanGate>
+                </TabsContent>
               )}
-            </TabsList>
-
-            <TabsContent value="general" className="mt-6">
-              <GeneralTab space={space} />
-            </TabsContent>
-
-            {/* Attendance / scheduling is a Professional+ capability. Under-tier
-                orgs see an upgrade panel here; the API enforces the same 402. */}
-            <TabsContent value="attendance" className="mt-6">
-              <PlanGate feature="shift_scheduling">
-                <AttendanceTab space={space} />
-              </PlanGate>
-            </TabsContent>
-
-            <TabsContent value="modules" className="mt-6">
-              <ModulesTab space={space} />
-            </TabsContent>
-            <TabsContent value="workflow" className="mt-6">
-              <WorkflowTab space={space} />
-            </TabsContent>
-            <TabsContent value="members" className="mt-6">
-              <MembersTab spaceId={spaceId} hasApartments={!!space?.enabledModules?.includes("apartments")} />
-            </TabsContent>
-            <TabsContent value="sharing" className="mt-6">
-              <SharingTab spaceId={spaceId} spaceName={space.name} />
-            </TabsContent>
-            {space?.enabledModules?.includes("crm") && (
-              <TabsContent value="customers" className="mt-6">
-                <PlanGate feature="crm">
-                  <CustomersTab space={space} />
-                </PlanGate>
-              </TabsContent>
-            )}
-            {space?.enabledModules?.includes("apartments") && (
-              <TabsContent value="apartments" className="mt-6">
-                <PlanGate feature="crm">
-                  <ApartmentsTab spaceId={spaceId} hasB2C={!!space?.enabledModules?.includes("b2c_portal")} />
-                </PlanGate>
-              </TabsContent>
-            )}
-            {space?.enabledModules?.includes("b2c_portal") && (
-              <TabsContent value="portal" className="mt-6">
-                <PlanGate feature="crm">
-                  <PortalTab spaceId={spaceId} />
-                </PlanGate>
-              </TabsContent>
-            )}
-            {space?.kind === "CUSTOMER" && (
-              <TabsContent value="invoices" className="mt-6">
-                <PlanGate feature="invoicing">
-                  <InvoicesTab spaceId={spaceId} spaceName={space.name} />
-                </PlanGate>
-              </TabsContent>
-            )}
+            </div>
           </Tabs>
         )}
       </div>

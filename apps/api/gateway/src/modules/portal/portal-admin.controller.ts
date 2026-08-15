@@ -20,6 +20,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagg
 import { RequirePermission } from '@hbcfield/shared';
 import { join } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 
 /**
  * Office-facing multi-portal management (staff, canManageUsers). Org always from
@@ -33,6 +34,7 @@ export class PortalAdminController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   private auth(cmd: string, payload: any) {
@@ -198,30 +200,60 @@ export class PortalAdminController {
     return this.auth('list_customers', { organizationId: req.user.organizationId, portalResident: true, portalId, search, limit: 100 });
   }
 
+  @Get('portals/:id/available-units')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Vacant apartments in the portal's space, for the invite picker" })
+  availableUnits(@Param('id') id: string, @Request() req: any) {
+    return this.auth('portal_list_available_units', { organizationId: req.user.organizationId, portalId: id });
+  }
+
+  @Get('portals/:id/available-customers')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Existing CRM customers (non-residents) in the portal's space, for the invite picker" })
+  availableCustomers(@Param('id') id: string, @Request() req: any) {
+    return this.auth('portal_list_assignable_customers', { organizationId: req.user.organizationId, portalId: id });
+  }
+
   @Post('residents')
   @RequirePermission('canManageUsers')
-  @ApiOperation({ summary: 'Invite a resident into a portal (customer + unit + invite code)' })
+  @ApiOperation({ summary: 'Invite a resident into a portal (assign an existing apartment or create one + invite code)' })
   async inviteResident(
-    @Body() body: { portalId: string; name?: string; email?: string; unitName: string; unitAddress?: string },
+    @Body() body: { portalId: string; customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string },
     @Request() req: any,
   ) {
     const orgId = req.user.organizationId;
-    // Name is optional — the resident sets their own name when they register
-    // (synced onto this customer on accept). Until then we label the record by
-    // its unit/reference so the office can still recognise it.
-    const initialName = body.name?.trim() || body.unitName?.trim() || 'Pending client';
-    const customerRes: any = await this.auth('create_customer', {
-      organizationId: orgId,
-      dto: { name: initialName, email: body.email, isPortalResident: true, portalId: body.portalId },
-    });
-    const customer = customerRes?.data ?? customerRes;
-    const unit: any = await this.auth('portal_create_unit', {
-      organizationId: orgId,
-      customerId: customer.id,
-      portalId: body.portalId,
-      name: body.unitName,
-      address: body.unitAddress,
-    });
+    // Promote an EXISTING CRM customer into the portal, or create a new one.
+    // Name is optional for new — the resident sets their own name on register.
+    let customer: any;
+    if (body.customerId) {
+      const updRes: any = await this.auth('update_customer', {
+        id: body.customerId,
+        organizationId: orgId,
+        actorId: req.user.id,
+        dto: { isPortalResident: true, portalId: body.portalId, ...(body.email ? { email: body.email } : {}) },
+      });
+      customer = updRes?.data ?? updRes;
+    } else {
+      const initialName = body.name?.trim() || body.unitName?.trim() || 'Pending client';
+      const customerRes: any = await this.auth('create_customer', {
+        organizationId: orgId,
+        dto: { name: initialName, email: body.email, isPortalResident: true, portalId: body.portalId },
+      });
+      customer = customerRes?.data ?? customerRes;
+    }
+    // Assign an EXISTING vacant apartment, or create a new one from free text.
+    const unit: any = body.unitId
+      ? await this.auth('portal_update_unit', {
+          id: body.unitId, organizationId: orgId,
+          customerId: customer.id, portalId: body.portalId, isPrimary: true,
+        })
+      : await this.auth('portal_create_unit', {
+          organizationId: orgId,
+          customerId: customer.id,
+          portalId: body.portalId,
+          name: body.unitName?.trim() || 'Unit',
+          address: body.unitAddress,
+        });
     const inviteRes: any = await this.auth('create_invitation', {
       targetRole: 'CUSTOMER',
       organizationId: orgId,
@@ -243,6 +275,20 @@ export class PortalAdminController {
       organizationId: req.user.organizationId,
       customerId,
     });
+  }
+
+  @Delete('residents/:customerId')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Remove a client from the portal (revokes app access, detaches, vacates units)' })
+  async removeResident(@Param('customerId') customerId: string, @Request() req: any) {
+    const result: any = await this.auth('portal_remove_client', {
+      organizationId: req.user.organizationId,
+      customerId,
+    });
+    // Instantly revoke the deactivated logins (don't wait for the 60s token-cache TTL).
+    const ids: string[] = result?.data?.deactivatedUserIds ?? [];
+    await Promise.all(ids.map((uid) => this.authCache.invalidateUser(uid).catch(() => undefined)));
+    return result;
   }
 
   // ── Unit CRUD (per resident) ──

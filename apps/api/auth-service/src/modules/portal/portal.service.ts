@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   PORTAL_TEMPLATES,
@@ -129,6 +129,26 @@ export class PortalService {
 
   /** Create a portal bound to a space (a space can run several). Mirrors
    *  createPortal but stamps spaceId on the portal + its seeded categories. */
+  /**
+   * The Apartment (rental) entity REQUIRES the space's Apartments module — that's
+   * where its catalog/residents live. Fail closed if it's off. Called ONLY when a
+   * portal is created or switched to the rental entity; other entities (Order/
+   * Workspace…) never need it. Enforced server-side (the UI also gates the option).
+   */
+  private async assertApartmentsModule(organizationId: string, spaceId: string) {
+    const space = await this.prisma.companyLocation.findFirst({
+      where: { id: spaceId, organizationId },
+      select: { enabledModules: true, organization: { select: { enabledModules: true } } },
+    });
+    const effective =
+      (space?.enabledModules as string[] | null) ??
+      (space?.organization?.enabledModules as string[] | null) ??
+      [];
+    if (!effective.includes('apartments')) {
+      throw new BadRequestException('Enable the Apartments module for this space before using the Apartment entity.');
+    }
+  }
+
   async createSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
     const space = await this.prisma.companyLocation.findFirst({
       where: { id: data.spaceId, organizationId: data.organizationId },
@@ -136,6 +156,8 @@ export class PortalService {
     });
     if (!space) throw new NotFoundException('Space not found');
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
+    // Apartment entity ⇒ the Apartments module must be on (fail before creating).
+    if (template.key === 'rental') await this.assertApartmentsModule(data.organizationId, data.spaceId);
     const portal = await this.prisma.portal.create({
       data: {
         organizationId: data.organizationId,
@@ -222,6 +244,7 @@ export class PortalService {
   async updateSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string }) {
     const ensured = await this.ensurePortalForSpace({ organizationId: data.organizationId, spaceId: data.spaceId });
     if (data.templateKey) {
+      if (data.templateKey === 'rental') await this.assertApartmentsModule(data.organizationId, data.spaceId);
       await this.prisma.portal.update({
         where: { id: ensured.data.id },
         data: { templateKey: data.templateKey, entityLabel: PortalService.ENTITY_LABELS[data.templateKey] ?? 'Unit' },
@@ -264,9 +287,13 @@ export class PortalService {
   }) {
     const portal = await this.prisma.portal.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
-      select: { id: true },
+      select: { id: true, spaceId: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
+    // Switching to the Apartment entity requires the space's Apartments module.
+    if (data.templateKey === 'rental' && portal.spaceId) {
+      await this.assertApartmentsModule(data.organizationId, portal.spaceId);
+    }
 
     // Validate the routing space belongs to this org (fk-less link, defence in depth).
     if (data.spaceId) {
@@ -572,6 +599,7 @@ export class PortalService {
     lng?: number | null;
     isPrimary?: boolean;
     spaceId?: string | null;
+    portalId?: string | null;
     customerId?: string | null;
     contactName?: string | null;
     contactPhone?: string | null;
@@ -603,6 +631,7 @@ export class PortalService {
         ...(data.lng !== undefined ? { lng: data.lng } : {}),
         ...(data.isPrimary !== undefined ? { isPrimary: data.isPrimary } : {}),
         ...(data.spaceId !== undefined ? { spaceId: data.spaceId } : {}),
+        ...(data.portalId !== undefined ? { portalId: data.portalId } : {}),
         ...(data.contactName !== undefined ? { contactName: data.contactName } : {}),
         ...(data.contactPhone !== undefined ? { contactPhone: data.contactPhone } : {}),
         // Member resident → clear client; client resident → clear member.
@@ -664,6 +693,86 @@ export class PortalService {
       void this.logUnitActivity({ unitId: targetId, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: rn ? `Resident set to ${rn}` : 'Resident set', metadata: rn ? { resident: rn } : undefined });
     }
     return { data: { success: true, unitId: targetId } };
+  }
+
+  /** Vacant apartments the office can assign when inviting a client — the
+   *  portal's space catalog, minus any already occupied (member or client).
+   *  Staff-only (portal-admin); no apartments-module gate. */
+  async listAvailableUnitsForPortal(data: { organizationId: string; portalId: string }) {
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: data.portalId, organizationId: data.organizationId },
+      select: { id: true, spaceId: true },
+    });
+    if (!portal) throw new NotFoundException('Portal not found');
+    const rows = await this.prisma.customerUnit.findMany({
+      where: {
+        organizationId: data.organizationId,
+        isActive: true,
+        residentUserId: null,
+        customerId: null,
+        // Space apartments carry spaceId; fall back to portal-scoped units.
+        ...(portal.spaceId ? { spaceId: portal.spaceId } : { portalId: data.portalId }),
+      },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, address: true, lat: true, lng: true },
+      take: 200,
+    });
+    return { data: rows };
+  }
+
+  /** Existing CRM customers the office can invite into the portal — the portal's
+   *  space customers who aren't portal residents yet. Staff-only (portal-admin). */
+  async listAssignableCustomersForPortal(data: { organizationId: string; portalId: string }) {
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: data.portalId, organizationId: data.organizationId },
+      select: { id: true, spaceId: true },
+    });
+    if (!portal) throw new NotFoundException('Portal not found');
+    const rows = await this.prisma.customer.findMany({
+      where: {
+        organizationId: data.organizationId,
+        isActive: true,
+        isPortalResident: false,
+        ...(portal.spaceId ? { spaceId: portal.spaceId } : {}),
+      },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, email: true },
+      take: 200,
+    });
+    return { data: rows };
+  }
+
+  /** Remove a CLIENT from a portal (the Clients tab action). Best-performance:
+   *  one round-trip to collect the login ids (for cache busting) + one atomic
+   *  transaction that revokes app access, detaches from the portal, vacates any
+   *  apartment they held, and revokes pending invites. The customer record is
+   *  KEPT (isActive), so it's reversible and no history is lost. Returns the
+   *  deactivated login ids so the gateway can bust the token cache instantly. */
+  async removePortalClient(data: { organizationId: string; customerId: string }) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: data.customerId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!customer) throw new NotFoundException('Client not found');
+
+    const users = await this.prisma.user.findMany({
+      where: { customerId: data.customerId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    const deactivatedUserIds = users.map((u) => u.id);
+
+    await this.prisma.$transaction([
+      // Revoke the app login(s).
+      this.prisma.user.updateMany({ where: { customerId: data.customerId, organizationId: data.organizationId }, data: { isActive: false } }),
+      // Detach from the portal — drops off the Clients list, keeps the record.
+      this.prisma.customer.update({ where: { id: data.customerId }, data: { isPortalResident: false, portalId: null } }),
+      // Vacate any apartment/unit they occupied.
+      this.prisma.customerUnit.updateMany({ where: { customerId: data.customerId, organizationId: data.organizationId }, data: { customerId: null } }),
+      // Revoke any still-pending invitation.
+      this.prisma.invitation.updateMany({ where: { customerId: data.customerId, status: 'PENDING' }, data: { status: 'REVOKED' } }),
+    ]);
+
+    return { data: { success: true, deactivatedUserIds } };
   }
 
   async deleteUnit(data: { id: string; organizationId: string; customerId?: string }) {

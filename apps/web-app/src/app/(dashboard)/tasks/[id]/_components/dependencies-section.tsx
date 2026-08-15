@@ -164,7 +164,7 @@ function AddDependencyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("tasks.dependencies.add")}</DialogTitle>
         </DialogHeader>

@@ -406,7 +406,7 @@ export default function JoinRequestsPage() {
 
       {/* Approve Dialog */}
       <Dialog open={approveDialogOpen} onOpenChange={closeApproveDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("joinRequests.approveDialog.title")}</DialogTitle>
             <DialogDescription>
@@ -475,7 +475,7 @@ export default function JoinRequestsPage() {
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={closeRejectDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("joinRequests.rejectDialog.title")}</DialogTitle>
             <DialogDescription>

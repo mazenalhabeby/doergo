@@ -961,7 +961,7 @@ export default function MembersPage() {
 
       {/* ── Bulk Access Dialog — full Access Builder applied to all selected ── */}
       <Dialog open={!!bulkAccessIds} onOpenChange={(open) => !open && setBulkAccessIds(null)}>
-        <DialogContent className="max-w-2xl p-0 gap-0 max-h-[88vh] overflow-y-auto">
+        <DialogContent className="p-0 gap-0 max-h-[88vh] overflow-y-auto">
           <DialogHeader className="sr-only">
             <DialogTitle>{t("members.bulk.accessTitle", "Bulk access")}</DialogTitle>
             <DialogDescription>{t("members.bulk.accessDesc", "Apply access to the selected members")}</DialogDescription>

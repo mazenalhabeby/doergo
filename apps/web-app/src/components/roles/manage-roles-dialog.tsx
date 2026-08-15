@@ -59,7 +59,7 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) close() }}>
-      <DialogContent className="sm:max-w-[540px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         {editing ? (
           <RoleEditor
             role={editing === "new" ? null : editing}

@@ -569,7 +569,7 @@ function RotaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? t("scheduling.rota.editTitle") : t("scheduling.rota.new")}</DialogTitle>
           <DialogDescription>{t("scheduling.rota.dialogDescription")}</DialogDescription>

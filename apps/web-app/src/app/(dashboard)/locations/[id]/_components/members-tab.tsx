@@ -257,7 +257,7 @@ function RoleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? t("scheduling.roles.editTitle") : t("scheduling.roles.new")}</DialogTitle>
           <DialogDescription>{t("scheduling.roles.dialogDescription")}</DialogDescription>

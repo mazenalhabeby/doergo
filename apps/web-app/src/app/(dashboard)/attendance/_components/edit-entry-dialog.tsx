@@ -130,7 +130,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
           <Pencil className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("attendance.editEntry.title")}</DialogTitle>
           <DialogDescription>

@@ -378,7 +378,7 @@ export function EditMemberDialog({
         }
       }}
     >
-      <DialogContent className="max-w-lg px-6">
+      <DialogContent className="px-6">
         <DialogHeader>
           {member && (
             <div className="flex items-center gap-3 text-left">

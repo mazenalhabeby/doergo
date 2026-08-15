@@ -145,7 +145,32 @@ export class CustomersService {
       select: customerSelect,
     });
     if (!customer) throw new NotFoundException('Customer not found');
-    return { data: customer };
+
+    // App-access status. `isPortalResident` only means "invited"; a CUSTOMER
+    // User bound to this customer is proof they ACCEPTED and can log in. Also
+    // resolve the entity (portal label) they belong to.
+    const [login, portal] = await Promise.all([
+      this.prisma.user.findFirst({
+        where: { customerId: id, organizationId, role: 'CUSTOMER' as any },
+        select: { id: true, isActive: true },
+      }),
+      customer.portalId
+        ? this.prisma.portal.findFirst({ where: { id: customer.portalId, organizationId }, select: { name: true, entityLabel: true } })
+        : Promise.resolve(null),
+    ]);
+
+    return {
+      data: {
+        ...customer,
+        app: {
+          invited: customer.isPortalResident,        // access granted (invite sent)
+          accepted: !!login,                          // signed up → has a login
+          active: !!login?.isActive,                  // login not revoked
+          portalName: portal?.name ?? null,
+          entityLabel: portal?.entityLabel ?? null,   // Apartment / Order / Workspace…
+        },
+      },
+    };
   }
 
   async create(organizationId: string, dto: CustomerInput) {

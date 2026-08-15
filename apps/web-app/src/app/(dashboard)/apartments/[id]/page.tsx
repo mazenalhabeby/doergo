@@ -68,9 +68,9 @@ export default function ApartmentDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-      <button onClick={() => (unit.spaceId ? router.push(`/locations/${unit.spaceId}`) : router.back())}
+      <button onClick={() => (unit.spaceId ? router.push(`/locations/${unit.spaceId}?tab=apartments`) : router.back())}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> {spaceQ.data?.name ?? t("apartments.title", "Apartments")}
+        <ArrowLeft className="h-4 w-4" /> {t("apartments.backToList", "Apartments")}
       </button>
 
       {/* Header */}

@@ -142,7 +142,7 @@ export function SprintFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEdit ? t("tasks.sprint.editTitle") : t("tasks.sprint.createTitle")}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -411,7 +411,7 @@ export function EpicFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEdit ? t("tasks.epic.editTitle") : t("tasks.epic.createTitle")}</DialogTitle>
           <DialogDescription className="sr-only">

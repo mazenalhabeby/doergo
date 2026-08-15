@@ -146,7 +146,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("tasks.edit.title")}</DialogTitle>
           <DialogDescription>

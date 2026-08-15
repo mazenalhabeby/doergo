@@ -217,7 +217,7 @@ export class CustomersController {
   @Post(':id/invite')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
-  async invite(@Param('id') id: string, @Body() body: { email?: string }, @Request() req: any) {
+  async invite(@Param('id') id: string, @Body() body: { email?: string; portalId?: string }, @Request() req: any) {
     const orgId = req.user.organizationId;
     const custRes: any = await this.auth('get_customer', { id, organizationId: orgId });
     const customer = custRes?.data ?? custRes;
@@ -228,13 +228,22 @@ export class CustomersController {
     const email = body.email?.trim() || customer.email;
     if (!email) throw new BadRequestException('An email is required to invite this customer');
 
-    // A space may run several portals now. Prefer the customer's assigned unit's
-    // OWN portal (the apartment they were assigned decides which portal they log
-    // into). Only fall back to ensuring the space's default portal if they have
-    // no unit yet.
+    // Which portal (= which entity + which categories the client will see)?
+    // Priority: (1) the customer's assigned unit's OWN portal — the apartment
+    // they hold decides their portal; (2) an explicitly-chosen portalId from the
+    // caller (validated to belong to this customer's space); (3) the space's
+    // default portal (single-portal spaces / no choice needed).
     const units: any[] = (await this.auth('portal_list_units', { organizationId: orgId, customerId: id })) || [];
     let unit: any = units.find((u) => u.isPrimary) ?? units[0];
     let portalId: string | undefined = unit?.portalId ?? undefined;
+    if (!portalId && body.portalId) {
+      const p: any = await this.auth('portal_get', { id: body.portalId, organizationId: orgId });
+      const portal = p?.data ?? p;
+      if (!portal || portal.spaceId !== customer.spaceId) {
+        throw new BadRequestException('Invalid portal for this customer');
+      }
+      portalId = body.portalId;
+    }
     if (!portalId) {
       const portalRes: any = await this.auth('portal_ensure_for_space', { organizationId: orgId, spaceId: customer.spaceId });
       portalId = portalRes?.data?.id ?? portalRes?.id;

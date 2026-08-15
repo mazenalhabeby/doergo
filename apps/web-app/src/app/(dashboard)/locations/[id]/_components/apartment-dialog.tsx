@@ -30,13 +30,17 @@ const encodeResident = (u?: SpaceUnit) => u?.residentUserId ? `u:${u.residentUse
 const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
-export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved, trigger }: {
+export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved, trigger, hideResident, entityLabel }: {
   // apartmentPortalIds = ids of this space's B2C portals whose entity is
   // Apartment. Non-empty ⇒ the apartment can host a CLIENT resident, and the
   // client candidates are scoped to those portals. Empty ⇒ members only.
-  spaceId: string; apartmentPortalIds?: string[]; existing?: SpaceUnit; onSaved: () => void; trigger: React.ReactNode
+  // hideResident = reuse the full apartment model without the Resident picker
+  // (e.g. the portal invite, where the resident IS the client being invited).
+  // entityLabel = generalize the copy for non-apartment portals (Order/Workspace…);
+  // falls back to "Apartment" when absent (the space Apartments tab).
+  spaceId: string; apartmentPortalIds?: string[]; existing?: SpaceUnit; onSaved: (unit?: SpaceUnit) => void; trigger: React.ReactNode; hideResident?: boolean; entityLabel?: string
 }) {
-  const hasApartmentPortal = (apartmentPortalIds?.length ?? 0) > 0
+  const hasApartmentPortal = !hideResident && (apartmentPortalIds?.length ?? 0) > 0
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(existing?.name ?? "")
@@ -68,7 +72,12 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
       const base = { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, residentUserId, customerId, details: cleanDetails }
       return existing ? spaceUnitsApi.update(spaceId, existing.id, base) : spaceUnitsApi.create(spaceId, base)
     },
-    onSuccess: () => { notify.success(existing ? t("apartments.updated", "Apartment updated") : t("apartments.added", "Apartment added")); onSaved(); setOpen(false) },
+    onSuccess: (unit) => {
+      notify.success(entityLabel
+        ? (existing ? t("apartments.updatedEntity", "{{e}} updated", { e: entityLabel }) : t("apartments.addedEntity", "{{e}} added", { e: entityLabel }))
+        : (existing ? t("apartments.updated", "Apartment updated") : t("apartments.added", "Apartment added")))
+      onSaved(unit); setOpen(false)
+    },
     onError: (e: any) => notify.error(e.message || "Could not save"),
   })
 
@@ -82,8 +91,10 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader><DialogTitle>{existing ? t("apartments.edit", "Edit apartment") : t("apartments.add", "Add apartment")}</DialogTitle></DialogHeader>
+      <DialogContent className="max-h-[88vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{entityLabel
+          ? (existing ? t("apartments.editEntity", "Edit {{e}}", { e: entityLabel }) : t("apartments.addEntity", "Add {{e}}", { e: entityLabel }))
+          : (existing ? t("apartments.edit", "Edit apartment") : t("apartments.add", "Add apartment"))}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>{t("apartments.name", "Name / number")}</Label>
@@ -96,7 +107,9 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
               onAddressChange={(a) => setAddress(a)} />
           </div>
 
-          {/* Resident — tabbed picker: Members always, Clients when a B2C portal runs. */}
+          {/* Resident — tabbed picker: Members always, Clients when a B2C portal runs.
+              Hidden when reused from the invite (the resident is the invited client). */}
+          {!hideResident && (
           <div className="space-y-1.5">
             <Label>{t("apartments.resident", "Resident (lives here)")}</Label>
             <div className="rounded-xl border border-border">
@@ -142,6 +155,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
               </div>
             </div>
           </div>
+          )}
 
           {/* More info — flexible property attributes (floor, size, rent, access…). */}
           <div className="space-y-2">

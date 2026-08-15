@@ -85,7 +85,7 @@ export function AddDayOffDialog() {
           {t("attendance.addDayOff.button")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("attendance.addDayOff.title")}</DialogTitle>
           <DialogDescription>{t("attendance.addDayOff.description")}</DialogDescription>

@@ -253,7 +253,7 @@ export function AssignMemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[440px] p-0 gap-0 overflow-hidden">
+      <DialogContent className="p-0 gap-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-5 pt-5 pb-3">
           <DialogTitle className="text-base font-semibold text-foreground">

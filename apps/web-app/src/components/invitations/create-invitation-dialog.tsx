@@ -177,7 +177,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   if (success && generatedCode) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("invitations.inviteDialog.title")}</DialogTitle>
           </DialogHeader>
@@ -240,7 +240,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("invitations.inviteDialog.title")}</DialogTitle>
           <DialogDescription>{t("invitations.inviteDialog.description")}</DialogDescription>

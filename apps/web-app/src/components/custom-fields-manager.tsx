@@ -217,7 +217,7 @@ function FieldDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditing ? t("customFields.editField") : t("customFields.newField")}</DialogTitle>
           <DialogDescription>

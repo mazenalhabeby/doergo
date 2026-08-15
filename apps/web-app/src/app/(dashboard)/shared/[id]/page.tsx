@@ -466,7 +466,7 @@ function AddWorkerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("spaceSharing.guest.addWorker", "Add worker")}</DialogTitle>
           <DialogDescription>{t("spaceSharing.guest.addWorkerDescription", "Add one of your team to this shared space.")}</DialogDescription>
@@ -526,7 +526,7 @@ function CreateTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("spaceSharing.guest.newTask", "New task")}</DialogTitle>
           <DialogDescription>{t("spaceSharing.guest.newTaskDescription", "Create a task in this shared space.")}</DialogDescription>
@@ -606,7 +606,7 @@ function RequestMoreDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("spaceSharing.guest.requestDialogTitle")}</DialogTitle>
           <DialogDescription>{t("spaceSharing.guest.requestDialogDescription")}</DialogDescription>

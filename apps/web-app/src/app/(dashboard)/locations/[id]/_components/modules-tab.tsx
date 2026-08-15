@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Blocks, Sparkles } from "lucide-react"
+import { Blocks, Sparkles, Plus, Minus } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
@@ -18,8 +18,8 @@ import { SectionHeader } from "./section-header"
 export function ModulesTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [enabledModules, setEnabledModules] = useState<string[]>(space.enabledModules || [])
-  const [hasChanges, setHasChanges] = useState(false)
+  const saved = (space.enabledModules as string[] | null) || []
+  const [enabledModules, setEnabledModules] = useState<string[]>(saved)
 
   const mutation = useMutation({
     mutationFn: (modules: string[]) => locationsApi.update(space.id, { enabledModules: modules }),
@@ -27,30 +27,30 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       queryClient.invalidateQueries({ queryKey: ["location", space.id] })
       queryClient.invalidateQueries({ queryKey: ["locations"] })
       notify.success(t("locations.toast.modulesUpdated"))
-      setHasChanges(false)
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.modulesUpdateFailed")),
   })
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) => {
-      let next: string[]
       if (prev.includes(key)) {
         // Disabling: also drop anything that depends on it (e.g. crm off → b2c off).
-        next = resolveModuleDependencies(prev.filter((m) => m !== key))
-      } else {
-        // Enabling: pull in its prerequisites too.
-        next = Array.from(new Set([...prev, key, ...moduleRequires(key)]))
+        return resolveModuleDependencies(prev.filter((m) => m !== key))
       }
-      setHasChanges(true)
-      return next
+      // Enabling: pull in its prerequisites too.
+      return Array.from(new Set([...prev, key, ...moduleRequires(key)]))
     })
   }
 
   const applyPreset = (modules: string[]) => {
     setEnabledModules(resolveModuleDependencies([...modules]))
-    setHasChanges(true)
   }
+
+  // Live diff vs. the saved set — drives the sticky "unsaved changes" bar and
+  // shows the office exactly what they turned on/off before saving.
+  const added = enabledModules.filter((m) => !saved.includes(m))
+  const removed = saved.filter((m) => !enabledModules.includes(m))
+  const dirty = added.length > 0 || removed.length > 0
 
   return (
     <div className="space-y-4">
@@ -144,11 +144,39 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
         </div>
       ))}
 
-      {hasChanges && (
-        <div className="flex justify-end pt-2">
-          <Button onClick={() => mutation.mutate(enabledModules)} disabled={mutation.isPending} size="sm">
-            {mutation.isPending ? t("common.saving") : t("common.saveChanges")}
-          </Button>
+      {/* Sticky unsaved-changes bar — always visible while there are pending
+          edits, no matter how long the list. Shows the exact diff so nobody
+          thinks a toggle auto-saved. */}
+      {dirty && (
+        <div className="sticky bottom-3 z-20 pt-2">
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {t("locations.unsavedCount", "{{count}} unsaved change", { count: added.length + removed.length })}
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {added.map((m) => (
+                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                    <Plus className="h-3 w-3" />{MODULE_LABEL[m] || m}
+                  </span>
+                ))}
+                {removed.map((m) => (
+                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-400">
+                    <Minus className="h-3 w-3" />{MODULE_LABEL[m] || m}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setEnabledModules(saved)} disabled={mutation.isPending}>
+                {t("common.discard", "Discard")}
+              </Button>
+              <Button size="sm" onClick={() => mutation.mutate(enabledModules)} disabled={mutation.isPending}>
+                {mutation.isPending ? t("common.saving") : t("common.saveChanges")}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

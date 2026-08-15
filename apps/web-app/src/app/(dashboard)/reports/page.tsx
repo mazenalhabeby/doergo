@@ -624,7 +624,7 @@ export default function ReportsPage() {
 
       {/* Save dialog */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent>
           <DialogHeader><DialogTitle>{active?.savedId ? t("reports.updateTemplateTitle", "Update template") : t("reports.saveTemplateTitle", "Save as template")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5"><Label className="text-xs">{t("reports.name", "Name")} *</Label><Input value={saveMeta.name} onChange={(e) => setSaveMeta({ ...saveMeta, name: e.target.value })} placeholder="Weekly overtime" /></div>
@@ -640,7 +640,7 @@ export default function ReportsPage() {
 
       {/* Schedule dialog */}
       <Dialog open={schedOpen} onOpenChange={setSchedOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader><DialogTitle>{t("reports.scheduleTitle", "Schedule email delivery")}</DialogTitle></DialogHeader>
 
           {/* Existing schedules */}

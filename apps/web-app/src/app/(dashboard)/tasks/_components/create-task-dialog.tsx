@@ -573,7 +573,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-h-[85vh] overflow-y-auto p-0 gap-0">
         <DialogHeader className="px-5 pt-5 pb-3">
           <DialogTitle className="text-base font-semibold">
             {t("tasks.create.title")}

@@ -276,7 +276,7 @@ function ShiftDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? t("scheduling.shifts.editTitle") : t("scheduling.shifts.new")}</DialogTitle>
           <DialogDescription>{t("scheduling.shifts.dialogDescription")}</DialogDescription>

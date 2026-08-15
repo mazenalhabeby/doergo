@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MapPin, Plus, Star, Trash2, Pencil, ChevronDown, ChevronUp, Home, User, Phone } from "lucide-react"
 
-import { customersApi, spacePortalApi, type CustomerAddress, type SpaceUnit } from "@/lib/api"
+import { customersApi, spacePortalApi, portalAdminApi, type CustomerAddress, type SpaceUnit } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -38,23 +38,29 @@ const LocationPicker = dynamic(
 /** Addresses panel for a customer record. When the space runs a B2C portal, this
  *  becomes the portal's entity (e.g. "Apartments") and lets you assign one from
  *  the space catalog. */
-export function AddressesPanel({ customerId, spaceId, hasPortal }: { customerId: string; spaceId?: string; hasPortal?: boolean }) {
+export function AddressesPanel({ customerId, spaceId, hasPortal, portalId }: { customerId: string; spaceId?: string; hasPortal?: boolean; portalId?: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [showAll, setShowAll] = useState(false)
 
   const q = useQuery({ queryKey: ["customer-addresses", customerId], queryFn: () => customersApi.addresses(customerId) })
-  const portalQ = useQuery({
-    queryKey: ["space-portal", spaceId],
-    queryFn: () => spacePortalApi.get(spaceId!),
-    enabled: !!spaceId && !!hasPortal,
-  })
+  // Resolve the entity from the customer's OWN portal (a space can run several
+  // portals with different entities); fall back to the space's default portal.
+  const custPortalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId!), enabled: !!portalId })
+  const spacePortalQ = useQuery({ queryKey: ["space-portal", spaceId], queryFn: () => spacePortalApi.get(spaceId!), enabled: !portalId && !!spaceId && !!hasPortal })
+  const portal = custPortalQ.data ?? spacePortalQ.data
   const addresses = q.data ?? []
   const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
   const others = addresses.filter((a) => a.id !== primary?.id)
   const invalidate = () => qc.invalidateQueries({ queryKey: ["customer-addresses", customerId] })
-  const entityLabel = portalQ.data?.entityLabel
+  const entityLabel = portal?.entityLabel
   const label = entityLabel ? `${entityLabel}s` : t("customers.addresses", "Addresses")
+  // "Assign from the catalog" only applies to the Apartment entity (the space's
+  // managed apartment pool). Other entities (Order/Workspace) are added per-client.
+  const isApartment = portal?.templateKey === "rental" || (entityLabel || "").toLowerCase().startsWith("apartment")
+  // The apartment catalog lives in the PORTAL's space — scope assignment there so
+  // apartments in other spaces are never offered (cross-space isolation).
+  const assignSpaceId = custPortalQ.data?.spaceId ?? spaceId
 
   const setPrimary = useMutation({ mutationFn: (unitId: string) => customersApi.setPrimaryAddress(customerId, unitId), onSuccess: invalidate })
   const remove = useMutation({ mutationFn: (unitId: string) => customersApi.removeAddress(customerId, unitId), onSuccess: () => { notify.success(t("customers.addressRemoved", "Address removed")); invalidate() } })
@@ -64,8 +70,8 @@ export function AddressesPanel({ customerId, spaceId, hasPortal }: { customerId:
       <div className="flex items-center justify-between px-4 pt-4">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
         <div className="flex items-center gap-3">
-          {entityLabel && spaceId && (
-            <AssignDialog spaceId={spaceId} customerId={customerId} entityLabel={entityLabel} onSaved={invalidate} trigger={
+          {isApartment && assignSpaceId && (
+            <AssignDialog spaceId={assignSpaceId} customerId={customerId} entityLabel={entityLabel!} onSaved={invalidate} trigger={
               <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><Home className="h-3.5 w-3.5" /> {t("customers.assign", "Assign")}</button>
             } />
           )}
@@ -178,7 +184,7 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader><DialogTitle>{existing ? t("customers.editAddress", "Edit address") : t("customers.addAddress", "Add address")}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
@@ -224,7 +230,8 @@ function AssignDialog({ spaceId, customerId, entityLabel, onSaved, trigger }: {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const unitsQ = useQuery({ queryKey: ["space-units", spaceId], queryFn: () => spacePortalApi.units(spaceId), enabled: open })
-  const vacant = (unitsQ.data ?? []).filter((u: SpaceUnit) => !u.customerId)
+  // Vacant = no client AND no member resident (never offer a member's home).
+  const vacant = (unitsQ.data ?? []).filter((u: SpaceUnit) => !u.customerId && !u.residentUserId)
 
   const assign = useMutation({
     mutationFn: (unitId: string) => spacePortalApi.assign(spaceId, unitId, customerId),

@@ -117,6 +117,21 @@ export class PortalController {
     return this.portalService.deleteUnit(data);
   }
 
+  @MessagePattern({ cmd: 'portal_remove_client' })
+  removePortalClient(@Payload() data: { organizationId: string; customerId: string }) {
+    return this.portalService.removePortalClient(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_list_available_units' })
+  listAvailableUnitsForPortal(@Payload() data: { organizationId: string; portalId: string }) {
+    return this.portalService.listAvailableUnitsForPortal(data);
+  }
+
+  @MessagePattern({ cmd: 'portal_list_assignable_customers' })
+  listAssignableCustomersForPortal(@Payload() data: { organizationId: string; portalId: string }) {
+    return this.portalService.listAssignableCustomersForPortal(data);
+  }
+
   // ── Intake category editor (per portal) ──
 
   @MessagePattern({ cmd: 'portal_create_category' })

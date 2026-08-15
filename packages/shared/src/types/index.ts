@@ -211,7 +211,7 @@ export const AVAILABLE_MODULES = [
   { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases', group: 'agile' },
   // Clients (customer records + optional app access)
   { key: 'crm', label: 'CRM', description: 'Customer records, info & history; sales works them with tasks (calls, visits)', group: 'clients' },
-  { key: 'apartments', label: 'Apartments / Units', description: 'A directory of apartments/units in this space — assign residents and the workers responsible for each', group: 'clients' },
+  { key: 'apartments', label: 'Apartments / Units', description: 'A directory of apartments/units in this space — assign a member or a client as resident; work is handled by tasks', group: 'clients' },
   { key: 'b2c_portal', label: 'B2C Portal', description: 'Invite a customer to the app to make orders & follow their jobs', group: 'clients' },
 ] as const;
 
@@ -227,11 +227,13 @@ export const MODULE_GROUPS = [
  * Module dependencies: a module can only be enabled if its prerequisites are too
  * (and disabling a prerequisite auto-disables its dependents). Enforced in the
  * space Modules tab UI AND server-side when persisting a space's modules.
- * B2C Portal invites customers (→ CRM) and exposes the space's units (→ Apartments),
- * so it requires both.
+ * B2C Portal invites customers, so it requires CRM. It does NOT require Apartments
+ * — a portal's entity may be Order/Workspace/etc. Apartments is an independent
+ * module (member housing + apartment catalog) and is only auto-enabled when a
+ * portal is created/switched to the Apartment (rental) entity (see portal.service).
  */
 export const MODULE_DEPENDENCIES: Record<string, string[]> = {
-  b2c_portal: ['crm', 'apartments'],
+  b2c_portal: ['crm'],
 };
 
 /** Prerequisite module keys for a module (empty if none). */

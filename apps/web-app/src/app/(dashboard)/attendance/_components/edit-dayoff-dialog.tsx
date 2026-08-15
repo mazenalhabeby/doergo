@@ -101,7 +101,7 @@ export function EditDayOffDialog({ dayOff }: { dayOff: DayOff }) {
           <Pencil className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("attendance.editDayOff.title", "Edit day off")}</DialogTitle>
           <DialogDescription>

@@ -4537,6 +4537,9 @@ export interface Customer {
   isActive: boolean;
   isPortalResident?: boolean;
   portalId?: string | null;
+  // App-access status (only on the single-customer GET). invited = access granted;
+  // accepted = signed up & has a login; entityLabel = the portal's entity.
+  app?: { invited: boolean; accepted: boolean; active: boolean; portalName?: string | null; entityLabel?: string | null };
   spaceId?: string | null; // per-space CRM
   ownerId?: string | null; // sales owner
   managerIds?: string[]; // assigned sales managers
@@ -4712,9 +4715,11 @@ export const customersApi = {
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
-  /** Invite a space customer to the B2C app — returns the invite code. */
-  invite: async (id: string, email?: string) => {
-    const res = await api.post<{ data: { code?: string; email?: string } }>(`/customers/${id}/invite`, { email });
+  /** Invite a space customer to the B2C app — returns the invite code. Pass
+   *  portalId to bind them to a specific portal (= entity + categories) when the
+   *  space runs several. Omit to auto-resolve (their unit's portal / the default). */
+  invite: async (id: string, opts?: { email?: string; portalId?: string }) => {
+    const res = await api.post<{ data: { code?: string; email?: string } }>(`/customers/${id}/invite`, { email: opts?.email, portalId: opts?.portalId });
     if (res.error) throw new Error(res.error);
     return res.data!.data;
   },
@@ -4831,6 +4836,22 @@ export interface PortalDetail {
   categories: PortalIntakeCategory[];
 }
 
+/** A vacant apartment offered in the invite dialog (portal's space catalog). */
+export interface PortalAvailableUnit {
+  id: string;
+  name: string;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+}
+
+/** An existing CRM customer offered in the invite dialog (portal's space). */
+export interface PortalAssignableCustomer {
+  id: string;
+  name: string;
+  email?: string | null;
+}
+
 export interface PortalCategoryInput {
   portalId?: string;
   key?: string;
@@ -4909,7 +4930,21 @@ export const portalAdminApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data ?? [];
   },
-  inviteResident: async (portalId: string, input: { name?: string; email?: string; unitName: string; unitAddress?: string }) => {
+  /** Vacant apartments in the portal's space — for the invite picker. */
+  availableUnits: async (portalId: string): Promise<PortalAvailableUnit[]> => {
+    const res = await api.get<{ data: PortalAvailableUnit[] }>(`/portal/admin/portals/${portalId}/available-units`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  /** Existing CRM customers (non-residents) in the portal's space — for the invite picker. */
+  availableCustomers: async (portalId: string): Promise<PortalAssignableCustomer[]> => {
+    const res = await api.get<{ data: PortalAssignableCustomer[] }>(`/portal/admin/portals/${portalId}/available-customers`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data ?? [];
+  },
+  // Pass customerId to promote an existing CRM customer, or name/email to create one.
+  // Pass unitId to assign an existing vacant apartment, or unitName/unitAddress to create one.
+  inviteResident: async (portalId: string, input: { customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string }) => {
     const res = await api.post<{ customer: Customer; unit: PortalCustomerUnit; code?: string }>("/portal/admin/residents", { portalId, ...input });
     if (res.error) throw new Error(res.error);
     return res.data!;
@@ -4918,6 +4953,13 @@ export const portalAdminApi = {
   // Re-send a pending client's invite by email (uses the existing code).
   resendInvite: async (customerId: string) => {
     const res = await api.post<{ success: boolean; data?: { sentTo: string } }>(`/portal/admin/residents/${customerId}/resend-invite`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+
+  // Remove a client from the portal — revokes app access + detaches (record kept).
+  removeResident: async (customerId: string) => {
+    const res = await api.delete<{ data?: { success: boolean; deactivatedUserIds: string[] } }>(`/portal/admin/residents/${customerId}`);
     if (res.error) throw new Error(res.error);
     return res.data;
   },

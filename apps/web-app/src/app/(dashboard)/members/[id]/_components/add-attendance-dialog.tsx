@@ -196,7 +196,7 @@ export function AddAttendanceDialog({
           {t("technicians.addAttendance.button")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("technicians.addAttendance.title")}</DialogTitle>
           <DialogDescription>

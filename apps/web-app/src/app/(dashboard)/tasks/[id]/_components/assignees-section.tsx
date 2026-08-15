@@ -140,7 +140,7 @@ function AddAssigneeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("tasks.assignees.addTeamMember")}</DialogTitle>
         </DialogHeader>
