@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { X, Check, Star, Clock, ListChecks, Camera } from "lucide-react"
+import { Check, Star, Clock, ListChecks, Camera } from "lucide-react"
 
 import {
   APP_STORE_URL,
@@ -13,12 +13,8 @@ import {
 
 type Phone = "ios" | "android"
 
-// Snooze so we nudge once, then stay quiet for a week if they pick the browser.
-const SNOOZE_KEY = "hbc:app-prompt:snooze-until"
-const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000
-
-/** Detect an actual PHONE (not desktop, not tablet — the web app is fine on a
- *  tablet). iPhone/iPod for iOS; Android UAs carry "Mobile" only on phones. */
+/** Detect an actual PHONE (not desktop, not tablet — the web app stays available
+ *  on tablets). iPhone/iPod for iOS; Android UAs carry "Mobile" only on phones. */
 function detectPhone(): Phone | null {
   if (typeof navigator === "undefined") return null
   const ua = navigator.userAgent || (navigator as any).vendor || ""
@@ -28,30 +24,25 @@ function detectPhone(): Phone | null {
 }
 
 /**
- * When someone opens the web app on a phone, offer the native app for the right
- * store. Non-blocking: they can continue in the browser, and the choice is
- * remembered for a week. Renders nothing on desktop/tablet.
+ * On a phone the web app is NOT available — installing the native app is
+ * required. This is a hard wall: no dismiss, no "continue in browser". Renders
+ * nothing on desktop/tablet, where the responsive web works fine.
  */
 export function MobileAppInterstitial() {
   const { t } = useTranslation()
   const [phone, setPhone] = useState<Phone | null>(null)
-  const [show, setShow] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     const p = detectPhone()
     if (!p) return
-    const until = Number(localStorage.getItem(SNOOZE_KEY) || 0)
-    if (until && Date.now() < until) return
     setPhone(p)
-    setShow(true)
-    // Next frame → run the entrance transition.
     requestAnimationFrame(() => setMounted(true))
   }, [])
 
-  // Lock the background from scrolling while the overlay is open (modal pattern).
+  // Lock the page from scrolling behind the wall.
   useEffect(() => {
-    if (!show) return
+    if (!phone) return
     const prevBody = document.body.style.overflow
     const prevHtml = document.documentElement.style.overflow
     document.body.style.overflow = "hidden"
@@ -60,18 +51,9 @@ export function MobileAppInterstitial() {
       document.body.style.overflow = prevBody
       document.documentElement.style.overflow = prevHtml
     }
-  }, [show])
+  }, [phone])
 
-  if (!show || !phone) return null
-
-  const dismiss = () => {
-    try {
-      localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS))
-    } catch {
-      /* private mode — just close for this view */
-    }
-    setShow(false)
-  }
+  if (!phone) return null
 
   const isIOS = phone === "ios"
   const storeUrl = isIOS ? APP_STORE_URL : GOOGLE_PLAY_URL
@@ -89,16 +71,6 @@ export function MobileAppInterstitial() {
       {/* Brand-tinted depth — soft glows, subtle in both themes */}
       <div className="pointer-events-none absolute -left-24 -top-28 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -right-20 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
-
-      {/* Close */}
-      <button
-        onClick={dismiss}
-        aria-label={t("common.close", "Close")}
-        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/60 text-muted-foreground backdrop-blur transition-colors hover:bg-muted hover:text-foreground"
-        style={{ top: "max(1rem, env(safe-area-inset-top))" }}
-      >
-        <X className="h-5 w-5" />
-      </button>
 
       <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-14">
         <div
@@ -125,10 +97,10 @@ export function MobileAppInterstitial() {
           </div>
 
           <h1 className="mt-4 text-[26px] font-bold leading-[1.15] tracking-tight text-foreground text-balance">
-            {t("appPrompt.title", "Get the HBCField app")}
+            {t("appPrompt.titleRequired", "Get the HBCField app")}
           </h1>
           <p className="mx-auto mt-2.5 max-w-[300px] text-[15px] leading-relaxed text-muted-foreground text-pretty">
-            {t("appPrompt.subtitle", "The full mobile experience — faster, and built for the field.")}
+            {t("appPrompt.subtitleRequired", "On your phone, HBCField runs in the app. Install it to continue — on a computer or tablet, use the web.")}
           </p>
 
           {/* Benefits card */}
@@ -144,7 +116,7 @@ export function MobileAppInterstitial() {
             ))}
           </div>
 
-          {/* Primary CTA — the detected store */}
+          {/* Primary CTA — the detected store (the only way forward on a phone) */}
           <a
             href={storeUrl}
             target="_blank"
@@ -160,20 +132,12 @@ export function MobileAppInterstitial() {
             </span>
           </a>
 
-          {/* Continue in browser */}
-          <button
-            onClick={dismiss}
-            className="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t("appPrompt.continueWeb", "Continue in browser")}
-          </button>
-
-          {/* Other store */}
+          {/* Other store — not a browser escape, just the other platform's app */}
           <a
             href={otherUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-block text-xs text-muted-foreground/70 underline-offset-2 hover:underline"
+            className="mt-4 inline-block text-xs text-muted-foreground/70 underline-offset-2 hover:underline"
           >
             {isIOS ? t("appPrompt.onAndroid", "On Android instead?") : t("appPrompt.onIos", "On iPhone instead?")}
           </a>
