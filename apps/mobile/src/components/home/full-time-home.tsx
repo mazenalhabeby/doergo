@@ -292,7 +292,7 @@ export function FullTimeHome() {
               onPress={() => setWorklogOpen(true)}
             >
               <Ionicons name="list-outline" size={20} color={colors.textPrimary} />
-              <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('worklog.button', 'Work log')}</Text>
+              <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('worklog.button', 'Activity')}</Text>
             </TouchableOpacity>
           )}
         </TourTarget>
@@ -429,7 +429,7 @@ export function FullTimeHome() {
           visible={worklogOpen}
           onClose={() => setWorklogOpen(false)}
           timeEntryId={status.currentEntry.id}
-          title={t('worklog.title', 'Work log')}
+          title={t('worklog.title', 'What I did today')}
           hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
         />
       )}

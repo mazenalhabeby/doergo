@@ -80,7 +80,7 @@ export function AttendanceTab({
                   {t('technicians.attendanceTab.statusColumn')}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('worklog.column', 'Work log')}
+                  {t('worklog.column', 'Activity')}
                 </th>
               </tr>
             </thead>
@@ -141,7 +141,7 @@ export function AttendanceTab({
                     <tr className="border-b border-border/60 bg-muted/20">
                       <td colSpan={7} className="px-5 py-4">
                         <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "What they did (work log)")}
+                          <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "Activity — what they did")}
                         </div>
                         <WorkLogTimeline entryId={entry.id} editable={canManage} />
                       </td>

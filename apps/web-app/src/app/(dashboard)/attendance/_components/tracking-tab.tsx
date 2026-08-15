@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, Clock, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
+import { AlertCircle, CheckCircle2, Clock, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown, ChevronRight, ListChecks } from "lucide-react"
+import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTranslation } from "react-i18next"
 import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { countryFromTz } from "@hbcfield/shared/client"
@@ -73,6 +74,7 @@ export function TrackingTab({
   // clock times — the attendance table stays pure clock entries.
   const showDaysOffTab = selectedLocationId === "all"
   const [view, setView] = React.useState<"attendance" | "daysoff">("attendance")
+  const [expandedId, setExpandedId] = React.useState<string | null>(null)
   const effectiveView: "attendance" | "daysoff" = showDaysOffTab ? view : "attendance"
 
   // Quick date-range presets (computed once on mount).
@@ -494,8 +496,11 @@ export function TrackingTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEntries.map((entry: TimeEntry) => (
-                    <TableRow key={entry.id} className="hover:bg-accent/50">
+                  {filteredEntries.map((entry: TimeEntry) => {
+                    const isOpen = expandedId === entry.id
+                    return (
+                    <React.Fragment key={entry.id}>
+                    <TableRow className="cursor-pointer hover:bg-accent/50" onClick={() => setExpandedId(isOpen ? null : entry.id)}>
                       <TableCell>
                         <WorkerCell entry={entry} />
                       </TableCell>
@@ -517,15 +522,30 @@ export function TrackingTab({
                         <ApprovalCell entry={entry} />
                       </TableCell>
                       <TableCell>
-                        <NoteCell note={entry.notes} />
+                        <div className="flex items-center gap-2">
+                          <NoteCell note={entry.notes} />
+                          <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
+                        </div>
                       </TableCell>
                       {isAdmin && (
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <EditEntryDialog entry={entry} />
                         </TableCell>
                       )}
                     </TableRow>
-                  ))}
+                    {isOpen && (
+                      <TableRow className="bg-muted/20 hover:bg-muted/20">
+                        <TableCell colSpan={isAdmin ? 8 : 7} className="p-4">
+                          <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
+                          </div>
+                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </React.Fragment>
+                    )
+                  })}
                 </TableBody>
               </Table>
 

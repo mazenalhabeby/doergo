@@ -44,6 +44,7 @@ import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
+import { WorkLogSheet } from '../../../src/components/worklog-sheet';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
@@ -87,6 +88,7 @@ export default function AttendanceScreen() {
 
   // Confirm sheet state
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  const [worklogOpen, setWorklogOpen] = useState(false);
 
   // Geofence warning state
   const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
@@ -991,6 +993,24 @@ export default function AttendanceScreen() {
           </View>
         )}
 
+        {/* Activity — log what you did today (opens the work-log sheet) */}
+        {isClockedIn && currentEntry?.id && (
+          <TouchableOpacity
+            onPress={() => setWorklogOpen(true)}
+            activeOpacity={0.8}
+            style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
+          >
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="list-outline" size={20} color={COLORS.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>{t('worklog.button', 'Activity')}</Text>
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>{t('worklog.tabHint', 'Log what you did today')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+
         {/* Recent History */}
         <TourTarget name="attendance-history" style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('attendance.history.title')}</Text>
@@ -1107,6 +1127,16 @@ export default function AttendanceScreen() {
         notesPlaceholder={t('attendance.shiftNotesPlaceholder')}
         isLoading={isActionLoading}
       />
+
+      {currentEntry?.id && (
+        <WorkLogSheet
+          visible={worklogOpen}
+          onClose={() => setWorklogOpen(false)}
+          timeEntryId={currentEntry.id}
+          title={t('worklog.title', 'What I did today')}
+          hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
+        />
+      )}
 
       {/* Out-of-ring reason + duration sheet */}
       <OutOfRingSheet

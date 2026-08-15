@@ -3,10 +3,11 @@
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Loader2, Plus, ImagePlus, Trash2, FileText, Clock, X } from "lucide-react"
+import { Loader2, Plus, ImagePlus, Trash2, FileText, X } from "lucide-react"
 
 import { worklogApi, uploadToS3, type WorkLogNote } from "@/lib/api"
 import { notify } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -15,10 +16,10 @@ const isImg = (m: string) => m.startsWith("image/")
 const MAX_FILES = 5
 
 /**
- * The "what I did today" timeline for one attendance session: timestamped notes
- * with photo/file thumbnails. `editable` shows a composer (own active session /
- * manager) that creates the note then uploads each photo direct to S3
- * (presign → PUT → confirm).
+ * "What I did" timeline for one attendance session — a vertical timeline of
+ * timestamped notes, each carrying ITS OWN photos/files. `editable` adds a
+ * composer (own active session / manager) that creates the note then uploads
+ * each photo direct to S3 (presign → PUT → confirm).
  */
 export function WorkLogTimeline({ entryId, editable }: { entryId: string; editable?: boolean }) {
   const { t } = useTranslation()
@@ -60,28 +61,40 @@ export function WorkLogTimeline({ entryId, editable }: { entryId: string; editab
   return (
     <div className="space-y-3">
       {q.isLoading ? (
-        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {t("common.loading", "Loading…")}</div>
+        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {t("common.loading", "Loading…")}</div>
       ) : notes.length === 0 ? (
-        <p className="py-3 text-sm text-muted-foreground">{t("worklog.empty", "No work-log notes for this session.")}</p>
+        <p className="py-2 text-sm text-muted-foreground">{t("worklog.empty", "Nothing logged yet.")}</p>
       ) : (
-        <ol className="space-y-2.5">
-          {notes.map((n: WorkLogNote) => (
-            <li key={n.id} className="flex gap-3">
-              <div className="flex shrink-0 items-center gap-1 pt-2 text-xs font-medium tabular-nums text-muted-foreground">
-                <Clock className="h-3 w-3" /> {fmtTime(n.at)}
+        <ol className="relative">
+          {notes.map((n: WorkLogNote, i) => (
+            <li key={n.id} className="group relative flex gap-3 pb-3 last:pb-0">
+              {/* Timeline rail: dot + connector */}
+              <div className="relative flex w-2 flex-col items-center pt-2">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-primary ring-4 ring-primary/10" />
+                {i < notes.length - 1 && <span className="mt-1 w-px flex-1 bg-border" />}
               </div>
-              <div className="min-w-0 flex-1 rounded-lg border border-border bg-card p-2.5">
-                <p className="whitespace-pre-wrap break-words text-sm text-foreground">{n.body}</p>
+              {/* Note card — carries its own time + text + photos */}
+              <div className="min-w-0 flex-1 rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold tabular-nums text-muted-foreground">{fmtTime(n.at)}</span>
+                  {editable && (
+                    <button onClick={() => delNote.mutate(n.id)} disabled={delNote.isPending}
+                      className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-foreground">{n.body}</p>
                 {n.attachments.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {n.attachments.map((a) =>
                       isImg(a.mimeType) ? (
-                        <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="block h-16 w-16 overflow-hidden rounded-md border border-border transition-transform hover:scale-[1.03]">
+                        <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="block h-16 w-16 overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.04]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={a.url ?? a.fileUrl} alt={a.fileName} className="h-full w-full object-cover" />
                         </a>
                       ) : (
-                        <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs text-foreground hover:bg-muted">
+                        <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted">
                           <FileText className="h-3.5 w-3.5 text-muted-foreground" /> <span className="max-w-[140px] truncate">{a.fileName}</span>
                         </a>
                       ),
@@ -89,18 +102,13 @@ export function WorkLogTimeline({ entryId, editable }: { entryId: string; editab
                   </div>
                 )}
               </div>
-              {editable && (
-                <button onClick={() => delNote.mutate(n.id)} disabled={delNote.isPending} className="shrink-0 self-start rounded p-1.5 text-muted-foreground transition-colors hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
             </li>
           ))}
         </ol>
       )}
 
       {editable && (
-        <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-2.5">
+        <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-2.5">
           <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={2}
             placeholder={t("worklog.placeholder", "What did you just do? e.g. finished with the machine")} className="resize-none bg-background" />
           {files.length > 0 && (
@@ -120,7 +128,7 @@ export function WorkLogTimeline({ entryId, editable }: { entryId: string; editab
               <ImagePlus className="mr-1.5 h-4 w-4" /> {t("worklog.photo", "Photo")}
             </Button>
             <Button size="sm" disabled={busy || (!draft.trim() && files.length === 0)} onClick={submit}>
-              {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Plus className="mr-1.5 h-4 w-4" />} {t("worklog.add", "Add note")}
+              {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Plus className="mr-1.5 h-4 w-4" />} {t("worklog.add", "Add")}
             </Button>
           </div>
         </div>

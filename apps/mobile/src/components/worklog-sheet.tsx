@@ -74,6 +74,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
   const { pickFromGallery, takePhoto } = useImagePicker();
 
   const [notes, setNotes] = useState<WorkLogNote[]>([]);
+  const [pending, setPending] = useState<PendingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState('');
   const [picked, setPicked] = useState<PickedImage[]>([]);
@@ -130,6 +131,15 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
     }
   }, [timeEntryId]);
 
+  const readPending = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
+      setPending(raw ? JSON.parse(raw) : []);
+    } catch {
+      setPending([]);
+    }
+  }, [timeEntryId]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -138,9 +148,10 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
     } catch {
       /* leave whatever we have */
     } finally {
+      await readPending(); // surface anything still queued (offline) so it's visible
       setLoading(false);
     }
-  }, [timeEntryId, flushPending]);
+  }, [timeEntryId, flushPending, readPending]);
 
   useEffect(() => {
     if (visible) load();
@@ -223,10 +234,11 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {loading ? (
               <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={colors.textSecondary} />
-            ) : notes.length === 0 ? (
+            ) : notes.length === 0 && pending.length === 0 ? (
               <Text style={[styles.empty, { color: colors.textMuted }]}>Nothing logged yet.</Text>
             ) : (
-              notes.map((n) => (
+              <>
+              {notes.map((n) => (
                 <View key={n.id} style={styles.noteRow}>
                   <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(n.at)}</Text>
                   <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
@@ -250,7 +262,27 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
                     <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
-              ))
+              ))}
+              {/* Queued (offline) notes — shown so you always see what you added,
+                  even before it syncs. */}
+              {pending.map((p) => (
+                <View key={p.id} style={styles.noteRow}>
+                  <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(p.at)}</Text>
+                  <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border, opacity: 0.75 }]}>
+                    <Text style={[styles.noteBody, { color: colors.textPrimary }]}>{p.body}</Text>
+                    {!!p.photos?.length && (
+                      <View style={styles.thumbs}>
+                        {p.photos.map((ph, i) => <Image key={i} source={{ uri: ph.uri }} style={styles.thumb} />)}
+                      </View>
+                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                      <Ionicons name="cloud-upload-outline" size={12} color={colors.textMuted} />
+                      <Text style={{ fontSize: FONT_SIZE.xs, color: colors.textMuted }}>Pending upload…</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+              </>
             )}
           </ScrollView>
 
