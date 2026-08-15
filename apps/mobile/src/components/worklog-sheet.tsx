@@ -14,6 +14,7 @@ import {
   Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
@@ -27,9 +28,32 @@ const isImg = (m: string) => m.startsWith('image/');
 const pendingKey = (entryId: string) => `worklog_pending_${entryId}`;
 const localId = () => `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
-// A queued (offline) note — text + the picked photos (their local URIs + metadata)
-// so photos re-upload on flush, not just the text.
+// A queued (offline) note — text + the picked photos (their persisted URIs +
+// metadata) so photos re-upload on flush, not just the text.
 type PendingItem = { id: string; body: string; at: string; photos?: PickedImage[] };
+
+// Queued photos are COPIED into persistent app storage so they survive an app
+// restart / OS cache eviction until the flush uploads them.
+const WORKLOG_DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}worklog/` : null;
+
+async function persistPhoto(img: PickedImage): Promise<PickedImage> {
+  if (!WORKLOG_DIR || img.uri.startsWith(WORKLOG_DIR)) return img;
+  try {
+    await FileSystem.makeDirectoryAsync(WORKLOG_DIR, { intermediates: true }).catch(() => {});
+    const ext = (img.fileName.split('.').pop() || img.mimeType.split('/').pop() || 'jpg').toLowerCase();
+    const dest = `${WORKLOG_DIR}${localId()}.${ext}`;
+    await FileSystem.copyAsync({ from: img.uri, to: dest });
+    return { ...img, uri: dest };
+  } catch {
+    return img; // fall back to the cache URI
+  }
+}
+
+async function deletePersisted(uri: string): Promise<void> {
+  if (WORKLOG_DIR && uri.startsWith(WORKLOG_DIR)) {
+    await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+  }
+}
 
 interface Props {
   visible: boolean;
@@ -88,9 +112,11 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
             fileSize: p.fileSize, mimeType: p.mimeType, width: p.width, height: p.height,
           });
         }
+        // Uploaded — drop the persisted copies.
+        for (const p of item.photos!) await deletePersisted(p.uri);
         done.add(item.id);
       } catch {
-        /* keep for next flush — note text isn't lost */
+        /* keep for next flush — note text + persisted photos aren't lost */
       }
     }
 
@@ -152,9 +178,11 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint }: Pro
         }
       }
     } catch {
-      // Offline: queue the note AND its photos (local URIs) so both re-upload
-      // on the next flush — nothing is lost.
-      await queueOffline({ id: localId(), body: body || '(photo)', at, photos: picked });
+      // Offline: copy the photos into persistent storage and queue the note +
+      // photos so both re-upload on the next flush — nothing is lost, even across
+      // an app restart.
+      const persisted = await Promise.all(picked.map(persistPhoto));
+      await queueOffline({ id: localId(), body: body || '(photo)', at, photos: persisted });
     } finally {
       setDraft('');
       setPicked([]);
