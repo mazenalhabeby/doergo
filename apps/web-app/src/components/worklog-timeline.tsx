@@ -76,7 +76,17 @@ export function WorkLogTimeline({ entryId, editable }: { entryId: string; editab
               {/* Note card — carries its own time + text + photos */}
               <div className="min-w-0 flex-1 rounded-xl border border-border bg-card p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold tabular-nums text-muted-foreground">{fmtTime(n.at)}</span>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="text-xs font-semibold tabular-nums text-muted-foreground">{fmtTime(n.at)}</span>
+                    {n.author?.name && (
+                      <span className="truncate text-xs text-muted-foreground">· {n.author.name}</span>
+                    )}
+                    {n.byManager && (
+                      <span className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        {t("worklog.byManager", "added by manager")}
+                      </span>
+                    )}
+                  </div>
                   {editable && (
                     <button onClick={() => delNote.mutate(n.id)} disabled={delNote.isPending}
                       className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100">

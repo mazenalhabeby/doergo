@@ -1799,6 +1799,7 @@ model TimeEntryNote {
   timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
 
   userId         String // the worker whose session this is
+  authorId       String? // who actually wrote the note (member, or a manager acting on their behalf); null = legacy → treat as the member
   organizationId String
 
   body   String // the note text

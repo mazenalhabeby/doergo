@@ -22,6 +22,8 @@ export interface WorkLogNote {
   taskId?: string | null;
   attachments: WorkLogAttachment[];
   createdAt: string;
+  author?: { id: string; name: string }; // who wrote it (member or manager)
+  byManager?: boolean; // true when a manager/admin wrote it, not the session's member
 }
 
 /**

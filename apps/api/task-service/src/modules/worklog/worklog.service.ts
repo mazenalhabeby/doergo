@@ -118,7 +118,8 @@ export class WorklogService {
     const note = await this.prisma.timeEntryNote.create({
       data: {
         timeEntryId: te.id,
-        userId: te.userId,
+        userId: te.userId, // the session's member
+        authorId: data.callerUserId, // who actually wrote it (member or manager)
         organizationId: data.organizationId,
         body: this.cleanBody(data.body),
         at: this.parseAt(data.at),
@@ -139,6 +140,7 @@ export class WorklogService {
       rows.push({
         timeEntryId: te.id,
         userId: te.userId,
+        authorId: data.callerUserId,
         organizationId: data.organizationId,
         body,
         at: this.parseAt(n.at),
@@ -150,21 +152,39 @@ export class WorklogService {
   }
 
   async listNotes(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean }) {
-    await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage);
+    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage);
     const notes = await this.prisma.timeEntryNote.findMany({
       where: { timeEntryId: data.timeEntryId, organizationId: data.organizationId },
       orderBy: { at: 'asc' },
       include: { attachments: true },
       take: 1000,
     });
+
+    // Resolve author display names in one query. `authorId` is null for legacy
+    // rows → fall back to the session's member (userId).
+    const authorIds = Array.from(new Set(notes.map((n) => n.authorId ?? n.userId)));
+    const users = authorIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: authorIds }, organizationId: data.organizationId },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : [];
+    const nameById = new Map(users.map((u) => [u.id, `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || 'Member']));
+
     // Short-lived signed GET URLs so a private bucket stays private.
     const withUrls = await Promise.all(
-      notes.map(async (n) => ({
-        ...n,
-        attachments: await Promise.all(
-          n.attachments.map(async (a) => ({ ...a, url: await this.signedGet(a.fileKey) })),
-        ),
-      })),
+      notes.map(async (n) => {
+        const authorId = n.authorId ?? n.userId;
+        return {
+          ...n,
+          author: { id: authorId, name: nameById.get(authorId) ?? 'Member' },
+          // true when a manager/admin (not the session's member) wrote it.
+          byManager: authorId !== te.userId,
+          attachments: await Promise.all(
+            n.attachments.map(async (a) => ({ ...a, url: await this.signedGet(a.fileKey) })),
+          ),
+        };
+      }),
     );
     return success(withUrls);
   }

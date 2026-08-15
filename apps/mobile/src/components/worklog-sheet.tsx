@@ -257,6 +257,14 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
                 <View key={n.id} style={styles.noteRow}>
                   <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(n.at)}</Text>
                   <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
+                    {n.byManager && (
+                      <View style={styles.byManagerRow}>
+                        <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.primary} />
+                        <Text style={[styles.byManagerText, { color: COLORS.primary }]} numberOfLines={1}>
+                          {n.author?.name ? `Added by ${n.author.name}` : 'Added by manager'}
+                        </Text>
+                      </View>
+                    )}
                     <Text style={[styles.noteBody, { color: colors.textPrimary }]}>{n.body}</Text>
                     {n.attachments.length > 0 && (
                       <View style={styles.thumbs}>
@@ -382,6 +390,8 @@ const styles = StyleSheet.create({
   noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
   noteTime: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold, paddingTop: 6, width: 44 },
   noteBubble: { flex: 1, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm },
+  byManagerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
+  byManagerText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold, flexShrink: 1 },
   noteBody: { fontSize: FONT_SIZE.base, lineHeight: 20 },
   thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.sm },
   thumb: { width: 56, height: 56, borderRadius: RADIUS.sm },
