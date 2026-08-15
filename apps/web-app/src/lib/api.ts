@@ -1188,6 +1188,70 @@ export interface WorkLogNote {
   byManager?: boolean; // true when a manager/admin wrote it, not the session's member
 }
 
+// ── Shift Issues (blockers) ──────────────────────────────────────────────────
+export type ShiftIssueStatus = "OPEN" | "ACKNOWLEDGED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "CANCELED"
+export type ShiftIssueSeverity = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+
+export interface ShiftIssueEvent {
+  id: string; type: string; actorId?: string | null; actorName?: string; body?: string | null;
+  metadata?: any; attachments?: WorkLogAttachment[]; at: string
+}
+export interface ShiftIssue {
+  id: string; organizationId: string; title: string; description?: string | null;
+  severity: ShiftIssueSeverity; status: ShiftIssueStatus;
+  reportedById: string; reporterName?: string; assignedToId?: string | null; assigneeName?: string | null;
+  spaceId?: string | null; timeEntryId?: string | null;
+  resolutionNote?: string | null; createdAt: string; updatedAt: string;
+  eventCount?: number; thread?: ShiftIssueEvent[]
+}
+
+export const shiftIssuesApi = {
+  list: async (params?: { status?: string; scope?: string }): Promise<ShiftIssue[]> => {
+    const qs = new URLSearchParams()
+    if (params?.status) qs.set("status", params.status)
+    if (params?.scope) qs.set("scope", params.scope)
+    const suffix = qs.toString() ? `?${qs.toString()}` : ""
+    const res = await api.get<{ data: ShiftIssue[] }>(`/shift-issues${suffix}`)
+    if (res.error) throw new Error(res.error)
+    return res.data?.data ?? []
+  },
+  get: async (id: string): Promise<ShiftIssue> => {
+    const res = await api.get<{ data: ShiftIssue }>(`/shift-issues/${id}`)
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+  create: async (input: { title: string; description?: string; severity?: string; timeEntryId?: string; spaceId?: string; attachments?: any[] }): Promise<ShiftIssue> => {
+    const res = await api.post<{ data: ShiftIssue }>(`/shift-issues`, input)
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+  message: async (id: string, input: { body?: string; attachments?: any[] }): Promise<ShiftIssueEvent> => {
+    const res = await api.post<{ data: ShiftIssueEvent }>(`/shift-issues/${id}/messages`, input)
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+  acknowledge: async (id: string) => {
+    const res = await api.post<{ data: ShiftIssue }>(`/shift-issues/${id}/acknowledge`, {})
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+  assign: async (id: string, assignToId: string) => {
+    const res = await api.post<{ data: ShiftIssue }>(`/shift-issues/${id}/assign`, { assignToId })
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+  setStatus: async (id: string, status: string, note?: string) => {
+    const res = await api.post<{ data: ShiftIssue }>(`/shift-issues/${id}/status`, { status, note })
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+  presignAttachment: async (id: string, fileName: string, mimeType: string) => {
+    const res = await api.post<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>(`/shift-issues/${id}/attachments/presign`, { fileName, mimeType })
+    if (res.error) throw new Error(res.error)
+    return res.data!.data
+  },
+}
+
 export const worklogApi = {
   list: async (entryId: string): Promise<WorkLogNote[]> => {
     const res = await api.get<{ data: WorkLogNote[] }>(`/attendance/entries/${entryId}/worklog`);

@@ -33,6 +33,7 @@ import { JoinRequestsModule } from './modules/join-requests/join-requests.module
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { SupportModule } from './modules/support/support.module';
+import { ShiftIssuesModule } from './modules/shift-issues/shift-issues.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PhasesModule } from './modules/phases/phases.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
@@ -119,6 +120,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     OrganizationsModule,
     BillingModule,
     SupportModule,
+    ShiftIssuesModule,
     ChatModule,
     PhasesModule,
     SprintsModule,

@@ -1839,6 +1839,85 @@ model TimeEntryNoteAttachment {
   @@map("time_entry_note_attachments")
 }
 
+// ── Shift Issues (Blockers) ──────────────────────────────────────────────────
+// A member on an active shift reports a blocker they can't fix. The responsible
+// person is notified, acknowledges, can dispatch someone, and the whole thing
+// plays out on ONE live thread (chat messages + system events interleaved).
+enum ShiftIssueStatus {
+  OPEN
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  CANCELED
+}
+
+enum ShiftIssueSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ShiftIssueEventType {
+  CREATED
+  MESSAGE
+  ACKNOWLEDGED
+  ASSIGNED
+  STATUS_CHANGED
+  RESOLVED
+  REOPENED
+  CLOSED
+}
+
+model ShiftIssue {
+  id             String  @id @default(cuid())
+  organizationId String
+  timeEntryId    String? // the shift it happened on (fk-less; validated in service)
+  spaceId        String? // CompanyLocation
+  reportedById   String  // the member who hit the blocker
+  assignedToId   String? // dispatched worker ("send someone")
+
+  title       String
+  description String?
+  severity    ShiftIssueSeverity @default(MEDIUM)
+  status      ShiftIssueStatus   @default(OPEN)
+
+  acknowledgedById String?
+  acknowledgedAt   DateTime?
+  resolvedById     String?
+  resolvedAt       DateTime?
+  resolutionNote   String?
+
+  events ShiftIssueEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([reportedById])
+  @@index([assignedToId])
+  @@map("shift_issues")
+}
+
+model ShiftIssueEvent {
+  id      String     @id @default(cuid())
+  issueId String
+  issue   ShiftIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  type        ShiftIssueEventType
+  actorId     String? // who did it / sent the message
+  body        String? // message text (MESSAGE) or system note
+  metadata    Json? // e.g. { assignedToId, assignedToName, fromStatus, toStatus }
+  attachments Json? // [{ fileKey, fileUrl, fileName, fileSize, mimeType, width, height }]
+
+  at        DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([issueId, at])
+  @@map("shift_issue_events")
+}
+
 // One "left the ring" episode for a single clock-in session. The heartbeat drives
 // the state machine; the ONLY automatic clock-out is an approver REJECT.
 // "Active excursion" = latest row for a timeEntryId whose status is one of

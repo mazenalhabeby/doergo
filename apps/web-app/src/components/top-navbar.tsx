@@ -457,6 +457,11 @@ function TimeAttendanceDropdown({
             </Link>
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+          <Link href="/issues" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+            {t("nav.sidebar.issues", "Shift Issues")}
+          </Link>
+        </DropdownMenuItem>
         {showSchedule && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/schedule" className="flex items-center gap-2 px-2 py-1.5 text-sm">

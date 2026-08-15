@@ -45,6 +45,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
 import { WorkLogSheet } from '../../../src/components/worklog-sheet';
+import { ReportIssueSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
@@ -90,6 +91,9 @@ export default function AttendanceScreen() {
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
   // Which session's activity sheet is open (active session OR a history row).
   const [worklogEntryId, setWorklogEntryId] = useState<string | null>(null);
+  // Shift Issues: report a blocker + open its live thread.
+  const [reportIssueOpen, setReportIssueOpen] = useState(false);
+  const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
 
   // Geofence warning state
   const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
@@ -1012,6 +1016,24 @@ export default function AttendanceScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Report an issue — a blocker the member can't fix during the shift */}
+        {isClockedIn && currentEntry?.id && (
+          <TouchableOpacity
+            onPress={() => setReportIssueOpen(true)}
+            activeOpacity={0.8}
+            style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
+          >
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="warning-outline" size={20} color="#dc2626" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>Report an issue</Text>
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>Blocked by something you can't fix?</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+
         {/* Recent History */}
         <TourTarget name="attendance-history" style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('attendance.history.title')}</Text>
@@ -1150,6 +1172,21 @@ export default function AttendanceScreen() {
           hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
         />
       )}
+
+      <ReportIssueSheet
+        visible={reportIssueOpen}
+        onClose={() => setReportIssueOpen(false)}
+        timeEntryId={currentEntry?.id}
+        spaceId={status?.currentEntry?.location?.id}
+        onCreated={(id) => { setReportIssueOpen(false); setIssueThreadId(id); }}
+      />
+      <ShiftIssueThreadSheet
+        visible={!!issueThreadId}
+        onClose={() => setIssueThreadId(null)}
+        issueId={issueThreadId}
+        canManage={!!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)}
+        currentUserId={(user as any)?.id}
+      />
 
       {/* Out-of-ring reason + duration sheet */}
       <OutOfRingSheet
