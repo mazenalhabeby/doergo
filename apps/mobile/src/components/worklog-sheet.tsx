@@ -9,7 +9,7 @@ import {
   Modal,
   ScrollView,
   Image,
-  Keyboard,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
 } from 'react-native';
@@ -82,18 +82,6 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
   const [viewer, setViewer] = useState<string | null>(null); // full-screen image preview
-  const [kbHeight, setKbHeight] = useState(0); // lift the composer above the keyboard
-
-  // Track the keyboard height so the bottom sheet's composer stays visible while
-  // typing. RN's KeyboardAvoidingView is unreliable inside a Modal on Android, so
-  // we lift the sheet content manually via paddingBottom (works on both platforms).
-  useEffect(() => {
-    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const onShow = Keyboard.addListener(showEvt, (e) => setKbHeight(e.endCoordinates?.height ?? 0));
-    const onHide = Keyboard.addListener(hideEvt, () => setKbHeight(0));
-    return () => { onShow.remove(); onHide.remove(); };
-  }, []);
 
   const flushPending = useCallback(async () => {
     let items: PendingItem[] = [];
@@ -234,9 +222,9 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.container}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: (kbHeight > 0 ? kbHeight : insets.bottom) + SPACING.md }]}>
+        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md }]}>
           <View style={[styles.handle, { backgroundColor: isDark ? '#4b5563' : '#d1d5db' }]} />
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
@@ -363,7 +351,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
           </>
           )}
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
       {/* Full-screen image preview */}
       <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
