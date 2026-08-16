@@ -30,4 +30,7 @@ export const shiftIssuesApi = {
   acknowledge: (id: string): Promise<ShiftIssue> => fetchWithAuth<ShiftIssue>(`/shift-issues/${id}/acknowledge`, { method: 'POST', body: '{}' }),
   setStatus: (id: string, status: string, note?: string): Promise<ShiftIssue> =>
     fetchWithAuth<ShiftIssue>(`/shift-issues/${id}/status`, { method: 'POST', body: JSON.stringify({ status, note }) }),
+  presignAttachment: (id: string, fileName: string, mimeType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }> =>
+    fetchWithAuth(`/shift-issues/${id}/attachments/presign`, { method: 'POST', body: JSON.stringify({ fileName, mimeType }) }),
 };
+

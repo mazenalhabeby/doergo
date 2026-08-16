@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
-  Modal, ScrollView, KeyboardAvoidingView, Platform, Pressable,
+  Modal, ScrollView, Image, KeyboardAvoidingView, Platform, Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,21 @@ import { useTheme } from '../contexts/theme-context';
 import { useSocketContext } from '../contexts/socket-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
 import { shiftIssuesApi, type ShiftIssue, type ShiftIssueEvent } from '../lib/api/shift-issues';
+import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
+import { uploadToPresignedUrl } from '../lib/api/attachments';
+
+// Upload picked photos to S3 and return attachment metadata for a message/report.
+async function uploadPhotos(issueId: string, photos: PickedImage[]): Promise<any[]> {
+  const out: any[] = [];
+  for (const p of photos) {
+    try {
+      const pre = await shiftIssuesApi.presignAttachment(issueId, p.fileName, p.mimeType);
+      await uploadToPresignedUrl(pre.uploadUrl, p.uri, p.mimeType);
+      out.push({ fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: p.fileName, fileSize: p.fileSize, mimeType: p.mimeType, width: p.width, height: p.height });
+    } catch { /* skip a failed photo, never lose the message */ }
+  }
+  return out;
+}
 
 const SEVERITIES: { key: string; label: string; color: string }[] = [
   { key: 'LOW', label: 'Low', color: '#64748b' },
@@ -24,9 +39,11 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
 }) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const { pickFromGallery, takePhoto } = useImagePicker();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('MEDIUM');
+  const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
 
   const submit = useCallback(async () => {
@@ -34,12 +51,21 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
     setBusy(true);
     try {
       const issue = await shiftIssuesApi.create({ title: title.trim(), description: description.trim() || undefined, severity, timeEntryId, spaceId });
-      setTitle(''); setDescription(''); setSeverity('MEDIUM');
+      // Photos are uploaded AFTER create (the S3 key needs the issue id) and
+      // posted as the reporter's first message.
+      if (picked.length) {
+        const attachments = await uploadPhotos(issue.id, picked);
+        if (attachments.length) { try { await shiftIssuesApi.message(issue.id, { body: '', attachments }); } catch { /* noop */ } }
+      }
+      setTitle(''); setDescription(''); setSeverity('MEDIUM'); setPicked([]);
       onCreated(issue.id);
     } catch {
       /* toast handled globally */
     } finally { setBusy(false); }
-  }, [title, description, severity, timeEntryId, spaceId, onCreated]);
+  }, [title, description, severity, timeEntryId, spaceId, picked, onCreated]);
+
+  const addGallery = useCallback(async () => { const imgs = await pickFromGallery(); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
+  const addCamera = useCallback(async () => { const img = await takePhoto(); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
@@ -68,6 +94,28 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
             placeholder="Describe what's happening (optional)" placeholderTextColor={colors.textMuted}
             value={description} onChangeText={setDescription} multiline maxLength={2000}
           />
+
+          {picked.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: SPACING.md }}>
+              {picked.map((p, i) => (
+                <View key={i} style={{ marginRight: SPACING.sm }}>
+                  <Image source={{ uri: p.uri }} style={{ width: 56, height: 56, borderRadius: RADIUS.sm }} />
+                  <TouchableOpacity style={styles.removeThumb} onPress={() => setPicked((prev) => prev.filter((_, idx) => idx !== i))}>
+                    <Ionicons name="close-circle" size={18} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          <View style={{ flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md }}>
+            <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.border }]} onPress={addCamera} disabled={picked.length >= 5}>
+              <Ionicons name="camera-outline" size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm }}>Camera</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.border }]} onPress={addGallery} disabled={picked.length >= 5}>
+              <Ionicons name="images-outline" size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm }}>Photo</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity style={[styles.primaryBtn, (!title.trim() || busy) && { opacity: 0.5 }]} onPress={submit} disabled={!title.trim() || busy}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Report issue</Text>}
           </TouchableOpacity>
@@ -84,9 +132,11 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { subscribe } = useSocketContext();
+  const { pickFromGallery, takePhoto } = useImagePicker();
   const [issue, setIssue] = useState<ShiftIssue | null>(null);
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState('');
+  const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -107,11 +157,17 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   }, [visible, issueId, subscribe, load]);
 
   const send = useCallback(async () => {
-    if (!issueId || !draft.trim()) return;
+    if (!issueId || (!draft.trim() && picked.length === 0)) return;
     setBusy(true);
-    try { await shiftIssuesApi.message(issueId, { body: draft.trim() }); setDraft(''); await load(); }
-    catch { /* noop */ } finally { setBusy(false); }
-  }, [issueId, draft, load]);
+    try {
+      const attachments = picked.length ? await uploadPhotos(issueId, picked) : [];
+      await shiftIssuesApi.message(issueId, { body: draft.trim(), attachments });
+      setDraft(''); setPicked([]); await load();
+    } catch { /* noop */ } finally { setBusy(false); }
+  }, [issueId, draft, picked, load]);
+
+  const addGallery = useCallback(async () => { const imgs = await pickFromGallery(); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
+  const addCamera = useCallback(async () => { const img = await takePhoto(); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
 
   const act = useCallback(async (fn: () => Promise<any>) => { try { await fn(); await load(); } catch { /* noop */ } }, [load]);
 
@@ -165,16 +221,36 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
               </ScrollView>
 
               {!closed ? (
-                <View style={styles.composer}>
-                  <TextInput
-                    style={[styles.msgInput, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
-                    placeholder="Message on this issue…" placeholderTextColor={colors.textMuted}
-                    value={draft} onChangeText={setDraft} multiline maxLength={2000}
-                  />
-                  <TouchableOpacity style={[styles.sendBtn, (!draft.trim() || busy) && { opacity: 0.5 }]} onPress={send} disabled={!draft.trim() || busy}>
-                    {busy ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
-                  </TouchableOpacity>
-                </View>
+                <>
+                  {picked.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: SPACING.sm }}>
+                      {picked.map((p, i) => (
+                        <View key={i} style={{ marginRight: SPACING.sm }}>
+                          <Image source={{ uri: p.uri }} style={{ width: 48, height: 48, borderRadius: RADIUS.sm }} />
+                          <TouchableOpacity style={styles.removeThumb} onPress={() => setPicked((prev) => prev.filter((_, idx) => idx !== i))}>
+                            <Ionicons name="close-circle" size={16} color="#fff" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  )}
+                  <View style={styles.composer}>
+                    <TouchableOpacity style={styles.iconBtn} onPress={addCamera} disabled={picked.length >= 5}>
+                      <Ionicons name="camera-outline" size={22} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={addGallery} disabled={picked.length >= 5}>
+                      <Ionicons name="images-outline" size={22} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                    <TextInput
+                      style={[styles.msgInput, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
+                      placeholder="Message on this issue…" placeholderTextColor={colors.textMuted}
+                      value={draft} onChangeText={setDraft} multiline maxLength={2000}
+                    />
+                    <TouchableOpacity style={[styles.sendBtn, (!draft.trim() && picked.length === 0) || busy ? { opacity: 0.5 } : null]} onPress={send} disabled={(!draft.trim() && picked.length === 0) || busy}>
+                      {busy ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
+                    </TouchableOpacity>
+                  </View>
+                </>
               ) : (
                 <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.md }}>This issue is {issue.status.toLowerCase()}.</Text>
               )}
@@ -192,7 +268,14 @@ function ThreadItem({ e, mine, colors, isDark }: { e: ShiftIssueEvent; mine: boo
       <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', marginBottom: SPACING.sm }}>
         <View style={{ maxWidth: '80%', borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, backgroundColor: mine ? COLORS.primary : (isDark ? colors.surfaceRaised : '#f1f5f9') }}>
           {!mine && <Text style={{ fontSize: FONT_SIZE.xs, fontWeight: '700', color: mine ? '#fff' : colors.textMuted, marginBottom: 2 }}>{e.actorName}</Text>}
-          <Text style={{ fontSize: FONT_SIZE.base, color: mine ? '#fff' : colors.textPrimary }}>{e.body}</Text>
+          {!!e.body && <Text style={{ fontSize: FONT_SIZE.base, color: mine ? '#fff' : colors.textPrimary }}>{e.body}</Text>}
+          {!!e.attachments?.length && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: e.body ? 6 : 0 }}>
+              {e.attachments.filter((a) => (a.mimeType ?? '').startsWith('image/')).map((a, i) => (
+                <Image key={i} source={{ uri: a.url ?? a.fileUrl }} style={{ width: 120, height: 120, borderRadius: RADIUS.md }} />
+              ))}
+            </View>
+          )}
         </View>
         <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 2 }}>{fmt(e.at)}</Text>
       </View>
@@ -228,7 +311,10 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: 6 },
   actionText: { fontSize: FONT_SIZE.sm, fontWeight: '600' },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.sm, marginTop: SPACING.sm },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.xs, marginTop: SPACING.sm },
   msgInput: { flex: 1, borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZE.base, minHeight: 44, maxHeight: 120 },
   sendBtn: { backgroundColor: COLORS.primary, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { padding: SPACING.sm, justifyContent: 'center' },
+  photoBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderRadius: RADIUS.md, paddingVertical: SPACING.sm },
+  removeThumb: { position: 'absolute', top: -6, right: -6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10 },
 });

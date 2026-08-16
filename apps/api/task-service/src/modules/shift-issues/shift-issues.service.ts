@@ -86,6 +86,21 @@ export class ShiftIssuesService {
     return `${this.s3Endpoint}/${this.s3Bucket}/${organizationId}/shift-issues/${issueId}/`;
   }
 
+  /** Keep only attachments whose object lives under THIS issue's prefix (anti-IDOR). */
+  private cleanAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Attachment[] {
+    if (!Array.isArray(attachments)) return [];
+    const prefix = this.issuePrefix(issue.organizationId, issue.id);
+    return attachments
+      .filter((a: any) => a && typeof a.fileUrl === 'string' && a.fileUrl.startsWith(prefix) && typeof a.fileKey === 'string')
+      .slice(0, 10)
+      .map((a: any) => ({
+        fileKey: a.fileKey, fileUrl: a.fileUrl,
+        fileName: String(a.fileName ?? 'file').slice(0, 255),
+        fileSize: Number(a.fileSize) || 0, mimeType: String(a.mimeType ?? ''),
+        width: a.width ?? null, height: a.height ?? null,
+      }));
+  }
+
   private async signAttachments(attachments: unknown): Promise<any[]> {
     if (!Array.isArray(attachments)) return [];
     return Promise.all(
@@ -131,7 +146,9 @@ export class ShiftIssuesService {
             type: 'CREATED',
             actorId: data.callerUserId,
             body: data.description?.slice(0, BODY_MAX) ?? null,
-            attachments: (data.attachments ?? []) as any,
+            // Photos on the report are uploaded AFTER create (the S3 key needs the
+            // issue id) and posted as the reporter's first message.
+            attachments: [] as any,
           },
         },
       },
@@ -207,10 +224,11 @@ export class ShiftIssuesService {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     this.assertParticipant(issue, data.callerUserId, !!data.canManage);
     const body = (data.body ?? '').trim();
-    if (!body && !(data.attachments ?? []).length) throw new BadRequestException('Empty message');
+    const attachments = this.cleanAttachments(issue, data.attachments);
+    if (!body && !attachments.length) throw new BadRequestException('Empty message');
 
     const event = await this.prisma.shiftIssueEvent.create({
-      data: { issueId: issue.id, type: 'MESSAGE', actorId: data.callerUserId, body: body.slice(0, BODY_MAX) || null, attachments: (data.attachments ?? []) as any },
+      data: { issueId: issue.id, type: 'MESSAGE', actorId: data.callerUserId, body: body.slice(0, BODY_MAX) || null, attachments: attachments as any },
     });
     await this.prisma.shiftIssue.update({ where: { id: issue.id }, data: { updatedAt: new Date() } });
     await this.broadcast(issue, data.callerUserId, event);

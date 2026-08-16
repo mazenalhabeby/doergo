@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft } from "lucide-react"
+import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft, ImagePlus, X } from "lucide-react"
 
-import { shiftIssuesApi, employeesApi, type ShiftIssue, type ShiftIssueEvent } from "@/lib/api"
+import { shiftIssuesApi, employeesApi, uploadToS3, type ShiftIssue, type ShiftIssueEvent } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
 import { notify } from "@/lib/toast"
@@ -118,8 +118,10 @@ export default function IssuesPage() {
 
 function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { issue: ShiftIssue; canManage: boolean; currentUserId?: string; onChanged: () => void; onBack: () => void }) {
   const [draft, setDraft] = useState("")
+  const [files, setFiles] = useState<File[]>([])
   const [assignOpen, setAssignOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const thread = issue.thread ?? []
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }) }, [thread.length])
@@ -128,8 +130,16 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
   const members: any[] = (membersQ.data as any)?.data ?? (membersQ.data as any)?.employees ?? []
 
   const send = useMutation({
-    mutationFn: () => shiftIssuesApi.message(issue.id, { body: draft.trim() }),
-    onSuccess: () => { setDraft(""); onChanged() },
+    mutationFn: async () => {
+      const attachments: any[] = []
+      for (const f of files) {
+        const pre = await shiftIssuesApi.presignAttachment(issue.id, f.name, f.type)
+        await uploadToS3(pre.uploadUrl, f)
+        attachments.push({ fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: f.name, fileSize: f.size, mimeType: f.type })
+      }
+      return shiftIssuesApi.message(issue.id, { body: draft.trim(), attachments })
+    },
+    onSuccess: () => { setDraft(""); setFiles([]); onChanged() },
     onError: (e: any) => notify.error(e?.message || "Failed to send"),
   })
   const act = (fn: () => Promise<any>) => fn().then(onChanged).catch((e: any) => notify.error(e?.message || "Action failed"))
@@ -183,13 +193,30 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
       </div>
 
       {!closed ? (
-        <div className="flex items-end gap-2 border-t border-border/60 bg-card p-3">
-          <Textarea value={draft} onChange={(ev) => setDraft(ev.target.value)} rows={1}
-            placeholder="Message on this issue…" className="max-h-32 min-h-[42px] resize-none rounded-xl"
-            onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); if (draft.trim()) send.mutate() } }} />
-          <Button size="icon" className="h-[42px] w-[42px] shrink-0 rounded-xl" disabled={!draft.trim() || send.isPending} onClick={() => send.mutate()}>
-            {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+        <div className="border-t border-border/60 bg-card p-3">
+          {files.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {files.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px]">
+                  <span className="max-w-[120px] truncate">{f.name}</span>
+                  <button onClick={() => setFiles((p) => p.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden"
+              onChange={(e) => { setFiles((p) => [...p, ...Array.from(e.target.files ?? [])].slice(0, 5)); e.currentTarget.value = "" }} />
+            <Button size="icon" variant="ghost" className="h-[42px] w-[42px] shrink-0" disabled={files.length >= 5} onClick={() => fileRef.current?.click()}>
+              <ImagePlus className="h-4 w-4" />
+            </Button>
+            <Textarea value={draft} onChange={(ev) => setDraft(ev.target.value)} rows={1}
+              placeholder="Message on this issue…" className="max-h-32 min-h-[42px] resize-none rounded-xl"
+              onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); if (draft.trim() || files.length) send.mutate() } }} />
+            <Button size="icon" className="h-[42px] w-[42px] shrink-0 rounded-xl" disabled={(!draft.trim() && files.length === 0) || send.isPending} onClick={() => send.mutate()}>
+              {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="border-t border-border/60 bg-card p-3 text-center text-xs text-muted-foreground">
