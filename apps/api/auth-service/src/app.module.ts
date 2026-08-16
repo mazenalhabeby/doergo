@@ -11,6 +11,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { InvoiceModule } from './modules/invoices/invoice.module';
 import { SpaceSharingModule } from './modules/space-sharing/space-sharing.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { PlatformAdminModule } from './modules/platform-admin/platform-admin.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { SearchModule } from './modules/search/search.module';
 import { PortalModule } from './modules/portal/portal.module';
@@ -85,6 +86,7 @@ import { PortalModule } from './modules/portal/portal.module';
     InvoiceModule,
     SpaceSharingModule,
     BillingModule,
+    PlatformAdminModule,
     CustomersModule,
     SearchModule,
     PortalModule,

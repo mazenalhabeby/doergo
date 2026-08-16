@@ -290,7 +290,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true, suspendedAt: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           // isActive so a deactivated role stops granting (M1). Space grants are
           // filtered to their effective window so expired/future grants don't
@@ -478,7 +478,7 @@ export class AuthService {
             // org's set, never the user's access profile. Drives hasModule/hasFeature.
             orgModules: (user.organization?.enabledModules as string[] | null) || [],
             // Billing tier + subscription status (lowercase) — drives plan gating.
-            subStatus: (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+            subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
             // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
             access: buildResolvedAccess({
@@ -542,7 +542,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true } },
+              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true, suspendedAt: true } },
             },
           },
         },
@@ -749,7 +749,7 @@ export class AuthService {
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
             enabledModules: (storedToken.user.enabledModules ?? storedToken.user.organization?.enabledModules) || [],
             orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
-            subStatus: (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+            subStatus: storedToken.user.organization?.suspendedAt ? 'canceled' : (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
           },
         },
@@ -1021,7 +1021,7 @@ export class AuthService {
           // CustomerScopeGuard + portal endpoints scope to the caller's own data.
           customerId: true,
           unitId: true,
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true, usesExternalWorkers: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true } },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
@@ -1130,7 +1130,7 @@ export class AuthService {
           orgModules: (organization?.enabledModules as string[] | null) || [],
           // Billing status carried on req.user so the SubscriptionGuard enforces
           // the read-only lock with zero extra DB reads (cached with the user).
-          subStatus: (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+          subStatus: organization?.suspendedAt ? 'canceled' : (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
           planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
           // Org-level portal opt-in (customers only exist when enabled).
           customerPortalEnabled: organization?.customerPortalEnabled ?? false,

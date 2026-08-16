@@ -1,10 +1,11 @@
 'use client';
 
 /**
- * PLATFORM-OPERATOR console (HBC internal — NOT a customer page). Hidden route,
- * no customer login. Gated purely by the PLATFORM_ADMIN_KEY: you paste it once
- * (kept in sessionStorage), and every request sends it as `x-platform-admin-key`.
- * Lets the operator set an org's tier — mainly ENTERPRISE for custom quotes.
+ * PLATFORM CONTROL CENTER (HBC internal — NOT a customer page). Hidden route, no
+ * customer login. Gated purely by PLATFORM_ADMIN_KEY: paste it once (kept in
+ * sessionStorage) and every request sends it as `x-platform-admin-key`. Lets the
+ * operator run the whole SaaS: overview metrics, organizations, seats/members,
+ * and org controls (tier / trial / suspend). Editable pricing is a later phase.
  */
 import { useCallback, useEffect, useState } from 'react';
 
@@ -12,13 +13,23 @@ const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const TIERS = ['starter', 'professional', 'business', 'enterprise'] as const;
 type Tier = (typeof TIERS)[number];
 
-interface Org {
-  id: string;
-  name: string;
-  planTier: string | null;
-  subStatus: string | null;
-  currentPeriodEnd: string | null;
-  trialEndsAt: string | null;
+const eur = (cents?: number | null) =>
+  cents == null ? '—' : `€${(cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—');
+
+interface Seats { office: number; field: number; fieldInhouse: number; total: number }
+interface Overview {
+  totalOrgs: number; trialing: number; suspended: number; newLast30: number;
+  byStatus: Record<string, number>; seats: Seats; mrrCents: number; arrCents: number;
+}
+interface OrgRow {
+  id: string; name: string; planTier: string | null; subStatus: string;
+  trialEndsAt: string | null; currentPeriodEnd: string | null; suspendedAt: string | null;
+  createdAt: string; memberCount: number; seats: Seats; mrrCents: number; stripeCustomerId: string | null;
+}
+interface OrgDetail extends OrgRow {
+  enabledModules: string[]; billingEmail: string | null; vatId: string | null;
+  members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null; lastActiveAt: string | null }>;
 }
 
 async function apiFetch<T>(path: string, key: string, init?: RequestInit): Promise<T> {
@@ -31,205 +42,202 @@ async function apiFetch<T>(path: string, key: string, init?: RequestInit): Promi
   return body as T;
 }
 
+const STATUS_COLOR: Record<string, string> = {
+  active: 'bg-green-500/15 text-green-400', trialing: 'bg-blue-500/15 text-blue-400',
+  past_due: 'bg-amber-500/15 text-amber-400', canceled: 'bg-slate-500/15 text-slate-400',
+  incomplete: 'bg-red-500/15 text-red-400',
+};
+
 export default function OperatorPage() {
   const [key, setKey] = useState('');
   const [keyInput, setKeyInput] = useState('');
-  const [orgs, setOrgs] = useState<Org[]>([]);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [orgs, setOrgs] = useState<OrgRow[]>([]);
+  const [detail, setDetail] = useState<OrgDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [pending, setPending] = useState<Record<string, Tier>>({});
-  const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
 
-  useEffect(() => {
-    const saved = sessionStorage.getItem('platformKey');
-    if (saved) setKey(saved);
-  }, []);
+  useEffect(() => { const s = sessionStorage.getItem('platformKey'); if (s) setKey(s); }, []);
 
   const load = useCallback(async (k: string) => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const r = await apiFetch<{ data: Org[] }>('/billing/admin/orgs', k);
-      setOrgs(r.data || []);
+      const [ov, list] = await Promise.all([
+        apiFetch<{ data: Overview }>('/platform/overview', k),
+        apiFetch<{ data: OrgRow[] }>(`/platform/orgs?status=${status}${search ? `&search=${encodeURIComponent(search)}` : ''}`, k),
+      ]);
+      setOverview(ov.data); setOrgs(list.data || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load');
-      if (String(e).includes('Forbidden')) {
-        setKey('');
-        sessionStorage.removeItem('platformKey');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (String(e).includes('Forbidden')) { setKey(''); sessionStorage.removeItem('platformKey'); }
+    } finally { setLoading(false); }
+  }, [status, search]);
 
-  useEffect(() => {
-    if (key) void load(key);
-  }, [key, load]);
+  useEffect(() => { if (key) load(key); }, [key, load]);
 
-  const unlock = () => {
-    const k = keyInput.trim();
-    if (!k) return;
-    sessionStorage.setItem('platformKey', k);
-    setKey(k);
+  const act = async (id: string, path: string, init?: RequestInit) => {
+    setBusyId(id);
+    try { await apiFetch(`/platform/orgs/${id}${path}`, key, { method: 'POST', ...init }); await load(key); if (detail?.id === id) openDetail(id); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); }
+    finally { setBusyId(null); }
+  };
+  const setTier = async (id: string, tier: Tier) => {
+    setBusyId(id);
+    try { await apiFetch('/billing/admin/org-tier', key, { method: 'POST', body: JSON.stringify({ organizationId: id, tier }) }); await load(key); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setBusyId(null); }
+  };
+  const openDetail = async (id: string) => {
+    try { const r = await apiFetch<{ data: OrgDetail }>(`/platform/orgs/${id}`, key); setDetail(r.data); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Failed'); }
   };
 
-  const apply = async (org: Org) => {
-    const tier = pending[org.id] ?? (org.planTier?.toLowerCase() as Tier) ?? 'enterprise';
-    setBusyId(org.id);
-    setError(null);
-    try {
-      await apiFetch('/billing/admin/org-tier', key, {
-        method: 'POST',
-        body: JSON.stringify({ organizationId: org.id, tier }),
-      });
-      await load(key);
-      setPending((p) => {
-        const n = { ...p };
-        delete n[org.id];
-        return n;
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update');
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  // ── Key gate ──────────────────────────────────────────────────────────────
+  // ── Key gate ──
   if (!key) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="text-lg font-semibold text-foreground">Operator console</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Enter the platform admin key.</p>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && unlock()}
-            placeholder="PLATFORM_ADMIN_KEY"
-            className="mt-5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40"
-          />
-          <button
-            onClick={unlock}
-            className="mt-4 w-full rounded-lg bg-foreground py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
-          >
-            Unlock
-          </button>
-          {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+      <div style={{ minHeight: '100vh' }} className="flex items-center justify-center bg-slate-950 p-6 text-slate-100">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <h1 className="mb-1 text-lg font-semibold">Platform Control Center</h1>
+          <p className="mb-4 text-sm text-slate-400">Enter the operator key.</p>
+          <input type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && keyInput) { sessionStorage.setItem('platformKey', keyInput); setKey(keyInput); } }}
+            placeholder="PLATFORM_ADMIN_KEY" className="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          <button onClick={() => { if (keyInput) { sessionStorage.setItem('platformKey', keyInput); setKey(keyInput); } }}
+            className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-500">Unlock</button>
+          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
-      </main>
+      </div>
     );
   }
 
-  const visible = orgs.filter(
-    (o) => o.name.toLowerCase().includes(filter.toLowerCase()) || o.id.includes(filter),
+  const Stat = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-1 text-2xl font-semibold text-slate-100">{value}</div>
+      {sub && <div className="mt-0.5 text-xs text-slate-400">{sub}</div>}
+    </div>
   );
 
   return (
-    <main className="min-h-screen bg-background p-6 sm:p-10">
-      <div className="mx-auto max-w-4xl">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Operator — plans</h1>
-            <p className="text-sm text-muted-foreground">{orgs.length} organizations</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Filter…"
-              className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-foreground/40"
-            />
-            <button
-              onClick={() => load(key)}
-              disabled={loading}
-              className="rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-accent disabled:opacity-50"
-            >
-              {loading ? '…' : 'Refresh'}
-            </button>
-            <button
-              onClick={() => {
-                sessionStorage.removeItem('platformKey');
-                setKey('');
-              }}
-              className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
-            >
-              Lock
-            </button>
-          </div>
+    <div style={{ minHeight: '100vh' }} className="bg-slate-950 p-4 text-slate-100 md:p-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Platform Control Center</h1>
+          <button onClick={() => { setKey(''); sessionStorage.removeItem('platformKey'); }} className="text-xs text-slate-400 hover:text-slate-200">Lock</button>
         </div>
 
-        {error && <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {error && <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">{error}</div>}
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card">
+        {/* Overview */}
+        {overview && (
+          <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
+            <Stat label="MRR" value={eur(overview.mrrCents)} sub={`${eur(overview.arrCents)} ARR`} />
+            <Stat label="Organizations" value={String(overview.totalOrgs)} sub={`+${overview.newLast30} in 30d`} />
+            <Stat label="Active" value={String(overview.byStatus.active ?? 0)} />
+            <Stat label="Trialing" value={String(overview.trialing)} />
+            <Stat label="Suspended" value={String(overview.suspended)} />
+            <Stat label="Seats" value={String(overview.seats.total)} sub={`${overview.seats.office} office · ${overview.seats.field + overview.seats.fieldInhouse} field`} />
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && load(key)}
+            placeholder="Search org…" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm outline-none focus:border-blue-500" />
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm">
+            {['all', 'active', 'trialing', 'past_due', 'canceled', 'incomplete'].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button onClick={() => load(key)} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">{loading ? '…' : 'Refresh'}</button>
+        </div>
+
+        {/* Orgs table */}
+        <div className="overflow-x-auto rounded-xl border border-slate-800">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Organization</th>
-                <th className="px-4 py-3 font-medium">Current</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Set tier</th>
+            <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Tier</th>
+                <th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th>
+                <th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2">Created</th><th className="px-3 py-2"></th>
               </tr>
             </thead>
-            <tbody>
-              {visible.map((o) => {
-                const current = (o.planTier?.toLowerCase() as Tier) || undefined;
-                const sel = pending[o.id] ?? current ?? 'enterprise';
-                const changed = sel !== current;
-                return (
-                  <tr key={o.id} className="border-b border-border/50 last:border-0">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{o.name}</div>
-                      <div className="font-mono text-[11px] text-muted-foreground">{o.id}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-foreground">
-                        {o.planTier || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{o.subStatus || '—'}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={sel}
-                          onChange={(e) => setPending((p) => ({ ...p, [o.id]: e.target.value as Tier }))}
-                          className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                        >
-                          {TIERS.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={() => apply(o)}
-                          disabled={!changed || busyId === o.id}
-                          className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-40"
-                        >
-                          {busyId === o.id ? '…' : 'Apply'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!loading && visible.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No organizations.
+            <tbody className="divide-y divide-slate-800">
+              {orgs.map((o) => (
+                <tr key={o.id} className="hover:bg-slate-900/50">
+                  <td className="px-3 py-2">
+                    <button onClick={() => openDetail(o.id)} className="font-medium text-slate-100 hover:text-blue-400">{o.name}</button>
+                    {o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SUSPENDED</span>}
+                  </td>
+                  <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[o.subStatus?.toLowerCase()] ?? 'bg-slate-700 text-slate-300'}`}>{o.subStatus?.toLowerCase()}</span></td>
+                  <td className="px-3 py-2">
+                    <select value={(o.planTier ?? '').toLowerCase()} disabled={busyId === o.id} onChange={(e) => setTier(o.id, e.target.value as Tier)}
+                      className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-xs">
+                      <option value="">—</option>
+                      {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{o.memberCount}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slate-400" title={`${o.seats.office} office · ${o.seats.field} field · ${o.seats.fieldInhouse} in-house`}>{o.seats.total}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{eur(o.mrrCents)}</td>
+                  <td className="px-3 py-2 text-slate-400">{date(o.trialEndsAt)}</td>
+                  <td className="px-3 py-2 text-slate-400">{date(o.createdAt)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="flex justify-end gap-1">
+                      <button disabled={busyId === o.id} onClick={() => act(o.id, '/extend-trial', { body: JSON.stringify({ days: 14 }) })} className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700" title="Extend trial 14 days">+14d</button>
+                      {o.suspendedAt ? (
+                        <button disabled={busyId === o.id} onClick={() => act(o.id, '/reactivate')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Reactivate</button>
+                      ) : (
+                        <button disabled={busyId === o.id} onClick={() => act(o.id, '/suspend')} className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Suspend</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              )}
+              ))}
+              {orgs.length === 0 && !loading && <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-500">No organizations.</td></tr>}
             </tbody>
           </table>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Setting a tier unlocks its features immediately (users see it within ~60s). The Stripe custom price for
-          Enterprise is managed separately in the Stripe dashboard.
-        </p>
       </div>
-    </main>
+
+      {/* Detail drawer */}
+      {detail && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setDetail(null)}>
+          <div className="h-full w-full max-w-lg overflow-y-auto border-l border-slate-800 bg-slate-900 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">{detail.name}</h2>
+                <p className="text-xs text-slate-500">{detail.id}</p>
+              </div>
+              <button onClick={() => setDetail(null)} className="text-slate-400 hover:text-slate-200">✕</button>
+            </div>
+            <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
+              <div><div className="text-xs text-slate-500">Status</div>{detail.subStatus?.toLowerCase()}{detail.suspendedAt && ' (suspended)'}</div>
+              <div><div className="text-xs text-slate-500">Tier</div>{detail.planTier?.toLowerCase() ?? '—'}</div>
+              <div><div className="text-xs text-slate-500">MRR</div>{eur(detail.mrrCents)}</div>
+              <div><div className="text-xs text-slate-500">Seats</div>{detail.seats.office} office · {detail.seats.field} field · {detail.seats.fieldInhouse} in-house</div>
+              <div><div className="text-xs text-slate-500">Trial ends</div>{date(detail.trialEndsAt)}</div>
+              <div><div className="text-xs text-slate-500">Period ends</div>{date(detail.currentPeriodEnd)}</div>
+              <div className="col-span-2"><div className="text-xs text-slate-500">Billing email / VAT</div>{detail.billingEmail ?? '—'} · {detail.vatId ?? '—'}</div>
+            </div>
+            <div className="mb-4">
+              <div className="mb-1 text-xs text-slate-500">Modules ({detail.enabledModules?.length ?? 0})</div>
+              <div className="flex flex-wrap gap-1">{(detail.enabledModules ?? []).map((m) => <span key={m} className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-300">{m}</span>)}</div>
+            </div>
+            <div>
+              <div className="mb-1 text-xs text-slate-500">Members ({detail.members.length})</div>
+              <div className="divide-y divide-slate-800 rounded-lg border border-slate-800">
+                {detail.members.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <div><span className={m.isActive ? '' : 'text-slate-500 line-through'}>{m.firstName} {m.lastName}</span> <span className="text-xs text-slate-500">{m.email}</span></div>
+                    <span className="text-xs text-slate-400">{m.role?.toLowerCase()}{m.employmentType ? ` · ${m.employmentType.toLowerCase()}` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
