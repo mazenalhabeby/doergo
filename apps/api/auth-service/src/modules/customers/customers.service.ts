@@ -180,7 +180,9 @@ export class CustomersService {
       }),
       this.prisma.customer.count({ where }),
     ]);
-    return { data: items, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    // Surface the caller's resolved CRM abilities so the UI can hide/disable
+    // actions it isn't allowed to take (the server still enforces regardless).
+    return { data: items, meta: { total, page, limit, totalPages: Math.ceil(total / limit), crmCaps: caps } };
   }
 
   async get(id: string, organizationId: string, caller?: CrmCaller) {
@@ -223,6 +225,9 @@ export class CustomersService {
           portalName: portal?.name ?? null,
           entityLabel: portal?.entityLabel ?? null,   // Apartment / Order / Workspace…
         },
+        // Caller's CRM abilities on THIS record — lets the detail UI hide actions
+        // it can't take (the server still enforces every one of them).
+        crmCaps: caps,
       },
     };
   }

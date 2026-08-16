@@ -28,7 +28,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { hasAccessModule, resolveCrmCaps } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
@@ -139,6 +139,15 @@ export function TopNavbar() {
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
+  // CRM navbar tab: ONLY for members who have CRM access but CANNOT manage a space.
+  // Admins / managers (who can open a space's settings) reach the CRM via the space's
+  // Customers tab instead — so they don't get this top-level entry.
+  const uAccess = (user as { role?: string; access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> } })
+  const canManageAnySpace =
+    user.canManageUsers ||
+    uAccess.access?.org?.canManageUsers === true ||
+    Object.values(uAccess.access?.perSpace ?? {}).some((p) => p?.canManageUsers === true)
+  const showCrm = !canManageAnySpace && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
   // Invoices: admins bill their customers. Shown for admins regardless of tier —
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.
@@ -215,6 +224,22 @@ export function TopNavbar() {
         >
           {t("nav.sidebar.tasks")}
         </Link>
+
+        {/* CRM — a member's assigned clients (server-scoped). Reachable without
+            space-manager rights, unlike the per-space Customers tab. */}
+        {showCrm && (
+          <Link
+            href="/clients"
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/clients")
+                ? cn(navItemActiveStyle, bottomIndicator)
+                : navItemInactive,
+            )}
+          >
+            {t("nav.crm", "CRM")}
+          </Link>
+        )}
 
         {/* Team dropdown (admins) */}
         {showTeam && <TeamDropdown pathname={pathname} onOpen={prefetch.prefetchTeam} />}

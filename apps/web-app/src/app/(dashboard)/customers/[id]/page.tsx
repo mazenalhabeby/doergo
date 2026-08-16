@@ -182,9 +182,11 @@ export default function CustomerRecordPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-      <button onClick={() => (customer.spaceId ? router.push(`/locations/${customer.spaceId}?tab=customers`) : router.back())}
+      {/* Back to wherever they came from — the member CRM list (/clients) or, for
+          a space manager, the space's Customers tab. history.back handles both. */}
+      <button onClick={() => router.back()}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> {t("customers.backToList", "Customers")}
+        <ArrowLeft className="h-4 w-4" /> {t("common.back", "Back")}
       </button>
 
       {/* ── HEADER ── */}
