@@ -31,6 +31,7 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
   const [draft, setDraft] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [busy, setBusy] = useState(false)
+  const [viewer, setViewer] = useState<string | null>(null) // full-screen image lightbox
   const fileRef = useRef<HTMLInputElement>(null)
 
   const submit = async () => {
@@ -99,10 +100,10 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
                   <div className="mt-2 flex flex-wrap gap-2">
                     {n.attachments.map((a) =>
                       isImg(a.mimeType) ? (
-                        <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="block h-16 w-16 overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.04]">
+                        <button key={a.id} type="button" onClick={() => setViewer(a.url ?? a.fileUrl)} className="block h-16 w-16 overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.04]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={a.url ?? a.fileUrl} alt={a.fileName} className="h-full w-full object-cover" />
-                        </a>
+                        </button>
                       ) : (
                         <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted">
                           <FileText className="h-3.5 w-3.5 text-muted-foreground" /> <span className="max-w-[140px] truncate">{a.fileName}</span>
@@ -165,6 +166,17 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
               {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Plus className="mr-1.5 h-4 w-4" />} {t("worklog.add", "Add")}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Full-screen image lightbox */}
+      {viewer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setViewer(null)}>
+          <button type="button" onClick={() => setViewer(null)} className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70">
+            <X className="h-5 w-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewer} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>
