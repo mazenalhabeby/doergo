@@ -80,9 +80,11 @@ export function AccessFields({
 }) {
   const { t } = useTranslation()
 
-  // Contacts this member could be allowed to reach: leadership — admins, managers
-  // (canViewAllTasks), and anyone holding a named role. (Replaces the retired
-  // "Show in Management" flag: a role IS management.)
+  // Contacts this member could be allowed to reach: leadership only — admins and
+  // managers. "Manager" = holds an elevated permission (view-all / assign tasks /
+  // manage users). NOT merely "has a named role": in the unified role system every
+  // member has a role, so `!!memberRole` would match plain employees (Technician,
+  // Maintenance Worker) too — we want only actual admins/managers here.
   const { data: membersData } = useQuery({
     queryKey: ["orgMembers", "accessContacts"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
@@ -91,7 +93,10 @@ export function AccessFields({
   const candidateContacts = useMemo(
     () =>
       (membersData?.data || []).filter(
-        (m) => m.id !== excludeContactId && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || !!m.memberRole),
+        (m) =>
+          m.id !== excludeContactId &&
+          m.isActive &&
+          (m.role === "ADMIN" || m.canViewAllTasks || m.canAssignTasks || m.canManageUsers),
       ),
     [membersData, excludeContactId],
   )

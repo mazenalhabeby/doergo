@@ -741,14 +741,21 @@ export class UsersService {
       return { success: true, data: [] };
     }
 
-    // Directory = admins (always) + managers / members holding a named role.
-    // (Replaces the retired "Show in Management" flag — a role IS management.)
+    // Directory = admins + managers ONLY. "Manager" = holds an elevated permission
+    // (view-all / assign tasks / manage users). NOT merely "has a named role":
+    // in the unified role system every member has a role, so `memberRoleId != null`
+    // matched plain employees (Technician, Maintenance Worker) too.
     const candidates = await this.prisma.user.findMany({
       where: {
         organizationId,
         isActive: true,
         id: { not: userId },
-        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { memberRoleId: { not: null } }],
+        OR: [
+          { role: Role.ADMIN },
+          { canViewAllTasks: true },
+          { canAssignTasks: true },
+          { canManageUsers: true },
+        ],
       },
       select: {
         id: true,

@@ -89,14 +89,23 @@ export function AccessBuilder({
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
     staleTime: 60000,
   })
+  // Eligible watchers = admins + managers only (elevated permission), NOT every
+  // member — `!!memberRole` matched plain employees since everyone has a role.
   const watcherCandidates = useMemo(
     () => (membersData?.data || []).filter(
-      (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || !!m.memberRole),
+      (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || m.canAssignTasks || m.canManageUsers),
     ),
     [membersData, member.id, isBulk],
   )
 
   const dirty = canon(draft) !== canon(initial) || watchersTouched
+
+  // Revert every pending edit back to the last-saved state.
+  const discard = () => {
+    setDraft(initial)
+    setWatcherIds(new Set((watchersData || []).map((w) => w.id)))
+    setWatchersTouched(false)
+  }
 
   const save = async () => {
     try {
@@ -132,6 +141,7 @@ export function AccessBuilder({
   }
 
   return (
+    <>
     <div className="rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div>
@@ -214,5 +224,29 @@ export function AccessBuilder({
         </Field>
       </div>
     </div>
+
+    {/* Sticky unsaved-changes bar — stays reachable no matter how far the form
+        is scrolled (same pattern as the space Modules tab). Bulk mode keeps its
+        header "Apply to all" button, so only show this in single-member edit. */}
+    {!isBulk && dirty && (
+      <div className="sticky bottom-3 z-20 pt-2">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold text-foreground">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+            {t("accessBuilder.unsaved", "You have unsaved changes")}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={discard} disabled={saving}>
+              {t("common.discard", "Discard")}
+            </Button>
+            <Button size="sm" className="gap-1.5" onClick={save} disabled={saving}>
+              <Save className="h-3.5 w-3.5" />
+              {saving ? t("common.saving") : t("common.saveChanges", "Save changes")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

@@ -1050,19 +1050,23 @@ export function ClientDashboard() {
                 <WorkspaceGrid boxes={displayBoxes} autoExpandSingle canSeeAbsenceReason={isAdminOrDispatcher} />
               </section>
 
-              {/* Right column: management contacts (top, always visible) + my tasks */}
-              <div className="space-y-6">
+              {/* Right column: management contacts (natural height) + my tasks.
+                  On lg+ the column is a viewport-tall flex column pinned in view,
+                  so My Tasks FILLS whatever height is left after the contacts card
+                  (dynamic — no hardcoded subtraction) and scrolls internally.
+                  On mobile it stacks and flows normally. */}
+              <div className="space-y-6 lg:space-y-0 lg:sticky lg:top-6 lg:flex lg:h-[calc(100vh-7rem)] lg:flex-col lg:gap-6">
                 {/* Reach management — independent of space membership */}
-                <div data-tour="dash-emp-contacts">
+                <div data-tour="dash-emp-contacts" className="lg:shrink-0">
                   <ManagementContacts />
                 </div>
 
-                <section data-tour="dash-emp-tasks">
+                <section data-tour="dash-emp-tasks" className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
                     <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
                   </div>
-                  <div className="rounded-2xl border border-border bg-card px-4 py-2">
+                  <div className="rounded-2xl border border-border bg-card px-4 py-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                     <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
                   </div>
                 </section>
