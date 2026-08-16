@@ -17,7 +17,7 @@ const ROLES = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'] as const;
 const eur = (c?: number | null) => (c == null ? '—' : `€${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—');
 
-interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string }; permissions: Cap[] }
+interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string; twoFactorEnabled?: boolean }; permissions: Cap[] }
 interface Seats { office: number; field: number; fieldInhouse: number; total: number }
 interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: Seats; mrrCents: number; arrCents: number }
 interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: Seats; mrrCents: number }
@@ -39,6 +39,9 @@ export default function ControlCenter() {
   const [booting, setBooting] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [needs2fa, setNeeds2fa] = useState(false);
+  const [security, setSecurity] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'orgs' | 'team' | 'pricing'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -73,9 +76,10 @@ export default function ControlCenter() {
   const login = async () => {
     setError(null); setBusy('login');
     try {
-      const r = await api<{ data: { token: string; user: Me['user']; permissions: Cap[] } }>('/platform/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      const r = await api<{ data: any }>('/platform/auth/login', { method: 'POST', body: JSON.stringify({ email, password, code: code || undefined }) });
+      if (r.data?.needs2fa) { setNeeds2fa(true); return; }
       TOKEN = r.data.token; sessionStorage.setItem('platformToken', TOKEN);
-      setMe({ user: r.data.user, permissions: r.data.permissions }); setPassword('');
+      setMe({ user: r.data.user, permissions: r.data.permissions }); setPassword(''); setCode(''); setNeeds2fa(false);
     } catch (e) { setError(e instanceof Error ? e.message : 'Login failed'); } finally { setBusy(null); }
   };
   const logout = () => { TOKEN = ''; sessionStorage.removeItem('platformToken'); setMe(null); };
@@ -94,11 +98,15 @@ export default function ControlCenter() {
         <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-6">
           <h1 className="mb-1 text-lg font-semibold">Platform Control Center</h1>
           <p className="mb-4 text-sm text-slate-400">HBC staff sign-in.</p>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" autoComplete="username"
-            className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500" />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && login()} placeholder="password" autoComplete="current-password"
-            className="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500" />
-          <button onClick={login} disabled={busy === 'login'} className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50">{busy === 'login' ? '…' : 'Sign in'}</button>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" autoComplete="username" disabled={needs2fa}
+            className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-60" />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && login()} placeholder="password" autoComplete="current-password" disabled={needs2fa}
+            className="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-60" />
+          {needs2fa && (
+            <input value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && login()} placeholder="6-digit authenticator code" inputMode="numeric" autoFocus
+              className="mb-3 w-full rounded-lg border border-blue-700 bg-slate-950 px-3 py-2 text-center text-lg tracking-widest outline-none focus:border-blue-500" />
+          )}
+          <button onClick={login} disabled={busy === 'login'} className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50">{busy === 'login' ? '…' : needs2fa ? 'Verify' : 'Sign in'}</button>
           {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
       </div>
@@ -122,7 +130,8 @@ export default function ControlCenter() {
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-slate-400">{me.user.firstName} {me.user.lastName} · <span className="text-blue-400">{me.user.role}</span></span>
+            <span className="text-slate-400">{me.user.firstName} {me.user.lastName} · <span className="text-blue-400">{me.user.role}</span>{me.user.twoFactorEnabled && <span className="ml-1 text-green-400" title="2FA on">🔒</span>}</span>
+            <button onClick={() => setSecurity(true)} className="text-xs text-slate-400 hover:text-slate-200">Security</button>
             <button onClick={logout} className="text-xs text-slate-400 hover:text-slate-200">Sign out</button>
           </div>
         </div>
@@ -199,6 +208,63 @@ export default function ControlCenter() {
           </div>
         </div>
       )}
+
+      {security && <SecurityModal me={me} onClose={() => setSecurity(false)} onError={setError} onMe={setMe} />}
+    </div>
+  );
+}
+
+function SecurityModal({ me, onClose, onError, onMe }: { me: Me; onClose: () => void; onError: (s: string) => void; onMe: (m: Me) => void }) {
+  const [cur, setCur] = useState(''); const [nw, setNw] = useState('');
+  const [setup, setSetup] = useState<{ secret: string; otpauthUri: string; qr: string } | null>(null);
+  const [code, setCode] = useState(''); const [busy, setBusy] = useState<string | null>(null);
+  const enabled = !!me.user.twoFactorEnabled;
+  const run = async (fn: () => Promise<any>, id: string) => { setBusy(id); try { await fn(); } catch (e) { onError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(null); } };
+
+  const changePw = () => run(async () => { await api('/platform/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword: cur, newPassword: nw }) }); setCur(''); setNw(''); onError('Password changed ✓'); }, 'pw');
+  const startSetup = () => run(async () => {
+    const r = await api<{ data: { secret: string; otpauthUri: string } }>('/platform/auth/2fa/setup', { method: 'POST', body: '{}' });
+    const QR = (await import('qrcode')).default; const qr = await QR.toDataURL(r.data.otpauthUri, { margin: 1, width: 200 });
+    setSetup({ ...r.data, qr });
+  }, 'setup');
+  const enable = () => run(async () => { await api('/platform/auth/2fa/enable', { method: 'POST', body: JSON.stringify({ code }) }); onMe({ ...me, user: { ...me.user, twoFactorEnabled: true } }); setSetup(null); setCode(''); }, '2fa');
+  const disable = () => run(async () => { await api('/platform/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ code }) }); onMe({ ...me, user: { ...me.user, twoFactorEnabled: false } }); setCode(''); }, '2fa');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="w-full max-w-md space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Security · {me.user.email}</h2><button onClick={onClose} className="text-slate-400">✕</button></div>
+
+        <div>
+          <div className="mb-2 text-sm font-semibold text-slate-300">Change password</div>
+          <input type="password" placeholder="current password" value={cur} onChange={(e) => setCur(e.target.value)} className="mb-2 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm" />
+          <input type="password" placeholder="new password (10+ chars)" value={nw} onChange={(e) => setNw(e.target.value)} className="mb-2 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm" />
+          <button disabled={busy === 'pw' || !cur || nw.length < 10} onClick={changePw} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500 disabled:opacity-40">Update password</button>
+        </div>
+
+        <div className="border-t border-slate-800 pt-4">
+          <div className="mb-2 text-sm font-semibold text-slate-300">Two-factor authentication {enabled ? <span className="text-green-400">· ON</span> : <span className="text-slate-500">· off</span>}</div>
+          {enabled ? (
+            <div className="flex items-center gap-2">
+              <input placeholder="current code" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} className="w-32 rounded border border-slate-700 bg-slate-950 px-3 py-2 text-center text-sm tracking-widest" />
+              <button disabled={busy === '2fa'} onClick={disable} className="rounded-lg bg-red-600/80 px-3 py-1.5 text-sm hover:bg-red-600">Disable 2FA</button>
+            </div>
+          ) : setup ? (
+            <div className="space-y-2 text-sm">
+              <p className="text-slate-400">Scan with your authenticator, then enter the code.</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={setup.qr} alt="2FA QR" className="rounded bg-white p-1" width={180} height={180} />
+              <p className="break-all font-mono text-[11px] text-slate-500">secret: {setup.secret}</p>
+              <div className="flex items-center gap-2">
+                <input placeholder="6-digit code" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} className="w-32 rounded border border-slate-700 bg-slate-950 px-3 py-2 text-center text-sm tracking-widest" />
+                <button disabled={busy === '2fa' || code.length !== 6} onClick={enable} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm hover:bg-green-500 disabled:opacity-40">Enable</button>
+              </div>
+            </div>
+          ) : (
+            <button disabled={busy === 'setup'} onClick={startSetup} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Set up 2FA</button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

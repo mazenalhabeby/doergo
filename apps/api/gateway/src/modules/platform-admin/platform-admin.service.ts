@@ -23,6 +23,10 @@ export class PlatformAdminService extends BaseGatewayService {
   updateUser(data: any) { return this.send({ cmd: 'platform_users_update' }, data); }
   resetPassword(data: any) { return this.send({ cmd: 'platform_users_reset_password' }, data); }
   bootstrapOwner(data: any) { return this.send({ cmd: 'platform_bootstrap_owner' }, data); }
+  changePassword(data: any) { return this.send({ cmd: 'platform_change_password' }, data); }
+  setup2fa(data: any) { return this.send({ cmd: 'platform_2fa_setup' }, data); }
+  enable2fa(data: any) { return this.send({ cmd: 'platform_2fa_enable' }, data); }
+  disable2fa(data: any) { return this.send({ cmd: 'platform_2fa_disable' }, data); }
   // Org tier (reuse billing admin logic on auth-service)
   setTier(data: { organizationId: string; tier: string }) { return this.send({ cmd: 'billing_admin_set_tier' }, data); }
 

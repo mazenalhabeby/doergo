@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, type PlatformRole } from '@hbcfield/shared';
+import { generateBase32Secret, verifyTotp, otpauthUri } from './totp.util';
 
 const MAX_FAILED = 5;
 const LOCKOUT_MS = 15 * 60_000;
@@ -36,32 +37,75 @@ export class PlatformAuthService {
     return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, role: u.role, isActive: u.isActive, twoFactorEnabled: u.twoFactorEnabled, lastLoginAt: u.lastLoginAt, createdAt: u.createdAt };
   }
 
-  // ── Login ────────────────────────────────────────────────────────────────────
-  async login(data: { email?: string; password?: string }) {
+  // ── Login (2FA-aware) ─────────────────────────────────────────────────────────
+  async login(data: { email?: string; password?: string; code?: string }) {
     const email = (data.email ?? '').trim().toLowerCase();
     const password = data.password ?? '';
-    // Generic error everywhere → no account enumeration / lockout probing.
-    const invalid = fail('Invalid email or password', 401);
+    const invalid = fail('Invalid email or password', 401); // generic → no enumeration
     if (!email || !password) return invalid;
 
     const user = await this.prisma.platformUser.findUnique({ where: { email } });
     if (!user || !user.isActive) return invalid;
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) return fail('Account temporarily locked. Try again later.', 423);
 
-    const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) {
+    const bump = async () => {
       const attempts = user.failedLoginAttempts + 1;
-      await this.prisma.platformUser.update({
-        where: { id: user.id },
-        data: { failedLoginAttempts: attempts, lockedUntil: attempts >= MAX_FAILED ? new Date(Date.now() + LOCKOUT_MS) : user.lockedUntil },
-      });
-      return invalid;
+      await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: attempts, lockedUntil: attempts >= MAX_FAILED ? new Date(Date.now() + LOCKOUT_MS) : user.lockedUntil } });
+    };
+
+    if (!(await bcrypt.compare(password, user.passwordHash))) { await bump(); return invalid; }
+
+    // Second factor.
+    if (user.twoFactorEnabled) {
+      if (!data.code) return ok({ needs2fa: true }); // password OK → prompt for the code
+      if (!verifyTotp(user.twoFactorSecret ?? '', data.code)) { await bump(); return fail('Invalid authentication code', 401); }
     }
 
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() } });
     const token = this.jwt.sign({ sub: user.id, role: user.role, typ: 'platform' }, { secret: this.secret(), expiresIn: TOKEN_TTL });
     this.logger.log(`[PLATFORM] login: ${user.email} (${user.role})`);
     return ok({ token, user: this.publicUser(user), permissions: platformCapsFor(user.role) });
+  }
+
+  // ── Self-service: change own password ─────────────────────────────────────────
+  async changePassword(data: { userId: string; currentPassword?: string; newPassword?: string }) {
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
+    if (!user) return fail('Not found', 404);
+    if (!(await bcrypt.compare(data.currentPassword ?? '', user.passwordHash))) return fail('Current password is incorrect', 401);
+    if (!data.newPassword || data.newPassword.length < 10) return fail('New password must be at least 10 characters');
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR) } });
+    this.logger.log(`[PLATFORM] ${user.email} changed their password`);
+    return ok({ id: user.id });
+  }
+
+  // ── Self-service: 2FA (TOTP) ──────────────────────────────────────────────────
+  /** Generate a secret (not yet enabled) + the otpauth URI for the authenticator. */
+  async setup2fa(data: { userId: string }) {
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
+    if (!user) return fail('Not found', 404);
+    const secret = generateBase32Secret();
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorSecret: secret, twoFactorEnabled: false } });
+    return ok({ secret, otpauthUri: otpauthUri(user.email, secret) });
+  }
+
+  /** Confirm the first code → turn 2FA on. */
+  async enable2fa(data: { userId: string; code?: string }) {
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
+    if (!user || !user.twoFactorSecret) return fail('Start 2FA setup first', 400);
+    if (!verifyTotp(user.twoFactorSecret, data.code ?? '')) return fail('Invalid code', 400);
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: true } });
+    this.logger.warn(`[PLATFORM] ${user.email} enabled 2FA`);
+    return ok({ twoFactorEnabled: true });
+  }
+
+  /** Turn 2FA off — requires a current code (proves possession). */
+  async disable2fa(data: { userId: string; code?: string }) {
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
+    if (!user) return fail('Not found', 404);
+    if (user.twoFactorEnabled && !verifyTotp(user.twoFactorSecret ?? '', data.code ?? '')) return fail('Invalid code', 400);
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
+    this.logger.warn(`[PLATFORM] ${user.email} disabled 2FA`);
+    return ok({ twoFactorEnabled: false });
   }
 
   // ── Validate (called by the gateway guard on every request) ───────────────────

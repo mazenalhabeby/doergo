@@ -29,4 +29,16 @@ export class PlatformAuthController {
 
   @MessagePattern({ cmd: 'platform_bootstrap_owner' })
   bootstrap(@Payload() d: any) { return this.svc.bootstrapOwner(d); }
+
+  @MessagePattern({ cmd: 'platform_change_password' })
+  changePassword(@Payload() d: any) { return this.svc.changePassword(d); }
+
+  @MessagePattern({ cmd: 'platform_2fa_setup' })
+  setup2fa(@Payload() d: any) { return this.svc.setup2fa(d); }
+
+  @MessagePattern({ cmd: 'platform_2fa_enable' })
+  enable2fa(@Payload() d: any) { return this.svc.enable2fa(d); }
+
+  @MessagePattern({ cmd: 'platform_2fa_disable' })
+  disable2fa(@Payload() d: any) { return this.svc.disable2fa(d); }
 }

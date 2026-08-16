@@ -33,6 +33,26 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   async me(@Request() req: any) { return this.unwrap(await this.svc.me({ userId: this.actor(req)! })); }
 
+  // ── Self-service: password + 2FA (acts on the logged-in user only) ──
+  @Post('auth/change-password')
+  @UseGuards(PlatformAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async changePassword(@Body() body: { currentPassword?: string; newPassword?: string }, @Request() req: any) {
+    return this.unwrap(await this.svc.changePassword({ userId: this.actor(req), currentPassword: body?.currentPassword, newPassword: body?.newPassword }));
+  }
+
+  @Post('auth/2fa/setup')
+  @UseGuards(PlatformAuthGuard)
+  async setup2fa(@Request() req: any) { return this.unwrap(await this.svc.setup2fa({ userId: this.actor(req) })); }
+
+  @Post('auth/2fa/enable')
+  @UseGuards(PlatformAuthGuard)
+  async enable2fa(@Body() body: { code?: string }, @Request() req: any) { return this.unwrap(await this.svc.enable2fa({ userId: this.actor(req), code: body?.code })); }
+
+  @Post('auth/2fa/disable')
+  @UseGuards(PlatformAuthGuard)
+  async disable2fa(@Body() body: { code?: string }, @Request() req: any) { return this.unwrap(await this.svc.disable2fa({ userId: this.actor(req), code: body?.code })); }
+
   // ── Staff management (managePlatformUsers = OWNER) ──
   @Get('users')
   @UseGuards(PlatformAuthGuard)
