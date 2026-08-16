@@ -6,7 +6,7 @@
  * role, and a Team screen for the Owner. Token kept in sessionStorage; every call
  * sends `Authorization: Bearer`. The server is authoritative on permissions.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const TIERS = ['starter', 'professional', 'business', 'enterprise'] as const;
@@ -43,7 +43,7 @@ export default function ControlCenter() {
   const [needs2fa, setNeeds2fa] = useState(false);
   const [security, setSecurity] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing'>('orgs');
+  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
@@ -126,6 +126,7 @@ export default function ControlCenter() {
             <div className="flex gap-1 rounded-lg border border-slate-800 p-0.5 text-sm">
               <button onClick={() => setTab('orgs')} className={`rounded px-3 py-1 ${tab === 'orgs' ? 'bg-slate-800' : 'text-slate-400'}`}>Organizations</button>
               <button onClick={() => setTab('pricing')} className={`rounded px-3 py-1 ${tab === 'pricing' ? 'bg-slate-800' : 'text-slate-400'}`}>Pricing</button>
+              {can('manageSupport') && <button onClick={() => setTab('support')} className={`rounded px-3 py-1 ${tab === 'support' ? 'bg-slate-800' : 'text-slate-400'}`}>Support</button>}
               {can('managePlatformUsers') && <button onClick={() => setTab('team')} className={`rounded px-3 py-1 ${tab === 'team' ? 'bg-slate-800' : 'text-slate-400'}`}>Team</button>}
             </div>
           </div>
@@ -186,6 +187,8 @@ export default function ControlCenter() {
           </>
         ) : tab === 'pricing' ? (
           <PricingPanel canEdit={can('editPricing')} onError={setError} />
+        ) : tab === 'support' ? (
+          <SupportPanel onError={setError} />
         ) : (
           <TeamPanel staff={staff} reload={loadStaff} onError={setError} meId={me.user.id} />
         )}
@@ -424,6 +427,80 @@ function PricingPanel({ canEdit, onError }: { canEdit: boolean; onError: (s: str
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface Ticket { id: string; subject: string; status: string; priority?: string; createdBy?: { firstName?: string; lastName?: string; email?: string } | null; lastCustomerMessageAt?: string | null; organizationId?: string }
+interface Msg { id: string; authorType: string; authorId?: string; body: string; isInternalNote?: boolean; createdAt: string }
+const ts = (s?: string | null) => (s ? new Date(s).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+const TSTATUS: Record<string, string> = { OPEN: 'bg-red-500/15 text-red-400', PENDING: 'bg-amber-500/15 text-amber-400', RESOLVED: 'bg-green-500/15 text-green-400', CLOSED: 'bg-slate-500/15 text-slate-400' };
+
+function SupportPanel({ onError }: { onError: (s: string) => void }) {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [sel, setSel] = useState<string | null>(null);
+  const [thread, setThread] = useState<{ ticket: Ticket; messages: Msg[] } | null>(null);
+  const [reply, setReply] = useState('');
+  const [note, setNote] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const loadInbox = useCallback(async () => { try { setTickets((await api<{ data: Ticket[] }>('/platform/support/inbox')).data || []); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
+  const loadThread = useCallback(async (id: string) => { try { const r = await api<{ data: { ticket: Ticket; messages: Msg[] } }>(`/platform/support/tickets/${id}`); setThread(r.data); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
+
+  useEffect(() => { loadInbox(); const t = setInterval(() => { loadInbox(); if (sel) loadThread(sel); }, 8000); return () => clearInterval(t); }, [loadInbox, loadThread, sel]);
+  useEffect(() => { if (sel) loadThread(sel); }, [sel, loadThread]);
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [thread?.messages.length]);
+
+  const send = async () => {
+    if (!sel || !reply.trim()) return; setBusy(true);
+    try { await api(`/platform/support/tickets/${sel}/messages`, { method: 'POST', body: JSON.stringify({ body: reply.trim(), isInternalNote: note }) }); setReply(''); await loadThread(sel); await loadInbox(); }
+    catch (e) { onError(e instanceof Error ? e.message : 'Send failed'); } finally { setBusy(false); }
+  };
+  const setStatus = async (status: string) => { if (!sel) return; setBusy(true); try { await api(`/platform/support/tickets/${sel}/status`, { method: 'POST', body: JSON.stringify({ status }) }); await loadThread(sel); await loadInbox(); } catch (e) { onError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(false); } };
+
+  return (
+    <div className="flex h-[70vh] gap-4">
+      <aside className="flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800">
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Inbox ({tickets.length})</div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {tickets.length === 0 ? <p className="p-4 text-sm text-slate-500">No open tickets.</p> : tickets.map((t) => (
+            <button key={t.id} onClick={() => setSel(t.id)} className={`flex w-full flex-col gap-0.5 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${sel === t.id ? 'bg-slate-800/60' : ''}`}>
+              <div className="flex items-center gap-2"><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ?? 'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{t.priority && <span className="text-[10px] text-slate-500">{t.priority}</span>}</div>
+              <span className="truncate text-sm font-medium">{t.subject}</span>
+              <span className="truncate text-xs text-slate-500">{t.createdBy?.firstName} {t.createdBy?.lastName} · {ts(t.lastCustomerMessageAt)}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-800">
+        {!thread ? <div className="flex flex-1 items-center justify-center text-sm text-slate-500">Select a ticket</div> : (
+          <>
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+              <div className="min-w-0"><div className="truncate font-semibold">{thread.ticket.subject}</div><div className="text-xs text-slate-500">{thread.ticket.createdBy?.email} · {thread.ticket.status?.toLowerCase()}</div></div>
+              <div className="flex gap-1"><button disabled={busy} onClick={() => setStatus('RESOLVED')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Resolve</button><button disabled={busy} onClick={() => setStatus('CLOSED')} className="rounded bg-slate-600/80 px-2 py-1 text-[11px] hover:bg-slate-600">Close</button></div>
+            </div>
+            <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-950/40 p-4">
+              {thread.messages.map((m) => (
+                <div key={m.id} className={`flex flex-col ${m.authorType === 'AGENT' ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.isInternalNote ? 'border border-amber-700 bg-amber-950/40 text-amber-200' : m.authorType === 'AGENT' ? 'bg-blue-600 text-white' : 'bg-slate-800'}`}>
+                    {m.isInternalNote && <div className="mb-0.5 text-[10px] font-semibold">internal note</div>}
+                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                  </div>
+                  <span className="mt-0.5 text-[10px] text-slate-500">{m.authorType === 'AGENT' ? (m.authorId || 'agent') : 'customer'} · {ts(m.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-slate-800 p-3">
+              <div className="mb-1.5 flex items-center gap-2 text-xs text-slate-400"><label className="flex items-center gap-1"><input type="checkbox" checked={note} onChange={(e) => setNote(e.target.checked)} /> internal note (not shown to customer)</label></div>
+              <div className="flex gap-2">
+                <textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={1} placeholder="Reply…" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm" />
+                <button disabled={busy || !reply.trim()} onClick={send} className="rounded-lg bg-blue-600 px-4 text-sm hover:bg-blue-500 disabled:opacity-40">Send</button>
+              </div>
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 }
