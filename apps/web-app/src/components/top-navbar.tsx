@@ -139,15 +139,13 @@ export function TopNavbar() {
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
-  // CRM navbar tab: ONLY for members who have CRM access but CANNOT manage a space.
-  // Admins / managers (who can open a space's settings) reach the CRM via the space's
-  // Customers tab instead — so they don't get this top-level entry.
-  const uAccess = (user as { role?: string; access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> } })
-  const canManageAnySpace =
-    user.canManageUsers ||
-    uAccess.access?.org?.canManageUsers === true ||
-    Object.values(uAccess.access?.perSpace ?? {}).some((p) => p?.canManageUsers === true)
-  const showCrm = !canManageAnySpace && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
+  // CRM navbar tab: for members with CRM access who are NOT org-level managers.
+  // Org admins/managers reach the CRM via the Spaces nav → a space's Customers tab,
+  // so they don't need this top-level entry. Per-space-only managers (who have no
+  // Spaces nav) DO get it, otherwise they'd have no way to reach the CRM at all.
+  const uAccess = (user as { role?: string; access?: { org?: Record<string, boolean> } })
+  const isOrgManager = user.role === "ADMIN" || user.canManageUsers || uAccess.access?.org?.canManageUsers === true
+  const showCrm = !isOrgManager && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
   // Invoices: admins bill their customers. Shown for admins regardless of tier —
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.
