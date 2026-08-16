@@ -57,13 +57,14 @@ export class ShiftIssueNotificationHandler {
 
   private systemLine(data: any): string {
     const who = data.actorName || 'Someone';
+    const reason = data.event?.body ? ` — ${String(data.event.body).slice(0, 80)}` : '';
     switch (data.event?.type) {
       case 'ACKNOWLEDGED': return `${who} acknowledged the issue`;
       case 'ASSIGNED': return `Dispatched to ${data.event?.metadata?.assignedToName ?? 'someone'}`;
-      case 'RESOLVED': return `${who} marked it resolved`;
+      case 'RESOLVED': return `${who} marked it resolved${reason}`;
       case 'REOPENED': return `${who} reopened it`;
-      case 'CLOSED': return `${who} closed it`;
-      default: return `${who} updated the issue`;
+      case 'CLOSED': return `${who} closed it${reason}`;
+      default: return `${who} updated the issue${reason}`;
     }
   }
 }

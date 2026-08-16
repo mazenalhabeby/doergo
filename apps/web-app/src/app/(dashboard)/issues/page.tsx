@@ -22,6 +22,7 @@ const STATUS: Record<string, string> = {
   CLOSED: "text-slate-600 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
   CANCELED: "text-slate-500 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:text-slate-400",
 }
+const RESOLVE_REASONS = ["Fixed on site", "Parts not available", "Needs a specialist", "Customer unavailable", "Duplicate", "Not an issue"]
 const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
 const isImg = (m?: string) => !!m && m.startsWith("image/")
 const Chip = ({ status }: { status: string }) => (
@@ -120,6 +121,8 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
   const [draft, setDraft] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [assignOpen, setAssignOpen] = useState(false)
+  const [resolveOpen, setResolveOpen] = useState(false)
+  const [reason, setReason] = useState("")
   const [viewer, setViewer] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -183,7 +186,25 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
                   </div>
                 )}
               </div>
-              <Button size="sm" onClick={() => act(() => shiftIssuesApi.setStatus(issue.id, "RESOLVED"))}><CircleCheck className="mr-1.5 h-3.5 w-3.5" /> Resolve</Button>
+              <div className="relative">
+                <Button size="sm" onClick={() => setResolveOpen((v) => !v)}><CircleCheck className="mr-1.5 h-3.5 w-3.5" /> Resolve</Button>
+                {resolveOpen && (
+                  <div className="absolute right-0 z-10 mt-1 w-72 rounded-xl border border-border bg-popover p-3 shadow-lg">
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground">Reason (optional)</p>
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {RESOLVE_REASONS.map((r) => (
+                        <button key={r} type="button" onClick={() => setReason(r)}
+                          className={cn("rounded-full border px-2.5 py-1 text-[11px] transition-colors", reason === r ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent")}>{r}</button>
+                      ))}
+                    </div>
+                    <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Add a note / excuse…" className="mb-2 resize-none text-sm" />
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => { setResolveOpen(false); setReason("") }}>Cancel</Button>
+                      <Button size="sm" onClick={() => { setResolveOpen(false); const r = reason.trim(); setReason(""); act(() => shiftIssuesApi.setStatus(issue.id, "RESOLVED", r || undefined)) }}>Resolve</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -260,13 +281,14 @@ function ThreadItem({ e, mine, onOpenImage }: { e: ShiftIssueEvent; mine: boolea
       </div>
     )
   }
+  const reasonSuffix = e.body ? ` — ${e.body}` : ""
   const label =
     e.type === "CREATED" ? `${e.actorName} reported this issue` :
     e.type === "ACKNOWLEDGED" ? `${e.actorName} acknowledged` :
     e.type === "ASSIGNED" ? `Dispatched to ${e.metadata?.assignedToName ?? "someone"}` :
-    e.type === "RESOLVED" ? `${e.actorName} marked it resolved` :
+    e.type === "RESOLVED" ? `${e.actorName} marked it resolved${reasonSuffix}` :
     e.type === "REOPENED" ? `${e.actorName} reopened it` :
-    e.type === "CLOSED" ? `${e.actorName} closed it` : `${e.actorName} updated the issue`
+    e.type === "CLOSED" ? `${e.actorName} closed it${reasonSuffix}` : `${e.actorName} updated the issue${reasonSuffix}`
   return (
     <div className="flex justify-center">
       <span className="inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1 text-[11px] text-muted-foreground">

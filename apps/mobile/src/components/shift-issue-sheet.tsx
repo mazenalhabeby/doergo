@@ -31,6 +31,7 @@ const SEVERITIES: { key: string; label: string; color: string }[] = [
   { key: 'HIGH', label: 'High', color: '#ea580c' },
   { key: 'URGENT', label: 'Urgent', color: '#dc2626' },
 ];
+const RESOLVE_REASONS = ['Fixed on site', 'Parts not available', 'Needs a specialist', 'Customer unavailable', 'Duplicate', 'Not an issue'];
 const fmt = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 const fmtDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const sevColor = (k?: string) => SEVERITIES.find((s) => s.key === k)?.color ?? '#64748b';
@@ -209,6 +210,8 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
   const [viewer, setViewer] = useState<string | null>(null); // full-screen image preview
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const [reason, setReason] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   const load = useCallback(async () => {
@@ -281,9 +284,37 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
                       <Ionicons name="checkmark" size={15} color={COLORS.primary} /><Text style={[styles.actionText, { color: colors.textPrimary }]}>Acknowledge</Text>
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={() => act(() => shiftIssuesApi.setStatus(issue.id, 'RESOLVED'))}>
+                  <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={() => setResolveOpen((v) => !v)}>
                     <Ionicons name="checkmark-done" size={15} color={COLORS.success} /><Text style={[styles.actionText, { color: colors.textPrimary }]}>Resolve</Text>
                   </TouchableOpacity>
+                </View>
+              )}
+
+              {canManage && !closed && resolveOpen && (
+                <View style={[styles.resolvePanel, { borderColor: colors.border, backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc' }]}>
+                  <Text style={{ fontSize: FONT_SIZE.xs, fontWeight: '600', color: colors.textMuted, marginBottom: 6 }}>Reason (optional)</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {RESOLVE_REASONS.map((r) => (
+                      <TouchableOpacity key={r} onPress={() => setReason(r)}
+                        style={{ borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, borderColor: reason === r ? COLORS.primary : colors.border, backgroundColor: reason === r ? `${COLORS.primary}18` : 'transparent' }}>
+                        <Text style={{ fontSize: FONT_SIZE.xs, color: reason === r ? COLORS.primary : colors.textSecondary }}>{r}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <TextInput
+                    style={{ borderWidth: 1, borderColor: colors.border, borderRadius: RADIUS.md, padding: SPACING.sm, fontSize: FONT_SIZE.sm, color: colors.textPrimary, minHeight: 40 }}
+                    placeholder="Add a note / excuse…" placeholderTextColor={colors.textMuted}
+                    value={reason} onChangeText={setReason} multiline
+                  />
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm, marginTop: 8 }}>
+                    <TouchableOpacity onPress={() => { setResolveOpen(false); setReason(''); }} style={{ paddingVertical: 6, paddingHorizontal: 12 }}>
+                      <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm }}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => { const r = reason.trim(); setResolveOpen(false); setReason(''); act(() => shiftIssuesApi.setStatus(issue.id, 'RESOLVED', r || undefined)); }}
+                      style={{ backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: 6, paddingHorizontal: 14 }}>
+                      <Text style={{ color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '600' }}>Resolve</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               )}
 
@@ -364,13 +395,14 @@ function ThreadItem({ e, mine, colors, isDark, onOpenImage }: { e: ShiftIssueEve
       </View>
     );
   }
+  const reasonSuffix = e.body ? ` — ${e.body}` : '';
   const label =
     e.type === 'CREATED' ? `${e.actorName} reported this issue` :
     e.type === 'ACKNOWLEDGED' ? `${e.actorName} acknowledged` :
     e.type === 'ASSIGNED' ? `Dispatched to ${e.metadata?.assignedToName ?? 'someone'}` :
-    e.type === 'RESOLVED' ? `${e.actorName} marked it resolved` :
+    e.type === 'RESOLVED' ? `${e.actorName} marked it resolved${reasonSuffix}` :
     e.type === 'REOPENED' ? `${e.actorName} reopened it` :
-    e.type === 'CLOSED' ? `${e.actorName} closed it` : `${e.actorName} updated the issue`;
+    e.type === 'CLOSED' ? `${e.actorName} closed it${reasonSuffix}` : `${e.actorName} updated the issue${reasonSuffix}`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 4 }}>
       <Ionicons name="ellipse" size={5} color={colors.textMuted} />
@@ -393,6 +425,7 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#fff', fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.base },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
   actionRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
+  resolvePanel: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: 6 },
   actionText: { fontSize: FONT_SIZE.sm, fontWeight: '600' },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.xs, marginTop: SPACING.sm },

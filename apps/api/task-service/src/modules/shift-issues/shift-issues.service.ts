@@ -295,7 +295,9 @@ export class ShiftIssuesService {
         issueId: issue.id,
         type: resolving ? 'RESOLVED' : reopening ? 'REOPENED' : data.status === 'CLOSED' ? 'CLOSED' : 'STATUS_CHANGED',
         actorId: data.callerUserId,
-        body: resolving ? (data.note?.slice(0, BODY_MAX) ?? null) : null,
+        // The reason / excuse ("parts not delivered") — kept on the event for
+        // resolve / cancel / close so it shows inline in the thread.
+        body: data.note?.trim().slice(0, BODY_MAX) || null,
         metadata: { fromStatus: issue.status, toStatus: data.status } as any,
       },
     });
