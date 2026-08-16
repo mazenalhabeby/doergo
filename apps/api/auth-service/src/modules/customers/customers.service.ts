@@ -1,5 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { resolveCrmCaps, ownsClient, type CrmCaps } from '@hbcfield/shared';
+
+/** Who is making the request — used to resolve & enforce CRM abilities. */
+export interface CrmCaller {
+  userId?: string;
+  role?: string; // system role ('ADMIN' bypasses to full CRM access)
+}
+const NO_CRM: CrmCaps = { view: 'none', work: false, editInfo: false, manage: false, canAccess: false };
 
 export interface CustomerDetail {
   label: string;
@@ -100,6 +108,25 @@ function sanitizeIds(ids: unknown): string[] | undefined {
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Resolve a caller's effective CRM abilities from their role (server-authoritative). */
+  private async crmCapsFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmCaps> {
+    if (!caller?.userId) return NO_CRM;
+    if (caller.role === 'ADMIN') return resolveCrmCaps('ADMIN', {});
+    const u = await this.prisma.user.findFirst({
+      where: { id: caller.userId, organizationId },
+      select: { role: true, memberRole: { select: { permissions: true } } },
+    });
+    if (!u) return NO_CRM;
+    return resolveCrmCaps(u.role, (u.memberRole?.permissions as Record<string, boolean> | null) ?? {});
+  }
+
+  /** Can this caller reach a specific client? All-scope OR owns/co-manages it. */
+  private canReach(caps: CrmCaps, client: { ownerId?: string | null; managerIds?: string[] }, caller: CrmCaller | undefined): boolean {
+    if (caps.view === 'all') return true;
+    if (caps.view === 'own' && caller?.userId) return ownsClient(client, caller.userId);
+    return false;
+  }
+
   /** List an org's customers (search + active filter + pagination). */
   async list(data: {
     organizationId: string;
@@ -110,22 +137,39 @@ export class CustomersService {
     spaceId?: string; // a space's Customers list (CRM)
     page?: number;
     limit?: number;
+    caller?: CrmCaller;
   }) {
     const page = Math.max(data.page || 1, 1);
     const limit = Math.min(Math.max(data.limit || 20, 1), 100);
+    const isPortalPath = data.portalResident === true || !!data.portalId;
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    // Portal-resident management is a manager/admin surface (not CRM rep scope).
+    if (isPortalPath) {
+      if (!caps.manage) throw new ForbiddenException('Not allowed to manage portal residents');
+    } else if (!caps.canAccess) {
+      throw new ForbiddenException('No CRM access');
+    }
+    const and: Record<string, unknown>[] = [];
     const where: Record<string, unknown> = { organizationId: data.organizationId };
     if (data.status === 'active' || !data.status) where.isActive = true;
     else if (data.status === 'inactive') where.isActive = false;
     if (typeof data.portalResident === 'boolean') where.isPortalResident = data.portalResident;
     if (data.portalId) where.portalId = data.portalId;
     if (data.spaceId) where.spaceId = data.spaceId;
-    if (data.search) {
-      where.OR = [
-        { name: { contains: data.search, mode: 'insensitive' } },
-        { contactName: { contains: data.search, mode: 'insensitive' } },
-        { email: { contains: data.search, mode: 'insensitive' } },
-      ];
+    // CRM "own" scope → only clients this caller owns or co-manages (indexed columns).
+    if (!isPortalPath && caps.view === 'own') {
+      and.push({ OR: [{ ownerId: data.caller?.userId }, { managerIds: { has: data.caller?.userId } }] });
     }
+    if (data.search) {
+      and.push({
+        OR: [
+          { name: { contains: data.search, mode: 'insensitive' } },
+          { contactName: { contains: data.search, mode: 'insensitive' } },
+          { email: { contains: data.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (and.length) where.AND = and;
     const [items, total] = await Promise.all([
       this.prisma.customer.findMany({
         where,
@@ -139,12 +183,22 @@ export class CustomersService {
     return { data: items, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
-  async get(id: string, organizationId: string) {
+  async get(id: string, organizationId: string, caller?: CrmCaller) {
     const customer = await this.prisma.customer.findFirst({
       where: { id, organizationId },
       select: customerSelect,
     });
     if (!customer) throw new NotFoundException('Customer not found');
+
+    // CRM access enforcement (server-authoritative). Portal residents are a
+    // manager surface; CRM clients are reachable by owner/co-manager or view-all.
+    const caps = await this.crmCapsFor(caller, organizationId);
+    if (customer.isPortalResident) {
+      if (!caps.manage) throw new ForbiddenException('Not allowed');
+    } else if (!caps.canAccess || !this.canReach(caps, customer, caller)) {
+      // 404 (not 403) so a member can't probe which client ids exist.
+      throw new NotFoundException('Customer not found');
+    }
 
     // App-access status. `isPortalResident` only means "invited"; a CUSTOMER
     // User bound to this customer is proof they ACCEPTED and can log in. Also
@@ -173,7 +227,10 @@ export class CustomersService {
     };
   }
 
-  async create(organizationId: string, dto: CustomerInput) {
+  async create(organizationId: string, dto: CustomerInput, caller?: CrmCaller) {
+    // Creating clients (and inviting portal residents) is a manage-level action.
+    const caps = await this.crmCapsFor(caller, organizationId);
+    if (!caps.manage) throw new ForbiddenException('Not allowed to create clients');
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
     await this.assertRefsInOrg(dto, organizationId);
@@ -212,9 +269,27 @@ export class CustomersService {
     return { data: customer };
   }
 
-  async update(id: string, organizationId: string, dto: CustomerInput, actorId?: string) {
-    const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true, status: true, isPortalResident: true } });
+  async update(id: string, organizationId: string, dto: CustomerInput, actorId?: string, caller?: CrmCaller) {
+    const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true } });
     if (!existing) throw new NotFoundException('Customer not found');
+
+    // ── CRM access enforcement (server-authoritative), by what's being changed ──
+    const caps = await this.crmCapsFor(caller, organizationId);
+    const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
+    const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
+    const touchesStatus = dto.status !== undefined;
+    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber'] as const;
+    const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
+    const reach = this.canReach(caps, existing, caller);
+    if (existing.isPortalResident || touchesPortal || touchesOwnership) {
+      // Portal/app-access + ownership reassignment are manage-level.
+      if (!caps.manage) throw new ForbiddenException('Not allowed');
+    } else {
+      if (!caps.canAccess || !reach) throw new NotFoundException('Customer not found');
+      if (touchesStatus && !(caps.work || caps.manage)) throw new ForbiddenException('Not allowed to change stage');
+      if (touchesInfo && !(caps.editInfo || caps.manage)) throw new ForbiddenException('Not allowed to edit client info');
+    }
+
     const data: Record<string, unknown> = {};
     if (dto.name !== undefined) {
       const name = dto.name.trim();
@@ -267,6 +342,24 @@ export class CustomersService {
     if (!c) throw new NotFoundException('Customer not found');
   }
 
+  /** Assert the caller may reach this client (owner/co-manager or view-all), and
+   *  optionally that they may WORK it (change stage / add notes). Server-side. */
+  private async assertCrmReach(customerId: string, organizationId: string, caller: CrmCaller | undefined, opts?: { needWork?: boolean }) {
+    const c = await this.prisma.customer.findFirst({
+      where: { id: customerId, organizationId },
+      select: { id: true, ownerId: true, managerIds: true, isPortalResident: true },
+    });
+    if (!c) throw new NotFoundException('Customer not found');
+    const caps = await this.crmCapsFor(caller, organizationId);
+    if (c.isPortalResident) {
+      if (!caps.manage) throw new ForbiddenException('Not allowed');
+      return c;
+    }
+    if (!caps.canAccess || !this.canReach(caps, c, caller)) throw new NotFoundException('Customer not found');
+    if (opts?.needWork && !(caps.work || caps.manage)) throw new ForbiddenException('Not allowed');
+    return c;
+  }
+
   /** Keep only ids that are real users in THIS org (drops cross-tenant / stale
    *  ids so manager assignment & reminder targeting never point out-of-org). */
   private async keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
@@ -291,8 +384,8 @@ export class CustomersService {
   }
 
   /** Timeline (newest first), author names resolved. */
-  async listActivities(data: { customerId: string; organizationId: string }) {
-    await this.assertCustomer(data.customerId, data.organizationId);
+  async listActivities(data: { customerId: string; organizationId: string; caller?: CrmCaller }) {
+    await this.assertCrmReach(data.customerId, data.organizationId, data.caller);
     const rows = await this.prisma.customerActivity.findMany({
       where: { customerId: data.customerId, organizationId: data.organizationId },
       orderBy: { createdAt: 'desc' },
@@ -309,8 +402,9 @@ export class CustomersService {
   async addActivity(data: {
     customerId: string; organizationId: string; type?: string; body?: string; dueAt?: string; authorId?: string;
     reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string;
+    caller?: CrmCaller;
   }) {
-    await this.assertCustomer(data.customerId, data.organizationId);
+    await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     const type = (data.type ?? 'NOTE') as any;
     const isReminder = type === 'REMINDER';
     const dueAt = data.dueAt ? new Date(data.dueAt) : null;
@@ -340,8 +434,9 @@ export class CustomersService {
   async updateActivity(data: {
     id: string; customerId: string; organizationId: string; body?: string; dueAt?: string | null; done?: boolean;
     reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string;
+    caller?: CrmCaller;
   }) {
-    await this.assertCustomer(data.customerId, data.organizationId);
+    await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     const existing = await this.prisma.customerActivity.findFirst({
       where: { id: data.id, customerId: data.customerId },
       select: { dueAt: true, remindBeforeMin: true, repeat: true, reminderKind: true, body: true, authorId: true, reminderAssigneeId: true, doneAt: true },
@@ -396,14 +491,17 @@ export class CustomersService {
     return { data: activity };
   }
 
-  async deleteActivity(data: { id: string; customerId: string; organizationId: string }) {
-    await this.assertCustomer(data.customerId, data.organizationId);
+  async deleteActivity(data: { id: string; customerId: string; organizationId: string; caller?: CrmCaller }) {
+    await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     await this.prisma.customerActivity.deleteMany({ where: { id: data.id, customerId: data.customerId } });
     return { success: true };
   }
 
   /** Soft-delete (deactivate) — preserves history on tasks/reports. */
-  async remove(id: string, organizationId: string) {
+  async remove(id: string, organizationId: string, caller?: CrmCaller) {
+    // Deleting/archiving a client is a manage-level action.
+    const caps = await this.crmCapsFor(caller, organizationId);
+    if (!caps.manage) throw new ForbiddenException('Not allowed to delete clients');
     const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true } });
     if (!existing) throw new NotFoundException('Customer not found');
     // Grab the portal login ids first so the gateway can bust their cached tokens

@@ -29,6 +29,12 @@ export const PERMISSION_KEYS = [
   'canManageRota',
   'canReconcileAttendance',
   'canViewSpaceAttendance',
+  // CRM (clients). View scope is two keys: own ⊂ all (viewAll implies viewOwn).
+  'crmViewOwn',
+  'crmViewAll',
+  'crmWork', // change pipeline stage + add timeline notes on visible clients
+  'crmEditInfo', // edit client details / addresses / units
+  'crmManageClients', // reassign owner/managers, create, delete/archive
 ] as const;
 
 export type AccessPermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -40,7 +46,7 @@ export type PermissionSet = Partial<Record<AccessPermissionKey, boolean>>;
 export type PermissionGrantScope = 'org' | 'space';
 
 /** Domain grouping for UI. */
-export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance';
+export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm';
 
 /** Human-facing metadata for every permission — drives the role-builder UI. */
 export const ACCESS_PERMISSION_SCHEMA: {
@@ -60,7 +66,61 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'canManageRota', label: 'Manage rota', description: 'Create shifts and assign members to shifts', domain: 'attendance', scopes: ['org', 'space'] },
   { key: 'canReconcileAttendance', label: 'Reconcile attendance', description: 'Close/fix open attendance entries', domain: 'attendance', scopes: ['org', 'space'] },
   { key: 'canViewSpaceAttendance', label: 'View attendance', description: 'See attendance for everyone in scope', domain: 'attendance', scopes: ['org', 'space'] },
+  // CRM — client relationship management (gated per-space by the `crm` module).
+  { key: 'crmViewOwn', label: 'View own clients', description: 'See CRM clients assigned to them', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmViewAll', label: 'View all clients', description: 'See every CRM client, not just assigned ones', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmWork', label: 'Work clients', description: 'Change pipeline stage and add timeline notes on visible clients', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmEditInfo', label: 'Edit client info', description: 'Edit client details, addresses and units', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership, create and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
 ];
+
+/** Resolved CRM abilities for a caller — what the customers service enforces. */
+export type CrmViewScope = 'none' | 'own' | 'all';
+export interface CrmCaps {
+  view: CrmViewScope; // 'none' = no CRM access at all
+  work: boolean; // change stage + add notes
+  editInfo: boolean; // edit details/addresses/units
+  manage: boolean; // reassign, create, delete
+  canAccess: boolean; // convenience: view !== 'none'
+}
+
+/**
+ * Resolve a caller's effective CRM abilities from their role. ADMIN gets full
+ * access. Everyone else is driven by the CRM permission keys on their role's
+ * PermissionSet. Single source of truth for client + server so they can't drift.
+ */
+export function resolveCrmCaps(
+  systemRole: string | null | undefined,
+  permissions: PermissionSet | null | undefined,
+): CrmCaps {
+  if (systemRole === 'ADMIN') {
+    return { view: 'all', work: true, editInfo: true, manage: true, canAccess: true };
+  }
+  const p = permissions ?? {};
+  // Backward-compat bridge: before CRM caps existed, CRM read = canViewAllTasks and
+  // CRM write = canManageUsers. Keep those working so existing manager roles don't
+  // lose access the moment this ships (they gain the granular keys only when an
+  // admin edits the role). New crm* keys are additive on top.
+  const legacyManage = !!p.canManageUsers; // full CRM writer (manager)
+  const legacyViewAll = !!p.canViewAllTasks; // read-only CRM (see everything)
+  const view: CrmViewScope =
+    p.crmViewAll || legacyManage || legacyViewAll ? 'all' : p.crmViewOwn ? 'own' : 'none';
+  return {
+    view,
+    work: !!p.crmWork || legacyManage,
+    editInfo: !!p.crmEditInfo || legacyManage,
+    manage: !!p.crmManageClients || legacyManage,
+    canAccess: view !== 'none',
+  };
+}
+
+/** Does this caller own (or co-manage) a client? Owner or a listed manager. */
+export function ownsClient(
+  client: { ownerId?: string | null; managerIds?: string[] | null },
+  userId: string,
+): boolean {
+  return client.ownerId === userId || (client.managerIds ?? []).includes(userId);
+}
 
 /** Role scope — mirrors the Prisma `RoleScope` enum. */
 export type RoleScope = 'ORG' | 'SPACE' | 'BOTH';

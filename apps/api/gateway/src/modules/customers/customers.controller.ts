@@ -61,6 +61,11 @@ export class CustomersController {
     return firstValueFrom(this.authClient.send({ cmd }, payload));
   }
 
+  /** Caller context for CRM cap resolution + per-record ownership (server-authoritative). */
+  private caller(req: any) {
+    return { userId: req.user.id, role: req.user.role };
+  }
+
   /** Assert the space has a module enabled (per-space gate; defence in depth). */
   private async requireSpaceModule(spaceId: string | null | undefined, organizationId: string, mod: string) {
     if (!spaceId) throw new BadRequestException('spaceId is required');
@@ -73,8 +78,11 @@ export class CustomersController {
     }
   }
 
+  // CRM read/work endpoints are authorization-enforced IN the service against the
+  // caller's CRM caps + per-record ownership (see customers.service). We pass the
+  // caller and drop the flat @RequirePermission so scoped CRM members (not just
+  // canViewAllTasks/canManageUsers holders) can reach their own clients.
   @Get()
-  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List customers (org-wide, or a space via ?spaceId=)' })
   async list(
     @Request() req: any,
@@ -94,18 +102,17 @@ export class CustomersController {
       limit: limit ? Number(limit) : undefined,
       // 'false' → B2B customers only; 'true' → residents only; omitted → all.
       portalResident: portalResident === undefined ? undefined : portalResident === 'true',
+      caller: this.caller(req),
     });
   }
 
   @Get(':id')
-  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a customer' })
   async get(@Param('id') id: string, @Request() req: any) {
-    return this.auth('get_customer', { id, organizationId: req.user.organizationId });
+    return this.auth('get_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
   }
 
   @Post()
-  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Create a customer (CRM record; ?spaceId scopes it to a space)' })
   async create(@Body() dto: CustomerDto, @Request() req: any) {
     const orgId = req.user.organizationId;
@@ -113,23 +120,25 @@ export class CustomersController {
       await this.requireSpaceModule(dto.spaceId, orgId, 'crm');
       dto = { ...dto, ownerId: dto.ownerId ?? req.user.id };
     }
-    return this.auth('create_customer', { organizationId: orgId, dto });
+    return this.auth('create_customer', { organizationId: orgId, dto, caller: this.caller(req) });
   }
 
   @Patch(':id')
-  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a customer' })
   async update(@Param('id') id: string, @Body() dto: CustomerDto, @Request() req: any) {
     // Moving a customer into a space requires that space to have the CRM module
     // (parity with create; the service also validates the space belongs to org).
     if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');
-    return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id });
+    return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) });
   }
 
   // ── Addresses (a customer's units; one is primary → shown on the map) ──
+  // Read gated by CRM reach (get_customer enforces it); writes stay manager-only
+  // in Phase 1 (address editing for scoped members is a follow-up).
   @Get(':id/addresses')
-  @RequirePermission('canViewAllTasks')
-  listAddresses(@Param('id') id: string, @Request() req: any) {
+  async listAddresses(@Param('id') id: string, @Request() req: any) {
+    // Enforce the caller may reach this client before exposing its units.
+    await this.auth('get_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
     return this.auth('portal_list_units', { organizationId: req.user.organizationId, customerId: id });
   }
 
@@ -165,16 +174,14 @@ export class CustomersController {
     return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
   }
 
-  // ── CRM activity timeline ──
+  // ── CRM activity timeline (service enforces reach + work cap) ──
   @Get(':id/activities')
-  @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: "A customer's CRM timeline (notes, calls, reminders, status)" })
   listActivities(@Param('id') id: string, @Request() req: any) {
-    return this.auth('list_customer_activities', { customerId: id, organizationId: req.user.organizationId });
+    return this.auth('list_customer_activities', { customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) });
   }
 
   @Post(':id/activities')
-  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Log an activity / note / reminder on a customer' })
   addActivity(@Param('id') id: string, @Body() body: { type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
     return this.auth('add_customer_activity', {
@@ -182,31 +189,30 @@ export class CustomersController {
       type: body.type, body: body.body, dueAt: body.dueAt,
       reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
       reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
+      caller: this.caller(req),
     });
   }
 
   @Patch(':id/activities/:activityId')
-  @RequirePermission('canManageUsers')
   updateActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Body() body: { body?: string; dueAt?: string | null; done?: boolean; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
     return this.auth('update_customer_activity', {
       id: activityId, customerId: id, organizationId: req.user.organizationId,
       body: body.body, dueAt: body.dueAt, done: body.done,
       reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
       reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
+      caller: this.caller(req),
     });
   }
 
   @Delete(':id/activities/:activityId')
-  @RequirePermission('canManageUsers')
   deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: any) {
-    return this.auth('delete_customer_activity', { id: activityId, customerId: id, organizationId: req.user.organizationId });
+    return this.auth('delete_customer_activity', { id: activityId, customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) });
   }
 
   @Delete(':id')
-  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete; revokes any app login)' })
   async remove(@Param('id') id: string, @Request() req: any) {
-    const result: any = await this.auth('delete_customer', { id, organizationId: req.user.organizationId });
+    const result: any = await this.auth('delete_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
     // Instantly revoke the deactivated portal logins (don't wait for the 60s
     // token-cache TTL) — consistent with every other access-change path.
     const ids: string[] = result?.deactivatedUserIds ?? [];

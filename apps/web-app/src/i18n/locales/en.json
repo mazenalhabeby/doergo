@@ -5272,7 +5272,8 @@
       "tasks": "Tasks",
       "members": "Members",
       "reports": "Reports",
-      "attendance": "Attendance"
+      "attendance": "Attendance",
+      "crm": "CRM / Clients"
     },
     "permissionCount": "{{count}} permissions"
   },
