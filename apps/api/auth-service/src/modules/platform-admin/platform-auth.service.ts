@@ -63,8 +63,9 @@ export class PlatformAuthService {
 
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() } });
     const token = this.jwt.sign({ sub: user.id, role: user.role, typ: 'platform' }, { secret: this.secret(), expiresIn: TOKEN_TTL });
+    const scope = await this.supportScope(user.id, user.role);
     this.logger.log(`[PLATFORM] login: ${user.email} (${user.role})`);
-    return ok({ token, user: this.publicUser(user), permissions: platformCapsFor(user.role) });
+    return ok({ token, user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) });
   }
 
   // ── Self-service: change own password ─────────────────────────────────────────
