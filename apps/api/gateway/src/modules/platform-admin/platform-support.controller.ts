@@ -19,8 +19,16 @@ export class PlatformSupportController {
   private agent(req: any): string { const u = req.platformUser; return `${u?.firstName ?? ''} ${u?.lastName ?? ''}`.trim() || u?.email || 'agent'; }
 
   @Get('inbox')
-  async inbox(@Query('status') status?: string, @Query('tier') tier?: string, @Query('atRisk') atRisk?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.unwrap(await this.svc.inbox({ status, tier, atRisk: atRisk === 'true', page: page ? Number(page) : 1, limit: limit ? Number(limit) : 50 }));
+  async inbox(@Request() req: any, @Query('status') status?: string, @Query('tier') tier?: string, @Query('atRisk') atRisk?: string, @Query('view') view?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+    const u = req.platformUser ?? {};
+    return this.unwrap(await this.svc.inbox({
+      status, tier, atRisk: atRisk === 'true', view,
+      page: page ? Number(page) : 1, limit: limit ? Number(limit) : 50,
+      // Access scope resolved from the platform token (server-authoritative).
+      isSupervisor: !!u.isSupportSupervisor,
+      teamIds: Array.isArray(u.supportTeamIds) ? u.supportTeamIds : [],
+      agentId: this.agent(req),
+    }));
   }
 
   @Get('tickets/:id')
@@ -35,7 +43,15 @@ export class PlatformSupportController {
   async status(@Param('id') id: string, @Body() body: { status?: string }) { return this.unwrap(await this.svc.setStatus({ ticketId: id, status: body?.status })); }
 
   @Post('tickets/:id/assign')
-  async assign(@Param('id') id: string, @Body() body: { agentId?: string }, @Request() req: any) { return this.unwrap(await this.svc.assign({ ticketId: id, agentId: body?.agentId ?? this.agent(req) })); }
+  async assign(@Param('id') id: string, @Body() body: { agentId?: string | null; teamId?: string | null }, @Request() req: any) {
+    // Build a sparse patch: only keys present are changed. With neither field the
+    // acting agent self-claims the ticket.
+    const payload: { ticketId: string; agentId?: string | null; teamId?: string | null } = { ticketId: id };
+    if (body && 'teamId' in body) payload.teamId = body.teamId ?? null;
+    if (body && 'agentId' in body) payload.agentId = body.agentId ?? null;
+    else if (!(body && 'teamId' in body)) payload.agentId = this.agent(req); // self-claim
+    return this.unwrap(await this.svc.assign(payload));
+  }
 
   @Post('tickets/:id/read')
   async read(@Param('id') id: string) { return this.unwrap(await this.svc.markRead(id)); }

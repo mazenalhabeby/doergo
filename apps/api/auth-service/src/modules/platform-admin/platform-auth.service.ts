@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, type PlatformRole } from '@hbcfield/shared';
+import { BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, isSupportSupervisor, type PlatformRole } from '@hbcfield/shared';
 import { generateBase32Secret, verifyTotp, otpauthUri } from './totp.util';
 
 const MAX_FAILED = 5;
@@ -108,6 +108,19 @@ export class PlatformAuthService {
     return ok({ twoFactorEnabled: false });
   }
 
+  /** The caller's support-team scope, resolved for inbox filtering. */
+  private async supportScope(userId: string, role: string) {
+    const memberships = await this.prisma.supportTeamMember.findMany({
+      where: { platformUserId: userId },
+      select: { teamId: true, teamRole: true },
+    });
+    return {
+      isSupportSupervisor: isSupportSupervisor(role),
+      supportTeamIds: memberships.map((m) => m.teamId),
+      supportTeamRoles: memberships.map((m) => ({ teamId: m.teamId, teamRole: m.teamRole })),
+    };
+  }
+
   // ── Validate (called by the gateway guard on every request) ───────────────────
   async validateToken(token: string) {
     try {
@@ -115,7 +128,8 @@ export class PlatformAuthService {
       if (payload?.typ !== 'platform' || !payload?.sub) return { valid: false };
       const user = await this.prisma.platformUser.findUnique({ where: { id: payload.sub } });
       if (!user || !user.isActive) return { valid: false };
-      return { valid: true, user: this.publicUser(user), permissions: platformCapsFor(user.role) };
+      const scope = await this.supportScope(user.id, user.role);
+      return { valid: true, user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) };
     } catch {
       return { valid: false };
     }
@@ -124,7 +138,8 @@ export class PlatformAuthService {
   async me(userId: string) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: userId } });
     if (!user) return fail('Not found', 404);
-    return ok({ user: this.publicUser(user), permissions: platformCapsFor(user.role) });
+    const scope = await this.supportScope(user.id, user.role);
+    return ok({ user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) });
   }
 
   // ── Staff management (OWNER only — enforced at the gateway) ────────────────────

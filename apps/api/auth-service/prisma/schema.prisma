@@ -417,6 +417,11 @@ model Organization {
   // override this via CompanyLocation.billableRateCents.
   billableRateCents Int?
 
+  // Support routing: manual pin to a support team (overrides routing rules). Null
+  // = routed by rules / triage. Not a hard cascade — clearing the team keeps orgs.
+  supportTeamId String?
+  supportTeam   SupportTeam? @relation("OrgSupportTeam", fields: [supportTeamId], references: [id], onDelete: SetNull)
+
   users User[]
   tasks Task[]
 
@@ -504,6 +509,7 @@ model Organization {
   subscription  Subscription?
   billingEvents BillingEvent[]
 
+  @@index([supportTeamId]) // orgs pinned to a support team
   @@map("organizations")
 }
 
@@ -2990,6 +2996,9 @@ model SupportTicket {
 
   // Agent (platform staff) currently owning the ticket — plain id, not a User FK.
   assignedAgentId String?
+  // Support team that owns this ticket, stamped at creation by the routing resolver
+  // (manual org pin > routing rule > null = unassigned triage queue). Plain id.
+  assignedTeamId String?
 
   // SLA (first response). Due date computed from tier's business-hours SLA.
   slaFirstResponseDueAt DateTime?
@@ -3010,6 +3019,7 @@ model SupportTicket {
   @@index([createdById, updatedAt]) // a customer's own ticket list (owner-scoped)
   @@index([status, priority, createdAt]) // agent inbox (priority routing order)
   @@index([assignedAgentId, status]) // an agent's assigned view
+  @@index([assignedTeamId, status]) // a team's scoped queue
   @@index([slaBreached, slaFirstResponseDueAt]) // breach sweep / at-risk
   @@map("support_tickets")
 }
@@ -3033,6 +3043,66 @@ model SupportMessage {
 
   @@index([ticketId, createdAt])
   @@map("support_messages")
+}
+
+// ── Support Teams: books of business + dynamic routing ──────────────────────
+// Platform-level (the SaaS support org), NOT customer-org scoped. Each team owns
+// a slice of the customer base (by routing rules and/or manual org pins); agents
+// see only their teams' queue + the unassigned triage queue, supervisors see all.
+
+enum SupportTeamRole {
+  MANAGER // manage the team's roster + reassign tickets within the team
+  AGENT // handle the team's queue
+}
+
+model SupportTeam {
+  id          String  @id @default(cuid())
+  name        String
+  color       String? // UI chip color, e.g. "#2563EB"
+  description String?
+  isActive    Boolean @default(true)
+
+  members      SupportTeamMember[]
+  routingRules SupportRoutingRule[]
+  pinnedOrgs   Organization[]       @relation("OrgSupportTeam") // manual overrides
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("support_teams")
+}
+
+model SupportTeamMember {
+  id     String      @id @default(cuid())
+  teamId String
+  team   SupportTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  // A PlatformUser id (not a hard FK so team membership survives independent of
+  // the platform_users table lifecycle; resolved in the service layer).
+  platformUserId String
+  teamRole       SupportTeamRole @default(AGENT)
+
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, platformUserId])
+  @@index([platformUserId]) // resolve a caller's teams
+  @@map("support_team_members")
+}
+
+model SupportRoutingRule {
+  id     String      @id @default(cuid())
+  teamId String
+  team   SupportTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  name       String
+  isActive   Boolean @default(true)
+  order      Int     @default(0) // lower = evaluated first; first match wins
+  conditions Json    @default("{}") // { planTier?, country?, state?, industry? } (RoutingConditions)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, order]) // ordered rule evaluation
+  @@map("support_routing_rules")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

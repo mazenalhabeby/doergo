@@ -8,6 +8,7 @@ import {
   SUPPORT_JOB_TYPES,
   supportTierPriority,
   slaFirstResponseDueAt,
+  resolveTeamForOrg,
   type PlanTier,
   type SupportAuthorType,
   type SupportStatus,
@@ -35,6 +36,35 @@ export class SupportService {
     return `support-sla-${ticketId}`;
   }
 
+  /**
+   * Resolve which support team owns an org's tickets (manual pin > routing rule >
+   * null triage). Shared pure resolver over the org's attributes + active rules.
+   */
+  private async resolveTeamForOrg(organizationId: string): Promise<string | null> {
+    const [org, rules] = await this.prisma.$transaction([
+      this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { planTier: true, country: true, state: true, industry: true, supportTeamId: true },
+      }),
+      this.prisma.supportRoutingRule.findMany({
+        where: { isActive: true },
+        select: { teamId: true, isActive: true, order: true, conditions: true },
+        orderBy: { order: 'asc' },
+      }),
+    ]);
+    if (!org) return null;
+    return resolveTeamForOrg(
+      {
+        planTier: org.planTier as string | null,
+        country: org.country,
+        state: org.state,
+        industry: org.industry,
+        supportTeamId: org.supportTeamId,
+      },
+      rules.map((r) => ({ teamId: r.teamId, isActive: r.isActive, order: r.order, conditions: r.conditions as any })),
+    );
+  }
+
   // ── customer: create ticket ────────────────────────────────────────────────
   async createTicket(data: {
     organizationId: string;
@@ -51,6 +81,9 @@ export class SupportService {
     const priority = supportTierPriority(tier);
     const dueAt = slaFirstResponseDueAt(tier, now);
 
+    // Dynamic routing: resolve the owning team from the org's manual pin / rules.
+    const assignedTeamId = await this.resolveTeamForOrg(data.organizationId);
+
     const ticket = await this.prisma.supportTicket.create({
       data: {
         organizationId: data.organizationId,
@@ -61,6 +94,7 @@ export class SupportService {
         status: 'OPEN',
         priority,
         planTierAtCreation: data.planTier ?? null,
+        assignedTeamId,
         slaFirstResponseDueAt: dueAt,
         lastCustomerMessageAt: now,
         messages: {
@@ -173,10 +207,16 @@ export class SupportService {
   }
 
   // ── agent: assign / status ─────────────────────────────────────────────────
-  async assign(data: { ticketId: string; agentId: string | null }) {
+  // Assign to an individual agent and/or reassign to a team. Passing `agentId`
+  // and/or `teamId` (each optional) patches only the provided fields; pass null
+  // to clear. Reassigning the team moves the ticket between scoped queues.
+  async assign(data: { ticketId: string; agentId?: string | null; teamId?: string | null }) {
+    const patch: Record<string, any> = {};
+    if ('agentId' in data) patch.assignedAgentId = data.agentId ?? null;
+    if ('teamId' in data) patch.assignedTeamId = data.teamId ?? null;
     const ticket = await this.prisma.supportTicket.update({
       where: { id: data.ticketId },
-      data: { assignedAgentId: data.agentId },
+      data: patch,
     });
     this.notificationClient.emit('support_ticket_updated', { ticket });
     return { success: true, data: ticket };
@@ -276,7 +316,20 @@ export class SupportService {
     return rows.map((r) => ({ ...r, [key]: map.get(r.id) ?? 0 }));
   }
 
-  async agentInbox(data: { status?: string; tier?: string; atRisk?: boolean; page?: number; limit?: number }) {
+  async agentInbox(data: {
+    status?: string;
+    tier?: string;
+    atRisk?: boolean;
+    page?: number;
+    limit?: number;
+    // Caller scope (from the platform token). Supervisors see everything; others
+    // see their teams' queue + the unassigned triage queue + their own tickets.
+    isSupervisor?: boolean;
+    teamIds?: string[];
+    agentId?: string;
+    // Optional explicit view within what the caller is allowed to see.
+    view?: 'all' | 'mine' | 'unassigned' | 'team';
+  }) {
     const page = Math.max(1, Number(data.page) || 1);
     const limit = Math.min(Math.max(1, Number(data.limit) || 25), 100);
     const where: any = {};
@@ -288,6 +341,28 @@ export class SupportService {
       where.slaBreached = false;
       where.firstRespondedAt = null;
     }
+
+    // ── Access scoping ────────────────────────────────────────────────────────
+    const teamIds = Array.isArray(data.teamIds) ? data.teamIds.filter(Boolean) : [];
+    // The set of tickets this caller is permitted to see.
+    const allowed: any[] = data.isSupervisor
+      ? [] // supervisors: no restriction
+      : [
+          { assignedTeamId: null }, // unassigned triage queue
+          ...(teamIds.length ? [{ assignedTeamId: { in: teamIds } }] : []),
+          ...(data.agentId ? [{ assignedAgentId: data.agentId }] : []),
+        ];
+
+    // Optional explicit view narrows further, but never beyond `allowed`.
+    const viewClauses: any[] = [];
+    if (data.view === 'mine' && data.agentId) viewClauses.push({ assignedAgentId: data.agentId });
+    else if (data.view === 'unassigned') viewClauses.push({ assignedTeamId: null });
+    else if (data.view === 'team' && teamIds.length) viewClauses.push({ assignedTeamId: { in: teamIds } });
+
+    const andParts: any[] = [];
+    if (allowed.length) andParts.push({ OR: allowed });
+    if (viewClauses.length) andParts.push({ OR: viewClauses });
+    if (andParts.length) where.AND = andParts;
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.supportTicket.findMany({

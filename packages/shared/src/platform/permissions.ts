@@ -13,20 +13,29 @@ export type PlatformCapability =
   | 'editPricing' // C2/C3 pricing
   | 'billingOps' // refunds / credits / coupons
   | 'manageSupport' // tickets / live chat
+  | 'manageSupportTeams' // create teams, routing rules, pin orgs, assign members
   | 'managePlatformUsers'; // add/remove staff, set roles
 
 export const PLATFORM_ROLES: PlatformRole[] = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'];
 
 const ALL: PlatformCapability[] = [
-  'view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps', 'manageSupport', 'managePlatformUsers',
+  'view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps', 'manageSupport', 'manageSupportTeams', 'managePlatformUsers',
 ];
 
 export const PLATFORM_PERMISSIONS: Record<PlatformRole, PlatformCapability[]> = {
   OWNER: ALL,
-  CONTROLLER: ['view', 'extendTrial', 'manageOrgs', 'manageSupport'],
+  CONTROLLER: ['view', 'extendTrial', 'manageOrgs', 'manageSupport', 'manageSupportTeams'],
   SUPPORT: ['view', 'extendTrial', 'manageSupport'],
   BILLING: ['view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps'],
 };
+
+/**
+ * Supervisors see EVERY ticket regardless of team (Zendesk "admin/team-lead sees all").
+ * Everyone else with manageSupport is scoped to their teams + the unassigned triage queue.
+ */
+export function isSupportSupervisor(role: string | null | undefined): boolean {
+  return role === 'OWNER' || role === 'CONTROLLER';
+}
 
 /** Does this platform role grant the capability? Unknown roles → deny (fail closed). */
 export function platformCan(role: string | null | undefined, cap: PlatformCapability): boolean {

@@ -3,12 +3,13 @@ import { PlatformAdminController } from './platform-admin.controller';
 import { PlatformAuthController } from './platform-auth.controller';
 import { PlatformPricingController } from './platform-pricing.controller';
 import { PlatformSupportController } from './platform-support.controller';
+import { PlatformSupportTeamsController, PlatformSupportTeamsService } from './platform-support-teams.controller';
 import { PlatformAdminService } from './platform-admin.service';
 import { PlatformSupportService } from './platform-support.service';
 
 // The SERVICE_NAMES.AUTH + SERVICE_NAMES.TASK ClientProxies are provided globally.
 @Module({
-  controllers: [PlatformAdminController, PlatformAuthController, PlatformPricingController, PlatformSupportController],
-  providers: [PlatformAdminService, PlatformSupportService],
+  controllers: [PlatformAdminController, PlatformAuthController, PlatformPricingController, PlatformSupportController, PlatformSupportTeamsController],
+  providers: [PlatformAdminService, PlatformSupportService, PlatformSupportTeamsService],
 })
 export class PlatformAdminModule {}

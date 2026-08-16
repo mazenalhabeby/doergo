@@ -11,13 +11,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const TIERS = ['starter', 'professional', 'business', 'enterprise'] as const;
 type Tier = (typeof TIERS)[number];
-type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' | 'manageSupport' | 'managePlatformUsers';
+type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' | 'manageSupport' | 'manageSupportTeams' | 'managePlatformUsers';
 const ROLES = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'] as const;
 
 const eur = (c?: number | null) => (c == null ? '—' : `€${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—');
 
-interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string; twoFactorEnabled?: boolean }; permissions: Cap[] }
+interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string; twoFactorEnabled?: boolean; isSupportSupervisor?: boolean; supportTeamIds?: string[] }; permissions: Cap[] }
 interface Seats { office: number; field: number; fieldInhouse: number; total: number }
 interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: Seats; mrrCents: number; arrCents: number }
 interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: Seats; mrrCents: number }
@@ -43,7 +43,7 @@ export default function ControlCenter() {
   const [needs2fa, setNeeds2fa] = useState(false);
   const [security, setSecurity] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support'>('orgs');
+  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support' | 'teams'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
@@ -127,6 +127,7 @@ export default function ControlCenter() {
               <button onClick={() => setTab('orgs')} className={`rounded px-3 py-1 ${tab === 'orgs' ? 'bg-slate-800' : 'text-slate-400'}`}>Organizations</button>
               <button onClick={() => setTab('pricing')} className={`rounded px-3 py-1 ${tab === 'pricing' ? 'bg-slate-800' : 'text-slate-400'}`}>Pricing</button>
               {can('manageSupport') && <button onClick={() => setTab('support')} className={`rounded px-3 py-1 ${tab === 'support' ? 'bg-slate-800' : 'text-slate-400'}`}>Support</button>}
+              {can('manageSupportTeams') && <button onClick={() => setTab('teams')} className={`rounded px-3 py-1 ${tab === 'teams' ? 'bg-slate-800' : 'text-slate-400'}`}>Support Teams</button>}
               {can('managePlatformUsers') && <button onClick={() => setTab('team')} className={`rounded px-3 py-1 ${tab === 'team' ? 'bg-slate-800' : 'text-slate-400'}`}>Team</button>}
             </div>
           </div>
@@ -188,7 +189,9 @@ export default function ControlCenter() {
         ) : tab === 'pricing' ? (
           <PricingPanel canEdit={can('editPricing')} onError={setError} />
         ) : tab === 'support' ? (
-          <SupportPanel onError={setError} />
+          <SupportPanel onError={setError} isSupervisor={!!me.user.isSupportSupervisor} hasTeams={(me.user.supportTeamIds?.length ?? 0) > 0} />
+        ) : tab === 'teams' ? (
+          <TeamsPanel onError={setError} />
         ) : (
           <TeamPanel staff={staff} reload={loadStaff} onError={setError} meId={me.user.id} />
         )}
@@ -431,23 +434,29 @@ function PricingPanel({ canEdit, onError }: { canEdit: boolean; onError: (s: str
   );
 }
 
-interface Ticket { id: string; subject: string; status: string; priority?: string; createdBy?: { firstName?: string; lastName?: string; email?: string } | null; lastCustomerMessageAt?: string | null; organizationId?: string }
+interface Ticket { id: string; subject: string; status: string; priority?: string; createdBy?: { firstName?: string; lastName?: string; email?: string } | null; lastCustomerMessageAt?: string | null; organizationId?: string; assignedTeamId?: string | null; assignedAgentId?: string | null }
 interface Msg { id: string; authorType: string; authorId?: string; body: string; isInternalNote?: boolean; createdAt: string }
 const ts = (s?: string | null) => (s ? new Date(s).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
 const TSTATUS: Record<string, string> = { OPEN: 'bg-red-500/15 text-red-400', PENDING: 'bg-amber-500/15 text-amber-400', RESOLVED: 'bg-green-500/15 text-green-400', CLOSED: 'bg-slate-500/15 text-slate-400' };
 
-function SupportPanel({ onError }: { onError: (s: string) => void }) {
+function SupportPanel({ onError, isSupervisor, hasTeams }: { onError: (s: string) => void; isSupervisor: boolean; hasTeams: boolean }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [teamNames, setTeamNames] = useState<Record<string, { name: string; color?: string | null }>>({});
   const [sel, setSel] = useState<string | null>(null);
   const [thread, setThread] = useState<{ ticket: Ticket; messages: Msg[] } | null>(null);
   const [reply, setReply] = useState('');
   const [note, setNote] = useState(false);
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState(false);
+  // Scope view: supervisors default to "all"; scoped agents to their queue.
+  const [view, setView] = useState<'all' | 'mine' | 'unassigned' | 'team'>(isSupervisor ? 'all' : 'team');
   const scrollRef = useRef<HTMLDivElement>(null);
   const selRef = useRef(sel); useEffect(() => { selRef.current = sel; }, [sel]);
+  const viewRef = useRef(view); useEffect(() => { viewRef.current = view; }, [view]);
 
-  const loadInbox = useCallback(async () => { try { setTickets((await api<{ data: Ticket[] }>('/platform/support/inbox')).data || []); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
+  const loadInbox = useCallback(async () => { try { setTickets((await api<{ data: Ticket[] }>(`/platform/support/inbox?view=${viewRef.current}`)).data || []); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
+  // Team names for the chips (best-effort; empty if the caller can't list teams).
+  useEffect(() => { (async () => { try { const r = await api<{ data: Array<{ id: string; name: string; color?: string | null }> }>('/platform/support/teams'); setTeamNames(Object.fromEntries(r.data.map((t) => [t.id, { name: t.name, color: t.color }]))); } catch { /* not a team admin — chips fall back to id-less label */ } })(); }, []);
   const loadThread = useCallback(async (id: string) => { try { const r = await api<{ data: { ticket: Ticket; messages: Msg[] } }>(`/platform/support/tickets/${id}`); setThread(r.data); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
 
   // Real-time via Socket.IO (authenticate as an agent with the platform token) +
@@ -470,7 +479,26 @@ function SupportPanel({ onError }: { onError: (s: string) => void }) {
     return () => { cancelled = true; socket?.disconnect(); clearInterval(t); };
   }, [loadInbox, loadThread]);
   useEffect(() => { if (sel) loadThread(sel); }, [sel, loadThread]);
+  useEffect(() => { loadInbox(); }, [view, loadInbox]);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [thread?.messages.length]);
+
+  // Reassign the open ticket to a team (or clear → triage). Agent self-claim is
+  // the default POST with no body.
+  const assignTeam = async (teamId: string | null) => {
+    if (!sel) return; setBusy(true);
+    try { await api(`/platform/support/tickets/${sel}/assign`, { method: 'POST', body: JSON.stringify({ teamId }) }); await loadThread(sel); await loadInbox(); }
+    catch (e) { onError(e instanceof Error ? e.message : 'Assign failed'); } finally { setBusy(false); }
+  };
+  const claim = async () => {
+    if (!sel) return; setBusy(true);
+    try { await api(`/platform/support/tickets/${sel}/assign`, { method: 'POST', body: JSON.stringify({}) }); await loadThread(sel); await loadInbox(); }
+    catch (e) { onError(e instanceof Error ? e.message : 'Claim failed'); } finally { setBusy(false); }
+  };
+  const teamChip = (id?: string | null) => {
+    if (!id) return <span className="rounded-full bg-slate-700/50 px-1.5 py-0.5 text-[10px] text-slate-400">triage</span>;
+    const t = teamNames[id];
+    return <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: (t?.color ?? '#334155') + '33', color: t?.color ?? '#94a3b8' }}>{t?.name ?? 'team'}</span>;
+  };
 
   const send = async () => {
     if (!sel || !reply.trim()) return; setBusy(true);
@@ -483,10 +511,15 @@ function SupportPanel({ onError }: { onError: (s: string) => void }) {
     <div className="flex h-[70vh] gap-4">
       <aside className="flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800">
         <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Inbox ({tickets.length})<span className={`ml-auto flex items-center gap-1 normal-case ${live ? 'text-green-400' : 'text-slate-600'}`}><span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-green-400' : 'bg-slate-600'}`} />{live ? 'live' : 'offline'}</span></div>
+        <div className="flex gap-1 border-b border-slate-800 px-2 py-1.5 text-[11px]">
+          {(isSupervisor ? (['all', 'unassigned', 'mine'] as const) : ([...(hasTeams ? (['team'] as const) : []), 'unassigned', 'mine'] as const)).map((v) => (
+            <button key={v} onClick={() => setView(v)} className={`rounded px-2 py-0.5 ${view === v ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}>{v === 'team' ? 'My teams' : v === 'mine' ? 'Assigned to me' : v === 'unassigned' ? 'Triage' : 'All'}</button>
+          ))}
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {tickets.length === 0 ? <p className="p-4 text-sm text-slate-500">No open tickets.</p> : tickets.map((t) => (
+          {tickets.length === 0 ? <p className="p-4 text-sm text-slate-500">No tickets in this view.</p> : tickets.map((t) => (
             <button key={t.id} onClick={() => setSel(t.id)} className={`flex w-full flex-col gap-0.5 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${sel === t.id ? 'bg-slate-800/60' : ''}`}>
-              <div className="flex items-center gap-2"><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ?? 'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{t.priority && <span className="text-[10px] text-slate-500">{t.priority}</span>}</div>
+              <div className="flex items-center gap-2"><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ?? 'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{teamChip(t.assignedTeamId)}{t.assignedAgentId && <span className="truncate text-[10px] text-blue-400">@{t.assignedAgentId}</span>}</div>
               <span className="truncate text-sm font-medium">{t.subject}</span>
               <span className="truncate text-xs text-slate-500">{t.createdBy?.firstName} {t.createdBy?.lastName} · {ts(t.lastCustomerMessageAt)}</span>
             </button>
@@ -496,9 +529,14 @@ function SupportPanel({ onError }: { onError: (s: string) => void }) {
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-800">
         {!thread ? <div className="flex flex-1 items-center justify-center text-sm text-slate-500">Select a ticket</div> : (
           <>
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-              <div className="min-w-0"><div className="truncate font-semibold">{thread.ticket.subject}</div><div className="text-xs text-slate-500">{thread.ticket.createdBy?.email} · {thread.ticket.status?.toLowerCase()}</div></div>
-              <div className="flex gap-1"><button disabled={busy} onClick={() => setStatus('RESOLVED')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Resolve</button><button disabled={busy} onClick={() => setStatus('CLOSED')} className="rounded bg-slate-600/80 px-2 py-1 text-[11px] hover:bg-slate-600">Close</button></div>
+            <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-3">
+              <div className="min-w-0"><div className="flex items-center gap-2"><span className="truncate font-semibold">{thread.ticket.subject}</span>{teamChip(thread.ticket.assignedTeamId)}</div><div className="text-xs text-slate-500">{thread.ticket.createdBy?.email} · {thread.ticket.status?.toLowerCase()}{thread.ticket.assignedAgentId && <span className="text-blue-400"> · @{thread.ticket.assignedAgentId}</span>}</div></div>
+              <div className="flex shrink-0 items-center gap-1">
+                <select disabled={busy} value={thread.ticket.assignedTeamId ?? ''} onChange={(e) => assignTeam(e.target.value || null)} className="rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px]" title="Route to team"><option value="">Triage</option>{Object.entries(teamNames).map(([id, t]) => <option key={id} value={id}>{t.name}</option>)}</select>
+                <button disabled={busy} onClick={claim} className="rounded bg-blue-600/80 px-2 py-1 text-[11px] hover:bg-blue-600" title="Assign to me">Claim</button>
+                <button disabled={busy} onClick={() => setStatus('RESOLVED')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Resolve</button>
+                <button disabled={busy} onClick={() => setStatus('CLOSED')} className="rounded bg-slate-600/80 px-2 py-1 text-[11px] hover:bg-slate-600">Close</button>
+              </div>
             </div>
             <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-950/40 p-4">
               {thread.messages.map((m) => (
@@ -521,6 +559,203 @@ function SupportPanel({ onError }: { onError: (s: string) => void }) {
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// ── Support Teams admin ───────────────────────────────────────────────────────
+interface TMember { id: string; platformUserId: string; teamRole: 'MANAGER' | 'AGENT'; user?: { firstName?: string; lastName?: string; email?: string; role?: string } | null }
+interface TRule { id: string; name: string; isActive: boolean; order: number; conditions: { planTier?: string[]; country?: string[]; state?: string[]; industry?: string[] } }
+interface Team { id: string; name: string; color?: string | null; description?: string | null; isActive: boolean; members: TMember[]; routingRules: TRule[]; _count?: { members: number; routingRules: number; pinnedOrgs: number } }
+interface TStaff { id: string; firstName: string; lastName: string; email: string; role: string }
+interface PinnedOrg { id: string; name: string; planTier?: string | null; country?: string | null; industry?: string | null }
+
+const csv = (a?: string[]) => (a && a.length ? a.join(', ') : '');
+const parseCsv = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
+
+function TeamsPanel({ onError }: { onError: (s: string) => void }) {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [staff, setStaff] = useState<TStaff[]>([]);
+  const [selId, setSelId] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<PinnedOrg[]>([]);
+  const [newTeam, setNewTeam] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const [t, s] = await Promise.all([
+        api<{ data: Team[] }>('/platform/support/teams'),
+        api<{ data: TStaff[] }>('/platform/support/teams/staff'),
+      ]);
+      setTeams(t.data); setStaff(s.data);
+      setSelId((cur) => cur ?? t.data[0]?.id ?? null);
+    } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); }
+  }, [onError]);
+  useEffect(() => { load(); }, [load]);
+
+  const sel = teams.find((t) => t.id === selId) || null;
+  const loadPinned = useCallback(async (id: string) => { try { setPinned((await api<{ data: PinnedOrg[] }>(`/platform/support/teams/${id}/pinned-orgs`)).data); } catch { setPinned([]); } }, []);
+  useEffect(() => { if (selId) loadPinned(selId); }, [selId, loadPinned]);
+
+  const wrap = async (fn: () => Promise<any>) => { setBusy(true); try { await fn(); await load(); } catch (e) { onError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(false); } };
+
+  const createTeam = () => { if (!newTeam.trim()) return; wrap(async () => { await api('/platform/support/teams', { method: 'POST', body: JSON.stringify({ name: newTeam.trim() }) }); setNewTeam(''); }); };
+  const updateTeam = (patch: Partial<Team>) => sel && wrap(() => api(`/platform/support/teams/${sel.id}`, { method: 'PUT', body: JSON.stringify(patch) }));
+  const deleteTeam = () => sel && confirm(`Delete team "${sel.name}"? Tickets return to triage; pinned orgs are unpinned.`) && wrap(async () => { await api(`/platform/support/teams/${sel.id}`, { method: 'DELETE' }); setSelId(null); });
+  const addMember = (platformUserId: string, teamRole: 'MANAGER' | 'AGENT') => sel && wrap(() => api(`/platform/support/teams/${sel.id}/members`, { method: 'POST', body: JSON.stringify({ platformUserId, teamRole }) }));
+  const removeMember = (platformUserId: string) => sel && wrap(() => api(`/platform/support/teams/${sel.id}/members/${platformUserId}`, { method: 'DELETE' }));
+  const saveRule = (r: Partial<TRule> & { conditions: TRule['conditions'] }) => sel && wrap(() => api(`/platform/support/teams/${sel.id}/rules`, { method: 'POST', body: JSON.stringify(r) }));
+  const deleteRule = (ruleId: string) => wrap(() => api(`/platform/support/teams/rules/${ruleId}`, { method: 'DELETE' }));
+  const unpin = (organizationId: string) => wrap(() => api('/platform/support/teams/pin-org', { method: 'POST', body: JSON.stringify({ organizationId, teamId: null }) }));
+
+  const memberIds = new Set(sel?.members.map((m) => m.platformUserId));
+  const addable = staff.filter((s) => !memberIds.has(s.id));
+
+  return (
+    <div className="flex h-[72vh] gap-4">
+      {/* Teams list */}
+      <aside className="flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800">
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Support Teams ({teams.length})</div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {teams.map((t) => (
+            <button key={t.id} onClick={() => setSelId(t.id)} className={`flex w-full items-center gap-2 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${selId === t.id ? 'bg-slate-800/60' : ''}`}>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: t.color ?? '#475569' }} />
+              <span className="min-w-0 flex-1"><span className={`block truncate text-sm font-medium ${t.isActive ? '' : 'text-slate-500 line-through'}`}>{t.name}</span><span className="text-[11px] text-slate-500">{t._count?.members ?? t.members.length} members · {t._count?.routingRules ?? t.routingRules.length} rules · {t._count?.pinnedOrgs ?? 0} pinned</span></span>
+            </button>
+          ))}
+          {teams.length === 0 && <p className="p-4 text-sm text-slate-500">No teams yet.</p>}
+        </div>
+        <div className="flex gap-1 border-t border-slate-800 p-2">
+          <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createTeam()} placeholder="New team name…" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm outline-none focus:border-blue-500" />
+          <button disabled={busy || !newTeam.trim()} onClick={createTeam} className="rounded bg-blue-600 px-3 text-sm hover:bg-blue-500 disabled:opacity-40">Add</button>
+        </div>
+      </aside>
+
+      {/* Team detail */}
+      <section className="min-w-0 flex-1 overflow-y-auto rounded-xl border border-slate-800 p-5">
+        {!sel ? <div className="flex h-full items-center justify-center text-sm text-slate-500">Select or create a team</div> : (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <input type="color" value={sel.color ?? '#475569'} onChange={(e) => updateTeam({ color: e.target.value })} className="h-8 w-8 shrink-0 cursor-pointer rounded border-0 bg-transparent" title="Team color" />
+              <input defaultValue={sel.name} key={sel.id + sel.name} onBlur={(e) => e.target.value.trim() && e.target.value !== sel.name && updateTeam({ name: e.target.value.trim() })} className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 text-lg font-semibold hover:border-slate-700 focus:border-blue-500 focus:outline-none" />
+              <label className="flex items-center gap-1 text-xs text-slate-400"><input type="checkbox" checked={sel.isActive} onChange={(e) => updateTeam({ isActive: e.target.checked })} /> active</label>
+              <button onClick={deleteTeam} className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Delete</button>
+            </div>
+
+            {/* Members */}
+            <div>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Members ({sel.members.length})</h3>
+              <div className="space-y-1.5">
+                {sel.members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 rounded-lg border border-slate-800 px-3 py-1.5 text-sm">
+                    <span className="min-w-0 flex-1 truncate">{m.user?.firstName} {m.user?.lastName} <span className="text-slate-500">· {m.user?.email}</span></span>
+                    <select value={m.teamRole} onChange={(e) => addMember(m.platformUserId, e.target.value as any)} className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[11px]"><option value="AGENT">Agent</option><option value="MANAGER">Manager</option></select>
+                    <button onClick={() => removeMember(m.platformUserId)} className="text-[11px] text-red-400 hover:text-red-300">remove</button>
+                  </div>
+                ))}
+                {sel.members.length === 0 && <p className="text-sm text-slate-500">No members — this team's queue is invisible until someone is added.</p>}
+              </div>
+              {addable.length > 0 && (
+                <div className="mt-2 flex items-center gap-2">
+                  <select id="addmember" className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm"><option value="">Add member…</option>{addable.map((s) => <option key={s.id} value={s.id}>{s.firstName} {s.lastName} ({s.role})</option>)}</select>
+                  <button onClick={() => { const el = document.getElementById('addmember') as HTMLSelectElement; if (el?.value) { addMember(el.value, 'AGENT'); el.value = ''; } }} className="rounded bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700">Add</button>
+                </div>
+              )}
+            </div>
+
+            {/* Routing rules */}
+            <div>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Routing rules ({sel.routingRules.length})</h3>
+              <p className="mb-2 text-xs text-slate-500">New tickets from orgs matching a rule auto-route here (first match by order wins; a manual org pin always wins over rules).</p>
+              <RuleEditor rules={sel.routingRules} onSave={saveRule} onDelete={deleteRule} busy={busy} />
+            </div>
+
+            {/* Pinned orgs */}
+            <div>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Pinned organizations ({pinned.length})</h3>
+              <p className="mb-2 text-xs text-slate-500">Manually assigned orgs (overrides routing rules). Pin an org from its row in the Organizations tab, or paste an org id below.</p>
+              <PinBox onPin={(orgId) => sel && wrap(() => api('/platform/support/teams/pin-org', { method: 'POST', body: JSON.stringify({ organizationId: orgId, teamId: sel.id }) }))} busy={busy} />
+              <div className="mt-2 space-y-1">
+                {pinned.map((o) => (
+                  <div key={o.id} className="flex items-center gap-2 rounded-lg border border-slate-800 px-3 py-1.5 text-sm">
+                    <span className="min-w-0 flex-1 truncate">{o.name} <span className="text-slate-500">· {o.planTier ?? '—'} · {o.country ?? '—'} · {o.industry ?? '—'}</span></span>
+                    <button onClick={() => unpin(o.id)} className="text-[11px] text-red-400 hover:text-red-300">unpin</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function RuleEditor({ rules, onSave, onDelete, busy }: { rules: TRule[]; onSave: (r: Partial<TRule> & { conditions: TRule['conditions'] }) => void; onDelete: (id: string) => void; busy: boolean }) {
+  const [draft, setDraft] = useState<{ name: string; order: string; planTier: string; country: string; state: string; industry: string }>({ name: '', order: '0', planTier: '', country: '', state: '', industry: '' });
+  const save = () => {
+    if (!draft.name.trim()) return;
+    onSave({ name: draft.name.trim(), order: Number(draft.order) || 0, isActive: true, conditions: { planTier: parseCsv(draft.planTier), country: parseCsv(draft.country), state: parseCsv(draft.state), industry: parseCsv(draft.industry) } });
+    setDraft({ name: '', order: '0', planTier: '', country: '', state: '', industry: '' });
+  };
+  return (
+    <div className="space-y-1.5">
+      {rules.map((r) => (
+        <div key={r.id} className="flex items-start gap-2 rounded-lg border border-slate-800 px-3 py-2 text-sm">
+          <span className="mt-0.5 w-6 shrink-0 text-center text-xs text-slate-500">#{r.order}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2"><span className="font-medium">{r.name}</span>{!r.isActive && <span className="text-[10px] text-slate-500">(inactive)</span>}<button onClick={() => onSave({ id: r.id, name: r.name, order: r.order, isActive: !r.isActive, conditions: r.conditions })} className="text-[10px] text-slate-400 hover:text-slate-200">{r.isActive ? 'disable' : 'enable'}</button></div>
+            <div className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-slate-400">
+              {r.conditions.planTier?.length ? <Cond k="tier" v={csv(r.conditions.planTier)} /> : null}
+              {r.conditions.country?.length ? <Cond k="country" v={csv(r.conditions.country)} /> : null}
+              {r.conditions.state?.length ? <Cond k="region" v={csv(r.conditions.state)} /> : null}
+              {r.conditions.industry?.length ? <Cond k="industry" v={csv(r.conditions.industry)} /> : null}
+              {!r.conditions.planTier?.length && !r.conditions.country?.length && !r.conditions.state?.length && !r.conditions.industry?.length ? <span className="text-slate-500">any org (catch-all)</span> : null}
+            </div>
+          </div>
+          <button onClick={() => onDelete(r.id)} className="text-[11px] text-red-400 hover:text-red-300">delete</button>
+        </div>
+      ))}
+      <div className="rounded-lg border border-dashed border-slate-700 p-2">
+        <div className="mb-1.5 flex gap-2">
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Rule name (e.g. DACH · Pro+)" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm" />
+          <input value={draft.order} onChange={(e) => setDraft({ ...draft, order: e.target.value })} type="number" title="order" className="w-16 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm" />
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4">
+          <input value={draft.planTier} onChange={(e) => setDraft({ ...draft, planTier: e.target.value })} placeholder="planTier: professional, business" className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs" />
+          <input value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })} placeholder="country: AT, DE, CH" className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs" />
+          <input value={draft.state} onChange={(e) => setDraft({ ...draft, state: e.target.value })} placeholder="region/state" className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs" />
+          <input value={draft.industry} onChange={(e) => setDraft({ ...draft, industry: e.target.value })} placeholder="industry: HVAC" className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs" />
+        </div>
+        <div className="mt-1.5 flex justify-end"><button disabled={busy || !draft.name.trim()} onClick={save} className="rounded bg-blue-600 px-3 py-1 text-sm hover:bg-blue-500 disabled:opacity-40">Add rule</button></div>
+        <p className="mt-1 text-[10px] text-slate-500">Comma-separated = OR within a field; fields AND together; leave a field blank for &quot;any&quot;.</p>
+      </div>
+    </div>
+  );
+}
+
+const Cond = ({ k, v }: { k: string; v: string }) => <span className="rounded bg-slate-800 px-1.5 py-0.5"><span className="text-slate-500">{k}:</span> {v}</span>;
+
+function PinBox({ onPin, busy }: { onPin: (orgId: string) => void; busy: boolean }) {
+  const [q, setQ] = useState('');
+  const [hits, setHits] = useState<OrgRow[]>([]);
+  const search = async () => { try { setHits((await api<{ data: OrgRow[] }>(`/platform/orgs?status=all${q ? `&search=${encodeURIComponent(q)}` : ''}`)).data.slice(0, 8)); } catch { setHits([]); } };
+  return (
+    <div>
+      <div className="flex gap-1.5">
+        <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && search()} placeholder="Search org to pin…" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm" />
+        <button onClick={search} className="rounded bg-slate-800 px-3 py-1 text-sm hover:bg-slate-700">Search</button>
+      </div>
+      {hits.length > 0 && (
+        <div className="mt-1 space-y-1">
+          {hits.map((o) => (
+            <div key={o.id} className="flex items-center gap-2 rounded border border-slate-800 px-3 py-1 text-sm">
+              <span className="min-w-0 flex-1 truncate">{o.name} <span className="text-slate-500">· {o.planTier ?? '—'}</span></span>
+              <button disabled={busy} onClick={() => { onPin(o.id); setHits([]); setQ(''); }} className="rounded bg-blue-600/80 px-2 py-0.5 text-[11px] hover:bg-blue-600">pin here</button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
