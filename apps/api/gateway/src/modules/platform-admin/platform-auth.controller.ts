@@ -19,8 +19,8 @@ export class PlatformAuthController {
   /** Staff login — open but tightly rate-limited (brute-force + lockout in the service). */
   @Post('auth/login')
   @Throttle({ default: { limit: 8, ttl: 60_000 } })
-  async login(@Body() body: { email?: string; password?: string }) {
-    return this.unwrap(await this.svc.login({ email: body?.email ?? '', password: body?.password ?? '' }));
+  async login(@Body() body: { email?: string; password?: string; code?: string }) {
+    return this.unwrap(await this.svc.login({ email: body?.email ?? '', password: body?.password ?? '', code: body?.code }));
   }
 
   /** Break-glass: create the first OWNER — gated by the shared PLATFORM_ADMIN_KEY. */
