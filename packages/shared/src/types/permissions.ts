@@ -103,15 +103,19 @@ export function resolveCrmCaps(
   // admin edits the role). New crm* keys are additive on top.
   const legacyManage = !!p.canManageUsers; // full CRM writer (manager)
   const legacyViewAll = !!p.canViewAllTasks; // read-only CRM (see everything)
-  const view: CrmViewScope =
+  const work = !!p.crmWork || legacyManage;
+  const editInfo = !!p.crmEditInfo || legacyManage;
+  const manage = !!p.crmManageClients || legacyManage;
+  let view: CrmViewScope =
     p.crmViewAll || legacyManage || legacyViewAll ? 'all' : p.crmViewOwn ? 'own' : 'none';
-  return {
-    view,
-    work: !!p.crmWork || legacyManage,
-    editInfo: !!p.crmEditInfo || legacyManage,
-    manage: !!p.crmManageClients || legacyManage,
-    canAccess: view !== 'none',
-  };
+  // Any granted CRM action implies being able to SEE the clients it acts on:
+  // managing implies the whole book, working/editing implies at least your own.
+  // (So ticking "Manage clients" alone still grants access — no silent dead end.)
+  if (view === 'none') {
+    if (manage) view = 'all';
+    else if (work || editInfo) view = 'own';
+  }
+  return { view, work, editInfo, manage, canAccess: view !== 'none' };
 }
 
 /** Does this caller own (or co-manage) a client? Owner or a listed manager. */
