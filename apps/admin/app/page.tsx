@@ -457,7 +457,9 @@ function SupportPanel({ onError, isSupervisor, hasTeams }: { onError: (s: string
   const loadInbox = useCallback(async () => { try { setTickets((await api<{ data: Ticket[] }>(`/platform/support/inbox?view=${viewRef.current}`)).data || []); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
   // Team names for the chips (best-effort; empty if the caller can't list teams).
   useEffect(() => { (async () => { try { const r = await api<{ data: Array<{ id: string; name: string; color?: string | null }> }>('/platform/support/teams'); setTeamNames(Object.fromEntries(r.data.map((t) => [t.id, { name: t.name, color: t.color }]))); } catch { /* not a team admin — chips fall back to id-less label */ } })(); }, []);
-  const loadThread = useCallback(async (id: string) => { try { const r = await api<{ data: { ticket: Ticket; messages: Msg[] } }>(`/platform/support/tickets/${id}`); setThread(r.data); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
+  // getThread returns the ticket FLAT as `data` (with `.messages` on it), not
+  // `{ ticket, messages }` — normalize it into the shape the view expects.
+  const loadThread = useCallback(async (id: string) => { try { const r = await api<{ data: Ticket & { messages?: Msg[] } }>(`/platform/support/tickets/${id}`); setThread({ ticket: r.data, messages: r.data?.messages ?? [] }); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
 
   // Real-time via Socket.IO (authenticate as an agent with the platform token) +
   // a slow 30s poll as a safety net if the socket drops.
