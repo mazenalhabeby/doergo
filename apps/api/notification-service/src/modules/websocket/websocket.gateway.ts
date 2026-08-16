@@ -11,7 +11,7 @@ import { instrument } from '@socket.io/admin-ui';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
-import { SocketEvents, PrismaService } from '@hbcfield/shared';
+import { SocketEvents, PrismaService, platformCan } from '@hbcfield/shared';
 
 export interface ClientInfo {
   userId: string;
@@ -67,6 +67,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // Presence = "is any agent online" → drives the customer's live-chat availability.
   private agentSockets = new Set<string>();
   private readonly platformAdminKey?: string;
+  private readonly platformJwtSecret?: string;
 
   constructor(private readonly prisma: PrismaService, configService: ConfigService) {
     const secret = configService.get<string>('JWT_ACCESS_SECRET');
@@ -74,8 +75,10 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       throw new Error('CRITICAL: JWT_ACCESS_SECRET must be configured for socket authentication');
     }
     this.jwtSecret = secret;
-    // Optional: agent sockets authenticate with this platform key (operator console).
+    // Agent sockets authenticate with EITHER the legacy platform key (operator
+    // console) OR a platform-staff JWT (admin.hbcfield.com) with manageSupport.
     this.platformAdminKey = configService.get<string>('PLATFORM_ADMIN_KEY');
+    this.platformJwtSecret = configService.get<string>('PLATFORM_JWT_SECRET');
   }
 
   /** True if at least one human support agent socket is connected. */
@@ -406,10 +409,20 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // ticket event (including internal notes) and drive live-chat presence.
   @SubscribeMessage('authenticate_agent')
   handleAuthenticateAgent(client: Socket) {
-    const key = client.handshake?.auth?.platformKey;
-    if (!this.platformAdminKey || !key || key !== this.platformAdminKey) {
-      this.logger.warn(`[AUTH] Agent socket ${client.id} rejected: bad platform key`);
-      return { success: false, error: 'Invalid platform key' };
+    const auth = client.handshake?.auth ?? {};
+    let authed = false;
+    // Path 1: legacy shared platform key (operator console).
+    if (this.platformAdminKey && auth.platformKey && auth.platformKey === this.platformAdminKey) authed = true;
+    // Path 2: platform-staff JWT (admin.hbcfield.com) — verify + require manageSupport.
+    if (!authed && this.platformJwtSecret && auth.token) {
+      try {
+        const p: any = jwt.verify(auth.token, this.platformJwtSecret, { algorithms: ['HS256'] });
+        if (p?.typ === 'platform' && platformCan(p.role, 'manageSupport')) authed = true;
+      } catch { /* invalid token */ }
+    }
+    if (!authed) {
+      this.logger.warn(`[AUTH] Agent socket ${client.id} rejected`);
+      return { success: false, error: 'Not authorized' };
     }
     clearTimeout((client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer);
     client.join('support-agents');

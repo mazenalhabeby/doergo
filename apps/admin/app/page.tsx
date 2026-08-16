@@ -443,12 +443,32 @@ function SupportPanel({ onError }: { onError: (s: string) => void }) {
   const [reply, setReply] = useState('');
   const [note, setNote] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [live, setLive] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const selRef = useRef(sel); useEffect(() => { selRef.current = sel; }, [sel]);
 
   const loadInbox = useCallback(async () => { try { setTickets((await api<{ data: Ticket[] }>('/platform/support/inbox')).data || []); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
   const loadThread = useCallback(async (id: string) => { try { const r = await api<{ data: { ticket: Ticket; messages: Msg[] } }>(`/platform/support/tickets/${id}`); setThread(r.data); } catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); } }, [onError]);
 
-  useEffect(() => { loadInbox(); const t = setInterval(() => { loadInbox(); if (sel) loadThread(sel); }, 8000); return () => clearInterval(t); }, [loadInbox, loadThread, sel]);
+  // Real-time via Socket.IO (authenticate as an agent with the platform token) +
+  // a slow 30s poll as a safety net if the socket drops.
+  useEffect(() => {
+    loadInbox();
+    let socket: any; let cancelled = false;
+    (async () => {
+      const { io } = await import('socket.io-client');
+      if (cancelled) return;
+      const SOCKET_URL = API.replace(/\/api\/v1$/, '');
+      socket = io(SOCKET_URL, { auth: { token: TOKEN }, transports: ['websocket', 'polling'], reconnection: true });
+      const refresh = () => { loadInbox(); if (selRef.current) loadThread(selRef.current); };
+      socket.on('connect', () => { socket.emit('authenticate_agent'); setLive(true); });
+      socket.on('disconnect', () => setLive(false));
+      socket.on('support.message', refresh);
+      socket.on('support.ticketUpdated', refresh);
+    })();
+    const t = setInterval(() => { loadInbox(); if (selRef.current) loadThread(selRef.current); }, 30000);
+    return () => { cancelled = true; socket?.disconnect(); clearInterval(t); };
+  }, [loadInbox, loadThread]);
   useEffect(() => { if (sel) loadThread(sel); }, [sel, loadThread]);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [thread?.messages.length]);
 
@@ -462,7 +482,7 @@ function SupportPanel({ onError }: { onError: (s: string) => void }) {
   return (
     <div className="flex h-[70vh] gap-4">
       <aside className="flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800">
-        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Inbox ({tickets.length})</div>
+        <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Inbox ({tickets.length})<span className={`ml-auto flex items-center gap-1 normal-case ${live ? 'text-green-400' : 'text-slate-600'}`}><span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-green-400' : 'bg-slate-600'}`} />{live ? 'live' : 'offline'}</span></div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {tickets.length === 0 ? <p className="p-4 text-sm text-slate-500">No open tickets.</p> : tickets.map((t) => (
             <button key={t.id} onClick={() => setSel(t.id)} className={`flex w-full flex-col gap-0.5 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${sel === t.id ? 'bg-slate-800/60' : ''}`}>

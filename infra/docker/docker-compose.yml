@@ -214,6 +214,8 @@ services:
       # Required by the websocket gateway to verify JWTs on socket connections.
       # Must match the auth-service / gateway value (same secret signs the tokens).
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      # Platform-staff JWT — lets admin.hbcfield.com agents authenticate the socket.
+      - PLATFORM_JWT_SECRET=${PLATFORM_JWT_SECRET}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
