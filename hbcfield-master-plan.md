@@ -426,12 +426,28 @@ The hard part: reflect edited prices onto **live** Stripe + existing subscriptio
 - ☐ **Global metrics/BI**: MRR movement, cohort retention, seat mix, module adoption.
 - ☐ **Ops**: feature flags, maintenance banner, broadcast announcement, impersonation log.
 
-## C.7 Open decisions (Part C)
-- ☐ Auth: keep `PLATFORM_ADMIN_KEY` header, or add a real PLATFORM_ADMIN role + 2FA login?
+## C.7 Decisions
+- **Surface: SEPARATE APP at `admin.hbcfield.com`, SAME backend** ✅ (decided 2026-08-16).
+  A dedicated standalone frontend (`apps/admin`) with **zero shared bundle/cookies** with
+  the customer app → minimal attack surface. It calls the **same API gateway** + the same
+  `/platform/*` endpoints (already built in C1). Interim: `/operator` on the customer app
+  works today on the same backend until the dedicated app is live.
+- ☐ Auth: keep `PLATFORM_ADMIN_KEY` header (current), or add PLATFORM_ADMIN login + 2FA?
+  (Recommend layering **Cloudflare Access** in front of `admin.hbcfield.com` — SSO/2FA at
+  the edge — on top of the key, so it's defence-in-depth without app changes.)
 - ☐ Existing-subscription policy on price change: **grandfather** (recommended) vs migrate?
 - ☐ Per-module billing scope: **per org**, **per office seat**, or **per space**?
 - ☐ Which modules become **paid add-ons** vs stay **tier-gated** (free within tier)?
-- ☐ Surface: extend `/operator`, or a new `/platform` control center?
+
+### C.7.1 Standing up `admin.hbcfield.com` (separate app)
+- ☐ **Scaffold `apps/admin`** — a minimal standalone Next.js app (no customer chrome);
+  move the C1 Control Center UI here. Talks to the same `NEXT_PUBLIC_API_URL`.
+- ☐ **Dockerfile** for `apps/admin` + a compose service (`admin-app`, `min=1`).
+- ☐ **Ingress**: nginx vhost / ACA ingress for `admin.hbcfield.com` → the admin container.
+- ☐ **DNS**: add `admin.hbcfield.com` in Cloudflare (proxied). 
+- ☐ **Lock it down**: Cloudflare Access (email/SSO + 2FA) and/or IP-allowlist in front —
+  the console never needs public reach.
+- ☐ Once live, **remove `/operator`** from the customer app (or leave hidden as break-glass).
 
 ## C.8 Build order (Part C)
 1. **C1** — Control Center foundation (safe; org mgmt + overview + read-only pricing).

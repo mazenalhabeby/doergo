@@ -351,6 +351,39 @@ services:
     networks:
       - hbcfield-network
 
+  # Platform Control Center — independent, minimal admin app at admin.hbcfield.com.
+  # Same backend (api-gateway); calls its own origin /api/v1 (nginx proxies it) so
+  # there's no CORS. Hidden internal tool — put Cloudflare Access / IP-allowlist in
+  # front of the admin.hbcfield.com vhost.
+  admin-app:
+    build:
+      context: ../../
+      dockerfile: apps/admin/Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://admin.${DOMAIN:-hbcfield.com}/api/v1
+    container_name: hbcfield-admin-app
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:3002:3002"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'next-server' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    networks:
+      - hbcfield-network
+
 volumes:
   hbcfield_postgres_data:
     name: hbcfield-postgres-data
