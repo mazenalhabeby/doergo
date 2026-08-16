@@ -138,6 +138,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   const [draft, setDraft] = useState('');
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
+  const [viewer, setViewer] = useState<string | null>(null); // full-screen image preview
   const scrollRef = useRef<ScrollView>(null);
 
   const load = useCallback(async () => {
@@ -217,7 +218,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
               )}
 
               <ScrollView ref={scrollRef} style={{ maxHeight: 340 }} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })} keyboardShouldPersistTaps="handled">
-                {thread.map((e) => <ThreadItem key={e.id} e={e} mine={e.actorId === currentUserId} colors={colors} isDark={isDark} />)}
+                {thread.map((e) => <ThreadItem key={e.id} e={e} mine={e.actorId === currentUserId} colors={colors} isDark={isDark} onOpenImage={setViewer} />)}
               </ScrollView>
 
               {!closed ? (
@@ -258,11 +259,21 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen image preview */}
+      <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
+        <Pressable style={styles.viewerBackdrop} onPress={() => setViewer(null)}>
+          {viewer && <Image source={{ uri: viewer }} style={styles.viewerImage} resizeMode="contain" />}
+          <TouchableOpacity style={[styles.viewerClose, { top: insets.top + SPACING.md }]} onPress={() => setViewer(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
 
-function ThreadItem({ e, mine, colors, isDark }: { e: ShiftIssueEvent; mine: boolean; colors: any; isDark: boolean }) {
+function ThreadItem({ e, mine, colors, isDark, onOpenImage }: { e: ShiftIssueEvent; mine: boolean; colors: any; isDark: boolean; onOpenImage: (uri: string) => void }) {
   if (e.type === 'MESSAGE') {
     return (
       <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', marginBottom: SPACING.sm }}>
@@ -272,7 +283,9 @@ function ThreadItem({ e, mine, colors, isDark }: { e: ShiftIssueEvent; mine: boo
           {!!e.attachments?.length && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: e.body ? 6 : 0 }}>
               {e.attachments.filter((a) => (a.mimeType ?? '').startsWith('image/')).map((a, i) => (
-                <Image key={i} source={{ uri: a.url ?? a.fileUrl }} style={{ width: 120, height: 120, borderRadius: RADIUS.md }} />
+                <TouchableOpacity key={i} activeOpacity={0.8} onPress={() => onOpenImage(a.url ?? a.fileUrl)}>
+                  <Image source={{ uri: a.url ?? a.fileUrl }} style={{ width: 120, height: 120, borderRadius: RADIUS.md }} />
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -317,4 +330,7 @@ const styles = StyleSheet.create({
   iconBtn: { padding: SPACING.sm, justifyContent: 'center' },
   photoBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderRadius: RADIUS.md, paddingVertical: SPACING.sm },
   removeThumb: { position: 'absolute', top: -6, right: -6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10 },
+  viewerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  viewerImage: { width: '100%', height: '100%' },
+  viewerClose: { position: 'absolute', right: SPACING.lg, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
 });
