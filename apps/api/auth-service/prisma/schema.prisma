@@ -3192,3 +3192,52 @@ model PlatformUser {
 
   @@map("platform_users")
 }
+
+// ── Editable pricing (C2) — versioned price book, source of truth for display ──
+// A published PricingConfig is the active price book. Editing writes a DRAFT
+// version; publishing swaps `active`. Stripe price IDs are filled by the C3 sync
+// layer — C2 never mutates Stripe.
+model PricingConfig {
+  id        String   @id @default(cuid())
+  version   Int      @unique
+  currency  String   @default("eur")
+  active    Boolean  @default(false)
+  note      String?
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  seatPrices   SeatPrice[]
+  modulePrices ModulePrice[]
+
+  @@map("pricing_configs")
+}
+
+model SeatPrice {
+  id       String        @id @default(cuid())
+  configId String
+  config   PricingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  seatType     String // office | field | field_inhouse
+  tier         String? // office only: starter | professional | business
+  monthlyCents Int
+  annualCents  Int
+  stripePriceId String? // set by C3
+
+  @@index([configId])
+  @@map("seat_prices")
+}
+
+model ModulePrice {
+  id       String        @id @default(cuid())
+  configId String
+  config   PricingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  moduleKey    String
+  monthlyCents Int
+  annualCents  Int
+  billingScope String  @default("per_org") // per_org | per_office_seat | per_space
+  stripePriceId String? // set by C3
+
+  @@index([configId])
+  @@map("module_prices")
+}

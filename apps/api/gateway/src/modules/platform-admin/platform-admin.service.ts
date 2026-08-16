@@ -25,4 +25,13 @@ export class PlatformAdminService extends BaseGatewayService {
   bootstrapOwner(data: any) { return this.send({ cmd: 'platform_bootstrap_owner' }, data); }
   // Org tier (reuse billing admin logic on auth-service)
   setTier(data: { organizationId: string; tier: string }) { return this.send({ cmd: 'billing_admin_set_tier' }, data); }
+
+  // Pricing (C2 — editable price book, no Stripe mutation)
+  pricingActive() { return this.send({ cmd: 'platform_pricing_active' }, {}); }
+  pricingList() { return this.send({ cmd: 'platform_pricing_list' }, {}); }
+  pricingCreateDraft(data: any) { return this.send({ cmd: 'platform_pricing_create_draft' }, data); }
+  pricingUpdateSeat(data: any) { return this.send({ cmd: 'platform_pricing_update_seat' }, data); }
+  pricingUpsertModule(data: any) { return this.send({ cmd: 'platform_pricing_upsert_module' }, data); }
+  pricingDeleteModule(data: any) { return this.send({ cmd: 'platform_pricing_delete_module' }, data); }
+  pricingPublish(data: any) { return this.send({ cmd: 'platform_pricing_publish' }, data); }
 }

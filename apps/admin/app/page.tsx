@@ -40,7 +40,7 @@ export default function ControlCenter() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'orgs' | 'team'>('orgs');
+  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
@@ -117,6 +117,7 @@ export default function ControlCenter() {
             <h1 className="text-xl font-semibold">Platform Control Center</h1>
             <div className="flex gap-1 rounded-lg border border-slate-800 p-0.5 text-sm">
               <button onClick={() => setTab('orgs')} className={`rounded px-3 py-1 ${tab === 'orgs' ? 'bg-slate-800' : 'text-slate-400'}`}>Organizations</button>
+              <button onClick={() => setTab('pricing')} className={`rounded px-3 py-1 ${tab === 'pricing' ? 'bg-slate-800' : 'text-slate-400'}`}>Pricing</button>
               {can('managePlatformUsers') && <button onClick={() => setTab('team')} className={`rounded px-3 py-1 ${tab === 'team' ? 'bg-slate-800' : 'text-slate-400'}`}>Team</button>}
             </div>
           </div>
@@ -174,6 +175,8 @@ export default function ControlCenter() {
               </table>
             </div>
           </>
+        ) : tab === 'pricing' ? (
+          <PricingPanel canEdit={can('editPricing')} onError={setError} />
         ) : (
           <TeamPanel staff={staff} reload={loadStaff} onError={setError} meId={me.user.id} />
         )}
@@ -228,6 +231,100 @@ function TeamPanel({ staff, reload, onError, meId }: { staff: StaffUser[]; reloa
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+interface SeatPrice { id: string; seatType: string; tier: string | null; monthlyCents: number; annualCents: number }
+interface ModulePrice { id: string; moduleKey: string; monthlyCents: number; annualCents: number; billingScope: string }
+interface PriceConfig { id: string; version: number; active: boolean; note: string | null; createdAt: string; seatPrices: SeatPrice[]; modulePrices: ModulePrice[] }
+const seatLabel = (s: SeatPrice) => s.seatType === 'office' ? `Office · ${s.tier}` : s.seatType === 'field_inhouse' ? 'Field · in-house' : 'Field · external';
+
+function PricingPanel({ canEdit, onError }: { canEdit: boolean; onError: (s: string) => void }) {
+  const [active, setActive] = useState<PriceConfig | null>(null);
+  const [versions, setVersions] = useState<PriceConfig[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null); // the draft being edited
+  const [busy, setBusy] = useState<string | null>(null);
+  const [mod, setMod] = useState({ moduleKey: '', euro: '', billingScope: 'per_org' });
+
+  const load = useCallback(async () => {
+    try { const r = await api<{ data: { active: PriceConfig | null; versions: PriceConfig[] } }>('/platform/pricing'); setActive(r.data.active); setVersions(r.data.versions || []); }
+    catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); }
+  }, [onError]);
+  useEffect(() => { load(); }, [load]);
+
+  const draft = versions.find((v) => v.id === editingId && !v.active) || null;
+  const shown = draft || active;
+
+  const run = async (fn: () => Promise<any>, id: string) => { setBusy(id); try { await fn(); await load(); } catch (e) { onError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(null); } };
+  const createDraft = () => run(async () => { const r = await api<{ data: PriceConfig }>('/platform/pricing/draft', { method: 'POST', body: JSON.stringify({}) }); setEditingId(r.data.id); }, 'draft');
+  const setSeat = (seatId: string, euro: string) => run(() => api(`/platform/pricing/${draft!.id}/seat/${seatId}`, { method: 'PATCH', body: JSON.stringify({ monthlyCents: Math.round(parseFloat(euro || '0') * 100) }) }), seatId);
+  const addModule = () => { if (!mod.moduleKey.trim()) return; run(async () => { await api(`/platform/pricing/${draft!.id}/module`, { method: 'POST', body: JSON.stringify({ moduleKey: mod.moduleKey.trim(), monthlyCents: Math.round(parseFloat(mod.euro || '0') * 100), billingScope: mod.billingScope }) }); setMod({ moduleKey: '', euro: '', billingScope: 'per_org' }); }, 'addmod'); };
+  const delModule = (id: string) => run(() => api(`/platform/pricing/${draft!.id}/module/${id}`, { method: 'DELETE' }), id);
+  const publish = () => run(async () => { await api(`/platform/pricing/${draft!.id}/publish`, { method: 'POST', body: '{}' }); setEditingId(null); }, 'publish');
+
+  if (!shown) return <div className="rounded-xl border border-slate-800 p-8 text-center text-slate-500">Loading pricing…</div>;
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm text-slate-400">Active: <span className="text-slate-200">v{active?.version}</span></span>
+        {draft ? (
+          <>
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-400">editing draft v{draft.version}</span>
+            <button disabled={busy === 'publish'} onClick={publish} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm hover:bg-green-500">Publish v{draft.version}</button>
+            <button onClick={() => setEditingId(null)} className="text-xs text-slate-400 hover:text-slate-200">Discard view</button>
+          </>
+        ) : canEdit ? (
+          <button disabled={busy === 'draft'} onClick={createDraft} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Edit prices (new draft)</button>
+        ) : <span className="text-xs text-slate-500">Read-only (needs editPricing)</span>}
+        <span className="ml-auto text-xs text-slate-500">Publishing changes DISPLAY only — Stripe sync is a separate step (C3).</span>
+      </div>
+
+      <div className="rounded-xl border border-slate-800">
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Seats (monthly, € · annual = ×10)</div>
+        <div className="divide-y divide-slate-800">
+          {shown.seatPrices.map((s) => (
+            <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+              <span className="w-44">{seatLabel(s)}</span>
+              {draft ? (
+                <input type="number" min="0" step="1" defaultValue={(s.monthlyCents / 100).toString()} disabled={busy === s.id}
+                  onBlur={(e) => e.target.value !== (s.monthlyCents / 100).toString() && setSeat(s.id, e.target.value)}
+                  className="w-24 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm" />
+              ) : <span className="w-24 tabular-nums">€{(s.monthlyCents / 100).toFixed(0)}</span>}
+              <span className="text-xs text-slate-500">/mo · €{(s.annualCents / 100).toFixed(0)}/yr</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-800">
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Module add-ons {draft ? '' : `(${shown.modulePrices.length})`}</div>
+        <div className="divide-y divide-slate-800">
+          {shown.modulePrices.length === 0 && <div className="px-4 py-3 text-sm text-slate-500">No paid modules — modules are free within their tier. {draft && 'Add one below to charge for it.'}</div>}
+          {shown.modulePrices.map((m) => (
+            <div key={m.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+              <span className="w-44 font-mono text-xs">{m.moduleKey}</span>
+              <span className="w-24 tabular-nums">€{(m.monthlyCents / 100).toFixed(0)}/mo</span>
+              <span className="text-xs text-slate-500">{m.billingScope}</span>
+              {draft && <button disabled={busy === m.id} onClick={() => delModule(m.id)} className="ml-auto rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Remove</button>}
+            </div>
+          ))}
+        </div>
+        {draft && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 bg-slate-900/50 p-3">
+            <input placeholder="module key (e.g. tracking)" value={mod.moduleKey} onChange={(e) => setMod({ ...mod, moduleKey: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+            <input placeholder="€/mo" type="number" min="0" value={mod.euro} onChange={(e) => setMod({ ...mod, euro: e.target.value })} className="w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+            <select value={mod.billingScope} onChange={(e) => setMod({ ...mod, billingScope: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm">
+              {['per_org', 'per_office_seat', 'per_space'].map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <button disabled={busy === 'addmod'} onClick={addModule} className="rounded bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Add module price</button>
+          </div>
+        )}
+      </div>
+
+      {versions.length > 1 && (
+        <div className="text-xs text-slate-500">Versions: {versions.map((v) => <span key={v.id} className={`mr-2 ${v.active ? 'text-green-400' : ''}`}>v{v.version}{v.active ? ' (active)' : ''}</span>)}</div>
+      )}
     </div>
   );
 }
