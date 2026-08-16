@@ -25,7 +25,7 @@ import {
 } from '../../lib/api';
 import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
 import { WorkLogSheet } from '../worklog-sheet';
-import { ReportIssueSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
+import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../shift-issue-sheet';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
@@ -57,6 +57,7 @@ export function HybridHome() {
   const [worklogOpen, setWorklogOpen] = useState(false);
   const [reportIssueOpen, setReportIssueOpen] = useState(false);
   const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
+  const [issueListOpen, setIssueListOpen] = useState(false);
 
   // Attendance state
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
@@ -299,6 +300,13 @@ export function HybridHome() {
               <Text style={hStyles.clockBtnText}>{t('issues.report', 'Report an issue')}</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: SPACING.sm, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: 'rgba(255,255,255,0.15)' }}
+            onPress={() => setIssueListOpen(true)}
+          >
+            <Ionicons name="chatbubbles-outline" size={16} color={COLORS.white} />
+            <Text style={hStyles.clockBtnText}>{t('issues.myIssues', 'My issues')}</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <TouchableOpacity
@@ -473,6 +481,12 @@ export function HybridHome() {
         issueId={issueThreadId}
         canManage={!!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)}
         currentUserId={(user as any)?.id}
+      />
+      <ShiftIssueListSheet
+        visible={issueListOpen}
+        onClose={() => setIssueListOpen(false)}
+        onOpen={(id) => { setIssueListOpen(false); setIssueThreadId(id); }}
+        onReport={attendanceStatus?.currentEntry?.id ? () => { setIssueListOpen(false); setReportIssueOpen(true); } : undefined}
       />
     </View>
   );

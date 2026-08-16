@@ -45,7 +45,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
 import { WorkLogSheet } from '../../../src/components/worklog-sheet';
-import { ReportIssueSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
+import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../../../src/components/shift-issue-sheet';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
@@ -94,6 +94,7 @@ export default function AttendanceScreen() {
   // Shift Issues: report a blocker + open its live thread.
   const [reportIssueOpen, setReportIssueOpen] = useState(false);
   const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
+  const [issueListOpen, setIssueListOpen] = useState(false);
 
   // Geofence warning state
   const [isOutsideGeofence, setIsOutsideGeofence] = useState(false);
@@ -1034,6 +1035,22 @@ export default function AttendanceScreen() {
           </TouchableOpacity>
         )}
 
+        {/* My issues — reopen an issue's thread to read / write */}
+        <TouchableOpacity
+          onPress={() => setIssueListOpen(true)}
+          activeOpacity={0.8}
+          style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
+        >
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="chatbubbles-outline" size={20} color={COLORS.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>My issues</Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted }}>Open a reported issue to read or reply</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
         {/* Recent History */}
         <TourTarget name="attendance-history" style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('attendance.history.title')}</Text>
@@ -1186,6 +1203,12 @@ export default function AttendanceScreen() {
         issueId={issueThreadId}
         canManage={!!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)}
         currentUserId={(user as any)?.id}
+      />
+      <ShiftIssueListSheet
+        visible={issueListOpen}
+        onClose={() => setIssueListOpen(false)}
+        onOpen={(id) => { setIssueListOpen(false); setIssueThreadId(id); }}
+        onReport={currentEntry?.id ? () => { setIssueListOpen(false); setReportIssueOpen(true); } : undefined}
       />
 
       {/* Out-of-ring reason + duration sheet */}

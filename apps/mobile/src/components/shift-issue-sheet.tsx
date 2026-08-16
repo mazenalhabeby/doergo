@@ -32,6 +32,76 @@ const SEVERITIES: { key: string; label: string; color: string }[] = [
   { key: 'URGENT', label: 'Urgent', color: '#dc2626' },
 ];
 const fmt = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+const fmtDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+const sevColor = (k?: string) => SEVERITIES.find((s) => s.key === k)?.color ?? '#64748b';
+const STATUS_LABEL: Record<string, string> = { OPEN: 'Open', ACKNOWLEDGED: 'Acknowledged', IN_PROGRESS: 'In progress', RESOLVED: 'Resolved', CLOSED: 'Closed', CANCELED: 'Canceled' };
+
+/** List of the member's issues (managers see the org's) — tap one to open its thread. */
+export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
+  visible: boolean; onClose: () => void; onOpen: (id: string) => void; onReport?: () => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { subscribe } = useSocketContext();
+  const [issues, setIssues] = useState<ShiftIssue[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setIssues(await shiftIssuesApi.list({ status: 'all' })); } catch { /* noop */ } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { if (visible) load(); }, [visible, load]);
+  useEffect(() => {
+    if (!visible) return;
+    const offs = [subscribe('shift_issue.event', () => load()), subscribe('shift_issue.created', () => load())];
+    return () => offs.forEach((o) => o());
+  }, [visible, subscribe, load]);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View style={styles.container}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md, maxHeight: '85%' }]}>
+          <View style={styles.handle} />
+          <View style={styles.headerRow}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Issues</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+            {loading && issues.length === 0 ? (
+              <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={colors.textSecondary} />
+            ) : issues.length === 0 ? (
+              <Text style={[styles.hint, { color: colors.textMuted, textAlign: 'center', paddingVertical: SPACING.lg }]}>No issues yet.</Text>
+            ) : issues.map((i) => (
+              <TouchableOpacity key={i.id} activeOpacity={0.7} onPress={() => { onOpen(i.id); }}
+                style={[styles.listRow, { borderColor: colors.border }]}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sevColor(i.severity), marginTop: 6 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: FONT_SIZE.base, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>{i.title}</Text>
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: colors.textMuted, marginTop: 1 }}>
+                    {STATUS_LABEL[i.status] ?? i.status} · {fmtDay(i.createdAt)}{i.eventCount ? ` · ${i.eventCount} updates` : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {onReport && (
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#dc2626', marginTop: SPACING.md }]} onPress={onReport}>
+              <Ionicons name="warning-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+              <Text style={styles.primaryBtnText}>Report an issue</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 /** Report a new blocker during a shift. */
 export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCreated }: {
@@ -318,7 +388,8 @@ const styles = StyleSheet.create({
   input: { borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZE.base, marginBottom: SPACING.md },
   sevRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
   sevChip: { flex: 1, alignItems: 'center', borderWidth: 1.5, borderRadius: RADIUS.md, paddingVertical: SPACING.sm },
-  primaryBtn: { backgroundColor: '#dc2626', borderRadius: RADIUS.md, paddingVertical: SPACING.md, alignItems: 'center' },
+  primaryBtn: { backgroundColor: '#dc2626', borderRadius: RADIUS.md, paddingVertical: SPACING.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, paddingVertical: SPACING.md, borderBottomWidth: 1 },
   primaryBtnText: { color: '#fff', fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.base },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
   actionRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
