@@ -22,6 +22,7 @@ import {
   Sun,
   Moon,
   Menu,
+  AlertTriangle,
 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -614,6 +615,16 @@ function MobileMenu({
                 </Link>
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+              <Link
+                href="/issues"
+                onClick={() => setOpen(false)}
+                className={cn(mobileItemBase, "pl-5", isActive(pathname, "/issues") ? mobileItemActiveStyle : mobileItemInactive)}
+              >
+                <AlertTriangle className="h-4 w-4" />
+                {t("nav.sidebar.issues", "Shift Issues")}
+              </Link>
+            </DropdownMenuItem>
             {showSchedule && (
               <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
                 <Link
