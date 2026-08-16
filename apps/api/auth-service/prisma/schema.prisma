@@ -3168,3 +3168,27 @@ model BillingEvent {
   @@index([organizationId, createdAt])
   @@map("billing_events")
 }
+
+// ── Platform staff (company super-admins) ────────────────────────────────────
+// HBC employees who run the SaaS via admin.hbcfield.com. Fully isolated from
+// customer Users — a platform token is signed with a SEPARATE secret and can
+// never act as a customer. RBAC via `role` (see @hbcfield/shared platformCan).
+model PlatformUser {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  role                String    @default("SUPPORT") // OWNER | CONTROLLER | SUPPORT | BILLING
+  isActive            Boolean   @default(true)
+  twoFactorSecret     String? // TOTP (base32) — set once 2FA is enrolled
+  twoFactorEnabled    Boolean   @default(false)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  createdById         String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@map("platform_users")
+}

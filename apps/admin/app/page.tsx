@@ -1,111 +1,104 @@
 'use client';
 
 /**
- * PLATFORM CONTROL CENTER (HBC internal — NOT a customer page). Hidden route, no
- * customer login. Gated purely by PLATFORM_ADMIN_KEY: paste it once (kept in
- * sessionStorage) and every request sends it as `x-platform-admin-key`. Lets the
- * operator run the whole SaaS: overview metrics, organizations, seats/members,
- * and org controls (tier / trial / suspend). Editable pricing is a later phase.
+ * HBCField Platform Control Center — independent admin app (admin.hbcfield.com).
+ * Real staff login (email + password → platform JWT, separate secret), RBAC by
+ * role, and a Team screen for the Owner. Token kept in sessionStorage; every call
+ * sends `Authorization: Bearer`. The server is authoritative on permissions.
  */
 import { useCallback, useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const TIERS = ['starter', 'professional', 'business', 'enterprise'] as const;
 type Tier = (typeof TIERS)[number];
+type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' | 'manageSupport' | 'managePlatformUsers';
+const ROLES = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'] as const;
 
-const eur = (cents?: number | null) =>
-  cents == null ? '—' : `€${(cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+const eur = (c?: number | null) => (c == null ? '—' : `€${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—');
 
+interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string }; permissions: Cap[] }
 interface Seats { office: number; field: number; fieldInhouse: number; total: number }
-interface Overview {
-  totalOrgs: number; trialing: number; suspended: number; newLast30: number;
-  byStatus: Record<string, number>; seats: Seats; mrrCents: number; arrCents: number;
-}
-interface OrgRow {
-  id: string; name: string; planTier: string | null; subStatus: string;
-  trialEndsAt: string | null; currentPeriodEnd: string | null; suspendedAt: string | null;
-  createdAt: string; memberCount: number; seats: Seats; mrrCents: number; stripeCustomerId: string | null;
-}
-interface OrgDetail extends OrgRow {
-  enabledModules: string[]; billingEmail: string | null; vatId: string | null;
-  members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null; lastActiveAt: string | null }>;
-}
+interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: Seats; mrrCents: number; arrCents: number }
+interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: Seats; mrrCents: number }
+interface OrgDetail extends OrgRow { enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
+interface StaffUser { id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean; lastLoginAt: string | null }
 
-async function apiFetch<T>(path: string, key: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', 'x-platform-admin-key': key, ...(init?.headers || {}) },
-  });
+let TOKEN = '';
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}), ...(init?.headers || {}) } });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body?.message || `HTTP ${res.status}`);
   return body as T;
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  active: 'bg-green-500/15 text-green-400', trialing: 'bg-blue-500/15 text-blue-400',
-  past_due: 'bg-amber-500/15 text-amber-400', canceled: 'bg-slate-500/15 text-slate-400',
-  incomplete: 'bg-red-500/15 text-red-400',
-};
+const STATUS_COLOR: Record<string, string> = { active: 'bg-green-500/15 text-green-400', trialing: 'bg-blue-500/15 text-blue-400', past_due: 'bg-amber-500/15 text-amber-400', canceled: 'bg-slate-500/15 text-slate-400', incomplete: 'bg-red-500/15 text-red-400' };
 
-export default function OperatorPage() {
-  const [key, setKey] = useState('');
-  const [keyInput, setKeyInput] = useState('');
+export default function ControlCenter() {
+  const [me, setMe] = useState<Me | null>(null);
+  const [booting, setBooting] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'orgs' | 'team'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [staff, setStaff] = useState<StaffUser[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  const [busy, setBusy] = useState<string | null>(null);
+  const can = (c: Cap) => !!me?.permissions.includes(c);
 
-  useEffect(() => { const s = sessionStorage.getItem('platformKey'); if (s) setKey(s); }, []);
-
-  const load = useCallback(async (k: string) => {
-    setLoading(true); setError(null);
+  const loadOrgs = useCallback(async () => {
     try {
       const [ov, list] = await Promise.all([
-        apiFetch<{ data: Overview }>('/platform/overview', k),
-        apiFetch<{ data: OrgRow[] }>(`/platform/orgs?status=${status}${search ? `&search=${encodeURIComponent(search)}` : ''}`, k),
+        api<{ data: Overview }>('/platform/overview'),
+        api<{ data: OrgRow[] }>(`/platform/orgs?status=${status}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
       ]);
       setOverview(ov.data); setOrgs(list.data || []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load');
-      if (String(e).includes('Forbidden')) { setKey(''); sessionStorage.removeItem('platformKey'); }
-    } finally { setLoading(false); }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Load failed'); }
   }, [status, search]);
+  const loadStaff = useCallback(async () => { try { setStaff((await api<{ data: StaffUser[] }>('/platform/users')).data || []); } catch (e) { setError(e instanceof Error ? e.message : 'Load failed'); } }, []);
 
-  useEffect(() => { if (key) load(key); }, [key, load]);
+  // Boot: restore session.
+  useEffect(() => {
+    const t = sessionStorage.getItem('platformToken');
+    if (!t) { setBooting(false); return; }
+    TOKEN = t;
+    api<{ data: Me }>('/platform/auth/me').then((r) => setMe(r.data)).catch(() => { TOKEN = ''; sessionStorage.removeItem('platformToken'); }).finally(() => setBooting(false));
+  }, []);
+  useEffect(() => { if (me && tab === 'orgs') loadOrgs(); if (me && tab === 'team') loadStaff(); }, [me, tab, loadOrgs, loadStaff]);
 
+  const login = async () => {
+    setError(null); setBusy('login');
+    try {
+      const r = await api<{ data: { token: string; user: Me['user']; permissions: Cap[] } }>('/platform/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      TOKEN = r.data.token; sessionStorage.setItem('platformToken', TOKEN);
+      setMe({ user: r.data.user, permissions: r.data.permissions }); setPassword('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Login failed'); } finally { setBusy(null); }
+  };
+  const logout = () => { TOKEN = ''; sessionStorage.removeItem('platformToken'); setMe(null); };
   const act = async (id: string, path: string, init?: RequestInit) => {
-    setBusyId(id);
-    try { await apiFetch(`/platform/orgs/${id}${path}`, key, { method: 'POST', ...init }); await load(key); if (detail?.id === id) openDetail(id); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); }
-    finally { setBusyId(null); }
-  };
-  const setTier = async (id: string, tier: Tier) => {
-    setBusyId(id);
-    try { await apiFetch('/billing/admin/org-tier', key, { method: 'POST', body: JSON.stringify({ organizationId: id, tier }) }); await load(key); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setBusyId(null); }
-  };
-  const openDetail = async (id: string) => {
-    try { const r = await apiFetch<{ data: OrgDetail }>(`/platform/orgs/${id}`, key); setDetail(r.data); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Failed'); }
+    setBusy(id);
+    try { await api(`/platform/orgs/${id}${path}`, { method: 'POST', ...init }); await loadOrgs(); if (detail?.id === id) setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${id}`)).data); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); } finally { setBusy(null); }
   };
 
-  // ── Key gate ──
-  if (!key) {
+  if (booting) return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-500">…</div>;
+
+  // ── Login ──
+  if (!me) {
     return (
-      <div style={{ minHeight: '100vh' }} className="flex items-center justify-center bg-slate-950 p-6 text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
         <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-6">
           <h1 className="mb-1 text-lg font-semibold">Platform Control Center</h1>
-          <p className="mb-4 text-sm text-slate-400">Enter the operator key.</p>
-          <input type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && keyInput) { sessionStorage.setItem('platformKey', keyInput); setKey(keyInput); } }}
-            placeholder="PLATFORM_ADMIN_KEY" className="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500" />
-          <button onClick={() => { if (keyInput) { sessionStorage.setItem('platformKey', keyInput); setKey(keyInput); } }}
-            className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-500">Unlock</button>
+          <p className="mb-4 text-sm text-slate-400">HBC staff sign-in.</p>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" autoComplete="username"
+            className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && login()} placeholder="password" autoComplete="current-password"
+            className="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          <button onClick={login} disabled={busy === 'login'} className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50">{busy === 'login' ? '…' : 'Sign in'}</button>
           {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
       </div>
@@ -113,104 +106,83 @@ export default function OperatorPage() {
   }
 
   const Stat = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-slate-100">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-slate-400">{sub}</div>}
-    </div>
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4"><div className="text-xs uppercase tracking-wide text-slate-500">{label}</div><div className="mt-1 text-2xl font-semibold">{value}</div>{sub && <div className="mt-0.5 text-xs text-slate-400">{sub}</div>}</div>
   );
 
   return (
-    <div style={{ minHeight: '100vh' }} className="bg-slate-950 p-4 text-slate-100 md:p-6">
+    <div className="min-h-screen bg-slate-950 p-4 text-slate-100 md:p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Platform Control Center</h1>
-          <button onClick={() => { setKey(''); sessionStorage.removeItem('platformKey'); }} className="text-xs text-slate-400 hover:text-slate-200">Lock</button>
-        </div>
-
-        {error && <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">{error}</div>}
-
-        {/* Overview */}
-        {overview && (
-          <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-            <Stat label="MRR" value={eur(overview.mrrCents)} sub={`${eur(overview.arrCents)} ARR`} />
-            <Stat label="Organizations" value={String(overview.totalOrgs)} sub={`+${overview.newLast30} in 30d`} />
-            <Stat label="Active" value={String(overview.byStatus.active ?? 0)} />
-            <Stat label="Trialing" value={String(overview.trialing)} />
-            <Stat label="Suspended" value={String(overview.suspended)} />
-            <Stat label="Seats" value={String(overview.seats.total)} sub={`${overview.seats.office} office · ${overview.seats.field + overview.seats.fieldInhouse} field`} />
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold">Platform Control Center</h1>
+            <div className="flex gap-1 rounded-lg border border-slate-800 p-0.5 text-sm">
+              <button onClick={() => setTab('orgs')} className={`rounded px-3 py-1 ${tab === 'orgs' ? 'bg-slate-800' : 'text-slate-400'}`}>Organizations</button>
+              {can('managePlatformUsers') && <button onClick={() => setTab('team')} className={`rounded px-3 py-1 ${tab === 'team' ? 'bg-slate-800' : 'text-slate-400'}`}>Team</button>}
+            </div>
           </div>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-slate-400">{me.user.firstName} {me.user.lastName} · <span className="text-blue-400">{me.user.role}</span></span>
+            <button onClick={logout} className="text-xs text-slate-400 hover:text-slate-200">Sign out</button>
+          </div>
+        </div>
+        {error && <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">{error} <button onClick={() => setError(null)} className="ml-2 opacity-60">✕</button></div>}
+
+        {tab === 'orgs' ? (
+          <>
+            {overview && (
+              <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
+                <Stat label="MRR" value={eur(overview.mrrCents)} sub={`${eur(overview.arrCents)} ARR`} />
+                <Stat label="Organizations" value={String(overview.totalOrgs)} sub={`+${overview.newLast30} in 30d`} />
+                <Stat label="Active" value={String(overview.byStatus.active ?? 0)} />
+                <Stat label="Trialing" value={String(overview.trialing)} />
+                <Stat label="Suspended" value={String(overview.suspended)} />
+                <Stat label="Seats" value={String(overview.seats.total)} sub={`${overview.seats.office} office · ${overview.seats.field + overview.seats.fieldInhouse} field`} />
+              </div>
+            )}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadOrgs()} placeholder="Search org…" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm outline-none focus:border-blue-500" />
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm">{['all', 'active', 'trialing', 'past_due', 'canceled', 'incomplete'].map((s) => <option key={s} value={s}>{s}</option>)}</select>
+              <button onClick={loadOrgs} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">Refresh</button>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Tier</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
+                <tbody className="divide-y divide-slate-800">
+                  {orgs.map((o) => (
+                    <tr key={o.id} className="hover:bg-slate-900/50">
+                      <td className="px-3 py-2"><button onClick={async () => setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${o.id}`)).data)} className="font-medium hover:text-blue-400">{o.name}</button>{o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SUSPENDED</span>}</td>
+                      <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[o.subStatus?.toLowerCase()] ?? 'bg-slate-700'}`}>{o.subStatus?.toLowerCase()}</span></td>
+                      <td className="px-3 py-2">
+                        {can('manageOrgs') ? (
+                          <select value={(o.planTier ?? '').toLowerCase()} disabled={busy === o.id} onChange={(e) => act(o.id, '/tier', { body: JSON.stringify({ tier: e.target.value }) })} className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-xs"><option value="">—</option>{TIERS.map((t) => <option key={t} value={t}>{t}</option>)}</select>
+                        ) : <span className="text-xs text-slate-400">{o.planTier?.toLowerCase() ?? '—'}</span>}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">{o.memberCount}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-slate-400" title={`${o.seats.office} office · ${o.seats.field} field · ${o.seats.fieldInhouse} in-house`}>{o.seats.total}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{eur(o.mrrCents)}</td>
+                      <td className="px-3 py-2 text-slate-400">{date(o.trialEndsAt)}</td>
+                      <td className="px-3 py-2 text-right"><div className="flex justify-end gap-1">
+                        {can('extendTrial') && <button disabled={busy === o.id} onClick={() => act(o.id, '/extend-trial', { body: JSON.stringify({ days: 14 }) })} className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700">+14d</button>}
+                        {can('manageOrgs') && (o.suspendedAt
+                          ? <button disabled={busy === o.id} onClick={() => act(o.id, '/reactivate')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Reactivate</button>
+                          : <button disabled={busy === o.id} onClick={() => act(o.id, '/suspend')} className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Suspend</button>)}
+                      </div></td>
+                    </tr>
+                  ))}
+                  {orgs.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-500">No organizations.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <TeamPanel staff={staff} reload={loadStaff} onError={setError} meId={me.user.id} />
         )}
-
-        {/* Filters */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && load(key)}
-            placeholder="Search org…" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm outline-none focus:border-blue-500" />
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm">
-            {['all', 'active', 'trialing', 'past_due', 'canceled', 'incomplete'].map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <button onClick={() => load(key)} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">{loading ? '…' : 'Refresh'}</button>
-        </div>
-
-        {/* Orgs table */}
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Tier</th>
-                <th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th>
-                <th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2">Created</th><th className="px-3 py-2"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {orgs.map((o) => (
-                <tr key={o.id} className="hover:bg-slate-900/50">
-                  <td className="px-3 py-2">
-                    <button onClick={() => openDetail(o.id)} className="font-medium text-slate-100 hover:text-blue-400">{o.name}</button>
-                    {o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SUSPENDED</span>}
-                  </td>
-                  <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[o.subStatus?.toLowerCase()] ?? 'bg-slate-700 text-slate-300'}`}>{o.subStatus?.toLowerCase()}</span></td>
-                  <td className="px-3 py-2">
-                    <select value={(o.planTier ?? '').toLowerCase()} disabled={busyId === o.id} onChange={(e) => setTier(o.id, e.target.value as Tier)}
-                      className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-xs">
-                      <option value="">—</option>
-                      {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{o.memberCount}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-400" title={`${o.seats.office} office · ${o.seats.field} field · ${o.seats.fieldInhouse} in-house`}>{o.seats.total}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{eur(o.mrrCents)}</td>
-                  <td className="px-3 py-2 text-slate-400">{date(o.trialEndsAt)}</td>
-                  <td className="px-3 py-2 text-slate-400">{date(o.createdAt)}</td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button disabled={busyId === o.id} onClick={() => act(o.id, '/extend-trial', { body: JSON.stringify({ days: 14 }) })} className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700" title="Extend trial 14 days">+14d</button>
-                      {o.suspendedAt ? (
-                        <button disabled={busyId === o.id} onClick={() => act(o.id, '/reactivate')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Reactivate</button>
-                      ) : (
-                        <button disabled={busyId === o.id} onClick={() => act(o.id, '/suspend')} className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Suspend</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {orgs.length === 0 && !loading && <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-500">No organizations.</td></tr>}
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* Detail drawer */}
       {detail && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setDetail(null)}>
           <div className="h-full w-full max-w-lg overflow-y-auto border-l border-slate-800 bg-slate-900 p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">{detail.name}</h2>
-                <p className="text-xs text-slate-500">{detail.id}</p>
-              </div>
-              <button onClick={() => setDetail(null)} className="text-slate-400 hover:text-slate-200">✕</button>
-            </div>
+            <div className="mb-4 flex items-start justify-between"><div><h2 className="text-lg font-semibold">{detail.name}</h2><p className="text-xs text-slate-500">{detail.id}</p></div><button onClick={() => setDetail(null)} className="text-slate-400">✕</button></div>
             <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
               <div><div className="text-xs text-slate-500">Status</div>{detail.subStatus?.toLowerCase()}{detail.suspendedAt && ' (suspended)'}</div>
               <div><div className="text-xs text-slate-500">Tier</div>{detail.planTier?.toLowerCase() ?? '—'}</div>
@@ -218,26 +190,44 @@ export default function OperatorPage() {
               <div><div className="text-xs text-slate-500">Seats</div>{detail.seats.office} office · {detail.seats.field} field · {detail.seats.fieldInhouse} in-house</div>
               <div><div className="text-xs text-slate-500">Trial ends</div>{date(detail.trialEndsAt)}</div>
               <div><div className="text-xs text-slate-500">Period ends</div>{date(detail.currentPeriodEnd)}</div>
-              <div className="col-span-2"><div className="text-xs text-slate-500">Billing email / VAT</div>{detail.billingEmail ?? '—'} · {detail.vatId ?? '—'}</div>
             </div>
-            <div className="mb-4">
-              <div className="mb-1 text-xs text-slate-500">Modules ({detail.enabledModules?.length ?? 0})</div>
-              <div className="flex flex-wrap gap-1">{(detail.enabledModules ?? []).map((m) => <span key={m} className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-300">{m}</span>)}</div>
-            </div>
-            <div>
-              <div className="mb-1 text-xs text-slate-500">Members ({detail.members.length})</div>
-              <div className="divide-y divide-slate-800 rounded-lg border border-slate-800">
-                {detail.members.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                    <div><span className={m.isActive ? '' : 'text-slate-500 line-through'}>{m.firstName} {m.lastName}</span> <span className="text-xs text-slate-500">{m.email}</span></div>
-                    <span className="text-xs text-slate-400">{m.role?.toLowerCase()}{m.employmentType ? ` · ${m.employmentType.toLowerCase()}` : ''}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Modules ({detail.enabledModules?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.enabledModules ?? []).map((m) => <span key={m} className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px]">{m}</span>)}</div></div>
+            <div><div className="mb-1 text-xs text-slate-500">Members ({detail.members.length})</div><div className="divide-y divide-slate-800 rounded-lg border border-slate-800">{detail.members.map((m) => <div key={m.id} className="flex items-center justify-between px-3 py-2 text-sm"><div><span className={m.isActive ? '' : 'text-slate-500 line-through'}>{m.firstName} {m.lastName}</span> <span className="text-xs text-slate-500">{m.email}</span></div><span className="text-xs text-slate-400">{m.role?.toLowerCase()}</span></div>)}</div></div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function TeamPanel({ staff, reload, onError, meId }: { staff: StaffUser[]; reload: () => void; onError: (s: string) => void; meId: string }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ email: '', firstName: '', lastName: '', role: 'SUPPORT', password: '' });
+  const [busy, setBusy] = useState<string | null>(null);
+  const run = async (fn: () => Promise<any>, id: string) => { setBusy(id); try { await fn(); reload(); } catch (e) { onError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(null); } };
+  return (
+    <div className="rounded-xl border border-slate-800">
+      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3"><h2 className="text-sm font-semibold">Team</h2><button onClick={() => setOpen((v) => !v)} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Add staff</button></div>
+      {open && (
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-800 bg-slate-900/50 p-4 md:grid-cols-5">
+          <input placeholder="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+          <input placeholder="first name" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+          <input placeholder="last name" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+          <select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm">{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select>
+          <input placeholder="temp password (10+)" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+          <button disabled={busy === 'add'} onClick={() => run(async () => { await api('/platform/users', { method: 'POST', body: JSON.stringify(f) }); setOpen(false); setF({ email: '', firstName: '', lastName: '', role: 'SUPPORT', password: '' }); }, 'add')} className="col-span-2 rounded bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500 md:col-span-1">Create</button>
+        </div>
+      )}
+      <div className="divide-y divide-slate-800">
+        {staff.map((u) => (
+          <div key={u.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
+            <div className="min-w-0 flex-1"><span className={u.isActive ? 'font-medium' : 'font-medium text-slate-500 line-through'}>{u.firstName} {u.lastName}</span> <span className="text-xs text-slate-500">{u.email}</span>{u.id === meId && <span className="ml-2 text-[10px] text-slate-500">(you)</span>}</div>
+            <select value={u.role} disabled={busy === u.id} onChange={(e) => run(() => api(`/platform/users/${u.id}`, { method: 'PATCH', body: JSON.stringify({ role: e.target.value }) }), u.id)} className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs">{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select>
+            <span className="text-xs text-slate-500">{u.lastLoginAt ? `seen ${date(u.lastLoginAt)}` : 'never'}</span>
+            <button disabled={busy === u.id || u.id === meId} onClick={() => run(() => api(`/platform/users/${u.id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !u.isActive }) }), u.id)} className={`rounded px-2 py-1 text-[11px] ${u.isActive ? 'bg-red-600/80 hover:bg-red-600' : 'bg-green-600/80 hover:bg-green-600'} disabled:opacity-40`}>{u.isActive ? 'Deactivate' : 'Reactivate'}</button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -45,3 +45,6 @@ export * from './timezone-country';
 
 // Export crypto utilities (Node-only, not in client bundle)
 export * from './utils/crypto';
+
+// Platform-staff RBAC (permissions matrix)
+export * from './platform/permissions';
