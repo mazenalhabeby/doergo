@@ -59,6 +59,37 @@ export class StripeService {
     return id;
   }
 
+  // ── C3 pricing-sync primitives ──────────────────────────────────────────────
+  /** Current unit amount (cents) + product of a live Stripe price (read-only). */
+  async getPriceInfo(priceId: string): Promise<{ unitAmount: number | null; product: string; currency: string; active: boolean }> {
+    const p = await this.stripe.prices.retrieve(priceId);
+    return { unitAmount: p.unit_amount ?? null, product: typeof p.product === 'string' ? p.product : (p.product as any)?.id, currency: p.currency, active: p.active };
+  }
+
+  /** Create a NEW recurring price on a product (immutable). Does NOT change any
+   * subscription — existing subs keep their old price (grandfathered). */
+  async createRecurringPrice(params: { product: string; unitAmount: number; interval: 'month' | 'year'; currency?: string }): Promise<string> {
+    const price = await this.stripe.prices.create({
+      product: params.product,
+      unit_amount: params.unitAmount,
+      currency: params.currency ?? 'eur',
+      recurring: { interval: params.interval },
+      tax_behavior: 'exclusive',
+    });
+    return price.id;
+  }
+
+  /** Point a product's default price at a new price → affects NEW checkouts only. */
+  async setProductDefaultPrice(product: string, priceId: string): Promise<void> {
+    await this.stripe.products.update(product, { default_price: priceId });
+  }
+
+  /** Create a product (for a NEW paid module add-on). */
+  async createProduct(name: string): Promise<string> {
+    const p = await this.stripe.products.create({ name, tax_code: 'txcd_10103001' });
+    return p.id;
+  }
+
   /** Create a customer if we don't have one yet; returns the customer id. */
   async ensureCustomer(params: {
     customerId?: string | null;

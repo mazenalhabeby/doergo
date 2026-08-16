@@ -124,6 +124,9 @@ services:
       - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-90d}
       # Platform-staff auth (admin.hbcfield.com) — SEPARATE secret from customer JWT.
       - PLATFORM_JWT_SECRET=${PLATFORM_JWT_SECRET}
+      # C3 live-Stripe pricing sync — DISABLED unless explicitly 'true' (after a
+      # test-clock rehearsal). Off = apply refuses; preview is always read-only.
+      - PLATFORM_PRICING_SYNC_ENABLED=${PLATFORM_PRICING_SYNC_ENABLED:-false}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}

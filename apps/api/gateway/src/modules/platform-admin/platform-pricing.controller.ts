@@ -48,4 +48,13 @@ export class PlatformPricingController {
   @Post(':configId/publish')
   @RequirePlatformPerm('editPricing')
   async publish(@Param('configId') configId: string, @Request() req: any) { return this.unwrap(await this.svc.pricingPublish({ configId, byUserId: this.actor(req) })); }
+
+  // ── C3 Stripe sync ──
+  @Get('sync/preview')
+  @RequirePlatformPerm('editPricing')
+  async syncPreview() { return this.unwrap(await this.svc.pricingSyncPreview()); }
+
+  @Post('sync/apply')
+  @RequirePlatformPerm('editPricing')
+  async syncApply(@Body() body: { confirm?: string }, @Request() req: any) { return this.unwrap(await this.svc.pricingSyncApply({ confirm: body?.confirm, byUserId: this.actor(req) })); }
 }

@@ -34,4 +34,7 @@ export class PlatformAdminService extends BaseGatewayService {
   pricingUpsertModule(data: any) { return this.send({ cmd: 'platform_pricing_upsert_module' }, data); }
   pricingDeleteModule(data: any) { return this.send({ cmd: 'platform_pricing_delete_module' }, data); }
   pricingPublish(data: any) { return this.send({ cmd: 'platform_pricing_publish' }, data); }
+  // C3 Stripe sync (preview read-only; apply hard-gated)
+  pricingSyncPreview() { return this.send({ cmd: 'platform_pricing_sync_preview' }, {}); }
+  pricingSyncApply(data: any) { return this.send({ cmd: 'platform_pricing_sync_apply' }, data); }
 }

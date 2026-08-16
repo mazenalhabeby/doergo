@@ -246,6 +246,8 @@ function PricingPanel({ canEdit, onError }: { canEdit: boolean; onError: (s: str
   const [editingId, setEditingId] = useState<string | null>(null); // the draft being edited
   const [busy, setBusy] = useState<string | null>(null);
   const [mod, setMod] = useState({ moduleKey: '', euro: '', billingScope: 'per_org' });
+  const [sync, setSync] = useState<any | null>(null);
+  const [confirmTxt, setConfirmTxt] = useState('');
 
   const load = useCallback(async () => {
     try { const r = await api<{ data: { active: PriceConfig | null; versions: PriceConfig[] } }>('/platform/pricing'); setActive(r.data.active); setVersions(r.data.versions || []); }
@@ -324,6 +326,37 @@ function PricingPanel({ canEdit, onError }: { canEdit: boolean; onError: (s: str
 
       {versions.length > 1 && (
         <div className="text-xs text-slate-500">Versions: {versions.map((v) => <span key={v.id} className={`mr-2 ${v.active ? 'text-green-400' : ''}`}>v{v.version}{v.active ? ' (active)' : ''}</span>)}</div>
+      )}
+
+      {/* C3 — Stripe sync (live billing) */}
+      {canEdit && (
+        <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-amber-300">⚠ Sync to Stripe (live billing)</span>
+            <button onClick={() => run(async () => setSync((await api<{ data: any }>('/platform/pricing/sync/preview')).data), 'syncprev')} disabled={busy === 'syncprev'} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">Preview sync</button>
+            <span className="text-xs text-slate-500">Reads Stripe, changes nothing. Existing subscriptions are always grandfathered.</span>
+          </div>
+          {sync && (
+            <div className="mt-3 space-y-2 text-sm">
+              <div className="text-slate-300">{sync.changeCount} price change(s) · existing subs affected: <span className="text-green-400">0 (grandfathered)</span> · apply: <span className={sync.enabled ? 'text-green-400' : 'text-red-400'}>{sync.enabled ? 'ENABLED' : 'DISABLED'}</span></div>
+              {(sync.changes ?? []).map((c: any, i: number) => (
+                <div key={i} className="flex gap-3 rounded border border-slate-800 px-3 py-1.5 text-xs">
+                  <span className="w-40">{c.seatType}{c.tier ? `/${c.tier}` : ''} · {c.interval}</span>
+                  <span className="tabular-nums text-slate-400">€{((c.currentCents ?? 0) / 100).toFixed(0)} → </span>
+                  <span className="tabular-nums text-amber-300">€{(c.nextCents / 100).toFixed(0)}</span>
+                  {c.newPriceId && <span className="ml-auto font-mono text-green-400">{c.newPriceId}</span>}
+                </div>
+              ))}
+              <p className="text-xs text-slate-500">{sync.note}</p>
+              {sync.enabled && sync.changeCount > 0 && (
+                <div className="mt-2 flex items-center gap-2">
+                  <input placeholder='type APPLY to confirm' value={confirmTxt} onChange={(e) => setConfirmTxt(e.target.value)} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
+                  <button disabled={busy === 'syncapply' || confirmTxt !== 'APPLY'} onClick={() => run(async () => { setSync((await api<{ data: any }>('/platform/pricing/sync/apply', { method: 'POST', body: JSON.stringify({ confirm: 'APPLY' }) })).data); setConfirmTxt(''); }, 'syncapply')} className="rounded-lg bg-red-600 px-3 py-1.5 text-sm hover:bg-red-500 disabled:opacity-40">Apply to Stripe</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
