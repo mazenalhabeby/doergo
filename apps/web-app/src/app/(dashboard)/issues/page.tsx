@@ -120,6 +120,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
   const [draft, setDraft] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [assignOpen, setAssignOpen] = useState(false)
+  const [viewer, setViewer] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const thread = issue.thread ?? []
@@ -189,8 +190,17 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
       </header>
 
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/20 px-4 py-4 md:px-5">
-        {thread.map((e) => <ThreadItem key={e.id} e={e} mine={e.actorId === currentUserId} />)}
+        {thread.map((e) => <ThreadItem key={e.id} e={e} mine={e.actorId === currentUserId} onOpenImage={setViewer} />)}
       </div>
+
+      {/* Full-screen image lightbox */}
+      {viewer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setViewer(null)}>
+          <button type="button" onClick={() => setViewer(null)} className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"><X className="h-5 w-5" /></button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewer} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
 
       {!closed ? (
         <div className="border-t border-border/60 bg-card p-3">
@@ -228,7 +238,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
   )
 }
 
-function ThreadItem({ e, mine }: { e: ShiftIssueEvent; mine: boolean }) {
+function ThreadItem({ e, mine, onOpenImage }: { e: ShiftIssueEvent; mine: boolean; onOpenImage: (uri: string) => void }) {
   if (e.type === "MESSAGE") {
     return (
       <div className={cn("flex flex-col", mine ? "items-end" : "items-start")}>
@@ -238,8 +248,10 @@ function ThreadItem({ e, mine }: { e: ShiftIssueEvent; mine: boolean }) {
           {!!e.attachments?.length && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {e.attachments.map((a) => isImg(a.mimeType) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer"><img src={a.url ?? a.fileUrl} alt={a.fileName} className="h-24 w-24 rounded-lg object-cover" /></a>
+                <button key={a.id} type="button" onClick={() => onOpenImage(a.url ?? a.fileUrl)} className="overflow-hidden rounded-lg transition-transform hover:scale-[1.03]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={a.url ?? a.fileUrl} alt={a.fileName} className="h-24 w-24 rounded-lg object-cover" />
+                </button>
               ) : (<a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="text-xs underline">{a.fileName}</a>))}
             </div>
           )}
