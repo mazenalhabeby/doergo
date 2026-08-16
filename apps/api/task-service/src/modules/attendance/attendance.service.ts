@@ -1973,13 +1973,14 @@ export class AttendanceService {
           state: r.state,
           reminderCount: r.reminderCount,
           localDate: r.localDate,
+          excuseReason: r.excuseReason ?? null,
         };
       }),
     );
   }
 
-  /** Excuse a no-show (mark EXCUSED, stop chasing) or reopen it (back to PENDING). */
-  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen' }) {
+  /** Excuse a no-show (mark EXCUSED + record the reason) or reopen it (back to PENDING). */
+  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
     const inst = await this.prisma.shiftInstance.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
       select: { id: true },
@@ -1987,7 +1988,9 @@ export class AttendanceService {
     if (!inst) throw new NotFoundException('No-show not found');
     const updated = await this.prisma.shiftInstance.update({
       where: { id: inst.id },
-      data: data.action === 'reopen' ? { state: 'PENDING', nextRemindAt: new Date() } : { state: 'EXCUSED', nextRemindAt: null },
+      data: data.action === 'reopen'
+        ? { state: 'PENDING', nextRemindAt: new Date(), excuseReason: null, excusedById: null }
+        : { state: 'EXCUSED', nextRemindAt: null, excuseReason: data.reason?.trim().slice(0, 500) || null, excusedById: data.excusedById ?? null },
     });
     return success(updated);
   }

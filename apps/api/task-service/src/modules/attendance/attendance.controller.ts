@@ -95,7 +95,7 @@ export class AttendanceController {
   }
 
   @MessagePattern({ cmd: 'resolve_no_show' })
-  async resolveNoShow(@Payload() data: { id: string; organizationId: string; action: 'excuse' | 'reopen' }) {
+  async resolveNoShow(@Payload() data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
     return this.attendanceService.resolveNoShow(data);
   }
 

@@ -2124,6 +2124,8 @@ model ShiftInstance {
   reminderCount Int       @default(0)
   nextRemindAt  DateTime? // when the sweep should next act (set to grace-until at create; null when resolved)
   timeEntryId   String? // the fulfilling clock-in, when PRESENT
+  excuseReason  String? // why the no-show was excused (e.g. approved absence, sick leave)
+  excusedById   String? // who excused it
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

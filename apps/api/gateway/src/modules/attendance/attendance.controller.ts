@@ -305,13 +305,15 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Excuse or reopen a no-show' })
   async resolveNoShow(
     @Param('id') id: string,
-    @Body() body: { action: 'excuse' | 'reopen' },
+    @Body() body: { action: 'excuse' | 'reopen'; reason?: string },
     @Request() req: any,
   ) {
     return this.attendanceService.resolveNoShow({
       id,
       organizationId: req.user.organizationId,
       action: body?.action === 'reopen' ? 'reopen' : 'excuse',
+      reason: body?.reason,
+      excusedById: req.user.id,
     });
   }
 

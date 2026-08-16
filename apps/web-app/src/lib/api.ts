@@ -2091,6 +2091,7 @@ export interface NoShowRow {
   state: "REMINDED" | "ESCALATED" | "EXCUSED";
   reminderCount: number;
   localDate: string;
+  excuseReason?: string | null;
 }
 
 export const attendanceApi = {
@@ -2266,8 +2267,8 @@ export const attendanceApi = {
     return response.data?.data ?? [];
   },
 
-  resolveNoShow: async (id: string, action: "excuse" | "reopen") => {
-    const response = await api.patch(`/attendance/no-shows/${id}`, { action });
+  resolveNoShow: async (id: string, action: "excuse" | "reopen", reason?: string) => {
+    const response = await api.patch(`/attendance/no-shows/${id}`, { action, reason });
     if (response.error) throw new Error(response.error);
     return response.data;
   },
