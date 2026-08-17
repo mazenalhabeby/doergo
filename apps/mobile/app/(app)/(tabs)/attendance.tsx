@@ -43,7 +43,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../../src/components';
+import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer, PressableScale } from '../../../src/components';
 import { WorkLogSheet } from '../../../src/components/worklog-sheet';
 import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../../../src/components/shift-issue-sheet';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
@@ -839,34 +839,34 @@ export default function AttendanceScreen() {
                 <View style={[styles.breakSection, { borderTopColor: colors.border }]}>
                   <Text style={[styles.breakSectionTitle, { color: colors.textSecondary }]}>{t('attendance.breaks.takeABreak')}</Text>
                   <View style={styles.breakButtonsRow}>
-                    <TouchableOpacity
+                    <PressableScale
                       style={[styles.breakTypeButton, { backgroundColor: colors.primaryLight }]}
                       onPress={() => handleStartBreak(BreakType.LUNCH)}
                       disabled={isBreakLoading}
                     >
                       <Ionicons name="restaurant-outline" size={20} color={COLORS.primary} />
                       <Text style={styles.breakTypeButtonText}>{t('attendance.breaks.lunch')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </PressableScale>
+                    <PressableScale
                       style={[styles.breakTypeButton, { backgroundColor: colors.primaryLight }]}
                       onPress={() => handleStartBreak(BreakType.SHORT)}
                       disabled={isBreakLoading}
                     >
                       <Ionicons name="cafe-outline" size={20} color={COLORS.primary} />
                       <Text style={styles.breakTypeButtonText}>{t('attendance.breaks.short')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </PressableScale>
+                    <PressableScale
                       style={[styles.breakTypeButton, { backgroundColor: colors.primaryLight }]}
                       onPress={() => handleStartBreak(BreakType.OTHER)}
                       disabled={isBreakLoading}
                     >
                       <Ionicons name="time-outline" size={20} color={COLORS.primary} />
                       <Text style={styles.breakTypeButtonText}>{t('attendance.breaks.other')}</Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                   </View>
-                  {breakStatus?.totalBreakMinutes && breakStatus.totalBreakMinutes > 0 && (
+                  {(breakStatus?.totalBreakMinutes ?? 0) > 0 && (
                     <Text style={[styles.totalBreakText, { color: colors.textMuted }]}>
-                      {t('attendance.breaks.totalBreakTime', { duration: formatDuration(breakStatus.totalBreakMinutes) })}
+                      {t('attendance.breaks.totalBreakTime', { duration: formatDuration(breakStatus!.totalBreakMinutes) })}
                     </Text>
                   )}
                 </View>
@@ -904,7 +904,7 @@ export default function AttendanceScreen() {
           {/* Quick actions — grouped INSIDE the shift card (not floating below it) */}
           <View style={[styles.cardActions, { borderTopColor: colors.border }]}>
             {isClockedIn && currentEntry?.id && (
-              <TouchableOpacity onPress={() => setWorklogEntryId(currentEntry.id)} activeOpacity={0.7} style={styles.cardAction}>
+              <PressableScale onPress={() => setWorklogEntryId(currentEntry.id)} style={styles.cardAction}>
                 <View style={[styles.cardActionIcon, { backgroundColor: colors.surfaceRaised }]}>
                   <Ionicons name="list-outline" size={20} color={COLORS.primary} />
                 </View>
@@ -913,10 +913,10 @@ export default function AttendanceScreen() {
                   <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>{t('worklog.tabHint', 'Log what you did today')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
+              </PressableScale>
             )}
             {isClockedIn && currentEntry?.id && (
-              <TouchableOpacity onPress={() => setReportIssueOpen(true)} activeOpacity={0.7} style={[styles.cardAction, styles.cardActionRow, { borderTopColor: colors.border }]}>
+              <PressableScale onPress={() => setReportIssueOpen(true)} style={[styles.cardAction, styles.cardActionRow, { borderTopColor: colors.border }]}>
                 <View style={[styles.cardActionIcon, { backgroundColor: 'rgba(239,68,68,0.14)' }]}>
                   <Ionicons name="warning-outline" size={20} color="#ef4444" />
                 </View>
@@ -925,9 +925,9 @@ export default function AttendanceScreen() {
                   <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>Blocked by something you can't fix?</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
+              </PressableScale>
             )}
-            <TouchableOpacity onPress={() => setIssueListOpen(true)} activeOpacity={0.7} style={[styles.cardAction, (isClockedIn && !!currentEntry?.id) && styles.cardActionRow, { borderTopColor: colors.border }]}>
+            <PressableScale onPress={() => setIssueListOpen(true)} style={[styles.cardAction, (isClockedIn && !!currentEntry?.id) && styles.cardActionRow, { borderTopColor: colors.border }]}>
               <View style={[styles.cardActionIcon, { backgroundColor: colors.surfaceRaised }]}>
                 <Ionicons name="chatbubbles-outline" size={20} color={COLORS.primary} />
               </View>
@@ -936,7 +936,7 @@ export default function AttendanceScreen() {
                 <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>Open a reported issue to read or reply</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </View>
 
@@ -1048,9 +1048,8 @@ export default function AttendanceScreen() {
             </View>
           ) : (
             history.map((entry) => (
-              <TouchableOpacity
+              <PressableScale
                 key={entry.id}
-                activeOpacity={0.8}
                 onPress={() => setWorklogEntryId(entry.id)}
                 style={[styles.historyCard, { backgroundColor: colors.card }]}
               >
@@ -1136,7 +1135,7 @@ export default function AttendanceScreen() {
                   <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.primary }}>{t('worklog.viewActivity', 'View activity')}</Text>
                   <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             ))
           )}
         </TourTarget>

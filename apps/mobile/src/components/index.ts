@@ -7,6 +7,8 @@ export { TokenMonitor } from './token-monitor';
 export { TaskCard } from './task-card';
 export type { TaskCardData } from './task-card';
 export { FilterChip } from './filter-chip';
+export { PressableScale } from './pressable-scale';
+export type { PressableScaleProps } from './pressable-scale';
 export { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from './onboarding-icons';
 export { TechnicianPicker } from './technician-picker';
 export { LoadingState, ErrorState } from './screen-states';
