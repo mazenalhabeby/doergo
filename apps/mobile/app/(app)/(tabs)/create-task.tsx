@@ -180,7 +180,14 @@ export default function CreateTaskScreen() {
             crushed 12+ spaces into slivers, wrapping the names vertically). */}
         {spaces.length > 1 && (
           <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>{t('createTask.spaceLabel', 'Space')}</Text>
+            <View style={styles.labelRow}>
+              <Text style={[styles.label, styles.labelInline, { color: colors.textPrimary }]}>{t('createTask.spaceLabel', 'Space')}</Text>
+              <View style={[styles.countBadge, { backgroundColor: COLORS.primary + '18' }]}>
+                <Text style={[styles.countBadgeText, { color: COLORS.primary }]}>
+                  {t('createTask.spaceCount', '{{count}} available', { count: spaces.length })}
+                </Text>
+              </View>
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -199,7 +206,6 @@ export default function CreateTaskScreen() {
                     onPress={() => setSpaceId(s.id)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="grid-outline" size={14} color={isSelected ? COLORS.primary : colors.textSecondary} />
                     <Text
                       numberOfLines={1}
                       style={[
@@ -422,6 +428,28 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.semibold,
     marginBottom: SPACING.sm,
+  },
+  // Label + live count badge (e.g. "Space  ⬚ 12 available").
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  labelInline: {
+    marginBottom: 0,
+  },
+  countBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+  },
+  countBadgeText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   input: {
     borderWidth: 1,
