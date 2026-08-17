@@ -13,7 +13,7 @@ import {
   Keyboard,
   Platform,
 } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
@@ -291,6 +291,10 @@ export function LocationSearchPicker({
         <MapView
           ref={mapRef}
           style={styles.map}
+          // Android must use Google tiles (requires the Maps SDK key baked into
+          // the build); iOS stays on native Apple Maps — no key, best performance.
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          loadingEnabled
           initialRegion={defaultRegion}
           onPress={handleMapPress}
           showsUserLocation
