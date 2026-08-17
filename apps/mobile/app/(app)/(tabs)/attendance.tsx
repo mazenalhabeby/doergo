@@ -1004,7 +1004,7 @@ export default function AttendanceScreen() {
           <TouchableOpacity
             onPress={() => setWorklogEntryId(currentEntry.id)}
             activeOpacity={0.8}
-            style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
+            style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
           >
             <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="list-outline" size={20} color={COLORS.primary} />
@@ -1022,7 +1022,7 @@ export default function AttendanceScreen() {
           <TouchableOpacity
             onPress={() => setReportIssueOpen(true)}
             activeOpacity={0.8}
-            style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
+            style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
           >
             <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.14)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="warning-outline" size={20} color="#ef4444" />
@@ -1039,7 +1039,7 @@ export default function AttendanceScreen() {
         <TouchableOpacity
           onPress={() => setIssueListOpen(true)}
           activeOpacity={0.8}
-          style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
+          style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
         >
           <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="chatbubbles-outline" size={20} color={COLORS.primary} />
