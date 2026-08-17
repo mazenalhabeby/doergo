@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
-  Modal, ScrollView, Image, KeyboardAvoidingView, Platform, Pressable,
+  Modal, ScrollView, Image, Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { useSocketContext } from '../contexts/socket-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
+import { BlurSheet } from './blur-sheet';
 import { shiftIssuesApi, type ShiftIssue, type ShiftIssueEvent } from '../lib/api/shift-issues';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
@@ -60,9 +61,7 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
   }, [visible, subscribe, load]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.container}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <BlurSheet visible={visible} onClose={onClose} avoidKeyboard={false}>
         <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md, maxHeight: '85%' }]}>
           <View style={styles.handle} />
           <View style={styles.headerRow}>
@@ -99,8 +98,7 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
             </TouchableOpacity>
           )}
         </View>
-      </View>
-    </Modal>
+    </BlurSheet>
   );
 }
 
@@ -139,9 +137,7 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
   const addCamera = useCallback(async () => { const img = await takePhoto(); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <BlurSheet visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md }]}>
           <View style={styles.handle} />
           <Text style={[styles.title, { color: colors.textPrimary }]}>Report an issue</Text>
@@ -191,8 +187,7 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Report issue</Text>}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </BlurSheet>
   );
 }
 
@@ -250,9 +245,8 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   const sev = SEVERITIES.find((s) => s.key === issue?.severity);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <>
+    <BlurSheet visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md, maxHeight: '88%' }]}>
           <View style={styles.handle} />
           {loading && !issue ? (
@@ -359,7 +353,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
             </>
           )}
         </View>
-      </KeyboardAvoidingView>
+    </BlurSheet>
 
       {/* Full-screen image preview */}
       <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
@@ -370,7 +364,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
           </TouchableOpacity>
         </Pressable>
       </Modal>
-    </Modal>
+    </>
   );
 }
 

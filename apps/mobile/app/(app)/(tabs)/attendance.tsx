@@ -43,7 +43,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer, PressableScale } from '../../../src/components';
+import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer, PressableScale, BlurSheet } from '../../../src/components';
 import { WorkLogSheet } from '../../../src/components/worklog-sheet';
 import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../../../src/components/shift-issue-sheet';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
@@ -109,29 +109,9 @@ export default function AttendanceScreen() {
   // Overtime state
   const [activeOvertime, setActiveOvertime] = useState<OvertimeRequest | null>(null);
 
-  // Break bottom sheet animation. useWindowDimensions re-renders on rotation
-  // (Dimensions.get is a one-time snapshot that goes stale on tablets).
-  const { height: SCREEN_HEIGHT } = useWindowDimensions();
-  const breakSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const breakOverlayAnim = useRef(new Animated.Value(0)).current;
-
-
-  const openBreakModal = useCallback(() => {
-    setBreakModalVisible(true);
-    Animated.parallel([
-      Animated.timing(breakOverlayAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.spring(breakSlideAnim, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
-    ]).start();
-  }, [breakSlideAnim, breakOverlayAnim]);
-
-  const closeBreakModal = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(breakOverlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-      Animated.timing(breakSlideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
-    ]).start(() => {
-      setBreakModalVisible(false);
-    });
-  }, [breakSlideAnim, breakOverlayAnim, SCREEN_HEIGHT]);
+  // Break bottom sheet — presentation + animation handled by <BlurSheet>.
+  const openBreakModal = useCallback(() => setBreakModalVisible(true), []);
+  const closeBreakModal = useCallback(() => setBreakModalVisible(false), []);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -1270,32 +1250,8 @@ export default function AttendanceScreen() {
       </Modal>
 
       {/* Break Notes Bottom Sheet */}
-      <Modal
-        visible={breakModalVisible}
-        transparent
-        animationType="none"
-        onRequestClose={closeBreakModal}
-        statusBarTranslucent
-      >
-        <KeyboardAvoidingView
-          style={styles.modalContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: breakOverlayAnim }]}>
-            {Platform.OS === 'ios' ? (
-              <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={closeBreakModal} />
-              </BlurView>
-            ) : (
-              <Pressable
-                style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.65)' }]}
-                onPress={closeBreakModal}
-              />
-            )}
-          </Animated.View>
-          <Animated.View
-            style={[styles.modalSheet, { transform: [{ translateY: breakSlideAnim }] }]}
-          >
+      <BlurSheet visible={breakModalVisible} onClose={closeBreakModal}>
+          <View style={styles.modalSheet}>
             <View style={[styles.modalHandle, { backgroundColor: colors.borderLight }]} />
             <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
               <View style={styles.modalHeader}>
@@ -1361,9 +1317,8 @@ export default function AttendanceScreen() {
               {/* Safe area spacer */}
               <View style={{ height: insets.bottom }} />
             </View>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </Modal>
+          </View>
+      </BlurSheet>
     </View>
   );
 }

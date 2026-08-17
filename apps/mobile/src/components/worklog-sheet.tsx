@@ -9,8 +9,6 @@ import {
   Modal,
   ScrollView,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
+import { BlurSheet } from './blur-sheet';
 import { worklogApi, type WorkLogNote } from '../lib/api/worklog';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 
@@ -221,9 +220,8 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
   }, [takePhoto]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <>
+    <BlurSheet visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md }]}>
           <View style={[styles.handle, { backgroundColor: isDark ? '#4b5563' : '#d1d5db' }]} />
           <View style={styles.header}>
@@ -351,7 +349,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
           </>
           )}
         </View>
-      </KeyboardAvoidingView>
+    </BlurSheet>
 
       {/* Full-screen image preview */}
       <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
@@ -362,7 +360,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
           </TouchableOpacity>
         </Pressable>
       </Modal>
-    </Modal>
+    </>
   );
 }
 
