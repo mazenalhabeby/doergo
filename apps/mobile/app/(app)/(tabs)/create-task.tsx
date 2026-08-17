@@ -176,18 +176,24 @@ export default function CreateTaskScreen() {
           />
         </View>
 
-        {/* Space */}
+        {/* Space — horizontal scroll of content-sized chips (a fixed flex row
+            crushed 12+ spaces into slivers, wrapping the names vertically). */}
         {spaces.length > 1 && (
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.textPrimary }]}>{t('createTask.spaceLabel', 'Space')}</Text>
-            <View style={styles.priorityRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.spaceRow}
+              keyboardShouldPersistTaps="handled"
+            >
               {spaces.map((s) => {
                 const isSelected = spaceId === s.id;
                 return (
                   <TouchableOpacity
                     key={s.id}
                     style={[
-                      styles.priorityChip,
+                      styles.spaceChip,
                       { backgroundColor: isSelected ? COLORS.primary + '20' : colors.card, borderColor: isSelected ? COLORS.primary : colors.border },
                     ]}
                     onPress={() => setSpaceId(s.id)}
@@ -195,6 +201,7 @@ export default function CreateTaskScreen() {
                   >
                     <Ionicons name="grid-outline" size={14} color={isSelected ? COLORS.primary : colors.textSecondary} />
                     <Text
+                      numberOfLines={1}
                       style={[
                         styles.priorityText,
                         { color: isSelected ? COLORS.primary : colors.textSecondary },
@@ -206,7 +213,7 @@ export default function CreateTaskScreen() {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
         )}
 
@@ -431,6 +438,22 @@ const styles = StyleSheet.create({
   priorityRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
+  },
+  // Space selector — content-sized chips in a horizontal scroll (many spaces).
+  spaceRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    paddingRight: SPACING.lg,
+  },
+  spaceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    gap: SPACING.xs,
+    maxWidth: 220,
   },
   priorityChip: {
     flex: 1,
