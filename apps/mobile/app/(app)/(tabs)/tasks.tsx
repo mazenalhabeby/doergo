@@ -19,7 +19,8 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
-import { TaskCard, FilterChip, Skeleton, ScreenContainer } from '../../../src/components';
+import { TaskCard, FilterChip, Skeleton, ScreenContainer, PressableScale } from '../../../src/components';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TourTarget } from '../../../src/components/tour';
 import { useResponsive } from '../../../src/lib/responsive';
 import { TaskDetailPane } from '../task/[id]';
@@ -411,6 +412,26 @@ export default function TasksScreen() {
           )
         }
       >
+      {/* Plan route — optimize today's location tasks into a driving route */}
+      <PressableScale
+        onPress={() => router.push('/(app)/route-planner')}
+        activeScale={0.97}
+        style={styles.planRouteWrap}
+      >
+        <LinearGradient
+          colors={['#10b981', COLORS.primary, COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.planRouteGradient}
+        >
+          <View style={styles.planRouteIconChip}>
+            <Ionicons name="navigate" size={18} color="#fff" />
+          </View>
+          <Text style={styles.planRouteText}>{t('route.planRoute', 'Plan my route')}</Text>
+          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.85)" />
+        </LinearGradient>
+      </PressableScale>
+
       {/* Search Bar */}
       <TourTarget name="tasks-search" style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color={colors.textMuted} />
@@ -428,23 +449,6 @@ export default function TasksScreen() {
           </TouchableOpacity>
         )}
       </TourTarget>
-
-      {/* Plan route — optimize today's location tasks into a driving route */}
-      <TouchableOpacity
-        onPress={() => router.push('/(app)/route-planner')}
-        activeOpacity={0.85}
-        style={{
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-          // Align with the search bar (both lg) + even vertical rhythm.
-          marginHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: 0,
-          paddingVertical: 13, borderRadius: RADIUS.md, backgroundColor: COLORS.primary,
-        }}
-      >
-        <Ionicons name="navigate" size={18} color="#fff" />
-        <Text style={{ color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any }}>
-          {t('route.planRoute', 'Plan my route')}
-        </Text>
-      </TouchableOpacity>
 
       {/* Tab Bar */}
       <TourTarget name="tasks-header" style={[styles.tabBar, { borderBottomColor: colors.border }]}>
@@ -658,6 +662,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.md,
     borderWidth: 1,
+  },
+  // "Plan my route" — hero CTA above the search bar: brand gradient + frosted
+  // icon chip. No glow/elevation: colored shadows render as a muddy dark blob
+  // on Android, so the gradient carries the emphasis on its own.
+  planRouteWrap: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    borderRadius: RADIUS.lg,
+  },
+  planRouteGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  planRouteIconChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  planRouteText: {
+    flex: 1,
+    color: '#fff',
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold as any,
+    letterSpacing: 0.3,
   },
   searchInput: {
     flex: 1,
