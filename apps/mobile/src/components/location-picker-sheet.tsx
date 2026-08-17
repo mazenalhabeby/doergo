@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Pressable,
+  Modal,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,7 +74,7 @@ export function LocationPickerSheet({
   remoteSelected = false,
   onSelectRemote,
 }: LocationPickerSheetProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
   const hasAnimatedIn = useRef(false);
@@ -111,9 +112,10 @@ export function LocationPickerSheet({
       : `Clock In at ${selectedLocation?.name || 'Selected Location'}`);
 
   return (
+    <Modal visible transparent statusBarTranslucent animationType="none" onRequestClose={handleClose}>
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
-        <BlurView intensity={40} tint={isDark ? 'light' : 'dark'} style={StyleSheet.absoluteFill}>
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </BlurView>
       </Animated.View>
@@ -262,6 +264,7 @@ export function LocationPickerSheet({
         </View>
       </Animated.View>
     </View>
+    </Modal>
   );
 }
 
