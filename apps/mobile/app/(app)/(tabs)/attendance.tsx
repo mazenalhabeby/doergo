@@ -1024,8 +1024,8 @@ export default function AttendanceScreen() {
             activeOpacity={0.8}
             style={{ marginHorizontal: 20, marginBottom: 20, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
           >
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="warning-outline" size={20} color="#dc2626" />
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.14)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="warning-outline" size={20} color="#ef4444" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>Report an issue</Text>
