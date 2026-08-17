@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
@@ -14,7 +12,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../contexts/toast-context';
 import {
   attendanceApi,
   type AttendanceStatus,
@@ -22,15 +19,12 @@ import {
   type CompanyLocation,
   type BreakStatus,
 } from '../../lib/api';
-import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer } from '../../components';
-import { WorkLogSheet } from '../worklog-sheet';
-import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../shift-issue-sheet';
+import { LoadingState, ErrorState, ScreenContainer } from '../../components';
+import { ShiftClockCard } from './shift-clock-card';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
-import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
-import { stopGeofence } from '../../services/background-geofence';
 import {
   formatDurationMinutes as formatDuration,
 } from '../../lib/utils';
@@ -45,23 +39,15 @@ export function FullTimeHome() {
   const { formatTime, formatDateRelative: formatDate } = useTimeFormat();
   const { colors } = useTheme();
   const { t, i18n } = useTranslation();
-  const toast = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isActionLoading, setIsActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Attendance state
+  // Attendance state — the clock-in/out widget (ShiftClockCard) owns its own
+  // copy; this state drives the quick-stats / locations / history below.
   const [status, setStatus] = useState<AttendanceStatus | null>(null);
   const [history, setHistory] = useState<TimeEntry[]>([]);
   const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
-
-  // Confirm sheet state
-  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
-  const [worklogOpen, setWorklogOpen] = useState(false);
-  const [reportIssueOpen, setReportIssueOpen] = useState(false);
-  const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
-  const [issueListOpen, setIssueListOpen] = useState(false);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -138,49 +124,16 @@ export function FullTimeHome() {
     setIsRefreshing(false);
   };
 
-  // Shared clock-in flow (GPS + location/remote picker) — same implementation as
-  // the attendance tab, so allowRemote members get the "Work remotely" choice
-  // here too. (DRY)
+  // Clock-in/out lives in <ShiftClockCard/>. We still use the shared hook here
+  // only for its GPS distance helper, which powers the assigned-locations list. (DRY)
   const clockIn = useClockIn({
     assignedLocations: status?.assignedLocations || [],
-    onClockedIn: () => fetchAttendanceData(),
   });
   const getDistanceToLocation = clockIn.getDistanceToLocation;
 
   // Live out-of-ring updates so the home banner reflects admin decisions /
   // background detection without a manual pull-to-refresh.
   useExcursionSync(() => fetchAttendanceData(), user?.id);
-
-  // Handle clock out
-  const handleClockOut = () => {
-    setShowClockOutConfirm(true);
-  };
-
-  const confirmClockOut = async (notes: string) => {
-    setShowClockOutConfirm(false);
-    setIsActionLoading(true);
-    try {
-      const location = await clockIn.getCurrentLocation();
-      if (!location) {
-        setIsActionLoading(false);
-        return;
-      }
-
-      await attendanceApi.clockOut({
-        lat: location.lat,
-        lng: location.lng,
-        accuracy: location.accuracy,
-        notes: notes || undefined,
-      });
-      await stopBackgroundHeartbeat();
-      await stopGeofence();
-      await fetchAttendanceData();
-    } catch (err: any) {
-      toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockOut'));
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
 
   // Check if within geofence
   const isWithinGeofence = (location: CompanyLocation): boolean => {
@@ -224,101 +177,9 @@ export function FullTimeHome() {
         />
         <AlwaysLocationNudge active={isClockedIn && status?.currentEntry?.location?.lat != null} />
 
-        {/* Clock Status Card */}
-        <TourTarget name="home-work" style={[ftStyles.statusCard, isClockedIn ? ftStyles.statusCardActive : ftStyles.statusCardInactive, !isClockedIn && { backgroundColor: colors.card }]}>
-          <View style={ftStyles.statusHeader}>
-            <View style={[ftStyles.statusIndicator, isClockedIn ? ftStyles.indicatorActive : ftStyles.indicatorInactive]} />
-            <Text style={[ftStyles.statusText, isClockedIn ? ftStyles.statusTextActive : { color: colors.textPrimary }]}>
-              {isClockedIn ? t('home.fullTime.clockedIn') : t('home.fullTime.clockedOut')}
-            </Text>
-          </View>
-
-          {isClockedIn && status?.currentEntry && (
-            <View style={ftStyles.shiftInfo}>
-              <View style={ftStyles.shiftRow}>
-                <Ionicons name="location" size={16} color={COLORS.primary} />
-                <Text style={ftStyles.shiftLocation}>
-                  {status.currentEntry.location?.name || t('common.unknownLocation')}
-                  {!!countryFromTz((status.currentEntry.timezone ?? status.currentEntry.location?.timezone), i18n.language) &&
-                    ` · ${countryFromTz((status.currentEntry.timezone ?? status.currentEntry.location?.timezone), i18n.language)}`}
-                </Text>
-              </View>
-              <View style={ftStyles.shiftRow}>
-                <Ionicons name="time" size={16} color={COLORS.primary} />
-                <Text style={ftStyles.shiftTime}>
-                  {t('home.fullTime.startedAt', { time: formatTime(status.currentEntry.clockInAt, (status.currentEntry.timezone ?? status.currentEntry.location?.timezone)) })}
-                </Text>
-              </View>
-              <View style={ftStyles.durationBadge}>
-                <Ionicons name="hourglass" size={14} color={COLORS.white} />
-                <Text style={ftStyles.durationText}>{formatDuration(elapsedMinutes)}</Text>
-              </View>
-
-              {breakStatus?.isOnBreak && (
-                <View style={ftStyles.breakBadge}>
-                  <Ionicons name="cafe" size={14} color={COLORS.white} />
-                  <Text style={ftStyles.breakText}>{t('home.fullTime.onBreak')}</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Action Button */}
-          <TouchableOpacity
-            style={[
-              ftStyles.clockButton,
-              isClockedIn ? ftStyles.clockOutButton : ftStyles.clockInButton,
-              (isActionLoading || clockIn.isBusy) && sharedStyles.buttonDisabled,
-            ]}
-            onPress={isClockedIn ? handleClockOut : clockIn.openClockInModal}
-            disabled={isActionLoading || clockIn.isBusy}
-          >
-            {isActionLoading || clockIn.isBusy ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <>
-                <Ionicons
-                  name={isClockedIn ? 'log-out' : 'log-in'}
-                  size={20}
-                  color={COLORS.white}
-                />
-                <Text style={ftStyles.clockButtonText}>
-                  {isClockedIn ? t('home.fullTime.clockOut') : t('home.fullTime.clockIn')}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {/* Work log — jot down what you do through the shift (→ clock-out summary). */}
-          {isClockedIn && status?.currentEntry?.id && (
-            <TouchableOpacity
-              style={[ftStyles.clockButton, { marginTop: SPACING.sm, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-              onPress={() => setWorklogOpen(true)}
-            >
-              <Ionicons name="list-outline" size={20} color={colors.textPrimary} />
-              <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('worklog.button', 'Activity')}</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Report an issue — a blocker the member can't fix during the shift */}
-          {isClockedIn && status?.currentEntry?.id && (
-            <TouchableOpacity
-              style={[ftStyles.clockButton, { marginTop: SPACING.sm, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-              onPress={() => setReportIssueOpen(true)}
-            >
-              <Ionicons name="warning-outline" size={20} color="#dc2626" />
-              <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('issues.report', 'Report an issue')}</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* My issues — reopen an issue's thread to read / write */}
-          <TouchableOpacity
-            style={[ftStyles.clockButton, { marginTop: SPACING.sm, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-            onPress={() => setIssueListOpen(true)}
-          >
-            <Ionicons name="chatbubbles-outline" size={20} color={colors.textPrimary} />
-            <Text style={[ftStyles.clockButtonText, { color: colors.textPrimary }]}>{t('issues.myIssues', 'My issues')}</Text>
-          </TouchableOpacity>
+        {/* Shift clock widget (self-contained: owns its own attendance state + sheets) */}
+        <TourTarget name="home-work">
+          <ShiftClockCard onChanged={() => fetchAttendanceData()} />
         </TourTarget>
 
         {/* Quick Stats */}
@@ -428,167 +289,11 @@ export function FullTimeHome() {
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
       </ScreenContainer>
-
-      {/* Location Selection Bottom Sheet */}
-      <LocationPickerSheet
-        {...clockIn.pickerProps}
-        confirmDisabled={clockIn.isClockingIn}
-      />
-
-      <ClockOutSheet
-        visible={showClockOutConfirm}
-        onClose={() => setShowClockOutConfirm(false)}
-        onConfirm={confirmClockOut}
-        title={t('home.fullTime.clockOutConfirmTitle')}
-        message={t('home.fullTime.clockOutConfirmMessage')}
-        confirmLabel={t('home.fullTime.clockOut')}
-        cancelLabel={t('common.cancel')}
-        notesLabel={t('home.fullTime.shiftNotesLabel')}
-        notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
-        isLoading={isActionLoading}
-      />
-
-      {status?.currentEntry?.id && (
-        <WorkLogSheet
-          visible={worklogOpen}
-          onClose={() => setWorklogOpen(false)}
-          timeEntryId={status.currentEntry.id}
-          title={t('worklog.title', 'What I did today')}
-          hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
-        />
-      )}
-
-      <ReportIssueSheet
-        visible={reportIssueOpen}
-        onClose={() => setReportIssueOpen(false)}
-        timeEntryId={status?.currentEntry?.id}
-        spaceId={status?.currentEntry?.location?.id}
-        onCreated={(id) => { setReportIssueOpen(false); setIssueThreadId(id); }}
-      />
-      <ShiftIssueThreadSheet
-        visible={!!issueThreadId}
-        onClose={() => setIssueThreadId(null)}
-        issueId={issueThreadId}
-        canManage={!!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)}
-        currentUserId={(user as any)?.id}
-      />
-      <ShiftIssueListSheet
-        visible={issueListOpen}
-        onClose={() => setIssueListOpen(false)}
-        onOpen={(id) => { setIssueListOpen(false); setIssueThreadId(id); }}
-        onReport={status?.currentEntry?.id ? () => { setIssueListOpen(false); setReportIssueOpen(true); } : undefined}
-      />
     </View>
   );
 }
 
 const ftStyles = StyleSheet.create({
-  // Status Card
-  statusCard: {
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    ...SHADOWS.md,
-  },
-  statusCardActive: {
-    backgroundColor: COLORS.primary,
-  },
-  statusCardInactive: {},
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  statusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: SPACING.sm,
-  },
-  indicatorActive: {
-    backgroundColor: COLORS.success,
-  },
-  indicatorInactive: {
-    backgroundColor: COLORS.slate300,
-  },
-  statusText: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  statusTextActive: {
-    color: COLORS.white,
-  },
-  shiftInfo: {
-    marginBottom: SPACING.lg,
-  },
-  shiftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.xs,
-  },
-  shiftLocation: {
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZE.base,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  shiftTime: {
-    marginLeft: SPACING.sm,
-    fontSize: FONT_SIZE.base,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  durationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.md,
-    marginTop: SPACING.sm,
-  },
-  durationText: {
-    marginLeft: SPACING.xs,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-  breakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.md,
-    marginTop: SPACING.sm,
-    marginLeft: SPACING.sm,
-  },
-  breakText: {
-    marginLeft: SPACING.xs,
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.white,
-  },
-  clockButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md,
-    gap: SPACING.sm,
-  },
-  clockInButton: {
-    backgroundColor: COLORS.primary,
-  },
-  clockOutButton: {
-    backgroundColor: COLORS.primaryDark,
-  },
-  clockButtonText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-
   // Quick Stats
   quickStatsRow: {
     flexDirection: 'row',

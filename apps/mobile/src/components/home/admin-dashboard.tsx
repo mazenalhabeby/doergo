@@ -29,6 +29,7 @@ import {
 } from '../../lib/api';
 import type { TimeEntry } from '../../lib/api/types';
 import { ErrorState, Skeleton, ScreenContainer } from '../../components';
+import { ShiftClockCard } from './shift-clock-card';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
@@ -617,33 +618,12 @@ export function AdminDashboard() {
           </Text>
         </TourTarget>
 
-        {/* Clock in/out — visible control for a working admin/owner. */}
+        {/* Clock in/out — the same self-contained shift widget members use, for a
+            working admin/owner (gated on the clock module). */}
         {canClock && (
-          <TouchableOpacity
-            onPress={() => router.push(ROUTES.attendance as any)}
-            activeOpacity={0.85}
-            style={[
-              styles.clockButton,
-              myClockedIn
-                ? { backgroundColor: colors.card, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }
-                : { backgroundColor: COLORS.primary },
-            ]}
-          >
-            <Ionicons
-              name={myClockedIn ? 'time' : 'log-in-outline'}
-              size={18}
-              color={myClockedIn ? COLORS.primary : '#fff'}
-            />
-            <Text style={[styles.clockButtonText, { color: myClockedIn ? colors.textPrimary : '#fff' }]}>
-              {myClockedIn ? t('home.admin.clock.onTheClock') : t('home.admin.clock.clockIn')}
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={myClockedIn ? colors.textMuted : 'rgba(255,255,255,0.85)'}
-              style={{ marginLeft: 'auto' }}
-            />
-          </TouchableOpacity>
+          <View style={{ marginTop: SPACING.sm }}>
+            <ShiftClockCard onChanged={refreshMyStatus} />
+          </View>
         )}
 
         {/* Admin's own out-of-ring state + Always-location nudge */}
@@ -754,17 +734,6 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 12, fontWeight: '500' },
   welcome: { fontSize: 21, fontWeight: '700', marginTop: 2 },
-  clockButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.sm,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-  },
-  clockButtonText: { fontSize: 14, fontWeight: '600' },
   grid: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
   columns: { flexDirection: 'row', alignItems: 'flex-start', gap: GRID_GAP },
   column: { flex: 1 },

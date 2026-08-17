@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  FlatList,
   RefreshControl,
-  ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
@@ -14,56 +12,35 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../contexts/toast-context';
 import {
   attendanceApi,
   tasksApi,
   TaskStatus,
   type AttendanceStatus,
-  type BreakStatus,
   type Task,
 } from '../../lib/api';
-import { TaskCard, LoadingState, ErrorState, LocationPickerSheet, Skeleton, ClockOutSheet, ScreenContainer } from '../../components';
-import { WorkLogSheet } from '../worklog-sheet';
-import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../shift-issue-sheet';
+import { TaskCard, ErrorState, Skeleton, ScreenContainer } from '../../components';
+import { ShiftClockCard } from './shift-clock-card';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
-import { useClockIn } from '../../hooks/useClockIn';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
-import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
-import { stopGeofence } from '../../services/background-geofence';
 import { WeekCalendar } from '../week-calendar';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
-import {
-  formatDurationMinutes as formatDuration,
-  isSameDay,
-} from '../../lib/utils';
-import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
+import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from './home-styles';
 
 export function HybridHome() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const toast = useToast();
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isClockLoading, setIsClockLoading] = useState(false);
 
-  // Confirm sheet state
-  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
-  const [worklogOpen, setWorklogOpen] = useState(false);
-  const [reportIssueOpen, setReportIssueOpen] = useState(false);
-  const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
-  const [issueListOpen, setIssueListOpen] = useState(false);
-
-  // Attendance state
+  // Attendance state — kept here for the out-of-ring banner / location nudge.
+  // The clock-in/out widget (ShiftClockCard) owns its own attendance state.
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
-  const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
-  const [elapsedMinutes, setElapsedMinutes] = useState(0);
-
 
   // Task state
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -85,23 +62,13 @@ export function HybridHome() {
       setError(null);
 
       // Fetch attendance + tasks in parallel
-      const [statusData, breakData, fetchedTasks] = await Promise.all([
+      const [statusData, fetchedTasks] = await Promise.all([
         attendanceApi.getStatus().catch(() => null),
-        attendanceApi.getBreakStatus().catch(() => null),
         tasksApi.list(),
       ]);
 
       if (statusData) setAttendanceStatus(statusData);
-      if (breakData) setBreakStatus(breakData);
       setTasks(fetchedTasks || []);
-
-      // Update elapsed time
-      if (statusData?.isClockedIn && statusData?.currentEntry) {
-        const clockInTime = new Date(statusData.currentEntry.clockInAt).getTime();
-        setElapsedMinutes(Math.floor((Date.now() - clockInTime) / 60000));
-      } else {
-        setElapsedMinutes(0);
-      }
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
       setError(err instanceof Error ? err.message : t('common.error'));
@@ -128,24 +95,6 @@ export function HybridHome() {
       fetchData();
     }, [fetchData])
   );
-
-  // Update elapsed time every minute
-  useEffect(() => {
-    if (!attendanceStatus?.isClockedIn || !attendanceStatus?.currentEntry) return;
-    const interval = setInterval(() => {
-      const clockInTime = new Date(attendanceStatus.currentEntry!.clockInAt).getTime();
-      setElapsedMinutes(Math.floor((Date.now() - clockInTime) / 60000));
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [attendanceStatus?.isClockedIn, attendanceStatus?.currentEntry]);
-
-  // Shared clock-in flow (GPS + location/remote picker) — one implementation
-  // across the attendance tab and both home screens, so allowRemote members get
-  // the "Work remotely" choice everywhere. (DRY)
-  const clockIn = useClockIn({
-    assignedLocations: attendanceStatus?.assignedLocations || [],
-    onClockedIn: () => fetchData(),
-  });
 
   // Live out-of-ring updates (admin approve/reject, background heartbeat) so the
   // home banner reflects state changes without a manual pull-to-refresh.
@@ -199,30 +148,6 @@ export function HybridHome() {
     });
   }, [tasks, selectedDate]);
 
-  // ── Attendance Actions ─────────────────────────────────────────────
-  // Clock-IN (GPS, location/remote picker) is handled by the shared useClockIn
-  // hook above. Clock-OUT stays local; it reuses the hook's GPS acquisition.
-  const handleClockOut = () => {
-    setShowClockOutConfirm(true);
-  };
-
-  const confirmClockOut = async (notes: string) => {
-    setShowClockOutConfirm(false);
-    setIsClockLoading(true);
-    try {
-      const location = await clockIn.getCurrentLocation();
-      if (!location) { setIsClockLoading(false); return; }
-      await attendanceApi.clockOut({ lat: location.lat, lng: location.lng, accuracy: location.accuracy, notes: notes || undefined });
-      await stopBackgroundHeartbeat();
-      await stopGeofence();
-      await fetchData();
-    } catch (err: any) {
-      toast.error(t('common.error'), err.message || t('home.fullTime.failedToClockOut'));
-    } finally {
-      setIsClockLoading(false);
-    }
-  };
-
   // ── Navigation ─────────────────────────────────────────────────────
   const handleTaskPress = (task: Task) => router.push(ROUTES.taskDetail(task.id));
   const handlePrevWeek = () => { const d = new Date(currentWeekStart); d.setDate(d.getDate() - 7); setCurrentWeekStart(d); };
@@ -249,90 +174,8 @@ export function HybridHome() {
       />
       <AlwaysLocationNudge active={isClockedIn && attendanceStatus?.currentEntry?.location?.lat != null} />
 
-      {/* Attendance Card */}
-      {isClockedIn ? (
-        <View style={[hStyles.attendanceCard, hStyles.attendanceCardActive]}>
-          <View style={hStyles.attendanceRow}>
-            <View style={hStyles.attendanceLeft}>
-              <View style={[hStyles.statusDot, hStyles.dotActive]} />
-              <View>
-                <Text style={[hStyles.attendanceStatus, { color: COLORS.white }]}>
-                  {t('home.fullTime.clockedIn')}
-                </Text>
-                {attendanceStatus?.currentEntry && (
-                  <Text style={hStyles.attendanceDetail}>
-                    {attendanceStatus.currentEntry.location?.name || ''} · {formatDuration(elapsedMinutes)}
-                    {breakStatus?.isOnBreak === true ? ` · ☕ ${t('home.fullTime.onBreak')}` : ''}
-                  </Text>
-                )}
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[hStyles.clockBtn, hStyles.clockOutBtn]}
-              onPress={handleClockOut}
-              disabled={isClockLoading || clockIn.isBusy}
-            >
-              {isClockLoading || clockIn.isBusy ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <>
-                  <Ionicons name="log-out" size={16} color={COLORS.white} />
-                  <Text style={hStyles.clockBtnText}>{t('home.fullTime.clockOut')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-          {attendanceStatus?.currentEntry?.id && (
-            <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: SPACING.sm, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: 'rgba(255,255,255,0.15)' }}
-              onPress={() => setWorklogOpen(true)}
-            >
-              <Ionicons name="list-outline" size={16} color={COLORS.white} />
-              <Text style={hStyles.clockBtnText}>{t('worklog.button', 'Activity')}</Text>
-            </TouchableOpacity>
-          )}
-          {attendanceStatus?.currentEntry?.id && (
-            <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: SPACING.sm, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: 'rgba(255,255,255,0.15)' }}
-              onPress={() => setReportIssueOpen(true)}
-            >
-              <Ionicons name="warning-outline" size={16} color={COLORS.white} />
-              <Text style={hStyles.clockBtnText}>{t('issues.report', 'Report an issue')}</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: SPACING.sm, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: 'rgba(255,255,255,0.15)' }}
-            onPress={() => setIssueListOpen(true)}
-          >
-            <Ionicons name="chatbubbles-outline" size={16} color={COLORS.white} />
-            <Text style={hStyles.clockBtnText}>{t('issues.myIssues', 'My issues')}</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={[hStyles.clockInCard, { backgroundColor: colors.card }]}
-          onPress={clockIn.openClockInModal}
-          disabled={isClockLoading || clockIn.isBusy}
-          activeOpacity={0.8}
-        >
-          <View style={hStyles.clockInIconBox}>
-            {isClockLoading || clockIn.isBusy ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
-            ) : (
-              <Ionicons name="finger-print" size={28} color={COLORS.primary} />
-            )}
-          </View>
-          <View style={hStyles.clockInTextBox}>
-            <Text style={[hStyles.clockInTitle, { color: colors.textPrimary }]}>
-              {t('home.fullTime.clockIn')}
-            </Text>
-            <Text style={[hStyles.clockInSubtitle, { color: colors.textMuted }]}>
-              {t('home.hybrid.tapToStartShift')}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-      )}
+      {/* Shift clock widget (self-contained: owns its own attendance state + sheets) */}
+      <ShiftClockCard onChanged={() => fetchData()} />
 
       {/* Task Stats */}
       <TourTarget name="home-today" style={sharedStyles.statsGrid}>
@@ -396,7 +239,7 @@ export function HybridHome() {
       </TourTarget>
     </>
   ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName,
-      colors, t, isClockedIn, attendanceStatus, breakStatus, elapsedMinutes, isClockLoading, clockIn]);
+      colors, t, isClockedIn, attendanceStatus]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
     <View style={hStyles.taskItemWrapper}>
@@ -439,152 +282,11 @@ export function HybridHome() {
         contentContainerStyle={{ flexGrow: 1 }}
       />
       </ScreenContainer>
-
-      <LocationPickerSheet
-        {...clockIn.pickerProps}
-        confirmDisabled={clockIn.isClockingIn}
-      />
-
-      <ClockOutSheet
-        visible={showClockOutConfirm}
-        onClose={() => setShowClockOutConfirm(false)}
-        onConfirm={confirmClockOut}
-        title={t('home.fullTime.clockOutConfirmTitle')}
-        message={t('home.fullTime.clockOutConfirmMessage')}
-        confirmLabel={t('home.fullTime.clockOut')}
-        cancelLabel={t('common.cancel')}
-        notesLabel={t('home.fullTime.shiftNotesLabel')}
-        notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
-        isLoading={isClockLoading}
-      />
-
-      {attendanceStatus?.currentEntry?.id && (
-        <WorkLogSheet
-          visible={worklogOpen}
-          onClose={() => setWorklogOpen(false)}
-          timeEntryId={attendanceStatus.currentEntry.id}
-          title={t('worklog.title', 'What I did today')}
-          hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
-        />
-      )}
-
-      <ReportIssueSheet
-        visible={reportIssueOpen}
-        onClose={() => setReportIssueOpen(false)}
-        timeEntryId={attendanceStatus?.currentEntry?.id}
-        spaceId={attendanceStatus?.currentEntry?.location?.id}
-        onCreated={(id) => { setReportIssueOpen(false); setIssueThreadId(id); }}
-      />
-      <ShiftIssueThreadSheet
-        visible={!!issueThreadId}
-        onClose={() => setIssueThreadId(null)}
-        issueId={issueThreadId}
-        canManage={!!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)}
-        currentUserId={(user as any)?.id}
-      />
-      <ShiftIssueListSheet
-        visible={issueListOpen}
-        onClose={() => setIssueListOpen(false)}
-        onOpen={(id) => { setIssueListOpen(false); setIssueThreadId(id); }}
-        onReport={attendanceStatus?.currentEntry?.id ? () => { setIssueListOpen(false); setReportIssueOpen(true); } : undefined}
-      />
     </View>
   );
 }
 
 const hStyles = StyleSheet.create({
-  // Compact Attendance Card
-  attendanceCard: {
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    ...SHADOWS.md,
-  },
-  attendanceCardActive: {
-    backgroundColor: COLORS.primary,
-  },
-  attendanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  attendanceLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: SPACING.sm,
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  dotActive: {
-    backgroundColor: COLORS.success,
-  },
-  dotInactive: {
-    backgroundColor: COLORS.slate300,
-  },
-  attendanceStatus: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
-  },
-  attendanceDetail: {
-    fontSize: FONT_SIZE.sm,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  clockBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
-    gap: SPACING.xs,
-  },
-  clockInBtn: {
-    backgroundColor: COLORS.primary,
-  },
-  clockOutBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  clockBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-
-  // Clock In Card (when clocked out)
-  clockInCard: {
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    ...SHADOWS.sm,
-  },
-  clockInIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  clockInTextBox: {
-    flex: 1,
-  },
-  clockInTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  clockInSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    marginTop: 2,
-  },
-
   // Task List
   jobsSection: {
     marginTop: SPACING.xxl,
