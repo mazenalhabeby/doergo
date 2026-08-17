@@ -5,9 +5,11 @@ import {
   Modal,
   Animated,
   Pressable,
+  Platform,
   Dimensions,
   type LayoutChangeEvent,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../../../contexts/theme-context';
 
 interface Props {
@@ -84,7 +86,13 @@ export function BottomSheet({
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
       <View style={styles.root}>
         <Animated.View style={[styles.backdrop, { opacity: backdrop }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+            </BlurView>
+          ) : (
+            <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.65)' }]} onPress={handleClose} />
+          )}
         </Animated.View>
 
         <Animated.View
@@ -105,7 +113,7 @@ export function BottomSheet({
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop: { ...StyleSheet.absoluteFillObject },
   sheet: {
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
