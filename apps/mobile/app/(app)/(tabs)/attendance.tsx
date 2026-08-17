@@ -900,6 +900,44 @@ export default function AttendanceScreen() {
             )}
           </TouchableOpacity>
           </TourTarget>
+
+          {/* Quick actions — grouped INSIDE the shift card (not floating below it) */}
+          <View style={[styles.cardActions, { borderTopColor: colors.border }]}>
+            {isClockedIn && currentEntry?.id && (
+              <TouchableOpacity onPress={() => setWorklogEntryId(currentEntry.id)} activeOpacity={0.7} style={styles.cardAction}>
+                <View style={[styles.cardActionIcon, { backgroundColor: colors.surfaceRaised }]}>
+                  <Ionicons name="list-outline" size={20} color={COLORS.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>{t('worklog.button', 'Activity')}</Text>
+                  <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>{t('worklog.tabHint', 'Log what you did today')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+            {isClockedIn && currentEntry?.id && (
+              <TouchableOpacity onPress={() => setReportIssueOpen(true)} activeOpacity={0.7} style={[styles.cardAction, styles.cardActionRow, { borderTopColor: colors.border }]}>
+                <View style={[styles.cardActionIcon, { backgroundColor: 'rgba(239,68,68,0.14)' }]}>
+                  <Ionicons name="warning-outline" size={20} color="#ef4444" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>Report an issue</Text>
+                  <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>Blocked by something you can't fix?</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setIssueListOpen(true)} activeOpacity={0.7} style={[styles.cardAction, (isClockedIn && !!currentEntry?.id) && styles.cardActionRow, { borderTopColor: colors.border }]}>
+              <View style={[styles.cardActionIcon, { backgroundColor: colors.surfaceRaised }]}>
+                <Ionicons name="chatbubbles-outline" size={20} color={COLORS.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>My issues</Text>
+                <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>Open a reported issue to read or reply</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Assigned Locations */}
@@ -998,58 +1036,6 @@ export default function AttendanceScreen() {
             )}
           </View>
         )}
-
-        {/* Activity — log what you did today (opens the work-log sheet) */}
-        {isClockedIn && currentEntry?.id && (
-          <TouchableOpacity
-            onPress={() => setWorklogEntryId(currentEntry.id)}
-            activeOpacity={0.8}
-            style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
-          >
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="list-outline" size={20} color={COLORS.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>{t('worklog.button', 'Activity')}</Text>
-              <Text style={{ fontSize: 13, color: colors.textMuted }}>{t('worklog.tabHint', 'Log what you did today')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-
-        {/* Report an issue — a blocker the member can't fix during the shift */}
-        {isClockedIn && currentEntry?.id && (
-          <TouchableOpacity
-            onPress={() => setReportIssueOpen(true)}
-            activeOpacity={0.8}
-            style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
-          >
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(239,68,68,0.14)', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="warning-outline" size={20} color="#ef4444" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>Report an issue</Text>
-              <Text style={{ fontSize: 13, color: colors.textMuted }}>Blocked by something you can't fix?</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-
-        {/* My issues — reopen an issue's thread to read / write */}
-        <TouchableOpacity
-          onPress={() => setIssueListOpen(true)}
-          activeOpacity={0.8}
-          style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 16, padding: 16 }}
-        >
-          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="chatbubbles-outline" size={20} color={COLORS.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>My issues</Text>
-            <Text style={{ fontSize: 13, color: colors.textMuted }}>Open a reported issue to read or reply</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
 
         {/* Recent History */}
         <TourTarget name="attendance-history" style={styles.section}>
@@ -1416,6 +1402,35 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     padding: SPACING.xl,
     ...SHADOWS.md,
+  },
+  // Quick-action rows nested inside the shift card (Activity / Report / My issues).
+  cardActions: {
+    marginTop: SPACING.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  cardAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: SPACING.md,
+  },
+  cardActionRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  cardActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardActionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  cardActionSub: {
+    fontSize: 13,
+    marginTop: 1,
   },
   statusHeader: {
     flexDirection: 'row',
