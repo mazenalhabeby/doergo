@@ -148,38 +148,33 @@ function TabItem({
 
   const tourKey = TAB_TOUR_KEY[route.name];
 
+  // Soft capsule that fades/scales in behind the active icon — replaces the old
+  // underline bar (which overlapped the label). Modern Material-3-style pill.
+  const pillScale = indicatorAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
   const inner = (
     <>
-      <Animated.View
-        style={[
-          styles.tabIconWrapper,
-          isFocused && { backgroundColor: themeColors.primaryLight },
-          { transform: [{ scale: scaleAnim }] },
-        ]}
-      >
+      <Animated.View style={[styles.iconRow, { transform: [{ scale: scaleAnim }] }]}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.activePill,
+            { backgroundColor: themeColors.primaryLight, opacity: indicatorAnim, transform: [{ scale: pillScale }] },
+          ]}
+        />
         <Ionicons
           name={iconName as any}
-          size={22}
+          size={23}
           color={isFocused ? COLORS.primary : themeColors.textMuted}
         />
       </Animated.View>
       <Text
-        style={[styles.tabLabel, { color: themeColors.textMuted }, isFocused && styles.tabLabelActive]}
+        style={[styles.tabLabel, { color: isFocused ? COLORS.primary : themeColors.textMuted }, isFocused && styles.tabLabelActive]}
         numberOfLines={1}
         adjustsFontSizeToFit
-        minimumFontScale={0.75}
+        minimumFontScale={0.7}
       >
         {label}
       </Text>
-      <Animated.View
-        style={[
-          styles.activeIndicator,
-          {
-            opacity: indicatorAnim,
-            transform: [{ scaleX: indicatorAnim }],
-          },
-        ]}
-      />
     </>
   );
 
@@ -251,7 +246,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       paddingBottom: insets.bottom,
       backgroundColor: isDark ? '#0a0a10' : '#ffffff',
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      // Soft upward lift so the bar reads as a floating surface (premium depth).
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: isDark ? 0.35 : 0.06,
+      shadowRadius: 12,
+      elevation: 12,
     }]}>
       <View style={styles.tabBarInner}>
         {visibleRoutes.map((route: any, index: number) => {
@@ -429,13 +430,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 2,
   },
-  // Glassmorphism Tab Bar
+  // Premium tab bar — clean pill indicator, no overlapping underline.
   tabBarOuter: {
   },
   tabBarInner: {
     flexDirection: 'row',
-    paddingTop: 10,
-    paddingHorizontal: 6,
+    paddingTop: 8,
+    paddingBottom: 2,
+    paddingHorizontal: 4,
   },
   tabItem: {
     flex: 1,
@@ -447,31 +449,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  tabIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  // Capsule that hosts the icon; the active pill fills it behind the glyph.
+  iconRow: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  activePill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
   },
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 5,
     width: '100%',
     textAlign: 'center',
     paddingHorizontal: 2,
+    letterSpacing: 0.1,
   },
   tabLabelActive: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    width: 24,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: COLORS.primary,
+    fontWeight: '700',
   },
 });
