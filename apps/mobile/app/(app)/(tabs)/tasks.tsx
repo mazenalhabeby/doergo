@@ -435,8 +435,9 @@ export default function TasksScreen() {
         activeOpacity={0.85}
         style={{
           flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-          marginHorizontal: SPACING.md, marginBottom: SPACING.sm,
-          paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.primary,
+          // Align with the search bar (both lg) + even vertical rhythm.
+          marginHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: 0,
+          paddingVertical: 13, borderRadius: RADIUS.md, backgroundColor: COLORS.primary,
         }}
       >
         <Ionicons name="navigate" size={18} color="#fff" />
