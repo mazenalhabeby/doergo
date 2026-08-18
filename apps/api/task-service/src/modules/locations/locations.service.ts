@@ -1,11 +1,13 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace } from '@hbcfield/shared';
+import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -27,7 +29,27 @@ const VALID_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 export class LocationsService {
   private readonly logger = new Logger(LocationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+  ) {}
+
+  /**
+   * Tell open clients a space or its roster moved, so their lists re-read.
+   *
+   * Fire-and-forget by design: a dropped notification must never fail the
+   * mutation that caused it — the clients keep a periodic refetch as a backstop.
+   * Carries ids only; every client re-reads through its own scoped endpoint, so
+   * nothing here can widen what a viewer is allowed to see.
+   */
+  private announce(event: 'space_changed' | 'space_roster_changed', organizationId: string, spaceId?: string | null) {
+    try {
+      this.notificationClient.emit(event, { organizationId, spaceId: spaceId ?? null });
+    } catch (err) {
+      this.logger.warn(`Failed to announce ${event} for org ${organizationId}: ${err}`);
+    }
+  }
 
   /**
    * Create a new company location
@@ -96,6 +118,7 @@ export class LocationsService {
     });
 
     this.logger.log(`Company location created: ${location.id}`);
+    this.announce('space_changed', data.organizationId, location.id);
     return success(location, 'Company location created successfully');
   }
 
@@ -294,6 +317,7 @@ export class LocationsService {
     });
 
     this.logger.log(`Company location updated: ${location.id}`);
+    this.announce('space_changed', data.organizationId, location.id);
     return success(location, 'Company location updated successfully');
   }
 
@@ -361,6 +385,7 @@ export class LocationsService {
     this.logger.log(
       `Company location deactivated: ${location.id} (tasks reassigned: ${tasksReassigned})`,
     );
+    this.announce('space_changed', data.organizationId, location.id);
     return success(
       { ...location, tasksReassigned },
       'Company location deleted successfully',
@@ -591,6 +616,7 @@ export class LocationsService {
     });
 
     this.logger.log(`Member assignment created/updated: ${assignment.id}`);
+    this.announce('space_roster_changed', data.organizationId, data.locationId);
     // Alias to the legacy shape (locationId/location) for client compat.
     const { space, spaceId, ...rest } = assignment;
     return success(
@@ -961,6 +987,7 @@ export class LocationsService {
     });
 
     this.logger.log(`Assignment updated: ${updated.id}`);
+    this.announce('space_roster_changed', data.organizationId, updated.spaceId ?? null);
     // Alias to the legacy shape (locationId/location) for client compat.
     const { space, spaceId, ...rest } = updated;
     return success(
@@ -987,6 +1014,7 @@ export class LocationsService {
     });
 
     this.logger.log(`Assignment removed: ${data.assignmentId}`);
+    this.announce('space_roster_changed', data.organizationId, assignment.spaceId);
     return success(null, 'Assignment removed successfully');
   }
 }

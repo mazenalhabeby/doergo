@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { SERVICE_NAMES } from '@hbcfield/shared';
 import { LocationsService } from '../locations.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
@@ -18,6 +19,7 @@ describe('LocationsService.getLocationAssignmentsBatch — space scope', () => {
     spaceAssignment: { findMany: jest.fn() },
     task: { findMany: jest.fn() },
   };
+  const notificationClient = { emit: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -29,7 +31,13 @@ describe('LocationsService.getLocationAssignmentsBatch — space scope', () => {
     prisma.task.findMany.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LocationsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        LocationsService,
+        { provide: PrismaService, useValue: prisma },
+        // Space/roster mutations announce themselves over this client; reads
+        // never touch it, so a stub is enough.
+        { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
+      ],
     }).compile();
 
     service = module.get(LocationsService);

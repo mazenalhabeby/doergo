@@ -707,6 +707,24 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // ATTENDANCE EVENTS
   // =========================================================================
 
+  /**
+   * A space changed (created / edited / archived / deleted). Org-wide, because
+   * every member's space list may be affected; the client re-reads through its
+   * own scoped endpoints, so this carries an id, not the space itself.
+   */
+  emitSpaceChanged(organizationId: string, spaceId: string | null) {
+    this.logger.debug(`[EMIT] space.changed for org ${organizationId}`);
+    this.messagesSent += 1;
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.SPACE_CHANGED, { spaceId });
+  }
+
+  /** Someone was added to or removed from a space's roster. */
+  emitSpaceRosterChanged(organizationId: string, spaceId: string | null) {
+    this.logger.debug(`[EMIT] space.rosterChanged for org ${organizationId}`);
+    this.messagesSent += 1;
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.SPACE_ROSTER_CHANGED, { spaceId });
+  }
+
   emitClockIn(userId: string, organizationId: string, timeEntry: any) {
     this.logger.log(`[EMIT] attendance.clockIn for user ${userId}`);
     this.messagesSent += 1;

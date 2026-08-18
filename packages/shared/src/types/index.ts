@@ -83,6 +83,10 @@ export const SocketEvents = {
   PRESENCE_CHANGED: 'presence.changed',
   // An admin changed this member's access/role → member should refresh profile
   MEMBER_ACCESS_UPDATED: 'member.access_updated',
+  // A space was created, edited, archived or deleted → space lists refresh.
+  SPACE_CHANGED: 'space.changed',
+  // Someone was added to or removed from a space's roster → rosters refresh.
+  SPACE_ROSTER_CHANGED: 'space.rosterChanged',
   // Support events
   SUPPORT_MESSAGE: 'support.message', // new message on a ticket
   SUPPORT_TICKET_UPDATED: 'support.ticketUpdated', // status/assignment/SLA change
