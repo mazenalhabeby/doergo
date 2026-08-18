@@ -44,19 +44,7 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
     }
   }, [expandedTitle])
 
-  // Order: spaces with someone in them first, quiet ("All quiet today") spaces
-  // last, so the eye lands on where work is actually happening instead of
-  // hunting for the busy cards between empty ones. Within each group the old
-  // biggest-team-first ordering is kept, and Array#sort is stable, so spaces
-  // that tie hold their incoming order.
-  const sortedBoxes = useMemo(() => {
-    return [...boxes].sort((a, b) => {
-      const quietA = previewMembers(a).length === 0
-      const quietB = previewMembers(b).length === 0
-      if (quietA !== quietB) return quietA ? 1 : -1
-      return getArea(b.people.length) - getArea(a.people.length)
-    })
-  }, [boxes])
+  const sortedBoxes = useMemo(() => sortWorkspaceBoxes(boxes), [boxes])
 
   const filteredBoxes = sortedBoxes
 
@@ -163,8 +151,28 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
   )
 })
 
+/** Coarse size bucket, so cards of similar team size group together. */
 function getArea(count: number): number {
   if (count <= 3) return count
   if (count <= 5) return 3
   return 8
+}
+
+/**
+ * Display order for the grid: spaces with someone in them first, quiet ("All
+ * quiet today") spaces last, so the eye lands on where work is actually
+ * happening instead of hunting for busy cards between empty ones. Within each
+ * group the biggest teams lead.
+ *
+ * Pure and exported so the ordering can be tested without mounting the grid.
+ * Does not mutate its input, and Array#sort is stable, so boxes that tie keep
+ * their incoming order.
+ */
+export function sortWorkspaceBoxes(boxes: WorkspaceBoxProps[]): WorkspaceBoxProps[] {
+  return [...boxes].sort((a, b) => {
+    const quietA = previewMembers(a).length === 0
+    const quietB = previewMembers(b).length === 0
+    if (quietA !== quietB) return quietA ? 1 : -1
+    return getArea(b.people.length) - getArea(a.people.length)
+  })
 }
