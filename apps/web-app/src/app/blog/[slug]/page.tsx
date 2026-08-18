@@ -1,25 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPosts, getPost, formatPostDate } from "@/lib/blog";
+import { getAllPosts, getFilePosts, getPost, formatPostDate } from "@/lib/blog";
 import { SITE_URL } from "@/lib/marketing-seo";
 import { BlogMarkdown } from "../_components/blog-markdown";
 
 const DISPLAY = "font-[family:var(--font-familjen)]";
 const MONO = "font-[family:var(--font-martian)]";
 
-export const dynamic = "force-static";
-export const dynamicParams = false;
+// DB-backed posts publish without a deploy: file posts are prebuilt, new DB
+// slugs render on demand and are then cached for the revalidation window.
+export const revalidate = 300;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
+  return getFilePosts().map((p) => ({ slug: p.slug }));
 }
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) return {};
   return {
     title: { absolute: `${post.title} — HBCField Blog` },
@@ -31,17 +33,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       description: post.description,
       publishedTime: post.date,
       url: `${SITE_URL}/blog/${post.slug}`,
-      ...(post.cover ? { images: [{ url: `${SITE_URL}${post.cover}` }] } : {}),
+      ...(post.cover ? { images: [{ url: post.cover.startsWith("http") ? post.cover : `${SITE_URL}${post.cover}` }] } : {}),
     },
   };
 }
 
 export default async function BlogPostPage({ params }: Params) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) notFound();
 
-  const others = getAllPosts().filter((p) => p.slug !== post.slug).slice(0, 4);
+  const others = (await getAllPosts()).filter((p) => p.slug !== post.slug).slice(0, 4);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
