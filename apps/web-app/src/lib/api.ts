@@ -3256,6 +3256,8 @@ export interface AccessRole {
 }
 
 export interface UpdateMemberInput {
+  /** Login email — unique across all users. Only send it when it changed. */
+  email?: string;
   firstName?: string;
   lastName?: string;
   position?: string;
