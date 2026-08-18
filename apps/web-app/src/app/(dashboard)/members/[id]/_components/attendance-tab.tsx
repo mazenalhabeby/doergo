@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 
 import { type TimeEntry } from "@/lib/api"
 import { AddAttendanceDialog } from "./add-attendance-dialog"
+import { AttendanceStatusCell } from "@/components/attendance-status-cell"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTimeFormat } from "@/hooks"
 import { cn } from "@/lib/utils"
@@ -17,9 +18,6 @@ interface AttendanceTabProps {
   employeeName?: string
   canManage?: boolean
 }
-
-const ZONE_IN_HEX = "#16a34a"
-const ZONE_OUT_HEX = "#ca8a04"
 
 export function AttendanceTab({
   attendance,
@@ -88,10 +86,6 @@ export function AttendanceTab({
               {attendance.map((entry: TimeEntry) => {
                 const tz = entry.timezone ?? entry.location?.timezone
                 const country = countryFromTz(tz, locale)
-                const statusHex = entry.clockInWithinGeofence ? ZONE_IN_HEX : ZONE_OUT_HEX
-                const statusLabel = entry.clockInWithinGeofence
-                  ? t('technicians.attendanceTab.inZone')
-                  : t('technicians.attendanceTab.outOfZone')
                 const isOpen = expanded === entry.id
                 return (
                   <Fragment key={entry.id}>
@@ -118,20 +112,7 @@ export function AttendanceTab({
                       {entry.location?.name || "—"}
                     </td>
                     <td className="px-5 py-3">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium"
-                        style={{
-                          borderColor: `${statusHex}33`,
-                          color: statusHex,
-                          backgroundColor: `${statusHex}14`,
-                        }}
-                      >
-                        <span
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{ backgroundColor: statusHex }}
-                        />
-                        {statusLabel}
-                      </span>
+                      <AttendanceStatusCell entry={entry} />
                     </td>
                     <td className="px-5 py-3">
                       <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
