@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AuditTrail } from "@/components/audit-trail"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
@@ -49,7 +48,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [lng, setLng] = useState<number | null>(space.lng ?? null)
   const [radius, setRadius] = useState(space.geofenceRadius.toString())
   const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
-  const [isActive, setIsActive] = useState(space.isActive)
   // Ownership classification (separate axis from workspace/physical).
   const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">(
     (space.kind as "PROJECT" | "COMPANY" | "CUSTOMER") || "COMPANY",
@@ -101,7 +99,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
     mutation.mutate({
       name: name.trim(),
       timezone,
-      isActive,
       // Ownership kind + customer contact fields (cleared when not CUSTOMER).
       kind,
       contactName: kind === "CUSTOMER" ? contactName.trim() || null : null,
@@ -144,11 +141,12 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
             <Label htmlFor="cfg-name">{t("locations.name")}</Label>
             <Input id="cfg-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("locations.name")} />
           </div>
+          {/* Read-only status — archiving/restoring is done in the Danger zone below. */}
           <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3">
             <div className="pr-4">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
-                {isActive ? (
+                {space.isActive ? (
                   <Badge className="gap-1 border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300">
                     <CheckCircle2 className="h-3 w-3" />
                     {t("common.active")}
@@ -162,7 +160,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">{t("locations.activeHint")}</p>
             </div>
-            <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
         </CardContent>
       </Card>
