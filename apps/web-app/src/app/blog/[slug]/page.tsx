@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { getAllPosts, getFilePosts, getPost, formatPostDate } from "@/lib/blog";
 import { SITE_URL } from "@/lib/marketing-seo";
 import { BlogMarkdown } from "../_components/blog-markdown";
+import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteFooter } from "@/components/marketing/site-footer";
 
 const DISPLAY = "font-[family:var(--font-familjen)]";
 const MONO = "font-[family:var(--font-martian)]";
@@ -56,20 +58,15 @@ export default async function BlogPostPage({ params }: Params) {
   };
 
   return (
-    <main className={`min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>
+    // `dark` wrapper: the blog is always dark, so the shared nav/footer's
+    // theme tokens must resolve to the dark palette regardless of user theme.
+    <main className={`dark min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-5 sm:px-10">
-        <Link href="/" className="text-[15px] font-semibold tracking-tight text-[#f2f2f0]">HBCField</Link>
-        <Link href="/#pricing" className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-[#f2f2f0]`}>
-          Start free trial
-        </Link>
-      </div>
+      <SiteNav active="blog" />
 
       <div className="mx-auto max-w-[820px]">
-        {/* Breadcrumb */}
-        <nav className={`${MONO} px-6 pt-10 text-[10px] uppercase tracking-[0.16em] text-white/35 sm:px-10`}>
+        {/* Breadcrumb (pt clears the fixed navbar) */}
+        <nav className={`${MONO} px-6 pt-28 text-[10px] uppercase tracking-[0.16em] text-white/35 sm:px-10`}>
           <Link href="/" className="hover:text-white/70">HBCField</Link>
           <span className="mx-1.5">/</span>
           <Link href="/blog" className="hover:text-white/70">Blog</Link>
@@ -127,15 +124,9 @@ export default async function BlogPostPage({ params }: Params) {
           </section>
         )}
 
-        {/* Footer */}
-        <footer className={`${MONO} border-t border-white/[0.08] px-6 py-10 text-[11px] text-white/35 sm:px-10`}>
-          <Link href="/" className="hover:text-white/60">HBCField</Link>
-          <span className="mx-2">·</span>
-          <Link href="/blog" className="hover:text-white/60">Blog</Link>
-          <span className="mx-2">·</span>
-          <Link href="/help" className="hover:text-white/60">Help Center</Link>
-        </footer>
       </div>
+
+      <SiteFooter />
     </main>
   );
 }

@@ -217,6 +217,7 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                 <a href="#industries" onClick={navTo('#industries')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.industries')}</a>
                 <a href="#pricing" onClick={navTo('#pricing')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.pricing')}</a>
                 <a href="#features" onClick={navTo('#features')} className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors lg:block ${navTone}`}>{t('home.nav.compare', 'Compare')}</a>
+                <Link href="/blog" className={`${MONO} hidden text-[11px] uppercase tracking-[0.2em] transition-colors md:block ${navTone}`}>{t('home.nav.blog', 'Blog')}</Link>
                 {/* Shop — external storefront. Stays visible on mobile (no `hidden`)
                     unlike the on-page anchors; word on larger screens, icon on small. */}
                 <a href="https://shop.hbcfield.com" target="_blank" rel="noopener noreferrer" aria-label={t('home.nav.shop', 'Shop')} title={t('home.nav.shop', 'Shop')} className={`${MONO} flex items-center text-[11px] uppercase tracking-[0.2em] transition-colors ${navTone}`}>
