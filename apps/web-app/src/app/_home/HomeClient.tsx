@@ -652,6 +652,7 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                   <FooterCol title={t('home.footer.company')} links={[
                     { label: t('home.footer.linkSignIn'), href: '/login' },
                     { label: t('home.footer.linkHelp', 'Help Center'), href: '/help' },
+                    { label: t('home.footer.linkBlog', 'Blog'), href: '/blog' },
                   ]} />
                   <FooterCol title={t('home.footer.legal')} links={[
                     { label: t('home.footer.linkPrivacy'), href: '/privacy' },

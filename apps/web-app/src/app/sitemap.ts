@@ -7,6 +7,7 @@ import {
   industryHreflang,
   hubHreflang,
 } from "@/lib/industries";
+import { getAllPosts } from "@/lib/blog";
 
 // Static, English-only pages (add blog/resource URLs here as you publish them).
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
@@ -65,6 +66,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // English-only static pages.
   for (const r of STATIC_ROUTES) {
     items.push({ url: `${SITE}${r.path}`, lastModified: now, changeFrequency: r.changeFrequency, priority: r.priority });
+  }
+
+  // Blog hub + posts (English-only).
+  const posts = getAllPosts();
+  if (posts.length > 0) {
+    items.push({ url: `${SITE}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
+    for (const p of posts) {
+      items.push({
+        url: `${SITE}/blog/${p.slug}`,
+        lastModified: new Date(`${p.date}T00:00:00Z`),
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
   }
 
   return items;
