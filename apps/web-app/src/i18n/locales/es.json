@@ -3271,7 +3271,9 @@
       "memberRemoveFailed": "No se pudo eliminar el miembro",
       "created": "Espacio creado",
       "createFailed": "No se pudo crear el espacio",
-      "resyncAllDone": "{{updated}} tarea(s) resincronizada(s) en {{spaces}} espacio(s)"
+      "resyncAllDone": "{{updated}} tarea(s) resincronizada(s) en {{spaces}} espacio(s)",
+      "purged": "Espacio eliminado permanentemente",
+      "purgeFailed": "No se pudo eliminar el espacio"
     },
     "workflowLabel": "Flujo",
     "selectWorkflow": "Selecciona un flujo...",
@@ -3316,7 +3318,11 @@
       "deleteFailed": "No se pudo eliminar el espacio"
     },
     "ownershipSection": "Propiedad",
-    "ownershipHint": "¿Es un proyecto, tu propia empresa o una empresa cliente para la que trabajas?"
+    "ownershipHint": "¿Es un proyecto, tu propia empresa o una empresa cliente para la que trabajas?",
+    "purgeSpace": "Eliminar espacio permanentemente",
+    "purge": "Eliminar permanentemente",
+    "purgeConfirmBefore": "Esto elimina permanentemente ",
+    "purgeConfirmAfter": ". Solo es posible mientras el espacio no tenga tareas, asistencia ni turnos; de lo contrario, desactívelo. Esta acción no se puede deshacer."
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

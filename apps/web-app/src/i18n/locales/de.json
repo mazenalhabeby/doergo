@@ -3288,7 +3288,9 @@
       "memberRemoveFailed": "Mitglied konnte nicht entfernt werden",
       "created": "Bereich erstellt",
       "createFailed": "Bereich konnte nicht erstellt werden",
-      "resyncAllDone": "{{updated}} Aufgabe(n) in {{spaces}} Bereich(en) neu abgeglichen"
+      "resyncAllDone": "{{updated}} Aufgabe(n) in {{spaces}} Bereich(en) neu abgeglichen",
+      "purged": "Space endgültig gelöscht",
+      "purgeFailed": "Space konnte nicht gelöscht werden"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Workflow auswählen...",
@@ -3333,7 +3335,11 @@
       "deleteFailed": "Bereich konnte nicht gelöscht werden"
     },
     "ownershipSection": "Zugehörigkeit",
-    "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?"
+    "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?",
+    "purgeSpace": "Space endgültig löschen",
+    "purge": "Endgültig löschen",
+    "purgeConfirmBefore": "Dies entfernt ",
+    "purgeConfirmAfter": " dauerhaft. Nur möglich, solange der Space keine Aufgaben, Zeiterfassungen oder Schichten enthält — andernfalls deaktivieren Sie ihn. Dies kann nicht rückgängig gemacht werden."
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

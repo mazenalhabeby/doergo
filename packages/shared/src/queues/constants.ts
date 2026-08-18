@@ -84,6 +84,7 @@ export const LOCATION_JOB_TYPES = {
   CREATE: 'location.create',
   UPDATE: 'location.update',
   DELETE: 'location.delete',
+  PURGE: 'location.purge', // hard delete — only for spaces without history
   // Technician assignment operations
   ASSIGN_TECHNICIAN: 'location.assignTechnician',
   UPDATE_ASSIGNMENT: 'location.updateAssignment',

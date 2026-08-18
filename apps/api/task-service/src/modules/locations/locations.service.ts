@@ -368,6 +368,70 @@ export class LocationsService {
   }
 
   /**
+   * PERMANENTLY delete a company location. Only allowed when the space carries
+   * no history (tasks, attendance, shifts, overtime, customers, recurring
+   * templates) — spaces with history must stay archived (deactivated) so
+   * payroll and job records keep their references.
+   */
+  async purge(data: { id: string; organizationId: string; userId: string }) {
+    const existing = await this.prisma.companyLocation.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      include: {
+        _count: {
+          select: {
+            tasks: true,
+            timeEntries: true,
+            shifts: true,
+            shiftAssignments: true,
+            overtimeRequests: true,
+            recurringTemplates: true,
+            customers: true,
+            customerUnits: true,
+          },
+        },
+      },
+    });
+    if (!existing) throw new NotFoundException('Company location not found');
+    if (existing.isDefault) {
+      throw new BadRequestException(
+        'The default space cannot be deleted. Make another space the default first.',
+      );
+    }
+    if (existing.isRemote) {
+      throw new BadRequestException(
+        'The Remote space is required for remote clock-ins and cannot be deleted.',
+      );
+    }
+
+    const c = existing._count;
+    const blockers: string[] = [];
+    if (c.tasks > 0) blockers.push(`${c.tasks} task(s)`);
+    if (c.timeEntries > 0) blockers.push(`${c.timeEntries} attendance record(s)`);
+    if (c.shifts > 0 || c.shiftAssignments > 0) blockers.push('shift schedule');
+    if (c.overtimeRequests > 0) blockers.push('overtime requests');
+    if (c.recurringTemplates > 0) blockers.push(`${c.recurringTemplates} recurring task template(s)`);
+    if (c.customers > 0 || c.customerUnits > 0) blockers.push('customer records');
+    if (blockers.length > 0) {
+      throw new BadRequestException(
+        `This space still has history (${blockers.join(', ')}) and can only be deactivated. ` +
+          'Permanent deletion is available for empty spaces only.',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // Config rows that reference the space without cascade.
+      await tx.intakeCategory.deleteMany({ where: { spaceId: data.id } }).catch(() => undefined);
+      // Access mappings and shift config cascade via the schema.
+      await tx.companyLocation.delete({ where: { id: data.id } });
+    });
+
+    this.logger.warn(
+      `Company location PURGED: ${existing.name} (${existing.id}) by ${data.userId}`,
+    );
+    return success({ id: existing.id }, 'Space permanently deleted');
+  }
+
+  /**
    * Get effective modules for a space.
    * Returns the space's enabledModules if set, otherwise falls back to the org's enabledModules.
    */

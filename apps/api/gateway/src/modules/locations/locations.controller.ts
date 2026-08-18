@@ -154,6 +154,17 @@ export class LocationsController {
     });
   }
 
+  @Delete(':id/permanent')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Permanently delete an empty company location (no tasks/attendance/shifts)' })
+  async purge(@Param('id') id: string, @Request() req: any) {
+    return this.locationsQueueService.purge({
+      id,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id/modules')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get effective modules for a space (falls back to org defaults)' })

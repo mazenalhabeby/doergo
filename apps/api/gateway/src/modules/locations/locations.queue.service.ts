@@ -40,6 +40,13 @@ export class LocationsQueueService extends BaseQueueService {
   }
 
   /**
+   * Permanently delete an empty company location (guarded server-side)
+   */
+  async purge(data: Record<string, any>) {
+    return this.addJobAndWait(LOCATION_JOB_TYPES.PURGE, data);
+  }
+
+  /**
    * Assign a member to a location
    */
   async assignMember(data: Record<string, any>) {
