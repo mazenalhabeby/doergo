@@ -36,3 +36,6 @@ export * from './timezone-country';
 
 // Client-safe constants (pure data — no server deps)
 export * from './constants/attendance';
+// Task status vocabulary and the overdue rule. Pure data + pure functions, and
+// the client needs them: every task view asks "is this finished / overdue?".
+export * from './constants/task';

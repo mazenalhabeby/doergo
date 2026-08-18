@@ -189,3 +189,21 @@ export function isActiveStatus(status: TaskStatus): boolean {
 export function isTerminalStatus(status: TaskStatus): boolean {
   return TERMINAL_STATUSES.includes(status);
 }
+
+/**
+ * Is this task past its due date and still open?
+ *
+ * "Overdue" needs both halves — a completed task due last week is not overdue —
+ * and the second half is exactly the terminal-status list above. This existed as
+ * four byte-identical copies across the task card, the table row, the timeline
+ * and the dashboard, each re-inlining the status list, so a change to what
+ * counts as finished would have had to be found in four places.
+ */
+export function isTaskOverdue(task: {
+  dueDate?: string | Date | null;
+  status: TaskStatus | string;
+}): boolean {
+  if (!task.dueDate) return false;
+  if (isTerminalStatus(task.status as TaskStatus)) return false;
+  return new Date(task.dueDate) < new Date();
+}

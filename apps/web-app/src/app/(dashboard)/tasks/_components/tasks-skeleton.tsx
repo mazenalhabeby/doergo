@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 
 import { Shimmer as S } from "@/components/skeletons/primitives"
 
@@ -73,20 +72,23 @@ function TableSkeleton() {
   )
 }
 
-/** Placeholder columns. Real column names arrive with the workflow. */
-const FALLBACK_COLUMNS = ["open", "assigned", "active", "blocked", "done"] as const
+/**
+ * Placeholder column widths. Deliberately NOT translated column names: this
+ * component is server-rendered, where no language is detected, so a translated
+ * label renders "Open" on the server and "Offen" on the client — a hydration
+ * mismatch. It would also be a lie, since a custom workflow names its own
+ * columns and the skeleton cannot know them yet.
+ */
+const COLUMN_LABEL_WIDTHS = [56, 72, 60, 64, 52]
 
 function BoardSkeleton() {
-  const { t } = useTranslation()
   return (
     <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 animate-in fade-in duration-300">
-      {FALLBACK_COLUMNS.map((key, i) => (
-        <div key={key} className="flex-shrink-0 w-[280px]">
+      {COLUMN_LABEL_WIDTHS.map((labelWidth, i) => (
+        <div key={i} className="flex-shrink-0 w-[280px]">
           <div className="flex items-center gap-2 mb-3 px-1">
             <div className="size-2 rounded-full bg-muted" />
-            <span className="text-sm font-semibold text-muted-foreground/30">
-              {t(`tasks.fallbackColumns.${key}`)}
-            </span>
+            <S className="h-3.5 rounded" style={{ width: labelWidth }} delayMs={i * 60} />
           </div>
           <div className="space-y-2 p-2 rounded-xl bg-muted/50 border border-border/30">
             {Array.from({ length: 2 + (i % 2) }).map((_, j) => {

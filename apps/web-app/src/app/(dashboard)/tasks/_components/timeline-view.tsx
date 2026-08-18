@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo, useRef, useEffect, useState, useCallback } from "react"
+import { isTaskOverdue } from "@hbcfield/shared/client"
 import ReactDOM from "react-dom"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
@@ -146,10 +147,7 @@ const TaskRow = React.memo(function TaskRow({
   task: Task
   animDelay: number
 }) {
-  const isOverdue =
-    task.dueDate &&
-    new Date(task.dueDate) < new Date() &&
-    !["COMPLETED", "CLOSED", "CANCELED"].includes(task.status)
+  const isOverdue = isTaskOverdue(task)
   const statusConfig = getStatusConfig(task.status)
 
   return (

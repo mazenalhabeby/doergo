@@ -1,4 +1,5 @@
 import i18n from "@/i18n"
+import { isTaskOverdue } from "@hbcfield/shared/client"
 import type { OrgMember, Task } from "@/lib/api"
 import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 
@@ -79,7 +80,6 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
     const accountedWorkerIds = new Set<string>()
 
     // Compute alerts per location
-    const now = new Date()
 
     for (const loc of locations) {
       if (!loc.isActive) continue
@@ -170,9 +170,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
         const isThisLocation = task.spaceId === locId || task.locationAddress?.includes(loc.name)
         if (!isThisLocation) continue
         const isBlocked = task.status === "BLOCKED"
-        const isOverdue = task.dueDate && new Date(task.dueDate) < now &&
-          !["COMPLETED", "CLOSED", "CANCELED"].includes(task.status)
-        if (isBlocked || isOverdue) locAlerts++
+        if (isBlocked || isTaskOverdue(task)) locAlerts++
       }
 
       const activeCount = people.length + onRoadPeople.length + remotePeople.length

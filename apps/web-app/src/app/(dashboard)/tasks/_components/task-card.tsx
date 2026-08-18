@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { isTaskOverdue } from "@hbcfield/shared/client"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { Calendar, Plus } from "lucide-react"
@@ -46,10 +47,7 @@ export const TaskCard = React.memo(function TaskCard({
   const { hasModule } = useAuth()
   const priorityConfig = getPriorityConfig(task.priority)
   const PriorityIcon = priorityConfig.icon
-  const isOverdue =
-    task.dueDate &&
-    new Date(task.dueDate) < new Date() &&
-    !["COMPLETED", "CLOSED", "CANCELED"].includes(task.status)
+  const isOverdue = isTaskOverdue(task)
 
   const cardContent = (
     <div

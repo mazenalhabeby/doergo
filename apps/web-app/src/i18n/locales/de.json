@@ -1586,6 +1586,28 @@
         "storyPoints": "Punkte",
         "title": "Titel"
       }
+    },
+    "menu": {
+      "assignTo": "Zuweisen an",
+      "backlog": "Backlog",
+      "delete": "Löschen",
+      "moveToSpace": "In Bereich verschieben",
+      "moveToSprint": "In Sprint verschieben",
+      "newTask": "Neue Aufgabe",
+      "noEpic": "Kein Epic",
+      "noPhase": "Keine Phase",
+      "noSpace": "Kein Bereich",
+      "none": "Keine",
+      "open": "Öffnen",
+      "priority": "Priorität",
+      "setEpic": "Epic festlegen",
+      "setPhase": "Phase festlegen",
+      "space": "Bereich",
+      "sprint": "Sprint",
+      "status": "Status",
+      "storyPoints": "Story Points",
+      "today": "Heute",
+      "unassigned": "Nicht zugewiesen"
     }
   },
   "technicians": {

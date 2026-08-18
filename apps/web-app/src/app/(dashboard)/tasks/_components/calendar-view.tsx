@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo, useState, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import ReactDOM from "react-dom"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -205,6 +206,7 @@ const CalendarCell = React.memo(function CalendarCell({
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function CalendarView({ tasks }: CalendarViewProps) {
+  const { t } = useTranslation()
   const today = startOfDay(new Date())
   const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [tooltip, setTooltip] = useState<{ task: Task; x: number; y: number } | null>(null)
@@ -350,7 +352,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
             )}
             disabled={isCurrentMonth}
           >
-            Today
+            {t("tasks.menu.today")}
           </Button>
           <Button
             variant="ghost"

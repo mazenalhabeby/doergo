@@ -720,7 +720,15 @@ export interface UpdateTaskInput {
 
 export interface TasksQueryParams {
   status?: string;
+  /** A tab group — several statuses at once. Sent comma-separated. */
+  statuses?: string[];
   priority?: string;
+  /** Free-text over title and description, matched server-side. */
+  search?: string;
+  /** Sprint id, or 'none' for the backlog (tasks in no sprint). */
+  sprintId?: string;
+  /** Epic id, or 'none' for tasks in no epic. */
+  epicId?: string;
   page?: number;
   limit?: number;
   /** Scope tasks to a single space. Used by the guest shared-space view. */
@@ -894,8 +902,12 @@ export interface StatusCountsResponse {
 
 export const tasksApi = {
   // Get task counts grouped by status
-  getStatusCounts: async () => {
-    const response = await api.get<StatusCountsResponse>('/tasks/counts');
+  /** Task counts grouped by status (default) or by space, over everything the
+   *  caller may see — not just the loaded page. */
+  getStatusCounts: async (params?: { groupBy?: 'status' | 'space'; spaceId?: string }) => {
+    const response = await api.get<StatusCountsResponse>(
+      buildUrlWithQuery('/tasks/counts', { groupBy: params?.groupBy, spaceId: params?.spaceId }),
+    );
 
     if (response.error) {
       throw new Error(response.error);
@@ -908,6 +920,12 @@ export const tasksApi = {
   list: async (params?: TasksQueryParams) => {
     const endpoint = buildUrlWithQuery('/tasks', {
       status: params?.status !== 'all' ? params?.status : undefined,
+      // The server filters on these; doing it in the browser only ever filtered
+      // the page that happened to be loaded.
+      statuses: params?.statuses?.length ? params.statuses.join(',') : undefined,
+      search: params?.search?.trim() || undefined,
+      sprintId: params?.sprintId !== 'all' ? params?.sprintId : undefined,
+      epicId: params?.epicId !== 'all' ? params?.epicId : undefined,
       priority: params?.priority !== 'all' ? params?.priority : undefined,
       page: params?.page,
       limit: params?.limit,

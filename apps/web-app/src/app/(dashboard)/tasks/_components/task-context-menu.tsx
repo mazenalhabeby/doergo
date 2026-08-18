@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import {
   ExternalLink,
@@ -65,6 +66,7 @@ function TaskContextMenuInner({
   actions,
   recentAssignees = [],
 }: TaskContextMenuProps) {
+  const { t } = useTranslation()
   const router = useRouter()
   const { hasModule } = useAuth()
 
@@ -75,7 +77,7 @@ function TaskContextMenuInner({
         {/* Open */}
         <ContextMenuItem onClick={() => router.push(`/tasks/${task.id}`)}>
           <ExternalLink className="size-4 mr-2" />
-          Open
+          {t("tasks.menu.open")}
         </ContextMenuItem>
 
         <ContextMenuSeparator />
@@ -88,7 +90,7 @@ function TaskContextMenuInner({
                 className="size-2 rounded-full mr-2 flex-shrink-0"
                 style={{ backgroundColor: getStatusConfig(task.status).hex }}
               />
-              Status
+              {t("tasks.menu.status")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
               {TASK_STATUSES.filter(s => s !== "DRAFT").map((status) => {
@@ -152,7 +154,7 @@ function TaskContextMenuInner({
               <span className="size-4 mr-2 flex-shrink-0 flex items-center justify-center">
                 <span className="size-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600" />
               </span>
-              Assign to
+              {t("tasks.menu.assignTo")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
               <ContextMenuItem
@@ -160,7 +162,7 @@ function TaskContextMenuInner({
                 disabled={!task.assignedToId}
                 className={!task.assignedToId ? "opacity-50" : ""}
               >
-                Unassigned
+                {t("tasks.menu.unassigned")}
               </ContextMenuItem>
               {recentAssignees.map((a) => {
                 const isCurrent = task.assignedToId === a.id
@@ -193,7 +195,7 @@ function TaskContextMenuInner({
           <ContextMenuSub>
             <ContextMenuSubTrigger>
               <ArrowRight className="size-4 mr-2 flex-shrink-0" />
-              Move to Sprint
+              {t("tasks.menu.moveToSprint")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
               <ContextMenuItem
@@ -202,7 +204,7 @@ function TaskContextMenuInner({
                 className={!task.sprintId ? "opacity-50" : ""}
               >
                 <Archive className="size-3.5 mr-2" />
-                Backlog
+                {t("tasks.menu.backlog")}
               </ContextMenuItem>
               {sprints.map((sprint) => {
                 const isCurrent = task.sprintId === sprint.id
@@ -228,7 +230,7 @@ function TaskContextMenuInner({
               <span className="size-4 mr-2 flex-shrink-0 flex items-center justify-center">
                 <span className="size-2 rounded-full bg-muted-foreground/40" />
               </span>
-              Set Phase
+              {t("tasks.menu.setPhase")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
               <ContextMenuItem
@@ -236,7 +238,7 @@ function TaskContextMenuInner({
                 disabled={!task.phaseId}
                 className={!task.phaseId ? "opacity-50" : ""}
               >
-                No Phase
+                {t("tasks.menu.noPhase")}
               </ContextMenuItem>
               {phases.map((phase) => {
                 const isCurrent = task.phaseId === phase.id
@@ -266,7 +268,7 @@ function TaskContextMenuInner({
               <span className="size-4 mr-2 flex-shrink-0 flex items-center justify-center">
                 <span className="size-2 rounded-full bg-purple-400" />
               </span>
-              Set Epic
+              {t("tasks.menu.setEpic")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
               <ContextMenuItem
@@ -274,7 +276,7 @@ function TaskContextMenuInner({
                 disabled={!task.epicId}
                 className={!task.epicId ? "opacity-50" : ""}
               >
-                No Epic
+                {t("tasks.menu.noEpic")}
               </ContextMenuItem>
               {epics.map((epic) => {
                 const isCurrent = task.epicId === epic.id
@@ -302,7 +304,7 @@ function TaskContextMenuInner({
           <ContextMenuSub>
             <ContextMenuSubTrigger>
               <MapPin className="size-4 mr-2 flex-shrink-0" />
-              Move to Space
+              {t("tasks.menu.moveToSpace")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
               <ContextMenuItem
@@ -310,7 +312,7 @@ function TaskContextMenuInner({
                 disabled={!task.spaceId}
                 className={!task.spaceId ? "opacity-50" : ""}
               >
-                No Space
+                {t("tasks.menu.noSpace")}
               </ContextMenuItem>
               {spaces.map((space) => {
                 const isCurrent = task.spaceId === space.id
@@ -337,7 +339,7 @@ function TaskContextMenuInner({
               <span className="size-4 mr-2 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
                 {task.storyPoints ?? "#"}
               </span>
-              Story Points
+              {t("tasks.menu.storyPoints")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[140px]">
               <ContextMenuItem
@@ -345,7 +347,7 @@ function TaskContextMenuInner({
                 disabled={task.storyPoints == null}
                 className={task.storyPoints == null ? "opacity-50" : ""}
               >
-                None
+                {t("tasks.menu.none")}
               </ContextMenuItem>
               {STORY_POINT_OPTIONS.map((pts) => {
                 const isCurrent = task.storyPoints === pts
@@ -378,7 +380,7 @@ function TaskContextMenuInner({
             className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
           >
             <Trash2 className="size-4 mr-2" />
-            Delete
+            {t("tasks.menu.delete")}
           </ContextMenuItem>
         )}
       </ContextMenuContent>
