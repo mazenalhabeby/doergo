@@ -1,8 +1,3 @@
-export { StatCard } from "./stat-card"
-export { ActivityFeed, type ActivityItem } from "./activity-feed"
-export { TaskChart, taskStatusColors, priorityColors } from "./task-chart"
-export { TeamStatus, type TeamMember } from "./team-status"
-export { QuickActions } from "./quick-actions"
 export { RecentTasks, type RecentTask } from "./recent-tasks"
 export { ManagementContacts } from "./management-contacts"
 export { WorkerAvatar, type WorkerAvatarProps, type WorkerStatus } from "./worker-avatar"

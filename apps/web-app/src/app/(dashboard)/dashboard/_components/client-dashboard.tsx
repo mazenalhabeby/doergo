@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useCallback, useState } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -21,6 +21,8 @@ import {
 } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
+import { fetchAllPages } from "@/lib/paginate"
+import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import {
   WorkspaceGrid,
@@ -35,7 +37,6 @@ import {
   type PendingAction,
 } from "@/components/dashboard"
 import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
-import { useActivityPanel } from "@/contexts/activity-panel-context"
 import { useTour } from "@/components/tour"
 import {
   getGreeting,
@@ -45,6 +46,43 @@ import {
   getTodayString,
 } from "./helpers"
 import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
+
+// ── Tuning ───────────────────────────────────────────────────────────────────
+
+/** Server hard cap for /organizations/members and /locations (one page each). */
+const MEMBERS_PAGE_SIZE = 200
+const SPACES_PAGE_SIZE = 500
+
+/**
+ * Newest tasks pulled for the activity feed, per-space alert counts and the
+ * "who is on a task" boxes. Deliberately a slice, not the full history: the
+ * dashboard only ever renders the most recent handful, so paging the entire
+ * backlog in would cost payload for rows nothing displays. An org that outgrows
+ * this needs server-side aggregation, not a bigger page.
+ */
+const DASHBOARD_TASK_LIMIT = 200
+
+/**
+ * Presence self-heal interval. "Online" is derived client-side as
+ * (now - lastActiveAt < ONLINE_WINDOW_MS), so a dashboard left open needs a
+ * periodic refetch or the cached timestamp ages out of the window and a
+ * still-connected member wrongly goes dark. The server bumps lastActiveAt at
+ * least once a minute, so refetching every 60s keeps everyone inside the window.
+ */
+const PRESENCE_REFETCH_MS = 60_000
+
+/** App-active within this window → the green "online" ring. */
+const ONLINE_WINDOW_MS = 3 * 60 * 1000
+
+/** Stable empty default — a `= []` literal would be a new identity each render. */
+const NO_MEMBERS: OrgMember[] = []
+
+/** What the presence labels need to know about a member's current clock-in. */
+interface AttendanceFacts {
+  locationId: string
+  isRemote: boolean
+  withinGeofence: boolean
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -94,9 +132,9 @@ function getEmployeeStatus(opts: {
   return { status: "on", tag: { text: i18n.t("dashboard.presence.available"), variant: "hrs" } }
 }
 
-/** App-active within the last 3 minutes → show the green "online" ring. */
+/** App-active within ONLINE_WINDOW_MS → show the green "online" ring. */
 function isOnline(lastActiveAt?: string | null): boolean {
-  return !!lastActiveAt && Date.now() - new Date(lastActiveAt).getTime() < 3 * 60 * 1000
+  return !!lastActiveAt && Date.now() - new Date(lastActiveAt).getTime() < ONLINE_WINDOW_MS
 }
 
 /** Build a PersonNodeProps from an OrgMember. `clockedIn` drives the green ring. */
@@ -141,7 +179,6 @@ export function ClientDashboard() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { isOpen: panelOpen } = useActivityPanel()
   // Drives the guide example team (see below).
   const { activeTourId, isTourCompleted } = useTour()
   const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
@@ -166,32 +203,41 @@ export function ClientDashboard() {
 
   // ── Data Fetching ──────────────────────────────────────────────────────────
 
-  // Tasks — auto-refresh every 30s for live updates
+  // Tasks. Kept current by the socket layer — useRealtimeSync invalidates
+  // ["tasks"] on every task event — so there is no polling interval here.
   const { data: tasksData, isLoading: loadingTasks } = useQuery({
     queryKey: ["tasks"],
-    queryFn: () => tasksApi.list({ limit: 200 }),
+    queryFn: () => tasksApi.list({ limit: DASHBOARD_TASK_LIMIT }),
   })
 
-  // Company locations
+  // Company spaces. Paged through to the end: /locations defaults to 20 per
+  // page, so requesting a single page silently dropped every space past the
+  // 20th from the grid, its alerts and its roster.
   const { data: locationsData, isLoading: loadingLocations } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => locationsApi.list(),
+    queryKey: ["locations", "dashboard"],
+    queryFn: () => fetchAllPages((page) => locationsApi.list({ page, limit: SPACES_PAGE_SIZE })),
   })
 
-  // All org members (for worker info: name, avatar, workMode, role)
-  const { data: membersData } = useQuery({
+  // All org members (for worker info: name, avatar, workMode, role).
+  //
+  // GET /organizations/members requires canManageUsers, so this is gated on that
+  // permission: without the gate every employee re-fired a request that could
+  // only ever 403, once a minute, for as long as the tab stayed open. Viewers
+  // who can't read the directory fall back to the member data embedded in their
+  // (scoped) space rosters — see memberMap below.
+  const canReadMembers = !!user?.canManageUsers
+  const { data: members = NO_MEMBERS } = useQuery({
     // Keep under the "orgMembers" namespace so member add/remove/role mutations
     // (which invalidate ["orgMembers"]) also refresh this dashboard list.
     queryKey: ["orgMembers", "dashboard"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    queryFn: () =>
+      fetchAllPages<OrgMember>((page) =>
+        organizationsApi.getMembers({ page, limit: MEMBERS_PAGE_SIZE }),
+      ),
+    enabled: canReadMembers,
     staleTime: 30000,
     refetchOnMount: true,
-    // Self-heal the online/offline dots on a continuously-open dashboard.
-    // "Online" is computed client-side as (now - lastActiveAt < 3min); without a
-    // periodic refetch the cached timestamp ages past the window and a
-    // still-connected member wrongly disappears. 60s keeps every connected user
-    // (server bumps lastActiveAt ≤60s) safely inside the 3-min window.
-    refetchInterval: 60000,
+    refetchInterval: PRESENCE_REFETCH_MS,
   })
 
   // Who is clocked in RIGHT NOW? Admins read org-wide. This is date-independent
@@ -204,13 +250,15 @@ export function ClientDashboard() {
     staleTime: 30000,
     enabled: isAdminOrDispatcher,
     // Safety refetch so clock-in/out state self-heals if a socket event is missed.
-    refetchInterval: 60000,
+    refetchInterval: PRESENCE_REFETCH_MS,
   })
 
   // Active breaks — who is currently on break? (admin-only endpoint)
-  const { data: activeBreaksData } = useQuery({
+  // getActiveBreaks() already unwraps the envelope and resolves to Break[], so
+  // the failure fallback must be an array too.
+  const { data: activeBreaks } = useQuery({
     queryKey: ["active-breaks"],
-    queryFn: () => attendanceApi.getActiveBreaks().catch(() => ({ data: [] })),
+    queryFn: () => attendanceApi.getActiveBreaks().catch(() => []),
     staleTime: 30000,
     enabled: isAdminOrDispatcher,
   })
@@ -226,16 +274,24 @@ export function ClientDashboard() {
 
   // ── Derived Data ───────────────────────────────────────────────────────────
 
-  const tasks: Task[] = tasksData?.data || []
-  const allLocations = locationsData?.data || []
-  const members: OrgMember[] = membersData?.data || []
-  const activeBreaks = (activeBreaksData as any)?.data || []
+  // These MUST be memoised: `response?.data || []` allocates a new array every
+  // render, which changes the identity of every dependency array they appear in
+  // — the big workspaceBoxes memo below then recomputed on each render instead
+  // of only when the data actually changed.
+  const tasks: Task[] = useMemo(() => tasksData?.data ?? [], [tasksData])
+  const allLocations = useMemo(() => locationsData ?? [], [locationsData])
 
-  // Set of user IDs currently on break
+  // Set of user IDs currently on break.
+  //
+  // This read used to be `(activeBreaksData as any)?.data || []` and then keyed
+  // on `b.userId`. Both were wrong: the API helper resolves to a Break[] (no
+  // `.data`), and the server flattens the owner onto `user`, never `userId`. So
+  // the set was ALWAYS EMPTY and nobody ever got the "On Break" label — the
+  // `as any` is what kept the compiler quiet about both.
   const onBreakUserIds = useMemo(() => {
     const set = new Set<string>()
-    for (const b of activeBreaks) {
-      if (b.userId) set.add(b.userId)
+    for (const b of activeBreaks ?? []) {
+      if (b.user?.id) set.add(b.user.id)
     }
     return set
   }, [activeBreaks])
@@ -289,57 +345,34 @@ export function ClientDashboard() {
     return map
   }, [members, rosters])
 
-  // Set of user IDs currently clocked in (active today, no clock-out)
-  const clockedInUserIds = useMemo(() => {
-    const set = new Set<string>()
-    for (const entry of todayEntries) {
-      if (isClockedIn(entry)) set.add(entry.userId)
-    }
-    return set
-  }, [todayEntries])
+  // Per-user attendance facts, derived in ONE pass. Previously the same array
+  // was copied and re-sorted three times to build three parallel maps keyed by
+  // the same user and read from the same (most recent) entry.
+  //
+  // `clockedIn` is true when ANY of today's entries is open; the descriptive
+  // fields come from the most recent entry, which is what the presence labels
+  // describe. Identical results to the three maps it replaces.
+  const { clockedInUserIds, attendanceByUser } = useMemo(() => {
+    const clocked = new Set<string>()
+    const facts = new Map<string, AttendanceFacts>()
 
-  // Map userId -> locationId from today's attendance (most recent clock-in location)
-  const attendanceLocationMap = useMemo(() => {
-    const map = new Map<string, string>()
-    // Sort by clockInAt descending so we get the most recent
-    const sorted = [...todayEntries].sort(
+    // Newest first, so the first entry seen per user IS their most recent.
+    const byRecency = [...todayEntries].sort(
       (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
     )
-    for (const entry of sorted) {
-      if (!map.has(entry.userId)) {
-        map.set(entry.userId, entry.locationId)
-      }
-    }
-    return map
-  }, [todayEntries])
 
-  // Map userId -> whether their current clock-in is remote (WFH), from the most
-  // recent entry. Drives the "Remote" vs "On Shift" label.
-  const attendanceRemoteMap = useMemo(() => {
-    const map = new Map<string, boolean>()
-    const sorted = [...todayEntries].sort(
-      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
-    )
-    for (const entry of sorted) {
-      if (!map.has(entry.userId)) {
-        map.set(entry.userId, !!entry.isRemote)
+    for (const entry of byRecency) {
+      if (isClockedIn(entry)) clocked.add(entry.userId)
+      if (!facts.has(entry.userId)) {
+        facts.set(entry.userId, {
+          locationId: entry.locationId,
+          isRemote: !!entry.isRemote,
+          withinGeofence: !!entry.clockInWithinGeofence,
+        })
       }
     }
-    return map
-  }, [todayEntries])
 
-  // userId -> whether their current clock-in was INSIDE the space geofence.
-  const attendanceGeofenceMap = useMemo(() => {
-    const map = new Map<string, boolean>()
-    const sorted = [...todayEntries].sort(
-      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
-    )
-    for (const entry of sorted) {
-      if (!map.has(entry.userId)) {
-        map.set(entry.userId, !!entry.clockInWithinGeofence)
-      }
-    }
-    return map
+    return { clockedInUserIds: clocked, attendanceByUser: facts }
   }, [todayEntries])
 
   // locationId -> { is this space shift-based, does it have a real geofence }.
@@ -360,15 +393,15 @@ export function ClientDashboard() {
   // geofence AND they clocked in inside it — no location ⇒ can't confirm ⇒ In Field.
   const shiftLabelInfo = useCallback(
     (userId: string): { isShiftBased: boolean; atSpace: boolean } => {
-      const locId = attendanceLocationMap.get(userId)
+      const locId = attendanceByUser.get(userId)?.locationId
       const meta = locId ? spaceMetaByLocation.get(locId) : undefined
-      const within = attendanceGeofenceMap.get(userId) ?? false
+      const within = attendanceByUser.get(userId)?.withinGeofence ?? false
       return {
         isShiftBased: meta?.isShiftBased ?? false,
         atSpace: (meta?.hasLocation ?? false) && within === true,
       }
     },
-    [attendanceLocationMap, spaceMetaByLocation, attendanceGeofenceMap],
+    [attendanceByUser, spaceMetaByLocation],
   )
 
   // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED)
@@ -417,6 +450,68 @@ export function ClientDashboard() {
     return map
   }, [locationIds, rosters])
 
+  // ── Space roster mutation ─────────────────────────────────────────────────
+
+  // Assignments for the space the dialog is editing — supplies both the dialog's
+  // initial selection and the assignment ids needed to remove someone (the API
+  // deletes by assignment id, not user id).
+  const assignSpaceRoster = useMemo(
+    () => (assignSpaceId ? rosters.filter((a) => a.locationId === assignSpaceId) : []),
+    [rosters, assignSpaceId],
+  )
+
+  /**
+   * Persist a roster edit made from a space card. This dialog previously got an
+   * empty `onAssign` and no `onSave`, which left it in single-select mode calling
+   * a no-op — the picker looked functional but never wrote anything.
+   *
+   * Removals go first so that swapping a member can't transiently exceed a space
+   * cap, and both directions run concurrently within their phase. Partial
+   * failures are reported rather than swallowed, matching the bulk actions on the
+   * members page.
+   */
+  const rosterMutation = useMutation({
+    mutationFn: async ({ spaceId, added, removed }: { spaceId: string; added: string[]; removed: string[] }) => {
+      const assignmentIdByUser = new Map(assignSpaceRoster.map((a) => [a.userId, a.id]))
+
+      const settle = async (jobs: Promise<unknown>[]) => {
+        const results = await Promise.allSettled(jobs)
+        return results.filter((r) => r.status === "rejected").length
+      }
+
+      let failed = await settle(
+        removed
+          .map((userId) => assignmentIdByUser.get(userId))
+          .filter((id): id is string => !!id)
+          .map((assignmentId) => locationsApi.removeAssignment(spaceId, assignmentId)),
+      )
+      failed += await settle(added.map((userId) => locationsApi.assignMember(spaceId, { userId })))
+
+      return { failed, total: added.length + removed.length }
+    },
+    onSuccess: ({ failed, total }) => {
+      if (failed > 0) {
+        notify.error(t("dashboard.client.assignPartial", { ok: total - failed, failed }))
+      } else if (total > 0) {
+        notify.success(t("dashboard.client.assignSaved", { count: total }))
+      }
+    },
+    onError: (error: Error) => notify.error(error.message),
+    onSettled: () => {
+      // The rosters drive the space cards, and the dialog reads its own copy.
+      queryClient.invalidateQueries({ queryKey: ["locationRosters"] })
+      queryClient.invalidateQueries({ queryKey: ["space-assignments"] })
+    },
+  })
+
+  const handleSaveRoster = useCallback(
+    async (added: string[], removed: string[]) => {
+      if (!assignSpaceId) return
+      await rosterMutation.mutateAsync({ spaceId: assignSpaceId, added, removed })
+    },
+    [assignSpaceId, rosterMutation],
+  )
+
   // ── Loading ────────────────────────────────────────────────────────────────
 
   const isDataLoading = loadingTasks || loadingLocations
@@ -457,7 +552,7 @@ export function ClientDashboard() {
     const map = new Map<string, string>()
     const visible = new Set(locations.map((l: { id: string }) => l.id))
     for (const userId of clockedInUserIds) {
-      const loc = attendanceLocationMap.get(userId)
+      const loc = attendanceByUser.get(userId)?.locationId
       if (loc && visible.has(loc)) {
         map.set(userId, loc) // clocked in at a visible space → active there
       } else {
@@ -469,7 +564,7 @@ export function ClientDashboard() {
       }
     }
     return map
-  }, [clockedInUserIds, attendanceLocationMap, locations, assignmentsPerLocation])
+  }, [clockedInUserIds, attendanceByUser, locations, assignmentsPerLocation])
 
   // ── Build Workspace Boxes ─────────────────────────────────────────────────
 
@@ -516,7 +611,7 @@ export function ClientDashboard() {
         // On Shift / In Field / Working is decided by WHERE they clocked in
         // (space geofence) + whether the space is shift-based — not their access.
         const { isShiftBased, atSpace } = shiftLabelInfo(userId)
-        const isRemoteHere = attendanceRemoteMap.get(userId) ?? false
+        const isRemoteHere = attendanceByUser.get(userId)?.isRemote ?? false
         // "In Field" = clocked in on a shift-based space but not confirmed inside it.
         const onRoad = isCurrentlyClockedIn && !isRemoteHere && isShiftBased && !atSpace
 
@@ -551,7 +646,7 @@ export function ClientDashboard() {
         } else if (activeSpace !== locId) {
           // Clocked in, but their active space is ELSEWHERE → off-shift here, with
           // a hint of where they actually are (not an active "off-site" node).
-          const remoteHere = attendanceRemoteMap.get(userId) ?? false
+          const remoteHere = attendanceByUser.get(userId)?.isRemote ?? false
           const whereName = activeSpace ? spaceNameById.get(activeSpace) : null
           const hint = remoteHere
             ? i18n.t("dashboard.presence.remote", "Remote")
@@ -562,7 +657,7 @@ export function ClientDashboard() {
         } else if (onRoad) {
           // Clocked in here, working on the road → "In Field" group.
           onRoadPeople.push(node)
-        } else if (attendanceRemoteMap.get(userId)) {
+        } else if (attendanceByUser.get(userId)?.isRemote) {
           // Clocked in remotely (WFH), attributed to this (home) space → "Off-site".
           remotePeople.push(node)
         } else {
@@ -616,7 +711,7 @@ export function ClientDashboard() {
             isClockedIn: clockedInUserIds.has(task.assignedTo.id),
             isOnBreak: onBreakUserIds.has(task.assignedTo.id),
             isOnline: false, // no last-active data on the task fallback
-            isRemote: attendanceRemoteMap.get(task.assignedTo.id) ?? false,
+            isRemote: attendanceByUser.get(task.assignedTo.id)?.isRemote ?? false,
           })
           onTaskPeople.push({
             initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
@@ -640,7 +735,7 @@ export function ClientDashboard() {
         isOnBreak: onBreakUserIds.has(userId),
         isOnline: memberOnline(member),
         presence: member.presence,
-        isRemote: attendanceRemoteMap.get(userId) ?? false,
+        isRemote: attendanceByUser.get(userId)?.isRemote ?? false,
         isShiftBased: siTask.isShiftBased,
         atSpace: siTask.atSpace,
       })
@@ -681,7 +776,7 @@ export function ClientDashboard() {
           isOnBreak: onBreakUserIds.has(worker.id),
           isOnline: online,
           presence: worker.presence,
-          isRemote: attendanceRemoteMap.get(worker.id) ?? false,
+          isRemote: attendanceByUser.get(worker.id)?.isRemote ?? false,
           isShiftBased: siWorker.isShiftBased,
           atSpace: siWorker.atSpace,
         })
@@ -726,7 +821,7 @@ export function ClientDashboard() {
     return boxes
   }, [
     locations, tasks, members, assignmentsPerLocation,
-    memberMap, clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, rosterActiveTaskMap,
+    memberMap, clockedInUserIds, onBreakUserIds, attendanceByUser, shiftLabelInfo, activeTaskMap, rosterActiveTaskMap,
     activeSpaceByUser, spaceNameById,
     handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
     isAdminOrDispatcher, user?.id, i18n.language,
@@ -1128,7 +1223,10 @@ export function ClientDashboard() {
         onOpenChange={(open) => { if (!open) setAssignSpaceId(null) }}
         taskId={null}
         spaceId={assignSpaceId}
+        currentAssigneeIds={assignSpaceRoster.map((a) => a.userId)}
+        isAssigning={rosterMutation.isPending}
         onAssign={() => {}}
+        onSave={handleSaveRoster}
       />
 
     </div>

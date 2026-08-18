@@ -42,22 +42,33 @@ export const PersonNode = React.memo(function PersonNode({
 }: PersonNodeProps) {
   const isClickable = !!onPersonClick && !!userId
 
-  const handleClick = React.useCallback(
-    (e: React.MouseEvent) => {
-      if (isClickable) {
-        e.stopPropagation()
-        onPersonClick!(userId!)
-      }
+  // One activation path for pointer and keyboard, so the two can't drift.
+  const activate = React.useCallback(
+    (e: React.SyntheticEvent) => {
+      if (!isClickable) return
+      e.stopPropagation() // don't also expand/collapse the surrounding space card
+      onPersonClick!(userId!)
     },
     [isClickable, onPersonClick, userId],
+  )
+
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " ") return
+      // Space on a role="button" div scrolls the page unless the default is
+      // suppressed — native <button> does this for us, a div does not.
+      e.preventDefault()
+      activate(e)
+    },
+    [activate],
   )
 
   return (
     <div
       role={isClickable ? "button" : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      onClick={handleClick}
-      onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onPersonClick!(userId!) } } : undefined}
+      onClick={activate}
+      onKeyDown={isClickable ? handleKeyDown : undefined}
       className={cn(
         "flex flex-col items-center",
         "gap-1.5 w-[84px]", // fixed size — no cqw; wide enough for longer status pills

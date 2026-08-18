@@ -903,7 +903,9 @@
       "exampleInField": "Sur le terrain",
       "exampleJob": "Réparation de climatiseur — Centre-ville",
       "noSpacesTitle": "Aucun espace attribué pour l'instant",
-      "noSpacesDescription": "Vous n'avez pas encore été ajouté à un espace. Consultez l'onglet Tâches pour votre travail attribué, ou demandez à votre responsable de vous ajouter."
+      "noSpacesDescription": "Vous n'avez pas encore été ajouté à un espace. Consultez l'onglet Tâches pour votre travail attribué, ou demandez à votre responsable de vous ajouter.",
+      "assignSaved": "Équipe mise à jour",
+      "assignPartial": "{{ok}} enregistrés, {{failed}} en échec"
     },
     "employeePanel": {
       "title": "Détails de l'employé",
@@ -956,7 +958,8 @@
       "onTheClock": "Pointé",
       "offDuty": "Hors service",
       "onTask": "En mission",
-      "offShift": "Hors service"
+      "offShift": "Hors service",
+      "atSpace": "À {{space}}"
     },
     "pending": {
       "worker": "Employé",
@@ -1754,9 +1757,23 @@
       "durationColumn": "Durée",
       "locationColumn": "Site",
       "statusColumn": "Statut",
-      "inZone": "Dans la zone",
-      "outOfZone": "Hors de la zone",
-      "noRecords": "Aucun enregistrement de présence trouvé"
+      "noRecords": "Aucun enregistrement de présence trouvé",
+      "state": {
+        "active": "En cours",
+        "needsReview": "À vérifier",
+        "approved": "Approuvé",
+        "rejected": "Refusé",
+        "autoApproved": "Approuvé automatiquement"
+      },
+      "flag": {
+        "missedClockOut": "Sortie manquante",
+        "geofenceIn": "Entrée hors zone",
+        "geofenceOut": "Sortie hors zone",
+        "late": "En retard",
+        "earlyDeparture": "Parti plus tôt",
+        "overtime": "Heures supp.",
+        "unscheduled": "Non planifié"
+      }
     },
     "locationsTab": {
       "title": "Affectations de sites",

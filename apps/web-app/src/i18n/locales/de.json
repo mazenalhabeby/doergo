@@ -903,7 +903,9 @@
       "exampleInField": "Im Einsatz",
       "exampleJob": "Klimaanlage reparieren — Zentrum",
       "noSpacesTitle": "Noch keine Bereiche zugewiesen",
-      "noSpacesDescription": "Sie wurden noch keinem Bereich hinzugefügt. Sehen Sie im Aufgaben-Tab nach Ihren zugewiesenen Aufgaben oder bitten Sie Ihren Manager, Sie hinzuzufügen."
+      "noSpacesDescription": "Sie wurden noch keinem Bereich hinzugefügt. Sehen Sie im Aufgaben-Tab nach Ihren zugewiesenen Aufgaben oder bitten Sie Ihren Manager, Sie hinzuzufügen.",
+      "assignSaved": "Team aktualisiert",
+      "assignPartial": "{{ok}} gespeichert, {{failed}} fehlgeschlagen"
     },
     "employeePanel": {
       "title": "Mitarbeiterdetails",
@@ -1755,9 +1757,23 @@
       "durationColumn": "Dauer",
       "locationColumn": "Standort",
       "statusColumn": "Status",
-      "inZone": "Im Bereich",
-      "outOfZone": "Außerhalb",
-      "noRecords": "Keine Anwesenheitsdaten gefunden"
+      "noRecords": "Keine Anwesenheitsdaten gefunden",
+      "state": {
+        "active": "Aktiv",
+        "needsReview": "Prüfung nötig",
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt",
+        "autoApproved": "Automatisch genehmigt"
+      },
+      "flag": {
+        "missedClockOut": "Ausstempeln fehlt",
+        "geofenceIn": "Einstempeln außerhalb",
+        "geofenceOut": "Ausstempeln außerhalb",
+        "late": "Verspätet",
+        "earlyDeparture": "Früher gegangen",
+        "overtime": "Überstunden",
+        "unscheduled": "Ungeplant"
+      }
     },
     "locationsTab": {
       "title": "Standortzuweisungen",

@@ -11,13 +11,6 @@ export function getGreeting(): string {
   return i18n.t("dashboard.greeting.evening")
 }
 
-/**
- * Helper function for pluralization
- */
-export function pluralize(count: number, singular: string, plural?: string): string {
-  return count === 1 ? singular : (plural || `${singular}s`)
-}
-
 // ── Avatar helpers (shared by the dashboard grid + activity feed) ─────────────
 
 export const AVATAR_COLORS = [
@@ -55,9 +48,19 @@ export function isClockedIn(entry: TimeEntry): boolean {
   return entry.status === "CLOCKED_IN" && !entry.clockOutAt
 }
 
-/** Today's date as YYYY-MM-DD. */
+/**
+ * Today's date as YYYY-MM-DD in the VIEWER's timezone.
+ *
+ * Must not go through `toISOString()`, which formats in UTC: east of Greenwich
+ * that returns yesterday's date until the UTC day rolls over (before 02:00 in
+ * GMT+2), and west of it returns tomorrow's during the evening. The value keys
+ * the attendance query, so a UTC date asks the server for the wrong day.
+ */
 export function getTodayString(): string {
-  return new Date().toISOString().split("T")[0]!
+  const now = new Date()
+  const month = `${now.getMonth() + 1}`.padStart(2, "0")
+  const day = `${now.getDate()}`.padStart(2, "0")
+  return `${now.getFullYear()}-${month}-${day}`
 }
 
 /** Time elapsed since a date, human readable. */
