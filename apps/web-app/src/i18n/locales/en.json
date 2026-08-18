@@ -3332,7 +3332,9 @@
       "confirmButton": "Delete space",
       "deleting": "Deleting…",
       "deleted": "Space deleted",
-      "deleteFailed": "Could not delete the space"
+      "deleteFailed": "Could not delete the space",
+      "purgeHint": "Removes the space forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.",
+      "purgeDialogDesc": "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead."
     },
     "ownershipSection": "Ownership",
     "ownershipHint": "Is this a project, your own company, or a customer company you do work for?",

@@ -34,18 +34,21 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
 
   const [open, setOpen] = useState(false)
   const [confirmText, setConfirmText] = useState("")
+  // 'archive' = deactivate (keeps history); 'purge' = permanent delete (empty spaces only)
+  const [mode, setMode] = useState<"archive" | "purge">("archive")
 
   const locked = !!space.isDefault || !!space.isRemote
   const taskCount = space._count?.tasks ?? 0
   const canDelete = confirmText.trim() === space.name
 
   const mutation = useMutation({
-    mutationFn: () => locationsApi.delete(space.id),
+    mutationFn: () => (mode === "purge" ? locationsApi.purge(space.id) : locationsApi.delete(space.id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] })
-      notify.success(t("locations.danger.deleted"))
+      notify.success(mode === "purge" ? t("locations.toast.purged", "Space permanently deleted") : t("locations.danger.deleted"))
       router.push("/locations")
     },
+    // For purge the server names exactly what blocks deletion (tasks, attendance, …).
     onError: (err: Error) => notify.error(err.message || t("locations.danger.deleteFailed")),
   })
 
@@ -79,6 +82,7 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
             className="shrink-0"
             disabled={locked}
             onClick={() => {
+              setMode("archive")
               setConfirmText("")
               setOpen(true)
             }}
@@ -87,21 +91,54 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
             {t("locations.danger.deleteButton")}
           </Button>
         </div>
+
+        {/* Permanent delete — empty spaces only (server-guarded). */}
+        <div className="mt-3 flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="pr-4">
+            <p className="text-sm font-medium text-foreground">{t("locations.purgeSpace", "Delete space permanently")}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t("locations.danger.purgeHint", "Removes the space forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.")}
+            </p>
+          </div>
+          <Button
+            variant="destructive"
+            className="shrink-0"
+            disabled={locked}
+            onClick={() => {
+              setMode("purge")
+              setConfirmText("")
+              setOpen(true)
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {t("locations.purge", "Delete permanently")}
+          </Button>
+        </div>
       </CardContent>
 
       <Dialog open={open} onOpenChange={(o) => !mutation.isPending && setOpen(o)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("locations.danger.dialogTitle", { name: space.name })}</DialogTitle>
-            <DialogDescription>{t("locations.danger.dialogDesc")}</DialogDescription>
+            <DialogTitle>
+              {mode === "purge"
+                ? t("locations.purgeSpace", "Delete space permanently")
+                : t("locations.danger.dialogTitle", { name: space.name })}
+            </DialogTitle>
+            <DialogDescription>
+              {mode === "purge"
+                ? t("locations.danger.purgeDialogDesc", "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead.")
+                : t("locations.danger.dialogDesc")}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-1">
-            <p className="text-sm text-muted-foreground">
-              {taskCount > 0
-                ? t("locations.danger.tasksMoved", { count: taskCount })
-                : t("locations.danger.tasksNone")}
-            </p>
+            {mode === "archive" && (
+              <p className="text-sm text-muted-foreground">
+                {taskCount > 0
+                  ? t("locations.danger.tasksMoved", { count: taskCount })
+                  : t("locations.danger.tasksNone")}
+              </p>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="danger-confirm">
                 {t("locations.danger.confirmLabel", { name: space.name })}
@@ -130,6 +167,8 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {t("locations.danger.deleting")}
                 </>
+              ) : mode === "purge" ? (
+                t("locations.purge", "Delete permanently")
               ) : (
                 t("locations.danger.confirmButton")
               )}

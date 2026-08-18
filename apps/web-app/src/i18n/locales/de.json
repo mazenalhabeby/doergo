@@ -3332,7 +3332,9 @@
       "confirmButton": "Bereich löschen",
       "deleting": "Wird gelöscht…",
       "deleted": "Bereich gelöscht",
-      "deleteFailed": "Bereich konnte nicht gelöscht werden"
+      "deleteFailed": "Bereich konnte nicht gelöscht werden",
+      "purgeHint": "Entfernt den Space für immer. Nur möglich, solange er keine Aufgaben, Zeiterfassungen oder Schichten enthält. Dies kann nicht rückgängig gemacht werden.",
+      "purgeDialogDesc": "Dies entfernt den Space dauerhaft. Es funktioniert nur, solange der Space keine Aufgaben, Zeiterfassungen oder Schichten enthält — andernfalls archivieren Sie ihn."
     },
     "ownershipSection": "Zugehörigkeit",
     "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?",
