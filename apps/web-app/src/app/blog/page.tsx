@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts, formatPostDate } from "@/lib/blog";
+import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteFooter } from "@/components/marketing/site-footer";
 
 const DISPLAY = "font-[family:var(--font-familjen)]";
 const MONO = "font-[family:var(--font-martian)]";
@@ -19,18 +21,14 @@ export default async function BlogIndexPage() {
   const posts = await getAllPosts();
 
   return (
-    <main className={`min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>
-      {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-5 sm:px-10">
-        <Link href="/" className="text-[15px] font-semibold tracking-tight text-[#f2f2f0]">HBCField</Link>
-        <Link href="/#pricing" className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-[#f2f2f0]`}>
-          Start free trial
-        </Link>
-      </div>
+    // `dark` wrapper: the blog is always dark, so the shared nav/footer's
+    // theme tokens must resolve to the dark palette regardless of user theme.
+    <main className={`dark min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>
+      <SiteNav active="blog" />
 
       <div className="mx-auto max-w-[1100px]">
-        {/* Hero */}
-        <header className="px-6 pb-14 pt-14 sm:px-10 sm:pb-20 sm:pt-20">
+        {/* Hero (pt clears the fixed navbar) */}
+        <header className="px-6 pb-14 pt-28 sm:px-10 sm:pb-20 sm:pt-36">
           <div className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-white/35`}>Blog</div>
           <h1 className={`mt-4 text-[clamp(2rem,6vw,4rem)] font-normal leading-[1.03] tracking-[-0.02em] text-[#f2f2f0]`}>
             Field notes
@@ -62,16 +60,9 @@ export default async function BlogIndexPage() {
             <p className="px-6 py-16 text-white/50 sm:px-10">No posts yet — check back soon.</p>
           )}
         </section>
-
-        {/* Footer */}
-        <footer className={`${MONO} px-6 py-10 text-[11px] text-white/35 sm:px-10`}>
-          <Link href="/" className="hover:text-white/60">HBCField</Link>
-          <span className="mx-2">·</span>
-          <Link href="/industries" className="hover:text-white/60">Industries</Link>
-          <span className="mx-2">·</span>
-          <Link href="/help" className="hover:text-white/60">Help Center</Link>
-        </footer>
       </div>
+
+      <SiteFooter />
     </main>
   );
 }
