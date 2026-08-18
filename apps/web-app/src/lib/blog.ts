@@ -25,6 +25,8 @@ export interface BlogPost {
   date: string;
   author: string;
   tags: string[];
+  /** Optional cover image path under /public, e.g. /images/blog/my-post/cover.jpg */
+  cover?: string;
   readingMinutes: number;
   /** Markdown body (frontmatter stripped) */
   content: string;
@@ -53,6 +55,7 @@ function toPost(slug: string, raw: string): BlogPost {
     date: meta.date ?? "1970-01-01",
     author: meta.author ?? "HBCField Team",
     tags: (meta.tags ?? "").split(",").map((t) => t.trim()).filter(Boolean),
+    cover: meta.cover || undefined,
     readingMinutes: Math.max(1, Math.round(words / 220)),
     content: body.trim(),
   };

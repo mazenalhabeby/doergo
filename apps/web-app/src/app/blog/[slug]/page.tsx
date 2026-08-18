@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       description: post.description,
       publishedTime: post.date,
       url: `${SITE_URL}/blog/${post.slug}`,
+      ...(post.cover ? { images: [{ url: `${SITE_URL}${post.cover}` }] } : {}),
     },
   };
 }
@@ -81,6 +82,14 @@ export default async function BlogPostPage({ params }: Params) {
             {formatPostDate(post.date)} · {post.readingMinutes} min read · {post.author}
           </div>
         </header>
+
+        {/* Cover image */}
+        {post.cover && (
+          <div className="px-6 pt-8 sm:px-10">
+            {/* eslint-disable-next-line @next/next/no-img-element -- author-provided static asset */}
+            <img src={post.cover} alt="" className="w-full rounded-xl border border-white/[0.08]" />
+          </div>
+        )}
 
         {/* Body */}
         <article className="px-6 pb-8 pt-6 sm:px-10">

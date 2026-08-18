@@ -22,6 +22,15 @@ export function BlogMarkdown({ children }: { children: string }) {
           <blockquote className="my-6 border-l-2 border-white/20 pl-5 text-white/60 [&_p]:my-0" {...p} />
         ),
         code: (p) => <code className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[14px] text-[#f2f2f0]" {...p} />,
+        img: ({ src, alt }) => (
+          // eslint-disable-next-line @next/next/no-img-element -- markdown images are author-provided static assets
+          <img
+            src={typeof src === "string" ? src : undefined}
+            alt={alt ?? ""}
+            loading="lazy"
+            className="my-8 w-full rounded-xl border border-white/[0.08]"
+          />
+        ),
         a: ({ href, ...rest }) => {
           const internal = href?.startsWith("/");
           return internal ? (
