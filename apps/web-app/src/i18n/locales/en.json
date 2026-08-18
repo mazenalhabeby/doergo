@@ -3288,7 +3288,9 @@
       "memberRemoveFailed": "Failed to remove member",
       "created": "Space created",
       "createFailed": "Failed to create space",
-      "resyncAllDone": "Re-synced {{updated}} task(s) across {{spaces}} space(s)"
+      "resyncAllDone": "Re-synced {{updated}} task(s) across {{spaces}} space(s)",
+      "purged": "Space permanently deleted",
+      "purgeFailed": "Could not delete space"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Select workflow...",
@@ -3333,7 +3335,11 @@
       "deleteFailed": "Could not delete the space"
     },
     "ownershipSection": "Ownership",
-    "ownershipHint": "Is this a project, your own company, or a customer company you do work for?"
+    "ownershipHint": "Is this a project, your own company, or a customer company you do work for?",
+    "purgeSpace": "Delete space permanently",
+    "purge": "Delete permanently",
+    "purgeConfirmBefore": "This permanently removes ",
+    "purgeConfirmAfter": ". Only possible while the space has no tasks, attendance or shift history — otherwise deactivate it instead. This cannot be undone."
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",

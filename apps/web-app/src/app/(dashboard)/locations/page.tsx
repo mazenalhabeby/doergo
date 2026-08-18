@@ -8,6 +8,7 @@ import {
   Loader2,
   Plus,
   MoreHorizontal,
+  Trash2,
   Users,
   Settings2,
   ToggleRight,
@@ -87,6 +88,7 @@ export default function SpacesPage() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<CompanyLocation | null>(null)
+  const [purgeTarget, setPurgeTarget] = useState<CompanyLocation | null>(null)
   const [resyncAllOpen, setResyncAllOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
@@ -111,6 +113,17 @@ export default function SpacesPage() {
       notify.success(t("locations.toast.deactivated"))
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.deactivateFailed")),
+  })
+
+  const purgeMutation = useMutation({
+    mutationFn: (id: string) => locationsApi.purge(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["locations"] })
+      setPurgeTarget(null)
+      notify.success(t("locations.toast.purged", "Space permanently deleted"))
+    },
+    // Server explains exactly what blocks deletion (tasks, attendance, …).
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.purgeFailed", "Could not delete space")),
   })
 
   const reactivateMutation = useMutation({
@@ -213,6 +226,7 @@ export default function SpacesPage() {
                 isAdmin={isAdmin}
                 index={index}
                 onDelete={() => setDeleteTarget(location)}
+                onPurge={() => setPurgeTarget(location)}
                 onReactivate={() => reactivateMutation.mutate(location.id)}
                 onViewTasks={() => router.push(`/tasks?space=${location.id}`)}
                 onOpenSettings={() => router.push(`/locations/${location.id}`)}
@@ -247,6 +261,27 @@ export default function SpacesPage() {
                 onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
               >
                 {t("locations.deactivate")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Permanent delete confirmation */}
+        <AlertDialog open={!!purgeTarget} onOpenChange={(open) => { if (!open) setPurgeTarget(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("locations.purgeSpace", "Delete space permanently")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("locations.purgeConfirmBefore", "This permanently removes ")}<strong>{purgeTarget?.name}</strong>{t("locations.purgeConfirmAfter", ". Only possible while the space has no tasks, attendance or shift history — otherwise deactivate it instead. This cannot be undone.")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => purgeTarget && purgeMutation.mutate(purgeTarget.id)}
+              >
+                {t("locations.purge", "Delete permanently")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -311,6 +346,7 @@ const SpaceCard = memo(function SpaceCard({
   isAdmin,
   index,
   onDelete,
+  onPurge,
   onReactivate,
   onViewTasks,
   onOpenSettings,
@@ -320,6 +356,7 @@ const SpaceCard = memo(function SpaceCard({
   isAdmin: boolean
   index: number
   onDelete: () => void
+  onPurge: () => void
   onReactivate: () => void
   onViewTasks: () => void
   onOpenSettings: () => void
@@ -463,6 +500,12 @@ const SpaceCard = memo(function SpaceCard({
                   <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
                     <ToggleRight className="mr-2 h-4 w-4" />
                     {t("locations.reactivate")}
+                  </DropdownMenuItem>
+                )}
+                {!space.isDefault && !space.isRemote && (
+                  <DropdownMenuItem onClick={onPurge} className="text-red-600 focus:text-red-600">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t("locations.purge", "Delete permanently")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

@@ -36,6 +36,8 @@ export class LocationsProcessor extends WorkerHost {
 
       case LOCATION_JOB_TYPES.DELETE:
         return this.locationsService.remove(data);
+      case LOCATION_JOB_TYPES.PURGE:
+        return this.locationsService.purge(data);
 
       // Member assignment operations
       case LOCATION_JOB_TYPES.ASSIGN_TECHNICIAN:

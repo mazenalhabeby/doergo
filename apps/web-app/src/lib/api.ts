@@ -3621,6 +3621,13 @@ export const locationsApi = {
     return response.data?.data;
   },
 
+  /** Permanent delete — server rejects spaces that still carry history. */
+  purge: async (id: string) => {
+    const response = await api.delete<{ success: boolean; data: { id: string } }>(`/locations/${id}/permanent`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   // Member assignments
   getAssignedMembers: async (locationId: string) => {
     const response = await api.get<{ success: boolean; data: LocationAssignment[] }>(`/locations/${locationId}/members`);
