@@ -3192,11 +3192,6 @@
     "newSpace": "Neuer Bereich",
     "createSpace": "Bereich erstellen",
     "createDescription": "Richten Sie einen neuen Arbeitsbereich mit eigenem Workflow und eigenen Modulen ein.",
-    "deactivateSpace": "Bereich deaktivieren",
-    "deactivateConfirmBefore": "Möchten Sie ",
-    "deactivateConfirmAfter": " wirklich deaktivieren? Mitarbeiter können an diesem Standort nicht mehr einstempeln. Sie können ihn später wieder aktivieren.",
-    "deactivate": "Deaktivieren",
-    "reactivate": "Reaktivieren",
     "configure": "Konfigurieren",
     "viewTasks": "Aufgaben anzeigen",
     "memberCount_one": "{{count}} Mitglied",
@@ -3210,8 +3205,8 @@
     "address": "Adresse",
     "geofenceRadius": "Geofence-Radius",
     "timezone": "Zeitzone",
-    "activeLabel": "Aktiv",
-    "activeHint": "Mitarbeiter können in diesem Bereich einstempeln",
+    "activeLabel": "Space-Status",
+    "activeHint": "Archivierte Spaces werden aus Auswahllisten ausgeblendet; der gesamte Verlauf bleibt erhalten.",
     "nameRequired": "Name ist erforderlich",
     "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu. Wählen Sie eine Voreinstellung und passen Sie sie an.",
     "presets": "Voreinstellungen",
@@ -3270,10 +3265,6 @@
       "billableRateHint": "Berechnet automatisch die Arbeitspositionen auf den Rechnungen dieses Kunden. Leer lassen, um den Organisationsstandard zu verwenden."
     },
     "toast": {
-      "deactivated": "Bereich deaktiviert",
-      "deactivateFailed": "Bereich konnte nicht deaktiviert werden",
-      "reactivated": "Bereich reaktiviert",
-      "reactivateFailed": "Reaktivierung fehlgeschlagen",
       "updated": "Bereich aktualisiert",
       "updateFailed": "Aktualisierung fehlgeschlagen",
       "modulesUpdated": "Module aktualisiert",
@@ -3290,7 +3281,11 @@
       "createFailed": "Bereich konnte nicht erstellt werden",
       "resyncAllDone": "{{updated}} Aufgabe(n) in {{spaces}} Bereich(en) neu abgeglichen",
       "purged": "Space endgültig gelöscht",
-      "purgeFailed": "Space konnte nicht gelöscht werden"
+      "purgeFailed": "Space konnte nicht gelöscht werden",
+      "archived": "Space archiviert",
+      "archiveFailed": "Space konnte nicht archiviert werden",
+      "restored": "Space wiederhergestellt",
+      "restoreFailed": "Space konnte nicht wiederhergestellt werden"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Workflow auswählen...",
@@ -3340,8 +3335,9 @@
     "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?",
     "purgeSpace": "Space endgültig löschen",
     "purge": "Endgültig löschen",
-    "purgeConfirmBefore": "Dies entfernt ",
-    "purgeConfirmAfter": " dauerhaft. Nur möglich, solange der Space keine Aufgaben, Zeiterfassungen oder Schichten enthält — andernfalls deaktivieren Sie ihn. Dies kann nicht rückgängig gemacht werden."
+    "archiveAction": "Archivieren",
+    "restoreAction": "Wiederherstellen",
+    "archived": "Archiviert"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

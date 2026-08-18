@@ -156,7 +156,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                 ) : (
                   <Badge variant="secondary" className="gap-1 text-muted-foreground">
                     <PauseCircle className="h-3 w-3" />
-                    {t("common.inactive")}
+                    {t("locations.archived", "Archived")}
                   </Badge>
                 )}
               </div>

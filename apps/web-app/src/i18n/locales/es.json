@@ -3175,11 +3175,6 @@
     "newSpace": "Nuevo espacio",
     "createSpace": "Crear espacio",
     "createDescription": "Configura un nuevo espacio de trabajo con su propio flujo y módulos.",
-    "deactivateSpace": "Desactivar espacio",
-    "deactivateConfirmBefore": "¿Seguro que quieres desactivar ",
-    "deactivateConfirmAfter": "? Los empleados ya no podrán registrar entrada en esta ubicación. Puedes reactivarlo más tarde.",
-    "deactivate": "Desactivar",
-    "reactivate": "Reactivar",
     "configure": "Configurar",
     "viewTasks": "Ver tareas",
     "memberCount_one": "{{count}} miembro",
@@ -3193,8 +3188,8 @@
     "address": "Dirección",
     "geofenceRadius": "Radio de geocerca",
     "timezone": "Zona horaria",
-    "activeLabel": "Activo",
-    "activeHint": "Los empleados pueden registrar entrada en este espacio",
+    "activeLabel": "Estado del espacio",
+    "activeHint": "Los espacios archivados se ocultan de los selectores; todo el historial se conserva.",
     "nameRequired": "El nombre es obligatorio",
     "modulesIntro": "Los módulos agregan funciones opcionales a las tareas de este espacio. Elige un preajuste y luego ajústalo.",
     "presets": "Preajustes",
@@ -3253,10 +3248,6 @@
       "billableRateHint": "Calcula automáticamente las líneas de mano de obra en las facturas de este cliente. Déjalo vacío para usar el valor predeterminado de la organización."
     },
     "toast": {
-      "deactivated": "Espacio desactivado",
-      "deactivateFailed": "No se pudo desactivar el espacio",
-      "reactivated": "Espacio reactivado",
-      "reactivateFailed": "No se pudo reactivar",
       "updated": "Espacio actualizado",
       "updateFailed": "No se pudo actualizar",
       "modulesUpdated": "Módulos actualizados",
@@ -3273,7 +3264,11 @@
       "createFailed": "No se pudo crear el espacio",
       "resyncAllDone": "{{updated}} tarea(s) resincronizada(s) en {{spaces}} espacio(s)",
       "purged": "Espacio eliminado permanentemente",
-      "purgeFailed": "No se pudo eliminar el espacio"
+      "purgeFailed": "No se pudo eliminar el espacio",
+      "archived": "Espacio archivado",
+      "archiveFailed": "No se pudo archivar el espacio",
+      "restored": "Espacio restaurado",
+      "restoreFailed": "No se pudo restaurar el espacio"
     },
     "workflowLabel": "Flujo",
     "selectWorkflow": "Selecciona un flujo...",
@@ -3323,8 +3318,9 @@
     "ownershipHint": "¿Es un proyecto, tu propia empresa o una empresa cliente para la que trabajas?",
     "purgeSpace": "Eliminar espacio permanentemente",
     "purge": "Eliminar permanentemente",
-    "purgeConfirmBefore": "Esto elimina permanentemente ",
-    "purgeConfirmAfter": ". Solo es posible mientras el espacio no tenga tareas, asistencia ni turnos; de lo contrario, desactívelo. Esta acción no se puede deshacer."
+    "archiveAction": "Archivar",
+    "restoreAction": "Restaurar",
+    "archived": "Archivado"
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

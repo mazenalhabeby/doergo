@@ -3192,11 +3192,6 @@
     "newSpace": "New Space",
     "createSpace": "Create Space",
     "createDescription": "Set up a new workspace with its own workflow and modules.",
-    "deactivateSpace": "Deactivate Space",
-    "deactivateConfirmBefore": "Are you sure you want to deactivate ",
-    "deactivateConfirmAfter": "? Employees will no longer be able to clock in at this location. You can reactivate it later.",
-    "deactivate": "Deactivate",
-    "reactivate": "Reactivate",
     "configure": "Configure",
     "viewTasks": "View Tasks",
     "memberCount_one": "{{count}} member",
@@ -3210,8 +3205,8 @@
     "address": "Address",
     "geofenceRadius": "Geofence Radius",
     "timezone": "Timezone",
-    "activeLabel": "Active",
-    "activeHint": "Employees can clock in at this space",
+    "activeLabel": "Space status",
+    "activeHint": "Archived spaces are hidden from pickers; all history is kept.",
     "nameRequired": "Name is required",
     "modulesIntro": "Modules add optional features to this space's tasks. Pick a preset, then fine-tune.",
     "presets": "Presets",
@@ -3270,10 +3265,6 @@
       "billableRateHint": "Auto-prices labor lines on this customer's invoices. Leave empty to use the organization default."
     },
     "toast": {
-      "deactivated": "Space deactivated",
-      "deactivateFailed": "Failed to deactivate space",
-      "reactivated": "Space reactivated",
-      "reactivateFailed": "Failed to reactivate",
       "updated": "Space updated",
       "updateFailed": "Failed to update",
       "modulesUpdated": "Modules updated",
@@ -3290,7 +3281,11 @@
       "createFailed": "Failed to create space",
       "resyncAllDone": "Re-synced {{updated}} task(s) across {{spaces}} space(s)",
       "purged": "Space permanently deleted",
-      "purgeFailed": "Could not delete space"
+      "purgeFailed": "Could not delete space",
+      "archived": "Space archived",
+      "archiveFailed": "Could not archive the space",
+      "restored": "Space restored",
+      "restoreFailed": "Could not restore the space"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Select workflow...",
@@ -3340,8 +3335,9 @@
     "ownershipHint": "Is this a project, your own company, or a customer company you do work for?",
     "purgeSpace": "Delete space permanently",
     "purge": "Delete permanently",
-    "purgeConfirmBefore": "This permanently removes ",
-    "purgeConfirmAfter": ". Only possible while the space has no tasks, attendance or shift history — otherwise deactivate it instead. This cannot be undone."
+    "archiveAction": "Archive",
+    "restoreAction": "Restore",
+    "archived": "Archived"
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",

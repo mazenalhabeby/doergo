@@ -3,11 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Info, Loader2, Trash2 } from "lucide-react"
 
-import { notify } from "@/lib/toast"
-import { locationsApi, type CompanyLocation } from "@/lib/api"
+import { type CompanyLocation } from "@/lib/api"
+import { useSpaceLifecycle } from "../../_hooks/use-space-lifecycle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,7 +29,6 @@ import {
 export function DangerZone({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const router = useRouter()
-  const queryClient = useQueryClient()
 
   const [open, setOpen] = useState(false)
   const [confirmText, setConfirmText] = useState("")
@@ -41,16 +39,10 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
   const taskCount = space._count?.tasks ?? 0
   const canDelete = confirmText.trim() === space.name
 
-  const mutation = useMutation({
-    mutationFn: () => (mode === "purge" ? locationsApi.purge(space.id) : locationsApi.delete(space.id)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
-      notify.success(mode === "purge" ? t("locations.toast.purged", "Space permanently deleted") : t("locations.danger.deleted"))
-      router.push("/locations")
-    },
-    // For purge the server names exactly what blocks deletion (tasks, attendance, …).
-    onError: (err: Error) => notify.error(err.message || t("locations.danger.deleteFailed")),
-  })
+  // Same lifecycle actions as the spaces list — one behavior, one copy (DRY).
+  const done = () => router.push("/locations")
+  const lifecycle = useSpaceLifecycle({ onArchived: done, onPurged: done })
+  const mutation = mode === "purge" ? lifecycle.purge : lifecycle.archive
 
   return (
     <Card className="max-w-3xl border-destructive/40">
@@ -159,7 +151,7 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => mutation.mutate()}
+              onClick={() => mutation.mutate(space.id)}
               disabled={!canDelete || mutation.isPending}
             >
               {mutation.isPending ? (
