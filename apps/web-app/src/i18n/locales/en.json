@@ -903,7 +903,9 @@
       "exampleInField": "In field",
       "exampleJob": "AC unit repair — Downtown",
       "noSpacesTitle": "No spaces assigned yet",
-      "noSpacesDescription": "You haven't been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you."
+      "noSpacesDescription": "You haven't been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you.",
+      "assignSaved": "Team updated",
+      "assignPartial": "{{ok}} saved, {{failed}} failed"
     },
     "employeePanel": {
       "title": "Employee Details",
@@ -1755,9 +1757,23 @@
       "durationColumn": "Duration",
       "locationColumn": "Location",
       "statusColumn": "Status",
-      "inZone": "In Zone",
-      "outOfZone": "Out of Zone",
-      "noRecords": "No attendance records found"
+      "noRecords": "No attendance records found",
+      "state": {
+        "active": "Active",
+        "needsReview": "Needs review",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "autoApproved": "Auto-approved"
+      },
+      "flag": {
+        "missedClockOut": "Missed clock-out",
+        "geofenceIn": "Clock-in outside zone",
+        "geofenceOut": "Clock-out outside zone",
+        "late": "Late",
+        "earlyDeparture": "Left early",
+        "overtime": "Overtime",
+        "unscheduled": "Unscheduled"
+      }
     },
     "locationsTab": {
       "title": "Location Assignments",

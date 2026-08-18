@@ -3,6 +3,14 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@hbcfield/shared'],
+  eslint: {
+    // The web app had NO eslint config until now, so lint never ran and ~250
+    // pre-existing violations accumulated (mostly no-explicit-any / unused
+    // vars / exhaustive-deps). Lint is available as `pnpm lint` and should be
+    // worked down; blocking `next build` on that backlog today would only stop
+    // deploys. Flip this off once the backlog is cleared.
+    ignoreDuringBuilds: true,
+  },
   output: 'standalone',
   poweredByHeader: false,
   images: {

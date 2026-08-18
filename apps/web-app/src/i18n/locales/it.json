@@ -903,7 +903,9 @@
       "exampleInField": "Sul campo",
       "exampleJob": "Riparazione condizionatore — Centro città",
       "noSpacesTitle": "Ancora nessuno spazio assegnato",
-      "noSpacesDescription": "Non è stato aggiunto a nessuno spazio. Controlli la scheda Attività per il lavoro assegnato, oppure chieda al suo responsabile di aggiungerla."
+      "noSpacesDescription": "Non è stato aggiunto a nessuno spazio. Controlli la scheda Attività per il lavoro assegnato, oppure chieda al suo responsabile di aggiungerla.",
+      "assignSaved": "Team aggiornato",
+      "assignPartial": "{{ok}} salvati, {{failed}} non riusciti"
     },
     "employeePanel": {
       "title": "Dettagli dipendente",
@@ -956,7 +958,8 @@
       "onTheClock": "Timbrato",
       "offDuty": "Fuori servizio",
       "onTask": "In attività",
-      "offShift": "Fuori turno"
+      "offShift": "Fuori turno",
+      "atSpace": "Presso {{space}}"
     },
     "pending": {
       "worker": "Lavoratore",
@@ -1754,9 +1757,23 @@
       "durationColumn": "Durata",
       "locationColumn": "Sede",
       "statusColumn": "Stato",
-      "inZone": "Nell'area",
-      "outOfZone": "Fuori dall'area",
-      "noRecords": "Nessuna registrazione di presenza trovata"
+      "noRecords": "Nessuna registrazione di presenza trovata",
+      "state": {
+        "active": "Attivo",
+        "needsReview": "Da verificare",
+        "approved": "Approvato",
+        "rejected": "Rifiutato",
+        "autoApproved": "Approvata automaticamente"
+      },
+      "flag": {
+        "missedClockOut": "Uscita mancante",
+        "geofenceIn": "Entrata fuori area",
+        "geofenceOut": "Uscita fuori area",
+        "late": "In ritardo",
+        "earlyDeparture": "Uscito prima",
+        "overtime": "Straordinario",
+        "unscheduled": "Non pianificato"
+      }
     },
     "locationsTab": {
       "title": "Assegnazioni di sede",

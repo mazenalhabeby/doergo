@@ -56,6 +56,24 @@ export interface WorkspaceBoxProps {
   className?: string
 }
 
+/**
+ * Members previewed on a COLLAPSED card, in display order: clocked in (on-site,
+ * in field, remote) first, then online-but-off-shift. Offline off-duty members
+ * are deliberately excluded — they only appear inside the expanded card.
+ *
+ * Exported because the grid sorts on it: a card with nobody here renders the
+ * "All quiet today" ghost, and those sink below the spaces that have someone.
+ * Keeping it in one place stops the two from drifting apart.
+ */
+export function previewMembers(box: Pick<WorkspaceBoxProps, "people" | "onRoadPeople" | "remotePeople" | "offShiftPeople">): PersonNodeProps[] {
+  return [
+    ...box.people,
+    ...(box.onRoadPeople ?? []),
+    ...(box.remotePeople ?? []),
+    ...(box.offShiftPeople ?? []),
+  ]
+}
+
 type ViewMode = "normal" | "expanded" | "collapsed"
 
 type SubPanel = "inField" | "offSite" | "offShift" | "offDuty" | null
@@ -401,7 +419,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
         // Show clocked-in people first, then off-shift (online, reachable).
         // Offline (off-duty) members are NOT shown here — they live only in the
         // expanded Off Duty group. Ring = clocked in, dot = availability.
-        const allActive = [...people, ...onRoadPeople, ...remotePeople, ...offShiftPeople]
+        const allActive = previewMembers({ people, onRoadPeople, remotePeople, offShiftPeople })
         const allEmpty = allActive.length === 0
         // Bounded, UNIFORM preview: show at most 12 members (4 per row × 3 rows).
         // Any overflow becomes a centered "+N more" pill. Combined with the card's

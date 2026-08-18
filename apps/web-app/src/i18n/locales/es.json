@@ -903,7 +903,9 @@
       "exampleInField": "En campo",
       "exampleJob": "Reparar aire acondicionado — Centro",
       "noSpacesTitle": "Aún no tienes espacios asignados",
-      "noSpacesDescription": "Todavía no te han agregado a un espacio. Revisa la pestaña Tareas para ver tu trabajo asignado o pide a tu responsable que te agregue."
+      "noSpacesDescription": "Todavía no te han agregado a un espacio. Revisa la pestaña Tareas para ver tu trabajo asignado o pide a tu responsable que te agregue.",
+      "assignSaved": "Equipo actualizado",
+      "assignPartial": "{{ok}} guardados, {{failed}} fallidos"
     },
     "employeePanel": {
       "title": "Detalles del empleado",
@@ -956,7 +958,8 @@
       "onTheClock": "Fichado",
       "offDuty": "Fuera de servicio",
       "onTask": "En tarea",
-      "offShift": "Fuera de turno"
+      "offShift": "Fuera de turno",
+      "atSpace": "En {{space}}"
     },
     "pending": {
       "worker": "Trabajador",
@@ -1754,9 +1757,23 @@
       "durationColumn": "Duración",
       "locationColumn": "Ubicación",
       "statusColumn": "Estado",
-      "inZone": "En la zona",
-      "outOfZone": "Fuera de la zona",
-      "noRecords": "No se encontraron registros de asistencia"
+      "noRecords": "No se encontraron registros de asistencia",
+      "state": {
+        "active": "Activo",
+        "needsReview": "Requiere revisión",
+        "approved": "Aprobado",
+        "rejected": "Rechazado",
+        "autoApproved": "Aprobado automáticamente"
+      },
+      "flag": {
+        "missedClockOut": "Sin salida registrada",
+        "geofenceIn": "Entrada fuera de zona",
+        "geofenceOut": "Salida fuera de zona",
+        "late": "Tarde",
+        "earlyDeparture": "Salió antes",
+        "overtime": "Horas extra",
+        "unscheduled": "Sin programar"
+      }
     },
     "locationsTab": {
       "title": "Asignaciones de ubicación",

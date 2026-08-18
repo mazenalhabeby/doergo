@@ -3580,7 +3580,10 @@ export interface UpdateAssignmentInput {
 }
 
 export const locationsApi = {
-  list: async (params?: { page?: number; limit?: number; includeInactive?: boolean; search?: string; kind?: string }) => {
+  // NB: no `search` option — GET /locations exposes page/limit/includeInactive/kind
+  // only. It used to be in this signature but was never forwarded, so callers
+  // passing it got unfiltered results with no error.
+  list: async (params?: { page?: number; limit?: number; includeInactive?: boolean; kind?: string }) => {
     const endpoint = buildUrlWithQuery('/locations', {
       page: params?.page,
       limit: params?.limit,
