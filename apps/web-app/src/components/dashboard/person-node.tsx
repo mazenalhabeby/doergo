@@ -71,7 +71,9 @@ export const PersonNode = React.memo(function PersonNode({
       onKeyDown={isClickable ? handleKeyDown : undefined}
       className={cn(
         "flex flex-col items-center",
-        "gap-1.5 w-[84px]", // fixed size — no cqw; wide enough for longer status pills
+        // Width lives in one place: --ws-node in globals.css, the same value the
+        // card builds its columns from. Wide enough for the longest status pill.
+        "gap-1.5 ws-node",
         dimmed && "opacity-30",
         isClickable && "cursor-pointer hover:opacity-80 transition-opacity",
         className,

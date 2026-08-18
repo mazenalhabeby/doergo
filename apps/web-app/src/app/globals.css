@@ -353,3 +353,43 @@
     border: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Workspace card geometry — ONE source of truth.
+   Read by the live card (workspace-box.tsx), its person nodes
+   (person-node.tsx) and the dashboard loading skeleton.
+
+   The card used to compute its own pixel width in JS from an assumed 76px
+   column while the node was 84px, so every card with two or more people wrapped
+   a column early: a 191px two-person card stacked both people vertically and
+   left ~107px blank. Nothing predicts a width now — the card is `max-content`
+   over a grid of real node columns, so the browser measures what it actually
+   holds and the two can never disagree again.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Node width. Wide enough for the longest status pill ("Unscheduled"). */
+  --ws-node: 84px;
+  --ws-node-gap: 8px;
+  /* Floor, so an empty card matches a one-person card and keeps
+     "All quiet today" on a single line. */
+  --ws-card-min: 140px;
+}
+
+.ws-node { width: var(--ws-node); }
+
+.ws-card {
+  width: max-content;
+  min-width: var(--ws-card-min);
+}
+
+/* --ws-cols is set per card from its head-count, capped at MAX_COLS. */
+.ws-card-nodes {
+  display: grid;
+  grid-template-columns: repeat(var(--ws-cols, 1), var(--ws-node));
+  gap: var(--ws-node-gap);
+  justify-content: center;
+  align-content: center;
+}
+
+/* Overflow pill spans whatever the row width happens to be. */
+.ws-card-more { grid-column: 1 / -1; }

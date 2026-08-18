@@ -1,4 +1,4 @@
-import { WORKSPACE_CARD, previewMembers, workspaceCardWidth } from '../workspace-box'
+import { WORKSPACE_CARD, previewMembers, workspaceCardCols } from '../workspace-box'
 
 /**
  * `previewMembers` is the single definition of "who shows on a collapsed card".
@@ -35,27 +35,39 @@ describe('previewMembers', () => {
   })
 })
 
-describe('workspaceCardWidth', () => {
-  it('gives an empty and a one-person card the same width', () => {
-    expect(workspaceCardWidth(0)).toBe(workspaceCardWidth(1))
+describe('workspaceCardCols', () => {
+  it('gives an empty and a one-person card the same single column', () => {
+    expect(workspaceCardCols(0)).toBe(1)
+    expect(workspaceCardCols(1)).toBe(1)
   })
 
-  it('never goes below the minimum that keeps the quiet label on one line', () => {
-    expect(workspaceCardWidth(0)).toBe(WORKSPACE_CARD.MIN_W)
+  it('grows one column per person up to the cap', () => {
+    expect([1, 2, 3, 4].map(workspaceCardCols)).toEqual([1, 2, 3, 4])
   })
 
-  it('grows one node column at a time', () => {
-    const { NODE_W, NODE_GAP, PAD_X } = WORKSPACE_CARD
-    expect(workspaceCardWidth(3)).toBe(3 * NODE_W + 2 * NODE_GAP + PAD_X)
+  it('stops at the cap, so no card runs away horizontally', () => {
+    expect(workspaceCardCols(WORKSPACE_CARD.MAX_COLS + 7)).toBe(WORKSPACE_CARD.MAX_COLS)
   })
 
-  it('stops growing past the column cap, so no card runs away', () => {
-    const capped = workspaceCardWidth(WORKSPACE_CARD.MAX_COLS)
-    expect(workspaceCardWidth(WORKSPACE_CARD.MAX_COLS + 7)).toBe(capped)
+  it('is monotonic', () => {
+    const cols = [0, 1, 2, 3, 4, 5, 12].map(workspaceCardCols)
+    expect(cols).toEqual([...cols].sort((a, b) => a - b))
   })
 
-  it('is monotonic up to the cap', () => {
-    const widths = [1, 2, 3, 4].map(workspaceCardWidth)
-    expect(widths).toEqual([...widths].sort((a, b) => a - b))
+  it('never returns zero columns, which would collapse the grid', () => {
+    expect(workspaceCardCols(-3)).toBe(1)
+  })
+
+  /**
+   * The width itself is deliberately NOT computed in TS any more: the card is
+   * max-content over these columns, so the browser measures it. A JS formula
+   * predicting a width from an assumed column size is exactly what let the card
+   * and its nodes disagree.
+   */
+  it('exposes no width formula to drift from the CSS', () => {
+    const geometry = WORKSPACE_CARD as Record<string, unknown>
+    expect(geometry.NODE_W).toBeUndefined()
+    expect(geometry.PAD_X).toBeUndefined()
+    expect(geometry.MIN_W).toBeUndefined()
   })
 })
