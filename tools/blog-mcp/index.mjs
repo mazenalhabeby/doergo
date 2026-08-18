@@ -10,7 +10,8 @@
  *   HBCFIELD_API_URL       (optional) — defaults to https://hbcfield.com/api/v1
  */
 import { readFile } from "node:fs/promises";
-import { extname } from "node:path";
+import { dirname, extname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -52,6 +53,18 @@ async function resolveId(ref) {
   if (!hit) throw new Error(`No post found with id or slug "${ref}"`);
   return hit.id;
 }
+
+server.tool(
+  "get_product_context",
+  "READ THIS FIRST before writing any blog post: the full HBCField product and feature reference plus the blog's writing rules (audience, tone, structure, honesty rules, tags, SEO). Everything claimed about HBCField in a post must be covered by this document.",
+  {},
+  async () => {
+    try {
+      const doc = await readFile(join(dirname(fileURLToPath(import.meta.url)), "PRODUCT.md"), "utf8");
+      return { content: [{ type: "text", text: doc }] };
+    } catch (e) { return err(e); }
+  },
+);
 
 server.tool(
   "list_blog_posts",
@@ -99,7 +112,7 @@ server.tool(
 
 server.tool(
   "create_blog_post",
-  "Create a blog post on hbcfield.com/blog. Content is Markdown (## headings, lists, ![alt](imageUrl)). Upload images first with upload_blog_image and reference the returned url. Publishes immediately unless status=DRAFT; the live site picks it up within ~5 minutes.",
+  "Create a blog post on hbcfield.com/blog. Call get_product_context first to load the product facts and writing rules. Content is Markdown (## headings, lists, ![alt](imageUrl); no H1 — the title renders as H1). Upload images first with upload_blog_image and reference the returned url. Publishes immediately unless status=DRAFT; the live site picks it up within ~5 minutes.",
   {
     title: z.string(),
     description: z.string().describe("One-sentence summary for meta description and the list page"),
