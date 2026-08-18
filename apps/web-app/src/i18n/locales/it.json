@@ -1410,8 +1410,8 @@
       "goalPlaceholder": "Cosa vogliamo ottenere?",
       "completeTitle": "Completare “{{name}}”?",
       "completeDescription": "Completa questo sprint e, facoltativamente, sposta le attività incomplete.",
-      "moveRemaining_one": "Sposta {{count}} attività rimanente",
-      "moveRemaining_other": "Sposta {{count}} attività rimanenti",
+      "moveRemaining_one": "Sposta 1 attività non completata",
+      "moveRemaining_other": "Sposta {{count}} attività non completate",
       "tasksMovedToSprint": "Le attività saranno spostate in “{{name}}”",
       "tasksMovedToBacklog": "Le attività saranno spostate nel backlog",
       "allComplete": "Tutte le attività di questo sprint sono complete. Ottimo lavoro!",
@@ -1436,7 +1436,10 @@
       "title": "Modifica attività",
       "description": "Aggiornare i dettagli dell'attività qui sotto.",
       "titlePlaceholder": "Titolo dell'attività...",
-      "descriptionPlaceholder": "Descrivere il problema..."
+      "descriptionPlaceholder": "Descrivere il problema...",
+      "flow": "Flusso",
+      "flowSimple": "Flusso semplice",
+      "flowHint": "Cambiare il flusso aggiorna le fasi dell'attività. Il suo stato passa alla prima fase del nuovo flusso se quella attuale non esiste lì."
     },
     "timeline": {
       "startLabel": "Inizio: {{date}}",

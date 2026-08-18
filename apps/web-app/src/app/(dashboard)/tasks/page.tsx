@@ -27,6 +27,12 @@ import { useSpaceWorkflow } from "@/hooks/use-space-modules"
 import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Phase, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
+import {
+  TasksViewSkeleton,
+  VIEW_MODE_STORAGE_KEY,
+  readStoredViewMode,
+  type TaskViewMode,
+} from "./_components/tasks-skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -101,9 +107,9 @@ const FALLBACK_STATUS_TABS: StatusTabGroup[] = [
   { key: "canceled", label: "Canceled", dotColor: "#94A3B8", statuses: ["CANCELED"] },
 ]
 
-type ViewMode = "table" | "board" | "schedule"
+// ViewMode + the storage key live with the skeleton that mirrors them.
+type ViewMode = TaskViewMode
 
-const VIEW_MODE_STORAGE_KEY = "hbcfield-tasks-view-mode"
 const GROUP_BY_STORAGE_KEY = "hbcfield-tasks-group-by"
 const GROUP_BY_OPTIONS: { value: GroupByOption; label: string }[] = [
   { value: "none", label: "None" },
@@ -146,15 +152,10 @@ export default function TasksPage() {
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "all"
   )
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
-      if (stored && ["table", "board", "schedule"].includes(stored)) {
-        return stored as ViewMode
-      }
-    }
-    return "board"
-  })
+  // Same reader the route-level skeleton uses, so the placeholder and the page
+  // always open on the same view.
+  const [viewMode, setViewMode] = useState<ViewMode>(readStoredViewMode)
+
   const [groupBy, setGroupBy] = useState<GroupByOption>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(GROUP_BY_STORAGE_KEY)
@@ -1296,81 +1297,7 @@ export default function TasksPage() {
         )}
 
         {/* Loading State — shimmer skeletons matching each view */}
-        {isLoading && viewMode === "table" && (
-          <div className="bg-card rounded-xl border border-border overflow-hidden animate-in fade-in duration-300">
-            <div className="flex items-center gap-4 px-5 py-3 bg-muted/40 border-b border-border/40">
-              <div className="w-8" />
-              {["w-48", "w-20", "w-28", "w-20", "w-24", "w-8"].map((w, i) => (
-                <div key={i} className={`relative overflow-hidden rounded bg-muted h-3.5 ${w} before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent`} />
-              ))}
-            </div>
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-3.5 border-b border-border/20 last:border-0" style={{ animationDelay: `${i * 50}ms` }}>
-                <div className="relative overflow-hidden rounded-full bg-muted size-4 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                <div className={`relative overflow-hidden rounded bg-muted h-4 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent`} style={{ width: `${140 + (i * 17) % 80}px` }} />
-                <div className="relative overflow-hidden rounded bg-muted h-4 w-14 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                <div className="flex items-center gap-2">
-                  <div className="relative overflow-hidden rounded-full bg-muted size-6 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                  <div className="relative overflow-hidden rounded bg-muted h-3.5 w-20 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                </div>
-                <div className="relative overflow-hidden rounded bg-muted h-3.5 w-16 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                <div className="relative overflow-hidden rounded-full bg-muted h-5 w-20 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {isLoading && viewMode === "board" && (
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 animate-in fade-in duration-300">
-            {["open", "assigned", "active", "blocked", "done"].map((key, i) => (
-              <div key={i} className="flex-shrink-0 w-[280px]">
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <div className="size-2 rounded-full bg-muted" />
-                  <span className="text-sm font-semibold text-muted-foreground/30">{t(`tasks.fallbackColumns.${key}`)}</span>
-                </div>
-                <div className="space-y-2 p-2 rounded-xl bg-muted/50 border border-border/30">
-                  {Array.from({ length: 2 + (i % 2) }).map((_, j) => (
-                    <div key={j} className="p-3.5 rounded-xl bg-card border border-border/50" style={{ animationDelay: `${(i * 3 + j) * 60}ms` }}>
-                      <div className="relative overflow-hidden rounded bg-muted h-4 w-full mb-2.5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                      <div className="relative overflow-hidden rounded bg-muted h-3 w-16 mb-3 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                      <div className="flex justify-between items-center">
-                        <div className="relative overflow-hidden rounded-full bg-muted size-5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                        <div className="relative overflow-hidden rounded bg-muted h-3 w-14 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {isLoading && viewMode === "schedule" && (
-          <div className="bg-card rounded-xl border border-border overflow-hidden animate-in fade-in duration-300">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 bg-muted/20">
-              <div className="relative overflow-hidden rounded bg-muted h-4 w-20 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-              <div className="relative overflow-hidden rounded-lg bg-muted h-7 w-40 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-            </div>
-            <div className="flex" style={{ height: 400 }}>
-              <div className="w-[250px] border-r border-border/40">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 h-[50px] border-b border-border/10">
-                    <div className="relative overflow-hidden rounded-full bg-muted size-1.5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
-                    <div className="relative overflow-hidden rounded bg-muted h-3" style={{ width: `${60 + (i * 13) % 60}px` }} />
-                  </div>
-                ))}
-              </div>
-              <div className="flex-1 p-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-[50px] flex items-center">
-                    <div className="relative overflow-hidden rounded-md bg-muted h-6 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" style={{ width: `${25 + (i * 19) % 45}%`, marginLeft: `${(i * 11) % 30}%` }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
+        {isLoading && <TasksViewSkeleton view={viewMode} />}
 
         {/* Empty State */}
         {!isLoading && !isError && filteredTasks.length === 0 && (

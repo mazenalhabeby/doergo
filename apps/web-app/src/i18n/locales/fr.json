@@ -1410,8 +1410,8 @@
       "goalPlaceholder": "Que voulons-nous accomplir ?",
       "completeTitle": "Terminer « {{name}} » ?",
       "completeDescription": "Terminez ce sprint et déplacez éventuellement les tâches inachevées.",
-      "moveRemaining_one": "Déplacer {{count}} tâche restante",
-      "moveRemaining_other": "Déplacer {{count}} tâches restantes",
+      "moveRemaining_one": "Déplacer 1 tâche inachevée",
+      "moveRemaining_other": "Déplacer {{count}} tâches inachevées",
       "tasksMovedToSprint": "Les tâches seront déplacées vers « {{name}} »",
       "tasksMovedToBacklog": "Les tâches seront déplacées vers le backlog",
       "allComplete": "Toutes les tâches de ce sprint sont terminées. Beau travail !",
@@ -1436,7 +1436,10 @@
       "title": "Modifier la tâche",
       "description": "Mettez à jour les détails de la tâche ci-dessous.",
       "titlePlaceholder": "Titre de la tâche...",
-      "descriptionPlaceholder": "Décrivez le problème..."
+      "descriptionPlaceholder": "Décrivez le problème...",
+      "flow": "Flux",
+      "flowSimple": "Flux simple",
+      "flowHint": "Changer de flux met à jour les étapes de la tâche. Son statut passe à la première étape du nouveau flux si l'actuelle n'y existe pas."
     },
     "timeline": {
       "startLabel": "Début : {{date}}",

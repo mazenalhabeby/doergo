@@ -1,5 +1,5 @@
-import { TasksPageSkeleton } from "@/components/skeletons"
+import { TasksPageLoading } from "./_components/tasks-skeleton"
 
 export default function Loading() {
-  return <TasksPageSkeleton />
+  return <TasksPageLoading />
 }
