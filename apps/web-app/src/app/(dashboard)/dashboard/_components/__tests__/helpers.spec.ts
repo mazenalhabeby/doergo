@@ -6,24 +6,13 @@ import { getTodayString, isClockedIn } from '../helpers'
  * day rolled over — the reason a member's own shift was missing before 02:00.
  */
 describe('getTodayString', () => {
-  const realDate = Date
-
   afterEach(() => {
-    global.Date = realDate
+    jest.useRealTimers()
   })
 
   /** Freeze "now" to a fixed instant, interpreted in the runtime's local zone. */
   function freeze(iso: string) {
-    const fixed = new realDate(iso)
-    class FrozenDate extends realDate {
-      constructor(...args: unknown[]) {
-        super(...(args.length ? (args as []) : [fixed.getTime()]))
-      }
-      static now() {
-        return fixed.getTime()
-      }
-    }
-    global.Date = FrozenDate as unknown as DateConstructor
+    jest.useFakeTimers().setSystemTime(new Date(iso))
   }
 
   it('formats as YYYY-MM-DD', () => {
@@ -34,9 +23,7 @@ describe('getTodayString', () => {
     // 00:30 local on the 18th. In any zone ahead of UTC this instant is still
     // the 17th in UTC — the old implementation returned the 17th here.
     freeze('2026-08-18T00:30:00')
-    const now = new Date()
-    const expected = `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, '0')}-${`${now.getDate()}`.padStart(2, '0')}`
-    expect(getTodayString()).toBe(expected)
+    expect(getTodayString()).toBe('2026-08-18')
   })
 
   it('zero-pads single-digit months and days', () => {

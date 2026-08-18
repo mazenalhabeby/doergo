@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation"
 import { Plus, Users } from "lucide-react"
 
 import { getSpaceScope } from "@hbcfield/shared/client"
-import i18n from "@/i18n"
 import { useAuth } from "@/contexts/auth-context"
 import {
   tasksApi,
@@ -21,8 +20,7 @@ import {
 } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
-import { fetchAllPages } from "@/lib/paginate"
-import { assigneeIds, isAssignedTo } from "@/lib/task-assignment"
+import { isAssignedTo } from "@/lib/task-assignment"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,8 +30,6 @@ import {
   ManagementContacts,
   type RecentTask,
   type WorkspaceBoxProps,
-  type PersonNodeProps,
-  type WorkerStatus,
   type LiveEvent,
   type PendingAction,
 } from "@/components/dashboard"
@@ -41,125 +37,14 @@ import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
 import { useTour } from "@/components/tour"
 import {
   getGreeting,
-  getInitials,
-  getAvatarColor,
-  isClockedIn,
-  getTodayString,
 } from "./helpers"
 import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
+import { buildWorkspaceBoxes } from "../_lib/build-workspace-boxes"
+import { useDashboardData } from "../_lib/use-dashboard-data"
+import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 
-// ── Tuning ───────────────────────────────────────────────────────────────────
-
-/** Server hard cap for /organizations/members and /locations (one page each). */
-const MEMBERS_PAGE_SIZE = 200
-const SPACES_PAGE_SIZE = 500
-
-/**
- * Newest tasks pulled for the activity feed, per-space alert counts and the
- * "who is on a task" boxes. Deliberately a slice, not the full history: the
- * dashboard only ever renders the most recent handful, so paging the entire
- * backlog in would cost payload for rows nothing displays. An org that outgrows
- * this needs server-side aggregation, not a bigger page.
- */
-const DASHBOARD_TASK_LIMIT = 200
-
-/**
- * Presence self-heal interval. "Online" is derived client-side as
- * (now - lastActiveAt < ONLINE_WINDOW_MS), so a dashboard left open needs a
- * periodic refetch or the cached timestamp ages out of the window and a
- * still-connected member wrongly goes dark. The server bumps lastActiveAt at
- * least once a minute, so refetching every 60s keeps everyone inside the window.
- */
-const PRESENCE_REFETCH_MS = 60_000
-
-/** App-active within this window → the green "online" ring. */
-const ONLINE_WINDOW_MS = 3 * 60 * 1000
-
-/** Stable empty default — a `= []` literal would be a new identity each render. */
-const NO_MEMBERS: OrgMember[] = []
-
-/** What the presence labels need to know about a member's current clock-in. */
-interface AttendanceFacts {
-  locationId: string
-  isRemote: boolean
-  withinGeofence: boolean
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Worker status shown on the dashboard. Availability (Available/Busy/Away — the
- * status the user sets, defaulting to Available) is the primary signal; clock-in
- * is a SEPARATE concept and only adds context ("On Break"/"Late") when on the
- * clock. Not being clocked in no longer means "Offline" — the green "online"
- * ring (app-active) conveys online/offline independently.
- */
-function getEmployeeStatus(opts: {
-  isClockedIn: boolean
-  isOnBreak: boolean
-  isOnline: boolean // app-active within the last few minutes
-  presence?: string | null // availability status (defaults to Available)
-  isRemote?: boolean // clocked in via remote / WFH
-  isShiftBased?: boolean // their space is shift-based (SHIFT/FIXED) → "On Shift" applies
-  atSpace?: boolean // clocked in INSIDE a geofenced space → confirmed at the space
-}): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
-  // Genuinely offline: not app-active AND not on the clock. Their stored
-  // availability doesn't apply because they aren't currently reachable.
-  if (!opts.isOnline && !opts.isClockedIn) {
-    return { status: "off" }
-  }
-  // Attendance exceptions first (only while on the clock).
-  if (opts.isClockedIn && opts.isOnBreak) {
-    return { status: "on", tag: { text: i18n.t("dashboard.presence.onBreak"), variant: "hrs" } }
-  }
-  // Availability the user DELIBERATELY set overrides the default clock label.
-  if (opts.presence === "BUSY") {
-    return { status: "busy", tag: { text: i18n.t("dashboard.presence.busy"), variant: "task" } }
-  }
-  if (opts.presence === "AWAY") {
-    return { status: "away", tag: { text: i18n.t("dashboard.presence.away"), variant: "hrs" } }
-  }
-  // On the clock → label by WHERE they are relative to the space (not their access
-  // type). Remote is its own thing; then shift-based spaces split into On Shift
-  // (confirmed inside the geofence) vs In Field (no location / outside it); an
-  // office / open-hours space (non shift-based) is simply "Working".
-  if (opts.isClockedIn) {
-    if (opts.isRemote) return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
-    if (!opts.isShiftBased) return { status: "on", tag: { text: i18n.t("dashboard.presence.working", "Working"), variant: "hrs" } }
-    if (opts.atSpace) return { status: "on", tag: { text: i18n.t("dashboard.presence.onShift"), variant: "hrs" } }
-    return { status: "on", tag: { text: i18n.t("dashboard.presence.inField"), variant: "task" } }
-  }
-  // Logged in / online but not clocked in.
-  return { status: "on", tag: { text: i18n.t("dashboard.presence.available"), variant: "hrs" } }
-}
-
-/** App-active within ONLINE_WINDOW_MS → show the green "online" ring. */
-function isOnline(lastActiveAt?: string | null): boolean {
-  return !!lastActiveAt && Date.now() - new Date(lastActiveAt).getTime() < ONLINE_WINDOW_MS
-}
-
-/** Build a PersonNodeProps from an OrgMember. `clockedIn` drives the green ring. */
-function memberToPersonNode(
-  member: OrgMember,
-  status: WorkerStatus,
-  tag?: PersonNodeProps["tag"],
-  currentTask?: string,
-  clockedIn = false,
-): PersonNodeProps {
-  return {
-    initials: getInitials(member.firstName, member.lastName),
-    color: getAvatarColor(member.id),
-    status,
-    clockedIn,
-    imageUrl: member.avatarUrl || undefined,
-    name: `${member.firstName} ${member.lastName?.[0] || ""}.`,
-    tag,
-    userId: member.id,
-    role: member.role === "EMPLOYEE" ? "Employee" : "Admin",
-    currentTask,
-  }
-}
 
 /** Map a Task to the compact RecentTask shape used by the dashboard list. */
 function toRecentTask(tk: Task): RecentTask {
@@ -183,12 +68,26 @@ export function ClientDashboard() {
   const queryClient = useQueryClient()
   // Drives the guide example team (see below).
   const { activeTourId, isTourCompleted } = useTour()
-  const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
-  // Access-Profile space scope: 'all' | 'own' | 'tasks'. Admins/managers always
-  // see every space. Resolved here (not further down) because it decides whether
-  // the spaces request is worth making at all.
-  const spaceScope = getSpaceScope(user ?? {})
-  const showsSpaces = isAdminOrDispatcher || spaceScope !== "tasks"
+  // All reads live in useDashboardData; this component is presentation.
+  const {
+    isAdminOrDispatcher,
+    spaceScope,
+    isLoading: isDataLoading,
+    tasks,
+    allLocations,
+    members,
+    rosters,
+    todayEntries,
+    pendingApprovals,
+    memberMap,
+    clockedInUserIds,
+    attendanceByUser,
+    onBreakUserIds,
+    shiftLabelInfo,
+    activeTaskMap,
+    rosterActiveTaskMap,
+    assignmentsPerLocation,
+  } = useDashboardData(user)
 
   const handleEditLocation = useCallback((locationId: string) => {
     // "Manage Space" → that space's own settings page, not the all-spaces list.
@@ -207,260 +106,6 @@ export function ClientDashboard() {
   const handleViewTasks = useCallback((locationId: string) => {
     router.push(`/tasks?space=${locationId}`)
   }, [router])
-
-  // ── Data Fetching ──────────────────────────────────────────────────────────
-
-  // Tasks. Kept current by the socket layer — useRealtimeSync invalidates
-  // ["tasks"] on every task event — so there is no polling interval here.
-  const { data: tasksData, isLoading: loadingTasks } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: () => tasksApi.list({ limit: DASHBOARD_TASK_LIMIT }),
-  })
-
-  // Company spaces. Paged through to the end: /locations defaults to 20 per
-  // page, so requesting a single page silently dropped every space past the
-  // 20th from the grid, its alerts and its roster.
-  const { data: locationsData, isLoading: loadingLocations } = useQuery({
-    queryKey: ["locations", "dashboard"],
-    queryFn: () => fetchAllPages((page) => locationsApi.list({ page, limit: SPACES_PAGE_SIZE })),
-    // A 'tasks'-scope member sees no spaces by definition; the server ran the
-    // full query and then discarded every row for them. Don't ask.
-    enabled: showsSpaces,
-  })
-
-  // All org members (for worker info: name, avatar, workMode, role).
-  //
-  // GET /organizations/members requires canManageUsers, so this is gated on that
-  // permission: without the gate every employee re-fired a request that could
-  // only ever 403, once a minute, for as long as the tab stayed open. Viewers
-  // who can't read the directory fall back to the member data embedded in their
-  // (scoped) space rosters — see memberMap below.
-  const canReadMembers = !!user?.canManageUsers
-  const { data: members = NO_MEMBERS } = useQuery({
-    // Keep under the "orgMembers" namespace so member add/remove/role mutations
-    // (which invalidate ["orgMembers"]) also refresh this dashboard list.
-    queryKey: ["orgMembers", "dashboard"],
-    queryFn: () =>
-      fetchAllPages<OrgMember>((page) =>
-        organizationsApi.getMembers({ page, limit: MEMBERS_PAGE_SIZE }),
-      ),
-    enabled: canReadMembers,
-    staleTime: 30000,
-    refetchOnMount: true,
-    refetchInterval: PRESENCE_REFETCH_MS,
-  })
-
-  // Who is clocked in RIGHT NOW? Admins read org-wide. This is date-independent
-  // (open entries only) so an overnight / still-open shift that started before
-  // midnight still counts — a single-day query would drop them after the date
-  // rolls over. Employees can't read this (403); they fetch presence per space.
-  const { data: attendanceData } = useQuery({
-    queryKey: ["attendance-active"],
-    queryFn: () => attendanceApi.getActiveEntries(),
-    staleTime: 30000,
-    enabled: isAdminOrDispatcher,
-    // Safety refetch so clock-in/out state self-heals if a socket event is missed.
-    refetchInterval: PRESENCE_REFETCH_MS,
-  })
-
-  // Active breaks — who is currently on break? (admin-only endpoint)
-  // getActiveBreaks() already unwraps the envelope and resolves to Break[], so
-  // the failure fallback must be an array too.
-  const { data: activeBreaks } = useQuery({
-    queryKey: ["active-breaks"],
-    queryFn: () => attendanceApi.getActiveBreaks().catch(() => []),
-    staleTime: 30000,
-    enabled: isAdminOrDispatcher,
-  })
-
-  // Attendance entries awaiting approval — feeds the "Pending Actions" panel so
-  // admins see payroll-blocking approvals from anywhere, not just the Attendance tab.
-  const { data: pendingApprovalsData } = useQuery({
-    queryKey: ["pending-approvals"],
-    queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }).catch(() => ({ data: [] })),
-    staleTime: 30000,
-    enabled: isAdminOrDispatcher,
-  })
-
-  // ── Derived Data ───────────────────────────────────────────────────────────
-
-  // These MUST be memoised: `response?.data || []` allocates a new array every
-  // render, which changes the identity of every dependency array they appear in
-  // — the big workspaceBoxes memo below then recomputed on each render instead
-  // of only when the data actually changed.
-  const tasks: Task[] = useMemo(() => tasksData?.data ?? [], [tasksData])
-  const allLocations = useMemo(() => locationsData ?? [], [locationsData])
-
-  // Set of user IDs currently on break.
-  //
-  // This read used to be `(activeBreaksData as any)?.data || []` and then keyed
-  // on `b.userId`. Both were wrong: the API helper resolves to a Break[] (no
-  // `.data`), and the server flattens the owner onto `user`, never `userId`. So
-  // the set was ALWAYS EMPTY and nobody ever got the "On Break" label — the
-  // `as any` is what kept the compiler quiet about both.
-  const onBreakUserIds = useMemo(() => {
-    const set = new Set<string>()
-    for (const b of activeBreaks ?? []) {
-      if (b.user?.id) set.add(b.user.id)
-    }
-    return set
-  }, [activeBreaks])
-
-  // Location assignments — fetch per location
-  const locationIds = useMemo(
-    () => allLocations.filter((l: { isActive: boolean }) => l.isActive).map((l: { id: string }) => l.id),
-    [allLocations],
-  )
-
-  const locKey = locationIds.join(",")
-
-  // Batched rosters (with each member's current task) for ALL visible spaces in
-  // ONE request — replaces the previous one-request-per-location fan-out.
-  const { data: rostersData } = useQuery({
-    queryKey: ["locationRosters", locKey],
-    queryFn: () => locationsApi.getRosters(locationIds),
-    enabled: locationIds.length > 0,
-    staleTime: 60000,
-  })
-  const rosters: LocationAssignment[] = useMemo(() => rostersData || [], [rostersData])
-
-  // Batched attendance for employees (admins use the org-wide query above), again
-  // one request for all their spaces instead of one per space.
-  const { data: batchAttendance } = useQuery({
-    queryKey: ["locationAttendanceBatch", locKey, getTodayString()],
-    queryFn: () => attendanceApi.getEntriesBatch(locationIds, getTodayString()),
-    enabled: !isAdminOrDispatcher && locationIds.length > 0,
-    staleTime: 30000,
-  })
-
-  // Today's presence entries: admins read org-wide; employees use the batch.
-  const todayEntries: TimeEntry[] = useMemo(() => {
-    if (isAdminOrDispatcher) return attendanceData?.data || []
-    return batchAttendance || []
-  }, [isAdminOrDispatcher, attendanceData, batchAttendance])
-
-  // Build the member lookup. Admins/managers get the full org member list; for
-  // employees (who can't read /organizations/members) we fall back to the user
-  // details embedded in the scoped location rosters — so their space still
-  // shows real names/avatars without exposing the whole directory.
-  const memberMap = useMemo(() => {
-    const map = new Map<string, OrgMember>()
-    for (const a of rosters) {
-      if (a.user && !map.has(a.user.id)) {
-        map.set(a.user.id, { ...a.user, isActive: true, role: "EMPLOYEE" } as unknown as OrgMember)
-      }
-    }
-    // Full member records take precedence (richer data) when available.
-    for (const m of members) map.set(m.id, m)
-    return map
-  }, [members, rosters])
-
-  // Per-user attendance facts, derived in ONE pass. Previously the same array
-  // was copied and re-sorted three times to build three parallel maps keyed by
-  // the same user and read from the same (most recent) entry.
-  //
-  // `clockedIn` is true when ANY of today's entries is open; the descriptive
-  // fields come from the most recent entry, which is what the presence labels
-  // describe. Identical results to the three maps it replaces.
-  const { clockedInUserIds, attendanceByUser } = useMemo(() => {
-    const clocked = new Set<string>()
-    const facts = new Map<string, AttendanceFacts>()
-
-    // Newest first, so the first entry seen per user IS their most recent.
-    const byRecency = [...todayEntries].sort(
-      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
-    )
-
-    for (const entry of byRecency) {
-      if (isClockedIn(entry)) clocked.add(entry.userId)
-      if (!facts.has(entry.userId)) {
-        facts.set(entry.userId, {
-          locationId: entry.locationId,
-          isRemote: !!entry.isRemote,
-          withinGeofence: !!entry.clockInWithinGeofence,
-        })
-      }
-    }
-
-    return { clockedInUserIds: clocked, attendanceByUser: facts }
-  }, [todayEntries])
-
-  // locationId -> { is this space shift-based, does it have a real geofence }.
-  const spaceMetaByLocation = useMemo(() => {
-    const map = new Map<string, { isShiftBased: boolean; hasLocation: boolean }>()
-    for (const l of allLocations as Array<{ id: string; workModel?: string; lat?: number | null; lng?: number | null }>) {
-      const wm = l.workModel || "NONE"
-      map.set(l.id, {
-        isShiftBased: wm === "SHIFT" || wm === "FIXED",
-        hasLocation: l.lat != null && l.lng != null,
-      })
-    }
-    return map
-  }, [allLocations])
-
-  // Resolve the On Shift / In Field / Working inputs for a worker from their
-  // current clock-in space. "atSpace" is true only when the space has a real
-  // geofence AND they clocked in inside it — no location ⇒ can't confirm ⇒ In Field.
-  const shiftLabelInfo = useCallback(
-    (userId: string): { isShiftBased: boolean; atSpace: boolean } => {
-      const locId = attendanceByUser.get(userId)?.locationId
-      const meta = locId ? spaceMetaByLocation.get(locId) : undefined
-      const within = attendanceByUser.get(userId)?.withinGeofence ?? false
-      return {
-        isShiftBased: meta?.isShiftBased ?? false,
-        atSpace: (meta?.hasLocation ?? false) && within === true,
-      }
-    },
-    [attendanceByUser, spaceMetaByLocation],
-  )
-
-  // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED).
-  // Credited to EVERY assignee, not just the lead: a co-assignee working the task
-  // showed no current task at all when this keyed off assignedToId alone.
-  const activeTaskMap = useMemo(() => {
-    const map = new Map<string, Task>()
-    const priority: Record<string, number> = {
-      IN_PROGRESS: 4,
-      ARRIVED: 3,
-      EN_ROUTE: 2,
-      BLOCKED: 1,
-    }
-    for (const task of tasks) {
-      const p = priority[task.status]
-      if (p === undefined) continue
-      for (const assigneeId of assigneeIds(task)) {
-        const existing = map.get(assigneeId)
-        if (!existing || (priority[existing.status] || 0) < p) {
-          map.set(assigneeId, task)
-        }
-      }
-    }
-    return map
-  }, [tasks])
-
-  // Active task per member as computed server-side on the roster. Employees can
-  // only read their own tasks, so this is how their dashboard learns which
-  // colleagues are currently working (presence parity with the admin view).
-  const rosterActiveTaskMap = useMemo(() => {
-    const map = new Map<string, { title: string; status: string }>()
-    for (const a of rosters) {
-      if (a.currentTask) {
-        map.set(a.userId, { title: a.currentTask, status: a.currentTaskStatus || "IN_PROGRESS" })
-      }
-    }
-    return map
-  }, [rosters])
-
-  // Assignments per location: locationId -> userId[]
-  const assignmentsPerLocation = useMemo(() => {
-    const map = new Map<string, Set<string>>()
-    for (const locId of locationIds) map.set(locId, new Set<string>())
-    for (const a of rosters) {
-      if (!map.has(a.locationId)) map.set(a.locationId, new Set<string>())
-      map.get(a.locationId)!.add(a.userId)
-    }
-    return map
-  }, [locationIds, rosters])
 
   // ── Space roster mutation ─────────────────────────────────────────────────
 
@@ -526,9 +171,6 @@ export function ClientDashboard() {
 
   // ── Loading ────────────────────────────────────────────────────────────────
 
-  // `loadingLocations` stays true forever while the query is disabled, so only
-  // count it when the spaces request is actually being made.
-  const isDataLoading = loadingTasks || (showsSpaces && loadingLocations)
 
   // Role-based + Access-Profile space-scope filtering.
   //   admin/manager → all spaces
@@ -581,264 +223,42 @@ export function ClientDashboard() {
 
   // ── Build Workspace Boxes ─────────────────────────────────────────────────
 
-  const workspaceBoxes: WorkspaceBoxProps[] = useMemo(() => {
-    const boxes: WorkspaceBoxProps[] = []
-
-    // The viewer is, by definition, online right now (they're looking at this
-    // page) — never let their own lastActiveAt lag drop them into "Off Duty".
-    const currentUserId = user?.id
-    const memberOnline = (m: { id: string; lastActiveAt?: string | null }) =>
-      m.id === currentUserId || isOnline(m.lastActiveAt)
-
-    // Track which worker IDs are accounted for (placed in a location box)
-    const accountedWorkerIds = new Set<string>()
-
-    // Compute alerts per location
-    const now = new Date()
-
-    for (const loc of locations) {
-      if (!loc.isActive) continue
-
-      const locId = loc.id
-      const assignedUserIds = assignmentsPerLocation.get(locId) || new Set<string>()
-
-      const people: PersonNodeProps[] = []
-      const offDutyPeople: PersonNodeProps[] = []
-      const offShiftPeople: PersonNodeProps[] = []
-      const onRoadPeople: PersonNodeProps[] = []
-      const remotePeople: PersonNodeProps[] = []
-
-      for (const userId of assignedUserIds) {
-        const member = memberMap.get(userId)
-        if (!member) continue
-        if (!member.isActive) continue
-
-        accountedWorkerIds.add(userId)
-
-        // Own tasks come from the tasks query; colleague tasks come from the
-        // server-computed roster (employees can't read others' tasks directly).
-        const ownTask = activeTaskMap.get(userId)
-        const rosterTask = rosterActiveTaskMap.get(userId)
-        const activeTaskTitle = ownTask?.title ?? rosterTask?.title
-        const isCurrentlyClockedIn = clockedInUserIds.has(userId)
-        // On Shift / In Field / Working is decided by WHERE they clocked in
-        // (space geofence) + whether the space is shift-based — not their access.
-        const { isShiftBased, atSpace } = shiftLabelInfo(userId)
-        const isRemoteHere = attendanceByUser.get(userId)?.isRemote ?? false
-        // "In Field" = clocked in on a shift-based space but not confirmed inside it.
-        const onRoad = isCurrentlyClockedIn && !isRemoteHere && isShiftBased && !atSpace
-
-        const isOnBreak = onBreakUserIds.has(userId)
-
-        const { status, tag } = getEmployeeStatus({
-          isClockedIn: isCurrentlyClockedIn,
-          isOnBreak,
-          isOnline: memberOnline(member),
-          presence: member.presence,
-          isRemote: isRemoteHere,
-          isShiftBased,
-          atSpace,
-        })
-
-        const node = memberToPersonNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
-
-        // A member is ACTIVE in exactly one space (activeSpaceByUser). Here they
-        // are Present/In-Field/Remote only if this IS that space; in every other
-        // space they belong to they read as off-shift ("At {space}" / "Remote") —
-        // never a misleading "off-site" active entry, and never double-counted.
-        const activeSpace = activeSpaceByUser.get(userId)
-        if (!isCurrentlyClockedIn) {
-          // Everyone sees WHO is off (online + not-clocked-in → "Off-shift";
-          // offline → "Off Duty"). The absence REASON is gated separately (admins
-          // & managers only) inside the card.
-          if (memberOnline(member)) {
-            offShiftPeople.push(memberToPersonNode(member, status, tag))
-          } else {
-            offDutyPeople.push(memberToPersonNode(member, status, tag))
-          }
-        } else if (activeSpace !== locId) {
-          // Clocked in, but their active space is ELSEWHERE → off-shift here, with
-          // a hint of where they actually are (not an active "off-site" node).
-          const remoteHere = attendanceByUser.get(userId)?.isRemote ?? false
-          const whereName = activeSpace ? spaceNameById.get(activeSpace) : null
-          const hint = remoteHere
-            ? i18n.t("dashboard.presence.remote", "Remote")
-            : whereName
-              ? i18n.t("dashboard.presence.atSpace", "At {{space}}", { space: whereName })
-              : undefined
-          offShiftPeople.push(memberToPersonNode(member, "off", hint ? { text: hint, variant: "hrs" } : undefined))
-        } else if (onRoad) {
-          // Clocked in here, working on the road → "In Field" group.
-          onRoadPeople.push(node)
-        } else if (attendanceByUser.get(userId)?.isRemote) {
-          // Clocked in remotely (WFH), attributed to this (home) space → "Off-site".
-          remotePeople.push(node)
-        } else {
-          // Clocked in here on-site → Present.
-          people.push(node)
-        }
-      }
-
-      // Count alerts (BLOCKED + overdue tasks at this location)
-      let locAlerts = 0
-      for (const task of tasks) {
-        const isThisLocation = task.spaceId === locId || task.locationAddress?.includes(loc.name)
-        if (!isThisLocation) continue
-        const isBlocked = task.status === "BLOCKED"
-        const isOverdue = task.dueDate && new Date(task.dueDate) < now &&
-          !["COMPLETED", "CLOSED", "CANCELED"].includes(task.status)
-        if (isBlocked || isOverdue) locAlerts++
-      }
-
-      const activeCount = people.length + onRoadPeople.length + remotePeople.length
-
-      boxes.push({
-        title: loc.name,
-        type: "fixed",
-        people,
-        offDutyPeople,
-        offShiftPeople,
-        onRoadPeople,
-        remotePeople,
-        totalAssigned: assignedUserIds.size,
-        activeCount,
-        locationId: locId,
-        alerts: locAlerts,
-        // Manage/assign are admin-only; employees get a read-only space view.
-        onEdit: isAdminOrDispatcher ? handleEditLocation : undefined,
-        onAssign: isAdminOrDispatcher ? handleAssignWorkers : undefined,
-        onViewTasks: handleViewTasks,
-        onPersonClick: handleNavigateToProfile,
-      })
-    }
-
-    // "On Task" dynamic box — workers with active tasks NOT assigned to any location
-    const onTaskPeople: PersonNodeProps[] = []
-    for (const [userId, task] of activeTaskMap) {
-      if (accountedWorkerIds.has(userId)) continue
-      const member = memberMap.get(userId)
-      if (!member) {
-        // Fallback to task.assignedTo data if member not found
-        if (task.assignedTo) {
-          const fallbackStatus = getEmployeeStatus({
-            isClockedIn: clockedInUserIds.has(task.assignedTo.id),
-            isOnBreak: onBreakUserIds.has(task.assignedTo.id),
-            isOnline: false, // no last-active data on the task fallback
-            isRemote: attendanceByUser.get(task.assignedTo.id)?.isRemote ?? false,
-          })
-          onTaskPeople.push({
-            initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
-            color: getAvatarColor(task.assignedTo.id),
-            status: fallbackStatus.status,
-            imageUrl: task.assignedTo.avatarUrl || undefined,
-            name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
-            tag: fallbackStatus.tag,
-            userId: task.assignedTo.id,
-            role: "Employee",
-            currentTask: task.title,
-          })
-        }
-        continue
-      }
-      accountedWorkerIds.add(userId)
-      const isClockedIn = clockedInUserIds.has(userId)
-      const siTask = shiftLabelInfo(userId)
-      const { status, tag } = getEmployeeStatus({
-        isClockedIn,
-        isOnBreak: onBreakUserIds.has(userId),
-        isOnline: memberOnline(member),
-        presence: member.presence,
-        isRemote: attendanceByUser.get(userId)?.isRemote ?? false,
-        isShiftBased: siTask.isShiftBased,
-        atSpace: siTask.atSpace,
-      })
-      onTaskPeople.push(memberToPersonNode(member, status, tag, task.title, isClockedIn))
-    }
-
-    if (onTaskPeople.length > 0) {
-      boxes.push({
-        title: i18n.t("dashboard.presence.onTask"),
-        type: "dynamic",
-        people: onTaskPeople,
-        onPersonClick: handleNavigateToProfile,
-      })
-    }
-
-    // Workers not already placed in a space/task box:
-    //  • clocked in  → "On the Clock" catch-all, so a clocked-in driver/worker is
-    //    NEVER invisible even with no space assignment and no active task (their
-    //    clock-in is server state — independent of whether the app is in use).
-    //  • off the clock → "Off-shift" (online/reachable) vs "Off Duty" (offline).
-    const offDutyPeople: PersonNodeProps[] = []
-    const offShiftPeople: PersonNodeProps[] = []
-    const onClockPeople: PersonNodeProps[] = []
-    // Employees are always part of presence; admins/owners appear only when
-    // they're actually on the clock (a working owner) — never as idle off-duty
-    // clutter. A non-employee therefore only reaches the "On the Clock" branch.
-    const workers = members.filter(m => m.isActive && (m.role === "EMPLOYEE" || clockedInUserIds.has(m.id)))
-    for (const worker of workers) {
-      if (accountedWorkerIds.has(worker.id)) continue
-      const isClockedIn = clockedInUserIds.has(worker.id)
-      const online = memberOnline(worker)
-
-      if (isClockedIn) {
-        accountedWorkerIds.add(worker.id)
-        const siWorker = shiftLabelInfo(worker.id)
-        const { status, tag } = getEmployeeStatus({
-          isClockedIn: true,
-          isOnBreak: onBreakUserIds.has(worker.id),
-          isOnline: online,
-          presence: worker.presence,
-          isRemote: attendanceByUser.get(worker.id)?.isRemote ?? false,
-          isShiftBased: siWorker.isShiftBased,
-          atSpace: siWorker.atSpace,
-        })
-        onClockPeople.push(memberToPersonNode(worker, status, tag, undefined, true))
-      } else if (!activeTaskMap.has(worker.id)) {
-        accountedWorkerIds.add(worker.id)
-        const { status, tag } = getEmployeeStatus({
-          isClockedIn: false,
-          isOnBreak: false,
-          isOnline: online,
-          presence: worker.presence,
-        })
-        ;(online ? offShiftPeople : offDutyPeople).push(memberToPersonNode(worker, status, tag))
-      }
-    }
-
-    if (onClockPeople.length > 0) {
-      boxes.push({
-        title: i18n.t("dashboard.presence.onTheClock"),
-        type: "dynamic",
-        people: onClockPeople,
-        onPersonClick: handleNavigateToProfile,
-      })
-    }
-    if (offShiftPeople.length > 0) {
-      boxes.push({
-        title: i18n.t("dashboard.presence.offShift"),
-        type: "dynamic",
-        people: offShiftPeople,
-        onPersonClick: handleNavigateToProfile,
-      })
-    }
-    if (offDutyPeople.length > 0) {
-      boxes.push({
-        title: i18n.t("dashboard.presence.offDuty"),
-        type: "dynamic",
-        people: offDutyPeople,
-        onPersonClick: handleNavigateToProfile,
-      })
-    }
-
-    return boxes
-  }, [
-    locations, tasks, members, assignmentsPerLocation,
-    memberMap, clockedInUserIds, onBreakUserIds, attendanceByUser, shiftLabelInfo, activeTaskMap, rosterActiveTaskMap,
-    activeSpaceByUser, spaceNameById,
-    handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
-    isAdminOrDispatcher, user?.id, i18n.language,
-  ])
+  // The card-building rules live in _lib/build-workspace-boxes — pure, and
+  // tested there. This memo only supplies the inputs.
+  const workspaceBoxes: WorkspaceBoxProps[] = useMemo(
+    () =>
+      buildWorkspaceBoxes({
+        locations,
+        tasks,
+        members,
+        memberMap,
+        assignmentsPerLocation,
+        clockedInUserIds,
+        onBreakUserIds,
+        attendanceByUser,
+        activeTaskMap,
+        rosterActiveTaskMap,
+        activeSpaceByUser,
+        spaceNameById,
+        shiftLabelInfo,
+        isAdminOrDispatcher,
+        currentUserId: user?.id,
+        handlers: {
+          // Manage/assign are admin-only; employees get a read-only space view.
+          onEdit: isAdminOrDispatcher ? handleEditLocation : undefined,
+          onAssign: isAdminOrDispatcher ? handleAssignWorkers : undefined,
+          onViewTasks: handleViewTasks,
+          onPersonClick: handleNavigateToProfile,
+        },
+      }),
+    [
+      locations, tasks, members, assignmentsPerLocation,
+      memberMap, clockedInUserIds, onBreakUserIds, attendanceByUser, shiftLabelInfo, activeTaskMap, rosterActiveTaskMap,
+      activeSpaceByUser, spaceNameById,
+      handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
+      isAdminOrDispatcher, user?.id, i18n.language,
+    ],
+  )
 
   // ── Live Events ────────────────────────────────────────────────────────────
 
@@ -848,11 +268,6 @@ export function ClientDashboard() {
   )
 
   // ── Pending Actions ────────────────────────────────────────────────────────
-
-  const pendingApprovals: TimeEntry[] = useMemo(
-    () => (pendingApprovalsData as { data?: TimeEntry[] } | undefined)?.data || [],
-    [pendingApprovalsData],
-  )
 
   // One-click approve straight from the panel; refresh the list so it drops off.
   const handleApproveEntry = useCallback(
@@ -984,147 +399,11 @@ export function ClientDashboard() {
     }
 
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-12 py-16 relative overflow-x-hidden min-h-[calc(100vh-4rem)]">
-        {/* Layer 1: Gradient blobs */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.07]">
-          {[
-            { w:500, h:500, bg:'#3b82f6', x:'-5%', y:'-10%', anim:'tileFloat1', dur:'18s', blur:120 },
-            { w:450, h:450, bg:'#8b5cf6', x:'50%', y:'50%',  anim:'tileFloat3', dur:'20s', blur:120 },
-            { w:400, h:400, bg:'#10b981', x:'60%', y:'-5%',  anim:'tileFloat2', dur:'22s', blur:100 },
-          ].map((blob, i) => (
-            <div key={i} className="absolute rounded-full" style={{ width:blob.w, height:blob.h, background:blob.bg, left:blob.x, top:blob.y, filter:`blur(${blob.blur}px)`, animation:`${blob.anim} ${blob.dur} ease-in-out infinite` }} />
-          ))}
-        </div>
-
-        {/* Layer 2: Popup workspace boxes with connection lines */}
-        <div className="absolute inset-0 pointer-events-none">
-          {(() => {
-            const boxes = [
-              { w:130, h:90, delay:'0.3s', avatars:[
-                { color:'#10b981', in:4, out:12, dur:16 },
-                { color:'#3b82f6', in:6, out:14, dur:18 },
-              ]},
-              { w:140, h:90, delay:'0.7s', avatars:[
-                { color:'#8b5cf6', in:3, out:11, dur:15 },
-                { color:'#f59e0b', in:7, out:13, dur:17 },
-                { color:'#10b981', in:9, out:16, dur:19 },
-              ]},
-              { w:120, h:90, delay:'1.1s', avatars:[
-                { color:'#3b82f6', in:5, out:10, dur:14 },
-              ]},
-              { w:130, h:90, delay:'1.5s', avatars:[
-                { color:'#ec4899', in:4, out:9,  dur:13 },
-                { color:'#06b6d4', in:8, out:15, dur:18 },
-              ]},
-              { w:140, h:90, delay:'1.9s', avatars:[
-                { color:'#f59e0b', in:3, out:8,  dur:12 },
-                { color:'#8b5cf6', in:6, out:11, dur:14 },
-                { color:'#ef4444', in:10, out:16, dur:17 },
-              ]},
-              { w:120, h:90, delay:'2.3s', avatars:[
-                { color:'#06b6d4', in:5, out:13, dur:16 },
-              ]},
-            ]
-            const count = boxes.length
-            const radius = 42
-            return boxes.map((box, i) => {
-              const angle = (i * 360 / count) - 90
-              const rad = (angle * Math.PI) / 180
-              const cx = 50 + radius * Math.cos(rad)
-              const cy = 50 + radius * Math.sin(rad)
-              return { ...box, x: `${cx}%`, y: `${cy}%`, angle }
-            })
-          })().map((box, i) => (
-            <div
-              key={i}
-              className="absolute rounded-2xl border border-foreground/[0.06] bg-card/50 backdrop-blur-md -translate-x-1/2 -translate-y-1/2 shadow-lg shadow-black/10"
-              style={{
-                left: box.x,
-                top: box.y,
-                width: box.w,
-                height: box.h,
-                animation: `boxPopIn 0.6s cubic-bezier(0.34,1.56,0.64,1) ${box.delay} both`,
-              }}
-            >
-              <div className="flex items-center gap-1.5 px-3 pt-2.5">
-                <div className="h-1.5 w-12 rounded-full bg-foreground/[0.08]" />
-                <div className="h-1.5 w-5 rounded-full bg-foreground/[0.05] ml-auto" />
-              </div>
-              <div className="flex items-center justify-center gap-2 pt-3 pb-2">
-                {box.avatars.map((av, j) => (
-                  <div
-                    key={j}
-                    className="w-7 h-7 rounded-full"
-                    style={{
-                      background: av.color,
-                      boxShadow: `0 0 10px ${av.color}25`,
-                      animation: `avatarClockIn ${av.dur}s ease-in-out ${av.in}s infinite`,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center justify-center gap-3 px-3 pb-2">
-                {box.avatars.map((_, j) => (
-                  <div key={j} className="h-1 w-6 rounded-full bg-foreground/[0.05]" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Content — admins get the setup CTA; everyone else a neutral message */}
-        <div className="relative text-center max-w-md space-y-10 z-10 px-6">
-          {isAdminOrDispatcher ? (
-            <>
-              <div className="space-y-4">
-                <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-                  {t("dashboard.client.setupTitleLine1")}<br />{t("dashboard.client.setupTitleLine2")}
-                </h1>
-                <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-                  {t("dashboard.client.setupDescription")}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-center gap-3">
-                <Button asChild size="lg" className="gap-2 h-12 px-6 text-sm shadow-lg shadow-primary/25">
-                  <Link href="/locations">
-                    <Plus className="h-4 w-4" />
-                    {t("dashboard.client.addSpace")}
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="gap-2 h-12 px-6 text-sm">
-                  <Link href="/members">
-                    <Users className="h-4 w-4" />
-                    {t("dashboard.client.inviteTeam")}
-                  </Link>
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {t("dashboard.client.noSpacesTitle")}
-              </h1>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">
-                {t("dashboard.client.noSpacesDescription")}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Onboarding preview: on a brand-new dashboard (no spaces yet) show an
-            example space with example teammates so the guide has something real to
-            demonstrate (statuses, tap-a-teammate, space actions). Shown until the
-            welcome guide is completed, then it's gone — nothing is persisted. */}
-        {showExampleOnEmpty && (
-          <div className="relative z-10 w-full max-w-sm px-6" data-tour="dash-spaces">
-            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("dashboard.client.exampleLabel")}
-            </p>
-            <WorkspaceGrid boxes={[exampleSpace]} autoExpandSingle />
-          </div>
-        )}
-      </div>
+      <EmptyWorkspace
+        isAdminOrDispatcher={isAdminOrDispatcher}
+        showExample={showExampleOnEmpty}
+        exampleSpace={exampleSpace}
+      />
     )
   }
 
