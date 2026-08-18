@@ -236,6 +236,7 @@ export class OrganizationsController {
         organizationId: user.organizationId,
         requesterId: user.id,
         dto: {
+          email: dto.email,
           firstName: dto.firstName,
           lastName: dto.lastName,
           position: dto.position,

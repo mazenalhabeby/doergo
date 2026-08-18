@@ -2122,7 +2122,10 @@
       "showInManagement": "Mostrar en Gestión",
       "showInManagementHint": "Muestra a esta persona (con su puesto) para que sus compañeros puedan contactarla desde cualquier lugar.",
       "showInManagementAdmin": "Los administradores siempre aparecen en el directorio de Gestión.",
-      "jobTitle": "Puesto"
+      "jobTitle": "Puesto",
+      "email": "Correo electrónico",
+      "invalidEmail": "Introduzca una dirección de correo válida",
+      "emailChangeHint": "Este es el acceso del miembro: iniciará sesión con la nueva dirección."
     },
     "detail": {
       "backToTeam": "Volver a Equipo",
