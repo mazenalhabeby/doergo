@@ -136,6 +136,14 @@ const KanbanColumn = React.memo(function KanbanColumn({
       items.push(
         <div
           key={task.id}
+          // Focusable and named, so the board is reachable without a mouse:
+          // dragging is pointer-only, and the context menu (Menu key / Shift+F10
+          // on the focused card) is the keyboard path to move a task. Screen
+          // readers announce the card and the column it currently sits in.
+          role="listitem"
+          tabIndex={0}
+          aria-label={`${task.title} — ${label}`}
+          className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           onDragOver={(e) => handleCardDragOver(e, i)}
           onDrop={handleCardDrop}
         >
@@ -201,6 +209,10 @@ const KanbanColumn = React.memo(function KanbanColumn({
                 ? "bg-amber-50/50 border-amber-300 dark:bg-amber-950/20 dark:border-amber-800"
                 : "bg-muted/50 border-border/40",
         )}
+        // A named list, so a screen reader announces which column it entered
+        // and how many cards it holds.
+        role="list"
+        aria-label={`${label} (${tasks.length})`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}

@@ -184,9 +184,14 @@ export class TasksController {
   }
 
   @Get('counts')
-  @ApiOperation({ summary: 'Get task counts grouped by status' })
+  @ApiOperation({ summary: 'Get task counts grouped by status or by space' })
   @ApiQuery({ name: 'spaceId', required: false, description: 'Filter counts by space (CompanyLocation) ID' })
-  async getStatusCounts(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
+  @ApiQuery({ name: 'groupBy', required: false, description: "'status' (default) or 'space'" })
+  async getStatusCounts(
+    @Query('spaceId') spaceId: string | undefined,
+    @Query('groupBy') groupBy: string | undefined,
+    @Request() req: any,
+  ) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getStatusCounts({
       userId: req.user.id,
@@ -195,6 +200,7 @@ export class TasksController {
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       ...(spaceId && { spaceId }),
+      ...(groupBy && { groupBy }),
     });
   }
 

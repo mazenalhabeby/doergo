@@ -1586,6 +1586,28 @@
         "storyPoints": "Points",
         "title": "Title"
       }
+    },
+    "menu": {
+      "assignTo": "Assign to",
+      "backlog": "Backlog",
+      "delete": "Delete",
+      "moveToSpace": "Move to Space",
+      "moveToSprint": "Move to Sprint",
+      "newTask": "New Task",
+      "noEpic": "No Epic",
+      "noPhase": "No Phase",
+      "noSpace": "No Space",
+      "none": "None",
+      "open": "Open",
+      "priority": "Priority",
+      "setEpic": "Set Epic",
+      "setPhase": "Set Phase",
+      "space": "Space",
+      "sprint": "Sprint",
+      "status": "Status",
+      "storyPoints": "Story Points",
+      "today": "Today",
+      "unassigned": "Unassigned"
     }
   },
   "technicians": {

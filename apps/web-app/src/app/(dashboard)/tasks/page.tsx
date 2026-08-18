@@ -26,6 +26,7 @@ import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type 
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
 import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Phase, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
 import { useSpaceModules } from "@/hooks/use-space-modules"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import {
   TasksViewSkeleton,
@@ -111,6 +112,9 @@ const FALLBACK_STATUS_TABS: StatusTabGroup[] = [
 type ViewMode = TaskViewMode
 
 const GROUP_BY_STORAGE_KEY = "hbcfield-tasks-group-by"
+
+/** Board and schedule show the whole workload at once; the server caps at 500. */
+const BOARD_FETCH_LIMIT = 500
 const GROUP_BY_OPTIONS: { value: GroupByOption; label: string }[] = [
   { value: "none", label: "None" },
   { value: "sprint", label: "Sprint" },
@@ -149,6 +153,8 @@ export default function TasksPage() {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
+  // The input stays instant; only the settled value drives the query.
+  const debouncedSearch = useDebouncedValue(searchQuery, 300)
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "all"
   )
@@ -271,24 +277,53 @@ export default function TasksPage() {
   }, [hasWorkflow, activeWorkflowStatuses])
 
   // Derive the API status filter from the active tab
-  const statusFilter = useMemo(() => {
+
+  // The statuses behind the active tab. Sent as a group, because a tab like
+  // "active" covers several statuses and the server takes a list.
+  const activeStatuses = useMemo(() => {
     const tab = STATUS_TABS.find((t) => t.key === activeTab)
-    if (!tab || tab.key === "all") return "all"
-    return "all"
+    return !tab || tab.key === "all" ? undefined : tab.statuses
   }, [activeTab, STATUS_TABS])
 
-  // Fetch tasks
+  // Board and schedule show the whole workload at once — a kanban column that
+  // says "Done 0" because the finished tasks are on page 3 is worse than no
+  // count. The table keeps real pagination.
+  const paginated = viewMode === "table"
+  const effectiveLimit = paginated ? limit : BOARD_FETCH_LIMIT
+
+  // Fetch tasks. Every filter below is applied by the SERVER: filtering in the
+  // browser only ever filtered the page that happened to be loaded, so a search
+  // missed anything past row 20 and the totals described a different set than
+  // the rows did.
+  const taskQueryParams = useMemo(
+    () => ({
+      statuses: activeStatuses,
+      search: debouncedSearch,
+      spaceId: selectedSpaceId || undefined,
+      sprintId: scope === "all" ? undefined : scope === "backlog" ? "none" : scope,
+      epicId: epicFilter === "all" ? undefined : epicFilter,
+      page: paginated ? page : 1,
+      limit: effectiveLimit,
+    }),
+    [activeStatuses, debouncedSearch, selectedSpaceId, scope, epicFilter, page, paginated, effectiveLimit],
+  )
+
   const { data: tasksData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["tasks", { status: statusFilter, page, limit }],
-    queryFn: () => tasksApi.list({ status: statusFilter, page, limit }),
+    queryKey: ["tasks", taskQueryParams],
+    queryFn: () => tasksApi.list(taskQueryParams),
+    placeholderData: (prev) => prev, // keep rows on screen while a filter re-fetches
+  })
+
+  // Space tab counts, grouped server-side over everything the viewer may see.
+  // Computed from the loaded page before, which is why the same tab showed 7 on
+  // page 1 and 4 on page 2.
+  const { data: spaceCounts } = useQuery({
+    queryKey: ["taskStatusCounts", "space"],
+    queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }),
+    staleTime: 30000,
   })
 
   // Fetch status counts
-  const { data: statusCounts, refetch: refetchCounts } = useQuery({
-    queryKey: ["taskStatusCounts"],
-    queryFn: () => tasksApi.getStatusCounts(),
-    staleTime: 30000,
-  })
 
   // Fetch phases
   const { data: phases } = useQuery({
@@ -468,7 +503,7 @@ export default function TasksPage() {
 
   const handleRefresh = () => {
     refetch()
-    refetchCounts()
+    queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
   }
 
   const tasks = tasksData?.data || []
@@ -753,84 +788,34 @@ export default function TasksPage() {
       })
   }, [handleClearSelection, queryClient])
 
-  // Compute tab counts from statusCounts
-  const tabCounts = useMemo(() => {
-    if (!statusCounts) return {} as Record<string, number>
-    const counts: Record<string, number> = {}
-    for (const tab of STATUS_TABS) {
-      if (tab.key === "all") {
-        counts.all = Object.values(statusCounts).reduce((a: number, b: unknown) => a + (b as number), 0)
-      } else {
-        counts[tab.key] = tab.statuses.reduce(
-          (sum, s) => sum + ((statusCounts as Record<string, number>)[s] || 0),
-          0
-        )
-      }
-    }
-    return counts
-  }, [statusCounts, STATUS_TABS])
+  // Any filter change invalidates the page number: page 3 of an unfiltered list
+  // is not page 3 of a filtered one, and asking for it returns an empty screen.
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, selectedSpaceId, scope, epicFilter, activeTab])
 
-  // Compute space task counts
+  // Space tab counts — server-grouped over everything visible, not the page.
   const spaceTaskCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const task of tasks) {
-      if (task.spaceId) {
-        counts.set(task.spaceId, (counts.get(task.spaceId) || 0) + 1)
-      }
+    for (const [spaceId, n] of Object.entries(spaceCounts ?? {})) {
+      if (spaceId !== "all") counts.set(spaceId, n as number)
     }
     return counts
-  }, [tasks])
+  }, [spaceCounts])
 
-  // Client-side filtering: space + scope + status tab + search
+  // Sorting only. Space, sprint, epic, status-group and search are applied by
+  // the server now — see taskQueryParams. Filtering here as well would narrow
+  // an already-correct page and quietly reintroduce the bug this replaced.
   const filteredTasks = useMemo(() => {
-    let result = tasks
-
-    // Space filter
-    if (selectedSpaceId) {
-      result = result.filter((task: Task) => task.spaceId === selectedSpaceId)
-    }
-
-    // Scope filter (sprint dropdown)
     if (scope === "backlog") {
-      result = result.filter((task: Task) => !task.sprintId)
-    } else if (scope !== "all") {
-      result = result.filter((task: Task) => task.sprintId === scope)
+      return sortBacklogTasks(tasks, backlogSortField, backlogSortDir)
     }
-
-    // Epic filter
-    if (epicFilter === "none") {
-      result = result.filter((task: Task) => !task.epicId)
-    } else if (epicFilter !== "all") {
-      result = result.filter((task: Task) => task.epicId === epicFilter)
-    }
-
-
-    // Tab filter
-    const tab = STATUS_TABS.find((t) => t.key === activeTab)
-    if (tab && tab.key !== "all" && tab.statuses.length > 0) {
-      result = result.filter((task: Task) => tab.statuses.includes(task.status))
-    }
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(
-        (task: Task) =>
-          task.title.toLowerCase().includes(query) ||
-          task.id.toLowerCase().includes(query)
-      )
-    }
-
-    // Sort: use backlog sort controls when in backlog scope, otherwise priority
-    if (scope === "backlog") {
-      return sortBacklogTasks(result, backlogSortField, backlogSortDir)
-    }
-    return [...result].sort((a: Task, b: Task) => {
+    return [...tasks].sort((a: Task, b: Task) => {
       const orderA = PRIORITY_ORDER[a.priority] ?? 99
       const orderB = PRIORITY_ORDER[b.priority] ?? 99
       return orderA - orderB
     })
-  }, [tasks, searchQuery, activeTab, scope, epicFilter, selectedSpaceId, STATUS_TABS, backlogSortField, backlogSortDir])
+  }, [tasks, scope, backlogSortField, backlogSortDir])
 
   // Tasks in the selected sprint (unfiltered — for sprint indicator)
   const sprintScopedTasks = useMemo(() => {
@@ -1183,44 +1168,6 @@ export default function TasksPage() {
         ) : (
           <>
 
-        {/* ── Line 2: Status tabs — hidden everywhere (status shown per row/column) ── */}
-        <div className="hidden">
-          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
-            {STATUS_TABS.map((tab) => {
-              const isActive = activeTab === tab.key
-              const count = tabCounts[tab.key] ?? 0
-
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab.key)}
-                  className={cn(
-                    "relative px-3 py-2 text-sm whitespace-nowrap transition-colors duration-150",
-                    isActive
-                      ? "text-foreground font-semibold"
-                      : "text-muted-foreground hover:text-foreground font-medium"
-                  )}
-                >
-                  {tab.label}
-                  {count > 0 && (
-                    <span
-                      className={cn(
-                        "ml-1 text-[11px] tabular-nums",
-                        isActive ? "text-foreground/60" : "text-muted-foreground/60"
-                      )}
-                    >
-                      {count > 99 ? "99+" : count}
-                    </span>
-                  )}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-foreground" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-          <div className="h-px bg-border/50" />
-        </div>
 
         {/* Group-by tabs (only on list view) */}
         {viewMode === "table" && availableGroupByOptions.length > 1 && (
@@ -1319,7 +1266,7 @@ export default function TasksPage() {
                   className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white mt-2"
                 >
                   <Plus className="size-4 mr-1.5" />
-                  New Task
+                  {t("tasks.menu.newTask")}
                 </Button>
               )}
             </div>
@@ -1480,7 +1427,7 @@ export default function TasksPage() {
               {t("tasks.page.showingCount", { count: filteredTasks.length, total })}
             </p>
 
-            {totalPages > 1 && (
+            {paginated && totalPages > 1 && (
               <div className="flex items-center gap-1.5">
                 <Button
                   variant="outline"

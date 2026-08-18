@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { X, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,6 +44,7 @@ function BulkActionBarInner({
   onBulkSpaceChange,
   onBulkDelete,
 }: BulkActionBarProps) {
+  const { t } = useTranslation()
   const { hasModule } = useAuth()
   const count = selectedIds.size
   const ids = Array.from(selectedIds)
@@ -77,7 +79,7 @@ function BulkActionBarInner({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-              Status
+              {t("tasks.menu.status")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
@@ -105,7 +107,7 @@ function BulkActionBarInner({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-              Priority
+              {t("tasks.menu.priority")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[160px]">
@@ -131,12 +133,12 @@ function BulkActionBarInner({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-              Sprint
+              {t("tasks.menu.sprint")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
             <DropdownMenuItem onClick={() => onBulkSprintChange(ids, null)}>
-              Backlog
+              {t("tasks.menu.backlog")}
             </DropdownMenuItem>
             {sprints.map((sprint) => (
               <DropdownMenuItem
@@ -155,12 +157,12 @@ function BulkActionBarInner({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
-              Space
+              {t("tasks.menu.space")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
             <DropdownMenuItem onClick={() => onBulkSpaceChange(ids, null)}>
-              No Space
+              {t("tasks.menu.noSpace")}
             </DropdownMenuItem>
             {spaces.map((space) => (
               <DropdownMenuItem
@@ -185,7 +187,7 @@ function BulkActionBarInner({
           onClick={handleDelete}
         >
           <Trash2 className="size-3.5 mr-1" />
-          Delete
+          {t("tasks.menu.delete")}
         </Button>
       )}
 

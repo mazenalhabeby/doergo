@@ -672,6 +672,32 @@ export class TasksService {
   }
 
   /**
+   * Who may see which tasks — the single definition.
+   *
+   * The list and the counts each had their own copy and they disagreed: the
+   * counts filtered an ADMIN down to tasks they CREATED while the list showed
+   * the whole org, and matched a member on `assignedToId` alone while the list
+   * also matched co-assignees. Every badge built on those counts therefore
+   * contradicted the rows underneath it.
+   */
+  private buildVisibilityWhere(opts: {
+    userId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    organizationId: string;
+  }): any {
+    const { userId, userRole, canViewAllTasks, organizationId } = opts;
+    if (userRole === Role.ADMIN || canViewAllTasks) {
+      return { organizationId };
+    }
+    // Assigned to them as LEAD (legacy assignedToId) OR as a co-assignee.
+    return {
+      organizationId,
+      AND: [{ OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] }],
+    };
+  }
+
+  /**
    * Find all tasks with role-based filtering
    * - CLIENT: sees tasks created by them in their organization
    * - DISPATCHER: sees all tasks in their organization (and accessible orgs)
@@ -704,11 +730,23 @@ export class TasksService {
     // Build where clause based on role
     const where: any = {};
 
-    // Status filter
-    if (status) where.status = status;
+    // Status filter. `statuses` (comma-separated or array) carries a tab group —
+    // e.g. "active" is several statuses — which a single `status` cannot express,
+    // so the client used to filter those client-side over one page of results.
+    const statusList = Array.isArray(query.statuses)
+      ? query.statuses
+      : typeof query.statuses === 'string' && query.statuses.trim()
+        ? query.statuses.split(',').map((x: string) => x.trim()).filter(Boolean)
+        : null;
+    if (statusList?.length) where.status = { in: statusList };
+    else if (status) where.status = status;
 
     // Priority filter
     if (priority) where.priority = priority;
+
+    // Sprint / epic. "none" means explicitly unassigned — that is the backlog.
+    if (query.sprintId) where.sprintId = query.sprintId === 'none' ? null : query.sprintId;
+    if (query.epicId) where.epicId = query.epicId === 'none' ? null : query.epicId;
 
     if (isSharedSpace) {
       // Cross-org shared space: the grant is server-authoritative (validated in
@@ -719,19 +757,10 @@ export class TasksService {
       // for a spaceId proven to be in the caller's received-shares set.
       where.spaceId = spaceId;
     } else {
-      // Visibility (new access-flag model): ADMIN or anyone granted "view all
-      // tasks" sees the whole org; everyone else sees only tasks they're on.
-      if (userRole === Role.ADMIN || canViewAllTasks) {
-        where.organizationId = organizationId;
-      } else {
-        // Sees tasks assigned to them — as the LEAD (legacy assignedToId, incl.
-        // seed data) OR as any multi-assignee MEMBER. Wrapped in AND so it
-        // composes with other OR filters below.
-        where.AND = [
-          ...(where.AND || []),
-          { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
-        ];
-      }
+      // Visibility — one rule, shared with getStatusCounts (see above).
+      const visibility = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId });
+      where.organizationId = visibility.organizationId;
+      if (visibility.AND) where.AND = [...(where.AND || []), ...visibility.AND];
 
       // Space filter — verify it belongs to the user's org before applying
       if (spaceId) {
@@ -1988,15 +2017,17 @@ export class TasksService {
     canViewAllTasks?: boolean;
     organizationId: string;
     spaceId?: string;
+    /** 'status' (default) or 'space'. */
+    groupBy?: string;
   }) {
-    const { userId, userRole, canViewAllTasks, organizationId, spaceId } = query;
+    const { userId, userRole, canViewAllTasks, organizationId, spaceId, groupBy } = query;
 
     if (!userRole) {
       return success({});
     }
 
     // Check Redis cache first
-    const cacheKey = `status_counts:${userRole}:${userId}:${organizationId}${spaceId ? `:${spaceId}` : ''}`;
+    const cacheKey = `status_counts:${groupBy === 'space' ? 'space' : 'status'}:${userRole}:${userId}:${organizationId}${spaceId ? `:${spaceId}` : ''}`;
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
@@ -2006,19 +2037,8 @@ export class TasksService {
       this.logger.warn('Redis cache read failed for status counts', err);
     }
 
-    // Build where clause based on role (same logic as findAll)
-    const where: any = {};
-
-    if (userRole === Role.ADMIN) {
-      // Admin dashboard widget: counts of tasks they created in their org.
-      where.organizationId = organizationId;
-      where.createdById = userId;
-    } else if (canViewAllTasks) {
-      // "View all tasks" grant → org-wide counts.
-      where.organizationId = organizationId;
-    } else {
-      where.assignedToId = userId;
-    }
+    // Same visibility rule the list uses — see buildVisibilityWhere.
+    const where: any = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId });
 
     // Space filter — verify it belongs to the user's org before applying
     if (spaceId) {
@@ -2032,21 +2052,32 @@ export class TasksService {
       where.spaceId = spaceId;
     }
 
-    // Get counts grouped by status using Prisma groupBy
-    const statusCounts = await this.prisma.task.groupBy({
-      by: ['status'],
-      where,
-      _count: {
-        status: true,
-      },
-    });
-
-    // Transform to a simple object { NEW: 5, ASSIGNED: 3, ... }
+    // Group by status (default) or by space. The space tabs previously counted
+    // whatever happened to be on the loaded PAGE, so the same tab showed
+    // different numbers on page 1 and page 2; grouping server-side over the full
+    // visible set is the only way those badges can be true.
     const counts: Record<string, number> = {};
     let total = 0;
-    for (const item of statusCounts) {
-      counts[item.status] = item._count.status;
-      total += item._count.status;
+    if (groupBy === 'space') {
+      const spaceCounts = await this.prisma.task.groupBy({
+        by: ['spaceId'],
+        where,
+        _count: { spaceId: true },
+      });
+      for (const item of spaceCounts) {
+        if (item.spaceId) counts[item.spaceId] = item._count.spaceId;
+        total += item._count.spaceId;
+      }
+    } else {
+      const statusCounts = await this.prisma.task.groupBy({
+        by: ['status'],
+        where,
+        _count: { status: true },
+      });
+      for (const item of statusCounts) {
+        counts[item.status] = item._count.status;
+        total += item._count.status;
+      }
     }
     counts['all'] = total;
 

@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { isTaskOverdue } from "@hbcfield/shared/client"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import {
@@ -57,10 +58,7 @@ function TaskTableRowInner({
   const priorityConfig = getPriorityConfig(task.priority)
   const PriorityIcon = priorityConfig.icon
 
-  const isOverdue =
-    task.dueDate &&
-    new Date(task.dueDate) < new Date() &&
-    !["COMPLETED", "CLOSED", "CANCELED"].includes(task.status)
+  const isOverdue = isTaskOverdue(task)
 
   const formattedDueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
