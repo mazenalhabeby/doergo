@@ -2129,7 +2129,10 @@
       "showInManagement": "Show in Management",
       "showInManagementHint": "Lists this person (with their job title) so teammates can reach them from anywhere.",
       "showInManagementAdmin": "Admins always appear in the Management directory.",
-      "jobTitle": "Job title"
+      "jobTitle": "Job title",
+      "email": "Email",
+      "invalidEmail": "Please enter a valid email address",
+      "emailChangeHint": "This is the member's login — they will sign in with the new address."
     },
     "detail": {
       "backToTeam": "Back to Team",

@@ -101,6 +101,8 @@ export interface UpdateMemberRoleDto {
  * DTO for updating a member's profile + role/permissions (combined)
  */
 export interface UpdateMemberProfileDto {
+  /** Login email — unique across all users. */
+  email?: string;
   firstName?: string;
   lastName?: string;
   position?: string;

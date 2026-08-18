@@ -197,6 +197,7 @@ export function EditMemberDialog({
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
   const [scheduleType, setScheduleType] = useState("NONE")
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
@@ -212,6 +213,7 @@ export function EditMemberDialog({
     if (!member) return
     setFirstName(member.firstName)
     setLastName(member.lastName)
+    setEmail(member.email)
     setPosition(member.position || "")
     setScheduleType(member.scheduleType || "NONE")
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
@@ -323,6 +325,12 @@ export function EditMemberDialog({
 
   const handleSave = () => {
     if (!member) return
+    // Login email: normalize once, validate shape client-side (server re-checks
+    // shape + uniqueness) so a typo never reaches the network.
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return notify.error(t("members.memberEditor.invalidEmail", "Please enter a valid email address"))
+    }
     if (scheduleType === "FIXED") {
       saveScheduleMutation.mutate({
         memberId: member.id,
@@ -343,6 +351,8 @@ export function EditMemberDialog({
       data: {
         firstName,
         lastName,
+        // Login email — only sent when edited (server re-checks uniqueness).
+        ...(normalizedEmail && normalizedEmail !== member.email ? { email: normalizedEmail } : {}),
         position: position || undefined,
         scheduleType,
         monthlyHourBudget:
@@ -402,6 +412,26 @@ export function EditMemberDialog({
             <div className="space-y-1.5">
               <Label htmlFor="editLastName" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.lastName")}</Label>
               <Input id="editLastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-9 focus-visible:ring-offset-0" />
+            </div>
+            {/* Login email — spans both columns. Changing it changes how the
+                member signs in, hence the inline hint. */}
+            <div className="space-y-1.5 col-span-2">
+              <Label htmlFor="editEmail" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.email", "Email")}</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                inputMode="email"
+                autoComplete="off"
+                spellCheck={false}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-9 focus-visible:ring-offset-0"
+              />
+              {email.trim().toLowerCase() !== member?.email && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-500">
+                  {t("members.memberEditor.emailChangeHint", "This is the member's login — they will sign in with the new address.")}
+                </p>
+              )}
             </div>
           </div>
 

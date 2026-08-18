@@ -2129,7 +2129,10 @@
       "showInManagement": "In Management anzeigen",
       "showInManagementHint": "Führt diese Person (mit ihrer Position) auf, damit Teamkollegen sie von überall erreichen können.",
       "showInManagementAdmin": "Admins erscheinen immer im Management-Verzeichnis.",
-      "jobTitle": "Position"
+      "jobTitle": "Position",
+      "email": "E-Mail",
+      "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "emailChangeHint": "Dies ist der Login des Mitglieds — die Anmeldung erfolgt künftig mit der neuen Adresse."
     },
     "detail": {
       "backToTeam": "Zurück zum Team",

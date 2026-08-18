@@ -1094,6 +1094,25 @@ export class UsersService {
 
     const data: any = {};
 
+    // Login email. Normalized, uniqueness-checked across ALL users (it is the
+    // login identifier), and a no-op when unchanged so re-saving the dialog
+    // never trips the uniqueness guard.
+    if ((dto as any).email !== undefined) {
+      const email = String((dto as any).email).trim().toLowerCase();
+      if (!email) throw new BadRequestException('Email is required');
+      if (email !== member.email) {
+        const taken = await this.prisma.user.findFirst({
+          where: { email, id: { not: memberId } },
+          select: { id: true },
+        });
+        if (taken) throw new BadRequestException('That email is already in use');
+        data.email = email;
+        this.logger.warn(
+          `[MEMBER] email changed ${member.email} → ${email} (member ${memberId}) by ${requesterId}`,
+        );
+      }
+    }
+
     // Profile fields
     if (dto.firstName !== undefined) data.firstName = dto.firstName;
     if (dto.lastName !== undefined) data.lastName = dto.lastName;

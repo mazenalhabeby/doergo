@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, Min, Max } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, IsEmail, Min, Max } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /**
@@ -220,6 +220,12 @@ export class UpdateSecuritySettingsDto {
  * Update member profile, role, and permissions DTO
  */
 export class UpdateMemberDto {
+  @ApiPropertyOptional({ description: 'Login email (must be unique across all users)' })
+  @IsOptional()
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  email?: string;
+
   @ApiPropertyOptional({ description: 'First name' })
   @IsOptional()
   @IsString()
