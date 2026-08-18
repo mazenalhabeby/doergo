@@ -2,7 +2,7 @@
 
 import { getSpaceScope } from "@hbcfield/shared/client"
 
-import { WORKSPACE_CARD, workspaceCardWidth } from "@/components/dashboard"
+import { WORKSPACE_CARD, workspaceCardCols } from "@/components/dashboard"
 import { cn } from "@/lib/utils"
 
 /**
@@ -83,17 +83,19 @@ function S({
   )
 }
 
-/** One workspace card, sized exactly as the live card with that many people. */
+/** One workspace card, laid out by the same CSS the live card uses. */
 function CardSkeleton({ nodes, index }: { nodes: number; index: number }) {
   return (
     <div
       className={cn(
-        "rounded-xl bg-card border border-border flex flex-col",
+        "ws-card rounded-xl bg-card border border-border flex flex-col",
         "animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards duration-500",
         "motion-reduce:animate-none",
       )}
       style={{
-        width: workspaceCardWidth(nodes),
+        // Same two inputs the real card gives the stylesheet, so the placeholder
+        // is the exact width the data will land in.
+        ["--ws-cols" as string]: String(workspaceCardCols(nodes)),
         minHeight: WORKSPACE_CARD.MIN_H,
         flexShrink: 0,
         // Cards rise in one after another — the page fills rather than appears.
@@ -106,15 +108,11 @@ function CardSkeleton({ nodes, index }: { nodes: number; index: number }) {
         <S className="h-2.5 w-6 rounded ml-auto" delayMs={index * 45} />
       </div>
 
-      {/* Person nodes: 44px avatar + name line, wrapped at 4 per row like the card */}
+      {/* Person nodes on the card's own column grid — same class, same widths */}
       <div className="flex-1 flex flex-col justify-center gap-2 p-3">
-        <div className="flex flex-wrap items-center content-center justify-center gap-2">
+        <div className="ws-card-nodes">
           {Array.from({ length: nodes }).map((_, j) => (
-            // 76px = the column the card is sized on. The live PersonNode is
-            // 84px and therefore sometimes wraps, but a placeholder can't know
-            // the real head-count anyway, and a uniform grid reads calmer than
-            // a ragged one.
-            <div key={j} className="flex flex-col items-center gap-1.5" style={{ width: 76 }}>
+            <div key={j} className="ws-node flex flex-col items-center gap-1.5">
               <S className="h-11 w-11 rounded-full" delayMs={index * 45 + j * 70} />
               <S className="h-2 w-12 rounded" delayMs={index * 45 + j * 70} />
             </div>

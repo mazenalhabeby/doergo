@@ -57,33 +57,31 @@ export interface WorkspaceBoxProps {
 }
 
 /**
- * Geometry of a collapsed workspace card.
+ * The only card geometry TypeScript still decides.
  *
- * Exported so the loading skeleton can lay out cards at exactly the sizes the
- * real grid will use — otherwise the content visibly jumps when the data lands.
- * Width snaps to whole node columns so every card of the same size matches
- * exactly, independent of how long its title is.
+ * Widths are not computed here: the card is `max-content` over a grid of real
+ * node columns (`.ws-card` / `.ws-card-nodes` in globals.css), so the browser
+ * measures what it holds. A JS formula used to predict that width from an
+ * assumed 76px column while the node was 84px, which made every card of two or
+ * more people wrap a column early — see the note in globals.css.
+ *
+ * Exported so the loading skeleton lays out on the same rules and the content
+ * does not jump when the data lands.
  */
 export const WORKSPACE_CARD = {
-  /** One person node. */
-  NODE_W: 76,
-  NODE_GAP: 8,
-  /** p-3 padding (24) + 1px border ×2 + ~5px slack so N nodes fit a row. */
-  PAD_X: 31,
+  /** Most node columns a card will grow to before it wraps. */
   MAX_COLS: 4,
-  /** Floor: an empty and a 1-person card are the same width, and wide enough
-   *  to keep the "All quiet today" label on one line. */
-  MIN_W: 140,
   MIN_H: 135,
   /** Gap between cards in the grid. */
   GRID_GAP: 14,
 } as const
 
-/** Card width for a given number of previewed people. */
-export function workspaceCardWidth(nodeCount: number): number {
-  const { NODE_W, NODE_GAP, PAD_X, MAX_COLS, MIN_W } = WORKSPACE_CARD
-  const cols = Math.min(Math.max(nodeCount, 1), MAX_COLS)
-  return Math.max(cols * NODE_W + (cols - 1) * NODE_GAP + PAD_X, MIN_W)
+/**
+ * Node columns for a head-count: at least one (so an empty card matches a
+ * one-person card), never more than MAX_COLS. Drives `--ws-cols`.
+ */
+export function workspaceCardCols(nodeCount: number): number {
+  return Math.min(Math.max(nodeCount, 1), WORKSPACE_CARD.MAX_COLS)
 }
 
 /**
@@ -154,11 +152,12 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
   const physicallyEmpty = people.length === 0 && visibleCount > 0
   const trulyEmpty = visibleCount === 0 && offShiftPeople.length === 0 && offDutyPeople.length === 0
 
-  // Width snaps to whole node columns — see WORKSPACE_CARD, shared with the
-  // loading skeleton so the two lay out identically.
   const MAX_COLS = WORKSPACE_CARD.MAX_COLS
   const shownNodes = people.length + onRoadPeople.length + remotePeople.length + offShiftPeople.length
-  const cardWidth = workspaceCardWidth(shownNodes)
+  // How many node columns this card grows to. The WIDTH follows from it in CSS
+  // (`.ws-card` is max-content over `.ws-card-nodes`), so nothing here has to
+  // predict what will fit.
+  const cardCols = workspaceCardCols(shownNodes)
 
   // OPEN state is untouched — keep the original CSS-grid span placement so an
   // expanded space (and the collapsed strip beside it) looks exactly as before.
@@ -171,7 +170,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
     ? { flex: 1, minWidth: 0 } // fills the open wrapper's width AND height
     : isOtherExpanded
       ? { flex: "0 0 116px", maxWidth: 116 } // compact chip in the strip
-      : { width: cardWidth, flexShrink: 0 } // fixed node-column width (consistent per size)
+      : { flexShrink: 0 } // width comes from .ws-card (max-content over its columns)
 
   return (
     <div
@@ -191,13 +190,15 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
         mode === "expanded" && "overflow-hidden",
         mode === "collapsed" && !isClosing && "opacity-60 hover:opacity-80",
         mode === "collapsed" && "overflow-hidden",
-        mode === "normal" && "hover:bg-accent/30",
+        mode === "normal" && "ws-card hover:bg-accent/30",
         trulyEmpty && mode !== "expanded" && "border-dashed opacity-50 hover:opacity-70",
         physicallyEmpty && mode !== "expanded" && "border-dashed opacity-75 hover:opacity-90",
         className,
       )}
       style={{
         ...sizeStyle,
+        // Consumed by .ws-card-nodes; the card's width follows from it.
+        ["--ws-cols" as string]: String(cardCols),
         // Compact, content-height cards; the masonry columns keep gaps equal.
         minHeight: mode === "collapsed" ? 50 : WORKSPACE_CARD.MIN_H,
         transform: mode === "collapsed" ? "scale(0.98)" : "scale(1)",
@@ -457,18 +458,18 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
               </div>
             ) : (
               <div className="flex-1 flex flex-col justify-center gap-2 p-3">
-                <div className="flex flex-wrap items-center content-center justify-center gap-2">
+                <div className="ws-card-nodes">
                   {shown.map((person, i) => (
                     <PersonNode key={`${person.name}-${i}`} {...person} />
                   ))}
+                  {extra > 0 && (
+                    <div className="ws-card-more flex justify-center">
+                      <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground/60">
+                        +{extra} {t("workspace.more", "more")}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {extra > 0 && (
-                  <div className="flex justify-center">
-                    <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground/60">
-                      +{extra} {t("workspace.more", "more")}
-                    </span>
-                  </div>
-                )}
               </div>
             )}
           </>
