@@ -39,3 +39,5 @@ export * from './constants/attendance';
 // Task status vocabulary and the overdue rule. Pure data + pure functions, and
 // the client needs them: every task view asks "is this finished / overdue?".
 export * from './constants/task';
+// The single per-task authorization rule — pure, shared by every service.
+export * from './access/task-access';
