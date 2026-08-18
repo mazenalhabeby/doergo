@@ -8,8 +8,8 @@ import { deriveAttendanceFlags, deriveAttendanceState } from '../attendance-stat
  * it reports instead, and the ordering guarantees the UI relies on.
  */
 
-const entry = (over: Partial<TimeEntry> = {}): TimeEntry =>
-  ({ id: 'e1', status: 'CLOCKED_OUT', approvalStatus: 'AUTO', flagReasons: [], ...over }) as TimeEntry
+const entry = (over: Record<string, unknown> = {}): TimeEntry =>
+  ({ id: 'e1', status: 'CLOCKED_OUT', approvalStatus: 'AUTO', flagReasons: [], ...over }) as unknown as TimeEntry
 
 describe('deriveAttendanceState', () => {
   it('reports an open session as Active regardless of approval state', () => {
@@ -24,13 +24,13 @@ describe('deriveAttendanceState', () => {
     ['REJECTED', 'rejected', 'red'],
     ['AUTO', 'auto-approved', 'green'],
   ])('maps a closed %s entry to %s', (approvalStatus, key, tone) => {
-    const s = deriveAttendanceState(entry({ approvalStatus: approvalStatus as never }))
+    const s = deriveAttendanceState(entry({ approvalStatus }))
     expect(s.key).toBe(key)
     expect(s.tone).toBe(tone)
   })
 
   it('falls back to auto-approved for an unrecognised approval state', () => {
-    expect(deriveAttendanceState(entry({ approvalStatus: 'WEIRD' as never })).key).toBe('auto-approved')
+    expect(deriveAttendanceState(entry({ approvalStatus: 'WEIRD' })).key).toBe('auto-approved')
   })
 
   it('always carries an English fallback, so a missing translation never blanks the cell', () => {
@@ -44,7 +44,7 @@ describe('deriveAttendanceFlags', () => {
   })
 
   it('tolerates a missing flagReasons field', () => {
-    expect(deriveAttendanceFlags(entry({ flagReasons: undefined as never }))).toEqual([])
+    expect(deriveAttendanceFlags(entry({ flagReasons: undefined }))).toEqual([])
   })
 
   it('orders by severity, not by the order the server happened to store them', () => {
