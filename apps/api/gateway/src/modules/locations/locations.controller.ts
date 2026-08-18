@@ -101,6 +101,11 @@ export class LocationsController {
 
   // Batched rosters for the dashboard — one request instead of one per space.
   // Declared before @Get(':id') so 'rosters' isn't matched as an id.
+  //
+  // The ids are client-supplied, so the caller's Access-Profile space scope is
+  // sent with them and enforced in the query (same scoping GET /locations
+  // applies to the list). Without it, an org check alone let any member read the
+  // roster of any space by id — including members granted no spaces at all.
   @Get('rosters')
   @ApiOperation({ summary: 'Rosters (with current task) for multiple spaces at once' })
   @ApiQuery({ name: 'ids', required: true, description: 'Comma-separated company-location IDs' })
@@ -108,6 +113,9 @@ export class LocationsController {
     return this.locationsService.getLocationAssignmentsBatch({
       locationIds: (ids || '').split(',').map((s) => s.trim()).filter(Boolean),
       organizationId: req.user.organizationId,
+      requesterId: req.user.id,
+      spaceScope: getSpaceScope(req.user),
+      canViewAll: !!req.user.canViewAllTasks,
     });
   }
 

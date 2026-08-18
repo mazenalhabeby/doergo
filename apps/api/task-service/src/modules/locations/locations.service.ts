@@ -749,9 +749,41 @@ export class LocationsService {
    * array of assignments (each carries locationId + currentTask); the client
    * groups by location.
    */
-  async getLocationAssignmentsBatch(data: { locationIds: string[]; organizationId: string }) {
+  async getLocationAssignmentsBatch(data: {
+    locationIds: string[];
+    organizationId: string;
+    /** Caller, for space-scope enforcement. */
+    requesterId?: string;
+    /** Access-Profile space scope: 'all' | 'own' | 'tasks'. */
+    spaceScope?: string;
+    /** Admins/managers bypass scoping. */
+    canViewAll?: boolean;
+  }) {
     const ids = (data.locationIds || []).filter(Boolean);
     if (!ids.length) return success([]);
+
+    // Space-scope enforcement. The ids arrive from the client, so an org check
+    // alone let any member read the roster of ANY space in the org by passing
+    // its id — including members whose Access Profile grants them no spaces at
+    // all. Mirrors the scoping GET /locations already applies to the list.
+    if (!data.canViewAll && data.requesterId) {
+      if (data.spaceScope === 'tasks') return success([]);
+      if (data.spaceScope !== 'all') {
+        const mine = await this.prisma.spaceAssignment.findMany({
+          where: {
+            userId: data.requesterId,
+            spaceId: { in: ids },
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+          },
+          select: { spaceId: true },
+        });
+        const allowed = new Set(mine.map((a) => a.spaceId));
+        const scoped = ids.filter((id) => allowed.has(id));
+        if (!scoped.length) return success([]);
+        ids.length = 0;
+        ids.push(...scoped);
+      }
+    }
 
     const locs = await this.prisma.companyLocation.findMany({
       where: { id: { in: ids }, organizationId: data.organizationId },
@@ -776,18 +808,38 @@ export class LocationsService {
     const memberIds = [...new Set(assignments.map((a) => a.userId))];
     const activeTasks = memberIds.length
       ? await this.prisma.task.findMany({
-          where: { spaceId: { in: validIds }, assignedToId: { in: memberIds }, status: { in: ACTIVE_STATUSES as any } },
-          select: { assignedToId: true, spaceId: true, title: true, status: true },
+          where: {
+            spaceId: { in: validIds },
+            status: { in: ACTIVE_STATUSES as any },
+            // Lead OR co-assignee: matching only assignedToId left every
+            // multi-assigned member looking idle on the roster.
+            OR: [
+              { assignedToId: { in: memberIds } },
+              { assignees: { some: { userId: { in: memberIds } } } },
+            ],
+          },
+          select: {
+            assignedToId: true,
+            spaceId: true,
+            title: true,
+            status: true,
+            assignees: { select: { userId: true } },
+          },
         })
       : [];
     // Key by (user, location) so a member in multiple spaces gets the right task.
     const taskByKey = new Map<string, { title: string; status: string }>();
     for (const t of activeTasks) {
-      if (!t.assignedToId || !t.spaceId) continue;
-      const key = `${t.assignedToId}:${t.spaceId}`;
-      const ex = taskByKey.get(key);
-      if (!ex || (TASK_PRIORITY[t.status] || 0) > (TASK_PRIORITY[ex.status] || 0)) {
-        taskByKey.set(key, { title: t.title, status: t.status });
+      if (!t.spaceId) continue;
+      const holders = new Set<string>();
+      if (t.assignedToId) holders.add(t.assignedToId);
+      for (const a of t.assignees ?? []) holders.add(a.userId);
+      for (const userId of holders) {
+        const key = `${userId}:${t.spaceId}`;
+        const ex = taskByKey.get(key);
+        if (!ex || (TASK_PRIORITY[t.status] || 0) > (TASK_PRIORITY[ex.status] || 0)) {
+          taskByKey.set(key, { title: t.title, status: t.status });
+        }
       }
     }
     const enriched = assignments.map(({ spaceId, ...a }) => {
