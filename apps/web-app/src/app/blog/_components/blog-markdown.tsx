@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
+import { resolveBlogAssetUrl } from "@/lib/blog";
 
 /**
  * Blog-article Markdown renderer in the dark marketing theme (the help center
@@ -25,7 +26,7 @@ export function BlogMarkdown({ children }: { children: string }) {
         img: ({ src, alt }) => (
           // eslint-disable-next-line @next/next/no-img-element -- markdown images are author-provided static assets
           <img
-            src={typeof src === "string" ? src : undefined}
+            src={typeof src === "string" ? resolveBlogAssetUrl(src) : undefined}
             alt={alt ?? ""}
             loading="lazy"
             className="my-8 w-full rounded-xl border border-white/[0.08]"

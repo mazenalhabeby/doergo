@@ -5,7 +5,8 @@ import { getAllPosts, formatPostDate } from "@/lib/blog";
 const DISPLAY = "font-[family:var(--font-familjen)]";
 const MONO = "font-[family:var(--font-martian)]";
 
-export const dynamic = "force-static";
+// DB-backed posts publish without a deploy — re-render at most every 5 minutes.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: { absolute: "Blog — HBCField" },
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/blog" },
 };
 
-export default function BlogIndexPage() {
-  const posts = getAllPosts();
+export default async function BlogIndexPage() {
+  const posts = await getAllPosts();
 
   return (
     <main className={`min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>

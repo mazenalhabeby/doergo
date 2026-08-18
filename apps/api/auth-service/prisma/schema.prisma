@@ -3311,3 +3311,33 @@ model ModulePrice {
   @@index([configId])
   @@map("module_prices")
 }
+
+// ─── Public marketing blog (AI-authored via platform API/MCP) ───────────────────
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String
+  content     String // Markdown body
+  coverUrl    String? // e.g. /api/v1/blog/images/<id> or any absolute URL
+  author      String    @default("HBCField Team")
+  tags        String[]  @default([])
+  status      String    @default("PUBLISHED") // DRAFT | PUBLISHED
+  publishedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, publishedAt])
+  @@map("blog_posts")
+}
+
+model BlogImage {
+  id        String   @id @default(cuid())
+  mime      String
+  fileName  String?
+  data      Bytes // stored in DB: blog-scale images, durable, backed up with the DB
+  createdAt DateTime @default(now())
+
+  @@map("blog_images")
+}

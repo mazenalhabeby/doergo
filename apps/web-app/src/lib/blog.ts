@@ -61,8 +61,8 @@ function toPost(slug: string, raw: string): BlogPost {
   };
 }
 
-/** All posts, newest first. Returns [] when the content directory is absent. */
-export function getAllPosts(): BlogPost[] {
+/** File posts, newest first. Returns [] when the content directory is absent. */
+export function getFilePosts(): BlogPost[] {
   let files: string[];
   try {
     files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith(".md"));
@@ -74,9 +74,77 @@ export function getAllPosts(): BlogPost[] {
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function getPost(slug: string): BlogPost | null {
+// ── API-backed posts (written via the platform blog API / MCP) ────────────────
+// The DB is the dynamic source: new posts published through the API appear on
+// the site within the revalidation window, no deploy needed. File posts remain
+// as a second source; on a slug collision the DB wins.
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://hbcfield.com/api/v1";
+
+/** API-relative asset URLs (e.g. /api/v1/blog/images/x) → absolute against the API host. */
+export function resolveBlogAssetUrl(u: string | undefined | null): string | undefined {
+  if (!u) return undefined;
+  if (u.startsWith("/api/v1/")) return `${API_URL}${u.slice("/api/v1".length)}`;
+  return u;
+}
+
+interface ApiPost {
+  slug: string;
+  title: string;
+  description: string;
+  author: string;
+  tags: string[];
+  coverUrl?: string | null;
+  publishedAt: string;
+  content: string;
+}
+
+function fromApi(p: ApiPost): BlogPost {
+  const words = p.content.split(/\s+/).filter(Boolean).length;
+  return {
+    slug: p.slug,
+    title: p.title,
+    description: p.description,
+    date: (p.publishedAt ?? "").slice(0, 10) || "1970-01-01",
+    author: p.author || "HBCField Team",
+    tags: p.tags ?? [],
+    cover: resolveBlogAssetUrl(p.coverUrl) ,
+    readingMinutes: Math.max(1, Math.round(words / 220)),
+    content: p.content.trim(),
+  };
+}
+
+async function fetchApiPosts(): Promise<BlogPost[]> {
+  try {
+    const res = await fetch(`${API_URL}/blog/posts`, { next: { revalidate: 300 } });
+    if (!res.ok) return [];
+    const body = await res.json();
+    const list: ApiPost[] = body?.data ?? [];
+    return list.map(fromApi);
+  } catch {
+    return [];
+  }
+}
+
+/** All posts (DB + files, DB wins on slug), newest first. */
+export async function getAllPosts(): Promise<BlogPost[]> {
+  const api = await fetchApiPosts();
+  const seen = new Set(api.map((p) => p.slug));
+  return [...api, ...getFilePosts().filter((p) => !seen.has(p.slug))].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export async function getPost(slug: string): Promise<BlogPost | null> {
   // Slug comes from the URL — refuse anything that could traverse paths.
   if (!/^[a-z0-9-]+$/.test(slug)) return null;
+  try {
+    const res = await fetch(`${API_URL}/blog/posts/${slug}`, { next: { revalidate: 300 } });
+    if (res.ok) {
+      const body = await res.json();
+      if (body?.data) return fromApi(body.data);
+    }
+  } catch {
+    /* fall through to file */
+  }
   try {
     return toPost(slug, fs.readFileSync(path.join(BLOG_DIR, `${slug}.md`), "utf8"));
   } catch {

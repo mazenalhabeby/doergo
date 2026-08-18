@@ -35,6 +35,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { SupportModule } from './modules/support/support.module';
 import { ShiftIssuesModule } from './modules/shift-issues/shift-issues.module';
 import { PlatformAdminModule } from './modules/platform-admin/platform-admin.module';
+import { BlogModule } from './modules/blog/blog.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PhasesModule } from './modules/phases/phases.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
@@ -123,6 +124,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     SupportModule,
     ShiftIssuesModule,
     PlatformAdminModule,
+    BlogModule,
     ChatModule,
     PhasesModule,
     SprintsModule,

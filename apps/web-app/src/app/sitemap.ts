@@ -21,7 +21,10 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
 const abs = (rel: Record<string, string>): Record<string, string> =>
   Object.fromEntries(Object.entries(rel).map(([k, p]) => [k, `${SITE}${p === "/" ? "" : p}`]));
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Blog posts publish dynamically via the API — refresh the sitemap hourly.
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const items: MetadataRoute.Sitemap = [];
 
@@ -69,7 +72,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }
 
   // Blog hub + posts (English-only).
-  const posts = getAllPosts();
+  const posts = await getAllPosts();
   if (posts.length > 0) {
     items.push({ url: `${SITE}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 });
     for (const p of posts) {
