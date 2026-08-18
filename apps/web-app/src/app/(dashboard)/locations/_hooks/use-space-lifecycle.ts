@@ -23,7 +23,12 @@ export function useSpaceLifecycle(handlers?: {
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["locations"] })
+  const invalidate = () => {
+    // Both cache families: the spaces list (["locations", …]) and the
+    // per-space detail used by the settings page (["location", id]).
+    queryClient.invalidateQueries({ queryKey: ["locations"] })
+    queryClient.invalidateQueries({ queryKey: ["location"] })
+  }
 
   const archive = useMutation({
     mutationFn: (id: string) => locationsApi.delete(id),
