@@ -634,6 +634,22 @@ export class AttendanceNotificationHandler {
     }
   }
 
+  /**
+   * Space and roster changes. These carry no notification of their own — they
+   * exist so open dashboards and space lists re-read instead of showing stale
+   * data until someone hits refresh, which was the last case in the app that
+   * still required one.
+   */
+  @EventPattern('space_changed')
+  async handleSpaceChanged(@Payload() data: { organizationId: string; spaceId?: string | null }) {
+    this.websocketGateway.emitSpaceChanged(data.organizationId, data.spaceId ?? null);
+  }
+
+  @EventPattern('space_roster_changed')
+  async handleSpaceRosterChanged(@Payload() data: { organizationId: string; spaceId?: string | null }) {
+    this.websocketGateway.emitSpaceRosterChanged(data.organizationId, data.spaceId ?? null);
+  }
+
   @EventPattern('attendance_clock_in')
   async handleClockIn(@Payload() data: {
     userId: string;

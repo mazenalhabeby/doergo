@@ -47,6 +47,9 @@ const Events = {
   EXCURSION_REJECTED: "geofence_excursion_rejected",
   EXCURSION_RETURNED: "geofence_excursion_returned",
   EXCURSION_EXPIRED: "geofence_excursion_expired",
+  // Spaces
+  SPACE_CHANGED: "space.changed",
+  SPACE_ROSTER_CHANGED: "space.rosterChanged",
   // Tracking
   WORKER_LOCATION: "worker.locationUpdated",
   // Future: messaging, calls
@@ -120,6 +123,14 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.EXCURSION_REJECTED]: [...ALL_ATTENDANCE_KEYS], // reject clocks the worker out
   [Events.EXCURSION_RETURNED]: [["geofence-excursions"]],
   [Events.EXCURSION_EXPIRED]: [["geofence-excursions"]],
+
+  // Space events → refresh the space lists and rosters. Until these existed, a
+  // space created/renamed/archived by someone else — or a roster edited by
+  // another admin — stayed invisible until the viewer reloaded the page. The
+  // payload carries ids only; each client re-reads through its own scoped
+  // endpoint, so nothing here widens what a viewer can see.
+  [Events.SPACE_CHANGED]: [["locations"], ["locationRosters"]],
+  [Events.SPACE_ROSTER_CHANGED]: [["locationRosters"], ["space-assignments"], ["all-location-assignments"]],
 
   // Location events → invalidate tracking data
   [Events.WORKER_LOCATION]: [["workerLocations"]],
