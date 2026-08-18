@@ -19,6 +19,7 @@ import { assigneeIds } from "@/lib/task-assignment"
 
 import { getTodayString, isClockedIn } from "../_components/helpers"
 import type { AttendanceFacts } from "./build-workspace-boxes"
+import { buildPresenceDirectory } from "./presence-directory"
 
 /**
  * Everything the dashboard reads, and the shapes it reads it into.
@@ -203,6 +204,13 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // employees (who can't read /organizations/members) we fall back to the user
   // details embedded in the scoped location rosters — so their space still
   // shows real names/avatars without exposing the whole directory.
+  // Managers cannot read the directory, so presence falls back to the people
+  // their attendance feed names — see buildPresenceDirectory.
+  const presenceDirectory = useMemo(
+    () => buildPresenceDirectory({ members, todayEntries, isAdminOrDispatcher }),
+    [members, todayEntries, isAdminOrDispatcher],
+  )
+
   const memberMap = useMemo(() => {
     const map = new Map<string, OrgMember>()
     for (const a of rosters) {
@@ -210,10 +218,12 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
         map.set(a.user.id, { ...a.user, isActive: true, role: "EMPLOYEE" } as unknown as OrgMember)
       }
     }
-    // Full member records take precedence (richer data) when available.
+    // Fuller records take precedence — the real directory first, then anything
+    // reconstructed from attendance for viewers who cannot read it.
+    for (const m of presenceDirectory) if (!map.has(m.id)) map.set(m.id, m)
     for (const m of members) map.set(m.id, m)
     return map
-  }, [members, rosters])
+  }, [members, presenceDirectory, rosters])
 
   // Per-user attendance facts, derived in ONE pass. Previously the same array
   // was copied and re-sorted three times to build three parallel maps keyed by
@@ -341,7 +351,8 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     // raw
     tasks,
     allLocations,
-    members,
+    /** Presence list: the directory, or its attendance-derived stand-in. */
+    members: presenceDirectory,
     rosters,
     todayEntries,
     pendingApprovals,
