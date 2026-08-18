@@ -23,6 +23,9 @@ import {
   haversineDistance,
   getStatusCapabilities,
   accessAllowsInSpace,
+  canAccessTask,
+  isTaskAssignee,
+  isWithinTaskBoundary,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -1540,51 +1543,68 @@ export class TasksService {
   /**
    * Check if user has access to a task
    */
+  /**
+   * May this caller touch this task?
+   *
+   * The single gate for every per-task mutation — comments, checklist items,
+   * status, assignees, dependencies. Order matters: the ORGANIZATION BOUNDARY
+   * is checked first, before any relationship to the task can grant access.
+   *
+   * It used to be checked last, and two paths reached `return` without ever
+   * consulting it:
+   *
+   *   • being assigned to the task returned immediately, so a stale
+   *     TaskAssignee row — a member who has since moved to another
+   *     organization, or a guest whose space share was revoked — kept write
+   *     access to a task that is no longer theirs to touch;
+   *   • the ADMIN branch denied only when the caller was BOTH not the creator
+   *     AND out of org, so having created a task overrode org isolation
+   *     entirely.
+   *
+   * Neither needs a hostile actor to bite: an ordinary org transfer is enough.
+   * A relationship to a task is now something that grants access WITHIN the
+   * boundary, never something that crosses it.
+   *
+   * `sharedSpaceIds` is the one legitimate way across, and it is
+   * server-authoritative — resolved from the token grant in auth-service, never
+   * client input. Callers that do not forward it simply get same-org semantics.
+   */
+  /**
+   * May this caller touch this task?
+   *
+   * The gate for every per-task mutation — comments, checklist items, status,
+   * assignees, dependencies. The decision itself lives in @hbcfield/shared
+   * (canAccessTask) because attachments.service needs the same answer and used
+   * to compute a different one. This wrapper only supplies the facts: it loads
+   * the co-assignee rows when they were not included with the task, and turns a
+   * "no" into the exception the callers expect.
+   */
   private async checkTaskAccess(
     task: any,
     userId: string,
     userRole: string,
     organizationId: string,
     canViewAllTasks?: boolean,
+    sharedSpaceIds?: string[],
   ) {
-    // Any user assigned to the task can access it (regardless of role). This
-    // covers BOTH the legacy single-assignee field (LEAD, mirrored into
-    // assignedToId) AND multi-assignee MEMBER rows in TaskAssignee — otherwise
-    // a MEMBER assignee would be locked out of their own task.
-    if (task.assignedToId === userId) {
-      return;
-    }
-    if (Array.isArray(task.assignees)) {
-      if (task.assignees.some((a: any) => a.userId === userId)) return;
-    } else {
+    const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds };
+
+    // Only hit the database when the answer is genuinely unknown — and only
+    // once the task is known to be inside the boundary, so an out-of-org probe
+    // cannot make us query on its behalf.
+    let assignee = isTaskAssignee(task, userId);
+    if (assignee === null && isWithinTaskBoundary(task, caller)) {
       const membership = await this.prisma.taskAssignee.findFirst({
         where: { taskId: task.id, userId },
         select: { id: true },
       });
-      if (membership) return;
+      assignee = !!membership;
     }
 
-    // ADMIN can access tasks they created or anything in their org.
-    if (userRole === Role.ADMIN) {
-      if (task.createdById !== userId && task.organizationId !== organizationId) {
-        this.logger.warn(`Authorization denied: ADMIN access to task outside org`, { userId, taskId: task.id });
-        throw new ForbiddenException('Access denied');
-      }
-      return;
+    if (!canAccessTask(task, caller, assignee ?? false)) {
+      this.logger.warn('Authorization denied for task', { userId, taskId: task.id });
+      throw new ForbiddenException('Access denied');
     }
-
-    // "View all tasks" grant → access to any task in their org.
-    if (canViewAllTasks) {
-      if (task.organizationId !== organizationId) {
-        this.logger.warn(`Authorization denied: view-all access to task outside org`, { userId, taskId: task.id });
-        throw new ForbiddenException('Access denied');
-      }
-      return;
-    }
-
-    // Otherwise: only tasks assigned to them (already checked above) → deny.
-    this.logger.warn(`Authorization denied: access to unassigned task`, { userId, taskId: task.id });
-    throw new ForbiddenException('Access denied');
   }
 
   /**

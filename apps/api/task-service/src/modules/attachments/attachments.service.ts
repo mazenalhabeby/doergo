@@ -11,7 +11,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TaskEventType, AttachmentType, Role, success } from '@hbcfield/shared';
+import { TaskEventType, AttachmentType, Role, success, canAccessTask } from '@hbcfield/shared';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
@@ -289,6 +289,14 @@ export class AttachmentsService {
     return success(null, 'Avatar deleted from S3');
   }
 
+  /**
+   * May this caller touch this task's attachments?
+   *
+   * Delegates to the shared rule (@hbcfield/shared canAccessTask), which is the
+   * same decision tasks.service makes. This file used to carry its own copy
+   * that recognised only the LEAD assignee, so a member co-assigned to a task
+   * could comment on it but was refused when attaching a photo to it.
+   */
   private checkTaskAccess(
     task: any,
     userId: string,
@@ -296,15 +304,7 @@ export class AttachmentsService {
     organizationId: string,
     canViewAllTasks?: boolean,
   ) {
-    // Admin or "view all tasks" grant → any task in their org.
-    if (userRole === Role.ADMIN || canViewAllTasks) {
-      if (task.organizationId !== organizationId) {
-        throw new ForbiddenException('Access denied');
-      }
-      return;
-    }
-    // Otherwise: only tasks in their org assigned to them.
-    if (task.organizationId !== organizationId || task.assignedToId !== userId) {
+    if (!canAccessTask(task, { userId, userRole, organizationId, canViewAllTasks })) {
       throw new ForbiddenException('Access denied');
     }
   }

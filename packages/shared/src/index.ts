@@ -48,3 +48,6 @@ export * from './utils/crypto';
 
 // Platform-staff RBAC (permissions matrix)
 export * from './platform/permissions';
+
+// The single per-task authorization rule — pure, shared by every service.
+export * from './access/task-access';
