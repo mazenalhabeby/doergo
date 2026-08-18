@@ -3312,7 +3312,9 @@
       "deleted": "Espacio archivado",
       "deleteFailed": "No se pudo archivar el espacio",
       "purgeHint": "Elimina el espacio para siempre. Solo es posible mientras no tenga tareas, asistencia ni turnos. Esta acción no se puede deshacer.",
-      "purgeDialogDesc": "Esto elimina el espacio permanentemente. Solo funciona mientras el espacio no tenga tareas, asistencia ni turnos; de lo contrario, archívelo."
+      "purgeDialogDesc": "Esto elimina el espacio permanentemente. Solo funciona mientras el espacio no tenga tareas, asistencia ni turnos; de lo contrario, archívelo.",
+      "restoreTitle": "Restaurar este espacio",
+      "restoreHint": "Este espacio está archivado. Al restaurarlo vuelve a estar activo y visible en los selectores."
     },
     "ownershipSection": "Propiedad",
     "ownershipHint": "¿Es un proyecto, tu propia empresa o una empresa cliente para la que trabajas?",

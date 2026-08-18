@@ -3,46 +3,39 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { AlertTriangle, Info, Loader2, Trash2 } from "lucide-react"
+import { AlertTriangle, ArchiveRestore, Info, Loader2, Trash2 } from "lucide-react"
 
 import { type CompanyLocation } from "@/lib/api"
-import { useSpaceLifecycle } from "../../_hooks/use-space-lifecycle"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { useSpaceLifecycle } from "../../_hooks/use-space-lifecycle"
+import { SpaceLifecycleDialog, type SpaceLifecycleMode } from "../../_components/space-lifecycle-dialog"
 
 /**
- * Danger zone — deleting (archiving) a space. Structural spaces (the org's
- * default bucket and the Remote clock-in bucket) are never deletable; the
- * backend enforces the same guard. Deleting moves the space's tasks to the
- * default space, so a type-to-confirm gate protects against accidents.
+ * Danger zone — space lifecycle. State-aware:
+ *   active space   → Archive (type-to-confirm) + Delete permanently
+ *   archived space → Restore (instant, it's safe) + Delete permanently
+ * Structural spaces (default bucket, Remote bucket) are never archivable or
+ * deletable; the backend enforces the same guards. All actions run through the
+ * shared useSpaceLifecycle hook + SpaceLifecycleDialog (DRY with the list page).
  */
 export function DangerZone({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const router = useRouter()
 
-  const [open, setOpen] = useState(false)
-  const [confirmText, setConfirmText] = useState("")
-  // 'archive' = deactivate (keeps history); 'purge' = permanent delete (empty spaces only)
-  const [mode, setMode] = useState<"archive" | "purge">("archive")
+  const [dialogMode, setDialogMode] = useState<SpaceLifecycleMode>("archive")
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   const locked = !!space.isDefault || !!space.isRemote
   const taskCount = space._count?.tasks ?? 0
-  const canDelete = confirmText.trim() === space.name
 
-  // Same lifecycle actions as the spaces list — one behavior, one copy (DRY).
-  const done = () => router.push("/locations")
-  const lifecycle = useSpaceLifecycle({ onArchived: done, onPurged: done })
-  const mutation = mode === "purge" ? lifecycle.purge : lifecycle.archive
+  // Restore is non-destructive — no confirm gate needed.
+  const lifecycle = useSpaceLifecycle()
+
+  const openDialog = (mode: SpaceLifecycleMode) => {
+    setDialogMode(mode)
+    setDialogOpen(true)
+  }
 
   return (
     <Card className="max-w-3xl border-destructive/40">
@@ -58,31 +51,48 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="pr-4">
-            <p className="text-sm font-medium text-foreground">{t("locations.danger.deleteTitle")}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{t("locations.danger.deleteHint")}</p>
-            {locked && (
-              <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Info className="h-3.5 w-3.5" />
-                {space.isDefault ? t("locations.danger.lockedDefault") : t("locations.danger.lockedRemote")}
-              </p>
-            )}
+        {space.isActive ? (
+          /* Active → offer Archive */
+          <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="pr-4">
+              <p className="text-sm font-medium text-foreground">{t("locations.danger.deleteTitle")}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("locations.danger.deleteHint")}</p>
+              {locked && (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Info className="h-3.5 w-3.5" />
+                  {space.isDefault ? t("locations.danger.lockedDefault") : t("locations.danger.lockedRemote")}
+                </p>
+              )}
+            </div>
+            <Button variant="destructive" className="shrink-0" disabled={locked} onClick={() => openDialog("archive")}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t("locations.danger.deleteButton")}
+            </Button>
           </div>
-          <Button
-            variant="destructive"
-            className="shrink-0"
-            disabled={locked}
-            onClick={() => {
-              setMode("archive")
-              setConfirmText("")
-              setOpen(true)
-            }}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {t("locations.danger.deleteButton")}
-          </Button>
-        </div>
+        ) : (
+          /* Archived → offer Restore */
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="pr-4">
+              <p className="text-sm font-medium text-foreground">{t("locations.danger.restoreTitle", "Restore this space")}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t("locations.danger.restoreHint", "This space is archived. Restoring makes it active and visible in pickers again.")}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="shrink-0 border-emerald-600/40 text-emerald-600 hover:bg-emerald-600/10 hover:text-emerald-600"
+              onClick={() => lifecycle.restore.mutate(space.id)}
+              disabled={lifecycle.restore.isPending}
+            >
+              {lifecycle.restore.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArchiveRestore className="mr-2 h-4 w-4" />
+              )}
+              {t("locations.restoreAction", "Restore")}
+            </Button>
+          </div>
+        )}
 
         {/* Permanent delete — empty spaces only (server-guarded). */}
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -92,82 +102,21 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
               {t("locations.danger.purgeHint", "Removes the space forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.")}
             </p>
           </div>
-          <Button
-            variant="destructive"
-            className="shrink-0"
-            disabled={locked}
-            onClick={() => {
-              setMode("purge")
-              setConfirmText("")
-              setOpen(true)
-            }}
-          >
+          <Button variant="destructive" className="shrink-0" disabled={locked} onClick={() => openDialog("purge")}>
             <Trash2 className="mr-2 h-4 w-4" />
             {t("locations.purge", "Delete permanently")}
           </Button>
         </div>
       </CardContent>
 
-      <Dialog open={open} onOpenChange={(o) => !mutation.isPending && setOpen(o)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {mode === "purge"
-                ? t("locations.purgeSpace", "Delete space permanently")
-                : t("locations.danger.dialogTitle", { name: space.name })}
-            </DialogTitle>
-            <DialogDescription>
-              {mode === "purge"
-                ? t("locations.danger.purgeDialogDesc", "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead.")
-                : t("locations.danger.dialogDesc")}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-1">
-            {mode === "archive" && (
-              <p className="text-sm text-muted-foreground">
-                {taskCount > 0
-                  ? t("locations.danger.tasksMoved", { count: taskCount })
-                  : t("locations.danger.tasksNone")}
-              </p>
-            )}
-            <div className="space-y-1.5">
-              <Label htmlFor="danger-confirm">
-                {t("locations.danger.confirmLabel", { name: space.name })}
-              </Label>
-              <Input
-                id="danger-confirm"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder={space.name}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-              {t("common.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => mutation.mutate(space.id)}
-              disabled={!canDelete || mutation.isPending}
-            >
-              {mutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("locations.danger.deleting")}
-                </>
-              ) : mode === "purge" ? (
-                t("locations.purge", "Delete permanently")
-              ) : (
-                t("locations.danger.confirmButton")
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SpaceLifecycleDialog
+        space={space}
+        mode={dialogMode}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        taskCount={taskCount}
+        onDone={() => router.push("/locations")}
+      />
     </Card>
   )
 }

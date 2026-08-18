@@ -3329,7 +3329,9 @@
       "deleted": "Space archived",
       "deleteFailed": "Could not archive the space",
       "purgeHint": "Removes the space forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.",
-      "purgeDialogDesc": "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead."
+      "purgeDialogDesc": "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead.",
+      "restoreTitle": "Restore this space",
+      "restoreHint": "This space is archived. Restoring makes it active and visible in pickers again."
     },
     "ownershipSection": "Ownership",
     "ownershipHint": "Is this a project, your own company, or a customer company you do work for?",
