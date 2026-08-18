@@ -22,6 +22,7 @@ import {
 import type { TimeEntry } from "@hbcfield/shared"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { fetchAllPages } from "@/lib/paginate"
+import { assigneeIds, isAssignedTo } from "@/lib/task-assignment"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import {
@@ -46,6 +47,7 @@ import {
   getTodayString,
 } from "./helpers"
 import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
+import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 
 // ── Tuning ───────────────────────────────────────────────────────────────────
 
@@ -182,6 +184,11 @@ export function ClientDashboard() {
   // Drives the guide example team (see below).
   const { activeTourId, isTourCompleted } = useTour()
   const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
+  // Access-Profile space scope: 'all' | 'own' | 'tasks'. Admins/managers always
+  // see every space. Resolved here (not further down) because it decides whether
+  // the spaces request is worth making at all.
+  const spaceScope = getSpaceScope(user ?? {})
+  const showsSpaces = isAdminOrDispatcher || spaceScope !== "tasks"
 
   const handleEditLocation = useCallback((locationId: string) => {
     // "Manage Space" → that space's own settings page, not the all-spaces list.
@@ -216,6 +223,9 @@ export function ClientDashboard() {
   const { data: locationsData, isLoading: loadingLocations } = useQuery({
     queryKey: ["locations", "dashboard"],
     queryFn: () => fetchAllPages((page) => locationsApi.list({ page, limit: SPACES_PAGE_SIZE })),
+    // A 'tasks'-scope member sees no spaces by definition; the server ran the
+    // full query and then discarded every row for them. Don't ask.
+    enabled: showsSpaces,
   })
 
   // All org members (for worker info: name, avatar, workMode, role).
@@ -404,7 +414,9 @@ export function ClientDashboard() {
     [attendanceByUser, spaceMetaByLocation],
   )
 
-  // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED)
+  // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED).
+  // Credited to EVERY assignee, not just the lead: a co-assignee working the task
+  // showed no current task at all when this keyed off assignedToId alone.
   const activeTaskMap = useMemo(() => {
     const map = new Map<string, Task>()
     const priority: Record<string, number> = {
@@ -414,13 +426,13 @@ export function ClientDashboard() {
       BLOCKED: 1,
     }
     for (const task of tasks) {
-      const assigneeId = task.assignedToId
-      if (!assigneeId) continue
       const p = priority[task.status]
       if (p === undefined) continue
-      const existing = map.get(assigneeId)
-      if (!existing || (priority[existing.status] || 0) < p) {
-        map.set(assigneeId, task)
+      for (const assigneeId of assigneeIds(task)) {
+        const existing = map.get(assigneeId)
+        if (!existing || (priority[existing.status] || 0) < p) {
+          map.set(assigneeId, task)
+        }
       }
     }
     return map
@@ -514,14 +526,15 @@ export function ClientDashboard() {
 
   // ── Loading ────────────────────────────────────────────────────────────────
 
-  const isDataLoading = loadingTasks || loadingLocations
+  // `loadingLocations` stays true forever while the query is disabled, so only
+  // count it when the spaces request is actually being made.
+  const isDataLoading = loadingTasks || (showsSpaces && loadingLocations)
 
   // Role-based + Access-Profile space-scope filtering.
   //   admin/manager → all spaces
   //   scope 'tasks' → NO spaces (tasks-only landing)
   //   scope 'all'   → read-only overview of every space
   //   scope 'own'   → only the spaces they're a roster member of (or assigned a task in)
-  const spaceScope = getSpaceScope(user ?? {})
   const locations = useMemo(() => {
     if (isAdminOrDispatcher) return allLocations
     if (spaceScope === "tasks") return []
@@ -533,7 +546,7 @@ export function ClientDashboard() {
       if (user?.id && ids.has(user.id)) userSpaceIds.add(locId)
     }
     for (const task of tasks) {
-      if (task.assignedToId === user?.id && task.spaceId) userSpaceIds.add(task.spaceId)
+      if (task.spaceId && isAssignedTo(task, user?.id)) userSpaceIds.add(task.spaceId)
     }
     if (userSpaceIds.size === 0) return []
     return allLocations.filter((loc: { id: string }) => userSpaceIds.has(loc.id))
@@ -932,9 +945,11 @@ export function ClientDashboard() {
 
   const greeting = getGreeting()
 
-  // Show nothing while data is still loading — prevents empty state flash
+  // Structural skeleton while the first fetch is in flight. Returning null here
+  // blanked the screen between the route-level skeleton unmounting and the data
+  // arriving; the skeleton mirrors the real layout so nothing jumps when it does.
   if (isDataLoading) {
-    return null // layout's Suspense fallback handles the skeleton
+    return <DashboardPageSkeleton variant={dashboardVariant(user)} />
   }
 
   const hasFixedLocations = workspaceBoxes.some(b => b.type === "fixed")
@@ -944,7 +959,7 @@ export function ClientDashboard() {
     // Employees with no space view (tasks-only scope, or unassigned) get a
     // compact task-focused landing — NOT the admin "set up workspace" screen.
     if (!isAdminOrDispatcher) {
-      const myTasks = tasks.filter((tk) => tk.assignedToId === user?.id).slice(0, 6)
+      const myTasks = tasks.filter((tk) => isAssignedTo(tk, user?.id)).slice(0, 6)
       return (
         <div className="mx-auto max-w-2xl px-6 py-8">
           <div data-tour="dash-emp-header">
@@ -1118,7 +1133,7 @@ export function ClientDashboard() {
   // Activity panel. Tasks are ALWAYS present for employees (here, or full-width
   // in the no-spaces landing above).
   if (!isAdminOrDispatcher) {
-    const myTasks = tasks.filter((tk) => tk.assignedToId === user?.id)
+    const myTasks = tasks.filter((tk) => isAssignedTo(tk, user?.id))
     return (
       <div style={{ display: "flex", width: "100%", height: "100%" }}>
         {/* Main content — scrollable */}

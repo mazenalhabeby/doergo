@@ -1,7 +1,8 @@
 // Skeleton components barrel export
 export { DashboardSkeleton, PageContentSkeleton } from './dashboard-skeleton';
+export { GenericContentSkeleton } from './primitives';
+export { RouteSkeleton } from './route-skeleton';
 export {
-  DashboardPageSkeleton,
   TasksPageSkeleton,
   TaskDetailPageSkeleton,
   TaskNewPageSkeleton,

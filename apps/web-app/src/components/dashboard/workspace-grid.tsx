@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { WorkspaceBox, previewMembers, type WorkspaceBoxProps } from "./workspace-box"
+import { WorkspaceBox, WORKSPACE_CARD, previewMembers, type WorkspaceBoxProps } from "./workspace-box"
 
 export interface WorkspaceGridProps {
   boxes: WorkspaceBoxProps[]
@@ -155,7 +155,7 @@ export const WorkspaceGrid = React.memo(function WorkspaceGrid({
       ) : (
         // Closed: cards sized to their content — an empty / 1-person space is just
         // one node (76×89) + padding; bigger teams grow wider. Packed left, wrap.
-        <div ref={gridRef} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 14 }}>
+        <div ref={gridRef} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: WORKSPACE_CARD.GRID_GAP }}>
           {filteredBoxes.map(renderBox)}
         </div>
       )}

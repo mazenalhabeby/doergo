@@ -1,4 +1,4 @@
-import { DashboardPageSkeleton } from "@/components/skeletons"
+import { DashboardPageSkeleton } from "./_components/dashboard-skeleton"
 
 export default function Loading() {
   return <DashboardPageSkeleton />

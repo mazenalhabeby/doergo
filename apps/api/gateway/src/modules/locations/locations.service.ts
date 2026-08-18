@@ -51,6 +51,9 @@ export class LocationsService extends BaseGatewayService {
   async getLocationAssignmentsBatch(data: {
     locationIds: string[];
     organizationId: string;
+    requesterId?: string;
+    spaceScope?: string;
+    canViewAll?: boolean;
   }) {
     return this.send({ cmd: 'get_location_assignments_batch' }, data);
   }

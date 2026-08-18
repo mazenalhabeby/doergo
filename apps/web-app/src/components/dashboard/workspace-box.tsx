@@ -57,6 +57,36 @@ export interface WorkspaceBoxProps {
 }
 
 /**
+ * Geometry of a collapsed workspace card.
+ *
+ * Exported so the loading skeleton can lay out cards at exactly the sizes the
+ * real grid will use — otherwise the content visibly jumps when the data lands.
+ * Width snaps to whole node columns so every card of the same size matches
+ * exactly, independent of how long its title is.
+ */
+export const WORKSPACE_CARD = {
+  /** One person node. */
+  NODE_W: 76,
+  NODE_GAP: 8,
+  /** p-3 padding (24) + 1px border ×2 + ~5px slack so N nodes fit a row. */
+  PAD_X: 31,
+  MAX_COLS: 4,
+  /** Floor: an empty and a 1-person card are the same width, and wide enough
+   *  to keep the "All quiet today" label on one line. */
+  MIN_W: 140,
+  MIN_H: 135,
+  /** Gap between cards in the grid. */
+  GRID_GAP: 14,
+} as const
+
+/** Card width for a given number of previewed people. */
+export function workspaceCardWidth(nodeCount: number): number {
+  const { NODE_W, NODE_GAP, PAD_X, MAX_COLS, MIN_W } = WORKSPACE_CARD
+  const cols = Math.min(Math.max(nodeCount, 1), MAX_COLS)
+  return Math.max(cols * NODE_W + (cols - 1) * NODE_GAP + PAD_X, MIN_W)
+}
+
+/**
  * Members previewed on a COLLAPSED card, in display order: clocked in (on-site,
  * in field, remote) first, then online-but-off-shift. Offline off-duty members
  * are deliberately excluded — they only appear inside the expanded card.
@@ -124,20 +154,11 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
   const physicallyEmpty = people.length === 0 && visibleCount > 0
   const trulyEmpty = visibleCount === 0 && offShiftPeople.length === 0 && offDutyPeople.length === 0
 
-  // Card width snaps to node columns so every card of the same size matches
-  // exactly (an empty / 1-person card is always 1 node + padding — no variation
-  // from title length). 1–4 columns; each column is a 76px node.
-  // PAD_X = the card's p-3 padding (24) + 1px border ×2 (box-border) + ~5px of
-  // slack, so N nodes actually fit on a row instead of wrapping down by ~2px.
-  const NODE_W = 76, NODE_GAP = 8, PAD_X = 31
-  const MAX_COLS = 4
-  // Floor the 1-column size so an empty and a 1-person card are always the SAME
-  // width AND wide enough to keep the "All quiet today" label on a single line
-  // (a bare 1 node + padding = 100px is too narrow for the label to fit).
-  const MIN_CARD_W = 140
+  // Width snaps to whole node columns — see WORKSPACE_CARD, shared with the
+  // loading skeleton so the two lay out identically.
+  const MAX_COLS = WORKSPACE_CARD.MAX_COLS
   const shownNodes = people.length + onRoadPeople.length + remotePeople.length + offShiftPeople.length
-  const wCols = Math.min(Math.max(shownNodes, 1), MAX_COLS)
-  const cardWidth = Math.max(wCols * NODE_W + (wCols - 1) * NODE_GAP + PAD_X, MIN_CARD_W)
+  const cardWidth = workspaceCardWidth(shownNodes)
 
   // OPEN state is untouched — keep the original CSS-grid span placement so an
   // expanded space (and the collapsed strip beside it) looks exactly as before.
@@ -178,7 +199,7 @@ export const WorkspaceBox = React.memo(React.forwardRef<HTMLDivElement, Workspac
       style={{
         ...sizeStyle,
         // Compact, content-height cards; the masonry columns keep gaps equal.
-        minHeight: mode === "collapsed" ? 50 : 135,
+        minHeight: mode === "collapsed" ? 50 : WORKSPACE_CARD.MIN_H,
         transform: mode === "collapsed" ? "scale(0.98)" : "scale(1)",
         transition: `all 0.7s ${APPLE_EASE}`,
       }}
