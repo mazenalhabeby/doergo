@@ -1,22 +1,10 @@
+import { Shimmer as S } from './primitives';
 import { cn } from "@/lib/utils"
 
 // ============================================================================
 // Base Shimmer Block
 // ============================================================================
 
-function S({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-md bg-muted",
-        "before:absolute before:inset-0 before:-translate-x-full",
-        "before:animate-[shimmer_1.5s_infinite]",
-        "before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent",
-        className
-      )}
-    />
-  )
-}
 
 // Page wrapper
 const PAGE_OUTER = "min-h-full bg-background animate-in fade-in duration-200"

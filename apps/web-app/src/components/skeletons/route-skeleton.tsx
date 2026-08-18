@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 
 import { DashboardPageSkeleton, dashboardVariant } from '@/app/(dashboard)/dashboard/_components/dashboard-skeleton';
+import { TasksPageLoading } from '@/app/(dashboard)/tasks/_components/tasks-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 
 import { GenericContentSkeleton } from './primitives';
@@ -23,6 +24,12 @@ import { GenericContentSkeleton } from './primitives';
 export function RouteSkeleton() {
   const pathname = usePathname();
   const { user } = useAuth();
+
+  if (pathname === '/tasks') {
+    // Draws the view the user left the list in, so the auth check, the Suspense
+    // boundary and the route loader all show the same shape.
+    return <TasksPageLoading />;
+  }
 
   if (pathname === '/dashboard') {
     // The dashboard has three layouts; draw the one this user will actually get.

@@ -6,17 +6,37 @@ import { cn } from '@/lib/utils';
 // dashboard-skeleton.tsx so RouteSkeleton can use the generic content shape
 // without the two files importing each other in a cycle.
 
-function Shimmer({ className, style }: { className?: string; style?: React.CSSProperties }) {
+/**
+ * The one shimmering placeholder.
+ *
+ * Every skeleton in the app draws from this: the page skeletons, the dashboard,
+ * and the task views. Four separate copies of the same 200-character class
+ * string existed before — one per skeleton file plus ~20 pasted inline into the
+ * tasks page — so a change to the sheen meant finding all of them.
+ *
+ * `delayMs` offsets the sweep per element, via a custom property because the
+ * animation runs on the ::before pseudo-element, which inline styles can't reach.
+ */
+export function Shimmer({
+  className,
+  style,
+  delayMs = 0,
+}: {
+  className?: string
+  style?: React.CSSProperties
+  delayMs?: number
+}) {
   return (
     <div
       className={cn(
         'relative overflow-hidden rounded-md bg-muted',
         'before:absolute before:inset-0 before:-translate-x-full',
-        'before:animate-[shimmer_1.5s_infinite]',
-        'before:bg-gradient-to-r before:from-transparent before:via-card/60 before:to-transparent',
-        className
+        'before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent',
+        'before:animate-[shimmer_1.5s_infinite] before:[animation-delay:var(--shimmer-delay,0ms)]',
+        'motion-reduce:before:animate-none',
+        className,
       )}
-      style={style}
+      style={{ ...style, '--shimmer-delay': `${delayMs}ms` } as React.CSSProperties}
     />
   );
 }

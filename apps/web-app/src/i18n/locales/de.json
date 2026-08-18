@@ -1410,8 +1410,8 @@
       "goalPlaceholder": "Was möchten wir erreichen?",
       "completeTitle": "„{{name}}“ abschließen?",
       "completeDescription": "Diesen Sprint abschließen und optional unerledigte Aufgaben verschieben.",
-      "moveRemaining_one": "{{count}} verbleibende Aufgabe verschieben",
-      "moveRemaining_other": "{{count}} verbleibende Aufgaben verschieben",
+      "moveRemaining_one": "1 offene Aufgabe verschieben",
+      "moveRemaining_other": "{{count}} offene Aufgaben verschieben",
       "tasksMovedToSprint": "Aufgaben werden nach „{{name}}“ verschoben",
       "tasksMovedToBacklog": "Aufgaben werden ins Backlog verschoben",
       "allComplete": "Alle Aufgaben in diesem Sprint sind abgeschlossen. Gute Arbeit!",
@@ -1436,7 +1436,10 @@
       "title": "Aufgabe bearbeiten",
       "description": "Aktualisieren Sie unten die Aufgabendetails.",
       "titlePlaceholder": "Aufgabentitel...",
-      "descriptionPlaceholder": "Beschreiben Sie das Problem..."
+      "descriptionPlaceholder": "Beschreiben Sie das Problem...",
+      "flow": "Ablauf",
+      "flowSimple": "Einfacher Ablauf",
+      "flowHint": "Ein anderer Ablauf ändert die Phasen der Aufgabe. Ihr Status wechselt zur ersten Phase des neuen Ablaufs, wenn die aktuelle dort nicht existiert."
     },
     "timeline": {
       "startLabel": "Start: {{date}}",

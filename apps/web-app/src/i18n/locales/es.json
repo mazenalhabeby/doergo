@@ -1410,8 +1410,8 @@
       "goalPlaceholder": "¿Qué queremos lograr?",
       "completeTitle": "¿Completar “{{name}}”?",
       "completeDescription": "Completa este sprint y, si quieres, mueve las tareas sin terminar.",
-      "moveRemaining_one": "Mover {{count}} tarea restante",
-      "moveRemaining_other": "Mover {{count}} tareas restantes",
+      "moveRemaining_one": "Mover 1 tarea sin terminar",
+      "moveRemaining_other": "Mover {{count}} tareas sin terminar",
       "tasksMovedToSprint": "Las tareas se moverán a “{{name}}”",
       "tasksMovedToBacklog": "Las tareas se moverán al backlog",
       "allComplete": "Todas las tareas de este sprint están completas. ¡Buen trabajo!",
@@ -1436,7 +1436,10 @@
       "title": "Editar tarea",
       "description": "Actualiza los detalles de la tarea a continuación.",
       "titlePlaceholder": "Título de la tarea...",
-      "descriptionPlaceholder": "Describe el problema..."
+      "descriptionPlaceholder": "Describe el problema...",
+      "flow": "Flujo",
+      "flowSimple": "Flujo simple",
+      "flowHint": "Cambiar el flujo actualiza las etapas de la tarea. Su estado pasa a la primera etapa del nuevo flujo si la actual no existe allí."
     },
     "timeline": {
       "startLabel": "Inicio: {{date}}",

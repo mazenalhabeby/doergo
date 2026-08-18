@@ -1410,8 +1410,8 @@
       "goalPlaceholder": "What do we want to achieve?",
       "completeTitle": "Complete “{{name}}”?",
       "completeDescription": "Complete this sprint and optionally move incomplete tasks.",
-      "moveRemaining_one": "Move {{count}} remaining task",
-      "moveRemaining_other": "Move {{count}} remaining tasks",
+      "moveRemaining_one": "Move 1 unfinished task",
+      "moveRemaining_other": "Move {{count}} unfinished tasks",
       "tasksMovedToSprint": "Tasks will be moved to “{{name}}”",
       "tasksMovedToBacklog": "Tasks will be moved to backlog",
       "allComplete": "All tasks in this sprint are complete. Nice work!",
@@ -1436,7 +1436,10 @@
       "title": "Edit Task",
       "description": "Update the task details below.",
       "titlePlaceholder": "Task title...",
-      "descriptionPlaceholder": "Describe the issue..."
+      "descriptionPlaceholder": "Describe the issue...",
+      "flow": "Flow",
+      "flowSimple": "Simple flow",
+      "flowHint": "Changing the flow updates the task's stages. Its status moves to the new flow's first stage if the current one doesn't exist there."
     },
     "timeline": {
       "startLabel": "Start: {{date}}",

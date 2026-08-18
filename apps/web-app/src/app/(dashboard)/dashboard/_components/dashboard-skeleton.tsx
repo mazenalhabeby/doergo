@@ -3,6 +3,7 @@
 import { getSpaceScope } from "@hbcfield/shared/client"
 
 import { WORKSPACE_CARD, workspaceCardCols } from "@/components/dashboard"
+import { Shimmer as S } from "@/components/skeletons/primitives"
 import { cn } from "@/lib/utils"
 
 /**
@@ -51,37 +52,6 @@ const ACTIVITY_LINES = [
   ["88%", "41%"],
   ["61%", "29%"],
 ]
-
-/**
- * Shimmering placeholder. The sheen is offset per element via `delayMs` so the
- * whole page doesn't pulse in lockstep, which reads as a single flashing block
- * rather than content arriving.
- */
-function S({
-  className,
-  style,
-  delayMs = 0,
-}: {
-  className?: string
-  style?: React.CSSProperties
-  delayMs?: number
-}) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-md bg-foreground/[0.06]",
-        "before:absolute before:inset-0 before:-translate-x-full",
-        "before:bg-gradient-to-r before:from-transparent before:via-foreground/[0.07] before:to-transparent",
-        // The delay has to land on the pseudo-element that actually animates,
-        // hence the custom property rather than a plain inline animationDelay.
-        "before:animate-[shimmer_1.6s_infinite] before:[animation-delay:var(--shimmer-delay,0ms)]",
-        "motion-reduce:before:animate-none",
-        className,
-      )}
-      style={{ ...style, "--shimmer-delay": `${delayMs}ms` } as React.CSSProperties}
-    />
-  )
-}
 
 /** One workspace card, laid out by the same CSS the live card uses. */
 function CardSkeleton({ nodes, index }: { nodes: number; index: number }) {
