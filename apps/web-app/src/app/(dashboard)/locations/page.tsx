@@ -26,6 +26,7 @@ import { notify } from "@/lib/toast"
 import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
+import { useSpaceLifecycle } from "./_hooks/use-space-lifecycle"
 import {
   locationsApi,
   workflowsApi,
@@ -103,24 +104,8 @@ export default function SpacesPage() {
 
   const locations = data?.data || []
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => locationsApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
-      setDeleteTarget(null)
-      notify.success(t("locations.toast.deactivated"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.deactivateFailed")),
-  })
-
-  const reactivateMutation = useMutation({
-    mutationFn: (id: string) => locationsApi.update(id, { isActive: true }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
-      notify.success(t("locations.toast.reactivated"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.reactivateFailed")),
-  })
+  // Unified space lifecycle (archive / restore) — shared with the settings danger zone.
+  const lifecycle = useSpaceLifecycle({ onArchived: () => setDeleteTarget(null) })
 
   // Re-sync EVERY space's tasks onto their workflows in one action.
   const resyncAllMutation = useMutation({
@@ -213,7 +198,7 @@ export default function SpacesPage() {
                 isAdmin={isAdmin}
                 index={index}
                 onDelete={() => setDeleteTarget(location)}
-                onReactivate={() => reactivateMutation.mutate(location.id)}
+                onReactivate={() => lifecycle.restore.mutate(location.id)}
                 onViewTasks={() => router.push(`/tasks?space=${location.id}`)}
                 onOpenSettings={() => router.push(`/locations/${location.id}`)}
               />
@@ -235,18 +220,16 @@ export default function SpacesPage() {
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{t("locations.deactivateSpace")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("locations.deactivateConfirmBefore")}<strong>{deleteTarget?.name}</strong>{t("locations.deactivateConfirmAfter")}
-              </AlertDialogDescription>
+              <AlertDialogTitle>{t("locations.danger.dialogTitle", { name: deleteTarget?.name })}</AlertDialogTitle>
+              <AlertDialogDescription>{t("locations.danger.dialogDesc")}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-red-600 hover:bg-red-700"
-                onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+                onClick={() => deleteTarget && lifecycle.archive.mutate(deleteTarget.id)}
               >
-                {t("locations.deactivate")}
+                {t("locations.danger.confirmButton")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -364,7 +347,7 @@ const SpaceCard = memo(function SpaceCard({
                   : "border-border text-muted-foreground"
               }`}
             >
-              {space.isActive ? t("common.active") : t("common.inactive")}
+              {space.isActive ? t("common.active") : t("locations.archived", "Archived")}
             </Badge>
             {/* Ownership kind — badge the non-default kinds (COMPANY is implicit). */}
             {space.kind === "CUSTOMER" && (
@@ -457,12 +440,12 @@ const SpaceCard = memo(function SpaceCard({
                 {space.isActive ? (
                   <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
                     <ToggleLeft className="mr-2 h-4 w-4" />
-                    {t("locations.deactivate")}
+                    {t("locations.archiveAction", "Archive")}
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
                     <ToggleRight className="mr-2 h-4 w-4" />
-                    {t("locations.reactivate")}
+                    {t("locations.restoreAction", "Restore")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
