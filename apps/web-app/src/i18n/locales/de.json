@@ -3329,7 +3329,9 @@
       "deleted": "Space archiviert",
       "deleteFailed": "Space konnte nicht archiviert werden",
       "purgeHint": "Entfernt den Space für immer. Nur möglich, solange er keine Aufgaben, Zeiterfassungen oder Schichten enthält. Dies kann nicht rückgängig gemacht werden.",
-      "purgeDialogDesc": "Dies entfernt den Space dauerhaft. Es funktioniert nur, solange der Space keine Aufgaben, Zeiterfassungen oder Schichten enthält — andernfalls archivieren Sie ihn."
+      "purgeDialogDesc": "Dies entfernt den Space dauerhaft. Es funktioniert nur, solange der Space keine Aufgaben, Zeiterfassungen oder Schichten enthält — andernfalls archivieren Sie ihn.",
+      "restoreTitle": "Diesen Space wiederherstellen",
+      "restoreHint": "Dieser Space ist archiviert. Beim Wiederherstellen wird er wieder aktiv und in Auswahllisten sichtbar."
     },
     "ownershipSection": "Zugehörigkeit",
     "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?",

@@ -27,6 +27,7 @@ import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceLifecycle } from "./_hooks/use-space-lifecycle"
+import { SpaceLifecycleDialog } from "./_components/space-lifecycle-dialog"
 import {
   locationsApi,
   workflowsApi,
@@ -87,7 +88,7 @@ export default function SpacesPage() {
   const isAdmin = user?.role === "ADMIN"
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<CompanyLocation | null>(null)
+  const [archiveTarget, setArchiveTarget] = useState<CompanyLocation | null>(null)
   const [resyncAllOpen, setResyncAllOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
@@ -104,8 +105,9 @@ export default function SpacesPage() {
 
   const locations = data?.data || []
 
-  // Unified space lifecycle (archive / restore) — shared with the settings danger zone.
-  const lifecycle = useSpaceLifecycle({ onArchived: () => setDeleteTarget(null) })
+  // Unified space lifecycle — restore is instant; archive goes through the
+  // shared type-to-confirm SpaceLifecycleDialog (same flow as space settings).
+  const lifecycle = useSpaceLifecycle()
 
   // Re-sync EVERY space's tasks onto their workflows in one action.
   const resyncAllMutation = useMutation({
@@ -197,7 +199,7 @@ export default function SpacesPage() {
                 workflows={workflows || []}
                 isAdmin={isAdmin}
                 index={index}
-                onDelete={() => setDeleteTarget(location)}
+                onDelete={() => setArchiveTarget(location)}
                 onReactivate={() => lifecycle.restore.mutate(location.id)}
                 onViewTasks={() => router.push(`/tasks?space=${location.id}`)}
                 onOpenSettings={() => router.push(`/locations/${location.id}`)}
@@ -216,24 +218,14 @@ export default function SpacesPage() {
           }}
         />
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("locations.danger.dialogTitle", { name: deleteTarget?.name })}</AlertDialogTitle>
-              <AlertDialogDescription>{t("locations.danger.dialogDesc")}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700"
-                onClick={() => deleteTarget && lifecycle.archive.mutate(deleteTarget.id)}
-              >
-                {t("locations.danger.confirmButton")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Archive confirmation — same type-to-confirm dialog as space settings. */}
+        <SpaceLifecycleDialog
+          space={archiveTarget}
+          mode="archive"
+          open={!!archiveTarget}
+          onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
+          taskCount={archiveTarget?._count?.tasks ?? 0}
+        />
 
         {/* Re-sync all spaces confirmation */}
         <AlertDialog open={resyncAllOpen} onOpenChange={setResyncAllOpen}>
