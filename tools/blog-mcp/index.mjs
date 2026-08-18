@@ -44,6 +44,15 @@ const MIME_BY_EXT = {
 
 const server = new McpServer({ name: "hbcfield-blog", version: "1.0.0" });
 
+/** Resolve a post reference (id or slug) to its id using the admin list. */
+async function resolveId(ref) {
+  if (!ref) throw new Error("Provide id or slug");
+  const posts = (await api("GET", "/platform/blog/posts")).data ?? [];
+  const hit = posts.find((p) => p.id === ref || p.slug === ref);
+  if (!hit) throw new Error(`No post found with id or slug "${ref}"`);
+  return hit.id;
+}
+
 server.tool(
   "list_blog_posts",
   "List all blog posts on hbcfield.com (including drafts) with id, slug, title, status and dates.",
@@ -109,31 +118,81 @@ server.tool(
   },
 );
 
+const patchShape = {
+  title: z.string().optional(),
+  description: z.string().optional(),
+  content: z.string().optional(),
+  newSlug: z.string().optional().describe("Change the post's URL slug"),
+  coverUrl: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  author: z.string().optional(),
+  status: z.enum(["PUBLISHED", "DRAFT"]).optional(),
+};
+
+async function applyUpdate(ref, patch) {
+  const id = await resolveId(ref);
+  const body = { ...patch };
+  if (body.newSlug !== undefined) { body.slug = body.newSlug; delete body.newSlug; }
+  return (await api("PATCH", `/platform/blog/posts/${encodeURIComponent(id)}`, body)).data;
+}
+
 server.tool(
   "update_blog_post",
-  "Update an existing blog post by id (any subset of fields; status PUBLISHED/DRAFT toggles visibility).",
-  {
-    id: z.string(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-    content: z.string().optional(),
-    slug: z.string().optional(),
-    coverUrl: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    author: z.string().optional(),
-    status: z.enum(["PUBLISHED", "DRAFT"]).optional(),
+  "Update an existing blog post (any subset of fields; status PUBLISHED/DRAFT toggles visibility). Reference the post by id or slug.",
+  { post: z.string().describe("Post id or slug"), ...patchShape },
+  async ({ post, ...patch }) => {
+    try { return out(await applyUpdate(post, patch)); } catch (e) { return err(e); }
   },
-  async ({ id, ...patch }) => {
-    try { return out((await api("PATCH", `/platform/blog/posts/${encodeURIComponent(id)}`, patch)).data); } catch (e) { return err(e); }
+);
+
+server.tool(
+  "update_blog_posts",
+  "Bulk-update several blog posts in one call. Each edit references a post by id or slug plus the fields to change. Returns a per-post result; one failure doesn't stop the rest.",
+  {
+    edits: z.array(z.object({ post: z.string().describe("Post id or slug"), ...patchShape })).min(1),
+  },
+  async ({ edits }) => {
+    const results = [];
+    for (const { post, ...patch } of edits) {
+      try {
+        const r = await applyUpdate(post, patch);
+        results.push({ post, ok: true, slug: r.slug, status: r.status });
+      } catch (e) {
+        results.push({ post, ok: false, error: String(e?.message ?? e) });
+      }
+    }
+    return out(results);
   },
 );
 
 server.tool(
   "delete_blog_post",
-  "Permanently delete a blog post by id.",
-  { id: z.string() },
-  async ({ id }) => {
-    try { return out((await api("DELETE", `/platform/blog/posts/${encodeURIComponent(id)}`)).data); } catch (e) { return err(e); }
+  "Permanently delete one blog post. Reference it by id or slug.",
+  { post: z.string().describe("Post id or slug") },
+  async ({ post }) => {
+    try {
+      const id = await resolveId(post);
+      return out((await api("DELETE", `/platform/blog/posts/${encodeURIComponent(id)}`)).data);
+    } catch (e) { return err(e); }
+  },
+);
+
+server.tool(
+  "delete_blog_posts",
+  "Permanently delete several blog posts in one call (ids or slugs). Returns a per-post result; one failure doesn't stop the rest.",
+  { posts: z.array(z.string()).min(1).describe("Post ids or slugs") },
+  async ({ posts }) => {
+    const results = [];
+    for (const ref of posts) {
+      try {
+        const id = await resolveId(ref);
+        const r = (await api("DELETE", `/platform/blog/posts/${encodeURIComponent(id)}`)).data;
+        results.push({ post: ref, ok: true, deletedSlug: r.slug });
+      } catch (e) {
+        results.push({ post: ref, ok: false, error: String(e?.message ?? e) });
+      }
+    }
+    return out(results);
   },
 );
 
