@@ -1370,15 +1370,13 @@ export class AttendanceService {
       organizationId: data.organizationId,
     };
 
-    // Date range filter
-    if (data.startDate || data.endDate) {
-      where.clockInAt = {};
-      if (data.startDate) {
-        where.clockInAt.gte = new Date(data.startDate);
-      }
-      if (data.endDate) {
-        where.clockInAt.lte = new Date(data.endDate);
-      }
+    // Date range filter. Uses the shared builder so a date-only `endDate`
+    // ("2026-08-18") becomes end-of-day rather than midnight — parsing it raw
+    // dropped every entry of the last day of the window, i.e. today's session
+    // (including the still-open one) never showed up in the history.
+    const range = buildDateRangeFilter(data.startDate, data.endDate);
+    if (range) {
+      where.clockInAt = range;
     }
 
     const [entries, total] = await Promise.all([
