@@ -30,7 +30,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getStatusConfig } from "@/lib/constants"
@@ -109,10 +108,24 @@ export function TaskDetailHeader({
 
         {/* Actions — clean, minimal */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/*
+            Edit is a button, not a menu item.
+
+            It lived inside the unlabelled ⋯ menu, which is where you put things
+            people occasionally need — not the primary action of the page. "There
+            is no way to edit the task" is what that looks like from the outside.
+            Cancel stays in the menu: it is destructive and belongs one step away.
+          */}
+          {!isCompleted && !isCanceled && canEdit && (
+            <Button variant="outline" size="sm" className="h-8" onClick={onEditClick}>
+              <Pencil className="size-3.5 mr-1.5" />
+              {t("tasks.detail.editTask")}
+            </Button>
+          )}
           {/* Only render actions the viewer may actually perform — the menu used
               to appear for anyone on an unfinished task, so Edit 403'd on save
               and Cancel sat one click away for people without the permission. */}
-          {!isCompleted && !isCanceled && (canEdit || canCancel) && (
+          {!isCompleted && !isCanceled && canCancel && (
             <AlertDialog>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -121,13 +134,6 @@ export function TaskDetailHeader({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {canEdit && (
-                    <DropdownMenuItem onClick={onEditClick}>
-                      <Pencil className="size-4 mr-2" />
-                      {t("tasks.detail.editTask")}
-                    </DropdownMenuItem>
-                  )}
-                  {canEdit && canCancel && <DropdownMenuSeparator />}
                   {canCancel && (
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">

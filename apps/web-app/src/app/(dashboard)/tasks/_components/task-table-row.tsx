@@ -1,18 +1,25 @@
 "use client"
 
 import React from "react"
-import { isTaskOverdue } from "@hbcfield/shared/client"
+import { isTaskOverdue, isFinishedStatus } from "@hbcfield/shared/client"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import {
   GripVertical,
   UserPlus,
+  ChevronDown,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
-import { getStatusConfig, getPriorityConfig } from "@/lib/constants"
+import { getStatusConfig, getPriorityConfig, TASK_STATUSES } from "@/lib/constants"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { TaskContextMenu, type TaskContextMenuActions } from "./task-context-menu"
 
@@ -55,6 +62,9 @@ function TaskTableRowInner({
   const { hasModule } = useAuth()
   const router = useRouter()
   const statusConfig = getStatusConfig(task.status)
+  // Offered only when there is something to offer: an action to call, and a
+  // task the server would actually move.
+  const canChangeStatus = !!contextActions?.onStatusChange && !isFinishedStatus(task.status)
   const priorityConfig = getPriorityConfig(task.priority)
   const PriorityIcon = priorityConfig.icon
 
@@ -173,15 +183,56 @@ function TaskTableRowInner({
         )}
       </div>
 
-      {/* Status Badge */}
-      <div className="w-[110px] flex-shrink-0">
-        <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-          style={{ backgroundColor: `${statusConfig.hex}14`, color: statusConfig.hex }}
-        >
-          <span className="size-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
-          {statusConfig.label}
-        </span>
+      {/*
+        Status — a control, not a label.
+
+        Changing it here was possible all along, but only by right-clicking the
+        row, which nobody discovers. On the board the same action is a drag you
+        can see. This is the third way of doing one thing, so it opens the same
+        list the context menu does. A finished task stays a plain badge: the
+        server will not move it, so nothing here should suggest otherwise.
+      */}
+      <div className="w-[110px] flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        {canChangeStatus ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title={t("tasks.menu.status")}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                style={{ backgroundColor: `${statusConfig.hex}14`, color: statusConfig.hex }}
+              >
+                <span className="size-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
+                {statusConfig.label}
+                <ChevronDown className="size-2.5 opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[180px]">
+              {TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {
+                const cfg = getStatusConfig(st)
+                return (
+                  <DropdownMenuItem
+                    key={st}
+                    disabled={st === task.status}
+                    onClick={() => contextActions!.onStatusChange!(task.id, st)}
+                    className={st === task.status ? "opacity-50" : ""}
+                  >
+                    <span className="size-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: cfg.hex }} />
+                    {cfg.label}
+                  </DropdownMenuItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+            style={{ backgroundColor: `${statusConfig.hex}14`, color: statusConfig.hex }}
+          >
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
+            {statusConfig.label}
+          </span>
+        )}
       </div>
 
       {/* Spacer for grid alignment */}
