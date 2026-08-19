@@ -1098,7 +1098,6 @@
       "fieldTechnician": "Employé de terrain",
       "call": "Appeler",
       "message": "Message",
-      "messageWho": "Écrire à qui ?",
       "steps": {
         "submitted": "Soumise",
         "assigned": "Attribuée",
@@ -5339,6 +5338,7 @@
   },
   "chat": {
     "title": "Messages",
+    "opening": "Ouverture…",
     "newMessage": "Nouveau message",
     "empty": "Aucune conversation pour le moment.",
     "noMessages": "Aucun message pour le moment",
