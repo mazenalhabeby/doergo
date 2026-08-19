@@ -1063,7 +1063,8 @@
       "itemsCount_one": "{{count}} Eintrag",
       "itemsCount_other": "{{count}} Einträge",
       "fillRequiredCustomFields": "Bitte füllen Sie alle erforderlichen benutzerdefinierten Felder aus",
-      "cantReceiveTasks": "kann keine Aufgaben erhalten"
+      "cantReceiveTasks": "kann keine Aufgaben erhalten",
+      "attachmentsFailed": "Konnte nicht angehängt werden: {{files}}"
     },
     "detail": {
       "title": "Aufgabendetails",

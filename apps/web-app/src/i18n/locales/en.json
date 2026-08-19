@@ -1063,7 +1063,8 @@
       "itemsCount_one": "{{count}} item",
       "itemsCount_other": "{{count}} items",
       "fillRequiredCustomFields": "Please fill in all required custom fields",
-      "cantReceiveTasks": "can’t receive tasks"
+      "cantReceiveTasks": "can’t receive tasks",
+      "attachmentsFailed": "Could not attach: {{files}}"
     },
     "detail": {
       "title": "Task Details",
