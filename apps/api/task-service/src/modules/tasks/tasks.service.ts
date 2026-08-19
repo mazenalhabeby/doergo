@@ -26,6 +26,7 @@ import {
   canAccessTask,
   isTaskAssignee,
   isWithinTaskBoundary,
+  mayChangeStatus,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -1362,19 +1363,20 @@ export class TasksService {
       ? workflowStatusKeys.includes(data.status as string)
       : (Object.values(TaskStatus) as string[]).includes(data.status as string);
     /*
-      A finished task stops moving — for everyone.
-
-      Managers may otherwise drop a card in any column of its workflow, which is
-      what makes the board usable. But that bypass also let a COMPLETED or
-      CANCELED task be dragged back into play, while the task's own detail page
-      offered nothing at all: the same person got two different answers
-      depending on which screen they were looking at. The declared transitions
-      already say what a finished task may do — COMPLETED may be CLOSED, and
-      CANCELED and CLOSED may do nothing — so from here the table governs and
-      the bypass does not apply.
+      One rule, shared with the screens that offer the move (mayChangeStatus in
+      @hbcfield/shared). Written twice, it drifted: the board let a manager drag
+      a finished task the service refused, and the task page hid a transition
+      the service allowed.
     */
-    const managerFreeMove = hasManageAuthority && targetIsValidStatus && !currentIsFinished;
-    if (!managerFreeMove && !allowedTransitions.includes(data.status as string)) {
+    const permitted = mayChangeStatus({
+      from: task.status as string,
+      to: data.status as string,
+      allowedTargets: allowedTransitions,
+      targetIsValidStatus,
+      isManager: hasManageAuthority,
+      fromIsFinished: currentIsFinished,
+    });
+    if (!permitted) {
       throw new BadRequestException(
         `Invalid status transition from ${task.status} to ${data.status}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
       );

@@ -227,3 +227,49 @@ export function isFinishedStatus(status: string | null | undefined): boolean {
     status === TaskStatus.CANCELED
   );
 }
+
+/**
+ * May a task move from one status to another?
+ *
+ * The single statement of a rule that had been written twice — once in the
+ * service and once, differently, in each screen that offers the move. That is
+ * how the board came to allow dragging a completed task the server would
+ * refuse, and how the task page came to hide a transition the server allows.
+ *
+ * A manager may drop a card in any column of the flow, which is what makes a
+ * board usable. That freedom stops at a finished task: from there the declared
+ * transitions govern, so COMPLETED may still be CLOSED — the step it has — and
+ * CANCELED and CLOSED may do nothing.
+ *
+ * Screens use it to decide what to OFFER; the service uses it to decide what to
+ * accept. Same answer, so nothing is offered that will then be refused.
+ */
+export function mayChangeStatus(opts: {
+  from: string;
+  to: string;
+  /** Statuses `from` declares it can become — the workflow's, or the canonical table's. */
+  allowedTargets: readonly string[];
+  /** Is `to` a status of this task's flow at all? */
+  targetIsValidStatus: boolean;
+  /** ADMIN, or the "view all tasks" grant — may move any card of an ACTIVE task. */
+  isManager: boolean;
+  /** Is `from` a terminal status? Canonical, or the workflow's isFinal/isCanceled. */
+  fromIsFinished: boolean;
+}): boolean {
+  if (opts.from === opts.to) return false;
+  const managerFreeMove = opts.isManager && opts.targetIsValidStatus && !opts.fromIsFinished;
+  return managerFreeMove || opts.allowedTargets.includes(opts.to);
+}
+
+/**
+ * Can this task move at all? If not, screens should not offer to move it —
+ * a card that lifts and snaps back is worse than one that never lifted.
+ */
+export function hasAnyTransition(opts: {
+  allowedTargets: readonly string[];
+  isManager: boolean;
+  fromIsFinished: boolean;
+}): boolean {
+  if (!opts.fromIsFinished && opts.isManager) return true; // free-move on the board
+  return opts.allowedTargets.length > 0;
+}
