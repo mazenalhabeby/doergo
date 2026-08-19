@@ -88,6 +88,10 @@ function dayLabel(iso: string, lang: string, t: import('i18next').TFunction) {
 }
 
 function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: number; dot?: boolean }) {
+  // Presence does not cross an organization boundary, so an external person
+  // arrives with none. Drawing the grey dot would state they are offline, which
+  // is a different claim from "we don't publish this" — show no dot at all.
+  const showDot = dot && !u?.isExternal;
   return (
     <span className="relative shrink-0" style={{ width: size, height: size }}>
       <span
@@ -96,7 +100,7 @@ function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: n
       >
         {u?.avatarUrl ? <img src={u.avatarUrl} alt="" className="h-full w-full object-cover" /> : initials(u)}
       </span>
-      {dot && (
+      {showDot && (
         <span
           className={`absolute bottom-0 right-0 rounded-full ring-2 ring-background ${presenceColor(u?.presence)}`}
           style={{ width: size * 0.28, height: size * 0.28 }}
@@ -251,7 +255,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                         </span>
                       )}
                     </div>
-                    <div className="truncate text-[11px] text-muted-foreground">{presenceLabel(activeConv.otherMember?.presence, t)}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {activeConv.isExternal
+                        ? t('chat.externalMember', 'At another organization')
+                        : presenceLabel(activeConv.otherMember?.presence, t)}
+                    </div>
                   </div>
                   {/* Voice / video call — wired in Phase 2 (LiveKit). */}
                   <button

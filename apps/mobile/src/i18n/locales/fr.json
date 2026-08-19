@@ -1182,7 +1182,8 @@
     },
     "external": "Externe",
     "closed": "Fermée",
-    "conversationClosed": "Cet espace n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents."
+    "conversationClosed": "Cet espace n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents.",
+    "externalMember": "Dans une autre organisation"
   },
   "locationConsent": {
     "title": "Localisation en arrière-plan",

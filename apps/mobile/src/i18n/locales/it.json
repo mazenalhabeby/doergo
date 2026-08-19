@@ -1182,7 +1182,8 @@
     },
     "external": "Esterno",
     "closed": "Chiusa",
-    "conversationClosed": "Questo spazio non è più condiviso, quindi questa conversazione è chiusa. Puoi ancora leggere quanto è stato scritto."
+    "conversationClosed": "Questo spazio non è più condiviso, quindi questa conversazione è chiusa. Puoi ancora leggere quanto è stato scritto.",
+    "externalMember": "In un'altra organizzazione"
   },
   "locationConsent": {
     "title": "Posizione in background",
