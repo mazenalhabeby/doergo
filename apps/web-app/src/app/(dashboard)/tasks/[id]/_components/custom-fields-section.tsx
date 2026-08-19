@@ -14,6 +14,7 @@ import {
   Loader2,
   Settings2,
 } from "lucide-react"
+import { notify } from "@/lib/toast"
 import { CollapsibleSection } from "./collapsible-section"
 
 import {
@@ -225,6 +226,16 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
     mutationFn: (values: { definitionId: string; value: string }[]) =>
       customFieldsApi.setTaskValues(taskId, values),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customFieldValues", taskId] })
+    },
+    onError: (err: Error) => {
+      // These fields save themselves 800ms after you stop typing, and the only
+      // sign of it was a "Saving…" label. With no error branch that label just
+      // disappeared on failure, which reads exactly like success — you would
+      // leave the page believing the value was stored.
+      notify.error(err?.message || t("tasks.customFields.saveFailed"))
+      // Put the server's values back on screen so what is shown is what is
+      // actually stored, rather than a local edit that never landed.
       queryClient.invalidateQueries({ queryKey: ["customFieldValues", taskId] })
     },
   })
