@@ -11,6 +11,7 @@ import {
 
 import { type WorkflowStatus } from "@/lib/api"
 import { useContactActions } from "@/hooks/use-contact-actions"
+import { useAuth } from "@/contexts/auth-context"
 import { cn, formatDurationMs } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 
@@ -114,6 +115,27 @@ export function TaskProgressCard({
   const members = assignees.filter(a => a.user.id !== primary?.user.id)
 
   const { message, call } = useContactActions()
+  const { user } = useAuth()
+
+  /**
+   * Who these buttons reach: the first person on the task who isn't you, lead
+   * first.
+   *
+   * A member opening their own task was offered a Message button that reached
+   * themselves, and chat refuses self-conversations — so the click did nothing,
+   * silently, exactly like the mailto it replaced. Skipping yourself also gives
+   * a lead with members someone real to reach rather than a dead button.
+   *
+   * Nobody else on the task means nobody to contact, and the buttons don't
+   * appear at all.
+   */
+  const contact = [primary, ...members].find(a => a && a.user.id !== user?.id)?.user
+    ?? (assignedTo?.id && assignedTo.id !== user?.id ? assignedTo : null)
+
+  // Both buttons must reach the SAME person. Only the legacy assignedTo record
+  // carries a phone number, so we have one to dial exactly when the contact is
+  // that person; otherwise Call says so rather than ringing someone else.
+  const contactPhone = contact && assignedTo?.id === contact.id ? assignedTo?.phone : undefined
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
@@ -165,30 +187,26 @@ export function TaskProgressCard({
               )}
             </div>
 
+            {contact && (
             <div className="flex items-center gap-1 ml-1">
               <button
-                onClick={() => call(primaryUser.phone)}
+                onClick={() => call(contactPhone)}
                 className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
                 title={t("tasks.progress.call")}
               >
                 <Phone className="size-3" />
               </button>
 
-              {/*
-                Straight into the conversation — with the lead when several
-                people are assigned, with the one person otherwise. Chat is
-                one-to-one, so the lead is who a task's messages belong with;
-                anyone needing a different assignee has the avatars above and
-                the team page.
-              */}
+              {/* Straight into the conversation — no list, no choosing. */}
               <button
-                onClick={() => primaryUser.id && message(primaryUser.id)}
+                onClick={() => contact.id && message(contact.id)}
                 className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
                 title={t("tasks.progress.message")}
               >
                 <MessageSquare className="size-3" />
               </button>
             </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
