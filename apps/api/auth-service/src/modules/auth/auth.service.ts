@@ -27,6 +27,7 @@ import {
   Role,
   normalizeRole,
   buildResolvedAccess,
+  accessAllows,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
@@ -60,6 +61,33 @@ function resolveProfileBadges(
  * captured at boot so the switch takes effect on the next token validation,
  * without a restart.
  */
+/**
+ * The legacy permission fields, restated from resolved access.
+ *
+ * `validateToken` spreads the raw user row, and about seventy-five places
+ * downstream read those columns — the gateway forwarding canViewAllTasks to a
+ * service, the service then deciding with it. Now that the role is the only
+ * source, a column and its own guard can disagree: the guard refuses using the
+ * role while the service allows using a column nobody maintains.
+ *
+ * So the columns stop at this boundary. Every consumer sees what `access`
+ * resolved — org-wide only, via accessAllows with no spaceId, because a column
+ * on the user row never meant "in this space". Space grants are checked against
+ * the resource's own spaceId, which is the only safe way to use them.
+ *
+ * This is also what makes the columns droppable: afterwards nothing in the
+ * request path reads them.
+ */
+function orgPermissionFields(access: ReturnType<typeof buildResolvedAccess>) {
+  return {
+    canCreateTasks: accessAllows(access, 'canCreateTasks'),
+    canViewAllTasks: accessAllows(access, 'canViewAllTasks'),
+    canAssignTasks: accessAllows(access, 'canAssignTasks'),
+    canManageUsers: accessAllows(access, 'canManageUsers'),
+    canViewReports: accessAllows(access, 'canViewReports'),
+  };
+}
+
 function ignoreLegacyFlags(): boolean {
   return process.env.ACCESS_IGNORE_LEGACY_FLAGS === 'true';
 }
@@ -434,6 +462,30 @@ export class AuthService {
       const refreshTtl =
         data.client === 'web' ? (data.rememberMe ? '30d' : '24h') : undefined;
 
+      /*
+        Resolve access ONCE for this response.
+
+        The same switch as validateToken — see the note on ignoreLegacyFlags.
+        Both must agree, or a member is handed permissions at sign-in that
+        vanish on their very next request.
+      */
+      const loginAccess = buildResolvedAccess({
+        userFlags: ignoreLegacyFlags()
+          ? undefined
+          : {
+              canCreateTasks: user.canCreateTasks,
+              canViewAllTasks: user.canViewAllTasks,
+              canAssignTasks: user.canAssignTasks,
+              canManageUsers: user.canManageUsers,
+              canViewReports: user.canViewReports,
+            },
+        memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
+        spaces: user.spaceAssignments.map((a) => ({
+          spaceId: a.spaceId,
+          permissions: a.role?.isActive ? a.role.permissions : undefined,
+        })),
+      });
+
       const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
         userAgent: data.userAgent,
         ipAddress: data.ipAddress,
@@ -465,12 +517,11 @@ export class AuthService {
             orgUsesExternalWorkers: user.organization?.usesExternalWorkers ?? false,
             onboardingCompleted: user.onboardingCompleted,
             avatarUrl: user.avatarUrl,
-            // Permission fields
-            canCreateTasks: user.canCreateTasks,
+            // Permission fields come from resolved access, below — the client
+            // gates its own UI on them (useTaskPermissions reads
+            // user.canCreateTasks), so they must be the same answer the server
+            // will give, not the raw columns.
             taskCreationScope: user.taskCreationScope,
-            canViewAllTasks: user.canViewAllTasks,
-            canAssignTasks: user.canAssignTasks,
-            canManageUsers: user.canManageUsers,
             allowRemote: user.allowRemote,
             presence: user.presence,
             // Worker configuration
@@ -493,25 +544,11 @@ export class AuthService {
             subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
             // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
-            access: buildResolvedAccess({
-              // Same switch as validateToken — see the note there. Both call
-              // sites must agree, or a member would be handed permissions at
-              // sign-in that disappear on their very next request.
-              userFlags: ignoreLegacyFlags()
-                ? undefined
-                : {
-                    canCreateTasks: user.canCreateTasks,
-                    canViewAllTasks: user.canViewAllTasks,
-                    canAssignTasks: user.canAssignTasks,
-                    canManageUsers: user.canManageUsers,
-                    canViewReports: user.canViewReports,
-                  },
-              memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
-              spaces: user.spaceAssignments.map((a) => ({
-                spaceId: a.spaceId,
-                permissions: a.role?.isActive ? a.role.permissions : undefined,
-              })),
-            }),
+            access: loginAccess,
+            // …and the permission fields derived from it, so what the client
+            // gates its UI on is what the server will authorize. Last, to win
+            // over the individual fields set above.
+            ...orgPermissionFields(loginAccess),
           },
           ...tokens,
         },
@@ -1148,6 +1185,9 @@ export class AuthService {
         user: {
           ...userData,
           access,
+          // Permission fields from `access`, never the raw columns — see
+          // orgPermissionFields. Must come after the spread to win over it.
+          ...orgPermissionFields(access),
           // Canonicalize the role once at this boundary so every downstream
           // service (and the gateway's req.user) sees ADMIN/MANAGER/EMPLOYEE,
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.
