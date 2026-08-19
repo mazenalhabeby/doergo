@@ -1181,7 +1181,9 @@
       "away": "Abwesend",
       "offline": "Offline"
     },
-    "external": "Extern"
+    "external": "Extern",
+    "closed": "Geschlossen",
+    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen."
   },
   "locationConsent": {
     "title": "Standort im Hintergrund",

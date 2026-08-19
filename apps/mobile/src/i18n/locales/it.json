@@ -1180,7 +1180,9 @@
       "away": "Assente",
       "offline": "Offline"
     },
-    "external": "Esterno"
+    "external": "Esterno",
+    "closed": "Chiusa",
+    "conversationClosed": "Questo spazio non è più condiviso, quindi questa conversazione è chiusa. Puoi ancora leggere quanto è stato scritto."
   },
   "locationConsent": {
     "title": "Posizione in background",

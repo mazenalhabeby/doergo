@@ -230,17 +230,74 @@ export class ChatService {
 
   /** Shares that could join these two orgs, in either direction. */
   private sharesBetween(orgA: string, orgB: string): Promise<ChatShareFacts[]> {
+    return this.sharesWith(orgA, [orgB]);
+  }
+
+  /**
+   * Shares joining `myOrg` to any of `otherOrgIds`, in either direction.
+   *
+   * One query however many counterpart organizations are involved — the
+   * conversation list needs the lot at once to say which threads are still
+   * open, and asking per thread would be a fan-out.
+   */
+  private sharesWith(myOrg: string, otherOrgIds: string[]): Promise<ChatShareFacts[]> {
+    const others = [...new Set(otherOrgIds)].filter((id) => id && id !== myOrg);
+    if (others.length === 0) return Promise.resolve([]);
     return this.prisma.spaceShare.findMany({
       where: {
         status: 'ACTIVE',
         showWorkers: true,
         OR: [
-          { ownerOrgId: orgA, guestOrgId: orgB },
-          { ownerOrgId: orgB, guestOrgId: orgA },
+          { ownerOrgId: myOrg, guestOrgId: { in: others } },
+          { guestOrgId: myOrg, ownerOrgId: { in: others } },
         ],
       },
       select: { spaceId: true, ownerOrgId: true, guestOrgId: true, status: true, showWorkers: true, expiresAt: true },
     });
+  }
+
+  /**
+   * Which of these cross-org conversations have stopped accepting messages.
+   *
+   * The server has always known this at send time; the list did not, so a
+   * closed thread looked ordinary until you typed into it and got an error.
+   * Resolved in two queries for the whole list, and skipped entirely — no
+   * queries at all — for the overwhelming majority of people, who have no
+   * cross-org threads.
+   */
+  private async closedConversationIds(
+    viewerId: string,
+    rows: Array<{ id: string; originSpaceId?: string | null; members: Array<{ userId: string }> }>,
+  ): Promise<Set<string>> {
+    const closed = new Set<string>();
+    const crossOrg = rows.filter((r) => r.originSpaceId);
+    if (crossOrg.length === 0) return closed;
+
+    const otherIds = crossOrg
+      .map((r) => r.members.find((m) => m.userId !== viewerId)?.userId)
+      .filter((id): id is string => !!id);
+
+    const parties = await this.chatParties([viewerId, ...otherIds]);
+    const me = parties[viewerId];
+    // No resolvable viewer means nothing cross-org can still be open.
+    if (!me) {
+      for (const r of crossOrg) closed.add(r.id);
+      return closed;
+    }
+
+    const shares = await this.sharesWith(
+      me.organizationId,
+      otherIds.map((id) => parties[id]?.organizationId).filter((o): o is string => !!o),
+    );
+
+    for (const r of crossOrg) {
+      const otherId = r.members.find((m) => m.userId !== viewerId)?.userId;
+      const other = otherId ? parties[otherId] : undefined;
+      if (!other || !isCrossOrgConversationLive(r.originSpaceId!, me, other, shares)) {
+        closed.add(r.id);
+      }
+    }
+    return closed;
   }
 
   /**
@@ -414,7 +471,11 @@ export class ChatService {
       for (const u of unreadRows) unreadMap.set(u.conversationId, Number(u.unread));
     }
 
-    const data2 = rows.map((r) => ({ ...this.shape(r, data.userId), unread: unreadMap.get(r.id) ?? 0 }));
+    const closed = await this.closedConversationIds(data.userId, rows as any);
+    const data2 = rows.map((r) => ({
+      ...this.shape(r, data.userId, closed.has(r.id)),
+      unread: unreadMap.get(r.id) ?? 0,
+    }));
     return { data: data2 };
   }
 
@@ -576,7 +637,7 @@ export class ChatService {
   }
 
   /** Shape a conversation from the viewer's perspective (adds otherMember for DMs). */
-  private shape(c: any, viewerId: string) {
+  private shape(c: any, viewerId: string, isClosed = false) {
     const members = (c.members ?? []).map((m: any) => m.user).filter(Boolean);
     const otherMember = c.type === 'DIRECT' ? members.find((u: any) => u.id !== viewerId) ?? null : null;
     return {
@@ -592,6 +653,13 @@ export class ChatService {
       // different things when they know the person is outside the business —
       // this is a control, not decoration.
       isExternal: !!c.originSpaceId,
+      /**
+       * The space that held this conversation open is no longer shared, so it
+       * accepts no new messages. History stays readable — the thread is closed,
+       * not deleted. Told to the client so it can say so up front instead of
+       * letting someone write a message and then refusing it.
+       */
+      isClosed,
       lastMessage: c.messages?.[0] ?? null,
     };
   }

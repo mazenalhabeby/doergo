@@ -360,6 +360,11 @@ function ConversationList({
                           {t('chat.external', 'External')}
                         </span>
                       )}
+                      {c.isClosed && (
+                        <span className="shrink-0 rounded bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground">
+                          {t('chat.closed', 'Closed')}
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground">{relTime(c.lastMessageAt, i18n.language)}</span>
                   </span>
@@ -599,24 +604,42 @@ function Thread({ conversation, meId }: { conversation: ChatConversation; meId: 
       )}
 
       {mut.isError && <p className="px-3 pb-1 text-xs text-red-500">{(mut.error as Error).message}</p>}
-      <div className="flex items-end gap-2 border-t border-border bg-background p-2.5">
-        <textarea
-          ref={taRef}
-          value={text}
-          onChange={(e) => onType(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-          placeholder={t('chat.messagePlaceholder', 'Write a message…')}
-          rows={1}
-          className="max-h-24 flex-1 resize-none rounded-2xl border border-border bg-muted px-3.5 py-2 text-[13.5px] outline-none transition-colors focus:border-blue-400 focus:bg-background"
-        />
-        <button
-          disabled={!canSend}
-          onClick={send}
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-40"
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      </div>
+
+      {conversation.isClosed ? (
+        /*
+          The shared space that held this conversation open is gone, so the
+          server will refuse anything typed here. Say that up front instead of
+          letting someone write a message and then bounce it — and leave the
+          history in place above, because it is closed, not deleted.
+        */
+        <div className="border-t border-border bg-muted/40 px-3.5 py-3">
+          <p className="text-center text-xs text-muted-foreground">
+            {t(
+              'chat.conversationClosed',
+              'This space is no longer shared, so this conversation is closed. You can still read what was said.',
+            )}
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-end gap-2 border-t border-border bg-background p-2.5">
+          <textarea
+            ref={taRef}
+            value={text}
+            onChange={(e) => onType(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder={t('chat.messagePlaceholder', 'Write a message…')}
+            rows={1}
+            className="max-h-24 flex-1 resize-none rounded-2xl border border-border bg-muted px-3.5 py-2 text-[13.5px] outline-none transition-colors focus:border-blue-400 focus:bg-background"
+          />
+          <button
+            disabled={!canSend}
+            onClick={send}
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-40"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

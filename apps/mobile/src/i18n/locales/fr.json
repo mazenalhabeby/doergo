@@ -1180,7 +1180,9 @@
       "away": "Absent",
       "offline": "Hors ligne"
     },
-    "external": "Externe"
+    "external": "Externe",
+    "closed": "Fermée",
+    "conversationClosed": "Cet espace n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents."
   },
   "locationConsent": {
     "title": "Localisation en arrière-plan",

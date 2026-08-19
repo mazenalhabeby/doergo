@@ -5385,7 +5385,9 @@
     "typing": "is typing…",
     "couldNotOpen": "Could not open that conversation",
     "cannotMessageSelf": "You cannot start a conversation with yourself",
-    "external": "External"
+    "external": "External",
+    "closed": "Closed",
+    "conversationClosed": "This space is no longer shared, so this conversation is closed. You can still read what was said."
   },
   "audit": {
     "history": "Activity",

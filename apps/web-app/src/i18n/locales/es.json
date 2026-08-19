@@ -5369,7 +5369,9 @@
     "typing": "está escribiendo…",
     "couldNotOpen": "No se pudo abrir esa conversación",
     "cannotMessageSelf": "No puedes iniciar una conversación contigo mismo",
-    "external": "Externo"
+    "external": "Externo",
+    "closed": "Cerrada",
+    "conversationClosed": "Este espacio ya no está compartido, por lo que esta conversación está cerrada. Todavía puedes leer lo que se dijo."
   },
   "audit": {
     "history": "Actividad",
