@@ -63,6 +63,8 @@ export default function InviteMemberPage() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // "Not an admin, but may see everything" — kept explicit rather than named
+  // after a role that no longer exists in the permission model.
   const isDispatcher = user?.role !== "ADMIN" && !!user?.canViewAllTasks
   const isEmployee = role === "EMPLOYEE"
 

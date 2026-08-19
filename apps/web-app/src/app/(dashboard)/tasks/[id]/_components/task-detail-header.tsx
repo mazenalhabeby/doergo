@@ -54,6 +54,8 @@ interface TaskDetailHeaderProps {
   onAssignClick: () => void
   onEditClick: () => void
   onCancelTask: () => void
+  /** Cancelling is destructive and permission-gated in its own right. */
+  canCancel: boolean
   isStatusChanging: boolean
 }
 
@@ -73,6 +75,7 @@ export function TaskDetailHeader({
   onAssignClick,
   onEditClick,
   onCancelTask,
+  canCancel,
   isStatusChanging,
 }: TaskDetailHeaderProps) {
   const { t } = useTranslation()
@@ -106,7 +109,10 @@ export function TaskDetailHeader({
 
         {/* Actions — clean, minimal */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isCompleted && !isCanceled && (
+          {/* Only render actions the viewer may actually perform — the menu used
+              to appear for anyone on an unfinished task, so Edit 403'd on save
+              and Cancel sat one click away for people without the permission. */}
+          {!isCompleted && !isCanceled && (canEdit || canCancel) && (
             <AlertDialog>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -115,17 +121,21 @@ export function TaskDetailHeader({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={onEditClick}>
-                    <Pencil className="size-4 mr-2" />
-                    {t("tasks.detail.editTask")}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
-                      <Trash2 className="size-4 mr-2" />
-                      {t("tasks.detail.cancelRequest")}
+                  {canEdit && (
+                    <DropdownMenuItem onClick={onEditClick}>
+                      <Pencil className="size-4 mr-2" />
+                      {t("tasks.detail.editTask")}
                     </DropdownMenuItem>
-                  </AlertDialogTrigger>
+                  )}
+                  {canEdit && canCancel && <DropdownMenuSeparator />}
+                  {canCancel && (
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+                        <Trash2 className="size-4 mr-2" />
+                        {t("tasks.detail.cancelRequest")}
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <AlertDialogContent>

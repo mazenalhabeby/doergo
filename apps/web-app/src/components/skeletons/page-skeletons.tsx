@@ -223,7 +223,9 @@ export function TasksPageSkeleton() {
 export function TaskDetailPageSkeleton() {
   return (
     <div className={PAGE_OUTER}>
-      <div className="p-8 max-w-6xl mx-auto space-y-6">
+      {/* max-w-7xl and p-8 match the real page — a 6xl skeleton shifted the
+          whole column sideways the moment the task arrived. */}
+      <div className="p-8 max-w-7xl mx-auto space-y-6">
         {/* Back + title row */}
         <div className="flex items-center gap-3">
           <S className="h-9 w-9 rounded-lg" />
