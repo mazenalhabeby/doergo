@@ -29,7 +29,6 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { notify } from "@/lib/toast"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
-import { AuditTrail } from "@/components/audit-trail"
 
 import {
   TaskProgressCard,
@@ -375,8 +374,16 @@ export default function TaskDetailPage({
             </CollapsibleSection>
             </div>
 
-            {/* Full accountability audit trail — managers only (self-gated) */}
-            <AuditTrail resourceType="tasks" resourceId={id} />
+            {/*
+              No AuditTrail panel here.
+              
+              A task already has Activity directly above, and it carries the
+              same events with the same actor and timestamp — status changes,
+              assignment, comments. Two panels listing one history is not twice
+              the accountability, it is the same list read twice; the audit
+              record stays reachable in full from the log page, and stays on
+              members and spaces where there is no timeline to duplicate.
+            */}
 
             {/* Service Report — module: service_reports + must be completed */}
             {hasModule("service_reports") && (isCompleted || task.status === "CLOSED") && (
