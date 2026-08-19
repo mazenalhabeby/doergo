@@ -5382,7 +5382,9 @@
     "voiceCall": "Sprachanruf",
     "videoCall": "Videoanruf",
     "open": "Öffnen",
-    "typing": "schreibt…"
+    "typing": "schreibt…",
+    "couldNotOpen": "Diese Unterhaltung konnte nicht geöffnet werden",
+    "cannotMessageSelf": "Sie können keine Unterhaltung mit sich selbst beginnen"
   },
   "audit": {
     "history": "Aktivität",

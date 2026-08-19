@@ -11,7 +11,6 @@ import {
 
 import { type WorkflowStatus } from "@/lib/api"
 import { useContactActions } from "@/hooks/use-contact-actions"
-import { useAuth } from "@/contexts/auth-context"
 import { cn, formatDurationMs } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 
@@ -114,8 +113,7 @@ export function TaskProgressCard({
   // avatar and a stacked avatar).
   const members = assignees.filter(a => a.user.id !== primary?.user.id)
 
-  const { message, call } = useContactActions()
-  const { user } = useAuth()
+  const { message, call, canMessage } = useContactActions()
 
   /**
    * Who these buttons reach: the first person on the task who isn't you, lead
@@ -129,8 +127,8 @@ export function TaskProgressCard({
    * Nobody else on the task means nobody to contact, and the buttons don't
    * appear at all.
    */
-  const contact = [primary, ...members].find(a => a && a.user.id !== user?.id)?.user
-    ?? (assignedTo?.id && assignedTo.id !== user?.id ? assignedTo : null)
+  const contact = [primary, ...members].find(a => a && canMessage(a.user.id))?.user
+    ?? (canMessage(assignedTo?.id) ? assignedTo : null)
 
   // Both buttons must reach the SAME person. Only the legacy assignedTo record
   // carries a phone number, so we have one to dial exactly when the contact is
