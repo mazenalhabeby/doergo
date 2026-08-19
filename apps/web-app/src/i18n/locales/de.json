@@ -1098,6 +1098,7 @@
       "fieldTechnician": "Außendiensttechniker",
       "call": "Anrufen",
       "message": "Nachricht",
+      "messageWho": "Wen anschreiben?",
       "steps": {
         "submitted": "Eingereicht",
         "assigned": "Zugewiesen",

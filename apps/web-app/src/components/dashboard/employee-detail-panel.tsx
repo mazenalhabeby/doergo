@@ -3,7 +3,6 @@
 import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { useChat } from "@/components/chat/chat-drawer"
 import { useRouter } from "next/navigation"
 import {
   CheckCircle2,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useContactActions } from "@/hooks/use-contact-actions"
 import { employeesApi } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
@@ -47,7 +47,7 @@ const STATUS_CONFIG: Record<string, { labelKey: string; dot: string; bg: string 
 
 export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetailPanelProps) {
   const { t } = useTranslation()
-  const { openChatWith } = useChat()
+  const { message } = useContactActions()
   const router = useRouter()
 
   const { data: detail, isLoading } = useQuery({
@@ -127,7 +127,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                 {/* Quick Actions */}
                 <div className="flex gap-1 shrink-0">
                   <button
-                    onClick={() => openChatWith(employee.id)}
+                    onClick={() => message(employee.id)}
                     className="size-9 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors"
                   >
                     <MessageCircle className="size-4" />
