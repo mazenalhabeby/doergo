@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
@@ -22,6 +23,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface ActivitySectionProps {
   taskId: string
+  /** Reports how many events there are, so the section header can show a count
+   *  without the parent subscribing to a query it does not otherwise need. */
+  onCountChange?: (count: number) => void
 }
 
 const EVENT_CONFIG: Record<
@@ -84,7 +88,7 @@ function getEventDescription(event: TaskEvent, t: (key: string, options?: Record
   return t(getEventConfig(event.eventType).labelKey)
 }
 
-export function ActivitySection({ taskId }: ActivitySectionProps) {
+export function ActivitySection({ taskId, onCountChange }: ActivitySectionProps) {
   const { t } = useTranslation()
   const { data: events, isLoading, isError } = useQuery({
     queryKey: ["taskTimeline", taskId],
@@ -96,22 +100,24 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
   ) || []
 
   const activityCount = filteredEvents.length
+  useEffect(() => {
+    onCountChange?.(activityCount)
+  }, [activityCount, onCountChange])
 
+  /*
+    Content only — no card, no header.
+    
+    CollapsibleSection already draws the card, the Clock icon, the "Activity"
+    title and the count, so drawing them again here produced a section headed
+    Activity containing a box headed Activity. Every sibling section on this
+    page is content-only; this one had not been.
+    
+    The list scrolls at the same height it did before, but as a max rather than
+    a fixed one, so a task with three events no longer reserves 400px of empty
+    space inside a panel you opened to read three events.
+  */
   return (
-    <div className="bg-card rounded-2xl shadow-sm h-[400px] flex flex-col">
-      <div className="p-6 border-b border-border shrink-0 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-          <Clock className="size-4 text-muted-foreground" />
-          {t('tasks.activity.title')}
-        </h3>
-        {activityCount > 0 && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full">
-            {activityCount}
-          </span>
-        )}
-      </div>
-
-      <div className="p-6 overflow-y-auto flex-1">
+    <div className="max-h-[360px] overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -157,7 +163,6 @@ export function ActivitySection({ taskId }: ActivitySectionProps) {
             </div>
           </div>
         )}
-      </div>
     </div>
   )
 }
