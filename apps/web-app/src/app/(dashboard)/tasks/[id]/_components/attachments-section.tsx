@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  Paperclip,
   Upload,
   Trash2,
   FileText,
@@ -182,19 +181,31 @@ export function AttachmentsSection({
 
   const isUploading = uploadingFiles.length > 0
 
+  /*
+    Content only — no card, no header.
+    
+    CollapsibleSection already draws the card, the Paperclip, the "Attachments"
+    title and the count, so this drew the whole lot a second time inside it:
+    one section headed Attachments containing a box headed Attachments, same
+    icon, same number. The Upload button moves down beside the dropzone it
+    triggers, which is where it was always pointing.
+  */
   return (
-    <div className="bg-card rounded-2xl shadow-sm mb-6">
-      <div className="p-5 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Paperclip className="size-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">{t("tasks.sections.attachments")}</h3>
-            {attachments.length > 0 && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                {attachments.length}
-              </span>
-            )}
-          </div>
+    <div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={ALLOWED_TYPES.join(",")}
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files) handleFiles(e.target.files)
+          e.target.value = ""
+        }}
+      />
+
+      <div>
+        <div className="mb-3 flex justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -205,21 +216,7 @@ export function AttachmentsSection({
             <Upload className="size-3.5 mr-1.5" />
             {t("tasks.attachments.upload")}
           </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept={ALLOWED_TYPES.join(",")}
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files) handleFiles(e.target.files)
-              e.target.value = ""
-            }}
-          />
         </div>
-      </div>
-
-      <div className="p-5">
         {/* Dropzone */}
         <div
           className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${

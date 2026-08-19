@@ -65,6 +65,10 @@ export default function TaskDetailPage({
   const canViewAllTasks = isAdmin || user?.canViewAllTasks === true
 
   const [showAssignModal, setShowAssignModal] = useState(false)
+  // Reported by ActivitySection, which is the only thing that loads the
+  // timeline — so the collapsed header can show a count without this page
+  // subscribing to a query it has no other use for.
+  const [activityCount, setActivityCount] = useState(0)
   const [showEditDialog, setShowEditDialog] = useState(false)
 
   // ─── Queries ────────────────────────────────────────────────────────────
@@ -358,8 +362,8 @@ export default function TaskDetailPage({
 
             {/* Activity — always visible */}
             <div data-tour="task-activity">
-            <CollapsibleSection id="activity" icon={Clock} title={t("tasks.sections.activity")}>
-              <ActivitySection taskId={id} />
+            <CollapsibleSection id="activity" icon={Clock} title={t("tasks.sections.activity")} count={activityCount || undefined}>
+              <ActivitySection taskId={id} onCountChange={setActivityCount} />
             </CollapsibleSection>
             </div>
 
