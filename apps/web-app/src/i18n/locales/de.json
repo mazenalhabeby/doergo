@@ -5391,8 +5391,8 @@
     "externalMember": "In einer anderen Organisation"
   },
   "audit": {
-    "history": "Aktivität",
-    "noActivity": "Noch keine Aktivität",
+    "history": "Prüfprotokoll",
+    "noActivity": "Noch nichts aufgezeichnet",
     "createdBy": "Erstellt von",
     "updatedBy": "Aktualisiert von",
     "by": "von",
