@@ -24,6 +24,7 @@
  * production image has no TypeScript runner.
  */
 const { PrismaClient } = require('@prisma/client');
+const crypto = require('crypto');
 
 const PERMISSION_KEYS = [
   'canCreateTasks',
@@ -75,8 +76,38 @@ function signature(perms) {
   return g.length ? g.join('+') : 'none';
 }
 
-function slugify(s) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+/**
+ * A slug that cannot collide.
+ *
+ * Spelling the permissions into the slug and truncating produced the same
+ * string for two DIFFERENT sets — and since the slug is the upsert key, the
+ * second member would have been handed the first member's role and quietly
+ * lost a permission. A digest of the full signature is short, stable across
+ * runs, and distinct whenever the grants are.
+ */
+function slugFor(signature) {
+  const digest = crypto.createHash('sha1').update(signature).digest('hex').slice(0, 10);
+  return `migrated-${digest}`;
+}
+
+/** A name a person can read, rather than a truncated key list. */
+const PERM_LABEL = {
+  canCreateTasks: 'create tasks',
+  canViewAllTasks: 'view all tasks',
+  canAssignTasks: 'assign tasks',
+  canManageUsers: 'manage members',
+  canViewReports: 'view reports',
+  canApproveOvertime: 'approve overtime',
+  canManageRota: 'manage rota',
+  canReconcileAttendance: 'reconcile attendance',
+  canViewSpaceAttendance: 'view space attendance',
+};
+
+function roleName(perms) {
+  const labels = PERMISSION_KEYS.filter((k) => perms?.[k] === true).map((k) => PERM_LABEL[k] || k);
+  if (labels.length === 0) return 'Migrated access';
+  if (labels.length <= 3) return `Can ${labels.join(', ')}`;
+  return `Can ${labels.slice(0, 2).join(', ')} +${labels.length - 2} more`;
 }
 
 async function main() {
@@ -135,9 +166,8 @@ async function main() {
           roleId = exact.id;
           console.log(`    → existing role "${exact.name}" grants exactly this`);
         } else {
-          const baseName = u.memberRole?.name ? `${u.memberRole.name} +` : 'Member +';
-          const name = `${baseName} ${missing.join(', ')}`.slice(0, 80);
-          const slug = `migrated-${slugify(sig)}`.slice(0, 60);
+          const name = roleName(target);
+          const slug = slugFor(sig);
           console.log(`    → NEW role "${name}" (slug ${slug})`);
           if (apply) {
             const role = await prisma.accessRole.upsert({
