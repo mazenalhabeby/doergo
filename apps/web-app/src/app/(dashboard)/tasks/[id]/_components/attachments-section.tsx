@@ -92,6 +92,8 @@ export function AttachmentsSection({
       toast.success(t("tasks.attachments.deleted"))
       queryClient.invalidateQueries({ queryKey: ["taskAttachments", taskId] })
       queryClient.invalidateQueries({ queryKey: ["taskTimeline", taskId] })
+      // The section header counts task.attachments, so the task has to know too.
+      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
       setDeleteTarget(null)
     },
     onError: (e: Error) => toast.error(e.message),
@@ -142,6 +144,8 @@ export function AttachmentsSection({
         toast.success(t("tasks.attachments.uploaded", { name: file.name }))
         queryClient.invalidateQueries({ queryKey: ["taskAttachments", taskId] })
         queryClient.invalidateQueries({ queryKey: ["taskTimeline", taskId] })
+        // The section header counts task.attachments, so the task has to know too.
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
       } catch (err) {
         toast.error(
           t("tasks.attachments.uploadFailed", { name: file.name, error: err instanceof Error ? err.message : t("common.error") }),

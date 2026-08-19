@@ -1238,7 +1238,8 @@
     },
     "customFields": {
       "enterPlaceholder": "Saisir {{name}}...",
-      "selectPlaceholder": "Sélectionner {{name}}..."
+      "selectPlaceholder": "Sélectionner {{name}}...",
+      "saveFailed": "Impossible d’enregistrer ce champ"
     },
     "sidebar": {
       "details": "Détails",

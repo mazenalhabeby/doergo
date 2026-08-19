@@ -1238,7 +1238,8 @@
     },
     "customFields": {
       "enterPlaceholder": "Inserire {{name}}...",
-      "selectPlaceholder": "Seleziona {{name}}..."
+      "selectPlaceholder": "Seleziona {{name}}...",
+      "saveFailed": "Impossibile salvare questo campo"
     },
     "sidebar": {
       "details": "Dettagli",
