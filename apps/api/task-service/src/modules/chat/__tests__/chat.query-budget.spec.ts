@@ -81,13 +81,14 @@ describe('query budget for sending a message', () => {
     expect(authCalls()).toEqual(['conversationMember.findUnique', 'user.findUnique']);
   });
 
-  it('costs no more than 6 for a member whose reach reaches into spaces', async () => {
-    // contactScope NONE has to resolve space-driven contact targets. Three of
-    // these are resolveMemberRouting re-reading spaceAssignment — shared
-    // infrastructure used by notification routing too, so left alone here.
+  it('costs 5 for a member whose reach runs through spaces', async () => {
+    // contactScope NONE resolves space-driven contact targets, which was four
+    // reads on its own (the person's spaces fetched twice, then two more
+    // against the same table, all sequential) and is three now — two of which
+    // run together, so it is two round trips rather than four.
     setup(null, 'same', 'NONE'); await build();
     await service.sendMessage({ conversationId: 'c', senderId: 'me', body: 'x' }).catch(() => {});
-    expect(authCalls().length).toBeLessThanOrEqual(6);
+    expect(authCalls().length).toBeLessThanOrEqual(5);
   });
 
   it('costs 4 for a cross-org send', async () => {

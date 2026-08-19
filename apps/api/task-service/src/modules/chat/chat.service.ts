@@ -11,7 +11,7 @@ import {
   type ChatShareFacts,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { resolveMemberRouting, spaceIdsForUser } from '../../common/space-access.util';
+import { resolveMemberRouting } from '../../common/space-access.util';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
 
