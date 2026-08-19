@@ -1063,7 +1063,8 @@
       "itemsCount_one": "{{count}} élément",
       "itemsCount_other": "{{count}} éléments",
       "fillRequiredCustomFields": "Veuillez remplir tous les champs personnalisés obligatoires",
-      "cantReceiveTasks": "ne peut pas recevoir de tâches"
+      "cantReceiveTasks": "ne peut pas recevoir de tâches",
+      "attachmentsFailed": "Impossible de joindre : {{files}}"
     },
     "detail": {
       "title": "Détails de la tâche",

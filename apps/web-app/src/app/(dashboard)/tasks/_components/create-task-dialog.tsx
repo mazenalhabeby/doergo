@@ -243,8 +243,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       setIsSubmittingLocal(false)
       setStoryPoints(null)
       setEpicId("none")
-      // Reopening the dialog must not silently reuse the last person picked.
-      setAssigneeId("")
+      // Reopening the dialog must not silently reuse the last people picked.
+      setAssigneeIds([])
     }
   }, [open])
 
@@ -292,7 +292,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     the task was created unassigned, so the only way to assign anyone was to
     open the task afterwards and do it again.
   */
-  const [assigneeId, setAssigneeId] = useState<string>("")
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([])
 
   // ── Fetch members for assignee picker ──
   const taskCreationScope = user?.taskCreationScope || "NONE"
@@ -364,27 +364,44 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const createMutation = useMutation({
     mutationFn: (input: CreateTaskInput) => tasksApi.create(input),
     onSuccess: async (task) => {
-      // Upload attachments if any
+      /*
+        Upload the attachments the task was created with.
+
+        A failure here used to reach console.error and nothing else: the dialog
+        closed on a success toast and the file was simply absent, which is
+        indistinguishable from never having attached it. The task IS created by
+        this point — that is not undone for a failed file — but the ones that
+        did not make it are named, so they can be added again rather than
+        discovered missing later.
+      */
+      const failedUploads: string[] = []
       if (attachments.length > 0 && task?.id) {
         for (const file of attachments) {
           try {
             const presign = await taskAttachmentsApi.getPresignedUrl(task.id, file.name, file.type)
-            if (presign?.uploadUrl) {
-              await fetch(presign.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
-              await taskAttachmentsApi.confirmUpload(task.id, {
-                fileName: file.name,
-                fileUrl: presign.fileUrl,
-                fileType: file.type,
-                fileSize: file.size,
-              })
-            }
+            if (!presign?.uploadUrl) throw new Error("No upload URL")
+            await fetch(presign.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
+            await taskAttachmentsApi.confirmUpload(task.id, {
+              fileName: file.name,
+              fileUrl: presign.fileUrl,
+              fileType: file.type,
+              fileSize: file.size,
+            })
           } catch {
-            console.error(`Failed to upload attachment: ${file.name}`)
+            failedUploads.push(file.name)
           }
         }
       }
 
       notify.taskCreated(title || t("tasks.create.successMessage"))
+      if (failedUploads.length > 0) {
+        notify.error(
+          t("tasks.create.attachmentsFailed", {
+            files: failedUploads.join(", "),
+            defaultValue: `Could not attach: ${failedUploads.join(", ")}`,
+          }),
+        )
+      }
       onOpenChange(false)
       await queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
@@ -444,12 +461,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       .map(([defId, value]) => ({ definitionId: defId, value }))
 
     // Build assignee list
-    const assigneeIds: string[] = []
-    if (isSelfScope && user?.id) {
-      assigneeIds.push(user.id)
-    } else if (assigneeId) {
-      assigneeIds.push(assigneeId)
-    }
+    // A task takes several people; the dialog now says so too.
+    const submitAssigneeIds: string[] = isSelfScope && user?.id ? [user.id] : assigneeIds
 
     // Recurring path — create a template instead of a one-off task. Reuses the
     // same title/space/type/priority/checklist already filled in above.
@@ -469,8 +482,13 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         endDate: recurEnd ? new Date(recurEnd).toISOString() : null,
         estimatedHours: parsedHours && !isNaN(parsedHours) ? parsedHours : null,
         locationAddress: locationAddress.trim() || null,
+        // The recurring API accepts these and the dialog was not sending them,
+        // so a repeating task kept the address text and lost the point on the
+        // map — every task it generated had no coordinates to route to.
+        locationLat: locationLat ?? null,
+        locationLng: locationLng ?? null,
         checklist: checklistItems.length > 0 ? checklistItems.map((text) => ({ text })) : null,
-        assigneeIds: assigneeIds.length > 0 ? assigneeIds : null,
+        assigneeIds: submitAssigneeIds.length > 0 ? submitAssigneeIds : null,
       })
       return
     }
@@ -498,7 +516,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         ? checklistItems.map((text) => ({ text }))
         : undefined,
       customFieldValues: cfValues.length > 0 ? cfValues : undefined,
-      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
+      assigneeIds: submitAssigneeIds.length > 0 ? submitAssigneeIds : undefined,
     })
   }
 
@@ -850,13 +868,56 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 ) : (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.assignTo")}</Label>
-                    <Select value={assigneeId} onValueChange={setAssigneeId} disabled={isSubmitting}>
+
+                    {/* Who is on the task so far — removable, so a mistake is
+                        undone here rather than after the task exists. */}
+                    {assigneeIds.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pb-1">
+                        {assigneeIds.map((id) => {
+                          const m = members.find((mm: OrgMember) => mm.id === id)
+                          if (!m) return null
+                          return (
+                            <span
+                              key={id}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-muted pl-1 pr-2 py-0.5 text-xs"
+                            >
+                              <span className="size-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                                <span className="text-[7px] font-semibold text-white">
+                                  {m.firstName?.[0]}{m.lastName?.[0]}
+                                </span>
+                              </span>
+                              {m.firstName} {m.lastName}
+                              <button
+                                type="button"
+                                onClick={() => setAssigneeIds((prev) => prev.filter((x) => x !== id))}
+                                disabled={isSubmitting}
+                                className="text-muted-foreground hover:text-foreground"
+                                aria-label={t("common.remove", { defaultValue: "Remove" })}
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/*
+                      Adds one at a time, because a task takes several people.
+                      Value stays empty so the same control can be used again —
+                      what is chosen lives in the chips above, not in the Select.
+                    */}
+                    <Select
+                      value=""
+                      onValueChange={(id) => setAssigneeIds((prev) => (prev.includes(id) ? prev : [...prev, id]))}
+                      disabled={isSubmitting}
+                    >
                       <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                         <SelectValue placeholder={t("tasks.create.selectTeamMember")} />
                       </SelectTrigger>
                       <SelectContent>
                         {members.map((member: OrgMember) => {
-                          const assignable = canReceiveTasks(member)
+                          const assignable = canReceiveTasks(member) && !assigneeIds.includes(member.id)
                           return (
                             <SelectItem key={member.id} value={member.id} disabled={!assignable}>
                               <div className="flex items-center gap-2">

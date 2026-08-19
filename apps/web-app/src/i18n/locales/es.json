@@ -1063,7 +1063,8 @@
       "itemsCount_one": "{{count}} elemento",
       "itemsCount_other": "{{count}} elementos",
       "fillRequiredCustomFields": "Completa todos los campos personalizados obligatorios",
-      "cantReceiveTasks": "no puede recibir tareas"
+      "cantReceiveTasks": "no puede recibir tareas",
+      "attachmentsFailed": "No se pudo adjuntar: {{files}}"
     },
     "detail": {
       "title": "Detalles de la tarea",

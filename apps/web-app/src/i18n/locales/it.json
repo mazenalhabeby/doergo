@@ -1063,7 +1063,8 @@
       "itemsCount_one": "{{count}} elemento",
       "itemsCount_other": "{{count}} elementi",
       "fillRequiredCustomFields": "Compilare tutti i campi personalizzati obbligatori",
-      "cantReceiveTasks": "non può ricevere attività"
+      "cantReceiveTasks": "non può ricevere attività",
+      "attachmentsFailed": "Impossibile allegare: {{files}}"
     },
     "detail": {
       "title": "Dettagli dell'attività",
