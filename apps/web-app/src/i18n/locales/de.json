@@ -5384,7 +5384,8 @@
     "open": "Öffnen",
     "typing": "schreibt…",
     "couldNotOpen": "Diese Unterhaltung konnte nicht geöffnet werden",
-    "cannotMessageSelf": "Sie können keine Unterhaltung mit sich selbst beginnen"
+    "cannotMessageSelf": "Sie können keine Unterhaltung mit sich selbst beginnen",
+    "external": "Extern"
   },
   "audit": {
     "history": "Aktivität",

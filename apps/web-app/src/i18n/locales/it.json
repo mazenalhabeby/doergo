@@ -5359,7 +5359,8 @@
     "open": "Apri",
     "typing": "sta scrivendo…",
     "couldNotOpen": "Impossibile aprire quella conversazione",
-    "cannotMessageSelf": "Non puoi iniziare una conversazione con te stesso"
+    "cannotMessageSelf": "Non puoi iniziare una conversazione con te stesso",
+    "external": "Esterno"
   },
   "audit": {
     "history": "Attività",

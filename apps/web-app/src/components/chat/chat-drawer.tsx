@@ -243,7 +243,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 <>
                   <Avatar u={activeConv.otherMember} size={36} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-foreground">{conversationTitle(activeConv, i18n.language)}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-semibold text-foreground">{conversationTitle(activeConv, i18n.language)}</span>
+                      {activeConv.isExternal && (
+                        <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+                          {t('chat.external', 'External')}
+                        </span>
+                      )}
+                    </div>
                     <div className="truncate text-[11px] text-muted-foreground">{presenceLabel(activeConv.otherMember?.presence, t)}</div>
                   </div>
                   {/* Voice / video call — wired in Phase 2 (LiveKit). */}
@@ -344,8 +351,15 @@ function ConversationList({
                 <Avatar u={c.otherMember} size={44} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-2">
-                    <span className={`truncate text-sm ${c.unread ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
-                      {conversationTitle(c, i18n.language)}
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className={`truncate text-sm ${c.unread ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
+                        {conversationTitle(c, i18n.language)}
+                      </span>
+                      {c.isExternal && (
+                        <span className="shrink-0 rounded bg-amber-100 px-1 py-px text-[9px] font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+                          {t('chat.external', 'External')}
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground">{relTime(c.lastMessageAt, i18n.language)}</span>
                   </span>

@@ -1,9 +1,17 @@
 import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
-import { SERVICE_NAMES, directConversationKey, canContactColleagues } from '@hbcfield/shared';
+import {
+  SERVICE_NAMES,
+  directConversationKey,
+  canContactColleagues,
+  resolveCrossOrgChatSpace,
+  isCrossOrgConversationLive,
+  type ChatParty,
+  type ChatShareFacts,
+} from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { resolveMemberRouting } from '../../common/space-access.util';
+import { resolveMemberRouting, spaceIdsForUser } from '../../common/space-access.util';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
 
@@ -36,7 +44,13 @@ export class ChatService {
     // can't be spoofed) and at most once, however many people we test.
     const spaceTargets = this.contactTargetsResolver(data.userId, data.organizationId);
     const verdicts = await Promise.all(all.map((u) => this.canReach(me as any, u as any, spaceTargets)));
-    return { data: all.filter((_, i) => verdicts[i]) };
+    const reachable: any[] = all.filter((_, i) => verdicts[i]);
+
+    // Colleagues at other companies, reachable through an actively shared space
+    // both of us work. Marked external so the directory never blurs the line
+    // between a coworker and someone at another business.
+    const external = await this.crossOrgContacts(data.userId);
+    return { data: [...reachable, ...external] };
   }
 
   /** User ids `me` may contact via their space(s) — per-member override, else the
@@ -91,6 +105,126 @@ export class ChatService {
   }
 
   /**
+   * People at other organizations this user may message.
+   *
+   * Only from spaces they are actually assigned to, and only where an ACTIVE
+   * share exposes workers — so the directory can never widen beyond what the
+   * space owner agreed to. Costs nothing for the overwhelming majority of
+   * users, who work no shared space at all and exit on the first query.
+   */
+  private async crossOrgContacts(userId: string) {
+    const me = await this.chatParty(userId);
+    if (!me || me.spaceIds.length === 0) return [];
+
+    const shares = await this.prisma.spaceShare.findMany({
+      where: {
+        status: 'ACTIVE',
+        showWorkers: true,
+        spaceId: { in: me.spaceIds },
+        OR: [{ ownerOrgId: me.organizationId }, { guestOrgId: me.organizationId }],
+      },
+      select: { spaceId: true, ownerOrgId: true, guestOrgId: true, expiresAt: true },
+    });
+    const now = Date.now();
+    const live = shares.filter((s) => !s.expiresAt || new Date(s.expiresAt).getTime() > now);
+    if (live.length === 0) return [];
+
+    // The other side of each share, per space.
+    const otherOrgBySpace = new Map<string, string>();
+    for (const s of live) {
+      otherOrgBySpace.set(s.spaceId, s.ownerOrgId === me.organizationId ? s.guestOrgId : s.ownerOrgId);
+    }
+
+    // Everyone assigned to those spaces who belongs to the other side.
+    const assignments = await this.prisma.spaceAssignment.findMany({
+      where: {
+        spaceId: { in: [...otherOrgBySpace.keys()] },
+        userId: { not: userId },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      },
+      select: { userId: true, spaceId: true },
+    });
+    if (assignments.length === 0) return [];
+
+    const candidates = await this.prisma.user.findMany({
+      where: {
+        id: { in: [...new Set(assignments.map((a) => a.userId))] },
+        isActive: true,
+        role: { not: 'CUSTOMER' },
+        organizationId: { in: [...new Set(otherOrgBySpace.values())] },
+      },
+      select: {
+        id: true, firstName: true, lastName: true, avatarUrl: true, position: true,
+        role: true, contactable: true, canManageUsers: true, presence: true, organizationId: true,
+      },
+      orderBy: [{ firstName: 'asc' }],
+    });
+
+    // Keep only people whose org is the counterpart of a space we BOTH work.
+    const spacesByUser = new Map<string, Set<string>>();
+    for (const a of assignments) {
+      if (!spacesByUser.has(a.userId)) spacesByUser.set(a.userId, new Set());
+      spacesByUser.get(a.userId)!.add(a.spaceId);
+    }
+    return candidates
+      .filter((u) =>
+        [...(spacesByUser.get(u.id) ?? [])].some((sp) => otherOrgBySpace.get(sp) === u.organizationId),
+      )
+      .map((u) => ({ ...u, isExternal: true }));
+  }
+
+  /**
+   * The facts the cross-org rule needs about one person.
+   *
+   * Read live, never from the session. `access.sharedSpaces` on the token is a
+   * snapshot refreshed roughly once a minute — fine for deciding what to render,
+   * far too loose to decide whether a message may be sent to another company.
+   */
+  private async chatParty(userId: string): Promise<ChatParty | null> {
+    const [user, spaceIds] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, organizationId: true, role: true, isActive: true },
+      }),
+      spaceIdsForUser(this.prisma, userId),
+    ]);
+    if (!user || !user.isActive || !user.organizationId) return null;
+    return { userId: user.id, organizationId: user.organizationId, role: user.role, spaceIds };
+  }
+
+  /** Shares that could join these two orgs, in either direction. */
+  private sharesBetween(orgA: string, orgB: string): Promise<ChatShareFacts[]> {
+    return this.prisma.spaceShare.findMany({
+      where: {
+        status: 'ACTIVE',
+        showWorkers: true,
+        OR: [
+          { ownerOrgId: orgA, guestOrgId: orgB },
+          { ownerOrgId: orgB, guestOrgId: orgA },
+        ],
+      },
+      select: { spaceId: true, ownerOrgId: true, guestOrgId: true, status: true, showWorkers: true, expiresAt: true },
+    });
+  }
+
+  /**
+   * The space authorizing a conversation between two people in different orgs,
+   * or null. Resolved from the database every time it is asked.
+   */
+  private async resolveCrossOrgSpace(
+    userId: string,
+    otherUserId: string,
+    preferSpaceId?: string | null,
+  ): Promise<{ spaceId: string; other: ChatParty } | null> {
+    const [me, other] = await Promise.all([this.chatParty(userId), this.chatParty(otherUserId)]);
+    if (!me || !other) return null;
+    if (me.organizationId === other.organizationId) return null; // in-org rules apply
+    const shares = await this.sharesBetween(me.organizationId, other.organizationId);
+    const spaceId = resolveCrossOrgChatSpace(me, other, shares, { preferSpaceId });
+    return spaceId ? { spaceId, other } : null;
+  }
+
+  /**
    * May `senderId` message `otherUserId` RIGHT NOW? Throws if not.
    *
    * The one place this question is answered, because it has to be asked in two
@@ -136,20 +270,61 @@ export class ChatService {
     }
     if (data.userId === data.otherUserId) throw new ForbiddenException('Cannot message yourself');
     // Server-side authorization — recomputed here, never trusted from the client.
-    await this.assertMayContact(data.userId, data.otherUserId, data.organizationId);
+    //
+    // Two paths. Same org: the ordinary contact rules. Different orgs: a space
+    // actively shared between them, which both people work. The cross-org path
+    // is tried only when the in-org lookup finds nobody, so the common case
+    // costs exactly what it did before.
+    const sameOrg = await this.prisma.user.findFirst({
+      where: { id: data.otherUserId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+
+    let originSpaceId: string | null = null;
+    let conversationOrgId = data.organizationId;
+
+    if (sameOrg) {
+      await this.assertMayContact(data.userId, data.otherUserId, data.organizationId);
+    } else {
+      // Opening is also where an anchor is chosen or renewed: a thread whose
+      // share died can be re-anchored to a share that is still alive, but that
+      // is a decision made here, never a side effect of sending.
+      const existing = await this.prisma.conversation.findFirst({
+        where: { dmKey: directConversationKey(data.userId, data.otherUserId) },
+        select: { organizationId: true, originSpaceId: true },
+      });
+      const resolved = await this.resolveCrossOrgSpace(
+        data.userId,
+        data.otherUserId,
+        existing?.originSpaceId,
+      );
+      if (!resolved) throw new NotFoundException('Member not found');
+      originSpaceId = resolved.spaceId;
+      // Anchor the row to the space owner's org so BOTH sides upsert the same
+      // conversation — (organizationId, dmKey) is unique, and letting each side
+      // use its own org would give the pair two threads that never meet.
+      const share = await this.prisma.spaceShare.findFirst({
+        where: { spaceId: originSpaceId, status: 'ACTIVE' },
+        select: { ownerOrgId: true },
+      });
+      if (!share) throw new NotFoundException('Member not found');
+      conversationOrgId = existing?.organizationId ?? share.ownerOrgId;
+    }
 
     const dmKey = directConversationKey(data.userId, data.otherUserId);
     // Upsert the DM: unique on (organizationId, dmKey) guarantees one thread.
     const conversation = await this.prisma.conversation.upsert({
-      where: { organizationId_dmKey: { organizationId: data.organizationId, dmKey } },
+      where: { organizationId_dmKey: { organizationId: conversationOrgId, dmKey } },
       create: {
-        organizationId: data.organizationId,
+        organizationId: conversationOrgId,
         type: 'DIRECT',
         dmKey,
+        originSpaceId,
         createdById: data.userId,
         members: { create: [{ userId: data.userId }, { userId: data.otherUserId }] },
       },
-      update: {},
+      // Renew the anchor when it moved; never clear one that is still good.
+      update: originSpaceId ? { originSpaceId } : {},
       include: { members: { include: { user: userSelect } } },
     });
     return { success: true, data: this.shape(conversation, data.userId) };
@@ -158,7 +333,16 @@ export class ChatService {
   // ── list my conversations (with last message + unread) ──────────────────────
   async listConversations(data: { userId: string; organizationId: string }) {
     const rows = await this.prisma.conversation.findMany({
-      where: { organizationId: data.organizationId, members: { some: { userId: data.userId } } },
+      where: {
+        members: { some: { userId: data.userId } },
+        // In-org threads stay org-scoped as defence in depth. Cross-org ones
+        // are anchored to the space OWNER's org, so a guest would never see
+        // their own conversations under that filter — for those, the
+        // membership row IS the grant, and it is only ever created by an
+        // authorized open. Listing and reading stay available after a share
+        // ends: the thread freezes, it does not vanish.
+        OR: [{ organizationId: data.organizationId }, { originSpaceId: { not: null } }],
+      },
       orderBy: { lastMessageAt: 'desc' },
       take: 100,
       include: {
@@ -264,7 +448,15 @@ export class ChatService {
    * and belonging to the group IS the grant.
    */
   private async assertStillReachable(
-    membership: { conversation: { id: string; type: string; organizationId: string; members: { userId: string }[] } },
+    membership: {
+      conversation: {
+        id: string;
+        type: string;
+        organizationId: string;
+        originSpaceId?: string | null;
+        members: { userId: string }[];
+      };
+    },
     senderId: string,
   ) {
     const conversation = membership.conversation;
@@ -274,6 +466,25 @@ export class ChatService {
     // A direct thread with no counterpart is malformed — deny rather than guess.
     if (!otherId) throw new ForbiddenException('This conversation is no longer available');
 
+    // ── Cross-org: the share that authorized this thread must still be alive ──
+    if (conversation.originSpaceId) {
+      const [me, other] = await Promise.all([this.chatParty(senderId), this.chatParty(otherId)]);
+      if (!me || !other) {
+        throw new ForbiddenException('You can no longer message this member');
+      }
+      const shares = await this.sharesBetween(me.organizationId, other.organizationId);
+      if (!isCrossOrgConversationLive(conversation.originSpaceId, me, other, shares)) {
+        // The space stopped being shared, the owner hid its workers, the share
+        // expired, or one of them was taken off the space. History stays
+        // readable; this thread carries nothing new.
+        throw new ForbiddenException(
+          'This space is no longer shared with your organization, so this conversation is closed',
+        );
+      }
+      return;
+    }
+
+    // ── Same org: the ordinary contact rules ─────────────────────────────────
     await this.assertMayContact(
       senderId,
       otherId,
@@ -285,6 +496,8 @@ export class ChatService {
   private async assertMember(conversationId: string, userId: string) {
     const membership = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
+      // The conversation carries its own authorization anchor (originSpaceId),
+      // so the send-time check can re-resolve it without a second read.
       include: { conversation: { include: { members: true } } },
     });
     if (!membership) throw new ForbiddenException('Not a member of this conversation');
@@ -304,6 +517,10 @@ export class ChatService {
       createdAt: c.createdAt,
       members,
       otherMember,
+      // Tell the reader they are talking to another company. People share
+      // different things when they know the person is outside the business —
+      // this is a control, not decoration.
+      isExternal: !!c.originSpaceId,
       lastMessage: c.messages?.[0] ?? null,
     };
   }

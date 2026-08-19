@@ -14,6 +14,8 @@ export interface ChatUserRef {
   avatarUrl?: string | null;
   position?: string | null;
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
+  /** This person works at another company, reachable through a shared space. */
+  isExternal?: boolean;
 }
 
 export interface ChatAttachment {
@@ -47,6 +49,14 @@ export interface ChatConversation {
   otherMember?: ChatUserRef | null; // for DIRECT: the person you're talking to
   lastMessage?: ChatMessage | null;
   unread?: number;
+  /**
+   * A conversation with another organization, held open by a shared space.
+   * Surfaced so the reader always knows they are talking outside the company —
+   * people share different things when they know that, which makes this a
+   * control rather than decoration. It also explains a thread that has stopped
+   * accepting messages because the space is no longer shared.
+   */
+  isExternal?: boolean;
 }
 
 /** For a 1:1 conversation, a stable key so two users always share ONE thread. */
