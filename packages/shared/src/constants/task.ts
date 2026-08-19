@@ -207,3 +207,23 @@ export function isTaskOverdue(task: {
   if (isTerminalStatus(task.status as TaskStatus)) return false;
   return new Date(task.dueDate) < new Date();
 }
+
+/**
+ * Is this status the end of the line?
+ *
+ * A finished task stops moving: COMPLETED may only be CLOSED, and CANCELED and
+ * CLOSED may do nothing. The server enforces it; screens use this so they stop
+ * OFFERING what the server will refuse — a card that slides into a column and
+ * snaps back is worse than one that never lifted.
+ *
+ * Canonical statuses only. A task on a custom workflow is finished when its
+ * current column is marked isFinal or isCanceled, which the caller knows and
+ * this cannot.
+ */
+export function isFinishedStatus(status: string | null | undefined): boolean {
+  return (
+    status === TaskStatus.COMPLETED ||
+    status === TaskStatus.CLOSED ||
+    status === TaskStatus.CANCELED
+  );
+}

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { useOrgWorkflow, buildKanbanColumns, type KanbanColumnDef } from "@/hooks/use-org-workflow"
 import type { TaskContextMenuActions } from "./task-context-menu"
+import { isFinishedStatus } from "@hbcfield/shared/client"
 import { TaskCard } from "./task-card"
 
 // Hardcoded fallback columns (used when no workflow exists)
@@ -158,13 +159,24 @@ const KanbanColumn = React.memo(function KanbanColumn({
             epics={epics}
             spaces={spaces}
             recentAssignees={recentAssignees}
-            dragProps={{
-              onDragStart: (e) => {
-                e.dataTransfer.setData("text/plain", task.id)
-                e.dataTransfer.effectAllowed = "move"
-                onDragStart(task.id)
-              },
-            }}
+            /*
+              A finished task is not draggable. The server refuses to move it —
+              a completed task may only be closed, a canceled or closed one
+              nothing at all — so offering the drag produced a card that slid
+              into a column and snapped back with an error. It also disagreed
+              with the task's own page, which offers nothing once finished.
+            */
+            dragProps={
+              isFinishedStatus(task.status)
+                ? undefined
+                : {
+                    onDragStart: (e) => {
+                      e.dataTransfer.setData("text/plain", task.id)
+                      e.dataTransfer.effectAllowed = "move"
+                      onDragStart(task.id)
+                    },
+                  }
+            }
           />
         </div>
       )

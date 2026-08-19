@@ -1327,12 +1327,26 @@ export class TasksService {
     }
     let allowedTransitions: string[] | null = null;
     let workflowStatusKeys: string[] | null = null;
+    // Is the task already in a terminal status? Set from the workflow below when
+    // there is one; otherwise from the canonical statuses.
+    let currentIsFinished =
+      task.status === TaskStatus.COMPLETED ||
+      task.status === TaskStatus.CLOSED ||
+      task.status === TaskStatus.CANCELED;
     if (effWorkflowId) {
       // Read from the per-org workflow cache (Redis) instead of the DB.
       const wf = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
       workflowStatusKeys = wf?.statuses?.map((s: { key: string }) => s.key) ?? null;
       const cur = wf?.statuses?.find((s: { key: string }) => s.key === task.status);
       if (cur) allowedTransitions = cur.transitions ?? [];
+      // A workflow marks its own terminal columns; honour those rather than the
+      // canonical names, which a custom workflow need not use. Only when the
+      // workflow actually defines this status — otherwise the canonical answer
+      // stands, rather than being overwritten with "not finished".
+      if (cur) {
+        const c = cur as { isFinal?: boolean; isCanceled?: boolean };
+        currentIsFinished = !!c.isFinal || !!c.isCanceled;
+      }
     }
     // Fallback to the canonical machine when there's no workflow, or the current
     // status isn't part of it (mixed/legacy data).
@@ -1347,7 +1361,19 @@ export class TasksService {
     const targetIsValidStatus = workflowStatusKeys
       ? workflowStatusKeys.includes(data.status as string)
       : (Object.values(TaskStatus) as string[]).includes(data.status as string);
-    const managerFreeMove = hasManageAuthority && targetIsValidStatus;
+    /*
+      A finished task stops moving — for everyone.
+
+      Managers may otherwise drop a card in any column of its workflow, which is
+      what makes the board usable. But that bypass also let a COMPLETED or
+      CANCELED task be dragged back into play, while the task's own detail page
+      offered nothing at all: the same person got two different answers
+      depending on which screen they were looking at. The declared transitions
+      already say what a finished task may do — COMPLETED may be CLOSED, and
+      CANCELED and CLOSED may do nothing — so from here the table governs and
+      the bypass does not apply.
+    */
+    const managerFreeMove = hasManageAuthority && targetIsValidStatus && !currentIsFinished;
     if (!managerFreeMove && !allowedTransitions.includes(data.status as string)) {
       throw new BadRequestException(
         `Invalid status transition from ${task.status} to ${data.status}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
