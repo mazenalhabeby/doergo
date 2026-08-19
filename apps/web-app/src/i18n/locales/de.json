@@ -5385,7 +5385,9 @@
     "typing": "schreibt…",
     "couldNotOpen": "Diese Unterhaltung konnte nicht geöffnet werden",
     "cannotMessageSelf": "Sie können keine Unterhaltung mit sich selbst beginnen",
-    "external": "Extern"
+    "external": "Extern",
+    "closed": "Geschlossen",
+    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen."
   },
   "audit": {
     "history": "Aktivität",

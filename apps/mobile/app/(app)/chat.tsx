@@ -319,6 +319,11 @@ export default function ChatScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Text style={[styles.name, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>{conversationTitle(c, i18n.language)}</Text>
                       {c.isExternal && <ExternalTag compact />}
+                      {c.isClosed && (
+                        <Text style={[styles.closedPill, { color: colors.textSecondary, borderColor: colors.border }]}>
+                          {t('chat.closed', 'Closed')}
+                        </Text>
+                      )}
                     </View>
                     <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>{c.lastMessage?.body ?? t('chat.noMessages', 'No messages yet')}</Text>
                   </View>
@@ -401,19 +406,33 @@ export default function ChatScreen() {
             </View>
           )}
 
-          <View style={[styles.replyBar, { borderColor: colors.border, paddingBottom: SPACING.sm + bottomPad }]}>
-            <TextInput
-              value={text}
-              onChangeText={onType}
-              placeholder={t('chat.messagePlaceholder', 'Write a message…')}
-              placeholderTextColor={colors.textSecondary}
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-              multiline
-            />
-            <TouchableOpacity style={[styles.sendBtn, !text.trim() && { opacity: 0.4 }]} disabled={!text.trim()} onPress={sendMessage}>
-              <Ionicons name="send" size={18} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          {active?.isClosed ? (
+            // The shared space is gone, so the server refuses anything typed
+            // here. Say so instead of bouncing a message after it is written —
+            // and leave the history above, because it is closed, not deleted.
+            <View style={[styles.closedBar, { borderColor: colors.border, paddingBottom: SPACING.md + bottomPad }]}>
+              <Text style={[styles.closedText, { color: colors.textSecondary }]}>
+                {t(
+                  'chat.conversationClosed',
+                  'This space is no longer shared, so this conversation is closed. You can still read what was said.',
+                )}
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.replyBar, { borderColor: colors.border, paddingBottom: SPACING.sm + bottomPad }]}>
+              <TextInput
+                value={text}
+                onChangeText={onType}
+                placeholder={t('chat.messagePlaceholder', 'Write a message…')}
+                placeholderTextColor={colors.textSecondary}
+                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+                multiline
+              />
+              <TouchableOpacity style={[styles.sendBtn, !text.trim() && { opacity: 0.4 }]} disabled={!text.trim()} onPress={sendMessage}>
+                <Ionicons name="send" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
         </KeyboardAvoidingView>
       )}
     </ScreenContainer>
@@ -476,4 +495,8 @@ const styles = StyleSheet.create({
   sendBtn: { backgroundColor: COLORS.primary, width: 40, height: 40, borderRadius: RADIUS.md, justifyContent: 'center', alignItems: 'center' },
   errorBar: { backgroundColor: '#FEE2E2', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm },
   errorText: { color: '#B91C1C', fontSize: FONT_SIZE.sm },
+  // A closed cross-org thread: no composer, just why.
+  closedBar: { borderTopWidth: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
+  closedText: { fontSize: FONT_SIZE.xs, textAlign: 'center', lineHeight: 17 },
+  closedPill: { fontSize: 9, fontWeight: '600', borderWidth: 1, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
 });

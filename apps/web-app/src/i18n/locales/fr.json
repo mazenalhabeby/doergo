@@ -5360,7 +5360,9 @@
     "typing": "est en train d'écrire…",
     "couldNotOpen": "Impossible d’ouvrir cette conversation",
     "cannotMessageSelf": "Vous ne pouvez pas démarrer une conversation avec vous-même",
-    "external": "Externe"
+    "external": "Externe",
+    "closed": "Fermée",
+    "conversationClosed": "Cet espace n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents."
   },
   "audit": {
     "history": "Activité",

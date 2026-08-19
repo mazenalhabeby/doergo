@@ -57,6 +57,11 @@ export interface ChatConversation {
    * accepting messages because the space is no longer shared.
    */
   isExternal?: boolean;
+  /**
+   * The shared space that held this cross-org conversation open is gone, so it
+   * takes no new messages. The history stays readable — closed, not deleted.
+   */
+  isClosed?: boolean;
 }
 
 /** For a 1:1 conversation, a stable key so two users always share ONE thread. */

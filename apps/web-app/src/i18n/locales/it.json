@@ -5360,7 +5360,9 @@
     "typing": "sta scrivendo…",
     "couldNotOpen": "Impossibile aprire quella conversazione",
     "cannotMessageSelf": "Non puoi iniziare una conversazione con te stesso",
-    "external": "Esterno"
+    "external": "Esterno",
+    "closed": "Chiusa",
+    "conversationClosed": "Questo spazio non è più condiviso, quindi questa conversazione è chiusa. Puoi ancora leggere quanto è stato scritto."
   },
   "audit": {
     "history": "Attività",

@@ -24,7 +24,7 @@ describe('ChatService — cross-org conversations', () => {
     spaceAssignment: { findMany: jest.fn() },
     spaceShare: { findMany: jest.fn(), findFirst: jest.fn() },
     conversationMember: { findUnique: jest.fn(), update: jest.fn() },
-    conversation: { update: jest.fn(), findFirst: jest.fn() },
+    conversation: { update: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
     message: { create: jest.fn() },
     $transaction: jest.fn(),
   };
@@ -145,5 +145,110 @@ describe('ChatService — cross-org conversations', () => {
     // path must not fall through to it.
     expect(prisma.user.findFirst).not.toHaveBeenCalled();
     expect(prisma.user.findUnique).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The list has to say which cross-org threads have stopped accepting messages,
+ * or a closed one looks ordinary until you type into it and get bounced.
+ */
+describe('ChatService.listConversations — closed threads are reported', () => {
+  let service: ChatService;
+
+  const OWNER_ORG = 'org-owner';
+  const GUEST_ORG = 'org-guest';
+  const SPACE = 'space-shared';
+  const ME = 'user-owner-side';
+  const THEM = 'user-guest-side';
+
+  const users: Record<string, any> = {
+    [ME]: { id: ME, organizationId: OWNER_ORG, role: 'EMPLOYEE', isActive: true },
+    [THEM]: { id: THEM, organizationId: GUEST_ORG, role: 'EMPLOYEE', isActive: true },
+  };
+
+  const prisma: any = {
+    conversation: { findMany: jest.fn() },
+    user: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn() },
+    spaceAssignment: { findMany: jest.fn() },
+    spaceShare: { findMany: jest.fn() },
+    $queryRaw: jest.fn(),
+  };
+
+  const row = (id: string, originSpaceId: string | null) => ({
+    id,
+    organizationId: OWNER_ORG,
+    type: 'DIRECT',
+    title: null,
+    originSpaceId,
+    lastMessageAt: null,
+    createdAt: new Date(),
+    members: [
+      { userId: ME, user: { id: ME } },
+      { userId: THEM, user: { id: THEM } },
+    ],
+    messages: [],
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    prisma.$queryRaw.mockResolvedValue([]);
+    prisma.user.findMany.mockImplementation(({ where }: any) =>
+      Promise.resolve((where.id.in as string[]).map((id) => users[id]).filter(Boolean)),
+    );
+    prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
+      Promise.resolve((where.userId?.in ?? [where.userId]).map((id: string) => ({ userId: id, spaceId: SPACE }))),
+    );
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ChatService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
+      ],
+    }).compile();
+    service = module.get(ChatService);
+  });
+
+  const list = () => service.listConversations({ userId: ME, organizationId: OWNER_ORG });
+
+  it('reports a cross-org thread as open while its share lives', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row('c1', SPACE)]);
+    prisma.spaceShare.findMany.mockResolvedValue([
+      { spaceId: SPACE, ownerOrgId: OWNER_ORG, guestOrgId: GUEST_ORG, status: 'ACTIVE', showWorkers: true, expiresAt: null },
+    ]);
+    const res: any = await list();
+    expect(res.data[0]).toMatchObject({ isExternal: true, isClosed: false });
+  });
+
+  it('reports it closed once the space is no longer shared', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row('c1', SPACE)]);
+    prisma.spaceShare.findMany.mockResolvedValue([]);
+    const res: any = await list();
+    expect(res.data[0]).toMatchObject({ isExternal: true, isClosed: true });
+  });
+
+  it('never marks an in-org thread closed', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row('c1', null)]);
+    const res: any = await list();
+    expect(res.data[0]).toMatchObject({ isExternal: false, isClosed: false });
+  });
+
+  it('costs nothing extra when there are no cross-org threads', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row('c1', null)]);
+    await list();
+    // The overwhelming majority of people: no share lookup, no party lookup.
+    expect(prisma.spaceShare.findMany).not.toHaveBeenCalled();
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
+  });
+
+  it('resolves a whole list of cross-org threads in one pass', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row('c1', SPACE), row('c2', SPACE), row('c3', SPACE)]);
+    prisma.spaceShare.findMany.mockResolvedValue([
+      { spaceId: SPACE, ownerOrgId: OWNER_ORG, guestOrgId: GUEST_ORG, status: 'ACTIVE', showWorkers: true, expiresAt: null },
+    ]);
+    await list();
+    // Two queries for the whole list, not two per thread.
+    expect(prisma.user.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.spaceShare.findMany).toHaveBeenCalledTimes(1);
   });
 });
