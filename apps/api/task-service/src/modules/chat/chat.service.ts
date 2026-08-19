@@ -170,7 +170,11 @@ export class ChatService {
       .filter((u) =>
         [...(spacesByUser.get(u.id) ?? [])].some((sp) => otherOrgBySpace.get(sp) === u.organizationId),
       )
-      .map((u) => ({ ...u, isExternal: true }));
+      // Presence is stripped on the way out. A shared space is agreement to
+      // exchange messages about the work, not to publish when another
+      // company's staff are at their desks. See shape() for the same rule on
+      // conversations, and the websocket gateway for typing.
+      .map(({ presence: _presence, ...u }) => ({ ...u, presence: null, isExternal: true }));
   }
 
   /**
@@ -638,7 +642,14 @@ export class ChatService {
 
   /** Shape a conversation from the viewer's perspective (adds otherMember for DMs). */
   private shape(c: any, viewerId: string, isClosed = false) {
-    const members = (c.members ?? []).map((m: any) => m.user).filter(Boolean);
+    const isExternal = !!c.originSpaceId;
+    // Across an organization boundary, presence does not travel — the same rule
+    // the contacts directory and the typing relay apply. Being reachable for
+    // work is not the same as being observable.
+    // Marked as well as stripped: the avatar needs to know not to draw a
+    // status dot, and "no presence" alone reads as offline.
+    const hide = (u: any) => (u && isExternal ? { ...u, presence: null, isExternal: true } : u);
+    const members = (c.members ?? []).map((m: any) => hide(m.user)).filter(Boolean);
     const otherMember = c.type === 'DIRECT' ? members.find((u: any) => u.id !== viewerId) ?? null : null;
     return {
       id: c.id,
@@ -652,7 +663,7 @@ export class ChatService {
       // Tell the reader they are talking to another company. People share
       // different things when they know the person is outside the business —
       // this is a control, not decoration.
-      isExternal: !!c.originSpaceId,
+      isExternal,
       /**
        * The space that held this conversation open is no longer shared, so it
        * accepts no new messages. History stays readable — the thread is closed,

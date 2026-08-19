@@ -5387,7 +5387,8 @@
     "cannotMessageSelf": "Sie können keine Unterhaltung mit sich selbst beginnen",
     "external": "Extern",
     "closed": "Geschlossen",
-    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen."
+    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
+    "externalMember": "In einer anderen Organisation"
   },
   "audit": {
     "history": "Aktivität",

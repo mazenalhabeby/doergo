@@ -1183,7 +1183,8 @@
     },
     "external": "Extern",
     "closed": "Geschlossen",
-    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen."
+    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
+    "externalMember": "In einer anderen Organisation"
   },
   "locationConsent": {
     "title": "Standort im Hintergrund",

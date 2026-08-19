@@ -252,3 +252,82 @@ describe('ChatService.listConversations — closed threads are reported', () => 
     expect(prisma.spaceShare.findMany).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * A shared space is agreement to exchange messages about the work. It is not
+ * agreement to publish when another company's staff are at their desks.
+ */
+describe('ChatService — presence does not cross the organization boundary', () => {
+  let service: ChatService;
+
+  const OWNER_ORG = 'org-owner';
+  const GUEST_ORG = 'org-guest';
+  const SPACE = 'space-shared';
+  const ME = 'user-owner-side';
+  const THEM = 'user-guest-side';
+
+  const prisma: any = {
+    conversation: { findMany: jest.fn() },
+    user: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn() },
+    spaceAssignment: { findMany: jest.fn() },
+    spaceShare: { findMany: jest.fn() },
+    $queryRaw: jest.fn(),
+  };
+
+  const row = (originSpaceId: string | null) => ({
+    id: 'c1', organizationId: OWNER_ORG, type: 'DIRECT', title: null, originSpaceId,
+    lastMessageAt: null, createdAt: new Date(),
+    members: [
+      { userId: ME, user: { id: ME, presence: 'AVAILABLE' } },
+      { userId: THEM, user: { id: THEM, presence: 'AVAILABLE' } },
+    ],
+    messages: [],
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    prisma.$queryRaw.mockResolvedValue([]);
+    prisma.user.findMany.mockResolvedValue([
+      { id: ME, organizationId: OWNER_ORG, role: 'EMPLOYEE' },
+      { id: THEM, organizationId: GUEST_ORG, role: 'EMPLOYEE' },
+    ]);
+    prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
+      Promise.resolve((where.userId?.in ?? [where.userId]).map((id: string) => ({ userId: id, spaceId: SPACE }))),
+    );
+    prisma.spaceShare.findMany.mockResolvedValue([
+      { spaceId: SPACE, ownerOrgId: OWNER_ORG, guestOrgId: GUEST_ORG, status: 'ACTIVE', showWorkers: true, expiresAt: null },
+    ]);
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ChatService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
+      ],
+    }).compile();
+    service = module.get(ChatService);
+  });
+
+  const list = () => service.listConversations({ userId: ME, organizationId: OWNER_ORG });
+
+  it('withholds an external counterpart’s presence', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row(SPACE)]);
+    const res: any = await list();
+    expect(res.data[0].otherMember).toMatchObject({ id: THEM, presence: null, isExternal: true });
+  });
+
+  it('marks them external so the avatar draws no status dot', async () => {
+    // Absent presence alone reads as "offline", which is a claim we are not
+    // entitled to make about another company's staff.
+    prisma.conversation.findMany.mockResolvedValue([row(SPACE)]);
+    const res: any = await list();
+    expect(res.data[0].otherMember.isExternal).toBe(true);
+  });
+
+  it('leaves presence alone inside the organization', async () => {
+    prisma.conversation.findMany.mockResolvedValue([row(null)]);
+    const res: any = await list();
+    expect(res.data[0].otherMember).toMatchObject({ presence: 'AVAILABLE' });
+    expect(res.data[0].otherMember.isExternal).toBeUndefined();
+  });
+});

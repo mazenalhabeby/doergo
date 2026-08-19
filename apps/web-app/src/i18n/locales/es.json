@@ -5371,7 +5371,8 @@
     "cannotMessageSelf": "No puedes iniciar una conversación contigo mismo",
     "external": "Externo",
     "closed": "Cerrada",
-    "conversationClosed": "Este espacio ya no está compartido, por lo que esta conversación está cerrada. Todavía puedes leer lo que se dijo."
+    "conversationClosed": "Este espacio ya no está compartido, por lo que esta conversación está cerrada. Todavía puedes leer lo que se dijo.",
+    "externalMember": "En otra organización"
   },
   "audit": {
     "history": "Actividad",

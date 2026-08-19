@@ -5388,7 +5388,8 @@
     "cannotMessageSelf": "You cannot start a conversation with yourself",
     "external": "External",
     "closed": "Closed",
-    "conversationClosed": "This space is no longer shared, so this conversation is closed. You can still read what was said."
+    "conversationClosed": "This space is no longer shared, so this conversation is closed. You can still read what was said.",
+    "externalMember": "At another organization"
   },
   "audit": {
     "history": "Activity",

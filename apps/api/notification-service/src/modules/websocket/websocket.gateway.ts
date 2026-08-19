@@ -449,15 +449,45 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     }
   }
 
-  // Chat typing indicator — relayed to the other conversation members' user rooms.
+  /**
+   * Chat typing indicator — relayed to the other conversation members.
+   *
+   * Two things this must not do, both of which it used to.
+   *
+   * It must not leave the organization. A cross-org conversation is held open
+   * by a shared space so two companies can coordinate work; that is agreement
+   * to exchange messages, not a licence to watch someone type in real time.
+   * Presence and typing say when a person is at their desk and how they are
+   * composing a sentence, which is a level of visibility into another
+   * business's staff nobody signed up for.
+   *
+   * And it must not take the recipient list from the client. `recipientIds`
+   * arrives over the wire, so anything a member could name, they could make
+   * "…is typing" appear on — including people they share no conversation with.
+   * The sender's own organization is read from their authenticated socket, and
+   * every recipient is checked against the sockets actually connected. Typing
+   * is ephemeral: a recipient who is not connected has nothing to receive, so
+   * resolving through live sockets costs nothing and closes both holes at once.
+   */
   @SubscribeMessage('chat_typing')
   handleChatTyping(client: Socket, payload: { conversationId: string; recipientIds: string[]; from: string }) {
+    const sender = this.connectedClients.get(client.id);
     // Portal customers are excluded from member chat entirely — reject any
     // chat-typing relay from a customer socket (spoof defense).
-    if (this.connectedClients.get(client.id)?.role === 'CUSTOMER') return;
+    if (!sender || sender.role === 'CUSTOMER') return;
     if (!payload?.conversationId || !Array.isArray(payload.recipientIds)) return;
-    const evt = { conversationId: payload.conversationId, from: payload.from };
-    for (const uid of payload.recipientIds) {
+
+    // Organizations of everyone currently connected, so a recipient can be
+    // checked without a database round trip on every keystroke.
+    const orgByUser = new Map<string, string>();
+    for (const info of this.connectedClients.values()) {
+      if (info.role !== 'CUSTOMER') orgByUser.set(info.userId, info.organizationId);
+    }
+
+    const evt = { conversationId: payload.conversationId, from: sender.userId };
+    for (const uid of new Set(payload.recipientIds)) {
+      if (uid === sender.userId) continue;
+      if (orgByUser.get(uid) !== sender.organizationId) continue; // absent or elsewhere
       this.server.to(`user:${uid}`).emit(SocketEvents.CHAT_TYPING, evt);
     }
   }

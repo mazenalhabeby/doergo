@@ -291,7 +291,11 @@ export default function ChatScreen() {
                 <Text style={[styles.headerName, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>{conversationTitle(active, i18n.language)}</Text>
                 {active.isExternal && <ExternalTag />}
               </View>
-              <Text style={[styles.headerStatus, { color: colors.textSecondary }]} numberOfLines={1}>{presenceLabel(active.otherMember?.presence, t)}</Text>
+              <Text style={[styles.headerStatus, { color: colors.textSecondary }]} numberOfLines={1}>
+                {active.isExternal
+                  ? t('chat.externalMember', 'At another organization')
+                  : presenceLabel(active.otherMember?.presence, t)}
+              </Text>
             </View>
           </View>
         ) : (
@@ -440,6 +444,10 @@ export default function ChatScreen() {
 }
 
 function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: number; dot?: boolean }) {
+  // Presence does not cross an organization boundary, so an external person
+  // arrives with none. A grey dot would state they are offline, which is a
+  // different claim from "we don't publish this" — draw no dot at all.
+  const showDot = dot && !u?.isExternal;
   const { colors } = useTheme();
   const r = size / 2;
   const img = resolveMediaUrl(u?.avatarUrl);
@@ -452,7 +460,7 @@ function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: n
           <Text style={{ color: colors.textSecondary, fontSize: size * 0.34, fontWeight: FONT_WEIGHT.semibold }}>{initials(u)}</Text>
         </View>
       )}
-      {dot && (
+      {showDot && (
         <View style={{
           position: 'absolute', bottom: 0, right: 0, width: size * 0.3, height: size * 0.3,
           borderRadius: size * 0.15, backgroundColor: presenceColor(u?.presence),
