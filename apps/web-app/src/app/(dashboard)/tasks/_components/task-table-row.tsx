@@ -1,7 +1,8 @@
 "use client"
 
 import React from "react"
-import { isTaskOverdue, isFinishedStatus } from "@hbcfield/shared/client"
+import { isTaskOverdue, isFinishedStatus, mayChangeStatus, hasAnyTransition, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
+import { useWorkflow } from "@/hooks/use-org-workflow"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import {
@@ -59,12 +60,46 @@ function TaskTableRowInner({
   isDragging = false,
 }: TaskTableRowProps) {
   const { t } = useTranslation()
-  const { hasModule } = useAuth()
+  const { hasModule, user } = useAuth()
   const router = useRouter()
   const statusConfig = getStatusConfig(task.status)
+
+  /*
+    The statuses THIS task can be in — its own task type's, not a fixed list.
+
+    The dropdown listed the canonical statuses regardless of the task's type, so
+    a task on a custom flow was offered columns that do not exist in it. It
+    reads the task's workflow now, falling back to the canonical machine only
+    when the task has none.
+  */
+  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(task.workflowId)
+  const statusOptions = taskHasWorkflow && flowStatuses.length
+    ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
+    : TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {
+        const cfg = getStatusConfig(st)
+        return { key: st, label: cfg.label, hex: cfg.hex }
+      })
+
+  const currentIsFinished = taskHasWorkflow && flowStatuses.length
+    ? (() => {
+        const cur = flowStatuses.find((st) => st.key === task.status)
+        return !!cur?.isFinal || !!cur?.isCanceled
+      })()
+    : isFinishedStatus(task.status)
+
+  const allowedTargets: string[] = taskHasWorkflow && flowStatuses.length
+    ? (flowStatuses.find((st) => st.key === task.status)?.transitions ?? [])
+    : ((STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[])
+
+  const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
+
   // Offered only when there is something to offer: an action to call, and a
   // task the server would actually move.
-  const canChangeStatus = !!contextActions?.onStatusChange && !isFinishedStatus(task.status)
+  const canChangeStatus = !!contextActions?.onStatusChange && hasAnyTransition({
+    allowedTargets,
+    isManager,
+    fromIsFinished: currentIsFinished,
+  })
   const priorityConfig = getPriorityConfig(task.priority)
   const PriorityIcon = priorityConfig.icon
 
@@ -208,17 +243,26 @@ function TaskTableRowInner({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[180px]">
-              {TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {
-                const cfg = getStatusConfig(st)
+              {statusOptions.map((opt) => {
+                // Shown, but only selectable when the move would be accepted —
+                // the same rule the service applies.
+                const permitted = mayChangeStatus({
+                  from: task.status,
+                  to: opt.key,
+                  allowedTargets,
+                  targetIsValidStatus: true,
+                  isManager,
+                  fromIsFinished: currentIsFinished,
+                })
                 return (
                   <DropdownMenuItem
-                    key={st}
-                    disabled={st === task.status}
-                    onClick={() => contextActions!.onStatusChange!(task.id, st)}
-                    className={st === task.status ? "opacity-50" : ""}
+                    key={opt.key}
+                    disabled={!permitted}
+                    onClick={() => contextActions!.onStatusChange!(task.id, opt.key)}
+                    className={!permitted ? "opacity-50" : ""}
                   >
-                    <span className="size-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: cfg.hex }} />
-                    {cfg.label}
+                    <span className="size-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: opt.hex }} />
+                    {opt.label}
                   </DropdownMenuItem>
                 )
               })}

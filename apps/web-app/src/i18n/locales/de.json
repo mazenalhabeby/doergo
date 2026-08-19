@@ -1084,7 +1084,8 @@
       "statusUpdated": "Aufgabenstatus aktualisiert",
       "assigneesUpdated": "Zuständige aktualisiert",
       "assigneeRemoved": "Zuständige(r) entfernt",
-      "leadUpdated": "Leitung aktualisiert"
+      "leadUpdated": "Leitung aktualisiert",
+      "updateFailed": "Änderung konnte nicht gespeichert werden"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Service erfolgreich abgeschlossen",

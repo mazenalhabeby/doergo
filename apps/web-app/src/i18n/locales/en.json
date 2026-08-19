@@ -1084,7 +1084,8 @@
       "statusUpdated": "Task status updated",
       "assigneesUpdated": "Assignees updated",
       "assigneeRemoved": "Assignee removed",
-      "leadUpdated": "Lead updated"
+      "leadUpdated": "Lead updated",
+      "updateFailed": "Could not save that change"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Service Completed Successfully",

@@ -243,6 +243,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       setIsSubmittingLocal(false)
       setStoryPoints(null)
       setEpicId("none")
+      // Reopening the dialog must not silently reuse the last person picked.
+      setAssigneeId("")
     }
   }, [open])
 
@@ -281,6 +283,16 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     staleTime: 60000,
     enabled: open,
   })
+
+  /*
+    Who the task is being assigned to.
+
+    The picker below had no `value` and no `onValueChange` — an uncontrolled
+    Select that stored nothing. You chose a member, the dialog forgot it, and
+    the task was created unassigned, so the only way to assign anyone was to
+    open the task afterwards and do it again.
+  */
+  const [assigneeId, setAssigneeId] = useState<string>("")
 
   // ── Fetch members for assignee picker ──
   const taskCreationScope = user?.taskCreationScope || "NONE"
@@ -435,6 +447,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     const assigneeIds: string[] = []
     if (isSelfScope && user?.id) {
       assigneeIds.push(user.id)
+    } else if (assigneeId) {
+      assigneeIds.push(assigneeId)
     }
 
     // Recurring path — create a template instead of a one-off task. Reuses the
@@ -836,7 +850,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 ) : (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.assignTo")}</Label>
-                    <Select disabled={isSubmitting}>
+                    <Select value={assigneeId} onValueChange={setAssigneeId} disabled={isSubmitting}>
                       <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                         <SelectValue placeholder={t("tasks.create.selectTeamMember")} />
                       </SelectTrigger>

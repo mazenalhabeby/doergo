@@ -196,12 +196,29 @@ export default function TaskDetailPage({
     onError: (e: Error) => notify.error(e.message),
   })
 
-  // Inline field save
+  /*
+    Inline field save — title, description, hours, points.
+
+    This refreshed only THIS task, so an edit made here was invisible on the
+    list and the board until a hard reload: same data, two caches, one of them
+    told. It also swallowed nothing — the update was awaited with no catch, so a
+    rejection surfaced as an unhandled promise rather than as a message.
+
+    Every cache holding this task now hears about it, and a failure says so.
+  */
   const handleFieldSave = useCallback(async (field: string, value: string) => {
     const parsed = value === "" ? null : (field === "estimatedHours" || field === "storyPoints" ? Number(value) : value)
-    await tasksApi.update(id, { [field]: parsed })
+    try {
+      await tasksApi.update(id, { [field]: parsed })
+    } catch (e) {
+      notify.error(e instanceof Error && e.message ? e.message : t("tasks.detail.updateFailed"))
+      throw e // let the field restore what was there before
+    }
     queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
-  }, [id, queryClient])
+    queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+    queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
+  }, [id, queryClient, t])
 
   // Comments
   const [newComment, setNewComment] = useState("")

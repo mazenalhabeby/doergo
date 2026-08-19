@@ -1084,7 +1084,8 @@
       "statusUpdated": "Estado de la tarea actualizado",
       "assigneesUpdated": "Responsables actualizados",
       "assigneeRemoved": "Responsable quitado",
-      "leadUpdated": "Responsable principal actualizado"
+      "leadUpdated": "Responsable principal actualizado",
+      "updateFailed": "No se pudo guardar el cambio"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Servicio completado correctamente",
