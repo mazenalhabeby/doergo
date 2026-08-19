@@ -1084,7 +1084,8 @@
       "statusUpdated": "Stato dell'attività aggiornato",
       "assigneesUpdated": "Assegnatari aggiornati",
       "assigneeRemoved": "Assegnatario rimosso",
-      "leadUpdated": "Responsabile aggiornato"
+      "leadUpdated": "Responsabile aggiornato",
+      "updateFailed": "Impossibile salvare la modifica"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Servizio completato con successo",

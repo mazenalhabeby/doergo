@@ -1084,7 +1084,8 @@
       "statusUpdated": "Statut de la tâche mis à jour",
       "assigneesUpdated": "Personnes assignées mises à jour",
       "assigneeRemoved": "Personne assignée retirée",
-      "leadUpdated": "Responsable mis à jour"
+      "leadUpdated": "Responsable mis à jour",
+      "updateFailed": "Impossible d’enregistrer la modification"
     },
     "progress": {
       "serviceCompletedSuccessfully": "Intervention terminée avec succès",

@@ -22,6 +22,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { useAuth } from "@/contexts/auth-context"
+import { useWorkflow } from "@/hooks/use-org-workflow"
+import { mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
@@ -67,6 +69,29 @@ function TaskContextMenuInner({
   recentAssignees = [],
 }: TaskContextMenuProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+
+  /*
+    The statuses THIS task can be in — its own type's, not a fixed list. Same
+    derivation as the table row; both feed the shared rule so what is offered
+    matches what the service accepts.
+  */
+  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(task.workflowId)
+  const usesFlow = taskHasWorkflow && flowStatuses.length > 0
+  const statusOptions = usesFlow
+    ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
+    : TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {
+        const cfg = getStatusConfig(st)
+        return { key: st, label: cfg.label, hex: cfg.hex }
+      })
+  const currentFlowStatus = usesFlow ? flowStatuses.find((st) => st.key === task.status) : undefined
+  const currentIsFinished = usesFlow
+    ? !!currentFlowStatus?.isFinal || !!currentFlowStatus?.isCanceled
+    : isFinishedStatus(task.status)
+  const allowedTargets: string[] = usesFlow
+    ? (currentFlowStatus?.transitions ?? [])
+    : ((STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[])
+  const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
   const router = useRouter()
   const { hasModule } = useAuth()
 
@@ -93,15 +118,28 @@ function TaskContextMenuInner({
               {t("tasks.menu.status")}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-[180px]">
-              {TASK_STATUSES.filter(s => s !== "DRAFT").map((status) => {
-                const config = getStatusConfig(status)
-                const isCurrent = task.status === status
+              {/*
+                The task's own statuses, not a fixed list — a task on a custom
+                type was offered columns that do not exist in its flow. Entries
+                the service would refuse are shown but not selectable, using the
+                same rule it applies.
+              */}
+              {statusOptions.map((opt) => {
+                const config = { hex: opt.hex, label: opt.label }
+                const permitted = mayChangeStatus({
+                  from: task.status,
+                  to: opt.key,
+                  allowedTargets,
+                  targetIsValidStatus: true,
+                  isManager,
+                  fromIsFinished: currentIsFinished,
+                })
                 return (
                   <ContextMenuItem
-                    key={status}
-                    disabled={isCurrent}
-                    onClick={() => actions.onStatusChange!(task.id, status)}
-                    className={isCurrent ? "opacity-50" : ""}
+                    key={opt.key}
+                    disabled={!permitted}
+                    onClick={() => actions.onStatusChange!(task.id, opt.key)}
+                    className={!permitted ? "opacity-50" : ""}
                   >
                     <span
                       className="size-2 rounded-full mr-2 flex-shrink-0"
