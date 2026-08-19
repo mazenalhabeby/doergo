@@ -20,6 +20,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { useContactActions } from "@/hooks/use-contact-actions"
+import { useAuth } from "@/contexts/auth-context"
 import { employeesApi } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
@@ -48,6 +49,7 @@ const STATUS_CONFIG: Record<string, { labelKey: string; dot: string; bg: string 
 export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetailPanelProps) {
   const { t } = useTranslation()
   const { message } = useContactActions()
+  const { user } = useAuth()
   const router = useRouter()
 
   const { data: detail, isLoading } = useQuery({
@@ -124,7 +126,9 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                   )}
                 </div>
 
-                {/* Quick Actions */}
+                {/* Quick Actions — hidden on your own card: chat refuses a
+                    conversation with yourself, so these would do nothing. */}
+                {employee.id !== user?.id && (
                 <div className="flex gap-1 shrink-0">
                   <button
                     onClick={() => message(employee.id)}
@@ -145,6 +149,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                     <Video className="size-4" />
                   </button>
                 </div>
+                )}
               </div>
             </div>
 
