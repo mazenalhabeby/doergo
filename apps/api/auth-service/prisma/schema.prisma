@@ -3126,6 +3126,14 @@ model Conversation {
   createdById    String
   lastMessageAt  DateTime?
 
+  // The shared space that authorizes a CROSS-ORG conversation. Null for the
+  // ordinary in-org case. This is the reason the two people may talk, not a
+  // cached verdict: every send re-resolves the share behind it, so revoking the
+  // share freezes the thread with nothing to update here. For a cross-org row
+  // `organizationId` is the space OWNER's org, deterministically, so both sides
+  // upsert the same conversation instead of one thread each.
+  originSpaceId  String?
+
   members  ConversationMember[]
   messages Message[]
 
@@ -3134,6 +3142,7 @@ model Conversation {
 
   @@unique([organizationId, dmKey]) // one DM per pair per org
   @@index([organizationId, lastMessageAt])
+  @@index([originSpaceId]) // freeze/audit sweeps by share
   @@map("conversations")
 }
 

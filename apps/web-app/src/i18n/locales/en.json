@@ -5385,7 +5385,8 @@
     "open": "Open",
     "typing": "is typing…",
     "couldNotOpen": "Could not open that conversation",
-    "cannotMessageSelf": "You cannot start a conversation with yourself"
+    "cannotMessageSelf": "You cannot start a conversation with yourself",
+    "external": "External"
   },
   "audit": {
     "history": "Activity",
