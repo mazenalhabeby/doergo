@@ -50,6 +50,8 @@ interface RouteData {
   distance: number | null
   duration: number | null // API returns seconds
   points: RoutePoint[]
+  /** Road-snapped path from the server; absent when matching isn't configured. */
+  matchedPath?: [number, number][] | null
   status: string
   startTime: string | null
   endTime: string | null
@@ -330,6 +332,7 @@ export function RouteTrackingSection({
               <div className="mt-4">
                 <RouteMapView
                   points={routeData.points}
+                  matchedPath={routeData.matchedPath}
                   isLive={isLive}
                 />
               </div>

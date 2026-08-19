@@ -65,7 +65,13 @@ export function isWithinTaskBoundary(task: TaskAccessSubject, caller: TaskAccess
  * Returns `null` when the co-assignee rows were not loaded, meaning the answer
  * is unknown and needs a lookup. Never guesses.
  */
-export function isTaskAssignee(task: TaskAccessSubject, userId: string): boolean | null {
+export function isTaskAssignee(
+  // Only the assignment fields — asking for the whole subject would force
+  // callers that just want "is this person on it?" (route tracking, for one) to
+  // fetch an organizationId they have no use for.
+  task: Pick<TaskAccessSubject, 'assignedToId' | 'assignees'>,
+  userId: string,
+): boolean | null {
   if (task.assignedToId && task.assignedToId === userId) return true;
   if (task.assignees === undefined) return null;
   if (task.assignees === null) return false;

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useEffect, useState } from "react"
+import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat } from "@/hooks"
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
@@ -16,6 +16,16 @@ interface RoutePoint {
 
 interface RouteMapViewProps {
   points: RoutePoint[]
+  /**
+   * Road-snapped path from the server, when route matching is configured.
+   *
+   * The browser used to do this itself, sending up to a hundred of an
+   * employee's coordinates and their timestamps to a public OSRM demo server —
+   * once per viewer, to a third party with no agreement covering it. It is
+   * computed server-side now, so nothing leaves this app; absent, the raw GPS
+   * trace is drawn, which is what the old code fell back to anyway.
+   */
+  matchedPath?: [number, number][] | null
   isLive?: boolean
 }
 
@@ -57,74 +67,17 @@ function createMarkerIcon(type: "start" | "end" | "current") {
   })
 }
 
-/**
- * Snap GPS points to actual roads using OSRM's free match API.
- * Falls back to raw points if the API fails.
- */
-async function snapToRoads(points: RoutePoint[]): Promise<[number, number][]> {
-  if (points.length < 2) return points.map(p => [p.lat, p.lng])
-
-  // OSRM expects max ~100 coordinates per request, sample if needed
-  let sampled = points
-  if (points.length > 100) {
-    const step = Math.ceil(points.length / 100)
-    sampled = points.filter((_, i) => i % step === 0)
-    // Always include last point
-    if (sampled[sampled.length - 1] !== points[points.length - 1]) {
-      sampled.push(points[points.length - 1])
-    }
-  }
-
-  // OSRM uses lng,lat order
-  const coords = sampled.map(p => `${p.lng},${p.lat}`).join(';')
-  const timestamps = sampled.map(p => Math.floor(new Date(p.timestamp).getTime() / 1000)).join(';')
-
-  try {
-    const url = `https://router.project-osrm.org/match/v1/driving/${coords}?overview=full&geometries=geojson&timestamps=${timestamps}`
-    const res = await fetch(url)
-    const data = await res.json()
-
-    if (data.code === 'Ok' && data.matchings?.[0]?.geometry?.coordinates) {
-      // OSRM returns [lng, lat], convert to [lat, lng] for Leaflet
-      return data.matchings[0].geometry.coordinates.map(
-        (c: [number, number]) => [c[1], c[0]] as [number, number]
-      )
-    }
-  } catch (err) {
-    console.warn('OSRM road snap failed, using raw GPS points:', err)
-  }
-
-  // Fallback: raw GPS points
-  return points.map(p => [p.lat, p.lng])
-}
-
-export default function RouteMapView({ points, isLive = false }: RouteMapViewProps) {
+export default function RouteMapView({ points, matchedPath, isLive = false }: RouteMapViewProps) {
   const { t } = useTranslation()
   const { formatTime } = useTimeFormat()
-  const [roadPath, setRoadPath] = useState<[number, number][]>([])
-  const [loading, setLoading] = useState(true)
 
-  // Raw GPS polyline (fallback / shown while loading)
+  // Raw GPS polyline — what the device actually recorded.
   const rawPositions = useMemo(() => {
     return points.map((p) => [p.lat, p.lng] as [number, number])
   }, [points])
 
-  // Snap GPS to roads
-  useEffect(() => {
-    if (points.length < 2) {
-      setRoadPath(rawPositions)
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    snapToRoads(points).then(path => {
-      setRoadPath(path)
-      setLoading(false)
-    })
-  }, [points, rawPositions])
-
-  const displayPath = roadPath.length > 0 ? roadPath : rawPositions
+  // The snapped path arrives with the route; no request, no waiting, no spinner.
+  const displayPath = matchedPath?.length ? matchedPath : rawPositions
 
   // Calculate map bounds
   const bounds = useMemo(() => {
