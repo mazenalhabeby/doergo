@@ -1,4 +1,4 @@
-import { STATUS_TRANSITIONS, TaskStatus } from '@hbcfield/shared';
+import { STATUS_TRANSITIONS, TaskStatus, mayChangeStatus, hasAnyTransition } from '@hbcfield/shared';
 
 /**
  * A finished task stops moving — for everyone.
@@ -12,15 +12,17 @@ import { STATUS_TRANSITIONS, TaskStatus } from '@hbcfield/shared';
  * declared transitions govern and the manager bypass does not apply.
  */
 describe('finished tasks are immutable', () => {
-  /** The service's rule, in the same shape it evaluates it. */
-  const mayMove = (from: TaskStatus, to: TaskStatus, isManager: boolean) => {
-    const finished =
-      from === TaskStatus.COMPLETED || from === TaskStatus.CLOSED || from === TaskStatus.CANCELED;
-    const allowed = (STATUS_TRANSITIONS[from] || []) as string[];
-    const targetIsValid = (Object.values(TaskStatus) as string[]).includes(to);
-    const managerFreeMove = isManager && targetIsValid && !finished;
-    return managerFreeMove || allowed.includes(to);
-  };
+  /** The shared rule itself — the one the service and every screen now call. */
+  const mayMove = (from: TaskStatus, to: TaskStatus, isManager: boolean) =>
+    mayChangeStatus({
+      from,
+      to,
+      allowedTargets: (STATUS_TRANSITIONS[from] || []) as string[],
+      targetIsValidStatus: (Object.values(TaskStatus) as string[]).includes(to),
+      isManager,
+      fromIsFinished:
+        from === TaskStatus.COMPLETED || from === TaskStatus.CLOSED || from === TaskStatus.CANCELED,
+    });
 
   it('lets a manager drop an active card in any column — the board still works', () => {
     expect(mayMove(TaskStatus.NEW, TaskStatus.IN_PROGRESS, true)).toBe(true);
@@ -59,5 +61,36 @@ describe('finished tasks are immutable', () => {
     expect(STATUS_TRANSITIONS[TaskStatus.CANCELED]).toEqual([]);
     expect(STATUS_TRANSITIONS[TaskStatus.CLOSED]).toEqual([]);
     expect(STATUS_TRANSITIONS[TaskStatus.COMPLETED]).toEqual([TaskStatus.CLOSED]);
+  });
+
+  describe('hasAnyTransition — what a screen offers at all', () => {
+    const canMove = (from: TaskStatus, isManager: boolean) =>
+      hasAnyTransition({
+        allowedTargets: (STATUS_TRANSITIONS[from] || []) as string[],
+        isManager,
+        fromIsFinished:
+          from === TaskStatus.COMPLETED || from === TaskStatus.CLOSED || from === TaskStatus.CANCELED,
+      });
+
+    it('lets a manager move any active card', () => {
+      expect(canMove(TaskStatus.NEW, true)).toBe(true);
+      expect(canMove(TaskStatus.IN_PROGRESS, true)).toBe(true);
+    });
+
+    it('still lets a COMPLETED card lift — it can be closed', () => {
+      // Blanket-blocking finished tasks left CLOSED unreachable: the board
+      // would not drag one and the page would not offer the step.
+      expect(canMove(TaskStatus.COMPLETED, true)).toBe(true);
+      expect(canMove(TaskStatus.COMPLETED, false)).toBe(true);
+    });
+
+    it('does not lift a canceled or closed card for anyone', () => {
+      expect(canMove(TaskStatus.CANCELED, true)).toBe(false);
+      expect(canMove(TaskStatus.CLOSED, true)).toBe(false);
+    });
+  });
+
+  it('refuses a no-op move', () => {
+    expect(mayMove(TaskStatus.NEW, TaskStatus.NEW, true)).toBe(false);
   });
 });

@@ -51,7 +51,7 @@ import { BacklogToolbar, sortBacklogTasks, type BacklogSortField, type BacklogSo
 import { SprintCapacityBar } from "./_components/sprint-capacity"
 import { SprintFormDialog, CompleteSprintDialog, DeleteSprintDialog, EpicFormDialog } from "./_components/sprint-management"
 import type { TaskContextMenuActions } from "./_components/task-context-menu"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { hasAccessModule, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 
 // Priority sort order
 const PRIORITY_ORDER: Record<string, number> = {
@@ -562,11 +562,33 @@ export default function TasksPage() {
   })
 
   const handleKanbanDrop = useCallback((taskId: string, newStatus: string) => {
-    // Don't do anything if dropping on the same status
     const task = tasks.find(t => t.id === taskId)
+    // Don't do anything if dropping on the same status
     if (task && task.status === newStatus) return
+
+    /*
+      Refuse a move the server would refuse, here rather than after a round
+      trip. A card lifts only when it can move at all, but WHERE it may land is
+      a second question: a completed task may be closed and nothing else, so
+      dropping it in "In Progress" should not travel and come back as an error.
+      Same rule the service applies.
+    */
+    if (task && !mayChangeStatus({
+      from: task.status,
+      to: newStatus,
+      allowedTargets: (STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[],
+      targetIsValidStatus: true,
+      isManager: user?.role === "ADMIN" || user?.canViewAllTasks === true,
+      fromIsFinished: isFinishedStatus(task.status),
+    })) {
+      notify.error(t("tasks.notify.invalidTransition", {
+        defaultValue: "This task can no longer be moved there.",
+      }))
+      return
+    }
+
     statusChangeMutation.mutate({ taskId, status: newStatus })
-  }, [tasks, statusChangeMutation])
+  }, [tasks, statusChangeMutation, user, t])
 
   // Handle reorder within same column/group
   const handleReorder = useCallback((taskId: string, newPosition: number, _groupKey: string) => {

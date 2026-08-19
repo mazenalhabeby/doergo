@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { useOrgWorkflow, buildKanbanColumns, type KanbanColumnDef } from "@/hooks/use-org-workflow"
 import type { TaskContextMenuActions } from "./task-context-menu"
-import { isFinishedStatus } from "@hbcfield/shared/client"
+import { isFinishedStatus, hasAnyTransition, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { TaskCard } from "./task-card"
 
 // Hardcoded fallback columns (used when no workflow exists)
@@ -38,11 +39,14 @@ interface KanbanColumnProps {
   epics?: Epic[]
   spaces?: { id: string; name: string }[]
   recentAssignees?: { id: string; firstName: string; lastName: string }[]
+  /** Can this task move at all? Resolved once by the board, from the same rule
+   *  the service applies, so a card only lifts when a drop would be accepted. */
+  canMoveTask: (task: Task) => boolean
 }
 
 const KanbanColumn = React.memo(function KanbanColumn({
   label, dotColor, tasks, dropStatus, wipLimit, draggingId, onDragStart, onDrop, onReorder, onDragEnd,
-  onAssignClick, contextActions, sprints, phases, epics, spaces, recentAssignees,
+  onAssignClick, contextActions, sprints, phases, epics, spaces, recentAssignees, canMoveTask,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false)
   const [insertIndex, setInsertIndex] = useState<number | null>(null)
@@ -160,14 +164,14 @@ const KanbanColumn = React.memo(function KanbanColumn({
             spaces={spaces}
             recentAssignees={recentAssignees}
             /*
-              A finished task is not draggable. The server refuses to move it —
-              a completed task may only be closed, a canceled or closed one
-              nothing at all — so offering the drag produced a card that slid
-              into a column and snapped back with an error. It also disagreed
-              with the task's own page, which offers nothing once finished.
+              Draggable only when the task can actually move — the same rule the
+              service applies (hasAnyTransition / mayChangeStatus in
+              @hbcfield/shared). A manager may free-move an active card; a
+              finished one may only make its declared step, so COMPLETED still
+              lifts (it can be closed) while CANCELED and CLOSED do not.
             */
             dragProps={
-              isFinishedStatus(task.status)
+              !canMoveTask(task)
                 ? undefined
                 : {
                     onDragStart: (e) => {
@@ -278,6 +282,37 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const { statuses: workflowStatuses, hasWorkflow } = useOrgWorkflow()
+  const { user } = useAuth()
+
+  /*
+    What a card may do, decided by the same rule the service enforces.
+
+    A manager may free-move an ACTIVE card, which is what a board is for. A
+    finished one is held to its declared transitions — so a COMPLETED card
+    still lifts, because it can be closed, while CANCELED and CLOSED do not.
+  */
+  const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
+  const targetsFor = useCallback((status: string): string[] => {
+    if (hasWorkflow) {
+      const cur = workflowStatuses.find((st) => st.key === status)
+      return cur?.transitions ?? []
+    }
+    return (STATUS_TRANSITIONS[status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[]
+  }, [hasWorkflow, workflowStatuses])
+
+  const finishedFor = useCallback((status: string): boolean => {
+    if (hasWorkflow) {
+      const cur = workflowStatuses.find((st) => st.key === status)
+      return !!cur?.isFinal || !!cur?.isCanceled
+    }
+    return isFinishedStatus(status)
+  }, [hasWorkflow, workflowStatuses])
+
+  const canMoveTask = useCallback((task: Task) => hasAnyTransition({
+    allowedTargets: targetsFor(task.status),
+    isManager,
+    fromIsFinished: finishedFor(task.status),
+  }), [targetsFor, finishedFor, isManager])
 
   // Build columns: prefer prop (space-aware), then org workflow, then fallback
   const columnDefs = useMemo(() => {
@@ -374,6 +409,7 @@ export function KanbanBoard({
       >
       {columns.map((col) => (
         <KanbanColumn
+          canMoveTask={canMoveTask}
           key={col.key}
           label={col.label}
           dotColor={col.dotColor}
