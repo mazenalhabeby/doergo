@@ -185,12 +185,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setActiveId(conv.id);
       setShowContacts(false);
     },
-    onError: () => {
+    onError: (err: unknown) => {
       // There was no error branch at all: a failed request left the drawer
       // open on nothing, and once opening showed a spinner, spinning forever.
-      // Say what happened and fall back to the conversation list, which is at
-      // least somewhere the reader can act from.
-      toast.error(t('chat.couldNotOpen', 'Could not open that conversation'));
+      //
+      // Lead with the server's reason. It distinguishes cases the reader can
+      // act on — "not allowed to contact this member" is an access setting,
+      // "member not found" means they are not in this organization — and a
+      // single generic sentence turned all of them into "it's broken".
+      const reason = err instanceof Error && err.message ? err.message : null;
+      toast.error(reason || t('chat.couldNotOpen', 'Could not open that conversation'));
       setActiveId(null);
     },
   });
