@@ -46,7 +46,6 @@ interface TaskDetailHeaderProps {
   isCanceled: boolean
   hasAssignee: boolean
   hasModule: (m: string) => boolean
-  hasWorkflow: boolean
   allowedTransitions: WorkflowStatus[]
   onTitleSave: (value: string) => Promise<void> | void
   onStatusChange: (status: string) => void
@@ -67,7 +66,6 @@ export function TaskDetailHeader({
   isCanceled,
   hasAssignee,
   hasModule,
-  hasWorkflow,
   allowedTransitions,
   onTitleSave,
   onStatusChange,
@@ -178,8 +176,22 @@ export function TaskDetailHeader({
         {/* Time on task — DB-anchored, live; same value on web, mobile & for admins */}
         <TaskTimer acceptedAt={task.acceptedAt} completedAt={task.completedAt} />
 
-        {/* Workflow transitions as subtle pills */}
-        {hasWorkflow && allowedTransitions.length > 0 && !isCompleted && !isCanceled && (
+        {/*
+          Transitions as pills — offered exactly when one exists.
+
+          This was gated on hasWorkflow, so a task on the canonical state
+          machine (most of them) showed a status badge and no way to change it,
+          while the board and the list both offered one. It was also hidden on
+          any finished task, which left COMPLETED with no route to CLOSED now
+          that finished cards cannot be dragged either — a status the flow
+          declares but nothing could reach.
+
+          The transition table decides on its own now, and it is the same table
+          the server enforces: CANCELED and CLOSED offer nothing because they
+          have nothing, and COMPLETED offers the one step it has. Closing a
+          finished task is not editing it.
+        */}
+        {allowedTransitions.length > 0 && (
           <>
             <ChevronRight className="size-3 text-muted-foreground/40" />
             {allowedTransitions.map((s) => (

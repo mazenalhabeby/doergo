@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, use, useEffect, useCallback } from "react"
+import { useState, use, useEffect, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -18,6 +18,8 @@ import {
   Settings2,
 } from "lucide-react"
 
+import { STATUS_TRANSITIONS } from "@hbcfield/shared/client"
+import { getStatusConfig } from "@/lib/constants"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
@@ -135,9 +137,23 @@ export default function TaskDetailPage({
     task ? { spaceId: task.spaceId, isFinished: isCompleted || isCanceled } : null,
   )
 
-  const allowedTransitions = task?.status && hasWorkflow
-    ? getTransitionsForStatus(task.status, workflowStatuses)
-    : []
+  /*
+    What this task may become next.
+
+    This used to be [] for any task WITHOUT a custom workflow — which is most of
+    them — so the detail page showed a status badge and no way to change it,
+    while the board and the list both offered one. The canonical state machine
+    is the fallback: the very table the server enforces, so a pill is offered
+    exactly when the transition will be accepted.
+  */
+  const allowedTransitions = useMemo<WorkflowStatus[]>(() => {
+    if (!task?.status) return []
+    if (hasWorkflow) return getTransitionsForStatus(task.status, workflowStatuses)
+    return (STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []).map((key) => {
+      const cfg = getStatusConfig(key)
+      return { id: key, key, name: cfg.label, color: cfg.hex } as WorkflowStatus
+    })
+  }, [task?.status, hasWorkflow, workflowStatuses])
 
   // ─── Mutations ──────────────────────────────────────────────────────────
   const assignMutation = useMutation({
@@ -283,7 +299,6 @@ export default function TaskDetailPage({
           isCanceled={isCanceled}
           hasAssignee={hasAssignee}
           hasModule={hasModule}
-          hasWorkflow={hasWorkflow}
           allowedTransitions={allowedTransitions}
           onTitleSave={(v) => handleFieldSave("title", v)}
           onStatusChange={(s) => statusChangeMutation.mutate(s)}
