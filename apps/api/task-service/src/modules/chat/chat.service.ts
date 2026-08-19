@@ -32,11 +32,11 @@ export class ChatService {
       },
       orderBy: [{ firstName: 'asc' }],
     });
-    // Space-driven contact targets for `me` (leaders in the spaces I belong to),
-    // resolved once server-side and reused for every target below.
-    const spaceTargets = await this.myContactTargets(data.userId, data.organizationId);
-    const reachable = all.filter((u) => this.canReach(me as any, u as any, spaceTargets));
-    return { data: reachable };
+    // One resolver shared by every candidate below: resolved server-side (so it
+    // can't be spoofed) and at most once, however many people we test.
+    const spaceTargets = this.contactTargetsResolver(data.userId, data.organizationId);
+    const verdicts = await Promise.all(all.map((u) => this.canReach(me as any, u as any, spaceTargets)));
+    return { data: all.filter((_, i) => verdicts[i]) };
   }
 
   /** User ids `me` may contact via their space(s) — per-member override, else the
@@ -54,11 +54,14 @@ export class ChatService {
    * `spaceTargets` is resolved server-side from the caller's OWN spaces, so it
    * can't be spoofed.
    */
-  private canReach(
+  private async canReach(
     me: { role: string; enabledModules: unknown; contactScope: string; contactAllowedIds: string[]; canManageUsers?: boolean },
     target: { id: string; role: string; contactable: boolean; canManageUsers?: boolean },
-    spaceTargets: Set<string>,
-  ): boolean {
+    // A thunk, not a Set: resolving space targets costs several queries, and
+    // most calls are settled by the cheap checks above without ever needing it.
+    // See contactTargetsResolver — it resolves at most once, on demand.
+    spaceTargets: () => Promise<Set<string>>,
+  ): Promise<boolean> {
     // External customers are never part of member chat (neither direction).
     if (me.role === 'CUSTOMER' || target.role === 'CUSTOMER') return false;
     // Admins and managers (canManageUsers) may contact anyone and are always reachable.
@@ -67,11 +70,63 @@ export class ChatService {
     if (meIsManager) return true;
     if (!canContactColleagues({ enabledModules: me.enabledModules })) return false; // admin disabled messaging
     if (!(target.contactable || targetIsManager)) return false;
-    // Space-driven: a leader in a space we share is always reachable.
-    if (spaceTargets.has(target.id)) return true;
-    if (me.contactScope === 'SELECTED') return (me.contactAllowedIds ?? []).includes(target.id);
     if (me.contactScope === 'ALL') return true;
+    // Space-driven: a leader in a space we share is always reachable. Only this
+    // branch and SELECTED need the space lookup.
+    if ((await spaceTargets()).has(target.id)) return true;
+    if (me.contactScope === 'SELECTED') return (me.contactAllowedIds ?? []).includes(target.id);
     return false; // NONE and not a space target
+  }
+
+  /**
+   * Lazy, memoized space-target resolver for one caller.
+   *
+   * Resolves at most once and only if the contact rule actually reaches the
+   * branch that needs it — so an admin sending a message, or a member whose
+   * contactScope is ALL, pays nothing for it.
+   */
+  private contactTargetsResolver(userId: string, organizationId: string): () => Promise<Set<string>> {
+    let cached: Promise<Set<string>> | null = null;
+    return () => (cached ??= this.myContactTargets(userId, organizationId));
+  }
+
+  /**
+   * May `senderId` message `otherUserId` RIGHT NOW? Throws if not.
+   *
+   * The one place this question is answered, because it has to be asked in two
+   * places: when a conversation is opened, and again on every message sent into
+   * it. Opening used to be the only check, which meant permission was granted
+   * permanently at creation — revoke someone's contact access, or take them out
+   * of the space that connected them, and every conversation they already had
+   * kept working forever.
+   */
+  private async assertMayContact(
+    senderId: string,
+    otherUserId: string,
+    organizationId: string,
+    deniedMessage = 'You are not allowed to contact this member',
+  ) {
+    const [me, other] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: senderId },
+        select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
+      }),
+      this.prisma.user.findFirst({
+        where: { id: otherUserId, organizationId },
+        select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true, canManageUsers: true },
+      }),
+    ]);
+    // `other.id` must match exactly — findFirst with a bad id could otherwise
+    // fall through to an unintended row. Also re-check self by resolved id.
+    if (!me || !other || other.id !== otherUserId) throw new NotFoundException('Member not found');
+    if (other.id === senderId) throw new ForbiddenException('Cannot message yourself');
+    const reachable = await this.canReach(
+      me as any,
+      other as any,
+      this.contactTargetsResolver(senderId, organizationId),
+    );
+    if (!reachable) throw new ForbiddenException(deniedMessage);
+    return other;
   }
 
   // ── open (or create) a 1:1 conversation with another member ─────────────────
@@ -80,25 +135,8 @@ export class ChatService {
       throw new NotFoundException('Member not found');
     }
     if (data.userId === data.otherUserId) throw new ForbiddenException('Cannot message yourself');
-    const [me, other] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: data.userId },
-        select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
-      }),
-      this.prisma.user.findFirst({
-        where: { id: data.otherUserId, organizationId: data.organizationId },
-        select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true, canManageUsers: true },
-      }),
-    ]);
-    // `other.id` must match exactly — findFirst with a bad id could otherwise fall
-    // through to an unintended row. Also re-check self by resolved id.
-    if (!me || !other || other.id !== data.otherUserId) throw new NotFoundException('Member not found');
-    if (other.id === data.userId) throw new ForbiddenException('Cannot message yourself');
-    // Server-side authorization — recompute space targets, never trust the client.
-    const spaceTargets = await this.myContactTargets(data.userId, data.organizationId);
-    if (!this.canReach(me as any, other as any, spaceTargets)) {
-      throw new ForbiddenException('You are not allowed to contact this member');
-    }
+    // Server-side authorization — recomputed here, never trusted from the client.
+    await this.assertMayContact(data.userId, data.otherUserId, data.organizationId);
 
     const dmKey = directConversationKey(data.userId, data.otherUserId);
     // Upsert the DM: unique on (organizationId, dmKey) guarantees one thread.
@@ -173,6 +211,11 @@ export class ChatService {
     attachments?: Attachment[];
   }) {
     const membership = await this.assertMember(data.conversationId, data.senderId);
+
+    // Membership is not permission. It says these two once had a reason to
+    // talk; it says nothing about whether they still do. Ask again, every time.
+    await this.assertStillReachable(membership, data.senderId);
+
     const now = new Date();
     const [message] = await this.prisma.$transaction([
       this.prisma.message.create({
@@ -209,6 +252,36 @@ export class ChatService {
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────────
+
+  /**
+   * May the sender still write into this conversation?
+   *
+   * Reading is deliberately untouched — history stays readable. Losing contact
+   * permission ends the conversation; it doesn't retract what was already said,
+   * and hiding a record someone has already read is theatre, not security.
+   *
+   * GROUP threads keep membership as the rule: there is no pair to evaluate,
+   * and belonging to the group IS the grant.
+   */
+  private async assertStillReachable(
+    membership: { conversation: { id: string; type: string; organizationId: string; members: { userId: string }[] } },
+    senderId: string,
+  ) {
+    const conversation = membership.conversation;
+    if (conversation.type !== 'DIRECT') return;
+
+    const otherId = conversation.members.find((m) => m.userId !== senderId)?.userId;
+    // A direct thread with no counterpart is malformed — deny rather than guess.
+    if (!otherId) throw new ForbiddenException('This conversation is no longer available');
+
+    await this.assertMayContact(
+      senderId,
+      otherId,
+      conversation.organizationId,
+      'You can no longer message this member',
+    );
+  }
+
   private async assertMember(conversationId: string, userId: string) {
     const membership = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
