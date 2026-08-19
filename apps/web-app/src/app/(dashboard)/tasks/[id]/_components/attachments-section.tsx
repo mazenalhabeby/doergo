@@ -57,7 +57,18 @@ interface UploadingFile {
   progress: number
 }
 
-export function AttachmentsSection({ taskId }: { taskId: string }) {
+export function AttachmentsSection({
+  taskId,
+  initialAttachments,
+}: {
+  taskId: string
+  /**
+   * The attachments the task detail response already carried. Without this the
+   * section refetched the exact rows the page had just paid for — findOne
+   * includes them — so opening a task fetched its attachments twice.
+   */
+  initialAttachments?: Attachment[]
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -68,6 +79,11 @@ export function AttachmentsSection({ taskId }: { taskId: string }) {
   const { data: attachments = [], isLoading } = useQuery({
     queryKey: ["taskAttachments", taskId],
     queryFn: () => taskAttachmentsApi.getAttachments(taskId),
+    // Seeded from the detail payload, so opening a task costs no extra request;
+    // uploads and deletes still invalidate and refetch. Mirrors how the subtasks
+    // section is wired.
+    initialData: initialAttachments,
+    staleTime: 30000,
   })
 
   const deleteMutation = useMutation({

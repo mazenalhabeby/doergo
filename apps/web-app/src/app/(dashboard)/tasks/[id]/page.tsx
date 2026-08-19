@@ -213,6 +213,22 @@ export default function TaskDetailPage({
   const checklistDone = task.checklistItems?.filter((i: any) => i.isCompleted).length ?? 0
   const checklistTotal = task.checklistItems?.length ?? 0
   const depCount = (task.predecessors?.length || 0) + (task.successors?.length || 0)
+  const subtaskCount = task.subtasks?.length ?? task._count?.subtasks ?? 0
+  const attachmentCount = task.attachments?.length ?? 0
+
+  /**
+   * Which sections open on arrival.
+   *
+   * A section you can ADD to always renders — hiding an empty checklist would
+   * remove the only way to create the first item — but it arrives collapsed
+   * when there is nothing in it, so the page is quiet without becoming a dead
+   * end. Sections you can only READ are hidden outright when empty, below.
+   *
+   * Every count here comes from the task response the page already has, so
+   * deciding this costs no request; and a collapsed section no longer mounts
+   * its body, so it costs no query either.
+   */
+  const openIfPresent = (n: number) => n > 0
 
   return (
     <div className="min-h-full bg-background">
@@ -294,7 +310,7 @@ export default function TaskDetailPage({
             {/* Subtasks — module: subtasks */}
             {hasModule("subtasks") && (
               <div data-tour="task-subtasks">
-              <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={task.subtasks?.length || task._count?.subtasks || 0}>
+              <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={subtaskCount} defaultOpen={openIfPresent(subtaskCount)}>
                 <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} />
               </CollapsibleSection>
               </div>
@@ -303,7 +319,7 @@ export default function TaskDetailPage({
             {/* Checklist — module: checklists */}
             {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
               <div data-tour="task-checklist">
-              <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0}>
+              <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0} defaultOpen={openIfPresent(checklistTotal)}>
                 <ChecklistSection taskId={id} items={task.checklistItems || []} />
               </CollapsibleSection>
               </div>
@@ -312,8 +328,8 @@ export default function TaskDetailPage({
             {/* Attachments — module: attachments */}
             {hasModule("attachments") && (
               <div data-tour="task-attachments">
-              <CollapsibleSection id="attachments" icon={Paperclip} title={t("tasks.sections.attachments")}>
-                <AttachmentsSection taskId={id} />
+              <CollapsibleSection id="attachments" icon={Paperclip} title={t("tasks.sections.attachments")} count={attachmentCount || undefined} defaultOpen={openIfPresent(attachmentCount)}>
+                <AttachmentsSection taskId={id} initialAttachments={task.attachments} />
               </CollapsibleSection>
               </div>
             )}
@@ -321,7 +337,7 @@ export default function TaskDetailPage({
             {/* Dependencies — module: dependencies */}
             {hasModule("dependencies") && (
               <div data-tour="task-dependencies">
-              <CollapsibleSection id="dependencies" icon={Link2} title={t("tasks.sections.dependencies")} count={depCount || undefined}>
+              <CollapsibleSection id="dependencies" icon={Link2} title={t("tasks.sections.dependencies")} count={depCount || undefined} defaultOpen={openIfPresent(depCount)}>
                 <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} />
               </CollapsibleSection>
               </div>
@@ -332,7 +348,7 @@ export default function TaskDetailPage({
 
             {/* Comments — always visible */}
             <div data-tour="task-comments">
-            <CollapsibleSection id="comments" icon={MessageCircle} title={t("tasks.comments.title")} count={comments.length || undefined}>
+            <CollapsibleSection id="comments" icon={MessageCircle} title={t("tasks.comments.title")} count={comments.length || undefined} defaultOpen>
               <CommentsSection
                 comments={comments}
                 newComment={newComment}
@@ -362,8 +378,11 @@ export default function TaskDetailPage({
               </div>
             )}
 
-            {/* Route Tracking — module: tracking + role-gated */}
-            {hasModule("tracking") && canViewAllTasks && (
+            {/* Route Tracking — module + permission, and only once a route exists.
+                Read-only: with no recorded points there is nothing to show and
+                nothing to add, unlike the sections above. Kept mounted while it
+                is still loading so it doesn't flash in and out. */}
+            {hasModule("tracking") && canViewAllTasks && (loadingRoute || (routeData?.points?.length ?? 0) > 0) && (
               <div data-tour="task-route-tracking">
               <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
                 <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />

@@ -29,16 +29,47 @@ export function CollapsibleSection({
 }: CollapsibleSectionProps) {
   const storageKey = `task-section-${id}`
 
-  const [open, setOpen] = useState(() => {
-    if (typeof window === "undefined") return defaultOpen
-    const stored = localStorage.getItem(storageKey)
-    return stored !== null ? stored === "true" : defaultOpen
-  })
+  // Start from the prop, then adopt the remembered state after mount. Reading
+  // localStorage during render would make the server (which always sees
+  // `defaultOpen`) and the client disagree — a hydration mismatch on any page
+  // where a section had been collapsed.
+  const [open, setOpen] = useState(defaultOpen)
+  const hydrated = useRef(false)
 
-  // Persist open/closed state
   useEffect(() => {
-    localStorage.setItem(storageKey, String(open))
+    if (hydrated.current) return
+    hydrated.current = true
+    try {
+      const stored = localStorage.getItem(storageKey)
+      if (stored !== null) setOpen(stored === "true")
+    } catch {
+      // Private mode / storage disabled — the prop default stands.
+    }
+  }, [storageKey])
+
+  // Persist, but only choices the reader actually made.
+  useEffect(() => {
+    if (!hydrated.current) return
+    try {
+      localStorage.setItem(storageKey, String(open))
+    } catch {
+      // Nothing to do — the section still works, it just won't be remembered.
+    }
   }, [open, storageKey])
+
+  /**
+   * Mount the body only once the section has been opened, and keep it mounted
+   * afterwards so reopening is instant.
+   *
+   * Collapsing is purely visual here (`grid-template-rows: 0fr`), so before
+   * this every section's children mounted on page load and every one of their
+   * queries fired — a collapsed Attachments panel still fetched its
+   * attachments. A section nobody opens should cost nothing.
+   */
+  const [everOpened, setEverOpened] = useState(defaultOpen)
+  useEffect(() => {
+    if (open) setEverOpened(true)
+  }, [open])
 
   // Animate content height
   const contentRef = useRef<HTMLDivElement>(null)
@@ -88,7 +119,7 @@ export function CollapsibleSection({
       >
         <div ref={innerRef} className="overflow-hidden">
           <div className="px-5 pb-5">
-            {children}
+            {everOpened ? children : null}
           </div>
         </div>
       </div>
