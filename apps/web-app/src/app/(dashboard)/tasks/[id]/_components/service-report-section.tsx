@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ZoomIn,
-  FileText,
   AlertCircle,
   Upload,
   Loader2,
@@ -434,7 +433,7 @@ function AttachmentDeleteButton({
 }
 
 export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectionProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
 
@@ -454,11 +453,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="size-5 text-muted-foreground animate-pulse" />
-          <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.serviceReport")}</h3>
-        </div>
+      <div>
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-muted rounded w-3/4"></div>
           <div className="h-4 bg-muted rounded w-1/2"></div>
@@ -470,10 +465,10 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
 
   if (error || !report) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle2 className="size-5 text-green-500" />
-          <h3 className="text-base font-semibold text-foreground">{t("tasks.serviceReport.jobCompleted")}</h3>
+          <span className="text-base font-semibold text-foreground">{t("tasks.serviceReport.jobCompleted")}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <AlertCircle className="size-4" />
@@ -487,15 +482,18 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
   const partsUsed = report.partsUsed || []
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm p-6 mb-6">
-      {/* Header */}
+    <div>
+      {/*
+        No card, no title — CollapsibleSection draws both. What stays is the
+        part it does not say: that the job is done, and when.
+      */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-5 text-green-500" />
-          <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.serviceReport")}</h3>
+          <span className="text-sm font-medium text-foreground">{t("tasks.serviceReport.jobCompleted")}</span>
         </div>
         <span className="text-sm text-muted-foreground">
-          {t("tasks.serviceReport.completedOn", { date: new Date(report.completedAt).toLocaleDateString("en-US", {
+          {t("tasks.serviceReport.completedOn", { date: new Date(report.completedAt).toLocaleDateString(i18n.language, {
             month: "short",
             day: "numeric",
             year: "numeric",

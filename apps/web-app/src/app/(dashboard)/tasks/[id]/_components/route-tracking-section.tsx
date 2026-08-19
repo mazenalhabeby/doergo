@@ -117,31 +117,14 @@ export function RouteTrackingSection({
   // Loading state
   if (isLoading) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-5 rounded" />
-            <Skeleton className="h-5 w-32" />
-          </div>
-        </div>
-        <div className="p-6">
-          <Skeleton className="h-20 rounded-xl" />
-        </div>
-      </div>
+      <Skeleton className="h-20 rounded-xl" />
     )
   }
 
   // No route data for assigned task - show waiting state
   if (hasAssignee && !routeData?.points?.length && !routeData?.distance) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Route className="size-5 text-muted-foreground" />
-            <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.routeTracking")}</h3>
-          </div>
-        </div>
-        <div className="p-6">
+      <div>
           <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
             <div className="size-12 rounded-xl bg-muted flex items-center justify-center">
               <Car className="size-6 text-muted-foreground" />
@@ -153,7 +136,6 @@ export function RouteTrackingSection({
               </p>
             </div>
           </div>
-        </div>
       </div>
     )
   }
@@ -177,11 +159,15 @@ export function RouteTrackingSection({
   const hasRoutePoints = routeData.points.length > 1
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden mb-6">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <h3 className="text-base font-semibold text-foreground">{t("tasks.sections.routeTracking")}</h3>
+    <div>
+      {/*
+        No card and no title here — CollapsibleSection draws both, and drawing
+        them again produced a panel headed Route Tracking containing a box
+        headed Route Tracking. The live/finished badge stays: it says something
+        the section header does not.
+      */}
+      {(isLive || (stage === "arrived")) && (
+        <div className="flex items-center gap-3 mb-4">
           {isLive && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
               <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
@@ -194,10 +180,10 @@ export function RouteTrackingSection({
             </span>
           )}
         </div>
-      </div>
+      )}
 
       {/* Content */}
-      <div className="p-6">
+      <div>
         {/* Stats Row */}
         <div className="flex gap-6 mb-6">
           <div className="flex items-center gap-2">

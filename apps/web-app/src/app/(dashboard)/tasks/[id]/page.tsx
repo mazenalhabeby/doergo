@@ -83,23 +83,31 @@ export default function TaskDetailPage({
     enabled: canViewAllTasks && !!task,
   })
 
-  // Fetch sprints, phases, epics for sidebar selectors
+  // Space-aware module resolution
+  const { hasModule: spaceHasModule } = useSpaceModules(task?.spaceId || null)
+  const hasModule = task?.spaceId ? spaceHasModule : orgHasModule
+
+  /*
+    Sidebar selectors for sprints, phases and epics — fetched only when the
+    space actually has the module, which is the same gate the sidebar renders
+    them behind. These are Business-tier features, so on every other plan this
+    was three requests per page view whose results were thrown away.
+  */
   const { data: sprints } = useQuery({
     queryKey: ["sprints"],
     queryFn: () => sprintsApi.list(),
+    enabled: hasModule("sprints"),
   })
   const { data: phases } = useQuery({
     queryKey: ["phases"],
     queryFn: () => phasesApi.list(),
+    enabled: hasModule("phases"),
   })
   const { data: epicsData } = useQuery({
     queryKey: ["epics"],
     queryFn: () => epicsApi.list(),
+    enabled: hasModule("epics"),
   })
-
-  // Space-aware module resolution
-  const { hasModule: spaceHasModule } = useSpaceModules(task?.spaceId || null)
-  const hasModule = task?.spaceId ? spaceHasModule : orgHasModule
 
   useEffect(() => {
     if (task?.title) setOverride(id, task.title)
@@ -311,7 +319,7 @@ export default function TaskDetailPage({
             {/* Subtasks — module: subtasks */}
             {hasModule("subtasks") && (
               <div data-tour="task-subtasks">
-              <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={subtaskCount} defaultOpen={openIfPresent(subtaskCount)}>
+              <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={subtaskCount || undefined} defaultOpen={openIfPresent(subtaskCount)}>
                 <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} />
               </CollapsibleSection>
               </div>
@@ -320,7 +328,7 @@ export default function TaskDetailPage({
             {/* Checklist — module: checklists */}
             {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
               <div data-tour="task-checklist">
-              <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : 0} defaultOpen={openIfPresent(checklistTotal)}>
+              <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : undefined} defaultOpen={openIfPresent(checklistTotal)}>
                 <ChecklistSection taskId={id} items={task.checklistItems || []} />
               </CollapsibleSection>
               </div>
