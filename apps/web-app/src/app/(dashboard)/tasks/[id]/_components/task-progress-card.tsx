@@ -20,7 +20,6 @@ interface AssignedUser {
   id?: string
   firstName: string
   lastName: string
-  email?: string
   phone?: string
   specialty?: string | null
   avatarUrl?: string | null
@@ -109,7 +108,7 @@ export function TaskProgressCard({
   const lead = assignees.find(a => a.role === "LEAD")
   const primary = lead ?? assignees[0]
   const primaryUser: AssignedUser | null = primary
-    ? { id: primary.user.id, firstName: primary.user.firstName, lastName: primary.user.lastName, avatarUrl: primary.user.avatarUrl, email: (assignedTo?.id === primary.user.id ? assignedTo?.email : undefined), phone: (assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined) }
+    ? { id: primary.user.id, firstName: primary.user.firstName, lastName: primary.user.lastName, avatarUrl: primary.user.avatarUrl, phone: (assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined) }
     : assignedTo
   // Everyone else shown as stacked avatars — EXCLUDE the primary so the same
   // person is never drawn twice (the bug: a lone MEMBER was both the primary
