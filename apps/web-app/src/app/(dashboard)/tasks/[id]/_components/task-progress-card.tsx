@@ -1,7 +1,6 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { useQuery } from "@tanstack/react-query"
 import {
   Check,
   Phone,
@@ -10,8 +9,10 @@ import {
   UserPlus,
 } from "lucide-react"
 
-import { tasksApi, type TaskEvent, type WorkflowStatus } from "@/lib/api"
-import { getStatusConfig } from "@/lib/constants"
+import { type WorkflowStatus } from "@/lib/api"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useContactActions } from "@/hooks/use-contact-actions"
+import { taskRoster } from "@/lib/task-roster"
 import { cn, formatDurationMs } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 
@@ -34,15 +35,12 @@ interface TaskAssignee {
 }
 
 interface TaskProgressCardProps {
-  taskId: string
   assignees: TaskAssignee[]
   assignedTo: AssignedUser | null
   isCompleted: boolean
   taskStatus: string
-  createdAt: string
   routeStartedAt?: string | null
   routeEndedAt?: string | null
-  routeDistance?: number | null
   workflowStatuses?: WorkflowStatus[]
 }
 
@@ -83,23 +81,15 @@ function getStepIndex(status: string, steps: { key: string }[], workflowStatuses
 
 
 export function TaskProgressCard({
-  taskId,
   assignees,
   assignedTo,
   isCompleted,
   taskStatus,
-  createdAt,
   routeStartedAt,
   routeEndedAt,
-  routeDistance,
   workflowStatuses,
 }: TaskProgressCardProps) {
   const { t } = useTranslation()
-
-  const { data: events } = useQuery({
-    queryKey: ["taskTimeline", taskId],
-    queryFn: () => tasksApi.getTimeline(taskId),
-  })
 
   const steps = buildSteps(workflowStatuses)
   const currentStepIndex = getStepIndex(taskStatus, steps, workflowStatuses)
@@ -125,6 +115,11 @@ export function TaskProgressCard({
   // person is never drawn twice (the bug: a lone MEMBER was both the primary
   // avatar and a stacked avatar).
   const members = assignees.filter(a => a.user.id !== primary?.user.id)
+
+  // Everyone on the task, lead first — the list the Message picker offers.
+  const everyone = taskRoster(assignees, assignedTo)
+
+  const { message, call } = useContactActions()
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
@@ -178,19 +173,65 @@ export function TaskProgressCard({
 
             <div className="flex items-center gap-1 ml-1">
               <button
-                onClick={() => primaryUser.phone && (window.location.href = `tel:${primaryUser.phone}`)}
+                onClick={() => call(primaryUser.phone)}
                 className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
                 title={t("tasks.progress.call")}
               >
                 <Phone className="size-3" />
               </button>
-              <button
-                onClick={() => primaryUser.email && (window.location.href = `mailto:${primaryUser.email}`)}
-                className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                title={t("tasks.progress.message")}
-              >
-                <MessageSquare className="size-3" />
-              </button>
+
+              {/*
+                One person on the task: message them. Several: ask which one.
+                A task has no group thread — chat is one-to-one — so picking
+                silently would send to whoever happens to be lead and leave the
+                others wondering why they never heard about it.
+              */}
+              {everyone.length > 1 ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                      title={t("tasks.progress.message")}
+                    >
+                      <MessageSquare className="size-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-56 p-1">
+                    <p className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground">
+                      {t("tasks.progress.messageWho")}
+                    </p>
+                    {everyone.map(person => (
+                      <button
+                        key={person.id}
+                        onClick={() => message(person.id)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm hover:bg-muted/60 transition-colors"
+                      >
+                        <UserAvatar
+                          firstName={person.firstName}
+                          lastName={person.lastName}
+                          avatarUrl={person.avatarUrl}
+                          seed={person.id}
+                          size="xs"
+                        />
+                        <span className="truncate">{person.firstName} {person.lastName}</span>
+                        {person.isLead && (
+                          <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
+                            {t("tasks.progress.lead")}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <button
+                  onClick={() => primaryUser.id && message(primaryUser.id)}
+                  className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                  title={t("tasks.progress.message")}
+                >
+                  <MessageSquare className="size-3" />
+                </button>
+              )}
             </div>
           </div>
         ) : (

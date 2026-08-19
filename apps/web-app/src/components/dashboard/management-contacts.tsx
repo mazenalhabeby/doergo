@@ -6,10 +6,10 @@ import { useTranslation } from "react-i18next"
 import { Phone, MessageSquare } from "lucide-react"
 import { organizationsApi, type OrgMember } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import { useChat } from "@/components/chat/chat-drawer"
 import { notify } from "@/lib/toast"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
+import { useContactActions } from "@/hooks/use-contact-actions"
 
 const PRESENCE: Record<string, { color: string; key: string; def: string }> = {
   AVAILABLE: { color: "bg-green-500", key: "presence.available", def: "Available" },
@@ -39,7 +39,7 @@ function lastActiveLabel(iso: string | null | undefined, t: TFunction): string {
  * query (no extra fetch).
  */
 export function ManagementContacts() {
-  const { openChatWith } = useChat()
+  const { message } = useContactActions()
   const { user } = useAuth()
   const { t } = useTranslation()
 
@@ -93,7 +93,7 @@ export function ManagementContacts() {
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => openChatWith(m.id)}
+                  onClick={() => message(m.id)}
                   className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   title={t("workspace.message", "Message")}
                 >

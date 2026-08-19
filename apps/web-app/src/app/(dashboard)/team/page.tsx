@@ -3,14 +3,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { MessageCircle, Phone, Users } from "lucide-react"
-import { useChat } from "@/components/chat/chat-drawer"
 import { teamApi } from "@/lib/api"
+import { useContactActions } from "@/hooks/use-contact-actions"
 import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
 
 export default function TeamPage() {
   const { t } = useTranslation()
-  const { openChatWith } = useChat()
+  const { message } = useContactActions()
   const { data: colleagues = [], isLoading } = useQuery({
     queryKey: ["team"],
     queryFn: () => teamApi.list(),
@@ -45,7 +45,7 @@ export default function TeamPage() {
                 </p>
               </div>
               <button
-                onClick={() => openChatWith(c.id)}
+                onClick={() => message(c.id)}
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition hover:opacity-90"
               >
                 <MessageCircle className="h-4 w-4" />

@@ -1098,6 +1098,7 @@
       "fieldTechnician": "Employé de terrain",
       "call": "Appeler",
       "message": "Message",
+      "messageWho": "Écrire à qui ?",
       "steps": {
         "submitted": "Soumise",
         "assigned": "Attribuée",

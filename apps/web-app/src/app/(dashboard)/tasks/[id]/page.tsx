@@ -281,15 +281,12 @@ export default function TaskDetailPage({
         {/* ─── Progress Card — always visible ─────────────────────── */}
         <div data-tour="task-progress">
         <TaskProgressCard
-          taskId={id}
           assignees={task.assignees || []}
           assignedTo={task.assignedTo || null}
           isCompleted={isCompleted}
           taskStatus={task.status}
-          createdAt={task.createdAt}
           routeStartedAt={task.routeStartedAt}
           routeEndedAt={task.routeEndedAt}
-          routeDistance={task.routeDistance}
           workflowStatuses={hasWorkflow ? workflowStatuses : undefined}
         />
         </div>

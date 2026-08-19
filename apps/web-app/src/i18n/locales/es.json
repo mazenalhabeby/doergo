@@ -1098,6 +1098,7 @@
       "fieldTechnician": "Empleado de campo",
       "call": "Llamar",
       "message": "Mensaje",
+      "messageWho": "¿A quién enviar mensaje?",
       "steps": {
         "submitted": "Enviada",
         "assigned": "Asignada",
