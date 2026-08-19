@@ -1,12 +1,12 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { useLocationTracking } from '../hooks/useLocationTracking';
+import { useLocationTracking, type RouteDestinationInput } from '../hooks/useLocationTracking';
 
 interface LocationTrackingContextType {
   isTracking: boolean;
   activeTaskId: string | null;
   lastLocation: { lat: number; lng: number; accuracy?: number } | null;
   error: string | null;
-  startTracking: (taskId: string) => Promise<boolean | undefined>;
+  startTracking: (taskId: string, destination?: RouteDestinationInput) => Promise<boolean | undefined>;
   stopTracking: () => void;
 }
 

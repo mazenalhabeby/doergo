@@ -492,6 +492,13 @@
       "signature": "Signature"
     }
   },
+  "routeArrival": {
+    "notificationTitle": "Vous êtes arrivé",
+    "notificationBody": "Vous semblez être arrivé sur le site. Appuyez pour vous signaler comme arrivé.",
+    "notificationBodyAt": "Vous semblez être arrivé à {{address}}. Appuyez pour vous signaler comme arrivé.",
+    "banner": "Vous semblez être arrivé. Signalez-vous comme arrivé dès que vous êtes prêt.",
+    "bannerAt": "Vous semblez être arrivé à {{address}}. Signalez-vous comme arrivé dès que vous êtes prêt."
+  },
   "createTask": {
     "titleLabel": "Titre *",
     "titlePlaceholder": "Que faut-il faire ?",

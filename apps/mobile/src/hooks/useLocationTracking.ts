@@ -17,6 +17,13 @@ interface LocationData {
   accuracy?: number;
 }
 
+/** Where this route is headed — powers the "you've arrived" prompt. */
+export interface RouteDestinationInput {
+  lat?: number | null;
+  lng?: number | null;
+  address?: string | null;
+}
+
 interface LocationTrackingState {
   isTracking: boolean;
   activeTaskId: string | null;
@@ -124,7 +131,7 @@ export function useLocationTracking() {
     }
   }, []);
 
-  const startTracking = useCallback(async (taskId: string) => {
+  const startTracking = useCallback(async (taskId: string, destination?: RouteDestinationInput) => {
     // Already tracking — just re-point at the (possibly different) task.
     taskIdRef.current = taskId;
 
@@ -138,8 +145,9 @@ export function useLocationTracking() {
     // Seed the route with an immediate point (don't wait for the first 25m).
     await sendLocationUpdate();
 
-    // Hand off continuous capture to the background task.
-    const ok = await startRouteTracking(taskId);
+    // Hand off continuous capture to the background task. The destination goes
+    // with it so arrival can be recognised from points already being recorded.
+    const ok = await startRouteTracking(taskId, destination);
     if (!ok) {
       setState((prev) => ({ ...prev, error: 'Could not start background tracking' }));
     }

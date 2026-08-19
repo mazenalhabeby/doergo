@@ -13,6 +13,7 @@ import {
   Animated,
   Pressable,
   Image,
+  AppState,
   StyleSheet as RNStyleSheet,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -37,6 +38,7 @@ import { TechnicianPicker, LoadingState, ErrorState, ConfirmSheet, centeredConte
 import { TourTarget } from '../../../src/components/tour';
 import { useResponsive } from '../../../src/lib/responsive';
 import { CustomFieldsCard } from '../../../src/components/custom-fields-card';
+import { hasArrivalPrompt } from '../../../src/services/route-arrival';
 import { getStatusStyle, getPriorityStyle } from '../../../src/lib/styles';
 import { getJobId, formatTimeAgo } from '../../../src/lib/utils';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
@@ -206,11 +208,40 @@ export function TaskDetailPane({
     };
   }, [task?.acceptedAt, task?.completedAt, task?.status]);
 
+  // Has the phone noticed the member reach the job site? The background tracker
+  // sets this from points it is already recording (see route-arrival.ts) and
+  // fires a notification; this is the same news shown in-app, for a member who
+  // already has the task open or came here by tapping that notification.
+  const [hasArrived, setHasArrived] = useState(false);
+  useEffect(() => {
+    if (!task?.id || task.status !== TaskStatus.EN_ROUTE) {
+      setHasArrived(false);
+      return;
+    }
+    let active = true;
+    const check = () => {
+      hasArrivalPrompt(task.id).then((v) => { if (active) setHasArrived(v); });
+    };
+    check();
+    // The flag is written by a background task, so there is nothing to subscribe
+    // to. A read every half-minute is imperceptible next to the GPS that is
+    // already running, and only while this screen is open on an active route.
+    const timer = setInterval(check, 30000);
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') check();
+    });
+    return () => {
+      active = false;
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, [task?.id, task?.status]);
+
   // Auto-start/stop location tracking based on task status
   // Tracking lives in app-level context — survives screen navigation
   useEffect(() => {
     if (task?.status === TaskStatus.EN_ROUTE && !isTracking && task.id) {
-      startTracking(task.id);
+      startTracking(task.id, destinationOf(task));
     } else if (task?.status !== TaskStatus.EN_ROUTE && isTracking) {
       stopTracking();
     }
@@ -422,7 +453,7 @@ export function TaskDetailPane({
       }
 
       if (newStatus === TaskStatus.EN_ROUTE) {
-        startTracking(task.id);
+        startTracking(task.id, destinationOf(task));
       }
 
       // Get GPS location for statuses that require location verification
@@ -444,7 +475,7 @@ export function TaskDetailPane({
       setTask(updatedTask);
     } catch (err) {
       if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
-        startTracking(task.id);
+        startTracking(task.id, destinationOf(task));
       }
       if (newStatus === TaskStatus.EN_ROUTE) {
         stopTracking();
@@ -1680,10 +1711,22 @@ export function TaskDetailPane({
                     )}
                   </View>
                   {locationError && (
-                    <TouchableOpacity onPress={() => task && startTracking(task.id)} style={styles.retryTrackingButton}>
+                    <TouchableOpacity onPress={() => task && startTracking(task.id, destinationOf(task))} style={styles.retryTrackingButton}>
                       <Text style={styles.retryTrackingText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                   )}
+                </View>
+              )}
+
+              {/* Arrival Banner — you're here; the Arrived button is right below */}
+              {hasArrived && task.status === TaskStatus.EN_ROUTE && (
+                <View style={styles.arrivalBanner}>
+                  <Ionicons name="location" size={20} color={COLORS.success} />
+                  <Text style={styles.arrivalBannerText}>
+                    {task.locationAddress
+                      ? t('routeArrival.bannerAt', { address: task.locationAddress })
+                      : t('routeArrival.banner')}
+                  </Text>
                 </View>
               )}
 
@@ -1811,6 +1854,16 @@ export function TaskDetailPane({
 }
 
 // Route entry: reads the id from the URL and renders the pane as a full-screen sheet.
+/**
+ * Where a task is being driven to. Passed to the tracker so the phone can
+ * recognise arrival from the route it is already recording — see
+ * `services/route-arrival.ts`. A task without coordinates simply gets no
+ * arrival prompt.
+ */
+function destinationOf(task: Task) {
+  return { lat: task.locationLat, lng: task.locationLng, address: task.locationAddress };
+}
+
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return <TaskDetailPane taskId={id!} />;
