@@ -5392,8 +5392,8 @@
     "externalMember": "At another organization"
   },
   "audit": {
-    "history": "Activity",
-    "noActivity": "No activity yet",
+    "history": "Audit log",
+    "noActivity": "Nothing recorded yet",
     "createdBy": "Created by",
     "updatedBy": "Updated by",
     "by": "by",

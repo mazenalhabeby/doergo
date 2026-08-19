@@ -5366,8 +5366,8 @@
     "externalMember": "Dans une autre organisation"
   },
   "audit": {
-    "history": "Activité",
-    "noActivity": "Aucune activité pour le moment",
+    "history": "Journal d’audit",
+    "noActivity": "Rien d’enregistré pour l’instant",
     "createdBy": "Créé par",
     "updatedBy": "Mis à jour par",
     "by": "par",
