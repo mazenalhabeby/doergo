@@ -5,6 +5,7 @@ import {
   CallHandler,
   Inject,
 } from '@nestjs/common';
+import { PATH_METADATA } from '@nestjs/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -85,6 +86,64 @@ function looksLikeId(seg: string): boolean {
   );
 }
 
+/**
+ * The route as DECLARED on the controller — `/tasks/:id/assignees/:userId` —
+ * rather than as guessed from the URL.
+ *
+ * Guessing was the bug. `looksLikeId` recognises cuids, uuids and long hex, so
+ * any other kind of identifier was mistaken for a resource name: deleting an
+ * assignee at `/tasks/{cuid}/assignees/emp-dana` made `emp-dana` the resource
+ * type and wrote the event `EMP-DANA_DELETED`. That misread three things at
+ * once — the label a person reads, the normalized path used to look up a
+ * curated action name, and the vocabulary of event types itself, which grew by
+ * one for every distinct identifier that ever appeared in a URL.
+ *
+ * Nest knows the answer exactly: the controller's prefix plus the handler's
+ * path. No heuristic can beat reading the declaration.
+ */
+function declaredPath(context: ExecutionContext): string | null {
+  try {
+    const controllerPath = Reflect.getMetadata(PATH_METADATA, context.getClass());
+    const handlerPath = Reflect.getMetadata(PATH_METADATA, context.getHandler());
+    const parts = [controllerPath, handlerPath]
+      .map((p) => (typeof p === 'string' ? p : Array.isArray(p) ? p[0] : ''))
+      .filter((p) => p && p !== '/')
+      .map((p) => String(p).replace(/^\/+|\/+$/g, ''))
+      .filter(Boolean);
+    return parts.length ? '/' + parts.join('/') : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Split a declared route into its literal segments and its parameters. */
+export function fromDeclaredPath(declared: string, actualUrl: string) {
+  const declaredSegs = declared.split('/').filter(Boolean);
+  const actualSegs = (actualUrl.split('?')[0] || '')
+    .replace(/^\/api\/v\d+/, '')
+    .split('/')
+    .filter(Boolean);
+
+  const normSegs: string[] = [];
+  let resourceId: string | undefined;
+  let resourceType: string | undefined;
+
+  declaredSegs.forEach((seg, i) => {
+    if (seg.startsWith(':')) {
+      // A parameter position, whatever the value happens to look like. The
+      // FIRST one is the record this event is about — /tasks/:id/assignees/:userId
+      // is an event about the task.
+      if (!resourceId && actualSegs[i]) resourceId = actualSegs[i];
+      normSegs.push(':id');
+    } else {
+      resourceType = seg; // last literal wins (sub-resources)
+      normSegs.push(seg);
+    }
+  });
+
+  return { normalized: '/' + normSegs.join('/'), resourceId, resourceType };
+}
+
 /** Strip the global prefix + query, normalize ids → :id. */
 function parsePath(originalUrl: string) {
   let path = (originalUrl || '').split('?')[0] || '';
@@ -124,15 +183,18 @@ export class AuditInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
+    // The declared route travels with the request so `record` can name the
+    // resource exactly rather than infer it from the URL.
+    const declared = declaredPath(context);
     return next.handle().pipe(
       tap({
-        next: () => this.record(req, true),
-        error: (err) => this.record(req, false, err),
+        next: () => this.record(req, true, undefined, declared),
+        error: (err) => this.record(req, false, err, declared),
       }),
     );
   }
 
-  private record(req: any, ok: boolean, err?: any): void {
+  private record(req: any, ok: boolean, err?: any, declared?: string | null): void {
     try {
       const method: string = req.method;
       if (!MUTATING.has(method)) return;
@@ -140,7 +202,13 @@ export class AuditInterceptor implements NestInterceptor {
       const user = req.user;
       if (!user?.id || !user?.organizationId) return; // public / unauthenticated
 
-      const { path, normalized, resourceId, resourceType } = parsePath(req.originalUrl || req.url);
+      const url = req.originalUrl || req.url;
+      const guessed = parsePath(url);
+      // Prefer the declared route; fall back to the URL heuristic only when the
+      // metadata is unavailable (a route defined outside a normal controller).
+      const resolved = declared ? fromDeclaredPath(declared, url) : guessed;
+      const { path } = guessed;
+      const { normalized, resourceId, resourceType } = resolved;
       if (SKIP_PREFIXES.some((p) => path.startsWith(p))) return;
 
       const eventType =
