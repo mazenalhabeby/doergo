@@ -493,6 +493,13 @@
       "signature": "Signature"
     }
   },
+  "routeArrival": {
+    "notificationTitle": "You've arrived",
+    "notificationBody": "Looks like you've reached the job site. Tap to mark yourself as arrived.",
+    "notificationBodyAt": "Looks like you've reached {{address}}. Tap to mark yourself as arrived.",
+    "banner": "Looks like you've arrived. Mark yourself as arrived when you're ready.",
+    "bannerAt": "Looks like you've arrived at {{address}}. Mark yourself as arrived when you're ready."
+  },
   "createTask": {
     "titleLabel": "Title *",
     "titlePlaceholder": "What needs to be done?",

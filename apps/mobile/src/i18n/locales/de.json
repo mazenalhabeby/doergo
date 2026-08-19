@@ -493,6 +493,13 @@
       "signature": "Unterschrift"
     }
   },
+  "routeArrival": {
+    "notificationTitle": "Sie sind angekommen",
+    "notificationBody": "Sie scheinen den Einsatzort erreicht zu haben. Tippen Sie, um sich als angekommen zu melden.",
+    "notificationBodyAt": "Sie scheinen {{address}} erreicht zu haben. Tippen Sie, um sich als angekommen zu melden.",
+    "banner": "Sie scheinen angekommen zu sein. Melden Sie sich als angekommen, sobald Sie so weit sind.",
+    "bannerAt": "Sie scheinen bei {{address}} angekommen zu sein. Melden Sie sich als angekommen, sobald Sie so weit sind."
+  },
   "createTask": {
     "titleLabel": "Titel *",
     "titlePlaceholder": "Was muss erledigt werden?",

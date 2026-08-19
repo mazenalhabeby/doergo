@@ -492,6 +492,13 @@
       "signature": "Firma"
     }
   },
+  "routeArrival": {
+    "notificationTitle": "Has llegado",
+    "notificationBody": "Parece que has llegado al lugar de trabajo. Toca para marcarte como llegado.",
+    "notificationBodyAt": "Parece que has llegado a {{address}}. Toca para marcarte como llegado.",
+    "banner": "Parece que has llegado. Márcate como llegado cuando estés listo.",
+    "bannerAt": "Parece que has llegado a {{address}}. Márcate como llegado cuando estés listo."
+  },
   "createTask": {
     "titleLabel": "Título *",
     "titlePlaceholder": "¿Qué hay que hacer?",

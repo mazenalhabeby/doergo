@@ -811,6 +811,25 @@ export const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
+  // Arrival Banner (the phone noticed the member reached the job site)
+  arrivalBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.successLight,
+    borderWidth: 1,
+    borderColor: COLORS.successBorder,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    gap: SPACING.sm,
+  },
+  arrivalBannerText: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.success,
+    lineHeight: 18,
+  },
+
   // Centered modal content (used by edit modal)
   completionModalContent: {
     // backgroundColor provided inline via colors.card

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackingApi, ApiError } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
 import { requestBackgroundLocationConsent } from './location-consent';
+import { checkArrival, setRouteDestination, clearRouteDestination } from './route-arrival';
 
 /**
  * Background route tracking.
@@ -225,15 +226,26 @@ TaskManager.defineTask(ROUTE_TASK, async ({ data, error }: any) => {
   // flushPoints handles batch→per-point fallback and buffers what it can't
   // deliver, and never throws, so the background task can't crash here.
   await flushPoints(taskId, points);
+
+  // Same positions, no extra GPS: has the member reached the job site? Prompts
+  // them to mark Arrived, which is the step that's easy to forget and expensive
+  // to forget — see route-arrival.ts.
+  await checkArrival(points);
 });
 
 /**
  * Start recording the member's route for a task. Idempotent — if already
- * running, it just re-points tracking at the new task id.
+ * running, it just re-points tracking at the new task id and destination.
  */
-export async function startRouteTracking(taskId: string): Promise<boolean> {
+export async function startRouteTracking(
+  taskId: string,
+  destination?: { lat?: number | null; lng?: number | null; address?: string | null },
+): Promise<boolean> {
   try {
     await SecureStore.setItemAsync(ROUTE_TASK_KEY, taskId);
+    // Stored now, from the caller that already has the task, so the headless
+    // task can recognise arrival without a network round trip.
+    await setRouteDestination(taskId, destination?.lat, destination?.lng, destination?.address);
 
     const alreadyRunning = await TaskManager.isTaskRegisteredAsync(ROUTE_TASK);
     if (alreadyRunning) return true;
@@ -282,6 +294,7 @@ export async function stopRouteTracking(): Promise<void> {
     console.error('[Route] Failed to stop:', err);
   } finally {
     await SecureStore.deleteItemAsync(ROUTE_TASK_KEY).catch(() => undefined);
+    await clearRouteDestination();
   }
 }
 
