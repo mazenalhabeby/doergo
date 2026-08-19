@@ -2,7 +2,8 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter } from '@hbcfield/shared';
+import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter, isTaskAssignee } from '@hbcfield/shared';
+import { RouteMatchingService } from './route-matching.service';
 import { catchError, of } from 'rxjs';
 
 // Field-worker roles across the legacy → current rename. Must be valid DB Role
@@ -17,6 +18,7 @@ export class LocationService {
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
+    private readonly routeMatching: RouteMatchingService,
   ) {}
 
   /**
@@ -85,11 +87,15 @@ export class LocationService {
       // a worker may only append GPS points to their own active task).
       const task = await this.prisma.task.findUnique({
         where: { id: taskId },
-        select: { status: true, assignedToId: true },
+        // Co-assignees included: a member assigned alongside a lead drives the
+        // same route, and matching assignedToId alone silently discarded every
+        // point they recorded — accepted by the API, never stored.
+        select: { status: true, assignedToId: true, assignees: { select: { userId: true } } },
       });
 
-      // Only record history if the task is EN_ROUTE and owned by the caller.
-      if (task && task.status === 'EN_ROUTE' && task.assignedToId === userId) {
+      // Only record history while the task is EN_ROUTE and the caller is on it —
+      // as lead or co-assignee (isTaskAssignee, the shared rule).
+      if (task && task.status === 'EN_ROUTE' && isTaskAssignee(task, userId) === true) {
         // Get the last location point for this task to calculate incremental distance
         const lastPoint = await this.prisma.locationHistory.findFirst({
           where: { taskId, userId },
@@ -186,11 +192,15 @@ export class LocationService {
     if (taskId) {
       const task = await this.prisma.task.findUnique({
         where: { id: taskId },
-        select: { status: true, assignedToId: true },
+        // Co-assignees included: a member assigned alongside a lead drives the
+        // same route, and matching assignedToId alone silently discarded every
+        // point they recorded — accepted by the API, never stored.
+        select: { status: true, assignedToId: true, assignees: { select: { userId: true } } },
       });
 
-      // Only record history if the task is EN_ROUTE and owned by the caller.
-      if (task && task.status === 'EN_ROUTE' && task.assignedToId === userId) {
+      // Only record history while the task is EN_ROUTE and the caller is on it —
+      // as lead or co-assignee (isTaskAssignee, the shared rule).
+      if (task && task.status === 'EN_ROUTE' && isTaskAssignee(task, userId) === true) {
         const lastPoint = await this.prisma.locationHistory.findFirst({
           where: { taskId, userId },
           orderBy: { timestamp: 'desc' },
@@ -452,6 +462,11 @@ export class LocationService {
       );
     }
 
+    // Road-snapped path, computed here rather than in every viewer's browser —
+    // see RouteMatchingService. Null when matching is off or upstream is
+    // unavailable, and the client draws the raw points.
+    const matchedPath = await this.routeMatching.matchToRoads(points);
+
     return success({
       taskId: task.id,
       workerId: task.assignedToId,
@@ -461,6 +476,7 @@ export class LocationService {
       duration, // seconds
       distance: task.routeDistance, // meters
       points,
+      matchedPath,
     });
   }
 

@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackingApi, ApiError } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
 import { requestBackgroundLocationConsent } from './location-consent';
@@ -33,6 +34,17 @@ const DISTANCE_INTERVAL_M = 25;
 // Batch radio wake-ups: the OS may hold points up to this long before delivering.
 const DEFERRED_INTERVAL_MS = 12000;
 
+// Bursts that couldn't be delivered wait here until the next one succeeds.
+const PENDING_KEY = 'route_pending_bursts';
+// Ceiling on what we hold. At ~25 m per point that is roughly 12 km of route —
+// far more than a normal signal gap — and it bounds both the storage write and
+// the catch-up upload. Past it the OLDEST points go, because the recent ones
+// describe where the member is now.
+const MAX_PENDING_POINTS = 500;
+// A burst older than this belongs to a route that has long since ended;
+// uploading it would only muddy the record.
+const MAX_PENDING_AGE_MS = 6 * 60 * 60 * 1000;
+
 interface RawLocation {
   coords: { latitude: number; longitude: number; accuracy: number | null };
   timestamp: number;
@@ -50,38 +62,129 @@ interface FlushPoint {
 // Module-scoped: persists while the tracking session's process is alive.
 let batchUnsupported = false;
 
+/** A burst of points waiting for a working connection. */
+interface PendingBurst {
+  taskId?: string;
+  points: FlushPoint[];
+}
+
+async function loadPending(): Promise<PendingBurst[]> {
+  try {
+    const raw = await AsyncStorage.getItem(PENDING_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as PendingBurst[];
+    if (!Array.isArray(parsed)) return [];
+    const cutoff = Date.now() - MAX_PENDING_AGE_MS;
+    return parsed.filter((b) => {
+      if (!b?.points?.length) return false;
+      const stamp = b.points[0].timestamp ? Date.parse(b.points[0].timestamp) : NaN;
+      return Number.isNaN(stamp) || stamp >= cutoff;
+    });
+  } catch {
+    // Unreadable or corrupt — start clean rather than fail the flush.
+    return [];
+  }
+}
+
+async function savePending(bursts: PendingBurst[]): Promise<void> {
+  try {
+    if (!bursts.length) {
+      await AsyncStorage.removeItem(PENDING_KEY);
+      return;
+    }
+    // Trim from the front — oldest points are the least useful.
+    const trimmed = [...bursts];
+    let total = trimmed.reduce((n, b) => n + b.points.length, 0);
+    while (total > MAX_PENDING_POINTS && trimmed.length) {
+      const excess = total - MAX_PENDING_POINTS;
+      const first = trimmed[0];
+      if (first.points.length <= excess) {
+        total -= first.points.length;
+        trimmed.shift();
+      } else {
+        first.points = first.points.slice(excess);
+        total -= excess;
+      }
+    }
+    await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(trimmed));
+  } catch (err) {
+    console.warn('[Route] Could not persist pending points:', err);
+  }
+}
+
 /**
- * Upload a burst of points. Prefers the single batch request; if the server
- * doesn't have that endpoint yet (404), or the batch call fails, falls back to
- * sequential per-point uploads so tracking keeps working against an older
- * backend. Per-point order is preserved (sequential) to keep route distance
- * accurate.
+ * Send one burst. Returns the points still undelivered — empty means the server
+ * has them.
+ *
+ * Prefers the single batch request; if the server doesn't have that endpoint
+ * (404) it switches to per-point uploads for the rest of the session so
+ * tracking keeps working against an older backend. Order is preserved
+ * (sequential) to keep route distance accurate.
  */
-async function flushPoints(taskId: string | undefined, points: FlushPoint[]): Promise<void> {
+async function sendBurst(taskId: string | undefined, points: FlushPoint[]): Promise<FlushPoint[]> {
   if (!batchUnsupported) {
     try {
       await trackingApi.updateLocationBatch({ taskId, points });
-      return;
+      return [];
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 404) {
-        // Endpoint missing — switch to per-point for the rest of the session.
+        // Endpoint missing — downgrade permanently and fall through.
         batchUnsupported = true;
+      } else if (err instanceof ApiError && err.statusCode < 500) {
+        // The server understood and refused: the task isn't EN_ROUTE any more,
+        // or this member isn't on it. Retrying can only fail identically, so
+        // drop the burst instead of carrying it forever.
+        console.warn('[Route] Burst rejected, discarding:', err.statusCode);
+        return [];
       } else {
-        // Transient failure (network/timeout). Don't permanently downgrade;
-        // still try per-point now as a best-effort for this burst.
-        console.warn('[Route] Batch flush failed, trying per-point:', err);
+        // Offline, timeout, or a server fault — keep the points for next time.
+        console.warn('[Route] Batch flush failed, will retry:', err);
+        return points;
       }
     }
   }
 
-  // Fallback: one request per point, in capture order.
+  const failed: FlushPoint[] = [];
   for (const p of points) {
     try {
       await trackingApi.updateLocation({ lat: p.lat, lng: p.lng, accuracy: p.accuracy, taskId });
     } catch (err) {
-      console.warn('[Route] Per-point upload failed:', err);
+      if (err instanceof ApiError && err.statusCode < 500 && err.statusCode !== 404) {
+        console.warn('[Route] Point rejected, discarding:', err.statusCode);
+        continue;
+      }
+      failed.push(p);
     }
   }
+  return failed;
+}
+
+/**
+ * Upload a burst, and any earlier bursts that couldn't be delivered.
+ *
+ * Field members drive through tunnels, underground garages and dead zones.
+ * Before this, a burst that failed was simply gone: the route drew a straight
+ * line across the gap — the exact defect background tracking was built to fix,
+ * reappearing wherever coverage is worst. Failed bursts are now held and sent
+ * with the next successful flush.
+ *
+ * Never throws: the headless task cannot handle an exception.
+ */
+async function flushPoints(taskId: string | undefined, points: FlushPoint[]): Promise<void> {
+  const queue: PendingBurst[] = [...(await loadPending()), { taskId, points }];
+  const remaining: PendingBurst[] = [];
+
+  for (let i = 0; i < queue.length; i++) {
+    const left = await sendBurst(queue[i].taskId, queue[i].points);
+    if (left.length) {
+      // One failure means the connection is down; trying the rest would only
+      // hold the radio up for nothing. Keep them all for the next burst.
+      remaining.push({ taskId: queue[i].taskId, points: left }, ...queue.slice(i + 1));
+      break;
+    }
+  }
+
+  await savePending(remaining);
 }
 
 // ── Background task — runs in a separate JS context, no React state access ──
@@ -119,9 +222,8 @@ TaskManager.defineTask(ROUTE_TASK, async ({ data, error }: any) => {
     timestamp: new Date(l.timestamp).toISOString(),
   }));
 
-  // Best-effort: dropped points just thin the route slightly; the next burst
-  // will continue it. flushPoints handles batch→per-point fallback internally
-  // and never throws, so the background task can't crash here.
+  // flushPoints handles batch→per-point fallback and buffers what it can't
+  // deliver, and never throws, so the background task can't crash here.
   await flushPoints(taskId, points);
 });
 

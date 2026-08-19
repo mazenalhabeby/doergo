@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import * as Location from 'expo-location';
-import { trackingApi } from '../lib/api';
+import { trackingApi, tasksApi, ApiError } from '../lib/api';
 import {
   startRouteTracking,
   stopRouteTracking,
@@ -45,22 +46,60 @@ export function useLocationTracking() {
 
   const taskIdRef = useRef<string | null>(null);
 
-  // On mount: sync with any background tracking already running (e.g. the user
-  // navigated away and back, or relaunched mid-route).
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      const running = await isRouteTrackingRunning();
-      const activeTaskId = running ? await getActiveRouteTaskId() : null;
-      taskIdRef.current = activeTaskId;
-      setState((prev) => ({
-        ...prev,
-        permissionStatus: status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined',
-        isTracking: running,
-        activeTaskId,
-      }));
-    })();
+  // Sync with any background tracking already running (the member navigated
+  // away and back, or relaunched mid-route) — and stop it if it has outlived
+  // the route it belongs to.
+  //
+  // The background task survives the app being killed, by design. But it is
+  // only ever stopped from inside the app, so any path that ends a route
+  // without passing through this hook — the task completed from the web, a
+  // dispatcher reassigning it, a crash between ARRIVED and the stop call —
+  // leaves GPS running indefinitely on the member's phone. It records nothing
+  // usable (the server refuses points for a task that isn't EN_ROUTE) and
+  // drains the battery until the next reboot. So on every foreground, check the
+  // task the tracker is attributing points to and shut it down if that task has
+  // moved on.
+  const reconcile = useCallback(async () => {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    const permissionStatus =
+      status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : ('undetermined' as const);
+
+    let running = await isRouteTrackingRunning();
+    let activeTaskId = running ? await getActiveRouteTaskId() : null;
+
+    if (running) {
+      let stale = !activeTaskId; // tracking with no task to attribute points to
+      if (activeTaskId) {
+        try {
+          const task = await tasksApi.getById(activeTaskId);
+          stale = task.status !== 'EN_ROUTE';
+        } catch (err) {
+          // Only a definitive "this task is gone" ends tracking. A network
+          // failure must not, or driving through a dead zone would stop the
+          // recording this whole system exists to keep.
+          if (err instanceof ApiError && (err.statusCode === 404 || err.statusCode === 403)) {
+            stale = true;
+          }
+        }
+      }
+      if (stale) {
+        await stopRouteTracking();
+        running = false;
+        activeTaskId = null;
+      }
+    }
+
+    taskIdRef.current = activeTaskId;
+    setState((prev) => ({ ...prev, permissionStatus, isTracking: running, activeTaskId }));
   }, []);
+
+  useEffect(() => {
+    void reconcile();
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') void reconcile();
+    });
+    return () => sub.remove();
+  }, [reconcile]);
 
   // One-shot foreground fix → also seeds lastLocation and sends an immediate
   // point so the route starts the instant the member taps "Start Driving".

@@ -1367,6 +1367,9 @@ export interface TaskRoute {
   duration: number | null; // seconds
   distance: number | null; // meters
   points: RoutePoint[];
+  /** Road-snapped path [lat, lng], computed server-side. Null when route
+   *  matching isn't configured — the map then draws the raw points. */
+  matchedPath?: [number, number][] | null;
 }
 
 export interface WorkerCurrentRoute {

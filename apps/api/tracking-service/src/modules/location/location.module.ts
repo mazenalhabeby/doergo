@@ -3,13 +3,14 @@ import { ClientsModule, ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';
+import { RouteMatchingService } from './route-matching.service';
 
 @Module({
   imports: [
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [LocationController],
-  providers: [LocationService],
+  providers: [LocationService, RouteMatchingService],
 })
 export class LocationModule implements OnModuleInit {
   constructor(
