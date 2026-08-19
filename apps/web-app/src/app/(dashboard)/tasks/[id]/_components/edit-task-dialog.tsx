@@ -1,7 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { useTranslation } from "react-i18next"
+
+const LocationPicker = lazy(() =>
+  import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
+)
 import { format } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
@@ -56,6 +60,16 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
     task.dueDate ? new Date(task.dueDate) : undefined
   )
   const [locationAddress, setLocationAddress] = useState(task.locationAddress || "")
+  /*
+    The coordinates behind the address.
+
+    Editing used to change the address text alone and leave lat/lng untouched,
+    so a task could read "Vienna" while its pin — and the route a member is
+    navigated along — still pointed at the previous place. The address and the
+    point on the map are one fact and are now set together.
+  */
+  const [locationLat, setLocationLat] = useState<number | null>(task.locationLat ?? null)
+  const [locationLng, setLocationLng] = useState<number | null>(task.locationLng ?? null)
   const [startDate, setStartDate] = useState<Date | undefined>(
     task.startDate ? new Date(task.startDate) : undefined
   )
@@ -104,6 +118,8 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
       setStartDate(task.startDate ? new Date(task.startDate) : undefined)
       setEstimatedHours(task.estimatedHours != null ? String(task.estimatedHours) : "")
       setLocationAddress(task.locationAddress || "")
+      setLocationLat(task.locationLat ?? null)
+      setLocationLng(task.locationLng ?? null)
       setPhaseId(task.phaseId || "none")
       setSprintId(task.sprintId || "none")
       setWorkflowId(task.workflowId || "none")
@@ -138,6 +154,8 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
       startDate: startDate?.toISOString(),
       estimatedHours: parsedHours && !isNaN(parsedHours) ? parsedHours : undefined,
       locationAddress: locationAddress.trim() || undefined,
+      locationLat: locationLat ?? undefined,
+      locationLng: locationLng ?? undefined,
       phaseId: phaseId === "none" ? null : phaseId,
       sprintId: sprintId === "none" ? null : sprintId,
       workflowId: workflowId === "none" ? null : workflowId,
@@ -192,14 +210,25 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
               <Label htmlFor="edit-location" className="text-sm font-medium text-foreground">
                 {t("tasks.create.serviceLocationLabel")}
               </Label>
-              <Input
-                id="edit-location"
-                placeholder={t("tasks.fields.addressPlaceholder")}
-                value={locationAddress}
-                onChange={(e) => setLocationAddress(e.target.value)}
-                disabled={updateMutation.isPending}
-                className="h-10 rounded-lg border-border bg-card"
-              />
+              <Suspense
+                fallback={
+                  <div className="h-[200px] rounded-lg border border-border bg-muted flex items-center justify-center">
+                    <Loader2 className="size-5 text-muted-foreground animate-spin" />
+                  </div>
+                }
+              >
+                <LocationPicker
+                  address={locationAddress}
+                  lat={locationLat}
+                  lng={locationLng}
+                  onLocationChange={(addr, lat, lng) => {
+                    setLocationAddress(addr)
+                    setLocationLat(lat)
+                    setLocationLng(lng)
+                  }}
+                  disabled={updateMutation.isPending}
+                />
+              </Suspense>
             </div>
 
             <div className="space-y-2">
