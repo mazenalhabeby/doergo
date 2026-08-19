@@ -23,6 +23,7 @@ import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
 import { TaskDetailPageSkeleton } from "@/components/skeletons"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
+import { assigneeIds } from "@/lib/task-assignment"
 import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
 import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -122,7 +123,11 @@ export default function TaskDetailPage({
   const isCompleted = hasWorkflow
     ? workflowStatuses.some((s) => s.key === task?.status && s.isFinal)
     : task?.status === "COMPLETED" || task?.status === "CLOSED"
-  const hasAssignee = !!task?.assignedTo
+  // Anyone on the task, not just the lead. Reading `assignedTo` alone was the
+  // same blind spot fixed elsewhere: a task assigned through `assignees[]` with
+  // no lead reported as unassigned, which among other things kept the route
+  // panel's "waiting for the technician" state from ever showing.
+  const hasAssignee = !!task && assigneeIds(task).length > 0
 
   // What this user may actually do to THIS task, by the same rule the server
   // applies — org flag or the permission in the task's own space.
@@ -394,11 +399,21 @@ export default function TaskDetailPage({
               </div>
             )}
 
-            {/* Route Tracking — module + permission, and only once a route exists.
-                Read-only: with no recorded points there is nothing to show and
-                nothing to add, unlike the sections above. Kept mounted while it
-                is still loading so it doesn't flash in and out. */}
-            {hasModule("tracking") && canViewAllTasks && (loadingRoute || (routeData?.points?.length ?? 0) > 0) && (
+            {/* Route Tracking — module + permission, and only when there is a
+                route to show OR one being recorded right now.
+
+                Read-only, so unlike the sections above there is nothing to add
+                to an empty one; it stays hidden rather than sitting there
+                blank. The exception is a task the member is currently driving
+                to: the first GPS point can take a minute to arrive, and hiding
+                the panel until it does is how someone concludes tracking is
+                broken. That in-between state is what the section's "waiting for
+                the technician" view is for — which until now could never
+                appear, because this gate removed the section before the
+                component could render it. Kept mounted while loading so it
+                doesn't flash in and out. */}
+            {hasModule("tracking") && canViewAllTasks &&
+              (loadingRoute || (routeData?.points?.length ?? 0) > 0 || task.status === "EN_ROUTE") && (
               <div data-tour="task-route-tracking">
               <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
                 <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />
