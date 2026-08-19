@@ -38,13 +38,21 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
     canManageUsers: false,
   };
 
-  const membership = (type = 'DIRECT') => ({
+  /**
+   * The membership read carries the counterpart's contact fields — sending
+   * reuses them instead of fetching the same row again.
+   */
+  const membership = (type = 'DIRECT', other: any = { id: THEM, organizationId: ORG, role: 'EMPLOYEE', isActive: true, contactable: true, canManageUsers: false }) => ({
     id: 'cm-1',
     conversation: {
       id: 'conv-1',
       type,
       organizationId: ORG,
-      members: [{ userId: ME }, { userId: THEM }],
+      originSpaceId: null,
+      members: [
+        { userId: ME, user: { id: ME, organizationId: ORG, role: 'EMPLOYEE', isActive: true, contactable: true, canManageUsers: false } },
+        { userId: THEM, user: other },
+      ],
     },
   });
 
@@ -69,9 +77,6 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
 
   it('refuses when contact permission has since been revoked', async () => {
     prisma.user.findUnique.mockResolvedValue(plainMember);
-    prisma.user.findFirst.mockResolvedValue({
-      id: THEM, role: 'EMPLOYEE', contactable: true, canManageUsers: false,
-    });
 
     // contactScope NONE, no space connection, target is not a manager.
     await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
@@ -80,26 +85,36 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
 
   it('refuses once the other person has left the organization', async () => {
     prisma.user.findUnique.mockResolvedValue(plainMember);
-    prisma.user.findFirst.mockResolvedValue(null); // no longer in this org
+    // Their user row now belongs to a different org.
+    prisma.conversationMember.findUnique.mockResolvedValue(
+      membership('DIRECT', { id: THEM, organizationId: 'org-elsewhere', role: 'EMPLOYEE', isActive: true, contactable: true, canManageUsers: false }),
+    );
 
-    await expect(send()).rejects.toThrow(/Member not found/);
+    await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('refuses once the other account is deactivated', async () => {
+    prisma.user.findUnique.mockResolvedValue(plainMember);
+    prisma.conversationMember.findUnique.mockResolvedValue(
+      membership('DIRECT', { id: THEM, organizationId: ORG, role: 'EMPLOYEE', isActive: false, contactable: true, canManageUsers: false }),
+    );
+
+    await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('refuses when the target became non-contactable', async () => {
     prisma.user.findUnique.mockResolvedValue({ ...plainMember, contactScope: 'ALL' });
-    prisma.user.findFirst.mockResolvedValue({
-      id: THEM, role: 'EMPLOYEE', contactable: false, canManageUsers: false,
-    });
+    prisma.conversationMember.findUnique.mockResolvedValue(
+      membership('DIRECT', { id: THEM, organizationId: ORG, role: 'EMPLOYEE', isActive: true, contactable: false, canManageUsers: false }),
+    );
 
     await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('still allows a send that is genuinely permitted', async () => {
     prisma.user.findUnique.mockResolvedValue({ ...plainMember, contactScope: 'ALL' });
-    prisma.user.findFirst.mockResolvedValue({
-      id: THEM, role: 'EMPLOYEE', contactable: true, canManageUsers: false,
-    });
 
     await expect(send()).resolves.toEqual({ success: true, data: { id: 'msg-1' } });
     expect(prisma.$transaction).toHaveBeenCalled();
@@ -107,9 +122,6 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
 
   it('does not make an admin pay for the space lookup', async () => {
     prisma.user.findUnique.mockResolvedValue({ ...plainMember, role: 'ADMIN' });
-    prisma.user.findFirst.mockResolvedValue({
-      id: THEM, role: 'EMPLOYEE', contactable: true, canManageUsers: false,
-    });
 
     await expect(send()).resolves.toMatchObject({ success: true });
     // The rule settles on "is a manager" long before space targets matter.
@@ -120,13 +132,13 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
     prisma.conversationMember.findUnique.mockResolvedValue(membership('GROUP'));
 
     await expect(send()).resolves.toMatchObject({ success: true });
-    expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 
   it('denies a malformed direct thread with no counterpart', async () => {
     prisma.conversationMember.findUnique.mockResolvedValue({
       id: 'cm-1',
-      conversation: { id: 'conv-1', type: 'DIRECT', organizationId: ORG, members: [{ userId: ME }] },
+      conversation: { id: 'conv-1', type: 'DIRECT', organizationId: ORG, originSpaceId: null, members: [{ userId: ME }] },
     });
 
     await expect(send()).rejects.toBeInstanceOf(ForbiddenException);

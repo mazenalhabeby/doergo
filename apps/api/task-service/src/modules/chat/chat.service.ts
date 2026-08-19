@@ -181,15 +181,51 @@ export class ChatService {
    * far too loose to decide whether a message may be sent to another company.
    */
   private async chatParty(userId: string): Promise<ChatParty | null> {
-    const [user, spaceIds] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, organizationId: true, role: true, isActive: true },
+    return (await this.chatParties([userId]))[userId] ?? null;
+  }
+
+  /**
+   * Both sides of a conversation in two queries rather than four.
+   *
+   * Sending is a hot path and this runs on every cross-org message, so the two
+   * people are fetched together and their space assignments in one pass — the
+   * per-user helper above is the same work for a single id.
+   */
+  private async chatParties(userIds: string[]): Promise<Record<string, ChatParty>> {
+    const ids = [...new Set(userIds)].filter(Boolean);
+    if (ids.length === 0) return {};
+
+    const now = new Date();
+    const [users, assignments] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: ids }, isActive: true },
+        select: { id: true, organizationId: true, role: true },
       }),
-      spaceIdsForUser(this.prisma, userId),
+      this.prisma.spaceAssignment.findMany({
+        where: { userId: { in: ids }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+        select: { userId: true, spaceId: true },
+      }),
     ]);
-    if (!user || !user.isActive || !user.organizationId) return null;
-    return { userId: user.id, organizationId: user.organizationId, role: user.role, spaceIds };
+
+    const spacesByUser = new Map<string, string[]>();
+    for (const a of assignments) {
+      const list = spacesByUser.get(a.userId);
+      if (list) list.push(a.spaceId);
+      else spacesByUser.set(a.userId, [a.spaceId]);
+    }
+
+    const out: Record<string, ChatParty> = {};
+    for (const u of users) {
+      // No organization means nothing to share a space through.
+      if (!u.organizationId) continue;
+      out[u.id] = {
+        userId: u.id,
+        organizationId: u.organizationId,
+        role: u.role,
+        spaceIds: [...new Set(spacesByUser.get(u.id) ?? [])],
+      };
+    }
+    return out;
   }
 
   /** Shares that could join these two orgs, in either direction. */
@@ -216,7 +252,9 @@ export class ChatService {
     otherUserId: string,
     preferSpaceId?: string | null,
   ): Promise<{ spaceId: string; other: ChatParty } | null> {
-    const [me, other] = await Promise.all([this.chatParty(userId), this.chatParty(otherUserId)]);
+    const parties = await this.chatParties([userId, otherUserId]);
+    const me = parties[userId];
+    const other = parties[otherUserId];
     if (!me || !other) return null;
     if (me.organizationId === other.organizationId) return null; // in-org rules apply
     const shares = await this.sharesBetween(me.organizationId, other.organizationId);
@@ -239,16 +277,22 @@ export class ChatService {
     otherUserId: string,
     organizationId: string,
     deniedMessage = 'You are not allowed to contact this member',
+    // Supplied when the caller already holds the counterpart — sending does,
+    // because the membership read returns them. Must still be org-verified by
+    // the caller; this only avoids fetching the same row twice.
+    knownOther?: { id: string; role: string; contactable: boolean; canManageUsers?: boolean } | null,
   ) {
     const [me, other] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: senderId },
         select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
       }),
-      this.prisma.user.findFirst({
-        where: { id: otherUserId, organizationId },
-        select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true, canManageUsers: true },
-      }),
+      knownOther
+        ? Promise.resolve(knownOther)
+        : this.prisma.user.findFirst({
+            where: { id: otherUserId, organizationId },
+            select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true, canManageUsers: true },
+          }),
     ]);
     // `other.id` must match exactly — findFirst with a bad id could otherwise
     // fall through to an unintended row. Also re-check self by resolved id.
@@ -468,7 +512,9 @@ export class ChatService {
 
     // ── Cross-org: the share that authorized this thread must still be alive ──
     if (conversation.originSpaceId) {
-      const [me, other] = await Promise.all([this.chatParty(senderId), this.chatParty(otherId)]);
+      const parties = await this.chatParties([senderId, otherId]);
+      const me = parties[senderId];
+      const other = parties[otherId];
       if (!me || !other) {
         throw new ForbiddenException('You can no longer message this member');
       }
@@ -485,20 +531,45 @@ export class ChatService {
     }
 
     // ── Same org: the ordinary contact rules ─────────────────────────────────
+    // The counterpart came back with the membership read, so this costs one
+    // query (the sender's own permissions) instead of two.
+    const other = (conversation.members as any[]).find((m) => m.userId === otherId)?.user;
+    if (!other || !other.isActive || other.organizationId !== conversation.organizationId) {
+      throw new ForbiddenException('You can no longer message this member');
+    }
     await this.assertMayContact(
       senderId,
       otherId,
       conversation.organizationId,
       'You can no longer message this member',
+      other,
     );
   }
 
   private async assertMember(conversationId: string, userId: string) {
     const membership = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
-      // The conversation carries its own authorization anchor (originSpaceId),
-      // so the send-time check can re-resolve it without a second read.
-      include: { conversation: { include: { members: true } } },
+      include: {
+        conversation: {
+          include: {
+            // The counterpart's contact fields come back with the membership
+            // read rather than in a query of their own — the row is already
+            // being fetched, and the send-time check needs exactly these. The
+            // conversation also carries its own authorization anchor
+            // (originSpaceId), so nothing else has to be looked up to decide.
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true, organizationId: true, role: true, isActive: true,
+                    contactable: true, canManageUsers: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     if (!membership) throw new ForbiddenException('Not a member of this conversation');
     return membership;

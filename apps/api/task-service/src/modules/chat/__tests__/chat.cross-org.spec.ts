@@ -20,7 +20,7 @@ describe('ChatService — cross-org conversations', () => {
   const THEM = 'user-guest-side';
 
   const prisma = {
-    user: { findUnique: jest.fn(), findFirst: jest.fn() },
+    user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
     spaceAssignment: { findMany: jest.fn() },
     spaceShare: { findMany: jest.fn(), findFirst: jest.fn() },
     conversationMember: { findUnique: jest.fn(), update: jest.fn() },
@@ -46,7 +46,9 @@ describe('ChatService — cross-org conversations', () => {
 
   /** Both people are assigned to the shared space. */
   const bothOnSpace = () =>
-    prisma.spaceAssignment.findMany.mockResolvedValue([{ spaceId: SPACE }]);
+    prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
+      Promise.resolve((where.userId?.in ?? [where.userId]).flatMap((id: string) => [{ userId: id, spaceId: SPACE }])),
+    );
 
   const crossOrgMembership = () => ({
     id: 'cm-1',
@@ -63,7 +65,14 @@ describe('ChatService — cross-org conversations', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    prisma.user.findUnique.mockImplementation(({ where }: any) => Promise.resolve(users[where.id] ?? null));
+    // Both parties come back in ONE query now.
+    prisma.user.findMany.mockImplementation(({ where }: any) =>
+      Promise.resolve(
+        (where.id.in as string[])
+          .map((id) => users[id])
+          .filter((u) => u && (where.isActive === undefined || u.isActive === where.isActive)),
+      ),
+    );
     prisma.conversationMember.findUnique.mockResolvedValue(crossOrgMembership());
     prisma.$transaction.mockImplementation(async () => [{ id: 'msg-1' }]);
     bothOnSpace();
@@ -111,15 +120,21 @@ describe('ChatService — cross-org conversations', () => {
     // A live share elsewhere between the same orgs must not resurrect a thread
     // whose own reason has gone.
     prisma.spaceShare.findMany.mockResolvedValue([{ ...activeShare, spaceId: 'space-other' }]);
-    prisma.spaceAssignment.findMany.mockResolvedValue([{ spaceId: SPACE }, { spaceId: 'space-other' }]);
+    prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
+      Promise.resolve(
+        (where.userId?.in ?? [where.userId]).flatMap((id: string) => [
+          { userId: id, spaceId: SPACE },
+          { userId: id, spaceId: 'space-other' },
+        ]),
+      ),
+    );
     await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('closes it when the counterpart account is deactivated', async () => {
     prisma.spaceShare.findMany.mockResolvedValue([activeShare]);
-    prisma.user.findUnique.mockImplementation(({ where }: any) =>
-      Promise.resolve(where.id === THEM ? { ...users[THEM], isActive: false } : users[where.id]),
-    );
+    // The deactivated account simply doesn't come back from the batched read.
+    prisma.user.findMany.mockResolvedValue([users[ME]]);
     await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
   });
 
@@ -129,5 +144,6 @@ describe('ChatService — cross-org conversations', () => {
     // findFirst is the in-org "is this person in my org" lookup — the cross-org
     // path must not fall through to it.
     expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 });
