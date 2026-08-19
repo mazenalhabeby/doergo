@@ -1180,7 +1180,8 @@
       "busy": "Beschäftigt",
       "away": "Abwesend",
       "offline": "Offline"
-    }
+    },
+    "external": "Extern"
   },
   "locationConsent": {
     "title": "Standort im Hintergrund",

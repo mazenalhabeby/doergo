@@ -1179,7 +1179,8 @@
       "busy": "Occupé",
       "away": "Absent",
       "offline": "Hors ligne"
-    }
+    },
+    "external": "Externe"
   },
   "locationConsent": {
     "title": "Localisation en arrière-plan",

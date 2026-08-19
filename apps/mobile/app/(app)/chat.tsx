@@ -31,6 +31,31 @@ function initials(u?: ChatUserRef | null) {
   if (!u) return '?';
   return `${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase() || '?';
 }
+
+/**
+ * "External" — this person works at another company, reachable through a space
+ * shared with yours. Shown wherever the counterpart is named, because people
+ * share different things when they know who they are talking to. It also
+ * explains a thread that stops accepting messages: the space is no longer
+ * shared, so the conversation is closed while its history stays readable.
+ */
+function ExternalTag({ compact }: { compact?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <View style={[externalTagStyles.pill, compact && externalTagStyles.pillCompact]}>
+      <Text style={[externalTagStyles.text, compact && externalTagStyles.textCompact]}>
+        {t('chat.external', 'External')}
+      </Text>
+    </View>
+  );
+}
+
+const externalTagStyles = StyleSheet.create({
+  pill: { backgroundColor: '#FEF3C7', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 },
+  pillCompact: { paddingHorizontal: 4 },
+  text: { color: '#B45309', fontSize: 10, fontWeight: '600' },
+  textCompact: { fontSize: 9 },
+});
 function presenceColor(p?: string | null) {
   return p === 'AVAILABLE' ? '#10b981' : p === 'BUSY' ? '#f43f5e' : p === 'AWAY' ? '#f59e0b' : '#94a3b8';
 }
@@ -262,7 +287,10 @@ export default function ChatScreen() {
           <View style={styles.headerPerson}>
             <Avatar u={active.otherMember} size={34} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>{conversationTitle(active, i18n.language)}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.headerName, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>{conversationTitle(active, i18n.language)}</Text>
+                {active.isExternal && <ExternalTag />}
+              </View>
               <Text style={[styles.headerStatus, { color: colors.textSecondary }]} numberOfLines={1}>{presenceLabel(active.otherMember?.presence, t)}</Text>
             </View>
           </View>
@@ -288,7 +316,10 @@ export default function ChatScreen() {
                 <TouchableOpacity key={c.id} onPress={() => { threadFromListRef.current = true; openConversation(c); }} style={[styles.row, { borderColor: colors.border }]}>
                   <Avatar u={c.otherMember} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>{conversationTitle(c, i18n.language)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.name, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>{conversationTitle(c, i18n.language)}</Text>
+                      {c.isExternal && <ExternalTag compact />}
+                    </View>
                     <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>{c.lastMessage?.body ?? t('chat.noMessages', 'No messages yet')}</Text>
                   </View>
                   {!!c.unread && <View style={styles.badge}><Text style={styles.badgeText}>{c.unread}</Text></View>}
@@ -309,7 +340,10 @@ export default function ChatScreen() {
               <TouchableOpacity key={u.id} onPress={() => startChat(u.id, true)} style={[styles.row, { borderColor: colors.border }]}>
                 <Avatar u={u} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>{u.firstName} {u.lastName}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.name, { color: colors.textPrimary, flexShrink: 1 }]} numberOfLines={1}>{u.firstName} {u.lastName}</Text>
+                    {u.isExternal && <ExternalTag compact />}
+                  </View>
                   {!!u.position && <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>{u.position}</Text>}
                 </View>
               </TouchableOpacity>

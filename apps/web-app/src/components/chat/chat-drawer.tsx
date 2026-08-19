@@ -427,7 +427,20 @@ function ContactsPicker({ onPick, picking }: { onPick: (userId: string) => void;
             >
               <Avatar u={u} size={38} />
               <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-foreground">{u.firstName} {u.lastName}</span>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-sm font-medium text-foreground">{u.firstName} {u.lastName}</span>
+                  {/*
+                    The most important place for this marker, and the one it was
+                    missing from: this is where you PICK who to talk to. Without
+                    it someone at another company is indistinguishable from a
+                    colleague at the moment the choice is made.
+                  */}
+                  {u.isExternal && (
+                    <span className="shrink-0 rounded bg-amber-100 px-1 py-px text-[9px] font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+                      {t('chat.external', 'External')}
+                    </span>
+                  )}
+                </span>
                 {u.position && <span className="block truncate text-xs text-muted-foreground">{u.position}</span>}
               </span>
             </button>
