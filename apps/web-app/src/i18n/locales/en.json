@@ -5382,7 +5382,9 @@
     "voiceCall": "Voice call",
     "videoCall": "Video call",
     "open": "Open",
-    "typing": "is typing…"
+    "typing": "is typing…",
+    "couldNotOpen": "Could not open that conversation",
+    "cannotMessageSelf": "You cannot start a conversation with yourself"
   },
   "audit": {
     "history": "Activity",

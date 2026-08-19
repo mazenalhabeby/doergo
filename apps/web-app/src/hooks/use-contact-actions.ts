@@ -23,10 +23,11 @@ import { notify } from "@/lib/toast"
  */
 export function useContactActions() {
   const { t } = useTranslation()
-  const { openChatWith } = useChat()
+  const { openChatWith, canMessage } = useChat()
 
-  /** Open a direct conversation. Every colleague has an account, so this
-   *  always works — no contact details required. */
+  /** Open a direct conversation. No contact details required — every colleague
+   *  has an account. Ask `canMessage` first: there is no conversation with
+   *  yourself, and a Message button that reaches you does nothing. */
   const message = useCallback((userId: string) => openChatWith(userId), [openChatWith])
 
   /**
@@ -44,5 +45,5 @@ export function useContactActions() {
     [t],
   )
 
-  return { message, call }
+  return { message, call, canMessage }
 }

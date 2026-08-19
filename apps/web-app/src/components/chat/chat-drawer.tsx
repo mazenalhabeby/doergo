@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, ChevronLeft, Send, Loader2, MessageSquare, PenSquare, Search, Phone, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { SocketEvents, conversationTitle, type ChatConversation, type ChatMessage, type ChatUserRef } from '@hbcfield/shared/client';
+import { canOpenConversationWith } from '@/lib/chat-access';
 import { chatApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
@@ -15,9 +16,26 @@ import { useTimeFormat } from '@/hooks';
 interface ChatContextValue {
   openMessages: () => void;
   openChatWith: (userId: string) => void;
+  /**
+   * Can a conversation with this person be opened at all?
+   *
+   * Ask before rendering a Message button. Chat is between two people, so
+   * there is no conversation with yourself and none with nobody — and a button
+   * for either is a button that does nothing when pressed. That kept happening
+   * because each screen re-derived the rule, or forgot to: the task card
+   * offered a member a Message button pointing at themselves, and the employee
+   * panel did the same on your own card. One definition, so a screen can ask
+   * instead of guess.
+   */
+  canMessage: (userId?: string | null) => boolean;
   unread: number;
 }
-const ChatContext = createContext<ChatContextValue>({ openMessages: () => {}, openChatWith: () => {}, unread: 0 });
+const ChatContext = createContext<ChatContextValue>({
+  openMessages: () => {},
+  openChatWith: () => {},
+  canMessage: () => false,
+  unread: 0,
+});
 export function useChat() {
   return useContext(ChatContext);
 }
@@ -167,6 +185,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setActiveId(conv.id);
       setShowContacts(false);
     },
+    onError: () => {
+      // There was no error branch at all: a failed request left the drawer
+      // open on nothing, and once opening showed a spinner, spinning forever.
+      // Say what happened and fall back to the conversation list, which is at
+      // least somewhere the reader can act from.
+      toast.error(t('chat.couldNotOpen', 'Could not open that conversation'));
+      setActiveId(null);
+    },
   });
 
   const openMessages = useCallback(() => {
@@ -174,18 +200,29 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setActiveId(null);
     setShowContacts(false);
   }, []);
+  const canMessage = useCallback(
+    (userId?: string | null) => canOpenConversationWith(userId, user?.id),
+    [user?.id],
+  );
+
   const openChatWith = useCallback(
     (userId: string) => {
-      if (!userId || userId === user?.id) return; // can't message yourself
+      if (!canMessage(userId)) {
+        // Refusing is right; refusing invisibly is what made three rounds of
+        // dead buttons look like nothing was wrong. Callers that ask
+        // canMessage() first will never see this.
+        toast.error(t('chat.cannotMessageSelf', 'You cannot start a conversation with yourself'));
+        return;
+      }
       setOpen(true);
       setShowContacts(false);
       openDM.mutate(userId);
     },
-    [openDM, user?.id],
+    [canMessage, openDM, t],
   );
 
   return (
-    <ChatContext.Provider value={{ openMessages, openChatWith, unread }}>
+    <ChatContext.Provider value={{ openMessages, openChatWith, canMessage, unread }}>
       {children}
       {enabled && open && (
         <>

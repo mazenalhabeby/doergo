@@ -5357,7 +5357,9 @@
     "voiceCall": "Chiamata vocale",
     "videoCall": "Videochiamata",
     "open": "Apri",
-    "typing": "sta scrivendo…"
+    "typing": "sta scrivendo…",
+    "couldNotOpen": "Impossibile aprire quella conversazione",
+    "cannotMessageSelf": "Non puoi iniziare una conversazione con te stesso"
   },
   "audit": {
     "history": "Attività",

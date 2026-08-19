@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Phone, MessageSquare } from "lucide-react"
 import { organizationsApi, type OrgMember } from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
@@ -39,8 +38,7 @@ function lastActiveLabel(iso: string | null | undefined, t: TFunction): string {
  * query (no extra fetch).
  */
 export function ManagementContacts() {
-  const { message } = useContactActions()
-  const { user } = useAuth()
+  const { message, canMessage } = useContactActions()
   const { t } = useTranslation()
 
   // Contacts endpoint is accessible to ANY member (unlike /members, which needs
@@ -54,7 +52,9 @@ export function ManagementContacts() {
     refetchInterval: 60_000,
   })
 
-  const managers = ((data ?? []) as OrgMember[]).filter((m) => m.id !== user?.id)
+  // Only people there is actually a conversation to open with — same rule the
+  // chat itself applies, asked rather than restated.
+  const managers = ((data ?? []) as OrgMember[]).filter((m) => canMessage(m.id))
   if (managers.length === 0) return null
 
   return (
