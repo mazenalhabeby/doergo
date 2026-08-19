@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 
 import { DashboardPageSkeleton, dashboardVariant } from '@/app/(dashboard)/dashboard/_components/dashboard-skeleton';
 import { TasksPageLoading } from '@/app/(dashboard)/tasks/_components/tasks-skeleton';
+import { TaskDetailPageSkeleton } from './page-skeletons';
 import { useAuth } from '@/contexts/auth-context';
 
 import { GenericContentSkeleton } from './primitives';
@@ -24,6 +25,11 @@ import { GenericContentSkeleton } from './primitives';
 export function RouteSkeleton() {
   const pathname = usePathname();
   const { user } = useAuth();
+
+  // A task detail route — /tasks/<id>, but not /tasks/recurring.
+  if (pathname.startsWith('/tasks/') && pathname !== '/tasks/recurring') {
+    return <TaskDetailPageSkeleton />;
+  }
 
   if (pathname === '/tasks') {
     // Draws the view the user left the list in, so the auth check, the Suspense

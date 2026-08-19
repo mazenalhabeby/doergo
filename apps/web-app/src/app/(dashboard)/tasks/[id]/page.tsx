@@ -21,6 +21,8 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
+import { TaskDetailPageSkeleton } from "@/components/skeletons"
+import { useTaskPermissions } from "@/hooks/use-task-permissions"
 import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
 import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -38,7 +40,6 @@ import {
   ActivitySection,
   EditTaskDialog,
   ChecklistSection,
-  AssigneesSection,
   SubtasksSection,
   DependenciesSection,
   CustomFieldsSection,
@@ -59,8 +60,9 @@ export default function TaskDetailPage({
   const queryClient = useQueryClient()
   const { user, hasModule: orgHasModule } = useAuth()
   const { setOverride, clearOverride } = useBreadcrumbOverride()
-  const isDispatcher = user?.role !== "ADMIN" && !!user?.canViewAllTasks
   const isAdmin = user?.role === "ADMIN"
+  // Org-level, not task-scoped: reaching every task in the org is a flat grant.
+  const canViewAllTasks = isAdmin || user?.canViewAllTasks === true
 
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -74,7 +76,7 @@ export default function TaskDetailPage({
   const { data: routeData, isLoading: loadingRoute } = useQuery({
     queryKey: ["task-route", id],
     queryFn: () => trackingApi.getTaskRoute(id),
-    enabled: (isDispatcher || isAdmin) && !!task,
+    enabled: canViewAllTasks && !!task,
   })
 
   // Fetch sprints, phases, epics for sidebar selectors
@@ -101,7 +103,6 @@ export default function TaskDetailPage({
   }, [id, task?.title, setOverride, clearOverride])
 
   // ─── Derived State ──────────────────────────────────────────────────────
-  const canAssign = isAdmin || isDispatcher
   const { statuses: workflowStatuses, hasWorkflow } = useWorkflow(task?.workflowId)
 
   const isCanceled = hasWorkflow
@@ -111,7 +112,12 @@ export default function TaskDetailPage({
     ? workflowStatuses.some((s) => s.key === task?.status && s.isFinal)
     : task?.status === "COMPLETED" || task?.status === "CLOSED"
   const hasAssignee = !!task?.assignedTo
-  const canEdit = (isAdmin || isDispatcher) && !isCompleted && !isCanceled
+
+  // What this user may actually do to THIS task, by the same rule the server
+  // applies — org flag or the permission in the task's own space.
+  const { canEdit, canAssign, canCancel } = useTaskPermissions(
+    task ? { spaceId: task.spaceId, isFinished: isCompleted || isCanceled } : null,
+  )
 
   const allowedTransitions = task?.status && hasWorkflow
     ? getTransitionsForStatus(task.status, workflowStatuses)
@@ -125,6 +131,9 @@ export default function TaskDetailPage({
       setShowAssignModal(false)
       queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      // The list's space tabs are server-counted; a status change or a move
+      // between spaces makes those numbers stale.
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -134,6 +143,9 @@ export default function TaskDetailPage({
     onSuccess: () => {
       notify.success(t("tasks.detail.requestCancelled"))
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      // The list's space tabs are server-counted; a status change or a move
+      // between spaces makes those numbers stale.
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
       queryClient.invalidateQueries({ queryKey: ["task", id] })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -145,6 +157,9 @@ export default function TaskDetailPage({
       notify.success(t("tasks.detail.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      // The list's space tabs are server-counted; a status change or a move
+      // between spaces makes those numbers stale.
+      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -170,23 +185,10 @@ export default function TaskDetailPage({
   })
 
   // ─── Loading ────────────────────────────────────────────────────────────
+  // The same skeleton the route loader shows, so the shape never changes
+  // between the two waits.
   if (isLoading) {
-    return (
-      <div className="min-h-full bg-background p-8 max-w-7xl mx-auto">
-        <Skeleton className="h-10 w-64 mb-3" />
-        <Skeleton className="h-6 w-96 mb-6" />
-        <div className="flex gap-6">
-          <div className="flex-1 space-y-4">
-            <Skeleton className="h-32 w-full rounded-2xl" />
-            <Skeleton className="h-24 w-full rounded-2xl" />
-            <Skeleton className="h-24 w-full rounded-2xl" />
-          </div>
-          <div className="w-[35%] shrink-0">
-            <Skeleton className="h-80 w-full rounded-2xl" />
-          </div>
-        </div>
-      </div>
-    )
+    return <TaskDetailPageSkeleton />
   }
 
   // ─── Error ──────────────────────────────────────────────────────────────
@@ -244,6 +246,7 @@ export default function TaskDetailPage({
           user={user}
           canEdit={canEdit}
           canAssign={canAssign}
+          canCancel={canCancel}
           isCompleted={isCompleted}
           isCanceled={isCanceled}
           hasAssignee={hasAssignee}
@@ -360,7 +363,7 @@ export default function TaskDetailPage({
             )}
 
             {/* Route Tracking — module: tracking + role-gated */}
-            {hasModule("tracking") && (isAdmin || isDispatcher) && (
+            {hasModule("tracking") && canViewAllTasks && (
               <div data-tour="task-route-tracking">
               <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
                 <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />
@@ -374,6 +377,7 @@ export default function TaskDetailPage({
             <TaskDetailSidebar
               task={task}
               canEdit={canEdit}
+              canAssign={canAssign}
               hasModule={hasModule}
               onFieldSave={handleFieldSave}
               onAssignClick={() => setShowAssignModal(true)}

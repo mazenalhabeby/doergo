@@ -861,7 +861,7 @@ export class TasksService {
   /**
    * Find a single task by ID with authorization
    */
-  async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
+  async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string; sharedSpaceIds?: string[] }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
@@ -927,7 +927,14 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(
+      task,
+      data.userId,
+      data.userRole,
+      data.organizationId,
+      (data as any).canViewAllTasks,
+      data.sharedSpaceIds,
+    );
 
     // Derive task-time anchors from the status history (no schema change), so the
     // timer is DB-backed and identical on web, mobile and the admin view:

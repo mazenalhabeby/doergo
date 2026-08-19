@@ -25,6 +25,9 @@ import { STORY_POINT_OPTIONS } from "@/lib/api"
 interface TaskDetailSidebarProps {
   task: any
   canEdit: boolean
+  /** Adding/removing assignees is a different permission from editing fields —
+   *  the server requires canAssignTasks for it, not canCreateTasks. */
+  canAssign: boolean
   hasModule: (m: string) => boolean
   onFieldSave: (field: string, value: string) => Promise<void> | void
   onAssignClick: () => void
@@ -62,6 +65,7 @@ function getInitials(first: string, last: string) {
 export function TaskDetailSidebar({
   task,
   canEdit,
+  canAssign,
   hasModule,
   onFieldSave,
   onAssignClick,
@@ -94,7 +98,7 @@ export function TaskDetailSidebar({
                   <span className="text-[10px] text-muted-foreground/60 bg-muted px-1 py-0.5 rounded font-medium">{assignees.length}</span>
                 )}
               </div>
-              {canEdit && (
+              {canAssign && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -110,9 +114,10 @@ export function TaskDetailSidebar({
               <div className="space-y-1">
                 {assignees.map((a: any) => {
                   const isLead = a.role === "LEAD"
-                  // Can remove if: canEdit AND (not the only lead, or not lead at all)
-                  const canRemove = canEdit && !(isLead && leadCount <= 1 && hasMultiple)
-                  const canPromote = canEdit && !isLead && hasMultiple
+                  // Assignment permission, not edit permission — and never
+                  // strip the last lead from a multi-assignee task.
+                  const canRemove = canAssign && !(isLead && leadCount <= 1 && hasMultiple)
+                  const canPromote = canAssign && !isLead && hasMultiple
 
                   return (
                     <div
