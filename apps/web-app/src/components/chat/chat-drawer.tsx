@@ -223,10 +223,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 </>
               ) : (
                 <div className="flex-1 px-1 text-[15px] font-semibold text-foreground">
-                  {showContacts ? t('chat.newMessage', 'New message') : t('chat.title', 'Messages')}
+                  {showContacts
+                    ? t('chat.newMessage', 'New message')
+                    : openDM.isPending
+                      ? t('chat.opening', 'Opening…')
+                      : t('chat.title', 'Messages')}
                 </div>
               )}
-              {!activeId && !showContacts && (
+              {!activeId && !showContacts && !openDM.isPending && (
                 <button onClick={() => setShowContacts(true)} className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-blue-600" title={t('chat.newMessage', 'New message')}>
                   <PenSquare className="h-4.5 w-4.5" />
                 </button>
@@ -240,6 +244,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               <ContactsPicker onPick={(uid) => openChatWith(uid)} picking={openDM.isPending} />
             ) : activeId && activeConv ? (
               <Thread conversation={activeConv} meId={user!.id} />
+            ) : openDM.isPending ? (
+              /*
+                Opening a specific conversation takes a round trip, and until it
+                answered, this fell through to the full conversation list. Ask
+                to message one person and you got everyone you have ever spoken
+                to, then the thread you asked for a moment later. Wait here
+                instead — the drawer is going somewhere specific and should look
+                like it.
+              */
+              <div className="flex flex-1 items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
             ) : (
               <ConversationList conversations={conversations} onOpen={setActiveId} onNew={() => setShowContacts(true)} />
             )}

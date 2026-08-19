@@ -1098,7 +1098,6 @@
       "fieldTechnician": "Field Employee",
       "call": "Call",
       "message": "Message",
-      "messageWho": "Message who?",
       "steps": {
         "submitted": "Submitted",
         "assigned": "Assigned",
@@ -5364,6 +5363,7 @@
   },
   "chat": {
     "title": "Messages",
+    "opening": "Opening…",
     "newMessage": "New message",
     "empty": "No conversations yet.",
     "noMessages": "No messages yet",

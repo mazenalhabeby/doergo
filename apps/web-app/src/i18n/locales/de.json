@@ -1098,7 +1098,6 @@
       "fieldTechnician": "Außendiensttechniker",
       "call": "Anrufen",
       "message": "Nachricht",
-      "messageWho": "Wen anschreiben?",
       "steps": {
         "submitted": "Eingereicht",
         "assigned": "Zugewiesen",
@@ -5364,6 +5363,7 @@
   },
   "chat": {
     "title": "Nachrichten",
+    "opening": "Wird geöffnet…",
     "newMessage": "Neue Nachricht",
     "empty": "Noch keine Unterhaltungen.",
     "noMessages": "Noch keine Nachrichten",

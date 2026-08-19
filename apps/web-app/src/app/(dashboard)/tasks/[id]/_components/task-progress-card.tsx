@@ -10,9 +10,7 @@ import {
 } from "lucide-react"
 
 import { type WorkflowStatus } from "@/lib/api"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useContactActions } from "@/hooks/use-contact-actions"
-import { taskRoster } from "@/lib/task-roster"
 import { cn, formatDurationMs } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 
@@ -115,9 +113,6 @@ export function TaskProgressCard({
   // avatar and a stacked avatar).
   const members = assignees.filter(a => a.user.id !== primary?.user.id)
 
-  // Everyone on the task, lead first — the list the Message picker offers.
-  const everyone = taskRoster(assignees, assignedTo)
-
   const { message, call } = useContactActions()
 
   return (
@@ -180,57 +175,19 @@ export function TaskProgressCard({
               </button>
 
               {/*
-                One person on the task: message them. Several: ask which one.
-                A task has no group thread — chat is one-to-one — so picking
-                silently would send to whoever happens to be lead and leave the
-                others wondering why they never heard about it.
+                Straight into the conversation — with the lead when several
+                people are assigned, with the one person otherwise. Chat is
+                one-to-one, so the lead is who a task's messages belong with;
+                anyone needing a different assignee has the avatars above and
+                the team page.
               */}
-              {everyone.length > 1 ? (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                      title={t("tasks.progress.message")}
-                    >
-                      <MessageSquare className="size-3" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-56 p-1">
-                    <p className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground">
-                      {t("tasks.progress.messageWho")}
-                    </p>
-                    {everyone.map(person => (
-                      <button
-                        key={person.id}
-                        onClick={() => message(person.id)}
-                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm hover:bg-muted/60 transition-colors"
-                      >
-                        <UserAvatar
-                          firstName={person.firstName}
-                          lastName={person.lastName}
-                          avatarUrl={person.avatarUrl}
-                          seed={person.id}
-                          size="xs"
-                        />
-                        <span className="truncate">{person.firstName} {person.lastName}</span>
-                        {person.isLead && (
-                          <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
-                            {t("tasks.progress.lead")}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <button
-                  onClick={() => primaryUser.id && message(primaryUser.id)}
-                  className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                  title={t("tasks.progress.message")}
-                >
-                  <MessageSquare className="size-3" />
-                </button>
-              )}
+              <button
+                onClick={() => primaryUser.id && message(primaryUser.id)}
+                className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                title={t("tasks.progress.message")}
+              >
+                <MessageSquare className="size-3" />
+              </button>
             </div>
           </div>
         ) : (
