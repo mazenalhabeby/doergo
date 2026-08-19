@@ -19,6 +19,7 @@ import { usePrefersReducedMotion } from './use-reduced-motion';
 import { useLenis } from './use-lenis';
 import { scrollToHash } from './lenis-bus';
 import { useReveal } from './use-reveal';
+import { useScrollRestoration } from './use-scroll-restoration';
 import { asArray } from './i18n-array';
 import { INDUSTRY_SLUGS, industryPath, industriesHubPath } from '@/lib/industries';
 
@@ -126,6 +127,11 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   useLenis(!reduced);
+
+  // The page is two documents — see use-scroll-restoration. `mounted` is the
+  // commit in which the real prefers-reduced-motion value has been applied, so
+  // it marks the point where the layout is the one the offset was measured in.
+  useScrollRestoration(mounted);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) router.push('/dashboard');

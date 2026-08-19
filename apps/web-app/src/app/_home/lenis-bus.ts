@@ -63,33 +63,55 @@ export function setLenisInstance(l: LenisLike | null): void {
  * the scroll settles (it re-syncs to the final position with no snap). Falls
  * back to a plain native smooth scroll when Lenis isn't driving.
  */
+/**
+ * Jump to an absolute offset without Lenis undoing it.
+ *
+ * Lenis holds its own scroll value and re-applies it on the next tick, so a
+ * bare `window.scrollTo` is reverted a frame later. The reliable sequence is to
+ * pause Lenis, let the browser scroll, then resume once it settles — Lenis
+ * re-syncs to wherever the page ended up, with no snap.
+ */
+export function scrollToOffset(top: number, behavior: ScrollBehavior = 'auto'): void {
+  if (typeof window === 'undefined') return;
+  const target = Math.max(0, top);
+  const lenis = lenisInstance;
+
+  if (!lenis?.stop || !lenis.start) {
+    window.scrollTo({ top: target, behavior });
+    return;
+  }
+
+  lenis.stop(); // release the wheel so the native scroll isn't reverted
+  let settled = false;
+  let timer: ReturnType<typeof setTimeout>;
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    window.removeEventListener('scroll', onScroll);
+    lenis.start?.(); // resume smoothing, re-synced to the final position
+  };
+  const onScroll = () => {
+    clearTimeout(timer);
+    timer = setTimeout(finish, 140); // debounce: fire once scrolling stops
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.scrollTo({ top: target, behavior });
+  // An instant jump may emit no scroll event at all; settle on the next frame.
+  if (behavior === 'auto') requestAnimationFrame(() => requestAnimationFrame(finish));
+  setTimeout(finish, 1600); // safety: never leave Lenis stopped
+}
+
+/**
+ * Smooth-scroll to an on-page anchor (e.g. "#work"). `offset` clears the fixed
+ * navbar so the section top isn't hidden under it.
+ */
 export function scrollToHash(hash: string, offset = -76): void {
   if (typeof document === 'undefined') return;
   const el = document.querySelector<HTMLElement>(hash);
   if (!el) return;
   const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY + offset);
 
-  const lenis = lenisInstance;
-  if (lenis?.stop && lenis.start) {
-    lenis.stop(); // release the wheel to the browser so native scroll isn't reverted
-    let settled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      window.removeEventListener('scroll', onScroll);
-      lenis.start?.(); // resume smoothing, re-synced to the final position
-    };
-    const onScroll = () => {
-      clearTimeout(timer);
-      timer = setTimeout(finish, 140); // debounce: fire once scrolling stops
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.scrollTo({ top, behavior: 'smooth' });
-    setTimeout(finish, 1600); // safety: never leave Lenis stopped
-  } else {
-    window.scrollTo({ top, behavior: 'smooth' });
-  }
+  scrollToOffset(top, 'smooth');
 
   // reflect the section in the URL (shareable) without triggering a jump
   if (window.history?.replaceState) window.history.replaceState(null, '', hash);
