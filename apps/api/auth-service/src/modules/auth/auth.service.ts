@@ -52,6 +52,18 @@ function resolveProfileBadges(
   return base;
 }
 
+/**
+ * Are the legacy per-member permission flags still part of a member's access?
+ *
+ * Default is yes — the safe answer, because turning them off before every
+ * member's role covers them takes capabilities away. Read per call rather than
+ * captured at boot so the switch takes effect on the next token validation,
+ * without a restart.
+ */
+function ignoreLegacyFlags(): boolean {
+  return process.env.ACCESS_IGNORE_LEGACY_FLAGS === 'true';
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -482,13 +494,18 @@ export class AuthService {
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
             // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
             access: buildResolvedAccess({
-              userFlags: {
-                canCreateTasks: user.canCreateTasks,
-                canViewAllTasks: user.canViewAllTasks,
-                canAssignTasks: user.canAssignTasks,
-                canManageUsers: user.canManageUsers,
-                canViewReports: user.canViewReports,
-              },
+              // Same switch as validateToken — see the note there. Both call
+              // sites must agree, or a member would be handed permissions at
+              // sign-in that disappear on their very next request.
+              userFlags: ignoreLegacyFlags()
+                ? undefined
+                : {
+                    canCreateTasks: user.canCreateTasks,
+                    canViewAllTasks: user.canViewAllTasks,
+                    canAssignTasks: user.canAssignTasks,
+                    canManageUsers: user.canManageUsers,
+                    canViewReports: user.canViewReports,
+                  },
               memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
               spaces: user.spaceAssignments.map((a) => ({
                 spaceId: a.spaceId,
@@ -1093,13 +1110,32 @@ export class AuthService {
       // Resolve the member's access ONCE here (server-side, from their own
       // roles/assignments + any cross-org shares). Cached with the validated user.
       const access = buildResolvedAccess({
-        userFlags: {
-          canCreateTasks: userData.canCreateTasks,
-          canViewAllTasks: userData.canViewAllTasks,
-          canAssignTasks: userData.canAssignTasks,
-          canManageUsers: userData.canManageUsers,
-          canViewReports: userData.canViewReports,
-        },
+        /*
+          The per-member permission columns, on their way out.
+
+          While they are read, a permission can come from here OR from the
+          member's role, merged with a union — and a union cannot say no. That
+          is why moving someone to a narrower role removes nothing today, and
+          why "what can this person do?" cannot be answered by looking at their
+          role.
+
+          Once every member's role covers what their flags grant — which
+          `prisma/backfill-role-authority.js` reports on and performs — setting
+          ACCESS_IGNORE_LEGACY_FLAGS=true stops reading them and the role
+          becomes the whole answer. Kept as a switch rather than a deletion so
+          it can be turned back within seconds if it removes something the
+          backfill did not anticipate; the columns stay until it has run
+          quietly for a while.
+        */
+        userFlags: ignoreLegacyFlags()
+          ? undefined
+          : {
+              canCreateTasks: userData.canCreateTasks,
+              canViewAllTasks: userData.canViewAllTasks,
+              canAssignTasks: userData.canAssignTasks,
+              canManageUsers: userData.canManageUsers,
+              canViewReports: userData.canViewReports,
+            },
         memberRolePermissions: memberRole?.isActive ? memberRole.permissions : undefined,
         spaces: spaceAssignments.map((a) => ({
           spaceId: a.spaceId,

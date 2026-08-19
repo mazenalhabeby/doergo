@@ -52,3 +52,4 @@ export * from './platform/permissions';
 // The single per-task authorization rule — pure, shared by every service.
 export * from './access/task-access';
 export * from './access/cross-org-chat';
+export * from './access/legacy-flag-migration';
