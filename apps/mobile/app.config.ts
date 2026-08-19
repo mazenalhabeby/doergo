@@ -53,10 +53,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // 12.9" iPad screenshots to submit.
       supportsTablet: true,
       bundleIdentifier: 'com.hbcfield.app',
-      // Seed for EAS remote versioning (appVersionSource: "remote").
-      // Only used to initialize the remote counter on the first remote build;
-      // EAS manages/increments the real build number after that.
-      buildNumber: '5',
+      // No buildNumber / versionCode here on purpose. appVersionSource is
+      // "remote", so EAS owns those counters (currently iOS 12, Android 11) and
+      // ignores whatever this file says — a number here would only be a stale
+      // one that reads as authoritative. It still reaches the manifest via
+      // expo-constants, which is how it misleads.
       config: {
         googleMapsApiKey,
       },
@@ -88,8 +89,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
       package: 'com.hbcfield.app',
-      // Seed for EAS remote versioning (see iOS buildNumber note above).
-      versionCode: 4,
       config: {
         googleMaps: {
           apiKey: googleMapsApiKey,
