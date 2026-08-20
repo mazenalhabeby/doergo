@@ -6105,6 +6105,8 @@
     "noClients": "Nessun cliente in questo spazio",
     "fields": "Dettagli",
     "taken": "Assegnato",
-    "free": "Libero"
+    "free": "Libero",
+    "fieldsHint": "Tutto ciò che vale la pena annotare su questo.",
+    "duplicateField": "Esiste già un campo con questo nome — rinominalo o verrà scartato."
   }
 }

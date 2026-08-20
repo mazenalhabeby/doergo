@@ -64,3 +64,52 @@ describe('normalizeKindShape', () => {
     expect(s.holder).toMatchObject({ enabled: false, members: false, clients: false });
   });
 });
+
+import { detailRowsForKind, normalizeDetailRows, normalizeKindShape as shapeOf } from '@hbcfield/shared';
+
+/**
+ * A record shows the fields its KIND asks for, plus anything added on that one
+ * record. These are the rules that make renaming a field safe.
+ */
+describe('detailRowsForKind', () => {
+  const kind = shapeOf({ fields: [{ label: 'Floor' }, { label: 'Rent' }] });
+
+  it('prompts for every field the kind asks for, even on an empty record', () => {
+    expect(detailRowsForKind(kind, null)).toEqual([
+      { label: 'Floor', value: '' },
+      { label: 'Rent', value: '' },
+    ]);
+  });
+
+  it('carries the answers already given', () => {
+    const rows = detailRowsForKind(kind, [{ label: 'Rent', value: '900' }]);
+    expect(rows).toEqual([
+      { label: 'Floor', value: '' },
+      { label: 'Rent', value: '900' },
+    ]);
+  });
+
+  it('keeps a value recorded under a field the kind has since dropped', () => {
+    // Deleting a field on the kind must not quietly delete what people typed.
+    const rows = detailRowsForKind(kind, [{ label: 'Balcony', value: 'yes' }]);
+    expect(rows).toContainEqual({ label: 'Balcony', value: 'yes' });
+  });
+
+  it('keeps one-off fields added on a single record, after the kind\'s own', () => {
+    const rows = detailRowsForKind(kind, [
+      { label: 'Floor', value: '3' },
+      { label: 'Door code', value: '1234' },
+    ]);
+    expect(rows.map((r) => r.label)).toEqual(['Floor', 'Rent', 'Door code']);
+  });
+
+  it('matches the kind\'s field regardless of case, so no row appears twice', () => {
+    const rows = detailRowsForKind(kind, [{ label: 'floor', value: '3' }]);
+    expect(rows.filter((r) => r.label.toLowerCase() === 'floor')).toHaveLength(1);
+    expect(rows[0]).toEqual({ label: 'Floor', value: '3' });
+  });
+
+  it('drops a nameless row rather than showing a box nobody can interpret', () => {
+    expect(normalizeDetailRows([{ label: '', value: 'orphan' }])).toEqual([]);
+  });
+});

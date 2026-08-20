@@ -6130,6 +6130,8 @@
     "noClients": "Noch keine Kunden in diesem Space",
     "fields": "Details",
     "taken": "Vergeben",
-    "free": "Frei"
+    "free": "Frei",
+    "fieldsHint": "Alles, was zu diesem festgehalten werden sollte.",
+    "duplicateField": "Es gibt bereits ein Feld mit diesem Namen — bitte umbenennen, sonst geht es verloren."
   }
 }

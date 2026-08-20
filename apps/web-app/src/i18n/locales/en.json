@@ -6131,6 +6131,8 @@
     "noClients": "No clients in this space yet",
     "fields": "Details",
     "taken": "Taken",
-    "free": "Free"
+    "free": "Free",
+    "fieldsHint": "Anything worth recording about this one.",
+    "duplicateField": "Already a field with this name — rename it or it will be dropped."
   }
 }
