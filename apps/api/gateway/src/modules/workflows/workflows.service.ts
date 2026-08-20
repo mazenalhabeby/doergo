@@ -88,4 +88,20 @@ export class WorkflowsService extends BaseGatewayService {
   async setSpaceDefaultWorkflow(data: { spaceId: string; workflowId: string; organizationId: string }) {
     return this.send({ cmd: 'set_space_default_workflow' }, data);
   }
+
+  // ── The shared task-type library (tenant side: read + copy) ─────────────────
+
+  async listTemplates(data: { organizationId: string }) {
+    return this.send({ cmd: 'list_workflow_templates' }, data);
+  }
+
+  async useTemplate(data: {
+    templateId: string;
+    organizationId: string;
+    name?: string;
+    isDefault?: boolean;
+    spaceId?: string;
+  }) {
+    return this.send({ cmd: 'use_workflow_template' }, data);
+  }
 }

@@ -3400,7 +3400,10 @@
       "defaultSet": "Standard aktualisiert",
       "addFailed": "Aufgabentyp konnte nicht hinzugefügt werden",
       "removeFailed": "Aufgabentyp konnte nicht entfernt werden",
-      "defaultFailed": "Standard konnte nicht geändert werden"
+      "defaultFailed": "Standard konnte nicht geändert werden",
+      "libraryHint": "Oder beginnen Sie mit einer fertigen Aufgabenart. Sie wird in Ihre Organisation kopiert und kann anschließend bearbeitet werden.",
+      "libraryPlaceholder": "Aus der Bibliothek wählen …",
+      "useTemplate": "Vorlage verwenden"
     },
     "previewWorkflow": "Aufgabentyp ansehen oder bearbeiten"
   },
@@ -3773,7 +3776,8 @@
         "statusDeleted": "Status gelöscht",
         "statusAdded": "Status hinzugefügt",
         "statusUpdated": "Status aktualisiert"
-      }
+      },
+      "loadingLibrary": "Bibliothek wird geladen …"
     }
   },
   "assets": {

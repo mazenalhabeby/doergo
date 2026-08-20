@@ -2785,6 +2785,48 @@ model SpaceWorkflow {
   @@map("space_workflows")
 }
 
+/**
+ * The task-type LIBRARY — platform-curated, shared by every tenant.
+ *
+ * Deliberately has no organizationId: it belongs to the platform, and tenants
+ * only ever read it. A tenant that picks one gets a COPY (StatusWorkflow +
+ * WorkflowStatus rows of its own). Nothing points back here afterwards.
+ *
+ * Referencing a template live instead of copying it would mean a curator's edit
+ * rewriting the state machine under every tenant's in-flight tasks — and a task
+ * whose current status stopped existing has no transition out of it. Letting
+ * tenants write here would make one org's edit another org's options, a
+ * cross-tenant write in a system that otherwise has none.
+ *
+ * `definition` is the status list as JSON. It is read back through
+ * `normalizeTemplateStatuses` (shared) before any of it becomes a row, because
+ * JSON has no schema and this row was written by a different party than the one
+ * using it.
+ */
+model WorkflowTemplate {
+  id          String   @id @default(cuid())
+  // Stable across renames, and how a built-in template is recognised so seeding
+  // never creates it twice.
+  slug        String   @unique
+  name        String
+  description String?
+  industry    String? // "field-service", "logistics", "cleaning" — for grouping
+  icon        String?
+  position    Int      @default(0)
+  // Unpublished means invisible to tenants. A template is published only once it
+  // passes validation, so the library cannot hand out a workflow that traps work.
+  isPublished Boolean  @default(false)
+  // Seeded from code. Kept so a curator can tell a shipped template from one
+  // they wrote, and so seeding can leave curated edits alone.
+  isBuiltIn   Boolean  @default(false)
+  definition  Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, industry])
+  @@map("workflow_templates")
+}
+
 // Individual status within a workflow
 model WorkflowStatus {
   id           String         @id @default(cuid())

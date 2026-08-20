@@ -3375,7 +3375,10 @@
       "defaultSet": "Predefinito aggiornato",
       "addFailed": "Impossibile aggiungere quel tipo di attività",
       "removeFailed": "Impossibile rimuovere quel tipo di attività",
-      "defaultFailed": "Impossibile cambiare il predefinito"
+      "defaultFailed": "Impossibile cambiare il predefinito",
+      "libraryHint": "Oppure parti da un tipo di attività già pronto. Viene copiato nella tua organizzazione, quindi potrai modificarlo in seguito.",
+      "libraryPlaceholder": "Scegli dalla libreria…",
+      "useTemplate": "Usa modello"
     },
     "previewWorkflow": "Anteprima o modifica di un tipo di attività"
   },
@@ -3748,7 +3751,8 @@
         "statusDeleted": "Stato eliminato",
         "statusAdded": "Stato aggiunto",
         "statusUpdated": "Stato aggiornato"
-      }
+      },
+      "loadingLibrary": "Caricamento della libreria…"
     }
   },
   "assets": {

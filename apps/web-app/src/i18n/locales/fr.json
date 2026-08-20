@@ -3375,7 +3375,10 @@
       "defaultSet": "Valeur par défaut mise à jour",
       "addFailed": "Impossible d’ajouter ce type de tâche",
       "removeFailed": "Impossible de retirer ce type de tâche",
-      "defaultFailed": "Impossible de changer la valeur par défaut"
+      "defaultFailed": "Impossible de changer la valeur par défaut",
+      "libraryHint": "Ou partez d’un type de tâche prêt à l’emploi. Il est copié dans votre organisation, vous pourrez donc le modifier ensuite.",
+      "libraryPlaceholder": "Choisir dans la bibliothèque…",
+      "useTemplate": "Utiliser le modèle"
     },
     "previewWorkflow": "Aperçu ou modification d’un type de tâche"
   },
@@ -3748,7 +3751,8 @@
         "statusDeleted": "Statut supprimé",
         "statusAdded": "Statut ajouté",
         "statusUpdated": "Statut mis à jour"
-      }
+      },
+      "loadingLibrary": "Chargement de la bibliothèque…"
     }
   },
   "assets": {

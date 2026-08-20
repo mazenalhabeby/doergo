@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Check, Plus, Trash2, Loader2, Star } from "lucide-react"
+import { Check, Plus, Trash2, Loader2, Star, Library } from "lucide-react"
 
 import { workflowsApi, type StatusWorkflow } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -32,6 +32,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [adding, setAdding] = useState("")
+  const [picking, setPicking] = useState("")
 
   const { data: offered = [], isLoading } = useQuery({
     queryKey: ["space-workflows", spaceId],
@@ -41,9 +42,21 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
     queryKey: ["workflows"],
     queryFn: () => workflowsApi.list(),
   })
+  /*
+    The shared library — ready-made task types nobody in this organization has
+    to design. Picking one COPIES it: the organization gets its own definition
+    to edit, and nothing here points back at the library afterwards.
+  */
+  const { data: templates = [] } = useQuery({
+    queryKey: ["workflow-library"],
+    queryFn: workflowsApi.library.list,
+    staleTime: 5 * 60_000,
+  })
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
+    // A copy from the library is a new org task type, so the org list is stale too.
+    queryClient.invalidateQueries({ queryKey: ["workflows"] })
     // The space's own record still carries the legacy default; keep it honest.
     queryClient.invalidateQueries({ queryKey: ["location", spaceId] })
   }
@@ -63,6 +76,19 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
     onError: (e: Error) => notify.error(e.message || t("locations.workflows.removeFailed", "Could not remove that task type")),
   })
 
+  /*
+    Copy from the library and offer it here in one action, because that is one
+    intention. The server does both, so a refusal — the space is missing a
+    module the template's steps need — arrives before anything is half-done
+    rather than leaving a new task type stranded outside the space it was added
+    from.
+  */
+  const fromLibrary = useMutation({
+    mutationFn: (templateId: string) => workflowsApi.library.use(templateId, { spaceId }),
+    onSuccess: () => { notify.success(t("locations.workflows.added", "Task type added")); setPicking(""); refresh() },
+    onError: (e: Error) => notify.error(e.message || t("locations.workflows.addFailed", "Could not add that task type")),
+  })
+
   const makeDefault = useMutation({
     mutationFn: (workflowId: string) => workflowsApi.setSpaceDefault(spaceId, workflowId),
     onSuccess: () => { notify.success(t("locations.workflows.defaultSet", "Default updated")); refresh() },
@@ -71,7 +97,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
 
   const offeredIds = new Set(offered.map((w) => w.id))
   const addable = all.filter((w: StatusWorkflow) => !offeredIds.has(w.id))
-  const busy = attach.isPending || detach.isPending || makeDefault.isPending
+  const busy = attach.isPending || detach.isPending || makeDefault.isPending || fromLibrary.isPending
 
   return (
     <div className="space-y-3">
@@ -167,6 +193,43 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
             {attach.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <Plus className="mr-1.5 size-3.5" />}
             {t("common.add", "Add")}
           </Button>
+        </div>
+      )}
+
+      {/* Shown whatever the organization already has: the library is where a new
+          task type comes from, not a fallback for when the list runs out. */}
+      {templates.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground">
+            {t("locations.workflows.libraryHint", "Or start from a ready-made task type. It is copied into your organization, so you can edit it afterwards.")}
+          </p>
+          <div className="flex items-center gap-2">
+            <Select value={picking} onValueChange={setPicking} disabled={busy}>
+              <SelectTrigger className="h-9 flex-1">
+                <SelectValue placeholder={t("locations.workflows.libraryPlaceholder", "Choose from the library…")} />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>
+                    {tpl.name}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {tpl.statuses.map((st) => st.name).join(" → ")}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 shrink-0"
+              disabled={!picking || busy}
+              onClick={() => fromLibrary.mutate(picking)}
+            >
+              {fromLibrary.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <Library className="mr-1.5 size-3.5" />}
+              {t("locations.workflows.useTemplate", "Use template")}
+            </Button>
+          </div>
         </div>
       )}
     </div>

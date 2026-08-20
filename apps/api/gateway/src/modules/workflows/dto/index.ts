@@ -205,3 +205,31 @@ export class UpsertDefinitionOfDoneDto {
   @IsOptional()
   isActive?: boolean;
 }
+
+// ==================== Task-type library ====================
+
+/**
+ * Everything a tenant may say when copying a library template.
+ *
+ * Note what is NOT here: the statuses. They come from the library row, so the
+ * shape of the resulting state machine is never something a client can dictate.
+ */
+export class UseWorkflowTemplateDto {
+  @ApiPropertyOptional({ description: 'Name for the copy. Defaults to the template\'s own name.' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  name?: string;
+
+  @ApiPropertyOptional({ description: "Make it the organization's default task type", default: false })
+  @IsBoolean()
+  @IsOptional()
+  isDefault?: boolean;
+
+  @ApiPropertyOptional({ description: 'Also offer the copy in this space' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(40)
+  spaceId?: string;
+}
+

@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const TIERS = ['starter', 'professional', 'business', 'enterprise'] as const;
 type Tier = (typeof TIERS)[number];
-type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' | 'manageSupport' | 'manageSupportTeams' | 'managePlatformUsers';
+type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' | 'manageSupport' | 'manageSupportTeams' | 'manageLibrary' | 'managePlatformUsers';
 const ROLES = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'] as const;
 
 const eur = (c?: number | null) => (c == null ? '—' : `€${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
@@ -43,7 +43,7 @@ export default function ControlCenter() {
   const [needs2fa, setNeeds2fa] = useState(false);
   const [security, setSecurity] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support' | 'teams'>('orgs');
+  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support' | 'teams' | 'library'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
@@ -126,6 +126,7 @@ export default function ControlCenter() {
             <div className="flex gap-1 rounded-lg border border-slate-800 p-0.5 text-sm">
               <button onClick={() => setTab('orgs')} className={`rounded px-3 py-1 ${tab === 'orgs' ? 'bg-slate-800' : 'text-slate-400'}`}>Organizations</button>
               <button onClick={() => setTab('pricing')} className={`rounded px-3 py-1 ${tab === 'pricing' ? 'bg-slate-800' : 'text-slate-400'}`}>Pricing</button>
+              {can('manageLibrary') && <button onClick={() => setTab('library')} className={`rounded px-3 py-1 ${tab === 'library' ? 'bg-slate-800' : 'text-slate-400'}`}>Task-type library</button>}
               {can('manageSupport') && <button onClick={() => setTab('support')} className={`rounded px-3 py-1 ${tab === 'support' ? 'bg-slate-800' : 'text-slate-400'}`}>Support</button>}
               {can('manageSupportTeams') && <button onClick={() => setTab('teams')} className={`rounded px-3 py-1 ${tab === 'teams' ? 'bg-slate-800' : 'text-slate-400'}`}>Support Teams</button>}
               {can('managePlatformUsers') && <button onClick={() => setTab('team')} className={`rounded px-3 py-1 ${tab === 'team' ? 'bg-slate-800' : 'text-slate-400'}`}>Team</button>}
@@ -192,6 +193,8 @@ export default function ControlCenter() {
           <SupportPanel onError={setError} isSupervisor={!!me.user.isSupportSupervisor} hasTeams={(me.user.supportTeamIds?.length ?? 0) > 0} />
         ) : tab === 'teams' ? (
           <TeamsPanel onError={setError} />
+        ) : tab === 'library' ? (
+          <LibraryPanel onError={setError} />
         ) : (
           <TeamPanel staff={staff} reload={loadStaff} onError={setError} meId={me.user.id} />
         )}
@@ -756,6 +759,160 @@ function PinBox({ onPin, busy }: { onPin: (orgId: string) => void; busy: boolean
               <button disabled={busy} onClick={() => { onPin(o.id); setHits([]); setQ(''); }} className="rounded bg-blue-600/80 px-2 py-0.5 text-[11px] hover:bg-blue-600">pin here</button>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Task-type library — the templates every tenant copies from.
+//
+// One table, and this is its only write surface. A tenant reads published rows
+// and takes a COPY; nothing they hold points back here, so editing a template
+// never reaches a task that is already moving. That is also why the editor
+// below can be blunt about the definition: the blast radius of a bad save is
+// "this template is unpublishable", not "a tenant's tasks are stuck".
+// ============================================================================
+
+interface TplStatus { name: string; key: string; color: string; icon?: string; position: number; isFinal: boolean; isCanceled: boolean; transitions: string[]; capabilities: string[] }
+interface TplProblem { code: string; statusKey?: string; message: string }
+interface Tpl { id: string; slug: string; name: string; description: string | null; industry: string | null; icon: string | null; position: number; isPublished: boolean; isBuiltIn: boolean; statuses: TplStatus[]; problems: TplProblem[] }
+
+function LibraryPanel({ onError }: { onError: (s: string) => void }) {
+  const [rows, setRows] = useState<Tpl[]>([]);
+  const [editing, setEditing] = useState<Tpl | null>(null);
+  const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [importId, setImportId] = useState('');
+
+  const load = useCallback(async () => {
+    try { setRows((await api<{ data: Tpl[] }>('/platform/library/templates')).data); }
+    catch (e) { onError((e as Error).message); }
+  }, [onError]);
+  useEffect(() => { void load(); }, [load]);
+
+  const run = async (id: string, fn: () => Promise<unknown>) => {
+    setBusy(id);
+    try { await fn(); await load(); } catch (e) { onError((e as Error).message); } finally { setBusy(null); }
+  };
+
+  const open = (t: Tpl | null) => {
+    setEditing(t ?? ({ id: '', slug: '', name: '', description: '', industry: '', icon: '', position: rows.length, isPublished: false, isBuiltIn: false, statuses: [], problems: [] } as Tpl));
+    setDraft(JSON.stringify(t?.statuses ?? [], null, 2));
+  };
+
+  const save = async () => {
+    if (!editing) return;
+    let statuses: unknown;
+    // Parsed here so a typo is a message rather than a request that fails
+    // halfway with something the server has to guess at.
+    try { statuses = JSON.parse(draft || '[]'); }
+    catch { onError('The steps are not valid JSON.'); return; }
+    const body = { slug: editing.slug, name: editing.name, description: editing.description, industry: editing.industry, icon: editing.icon, position: editing.position, isPublished: editing.isPublished, statuses };
+    await run('save', async () => {
+      await api(editing.id ? `/platform/library/templates/${editing.id}` : '/platform/library/templates', { method: editing.id ? 'PATCH' : 'POST', body: JSON.stringify(body) });
+      setEditing(null);
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Task-type library</h2>
+          <p className="text-xs text-slate-500">Published templates are offered to every organization. Adding one gives them a copy to edit — it is never linked back here.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input value={importId} onChange={(e) => setImportId(e.target.value)} placeholder="Import from workflow id…" className="w-56 rounded bg-slate-800 px-2 py-1.5 text-xs outline-none" />
+          <button
+            disabled={!importId || busy === 'import'}
+            onClick={() => run('import', async () => { await api(`/platform/library/templates/import/${importId}`, { method: 'POST' }); setImportId(''); })}
+            className="rounded bg-slate-800 px-3 py-1.5 text-xs hover:bg-slate-700 disabled:opacity-40"
+          >Import from an org</button>
+          <button onClick={() => open(null)} className="rounded bg-blue-600 px-3 py-1.5 text-xs hover:bg-blue-500">New template</button>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-slate-800">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-900/60 text-[11px] uppercase tracking-wide text-slate-500">
+            <tr><th className="px-3 py-2 text-left">Name</th><th className="px-3 py-2 text-left">Slug</th><th className="px-3 py-2 text-left">Steps</th><th className="px-3 py-2 text-left">State</th><th className="px-3 py-2" /></tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800">
+            {rows.map((t) => (
+              <tr key={t.id} className="hover:bg-slate-900/40">
+                <td className="px-3 py-2">
+                  <div className="font-medium">{t.name}{t.isBuiltIn && <span className="ml-2 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">built-in</span>}</div>
+                  {t.description && <div className="text-xs text-slate-500">{t.description}</div>}
+                </td>
+                <td className="px-3 py-2 text-xs text-slate-400">{t.slug}</td>
+                <td className="px-3 py-2 text-xs text-slate-400">{t.statuses.map((s) => s.name).join(' → ') || '—'}</td>
+                <td className="px-3 py-2 text-xs">
+                  {t.isPublished
+                    ? <span className="rounded bg-green-500/15 px-1.5 py-0.5 text-green-400">published</span>
+                    : <span className="rounded bg-slate-500/15 px-1.5 py-0.5 text-slate-400">draft</span>}
+                  {/* Every problem at once, so a curator fixes the list rather
+                      than discovering the next fault after each attempt. */}
+                  {t.problems.length > 0 && (
+                    <div className="mt-1 text-[11px] text-amber-400">{t.problems.map((p) => p.message).join(' ')}</div>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  <div className="flex justify-end gap-1.5">
+                    <button onClick={() => open(t)} className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700">Edit</button>
+                    <button
+                      disabled={busy === t.id || (!t.isPublished && t.problems.length > 0)}
+                      title={!t.isPublished && t.problems.length > 0 ? 'Fix the problems above before publishing' : undefined}
+                      onClick={() => run(t.id, () => api(`/platform/library/templates/${t.id}/publish`, { method: 'PATCH', body: JSON.stringify({ isPublished: !t.isPublished }) }))}
+                      className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700 disabled:opacity-40"
+                    >{t.isPublished ? 'Unpublish' : 'Publish'}</button>
+                    <button
+                      disabled={busy === t.id}
+                      // A built-in comes back on the next boot, so it is
+                      // unpublished instead — say so rather than appearing to
+                      // delete and then reappearing.
+                      title={t.isBuiltIn ? 'Built-in: this unpublishes it' : undefined}
+                      onClick={() => run(t.id, () => api(`/platform/library/templates/${t.id}`, { method: 'DELETE' }))}
+                      className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600 disabled:opacity-40"
+                    >{t.isBuiltIn ? 'Retire' : 'Delete'}</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">The library is empty.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setEditing(null)}>
+          <div className="h-full w-full max-w-2xl overflow-y-auto border-l border-slate-800 bg-slate-900 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between">
+              <h2 className="text-lg font-semibold">{editing.id ? 'Edit template' : 'New template'}</h2>
+              <button onClick={() => setEditing(null)} className="text-slate-400">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <label className="col-span-2 block"><span className="mb-1 block text-xs text-slate-500">Name</span>
+                <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="w-full rounded bg-slate-800 px-2 py-1.5 outline-none" /></label>
+              <label className="block"><span className="mb-1 block text-xs text-slate-500">Slug {editing.id && '(fixed)'}</span>
+                <input value={editing.slug} disabled={!!editing.id} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} className="w-full rounded bg-slate-800 px-2 py-1.5 outline-none disabled:opacity-50" placeholder="derived from the name" /></label>
+              <label className="block"><span className="mb-1 block text-xs text-slate-500">Industry</span>
+                <input value={editing.industry ?? ''} onChange={(e) => setEditing({ ...editing, industry: e.target.value })} className="w-full rounded bg-slate-800 px-2 py-1.5 outline-none" placeholder="field-service" /></label>
+              <label className="col-span-2 block"><span className="mb-1 block text-xs text-slate-500">Description</span>
+                <input value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="w-full rounded bg-slate-800 px-2 py-1.5 outline-none" /></label>
+              <label className="col-span-2 block"><span className="mb-1 block text-xs text-slate-500">Steps (JSON: name, key, color, position, isFinal, isCanceled, transitions[], capabilities[])</span>
+                <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={18} spellCheck={false} className="w-full rounded bg-slate-800 px-2 py-1.5 font-mono text-xs outline-none" /></label>
+              <label className="col-span-2 flex items-center gap-2 text-xs text-slate-400">
+                <input type="checkbox" checked={editing.isPublished} onChange={(e) => setEditing({ ...editing, isPublished: e.target.checked })} />
+                Published — offered to every organization. Refused while the flow has problems.
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setEditing(null)} className="rounded bg-slate-800 px-3 py-1.5 text-xs">Cancel</button>
+              <button disabled={busy === 'save' || !editing.name.trim()} onClick={save} className="rounded bg-blue-600 px-3 py-1.5 text-xs hover:bg-blue-500 disabled:opacity-40">Save</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

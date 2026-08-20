@@ -149,8 +149,14 @@ export function getFlowSteps(
 
 // ============================================================================
 // Task-type templates — ready-made flows so a new task type isn't built from
-// scratch. ONE source of truth, used by the web "New Task Type" picker AND by
-// the backend that seeds a new org's default type. (DRY)
+// scratch. ONE source of truth for the flows the platform SHIPS: task-service
+// seeds these into the shared library at boot (where curators can then add to
+// them without a deploy), and auth-service gives a brand-new organization the
+// first one as its default type. (DRY)
+//
+// Clients do NOT read this list. They fetch the library, because it can carry
+// templates that were curated rather than shipped, and because the statuses of
+// a new task type are then decided server-side rather than by the browser.
 // ============================================================================
 
 export interface WorkflowTemplateStatus {
