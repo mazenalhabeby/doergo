@@ -6053,5 +6053,13 @@
     "testing": "Pruebas",
     "backlog": "Backlog",
     "draft": "Borrador"
+  },
+  "billing": {
+    "perMonth": "/mes",
+    "perMonthShort": "/mes",
+    "spaceCostLabel": "Este espacio cuesta",
+    "spaceCostPending": "Antes {{was}}: se aplica al guardar los módulos",
+    "spaceCostPerModule": "Cada módulo añade su propio precio",
+    "seatLine": "Los usuarios se facturan aparte, a {{price}} cada uno"
   }
 }

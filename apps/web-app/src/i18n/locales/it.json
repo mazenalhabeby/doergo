@@ -6044,5 +6044,13 @@
     "testing": "Test",
     "backlog": "Backlog",
     "draft": "Bozza"
+  },
+  "billing": {
+    "perMonth": "/mese",
+    "perMonthShort": "/mese",
+    "spaceCostLabel": "Questo spazio costa",
+    "spaceCostPending": "Prima {{was}} — applicato al salvataggio dei moduli",
+    "spaceCostPerModule": "Ogni modulo aggiunge il proprio prezzo",
+    "seatLine": "Gli utenti sono fatturati a parte, {{price}} ciascuno"
   }
 }

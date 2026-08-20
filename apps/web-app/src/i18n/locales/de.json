@@ -6069,5 +6069,13 @@
     "testing": "Test",
     "backlog": "Backlog",
     "draft": "Entwurf"
+  },
+  "billing": {
+    "perMonth": "/Monat",
+    "perMonthShort": "/Mon.",
+    "spaceCostLabel": "Dieser Bereich kostet",
+    "spaceCostPending": "Vorher {{was}} — wird beim Speichern der Module übernommen",
+    "spaceCostPerModule": "Jedes Modul hat seinen eigenen Preis",
+    "seatLine": "Benutzer werden separat mit je {{price}} berechnet"
   }
 }

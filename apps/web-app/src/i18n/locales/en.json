@@ -6070,5 +6070,13 @@
     "testing": "Testing",
     "backlog": "Backlog",
     "draft": "Draft"
+  },
+  "billing": {
+    "perMonth": "/month",
+    "perMonthShort": "/mo",
+    "spaceCostLabel": "This space costs",
+    "spaceCostPending": "Was {{was}} — saved when you save modules",
+    "spaceCostPerModule": "Each module adds its own price",
+    "seatLine": "Users are billed separately at {{price}} each"
   }
 }

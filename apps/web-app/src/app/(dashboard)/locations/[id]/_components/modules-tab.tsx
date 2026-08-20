@@ -7,7 +7,18 @@ import { Blocks, Sparkles, Plus, Minus } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
-import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, moduleI18n, moduleRequires, resolveModuleDependencies } from "@hbcfield/shared/client"
+import {
+  AVAILABLE_MODULES,
+  MODULE_GROUPS,
+  MODULE_PRESETS,
+  moduleI18n,
+  moduleRequires,
+  resolveModuleDependencies,
+  moduleMonthlyCents,
+  spaceMonthlyCost,
+  formatCents,
+  SEAT_MONTHLY_CENTS,
+} from "@hbcfield/shared/client"
 
 /** The English source for each module, used as the fallback for its key. */
 const MODULE_LABEL: Record<string, string> = Object.fromEntries(AVAILABLE_MODULES.map((m) => [m.key, m.label]))
@@ -31,6 +42,18 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.modulesUpdateFailed")),
   })
+
+  /*
+    What this space costs, from what is switched on at this moment.
+
+    Read from `enabledModules` — the unsaved state — not from the space record,
+    because the question somebody is asking while toggling is "what will this
+    cost me", and answering it only after they press Save is answering it too
+    late. The saved figure is shown next to it when the two differ.
+  */
+  const liveCost = spaceMonthlyCost(enabledModules)
+  const savedCost = spaceMonthlyCost(saved)
+  const costChanged = liveCost.monthlyCents !== savedCost.monthlyCents
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) => {
@@ -67,6 +90,45 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
           </Badge>
         }
       />
+
+      {/*
+        What this space costs, updating as modules are toggled.
+
+        Stated before the list rather than after it: the price is the reason to
+        hesitate over a switch, and a total underneath a long list is read after
+        the decision instead of during it.
+      */}
+      <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3">
+        <div>
+          <p className="text-xs text-muted-foreground">
+            {t("billing.spaceCostLabel", "This space costs")}
+          </p>
+          <p className="text-2xl font-semibold tabular-nums text-foreground">
+            {formatCents(liveCost.monthlyCents)}
+            <span className="ml-1 text-sm font-normal text-muted-foreground">
+              {t("billing.perMonth", "/month")}
+            </span>
+          </p>
+        </div>
+        <div className="text-right text-xs text-muted-foreground">
+          {costChanged ? (
+            // Named as not-yet-charged, because a number that changes on screen
+            // reads as a number already applied.
+            <p className="text-amber-600 dark:text-amber-500">
+              {t("billing.spaceCostPending", "Was {{was}} — saved when you save modules", {
+                was: formatCents(savedCost.monthlyCents),
+              })}
+            </p>
+          ) : (
+            <p>{t("billing.spaceCostPerModule", "Each module adds its own price")}</p>
+          )}
+          <p className="mt-0.5">
+            {t("billing.seatLine", "Users are billed separately at {{price}} each", {
+              price: formatCents(SEAT_MONTHLY_CENTS),
+            })}
+          </p>
+        </div>
+      </div>
 
       {/* Presets — one click to set a sensible bundle */}
       <div className="space-y-1.5">
@@ -122,6 +184,20 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
               >
                 <div className="flex-1 min-w-0 mr-3">
                   <span className="text-sm font-medium text-foreground">{t(moduleI18n.label(mod.key), { defaultValue: mod.label })}</span>
+                  {/* The price sits on the row being toggled. Anywhere else and
+                      somebody has to hold two screens in their head to answer
+                      "what does this one cost". */}
+                  <span
+                    className={cn(
+                      "ml-2 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                      isEnabled
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {formatCents(moduleMonthlyCents(mod.key))}
+                    <span className="opacity-70">{t("billing.perMonthShort", "/mo")}</span>
+                  </span>
                   <p className="text-xs text-muted-foreground mt-0.5">{t(moduleI18n.description(mod.key), { defaultValue: mod.description })}</p>
                   {locked && (
                     <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">
