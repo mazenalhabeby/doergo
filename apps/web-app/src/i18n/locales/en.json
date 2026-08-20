@@ -6141,6 +6141,7 @@
     "notePh": "Add a note — inspection, damage, handover…",
     "handedOver": "Changed hands",
     "someone": "A member",
-    "aClient": "A client"
+    "aClient": "A client",
+    "nobodyHas": "Nobody has this one."
   }
 }

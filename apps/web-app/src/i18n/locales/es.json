@@ -6124,6 +6124,7 @@
     "notePh": "Añadir una nota — inspección, daño, entrega…",
     "handedOver": "Cambió de manos",
     "someone": "Un miembro",
-    "aClient": "Un cliente"
+    "aClient": "Un cliente",
+    "nobodyHas": "Nadie tiene este."
   }
 }

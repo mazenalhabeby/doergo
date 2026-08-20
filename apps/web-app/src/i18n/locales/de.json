@@ -6140,6 +6140,7 @@
     "notePh": "Notiz hinzufügen — Prüfung, Schaden, Übergabe…",
     "handedOver": "Besitzer gewechselt",
     "someone": "Ein Mitglied",
-    "aClient": "Ein Kunde"
+    "aClient": "Ein Kunde",
+    "nobodyHas": "Niemand hat dieses."
   }
 }

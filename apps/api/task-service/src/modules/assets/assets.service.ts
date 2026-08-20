@@ -729,8 +729,11 @@ export class AssetsService {
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
       include: {
-        category: { select: { id: true, name: true, color: true, icon: true } },
+        // config comes with the category: the record page is drawn from the
+        // kind's shape, and a second round trip for it would be visible.
+        category: { select: { id: true, name: true, color: true, icon: true, config: true } },
         type: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true, email: true, phone: true } },
         _count: { select: { tasks: true } },
       },
     });
@@ -743,7 +746,17 @@ export class AssetsService {
       throw new ForbiddenException('Asset does not belong to your organization');
     }
 
-    return success(asset);
+    // holderUserId carries no foreign key (removing a member must not block),
+    // so the member is looked up rather than joined. Scoped to this org, and a
+    // member who has since been removed simply resolves to null.
+    const holderUser = asset.holderUserId
+      ? await this.prisma.user.findFirst({
+          where: { id: asset.holderUserId, organizationId: data.organizationId },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+      : null;
+
+    return success({ ...asset, holderUser });
   }
 
   /**
