@@ -4025,6 +4025,12 @@ export const sprintsApi = {
 export interface StatusWorkflow {
   id: string;
   name: string;
+  /**
+   * What the TASK carries throughout its life — sprint, story points, epic,
+   * phase, subtasks, dependencies, crm. Distinct from a status's capabilities,
+   * which say what the member does at one step.
+   */
+  capabilities?: string[];
   isDefault: boolean;
   isActive: boolean;
   organizationId: string;
@@ -4159,6 +4165,8 @@ export const workflowsApi = {
     isDefault?: boolean;
     /** Create it as this space's own. Omit for one the organization can share. */
     spaceId?: string;
+    /** What the TASK carries throughout: sprint, story_points, subtasks… */
+    capabilities?: string[];
     statuses?: Array<{
       name: string;
       key: string;

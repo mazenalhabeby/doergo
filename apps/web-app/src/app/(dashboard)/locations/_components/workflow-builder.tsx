@@ -8,7 +8,8 @@ import { Plus, X, Loader2, AlertCircle, Upload } from "lucide-react"
 
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { resolveTransitions, toStatusKey } from "@/lib/workflow-transitions"
-import { workflowAdvice } from "@hbcfield/shared/client"
+import { workflowAdvice, TYPE_CAPABILITY_MODULE, STEP_CAPABILITY_MODULE } from "@hbcfield/shared/client"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,6 +50,14 @@ interface StatusEntry {
 }
 
 interface WorkflowBuilderProps {
+  /**
+   * The space this flow is being built for. Its enabled modules decide which
+   * capabilities can actually be honoured, so the warnings are specific rather
+   * than a general "some module might be off".
+   */
+  spaceId?: string | null
+  /** Task-type capabilities of the flow being edited. */
+  initialTypeCapabilities?: string[]
   mode: "create" | "edit"
   workflowId?: string
   workflowName?: string
@@ -85,6 +94,18 @@ interface Template {
  * requirement from them, so this list is a label set, not a second source of
  * truth about what they mean.
  */
+
+/** Task-type capabilities, in the order they read best. Keys match shared. */
+const TYPE_CAPABILITY_CHIPS = [
+  { key: "subtasks", labelKey: "modules.subtasks", label: "Subtasks" },
+  { key: "dependencies", labelKey: "modules.dependencies", label: "Dependencies" },
+  { key: "sprint", labelKey: "modules.sprints", label: "Sprints" },
+  { key: "story_points", labelKey: "modules.story_points", label: "Story Points" },
+  { key: "epic", labelKey: "modules.epics", label: "Epics" },
+  { key: "phase", labelKey: "modules.phases", label: "Phases" },
+  { key: "crm", labelKey: "modules.crm", label: "CRM" },
+] as const
+
 const BUILDER_CAPABILITIES = [
   { key: "gps", labelKey: "workflows.capabilities.gps", label: "GPS", hintKey: "workflows.capabilities.gpsHint", hint: "Records the route while the member is at this step. Needs Route tracking." },
   { key: "timer", labelKey: "workflows.capabilities.timer", label: "Timer", hintKey: "workflows.capabilities.timerHint", hint: "Counts time on the job. Needs Time tracking." },
@@ -107,6 +128,7 @@ const StatusRow = memo(function StatusRow({
   onChange,
   onRemove,
   autoFocus,
+  moduleOn,
 }: {
   status: StatusEntry
   index: number
@@ -115,6 +137,8 @@ const StatusRow = memo(function StatusRow({
   onChange: (index: number, updates: Partial<StatusEntry>) => void
   onRemove: (index: number) => void
   autoFocus?: boolean
+  /** Is this module switched on in the space? Drives the amber warning. */
+  moduleOn: (key: string) => boolean
 }) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -224,18 +248,32 @@ const StatusRow = memo(function StatusRow({
       <div className="flex flex-wrap gap-1 pl-8 pr-8">
         {BUILDER_CAPABILITIES.map((cap) => {
           const on = caps.includes(cap.key)
+          // Selected, but the module it needs is off in this space — so the step
+          // would ask for something that cannot happen. Said here, while it can
+          // still be acted on, instead of only when the type is offered.
+          const unmet = on && !moduleOn(STEP_CAPABILITY_MODULE[cap.key] ?? "")
           return (
             <button
               key={cap.key}
               type="button"
               onClick={() => toggleCap(cap.key)}
-              title={t(cap.hintKey, cap.hint)}
+              title={
+                unmet
+                  ? t("workflows.capabilities.moduleOff", {
+                      module: STEP_CAPABILITY_MODULE[cap.key],
+                      defaultValue: 'The "{{module}}" module is off in this space, so this step cannot do it yet.',
+                    })
+                  : t(cap.hintKey, cap.hint)
+              }
               className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${
-                on
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                  : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
+                unmet
+                  ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                  : on
+                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
               }`}
             >
+              {unmet && "⚠ "}
               {t(cap.labelKey, cap.label)}
             </button>
           )
@@ -275,6 +313,8 @@ const toKey = toStatusKey
  */
 const WorkflowBuilder = memo(function WorkflowBuilder({
   mode,
+  spaceId = null,
+  initialTypeCapabilities,
   workflowId,
   workflowName: initialName,
   initialStatuses,
@@ -306,6 +346,14 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       })),
   }))
 
+  // What this SPACE has switched on. A capability whose module is off here is
+  // decoration: the step would ask the member for something the space cannot do.
+  const { hasModule } = useSpaceModules(spaceId)
+  // Without a space (creating one), nothing is known to be off — so nothing is
+  // warned about, rather than everything being warned about.
+  const moduleOn = useCallback((key: string) => (spaceId ? hasModule(key) : true), [spaceId, hasModule])
+
+  const [typeCapabilities, setTypeCapabilities] = useState<string[]>(initialTypeCapabilities ?? [])
   const [name, setName] = useState(initialName || "")
   const [statuses, setStatuses] = useState<StatusEntry[]>(() => {
     if (initialStatuses && initialStatuses.length > 0) {
@@ -401,7 +449,11 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
     try {
       if (mode === "create") {
         // Create the workflow
-        const workflow = await workflowsApi.create({ name: trimmedName })
+        const workflow = await workflowsApi.create({
+          name: trimmedName,
+          capabilities: typeCapabilities,
+          ...(spaceId ? { spaceId } : {}),
+        })
         if (!workflow) throw new Error(t("workflows.builder.toast.createFailedGeneric"))
 
         // Add statuses sequentially
@@ -424,9 +476,12 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         onCreated?.(workflow.id)
       } else if (mode === "edit" && workflowId) {
         // Update workflow name if changed
-        if (trimmedName !== initialName) {
-          await workflowsApi.update(workflowId, { name: trimmedName })
-        }
+        // Name and type capabilities travel together — one request, and no
+        // half-saved state if the second would have failed.
+        await workflowsApi.update(workflowId, {
+          ...(trimmedName !== initialName ? { name: trimmedName } : {}),
+          capabilities: typeCapabilities,
+        })
 
         // Determine added, updated, and removed statuses
         const existingIds = new Set(
@@ -537,6 +592,53 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         </p>
       )}
 
+      {/*
+        What the TASK carries, as opposed to what a member does at a step.
+
+        A task belongs to a sprint from creation to close — it is not "in a
+        sprint at step three" — so these sit above the steps rather than on one.
+        Twelve of the eighteen modules had no way to be declared by a task type
+        before this row existed, which is why nothing could warn about them.
+      */}
+      <div className="space-y-1.5">
+        <Label className="text-xs">{t("workflows.builder.typeCapabilities", "This task type uses")}</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {TYPE_CAPABILITY_CHIPS.map((cap) => {
+            const on = typeCapabilities.includes(cap.key)
+            const unmet = on && !moduleOn(TYPE_CAPABILITY_MODULE[cap.key] ?? "")
+            return (
+              <button
+                key={cap.key}
+                type="button"
+                onClick={() =>
+                  setTypeCapabilities((prev) =>
+                    prev.includes(cap.key) ? prev.filter((c) => c !== cap.key) : [...prev, cap.key],
+                  )
+                }
+                title={
+                  unmet
+                    ? t("workflows.capabilities.moduleOff", {
+                        module: TYPE_CAPABILITY_MODULE[cap.key],
+                        defaultValue: 'The "{{module}}" module is off in this space, so this step cannot do it yet.',
+                      })
+                    : undefined
+                }
+                className={`rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                  unmet
+                    ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                    : on
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                      : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {unmet && "⚠ "}
+                {t(cap.labelKey, cap.label)}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Statuses */}
       <div className="space-y-1.5">
         <Label className="text-xs">{t("workflows.builder.statuses")}</Label>
@@ -551,6 +653,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
               onChange={handleStatusChange}
               onRemove={handleRemoveStatus}
               autoFocus={lastAddedIndex === index}
+              moduleOn={moduleOn}
             />
           ))}
           <button

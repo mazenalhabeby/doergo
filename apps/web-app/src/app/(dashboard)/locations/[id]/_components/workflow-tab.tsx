@@ -159,8 +159,10 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
       {editMode && previewWorkflow && (
         <WorkflowBuilder
           mode="edit"
+          spaceId={space.id}
           workflowId={previewWorkflow.id}
           workflowName={previewWorkflow.name}
+          initialTypeCapabilities={previewWorkflow.capabilities ?? []}
           initialStatuses={previewWorkflow.statuses}
           onSaved={() => {
             setEditMode(false)
@@ -175,6 +177,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
       {showCreateBuilder && (
         <WorkflowBuilder
           mode="create"
+          spaceId={space.id}
           onCreated={(newId) => {
             setSelectedId(newId)
             setShowCreateBuilder(false)

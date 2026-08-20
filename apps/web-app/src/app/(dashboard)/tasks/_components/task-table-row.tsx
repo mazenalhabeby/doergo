@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES } from "@/lib/constants"
 import {
   DropdownMenu,
@@ -60,7 +61,15 @@ function TaskTableRowInner({
   isDragging = false,
 }: TaskTableRowProps) {
   const { t } = useTranslation()
-  const { hasModule, user } = useAuth()
+/*
+    Modules are the SPACE's, and a board can show tasks from several spaces at
+    once — so the row asks about its OWN task's space rather than the
+    organization's set. Cached per space by the hook, so a board of fifty rows
+    from three spaces makes three lookups, not fifty.
+  */
+  const { hasModule: orgHasModule, user } = useAuth()
+  const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
+  const hasModule = task.spaceId ? spaceHasModule : orgHasModule
   const router = useRouter()
   const statusConfig = getStatusConfig(task.status)
 

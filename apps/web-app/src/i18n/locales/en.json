@@ -3717,7 +3717,8 @@
       },
       "noFinalStatus": "Mark a step as finished — otherwise nothing on this task type can ever be completed.",
       "noTemplates": "No starter flows available.",
-      "fields": "Fields collected on this task type"
+      "fields": "Fields collected on this task type",
+      "typeCapabilities": "This task type uses"
     },
     "page": {
       "title": "Task Types",
@@ -3805,7 +3806,8 @@
       "report": "Report",
       "reportHint": "Work performed and parts used. Needs Service reports.",
       "form": "Form",
-      "formHint": "Visit notes or an outcome form. Needs Custom fields."
+      "formHint": "Visit notes or an outcome form. Needs Custom fields.",
+      "moduleOff": "The \"{{module}}\" module is off in this space, so this cannot happen yet."
     }
   },
   "assets": {

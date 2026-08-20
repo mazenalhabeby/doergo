@@ -22,6 +22,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { useAuth } from "@/contexts/auth-context"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useWorkflow } from "@/hooks/use-org-workflow"
 import { mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants"
@@ -93,7 +94,15 @@ function TaskContextMenuInner({
     : ((STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[])
   const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
   const router = useRouter()
-  const { hasModule } = useAuth()
+/*
+    Modules are the SPACE's, and a board can show tasks from several spaces at
+    once — so the row asks about its OWN task's space rather than the
+    organization's set. Cached per space by the hook, so a board of fifty rows
+    from three spaces makes three lookups, not fifty.
+  */
+  const { hasModule: orgHasModule } = useAuth()
+  const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
+  const hasModule = task.spaceId ? spaceHasModule : orgHasModule
 
   return (
     <ContextMenu>

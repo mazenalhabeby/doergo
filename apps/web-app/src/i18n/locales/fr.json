@@ -3692,7 +3692,8 @@
       },
       "noFinalStatus": "Marquez une étape comme terminée — sinon rien ne pourra jamais être achevé sur ce type de tâche.",
       "noTemplates": "Aucun flux de départ disponible.",
-      "fields": "Champs recueillis sur ce type de tâche"
+      "fields": "Champs recueillis sur ce type de tâche",
+      "typeCapabilities": "Ce type de tâche utilise"
     },
     "page": {
       "title": "Types de tâche",
@@ -3780,7 +3781,8 @@
       "report": "Rapport",
       "reportHint": "Travail effectué et pièces utilisées. Nécessite les rapports d’intervention.",
       "form": "Formulaire",
-      "formHint": "Notes de visite ou formulaire de résultat. Nécessite les champs personnalisés."
+      "formHint": "Notes de visite ou formulaire de résultat. Nécessite les champs personnalisés.",
+      "moduleOff": "Le module « {{module}} » est désactivé dans cet espace, cela ne peut pas encore se produire."
     }
   },
   "assets": {

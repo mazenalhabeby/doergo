@@ -1,20 +1,42 @@
 import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY, minTierForFeature } from '@hbcfield/shared';
+import { IS_PUBLIC_KEY, minTierForFeature, AVAILABLE_MODULES, tierAllows, type PlanTier } from '@hbcfield/shared';
 import { MODULE_KEY } from '../decorators/require-module.decorator';
 import { isFeatureEntitled } from '../entitlements';
+import { SpaceModulesService } from '../space-modules.service';
+
+const MODULE_KEYS = new Set<string>(AVAILABLE_MODULES.map((m) => m.key));
 
 /**
- * Rejects mutations whose required FEATURE module is not available to the org —
- * both the plan TIER must entitle it AND the org must have it enabled
- * (`isFeatureEntitled`). Reads planTier/orgModules off the cached token, no DB.
+ * Rejects mutations whose required FEATURE module is not available.
+ *
+ * Two questions, and they have different scopes:
+ *
+ *   TIER   — what the organization pays for. Always organization-wide.
+ *   MODULE — what is switched on, which is configured PER SPACE with the
+ *            organization's set as the fallback.
+ *
+ * This used to ask both of the organization, off the cached token with no
+ * lookup. That made a space's Modules tab decorative for everything except the
+ * workflow gate: switching Checklists off in one space left the endpoint
+ * accepting writes, because the organization still had it on.
+ *
+ * So the space is resolved — from an explicit spaceId on the request, or from
+ * the task the request is about — and its modules decide. Both are cached (see
+ * SpaceModulesService); an unresolvable space falls back to the organization,
+ * because a guard that fails closed on a slow lookup takes a working feature
+ * away from everyone.
+ *
  * Returns 402 (same as PlanGuard) so the upgrade CTA fires consistently.
  */
 @Injectable()
 export class ModuleGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private readonly spaceModules: SpaceModulesService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -35,18 +57,70 @@ export class ModuleGuard implements CanActivate {
     const user = req.user;
     if (!user) return true;
 
-    if (!isFeatureEntitled(user, required)) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.PAYMENT_REQUIRED,
-          message: `The "${required}" feature is not available on your plan.`,
-          error: 'PlanUpgradeRequired',
-          feature: required,
-          requiredTier: minTierForFeature(required),
-        },
-        HttpStatus.PAYMENT_REQUIRED,
-      );
+    // The tier question is the organization's, whatever space this touches.
+    if (!tierAllows((user.planTier ?? null) as PlanTier | null, required)) {
+      throw this.refuse(required);
     }
+    // Capabilities (recurring, invoicing…) are tier-gated only — nothing to
+    // switch on per space, so there is no space to resolve.
+    if (!MODULE_KEYS.has(required)) return true;
+
+    const spaceModules = await this.resolveSpaceModules(req, user);
+    if (spaceModules) {
+      if (!spaceModules.includes(required)) throw this.refuse(required, true);
+      return true;
+    }
+
+    // No space in play (or it could not be resolved): the organization's set.
+    if (!isFeatureEntitled(user, required)) throw this.refuse(required);
     return true;
+  }
+
+  /**
+   * Whose modules govern this request.
+   *
+   * An explicit spaceId is trusted only as far as the org scoping in
+   * `get_effective_modules`, which refuses a space belonging to another tenant —
+   * so a forged id resolves to nothing and falls back rather than widening.
+   */
+  private async resolveSpaceModules(req: any, user: any): Promise<string[] | null> {
+    const orgId = user.organizationId;
+    if (!orgId) return null;
+
+    const explicit =
+      req.body?.spaceId ?? req.params?.spaceId ?? req.query?.spaceId ?? null;
+    if (typeof explicit === 'string' && explicit) {
+      return this.spaceModules.forSpace(explicit, orgId);
+    }
+
+    // A task route carries the task, and the task carries the space.
+    const taskId = req.params?.taskId ?? (this.isTaskRoute(req) ? req.params?.id : null);
+    if (typeof taskId === 'string' && taskId) {
+      const spaceId = await this.spaceModules.spaceOfTask(taskId, orgId);
+      if (spaceId) return this.spaceModules.forSpace(spaceId, orgId);
+    }
+
+    return null;
+  }
+
+  /** `:id` means different things per controller; only trust it under /tasks. */
+  private isTaskRoute(req: any): boolean {
+    const url: string = req.route?.path ?? req.originalUrl ?? req.url ?? '';
+    return url.includes('/tasks/');
+  }
+
+  private refuse(feature: string, fromSpace = false): HttpException {
+    return new HttpException(
+      {
+        statusCode: HttpStatus.PAYMENT_REQUIRED,
+        message: fromSpace
+          ? `The "${feature}" module is switched off in this space.`
+          : `The "${feature}" feature is not available on your plan.`,
+        error: fromSpace ? 'ModuleDisabled' : 'PlanUpgradeRequired',
+        feature,
+        ...(fromSpace ? {} : { requiredTier: minTierForFeature(feature) }),
+      },
+      HttpStatus.PAYMENT_REQUIRED,
+    );
   }
 }

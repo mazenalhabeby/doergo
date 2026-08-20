@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
-import { success, missingModulesForWorkflow, statusesRequiringModule, validateWorkflow, spaceMayOffer } from '@hbcfield/shared';
+import { success, missingModulesForWorkflow, explainModuleRequirement, validateWorkflow, spaceMayOffer, isTypeCapability } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 
@@ -77,6 +77,8 @@ export class WorkflowsService {
      * offerable by any of its spaces. See `workflow-scope` in shared.
      */
     ownerSpaceId?: string | null;
+    /** What the TASK carries throughout — sprint, story points, subtasks… */
+    capabilities?: string[];
     /** Optional initial statuses — e.g. when starting from a template. */
     statuses?: Array<{
       name: string;
@@ -141,6 +143,9 @@ export class WorkflowsService {
           isDefault: (data.isDefault && !data.ownerSpaceId) || false,
           organizationId: data.organizationId,
           ownerSpaceId: data.ownerSpaceId ?? null,
+          // Only TYPE capabilities here. A step capability on the type would
+          // name a module nothing at this level can honour.
+          capabilities: (data.capabilities ?? []).filter(isTypeCapability),
           ...(data.statuses?.length
             ? {
                 statuses: {
@@ -187,6 +192,7 @@ export class WorkflowsService {
     organizationId: string;
     name?: string;
     isActive?: boolean;
+    capabilities?: string[];
   }) {
     const existing = await this.prisma.statusWorkflow.findUnique({
       where: { id: data.id },
@@ -223,6 +229,9 @@ export class WorkflowsService {
         data: {
           ...(newName ? { name: newName } : {}),
           ...(data.isActive !== undefined && { isActive: data.isActive }),
+          ...(data.capabilities !== undefined && {
+            capabilities: data.capabilities.filter(isTypeCapability),
+          }),
         },
         include: {
           statuses: { orderBy: { position: 'asc' } },
@@ -705,6 +714,7 @@ export class WorkflowsService {
         where: { id: data.workflowId },
         select: {
           ownerSpaceId: true,
+          capabilities: true,
           statuses: {
             select: { key: true, name: true, position: true, isFinal: true, isCanceled: true, transitions: true, capabilities: true },
           },
@@ -755,10 +765,13 @@ export class WorkflowsService {
       enabled = (org?.enabledModules as string[] | null) ?? [];
     }
 
-    const missing = missingModulesForWorkflow(workflow.statuses, enabled);
+    const missing = missingModulesForWorkflow(workflow.statuses, enabled, workflow.capabilities);
     if (missing.length > 0) {
       const detail = missing
-        .map((m) => `${m} (${statusesRequiringModule(workflow.statuses, m).join(', ')})`)
+        .map((m) => {
+          const why = explainModuleRequirement(workflow.statuses, workflow.capabilities, m);
+          return why ? `${m} (${why})` : m;
+        })
         .join('; ');
       throw new BadRequestException(
         `This task type needs modules this space has not enabled: ${detail}`,

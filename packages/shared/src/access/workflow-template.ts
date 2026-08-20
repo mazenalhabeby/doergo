@@ -22,7 +22,7 @@
  * tenant clone all judge a template identically.
  */
 
-import { CAPABILITY_MODULE } from './workflow-modules';
+import { isStepCapability, isTypeCapability } from './workflow-modules';
 
 /**
  * Bounds on what a template may contain.
@@ -81,9 +81,11 @@ function normalizeCapabilities(value: unknown): string[] {
   const out: string[] = [];
   for (const raw of value) {
     const cap = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
-    // An unknown capability would require a module nothing maps to — it could
-    // never be satisfied, so a workflow carrying one could never be attached.
-    if (cap && CAPABILITY_MODULE[cap] && !out.includes(cap)) out.push(cap);
+    // STEP capabilities only. A task-type one ("this task has a sprint") cannot
+    // be honoured at a moment in the flow, and an unknown one would require a
+    // module nothing maps to — never satisfiable, so a workflow carrying it
+    // could never be attached anywhere.
+    if (cap && isStepCapability(cap) && !out.includes(cap)) out.push(cap);
   }
   return out;
 }
@@ -142,4 +144,15 @@ export function normalizeTemplateStatuses(raw: unknown): TemplateStatusShape[] {
   return out
     .sort((a, b) => a.position - b.position)
     .map((s, i) => ({ ...s, position: i }));
+}
+
+/** The task-type capabilities on a stored template, cleaned the same way. */
+export function normalizeTypeCapabilities(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const entry of raw) {
+    const cap = typeof entry === 'string' ? entry.trim().toLowerCase() : '';
+    if (cap && isTypeCapability(cap) && !out.includes(cap)) out.push(cap);
+  }
+  return out;
 }

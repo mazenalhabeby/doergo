@@ -8,6 +8,7 @@ import { Calendar, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
+import { useSpaceModules } from "@/hooks/use-space-modules"
 import { getPriorityConfig } from "@/lib/constants"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { TaskContextMenu, type TaskContextMenuActions } from "./task-context-menu"
@@ -44,7 +45,15 @@ export const TaskCard = React.memo(function TaskCard({
   className,
 }: TaskCardProps) {
   const { t } = useTranslation()
-  const { hasModule } = useAuth()
+/*
+    Modules are the SPACE's, and a board can show tasks from several spaces at
+    once — so the row asks about its OWN task's space rather than the
+    organization's set. Cached per space by the hook, so a board of fifty rows
+    from three spaces makes three lookups, not fifty.
+  */
+  const { hasModule: orgHasModule } = useAuth()
+  const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
+  const hasModule = task.spaceId ? spaceHasModule : orgHasModule
   const priorityConfig = getPriorityConfig(task.priority)
   const PriorityIcon = priorityConfig.icon
   const isOverdue = isTaskOverdue(task)

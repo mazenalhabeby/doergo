@@ -2755,6 +2755,16 @@ model StatusWorkflow {
   ownerSpaceId       String?
   ownerSpace         CompanyLocation?        @relation("SpaceOwnedWorkflows", fields: [ownerSpaceId], references: [id], onDelete: Cascade)
   name               String // "Default", "Field Service", "Logistics", etc.
+  /**
+   * What the TASK carries throughout its life — sprint, story points, epic,
+   * phase, subtasks, dependencies, crm.
+   *
+   * Separate from WorkflowStatus.capabilities, which say what the member does
+   * at one step. "A task belongs to a sprint" is not true at step three and
+   * false at step four, so it cannot live on a status. Both lists feed the same
+   * module requirement (see `modulesRequiredByWorkflow` in shared).
+   */
+  capabilities       String[]                @default([])
   isDefault          Boolean                 @default(false)
   isActive           Boolean                 @default(true)
   createdAt          DateTime                @default(now())

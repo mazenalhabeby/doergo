@@ -3717,7 +3717,8 @@
       },
       "noFinalStatus": "Markieren Sie einen Schritt als abgeschlossen — sonst kann bei diesem Aufgabentyp nichts je fertiggestellt werden.",
       "noTemplates": "Keine Startabläufe verfügbar.",
-      "fields": "Felder, die bei dieser Aufgabenart erfasst werden"
+      "fields": "Felder, die bei dieser Aufgabenart erfasst werden",
+      "typeCapabilities": "Diese Aufgabenart nutzt"
     },
     "page": {
       "title": "Aufgabentypen",
@@ -3805,7 +3806,8 @@
       "report": "Bericht",
       "reportHint": "Ausgeführte Arbeiten und verwendete Teile. Benötigt Serviceberichte.",
       "form": "Formular",
-      "formHint": "Besuchsnotizen oder Ergebnisformular. Benötigt benutzerdefinierte Felder."
+      "formHint": "Besuchsnotizen oder Ergebnisformular. Benötigt benutzerdefinierte Felder.",
+      "moduleOff": "Das Modul „{{module}}“ ist in diesem Bereich aus, das ist hier noch nicht möglich."
     }
   },
   "assets": {

@@ -13,6 +13,9 @@ import {
 } from 'class-validator';
 
 const TASK_CAPABILITIES = ['gps', 'timer', 'checklist', 'photos', 'signature', 'report', 'form'];
+// What the TASK carries throughout its life, as opposed to what a member does
+// at one step. Kept in step with TYPE_CAPABILITY_MODULE in shared.
+const TYPE_CAPABILITIES = ['subtasks', 'dependencies', 'sprint', 'story_points', 'epic', 'phase', 'crm'];
 import { Type } from 'class-transformer';
 
 // ==================== Workflow DTOs ====================
@@ -36,6 +39,15 @@ export class CreateWorkflowDto {
   @IsOptional()
   @MaxLength(40)
   spaceId?: string;
+
+  @ApiPropertyOptional({
+    description: 'What the TASK carries throughout: sprint, story_points, epic, phase, subtasks, dependencies, crm',
+    isArray: true,
+  })
+  @IsArray()
+  @IsOptional()
+  @IsIn(TYPE_CAPABILITIES, { each: true })
+  capabilities?: string[];
 
   @ApiPropertyOptional({
     description: 'Optional initial statuses (e.g. when starting from a template)',
@@ -71,6 +83,15 @@ export class UpdateWorkflowDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'What the TASK carries throughout: sprint, story_points, epic, phase, subtasks, dependencies, crm',
+    isArray: true,
+  })
+  @IsArray()
+  @IsOptional()
+  @IsIn(TYPE_CAPABILITIES, { each: true })
+  capabilities?: string[];
 }
 
 // ==================== Workflow Status DTOs ====================

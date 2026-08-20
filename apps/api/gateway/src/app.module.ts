@@ -54,6 +54,7 @@ import { CustomerConfinementGuard } from './common/guards/customer-confinement.g
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PlanGuard } from './common/guards/plan.guard';
 import { ModuleGuard } from './common/guards/module.guard';
+import { SpaceModulesService } from './common/space-modules.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 @Module({
@@ -177,6 +178,10 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
       provide: APP_GUARD,
       useClass: PlanGuard,
     },
+    // ModuleGuard resolves the SPACE a request touches, so it needs the
+    // resolver injected — provided here because a global guard is constructed
+    // by the root injector.
+    SpaceModulesService,
     {
       provide: APP_GUARD,
       useClass: ModuleGuard,

@@ -3701,7 +3701,8 @@
       },
       "noFinalStatus": "Marca un paso como finalizado; de lo contrario, nada en este tipo de tarea podrá completarse.",
       "noTemplates": "No hay flujos iniciales disponibles.",
-      "fields": "Campos que se recogen en este tipo de tarea"
+      "fields": "Campos que se recogen en este tipo de tarea",
+      "typeCapabilities": "Este tipo de tarea usa"
     },
     "page": {
       "title": "Tipos de tarea",
@@ -3789,7 +3790,8 @@
       "report": "Informe",
       "reportHint": "Trabajo realizado y piezas usadas. Necesita Informes de servicio.",
       "form": "Formulario",
-      "formHint": "Notas de visita o formulario de resultado. Necesita Campos personalizados."
+      "formHint": "Notas de visita o formulario de resultado. Necesita Campos personalizados.",
+      "moduleOff": "El módulo «{{module}}» está desactivado en este espacio, así que esto todavía no puede ocurrir."
     }
   },
   "assets": {
