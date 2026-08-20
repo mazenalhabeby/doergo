@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SectionHeader, EmptyState } from "./section-header"
 import { AssetKindDialog } from "./asset-kind-dialog"
-import { AssetRecordDialog, type AssetRecord } from "./asset-record-dialog"
+import { AssetRecordDialog, type AssetRecord } from "@/components/assets/asset-record-dialog"
 
 /**
  * What this space owns.

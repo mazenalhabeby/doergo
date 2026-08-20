@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog"
 
 const LocationPicker = dynamic(
-  () => import("../../_components/location-picker"),
+  () => import("@/app/(dashboard)/locations/_components/location-picker"),
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
 ) as unknown as React.ComponentType<{
   lat: number | null; lng: number | null; radius: number; address: string

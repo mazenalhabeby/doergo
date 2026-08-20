@@ -863,7 +863,7 @@ export class AssetsService {
       include: {
         // config comes with the category: the record page is drawn from the
         // kind's shape, and a second round trip for it would be visible.
-        category: { select: { id: true, name: true, color: true, icon: true, config: true } },
+        category: { select: { id: true, name: true, color: true, icon: true, config: true, spaceId: true } },
         type: { select: { id: true, name: true } },
         customer: { select: { id: true, name: true, email: true, phone: true } },
         _count: { select: { tasks: true } },

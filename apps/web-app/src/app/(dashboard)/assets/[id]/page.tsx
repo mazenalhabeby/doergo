@@ -6,11 +6,12 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft, Clock, ListChecks, Loader2, Mail, MapPin, Package, Phone, Plus, Smartphone, Trash2, UserCheck,
+  ArrowLeft, Clock, ListChecks, Loader2, Mail, MapPin, Package, Phone, Plus, Settings2, Smartphone, Trash2, UserCheck,
 } from "lucide-react"
 
 import { assetsApi, type AssetActivity, type AssetCategory, type AssetMoneyEntry } from "@/lib/api"
 import { normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents, type KindShape } from "@hbcfield/shared/client"
+import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -124,6 +125,35 @@ export default function AssetRecordPage() {
             </p>
           )}
         </div>
+
+        {/* Editing has to be reachable from the record itself. Without this the
+            only way to correct anything — or add a field — was to go back to the
+            space and find the row again. */}
+        {kind && (
+          <AssetRecordDialog
+            spaceId={kind.spaceId ?? ""}
+            kind={kind}
+            existing={{
+              id: asset.id,
+              name: asset.name,
+              locationAddress: asset.locationAddress,
+              locationLat: asset.locationLat,
+              locationLng: asset.locationLng,
+              holderUserId: asset.holderUserId,
+              customerId: asset.customer?.id ?? null,
+              details: asset.details,
+            }}
+            onSaved={() => {
+              qc.invalidateQueries({ queryKey: ["asset", id] })
+              qc.invalidateQueries({ queryKey: ["asset-activities", id] })
+            }}
+            trigger={
+              <Button variant="outline" size="sm" className="shrink-0">
+                <Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}
+              </Button>
+            }
+          />
+        )}
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[300px_1fr]">
