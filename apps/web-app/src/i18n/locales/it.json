@@ -6101,7 +6101,12 @@
     "listName": "Ricambi",
     "listColumns": "Colonne",
     "listColumn": "Codice",
-    "listNeedsColumn": "Una tabella ha bisogno di almeno una colonna, altrimenti viene scartata."
+    "listNeedsColumn": "Una tabella ha bisogno di almeno una colonna, altrimenti viene scartata.",
+    "rolePlain": "Una tabella",
+    "roleParts": "Catalogo ricambi",
+    "roleFaults": "Codici di errore",
+    "sharedOn": "Uguale per tutti",
+    "sharedOff": "Diverso su ciascuno"
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
@@ -6147,5 +6152,18 @@
     "empty": "Non c’è ancora nulla",
     "noMatch": "Nessun risultato",
     "gone": "Quella tabella non è più su questo tipo."
+  },
+  "assetFaults": {
+    "search": "Cerca un codice o un sintomo…",
+    "empty": "Nessun codice di errore",
+    "cause": "Causa",
+    "fix": "Soluzione",
+    "partMissing": "non è nel catalogo ricambi"
+  },
+  "assetStructure": {
+    "title": "Le sue parti",
+    "here": "qui",
+    "inside": "{{count}} dentro",
+    "empty": "Niente dentro. Crea un record e mettilo qui dalla sua pagina."
   }
 }

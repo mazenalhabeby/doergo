@@ -10,9 +10,14 @@ import {
 } from "lucide-react"
 
 import { assetsApi, type AssetActivity, type AssetCategory, type AssetMoneyEntry } from "@/lib/api"
-import { normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents, type KindShape } from "@hbcfield/shared/client"
+import {
+  normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents, partsList,
+  type KindShape,
+} from "@hbcfield/shared/client"
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { AssetListTable } from "@/components/assets/asset-list-table"
+import { AssetFaults } from "@/components/assets/asset-faults"
+import { AssetStructure } from "@/components/assets/asset-structure"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -243,6 +248,7 @@ export default function AssetRecordPage() {
                 ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.entries.length || null] as const]
                 : []),
               ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
+              ["structure", t("assetStructure.title", "Parts of it"), null] as const,
             ] as const).map(([key, label, count]) => (
               <button
                 key={key}
@@ -260,14 +266,21 @@ export default function AssetRecordPage() {
             ))}
           </div>
 
-          {tab.startsWith("list:") ? (
+          {tab === "structure" ? (
+            <AssetStructure assetId={id} />
+          ) : tab.startsWith("list:") ? (
             (() => {
               const list = shape.lists.find((l) => `list:${l.label}` === tab)
               // The tab can outlive its list if the kind is edited while the
               // record is open; fall back rather than render nothing at all.
-              return list
-                ? <AssetListTable assetId={id} list={list} />
-                : <p className="py-8 text-center text-sm text-muted-foreground">{t("assetLists.gone", "That table is no longer on this kind.")}</p>
+              if (!list) {
+                return <p className="py-8 text-center text-sm text-muted-foreground">{t("assetLists.gone", "That table is no longer on this kind.")}</p>
+              }
+              // A fault library gets the lookup a technician can act on; every
+              // other table is a table.
+              return list.role === "faults"
+                ? <AssetFaults assetId={id} list={list} parts={partsList(shape)} />
+                : <AssetListTable assetId={id} list={list} />
             })()
           ) : tab === "money" ? (
             <MoneyPanel

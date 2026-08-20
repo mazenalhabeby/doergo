@@ -185,9 +185,11 @@ describe('money on a kind', () => {
 import { findKindList, normalizeListRow, listRowIsEmpty } from '@hbcfield/shared';
 
 describe('tables on a kind', () => {
-  it('keeps a list with its columns', () => {
+  it('keeps a list with its columns, plain and per-record unless told otherwise', () => {
     const s = shapeOf({ lists: [{ label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] }] });
-    expect(s.lists).toEqual([{ label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] }]);
+    expect(s.lists).toEqual([
+      { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }], role: 'plain', shared: false },
+    ]);
   });
 
   it('drops a table with no columns — there is nothing to put in it', () => {
@@ -216,19 +218,62 @@ describe('tables on a kind', () => {
   });
 
   it('keeps only the columns the list declares, and always all of them', () => {
-    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] };
+    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }], role: 'plain' as const, shared: false };
     const row = normalizeListRow(list, { Code: 'HYD-8842', Qty: '2', Sneaky: 'x' });
     expect(row).toEqual({ Code: 'HYD-8842', Qty: '2' });
   });
 
   it('gives a missing column an empty value rather than leaving it absent', () => {
     // A column the row has never had must still render as an empty cell.
-    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] };
+    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }], role: 'plain' as const, shared: false };
     expect(normalizeListRow(list, { Code: 'X' })).toEqual({ Code: 'X', Qty: '' });
   });
 
   it('knows a row where every cell is blank is not worth storing', () => {
     expect(listRowIsEmpty({ Code: '', Qty: '  ' })).toBe(true);
     expect(listRowIsEmpty({ Code: 'X', Qty: '' })).toBe(false);
+  });
+});
+
+import { partsList, faultsList, partLinkColumn, partCodeColumn } from '@hbcfield/shared';
+
+describe('catalogues and fault codes', () => {
+  const kind = shapeOf({ lists: [
+    { label: 'Parts', role: 'parts', columns: [{ label: 'Code' }, { label: 'Name' }] },
+    { label: 'Fault codes', role: 'faults', columns: [{ label: 'Code' }, { label: 'Meaning' }, { label: 'Part' }] },
+    { label: 'Keys', columns: [{ label: 'Code' }] },
+  ] });
+
+  it('shares a catalogue by default and keeps a plain table per record', () => {
+    // A parts list and a fault library are identical for every machine of a
+    // model; typing them into each one guarantees they drift apart.
+    expect(partsList(kind)!.shared).toBe(true);
+    expect(faultsList(kind)!.shared).toBe(true);
+    expect(kind.lists.find((l) => l.label === 'Keys')!.shared).toBe(false);
+  });
+
+  it('lets an explicit choice override the default either way', () => {
+    const s = shapeOf({ lists: [
+      { label: 'Parts', role: 'parts', shared: false, columns: [{ label: 'Code' }] },
+      { label: 'Keys', shared: true, columns: [{ label: 'Code' }] },
+    ] });
+    expect(partsList(s)!.shared).toBe(false);
+    expect(s.lists.find((l) => l.label === 'Keys')!.shared).toBe(true);
+  });
+
+  it('treats an unknown role as a plain table', () => {
+    const s = shapeOf({ lists: [{ label: 'X', role: 'nonsense', columns: [{ label: 'A' }] }] });
+    expect(s.lists[0]!.role).toBe('plain');
+  });
+
+  it('finds the columns that tie a fault to a part', () => {
+    expect(partLinkColumn(faultsList(kind)!)).toBe('Part');
+    expect(partCodeColumn(partsList(kind)!)).toBe('Code');
+  });
+
+  it('reports no link when the fault table has no Part column', () => {
+    // Not an error: a kind may list faults without naming parts.
+    const s = shapeOf({ lists: [{ label: 'F', role: 'faults', columns: [{ label: 'Code' }] }] });
+    expect(partLinkColumn(faultsList(s)!)).toBeNull();
   });
 });

@@ -1838,6 +1838,19 @@ export const assetsApi = {
     return response.data;
   },
 
+  // This record's parts, and the path back up to the top.
+  getStructure: async (assetId: string) => {
+    const response = await api.get<{ success: boolean; data: { children: { id: string; name: string; serialNumber?: string | null; _count?: { children: number } }[]; path: { id: string; name: string }[] } }>(`/assets/${assetId}/structure`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? { children: [], path: [] };
+  },
+
+  setParent: async (assetId: string, parentId: string | null) => {
+    const response = await api.patch<{ success: boolean }>(`/assets/${assetId}/parent`, { parentId });
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
   // Money logged against one asset, with the totals for the whole ledger.
   getMoney: async (assetId: string) => {
     const response = await api.get<{ success: boolean; data: AssetMoneySummary }>(`/assets/${assetId}/money`);

@@ -65,10 +65,34 @@ export interface KindMoneyCategory {
  * it needs. A field answers "what is this one's floor"; a list answers "what is
  * in it", which is a different question and needs rows, not a value.
  */
+/**
+ * What a table is FOR.
+ *
+ * 'parts'  a catalogue of spare parts, keyed by a code
+ * 'faults' an error-code lookup: code -> what it means, why, what to do, which
+ *          part. Maintenance systems keep this library against the equipment
+ *          CLASS, not each machine, which is why it lives on the kind.
+ * 'plain'  anything else the customer invents.
+ */
+export type KindListRole = 'plain' | 'parts' | 'faults';
+
 export interface KindList {
   label: string;
   columns: KindField[];
+  role: KindListRole;
+  /**
+   * Shared by every record of this kind, or filled in per record?
+   *
+   * A parts catalogue and a fault-code library are identical for every machine
+   * of a model — typing them into each one would be both wasted work and a
+   * guarantee that they drift apart. Anything specific to one machine (its
+   * meter readings, its keys) stays per record.
+   */
+  shared: boolean;
 }
+
+/** The columns a fault-code table needs to be worth looking at. */
+export const FAULT_COLUMNS = ['Code', 'Meaning', 'Cause', 'Fix', 'Part', 'Safety'] as const;
 
 export interface KindMoney {
   /** Does this kind cost or earn anything worth recording? */
@@ -184,7 +208,18 @@ export function normalizeKindShape(raw: unknown): KindShape {
 
     // A table with no columns has nothing to put in it.
     if (columns.length === 0) continue;
-    lists.push({ label, columns });
+
+    const role: KindListRole =
+      e.role === 'parts' || e.role === 'faults' ? e.role : 'plain';
+
+    lists.push({
+      label,
+      columns,
+      role,
+      // A fault library is reference data by nature: default it to shared so the
+      // common case needs no thought, while a plain table stays per record.
+      shared: typeof e.shared === 'boolean' ? e.shared : role !== 'plain',
+    });
   }
 
   return {
@@ -311,4 +346,32 @@ export function normalizeListRow(list: KindList, raw: unknown): Record<string, s
 /** True when every column of a row is blank — nothing worth storing. */
 export function listRowIsEmpty(values: Record<string, string>): boolean {
   return Object.values(values).every((v) => !v.trim());
+}
+
+/** The kind's parts catalogue, if it declares one. */
+export function partsList(shape: KindShape): KindList | null {
+  return shape.lists.find((l) => l.role === 'parts') ?? null;
+}
+
+/** The kind's fault-code library, if it declares one. */
+export function faultsList(shape: KindShape): KindList | null {
+  return shape.lists.find((l) => l.role === 'faults') ?? null;
+}
+
+/**
+ * Which column of a table holds the part code that ties a fault to a part.
+ *
+ * Matched by name rather than position so a customer may reorder or rename
+ * around it; absent simply means the two are not linked, which is a valid
+ * kind rather than an error.
+ */
+export function partLinkColumn(list: KindList): string | null {
+  const hit = list.columns.find((c) => c.label.trim().toLowerCase() === 'part');
+  return hit?.label ?? null;
+}
+
+/** Which column of the parts catalogue is its code. */
+export function partCodeColumn(list: KindList): string | null {
+  const hit = list.columns.find((c) => c.label.trim().toLowerCase() === 'code');
+  return hit?.label ?? list.columns[0]?.label ?? null;
 }

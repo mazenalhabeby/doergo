@@ -6,7 +6,10 @@ import { useMutation } from "@tanstack/react-query"
 import { ArrowDownLeft, ArrowUpRight, ListPlus, Loader2, MapPin, Plus, Table2, Trash2, User, Wallet } from "lucide-react"
 
 import { assetsApi, type AssetCategory } from "@/lib/api"
-import { normalizeKindShape, KIND_SHAPE_LIMITS, type KindShape, type MoneyDirection } from "@hbcfield/shared/client"
+import {
+  normalizeKindShape, KIND_SHAPE_LIMITS, FAULT_COLUMNS,
+  type KindShape, type MoneyDirection, type KindListRole,
+} from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -54,7 +57,7 @@ export function AssetKindDialog({
     setShape((s) => ({ ...s, fields: s.fields.map((f, idx) => (idx === i ? { label } : f)) }))
   const setMoney = (patch: Partial<KindShape["money"]>) =>
     setShape((s) => ({ ...s, money: { ...s.money, ...patch } }))
-  const setList = (i: number, patch: { label?: string; columns?: { label: string }[] }) =>
+  const setList = (i: number, patch: { label?: string; columns?: { label: string }[]; role?: KindListRole; shared?: boolean }) =>
     setShape((s) => ({ ...s, lists: s.lists.map((l, idx) => (idx === i ? { ...l, ...patch } : l)) }))
   const setCategory = (i: number, patch: { label?: string; direction?: MoneyDirection }) =>
     setShape((s) => ({
@@ -285,7 +288,7 @@ export function AssetKindDialog({
               <button
                 type="button"
                 disabled={shape.lists.length >= KIND_SHAPE_LIMITS.maxLists}
-                onClick={() => set("lists", [...shape.lists, { label: "", columns: [{ label: "" }] }])}
+                onClick={() => set("lists", [...shape.lists, { label: "", columns: [{ label: "" }], role: "plain", shared: false }])}
                 className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
               >
                 <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
@@ -301,6 +304,29 @@ export function AssetKindDialog({
                     placeholder={t("assetKinds.listName", "Parts")}
                     maxLength={KIND_SHAPE_LIMITS.maxLabel}
                   />
+                  {/* What the table is for. Choosing Fault codes fills in the
+                      columns a technician actually needs, because a fault
+                      library nobody can act on is just a list of numbers. */}
+                  <select
+                    value={list.role}
+                    onChange={(e) => {
+                      const role = e.target.value as KindListRole
+                      const wantsFaultColumns =
+                        role === "faults" && list.columns.filter((c) => c.label.trim()).length <= 1
+                      setList(i, {
+                        role,
+                        shared: role !== "plain",
+                        ...(wantsFaultColumns
+                          ? { columns: FAULT_COLUMNS.map((label) => ({ label })) }
+                          : {}),
+                      })
+                    }}
+                    className="h-9 shrink-0 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                  >
+                    <option value="plain">{t("assetKinds.rolePlain", "A table")}</option>
+                    <option value="parts">{t("assetKinds.roleParts", "Parts catalogue")}</option>
+                    <option value="faults">{t("assetKinds.roleFaults", "Fault codes")}</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => set("lists", shape.lists.filter((_, idx) => idx !== i))}
@@ -309,6 +335,22 @@ export function AssetKindDialog({
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                </div>
+
+                {/* Typed once for the kind, or filled in per record. A parts
+                    catalogue is the same on every machine of a model; a set of
+                    keys belongs to one flat. */}
+                <div className="flex gap-2 pl-1">
+                  <OwnerBtn
+                    active={list.shared}
+                    onClick={() => setList(i, { shared: true })}
+                    label={t("assetKinds.sharedOn", "Same for every one")}
+                  />
+                  <OwnerBtn
+                    active={!list.shared}
+                    onClick={() => setList(i, { shared: false })}
+                    label={t("assetKinds.sharedOff", "Different on each")}
+                  />
                 </div>
 
                 <div className="pl-1">
@@ -513,6 +555,24 @@ function DirBtn({
       )}
     >
       <Icon className="h-3.5 w-3.5" /> {label}
+    </button>
+  )
+}
+
+/** Typed once for the kind, or filled in per record. */
+function OwnerBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
+        active
+          ? "border-primary bg-primary/10 text-foreground"
+          : "border-border text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {label}
     </button>
   )
 }

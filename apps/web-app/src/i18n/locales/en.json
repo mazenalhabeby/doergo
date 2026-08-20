@@ -6127,7 +6127,12 @@
     "listName": "Parts",
     "listColumns": "Columns",
     "listColumn": "Code",
-    "listNeedsColumn": "A table needs at least one column, or it is dropped."
+    "listNeedsColumn": "A table needs at least one column, or it is dropped.",
+    "rolePlain": "A table",
+    "roleParts": "Parts catalogue",
+    "roleFaults": "Fault codes",
+    "sharedOn": "Same for every one",
+    "sharedOff": "Different on each"
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",
@@ -6173,5 +6178,18 @@
     "empty": "Nothing in here yet",
     "noMatch": "Nothing matches that",
     "gone": "That table is no longer on this kind."
+  },
+  "assetFaults": {
+    "search": "Search a code or a symptom…",
+    "empty": "No fault codes yet",
+    "cause": "Cause",
+    "fix": "Fix",
+    "partMissing": "not in the parts catalogue"
+  },
+  "assetStructure": {
+    "title": "Parts of it",
+    "here": "here",
+    "inside": "{{count}} inside",
+    "empty": "Nothing inside this one. Add a record and put it in here from its own page."
   }
 }

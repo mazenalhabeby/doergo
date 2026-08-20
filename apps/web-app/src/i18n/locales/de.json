@@ -6126,7 +6126,12 @@
     "listName": "Teile",
     "listColumns": "Spalten",
     "listColumn": "Code",
-    "listNeedsColumn": "Eine Tabelle braucht mindestens eine Spalte, sonst entfällt sie."
+    "listNeedsColumn": "Eine Tabelle braucht mindestens eine Spalte, sonst entfällt sie.",
+    "rolePlain": "Eine Tabelle",
+    "roleParts": "Teilekatalog",
+    "roleFaults": "Fehlercodes",
+    "sharedOn": "Für alle gleich",
+    "sharedOff": "Je Eintrag anders"
   },
   "assetRecords": {
     "intro": "Alles dieser Art in diesem Space.",
@@ -6172,5 +6177,18 @@
     "empty": "Noch nichts vorhanden",
     "noMatch": "Keine Treffer",
     "gone": "Diese Tabelle gehört nicht mehr zu dieser Art."
+  },
+  "assetFaults": {
+    "search": "Code oder Symptom suchen…",
+    "empty": "Noch keine Fehlercodes",
+    "cause": "Ursache",
+    "fix": "Behebung",
+    "partMissing": "nicht im Teilekatalog"
+  },
+  "assetStructure": {
+    "title": "Bestandteile",
+    "here": "hier",
+    "inside": "{{count}} enthalten",
+    "empty": "Nichts darin. Legen Sie einen Eintrag an und ordnen Sie ihn hier von seiner eigenen Seite aus ein."
   }
 }

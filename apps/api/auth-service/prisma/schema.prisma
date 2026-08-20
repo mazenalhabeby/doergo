@@ -1140,8 +1140,15 @@ model AssetListRow {
   id             String @id @default(cuid())
   organizationId String
 
-  assetId String
-  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  /// A row belongs to EITHER one record or the KIND (a shared catalogue typed
+  /// once for every machine of that model). Exactly one of these is set —
+  /// enforced by a check constraint, because a row owned by both or by neither
+  /// would be invisible in one place and duplicated in the other.
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   AssetCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   list String
   /// Values keyed by COLUMN LABEL. JSON because the columns are the customer's,
@@ -1155,6 +1162,7 @@ model AssetListRow {
   updatedAt DateTime @updatedAt
 
   @@index([assetId, list, position])
+  @@index([categoryId, list, position])
   @@map("asset_list_rows")
 }
 
@@ -1185,6 +1193,8 @@ model AssetCategory {
 
   types  AssetType[]
   assets Asset[]
+  /// Shared catalogue rows — parts, fault codes — typed once for the kind.
+  listRows AssetListRow[]
 
   // Unique per SPACE now, not per org — two spaces may both have "Vehicles".
   @@unique([organizationId, spaceId, name])
@@ -1257,6 +1267,14 @@ model Asset {
   // mirrors CustomerUnit.details.
   details Json?
 
+  /// Structure. A machine breaks down into subunits and components, to whatever
+  /// depth the equipment warrants (ISO 14224 levels 6-9). Self-referencing
+  /// rather than a fixed set of levels, because a pump needs one level and a
+  /// press needs four.
+  parentId String?
+  parent   Asset?  @relation("AssetStructure", fields: [parentId], references: [id], onDelete: SetNull)
+  children Asset[] @relation("AssetStructure")
+
   activities AssetActivity[]
   money      AssetMoney[]
   listRows   AssetListRow[]
@@ -1272,6 +1290,7 @@ model Asset {
   @@index([serialNumber])
   @@index([holderUserId])
   @@index([customerId])
+  @@index([parentId])
   @@map("assets")
 }
 

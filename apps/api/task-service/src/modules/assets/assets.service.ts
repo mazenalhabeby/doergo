@@ -12,6 +12,13 @@ import {
   findKindList, normalizeListRow, listRowIsEmpty,
 } from '@hbcfield/shared';
 
+/**
+ * How deep a machine may nest. ISO 14224 breaks equipment down four levels
+ * (unit, subunit, component, part); double that is generous, and a bound means
+ * a corrupted parent chain costs one query per level rather than hanging.
+ */
+const MAX_STRUCTURE_DEPTH = 8;
+
 @Injectable()
 export class AssetsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -477,7 +484,7 @@ export class AssetsService {
   private async assetInOrg(id: string, organizationId: string) {
     const asset = await this.prisma.asset.findFirst({
       where: { id, organizationId },
-      select: { id: true, holderUserId: true, customerId: true },
+      select: { id: true, holderUserId: true, customerId: true, categoryId: true },
     });
     if (!asset) throw new NotFoundException('Asset not found in this organization');
     return asset;
@@ -730,15 +737,14 @@ export class AssetsService {
     if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
       throw new ForbiddenException('Only clients and dispatchers can view assets');
     }
-    const { shape, list } = await this.assetList(data.id, data.list, data.organizationId);
-    void shape;
+    const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const page = Math.max(1, data.page ?? 1);
     const limit = Math.min(Math.max(data.limit ?? 50, 1), 200);
     const search = data.search?.trim();
 
     const where: Prisma.AssetListRowWhereInput = {
-      assetId: data.id,
+      ...owner,
       list: list.label,
       // string_contains over the whole row would need a column; matching any
       // declared column keeps it to the values people actually see.
@@ -776,7 +782,7 @@ export class AssetsService {
     if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
       throw new ForbiddenException('Only clients and dispatchers can update assets');
     }
-    const { list } = await this.assetList(data.id, data.list, data.organizationId);
+    const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const values = normalizeListRow(list, data.values);
     if (listRowIsEmpty(values)) {
@@ -785,7 +791,7 @@ export class AssetsService {
 
     // Appended, not inserted: a row lands where somebody expects it to.
     const last = await this.prisma.assetListRow.findFirst({
-      where: { assetId: data.id, list: list.label },
+      where: { ...owner, list: list.label },
       orderBy: { position: 'desc' },
       select: { position: true },
     });
@@ -793,7 +799,7 @@ export class AssetsService {
     const row = await this.prisma.assetListRow.create({
       data: {
         organizationId: data.organizationId,
-        assetId: data.id,
+        ...owner,
         list: list.label,
         values: values as unknown as Prisma.InputJsonValue,
         position: (last?.position ?? 0) + 1,
@@ -817,12 +823,21 @@ export class AssetsService {
     }
     await this.assetInOrg(data.id, data.organizationId);
 
+    // Scoped to the ORG, then re-checked against the resolved owner below: a
+    // shared row belongs to the kind, so scoping the lookup to this asset would
+    // make the catalogue read-only from every record that uses it.
     const existing = await this.prisma.assetListRow.findFirst({
-      where: { id: data.rowId, assetId: data.id, organizationId: data.organizationId },
+      where: { id: data.rowId, organizationId: data.organizationId },
     });
     if (!existing) throw new NotFoundException('Row not found');
 
-    const { list } = await this.assetList(data.id, existing.list, data.organizationId);
+    const { list, owner } = await this.assetList(data.id, existing.list, data.organizationId);
+    if (
+      (owner.assetId && existing.assetId !== owner.assetId) ||
+      (owner.categoryId && existing.categoryId !== owner.categoryId)
+    ) {
+      throw new NotFoundException('Row not found');
+    }
     const values = normalizeListRow(list, data.values);
     if (listRowIsEmpty(values)) {
       throw new BadRequestException('A row needs something in it');
@@ -836,7 +851,7 @@ export class AssetsService {
     return success(row);
   }
 
-  /** Remove one row. Scoped to the asset, so an id alone is not enough. */
+  /** Remove one row, from this record or from the kind's shared catalogue. */
   async removeRow(data: {
     id: string;
     rowId: string;
@@ -847,10 +862,16 @@ export class AssetsService {
     if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
       throw new ForbiddenException('Only clients and dispatchers can update assets');
     }
-    await this.assetInOrg(data.id, data.organizationId);
+    const asset = await this.assetInOrg(data.id, data.organizationId);
 
+    // Either this record's own row, or a row of a catalogue this record's kind
+    // owns. Never another kind's, and never another record's.
     const { count } = await this.prisma.assetListRow.deleteMany({
-      where: { id: data.rowId, assetId: data.id, organizationId: data.organizationId },
+      where: {
+        id: data.rowId,
+        organizationId: data.organizationId,
+        OR: [{ assetId: data.id }, ...(asset.categoryId ? [{ categoryId: asset.categoryId }] : [])],
+      },
     });
     if (!count) throw new NotFoundException('Row not found');
 
@@ -867,7 +888,7 @@ export class AssetsService {
   private async assetList(assetId: string, listLabel: string, organizationId: string) {
     const asset = await this.prisma.asset.findFirst({
       where: { id: assetId, organizationId },
-      select: { id: true, category: { select: { config: true } } },
+      select: { id: true, categoryId: true, category: { select: { config: true } } },
     });
     if (!asset) throw new NotFoundException('Asset not found in this organization');
 
@@ -875,7 +896,120 @@ export class AssetsService {
     const list = findKindList(shape, listLabel ?? '');
     if (!list) throw new BadRequestException(`"${listLabel}" is not a list on this kind`);
 
-    return { shape, list };
+    // A shared table's rows hang off the KIND, so every record of that kind
+    // reads the same catalogue. Resolving the owner here means every caller
+    // below is identical whichever sort of table it is.
+    const owner = list.shared
+      ? { categoryId: asset.categoryId, assetId: null }
+      : { assetId: asset.id, categoryId: null };
+
+    if (list.shared && !asset.categoryId) {
+      throw new BadRequestException('This record has no kind, so it has no shared catalogue');
+    }
+
+    return { shape, list, owner };
+  }
+
+  /**
+   * The parts of one machine: its subunits and components, plus the path back
+   * up to the top so a technician always knows where they are.
+   */
+  async structure(data: {
+    id: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can view assets');
+    }
+    await this.assetInOrg(data.id, data.organizationId);
+
+    const children = await this.prisma.asset.findMany({
+      where: { parentId: data.id, organizationId: data.organizationId },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, serialNumber: true, _count: { select: { children: true } } },
+    });
+
+    // Walk up rather than recurse down: the ancestors of one node are at most
+    // as deep as the tree, while the descendants could be the whole estate.
+    const path: { id: string; name: string }[] = [];
+    let cursor = await this.prisma.asset.findUnique({
+      where: { id: data.id },
+      select: { parentId: true },
+    });
+    const seen = new Set<string>([data.id]);
+    while (cursor?.parentId && !seen.has(cursor.parentId) && path.length < MAX_STRUCTURE_DEPTH) {
+      seen.add(cursor.parentId);
+      const parent = await this.prisma.asset.findFirst({
+        where: { id: cursor.parentId, organizationId: data.organizationId },
+        select: { id: true, name: true, parentId: true },
+      });
+      if (!parent) break;
+      path.unshift({ id: parent.id, name: parent.name });
+      cursor = { parentId: parent.parentId };
+    }
+
+    return success({ children, path });
+  }
+
+  /**
+   * Put one record under another, or back at the top.
+   *
+   * Refuses to make a record its own ancestor. Without that check a two-node
+   * cycle is one careless drag away, and every walk of the tree afterwards
+   * either loops forever or stops at an arbitrary depth.
+   */
+  async setParent(data: {
+    id: string;
+    parentId: string | null;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can update assets');
+    }
+    await this.assetInOrg(data.id, data.organizationId);
+
+    const parentId = data.parentId?.trim() || null;
+
+    if (parentId) {
+      if (parentId === data.id) {
+        throw new BadRequestException('A record cannot be inside itself');
+      }
+      const parent = await this.prisma.asset.findFirst({
+        where: { id: parentId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!parent) throw new BadRequestException('That parent is not in this organization');
+
+      // Walk up from the proposed parent: if we meet this record, the move
+      // would close a loop.
+      let cursor: string | null = parentId;
+      const seen = new Set<string>();
+      let depth = 0;
+      while (cursor && depth++ < MAX_STRUCTURE_DEPTH) {
+        if (cursor === data.id) {
+          throw new BadRequestException('That would put this record inside one of its own parts');
+        }
+        if (seen.has(cursor)) break;
+        seen.add(cursor);
+        const next: { parentId: string | null } | null = await this.prisma.asset.findUnique({
+          where: { id: cursor },
+          select: { parentId: true },
+        });
+        cursor = next?.parentId ?? null;
+      }
+    }
+
+    const updated = await this.prisma.asset.update({
+      where: { id: data.id },
+      data: { parentId },
+      select: { id: true, parentId: true },
+    });
+
+    return success(updated);
   }
 
   async create(data: {

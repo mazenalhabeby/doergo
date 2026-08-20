@@ -6110,7 +6110,12 @@
     "listName": "Piezas",
     "listColumns": "Columnas",
     "listColumn": "Código",
-    "listNeedsColumn": "Una tabla necesita al menos una columna, o se descarta."
+    "listNeedsColumn": "Una tabla necesita al menos una columna, o se descarta.",
+    "rolePlain": "Una tabla",
+    "roleParts": "Catálogo de piezas",
+    "roleFaults": "Códigos de error",
+    "sharedOn": "Igual para todos",
+    "sharedOff": "Distinto en cada uno"
   },
   "assetRecords": {
     "intro": "Todo de este tipo en este espacio.",
@@ -6156,5 +6161,18 @@
     "empty": "Aún no hay nada",
     "noMatch": "Ninguna coincidencia",
     "gone": "Esa tabla ya no está en este tipo."
+  },
+  "assetFaults": {
+    "search": "Buscar un código o un síntoma…",
+    "empty": "Aún no hay códigos de error",
+    "cause": "Causa",
+    "fix": "Solución",
+    "partMissing": "no está en el catálogo de piezas"
+  },
+  "assetStructure": {
+    "title": "Sus partes",
+    "here": "aquí",
+    "inside": "{{count}} dentro",
+    "empty": "Nada dentro. Cree un registro y colóquelo aquí desde su propia página."
   }
 }

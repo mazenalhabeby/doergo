@@ -276,6 +276,39 @@ export class AssetsController {
     });
   }
 
+  @Get(':id/structure')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: "This record's parts, and the path back up" })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async structure(@Param('id') id: string, @Request() req: any) {
+    return this.assetsService.structure({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Patch(':id/parent')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Put this record inside another, or back at the top' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async setParent(
+    @Param('id') id: string,
+    @Body() body: { parentId?: string | null },
+    @Request() req: any,
+  ) {
+    return this.assetsService.setParent({
+      id,
+      parentId: body?.parentId ?? null,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id/history')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get maintenance history for an asset' })

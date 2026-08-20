@@ -6101,7 +6101,12 @@
     "listName": "Pièces",
     "listColumns": "Colonnes",
     "listColumn": "Code",
-    "listNeedsColumn": "Un tableau a besoin d’au moins une colonne, sinon il est ignoré."
+    "listNeedsColumn": "Un tableau a besoin d’au moins une colonne, sinon il est ignoré.",
+    "rolePlain": "Un tableau",
+    "roleParts": "Catalogue de pièces",
+    "roleFaults": "Codes défaut",
+    "sharedOn": "Identique pour tous",
+    "sharedOff": "Différent sur chacun"
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",
@@ -6147,5 +6152,18 @@
     "empty": "Rien pour le moment",
     "noMatch": "Aucun résultat",
     "gone": "Ce tableau ne fait plus partie de ce type."
+  },
+  "assetFaults": {
+    "search": "Rechercher un code ou un symptôme…",
+    "empty": "Aucun code défaut",
+    "cause": "Cause",
+    "fix": "Solution",
+    "partMissing": "absent du catalogue de pièces"
+  },
+  "assetStructure": {
+    "title": "Ses composants",
+    "here": "ici",
+    "inside": "{{count}} à l’intérieur",
+    "empty": "Rien à l’intérieur. Créez une fiche et placez-la ici depuis sa propre page."
   }
 }
