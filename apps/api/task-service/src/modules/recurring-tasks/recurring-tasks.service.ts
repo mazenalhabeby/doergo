@@ -7,6 +7,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { assertSpaceInOrg, assertWorkflowInOrg, assertUsersInOrg } from '../../common/tenant-scope.util';
 import { success } from '@hbcfield/shared';
 
 @Injectable()
@@ -429,39 +430,24 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Ensure a referenced space / task type belongs to the org. */
+  /**
+   * The ids on this template all belong to this organization.
+   *
+   * These three checks were written out here after a security audit; task
+   * creation never adopted them and could be handed another tenant's workflow.
+   * They live in tenant-scope.util now, so the rule has one statement and the
+   * next path that takes an id from a client finds it rather than reinventing
+   * it — slightly differently.
+   */
   private async assertSpaceAndWorkflow(
     organizationId: string,
     spaceId?: string,
     workflowId?: string,
     assigneeIds?: string[],
   ) {
-    if (spaceId) {
-      const space = await this.prisma.companyLocation.findFirst({
-        where: { id: spaceId, organizationId },
-        select: { id: true },
-      });
-      if (!space) throw new BadRequestException('Space not found in this organization');
-    }
-    if (workflowId) {
-      const wf = await this.prisma.statusWorkflow.findFirst({
-        where: { id: workflowId, organizationId },
-        select: { id: true },
-      });
-      if (!wf) throw new BadRequestException('Task Type not found in this organization');
-    }
-    // Every assignee must belong to THIS org. Otherwise a foreign user id gains
-    // read+notifications on the generated tasks (checkTaskAccess short-circuits on
-    // assignment before any org compare). (Sec audit H4.)
-    if (assigneeIds && assigneeIds.length > 0) {
-      const unique = [...new Set(assigneeIds)];
-      const found = await this.prisma.user.findMany({
-        where: { id: { in: unique }, organizationId },
-        select: { id: true },
-      });
-      if (found.length !== unique.length) {
-        throw new BadRequestException('One or more assignees are not members of this organization');
-      }
-    }
+    await assertSpaceInOrg(this.prisma, spaceId, organizationId);
+    await assertWorkflowInOrg(this.prisma, workflowId, organizationId);
+    await assertUsersInOrg(this.prisma, assigneeIds, organizationId);
   }
 
   /** First non-cancel status of a task type (the flow's starting point). */

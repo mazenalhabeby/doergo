@@ -12,6 +12,7 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import {
   TaskStatus,
   TaskEventType,
@@ -150,6 +151,22 @@ export class TasksService {
     const effWorkflowId: string | null = isUntriaged
       ? null
       : ((data.workflowId as string | undefined) ?? spaceWorkflowId ?? null);
+
+    /*
+      A workflow id arriving from a client says nothing about whose it is.
+
+      This was used unchecked: the status lookup below filters on workflowId
+      alone, so passing another tenant's id created a task running on THEIR
+      state machine — their status names, their transitions, inside this
+      organization. Narrow to exploit and trivial to prevent.
+
+      Checked against effectiveOrgId, the org the TASK will belong to, which is
+      not always the caller's: in a cross-org shared space the task belongs to
+      the space's owner, so its workflow must be the owner's too. The triage
+      path has always done this; creation had not.
+    */
+    await assertWorkflowInOrg(this.prisma, effWorkflowId, effectiveOrgId);
+
     let initialStatus: string = hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW;
     if (effWorkflowId) {
       const firstStatus = await this.prisma.workflowStatus.findFirst({
