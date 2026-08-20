@@ -113,7 +113,7 @@ function CreatePortalDialog({ spaceId, hasApartments, onOpenModules, open, onOpe
         <div className="space-y-4">
           <div>
             <Label>{t("portal.portalName", "Portal name")}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Rivergate Rentals" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("portal.namePlaceholder", "Rivergate Rentals")} />
           </div>
           <div>
             <Label>{t("portal.pickType", "Type")}</Label>

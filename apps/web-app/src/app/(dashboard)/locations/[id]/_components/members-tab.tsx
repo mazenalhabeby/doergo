@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
 import { spaceRolesApi, spaceMembersApi, employeesApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
+import { fetchAllPages } from "@/lib/paginate"
 import {
   SPACE_ROLE_PERMISSION_SCHEMA,
   type SpaceRole,
@@ -344,9 +345,17 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
     enabled: !!hasApartments,
   })
   const units = unitData ?? []
-  const { data: employeeData } = useQuery({
+  /*
+    Everyone who could be added — not the first hundred of them.
+
+    The API caps a page at 100, and this asked for one page, so an
+    organization with more members than that silently offered a subset: the
+    people missing from the picker looked like people who did not exist. Paged
+    through instead, with the shared helper's runaway guard still in place.
+  */
+  const { data: employeeList } = useQuery({
     queryKey: ["employees-for-space-members"],
-    queryFn: () => employeesApi.list({ limit: 100, status: "active" }),
+    queryFn: () => fetchAllPages((page) => employeesApi.list({ limit: 100, page, status: "active" })),
   })
   const { data: roles } = useQuery({
     queryKey: ["space-roles"],
@@ -354,7 +363,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
   })
 
   const assignedIds = new Set((members || []).map((m) => m.userId))
-  const availableEmployees = (employeeData?.data || []).filter((e) => !assignedIds.has(e.id))
+  const availableEmployees = (employeeList ?? []).filter((e) => !assignedIds.has(e.id))
 
   const assignMutation = useMutation({
     mutationFn: () =>

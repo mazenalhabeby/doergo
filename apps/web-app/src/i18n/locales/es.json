@@ -5485,7 +5485,11 @@
     "noCategoriesTitle": "Aún no hay categorías",
     "inviteHint": "Solo indica la {{entity}} y comparte el código: el cliente pone su propio nombre al registrarse.",
     "resNameOpt": "Nombre del cliente (opcional)",
-    "resNamePlaceholder": "Déjalo en blanco: lo pone al registrarse"
+    "resNamePlaceholder": "Déjalo en blanco: lo pone al registrarse",
+    "namePlaceholder": "Alquileres Rivergate",
+    "catLabelPlaceholder": "Aire acondicionado",
+    "catTeamPlaceholder": "Equipo de climatización",
+    "catIssuesPlaceholder": "No enfría, Sin corriente"
   },
   "scheduling": {
     "title": "Ajustes del espacio",
@@ -5871,5 +5875,8 @@
       "sendRequest": "Enviar solicitud",
       "titleRequired": "Introduzca un título para su solicitud."
     }
+  },
+  "apartments": {
+    "removeFailed": "No se pudo eliminar este apartamento"
   }
 }

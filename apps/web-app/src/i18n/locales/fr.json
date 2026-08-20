@@ -5476,7 +5476,11 @@
     "noCategoriesTitle": "Aucune catégorie pour l'instant",
     "inviteHint": "Indiquez juste l'{{entity}} et partagez le code — le client saisit son nom lors de son inscription.",
     "resNameOpt": "Nom du client (facultatif)",
-    "resNamePlaceholder": "Laissez vide — défini à l'inscription"
+    "resNamePlaceholder": "Laissez vide — défini à l'inscription",
+    "namePlaceholder": "Locations Rivergate",
+    "catLabelPlaceholder": "Climatisation",
+    "catTeamPlaceholder": "Équipe CVC",
+    "catIssuesPlaceholder": "Ne refroidit pas, Pas de courant"
   },
   "scheduling": {
     "title": "Paramètres de l’espace",
@@ -5862,5 +5866,8 @@
       "sendRequest": "Envoyer la demande",
       "titleRequired": "Saisissez un titre pour votre demande."
     }
+  },
+  "apartments": {
+    "removeFailed": "Impossible de supprimer ce logement"
   }
 }

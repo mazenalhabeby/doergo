@@ -375,7 +375,7 @@ function SharesSection({ spaceId }: { spaceId: string }) {
 // ── Incoming requests ───────────────────────────────────────────────────────
 
 function RequestsSection({ spaceId }: { spaceId: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
 
   const { data: requests, isLoading } = useQuery({
@@ -434,7 +434,7 @@ function RequestsSection({ spaceId }: { spaceId: string }) {
                     </div>
                     {req.note && <p className="mt-1 text-xs text-muted-foreground">{req.note}</p>}
                     <p className="mt-1 text-[11px] text-muted-foreground/70">
-                      {new Date(req.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(req.createdAt).toLocaleString(i18n.language, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
