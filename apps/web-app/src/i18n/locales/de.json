@@ -3715,14 +3715,9 @@
         "saveFailed": "Workflow konnte nicht gespeichert werden",
         "createFailedGeneric": "Workflow konnte nicht erstellt werden"
       },
-      "noFinalStatus": "Markieren Sie einen Schritt als abgeschlossen — sonst kann bei diesem Aufgabentyp nichts je fertiggestellt werden."
-    },
-    "templateLabels": {
-      "simple": "Einfach",
-      "fieldService": "Außendienst",
-      "logistics": "Logistik",
-      "software": "Software",
-      "support": "Support"
+      "noFinalStatus": "Markieren Sie einen Schritt als abgeschlossen — sonst kann bei diesem Aufgabentyp nichts je fertiggestellt werden.",
+      "noTemplates": "Keine Startabläufe verfügbar.",
+      "fields": "Felder, die bei dieser Aufgabenart erfasst werden"
     },
     "page": {
       "title": "Aufgabentypen",
@@ -3795,6 +3790,22 @@
       "submitToLibrary": "Der Bibliothek anbieten",
       "submitHint": "Diesen Ablauf anderen Organisationen anbieten. Er wird zuerst geprüft.",
       "spaceSubtitle": "Die Abläufe, die Aufgaben in diesem Bereich durchlaufen. Eine geteilte Aufgabenart zu ändern wirkt überall, wo sie angeboten wird."
+    },
+    "capabilities": {
+      "gps": "GPS",
+      "gpsHint": "Zeichnet die Route auf, solange das Mitglied in diesem Schritt ist. Benötigt Routenverfolgung.",
+      "timer": "Timer",
+      "timerHint": "Erfasst die Arbeitszeit. Benötigt Zeiterfassung.",
+      "checklist": "Checkliste",
+      "checklistHint": "Eine Liste zum Abarbeiten. Benötigt Checklisten.",
+      "photos": "Fotos",
+      "photosHint": "Vorher/Nachher- oder Nachweisfotos. Benötigt Anhänge.",
+      "signature": "Unterschrift",
+      "signatureHint": "Kundenfreigabe. Benötigt Serviceberichte.",
+      "report": "Bericht",
+      "reportHint": "Ausgeführte Arbeiten und verwendete Teile. Benötigt Serviceberichte.",
+      "form": "Formular",
+      "formHint": "Besuchsnotizen oder Ergebnisformular. Benötigt benutzerdefinierte Felder."
     }
   },
   "assets": {

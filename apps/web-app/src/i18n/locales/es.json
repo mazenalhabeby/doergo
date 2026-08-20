@@ -3699,14 +3699,9 @@
         "saveFailed": "No se pudo guardar el flujo de trabajo",
         "createFailedGeneric": "No se pudo crear el flujo de trabajo"
       },
-      "noFinalStatus": "Marca un paso como finalizado; de lo contrario, nada en este tipo de tarea podrá completarse."
-    },
-    "templateLabels": {
-      "simple": "Simple",
-      "fieldService": "Servicio en campo",
-      "logistics": "Logística",
-      "software": "Software",
-      "support": "Soporte"
+      "noFinalStatus": "Marca un paso como finalizado; de lo contrario, nada en este tipo de tarea podrá completarse.",
+      "noTemplates": "No hay flujos iniciales disponibles.",
+      "fields": "Campos que se recogen en este tipo de tarea"
     },
     "page": {
       "title": "Tipos de tarea",
@@ -3779,6 +3774,22 @@
       "submitToLibrary": "Ofrecer a la biblioteca",
       "submitHint": "Ofrecer este flujo a otras organizaciones. Primero se revisa.",
       "spaceSubtitle": "Los flujos por los que pasan las tareas de este espacio. Editar uno compartido lo cambia en todos los espacios que lo ofrecen."
+    },
+    "capabilities": {
+      "gps": "GPS",
+      "gpsHint": "Registra la ruta mientras el miembro está en este paso. Necesita Seguimiento de rutas.",
+      "timer": "Cronómetro",
+      "timerHint": "Cuenta el tiempo en el trabajo. Necesita Control horario.",
+      "checklist": "Lista",
+      "checklistHint": "Una lista que completar. Necesita Listas de control.",
+      "photos": "Fotos",
+      "photosHint": "Fotos de antes/después o de evidencia. Necesita Adjuntos.",
+      "signature": "Firma",
+      "signatureHint": "Conformidad del cliente. Necesita Informes de servicio.",
+      "report": "Informe",
+      "reportHint": "Trabajo realizado y piezas usadas. Necesita Informes de servicio.",
+      "form": "Formulario",
+      "formHint": "Notas de visita o formulario de resultado. Necesita Campos personalizados."
     }
   },
   "assets": {

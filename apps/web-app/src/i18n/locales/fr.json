@@ -3690,14 +3690,9 @@
         "saveFailed": "Échec de l'enregistrement du flux de travail",
         "createFailedGeneric": "Échec de la création du flux de travail"
       },
-      "noFinalStatus": "Marquez une étape comme terminée — sinon rien ne pourra jamais être achevé sur ce type de tâche."
-    },
-    "templateLabels": {
-      "simple": "Simple",
-      "fieldService": "Service sur le terrain",
-      "logistics": "Logistique",
-      "software": "Logiciel",
-      "support": "Support"
+      "noFinalStatus": "Marquez une étape comme terminée — sinon rien ne pourra jamais être achevé sur ce type de tâche.",
+      "noTemplates": "Aucun flux de départ disponible.",
+      "fields": "Champs recueillis sur ce type de tâche"
     },
     "page": {
       "title": "Types de tâche",
@@ -3770,6 +3765,22 @@
       "submitToLibrary": "Proposer à la bibliothèque",
       "submitHint": "Proposer ce flux à d’autres organisations. Il est d’abord relu.",
       "spaceSubtitle": "Les flux que suivent les tâches de cet espace. Modifier un flux partagé le change partout où il est proposé."
+    },
+    "capabilities": {
+      "gps": "GPS",
+      "gpsHint": "Enregistre le trajet pendant que le membre est à cette étape. Nécessite le suivi d’itinéraire.",
+      "timer": "Minuteur",
+      "timerHint": "Compte le temps passé sur le travail. Nécessite le suivi du temps.",
+      "checklist": "Checklist",
+      "checklistHint": "Une liste à parcourir. Nécessite les checklists.",
+      "photos": "Photos",
+      "photosHint": "Photos avant/après ou justificatives. Nécessite les pièces jointes.",
+      "signature": "Signature",
+      "signatureHint": "Validation du client. Nécessite les rapports d’intervention.",
+      "report": "Rapport",
+      "reportHint": "Travail effectué et pièces utilisées. Nécessite les rapports d’intervention.",
+      "form": "Formulaire",
+      "formHint": "Notes de visite ou formulaire de résultat. Nécessite les champs personnalisés."
     }
   },
   "assets": {

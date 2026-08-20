@@ -1,53 +1,45 @@
 import { readFileSync } from "fs"
 import { join } from "path"
 import { validateWorkflow } from "@hbcfield/shared/client"
+import { resolveTransitions, linearTransitions, toStatusKey } from "@/lib/workflow-transitions"
 
 /**
- * The simple builder must not create a task type that cannot be used.
+ * The space's builder edits names, colours, marks and capabilities — it has no
+ * transition control. That leaves two silent ways to get transitions wrong, and
+ * this file exists because BOTH have shipped:
  *
- * It has no transition editor, and used to write statuses with none at all.
- * That was harmless until the validator arrived: a step with no way out and no
- * "finished" mark is a dead end, so the whole type is refused the moment
- * somebody offers it in a space. Created, then permanently unusable — a worse
- * outcome than being unable to create it.
+ *   - writing none at all → the validator reads every step as a dead end and
+ *     refuses the task type when somebody tries to offer it. Created, then
+ *     permanently unusable.
+ *   - regenerating a chain on every save → branching from a library template is
+ *     flattened. A forked Field Service flow has Blocked → In Progress; lose it
+ *     and a task sitting in Blocked has nowhere to go.
  *
- * The chain it writes is reproduced here from the same rule the component uses,
- * and the SOURCE is asserted to still call it, because a passing chain proves
- * nothing if nobody sends it.
+ * These import the real module rather than a copy. An earlier version of this
+ * file reimplemented the helper locally and passed happily while the component
+ * was broken.
  */
-function linearTransitions(
-  statuses: { name: string; isFinal: boolean; isCanceled: boolean }[],
-  index: number,
-): string[] {
-  const toKey = (n: string) => n.trim().toUpperCase().replace(/\s+/g, "_")
-  const current = statuses[index]
-  if (!current || current.isFinal || current.isCanceled) return []
-  const out: string[] = []
-  const next = statuses.slice(index + 1).find((s) => !s.isCanceled)
-  if (next) out.push(toKey(next.name))
-  const cancel = statuses.find((s) => s.isCanceled)
-  if (cancel && cancel !== current) out.push(toKey(cancel.name))
-  return out
-}
-
-const build = (statuses: { name: string; isFinal: boolean; isCanceled: boolean }[]) =>
+const build = (statuses: { name: string; isFinal: boolean; isCanceled: boolean; transitions?: string[] }[]) =>
   statuses.map((s, i) => ({
-    key: s.name.trim().toUpperCase().replace(/\s+/g, "_"),
+    key: toStatusKey(s.name),
     name: s.name,
     position: i,
     isFinal: s.isFinal,
     isCanceled: s.isCanceled,
-    transitions: linearTransitions(statuses, i),
+    transitions: resolveTransitions(statuses, i),
   }))
 
-describe("the simple builder produces a usable task type", () => {
+describe("the builder produces a usable task type", () => {
   it("wires a plain three-step flow end to end", () => {
-    const flow = build([
-      { name: "Open", isFinal: false, isCanceled: false },
-      { name: "In Progress", isFinal: false, isCanceled: false },
-      { name: "Done", isFinal: true, isCanceled: false },
-    ])
-    expect(validateWorkflow(flow)).toEqual([])
+    expect(
+      validateWorkflow(
+        build([
+          { name: "Open", isFinal: false, isCanceled: false },
+          { name: "In Progress", isFinal: false, isCanceled: false },
+          { name: "Done", isFinal: true, isCanceled: false },
+        ]),
+      ),
+    ).toEqual([])
   })
 
   it("keeps a cancel step reachable from every working step", () => {
@@ -72,23 +64,64 @@ describe("the simple builder produces a usable task type", () => {
     expect(flow[2]!.transitions).toEqual([])
   })
 
-  it("would have been refused before this fix", () => {
-    // The old behaviour, asserted so the regression is legible.
+  it("would have been refused before the chain existed", () => {
     const noTransitions = [
       { key: "OPEN", name: "Open", position: 0, isFinal: false, isCanceled: false, transitions: [] },
       { key: "DONE", name: "Done", position: 1, isFinal: true, isCanceled: false, transitions: [] },
     ]
-    const codes = validateWorkflow(noTransitions).map((p) => p.code)
-    expect(codes).toContain("dead_end")
+    expect(validateWorkflow(noTransitions).map((p) => p.code)).toContain("dead_end")
+  })
+})
+
+describe("branching survives an edit", () => {
+  const forked = [
+    { name: "In Progress", isFinal: false, isCanceled: false, transitions: ["BLOCKED", "DONE"] },
+    { name: "Blocked", isFinal: false, isCanceled: false, transitions: ["IN_PROGRESS"] },
+    { name: "Done", isFinal: true, isCanceled: false, transitions: [] },
+  ]
+
+  it("keeps what a step already declares", () => {
+    expect(resolveTransitions(forked, 0)).toEqual(["BLOCKED", "DONE"])
+    expect(resolveTransitions(forked, 1)).toEqual(["IN_PROGRESS"])
   })
 
-  it("is actually wired into both write paths in the component", () => {
+  it("differs from the chain it would otherwise have written", () => {
+    // Names the loss precisely: the chain has no way back out of Blocked.
+    expect(linearTransitions(forked, 1)).not.toContain("IN_PROGRESS")
+  })
+
+  it("still wires a brand-new step that declares nothing", () => {
+    expect(
+      resolveTransitions(
+        [
+          { name: "Open", isFinal: false, isCanceled: false },
+          { name: "Done", isFinal: true, isCanceled: false },
+        ],
+        0,
+      ),
+    ).toEqual(["DONE"])
+  })
+})
+
+describe("the component uses it", () => {
+  const src = readFileSync(
+    join(__dirname, "../app/(dashboard)/locations/_components/workflow-builder.tsx"),
+    "utf8",
+  )
+
+  it("calls the resolver on every write path", () => {
     // A correct helper nobody calls is not a fix.
-    const src = readFileSync(
-      join(__dirname, "../app/(dashboard)/locations/_components/workflow-builder.tsx"),
-      "utf8",
-    )
-    const calls = src.match(/transitions: linearTransitions\(/g) ?? []
-    expect(calls.length).toBeGreaterThanOrEqual(2)
+    expect((src.match(/transitions: resolveTransitions\(/g) ?? []).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it("never wires the raw chain straight into a write", () => {
+    expect(src).not.toMatch(/transitions: linearTransitions\(/)
+  })
+
+  it("does not keep a private copy of the key form", () => {
+    // The keys a status is stored under and the keys transitions point at have
+    // to be produced by the same function, or every transition is a dead link.
+    expect(src).toMatch(/toStatusKey/)
+    expect(src).not.toMatch(/function toKey\(/)
   })
 })

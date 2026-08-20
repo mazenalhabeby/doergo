@@ -3715,14 +3715,9 @@
         "saveFailed": "Failed to save workflow",
         "createFailedGeneric": "Failed to create workflow"
       },
-      "noFinalStatus": "Mark a step as finished — otherwise nothing on this task type can ever be completed."
-    },
-    "templateLabels": {
-      "simple": "Simple",
-      "fieldService": "Field Service",
-      "logistics": "Logistics",
-      "software": "Software",
-      "support": "Support"
+      "noFinalStatus": "Mark a step as finished — otherwise nothing on this task type can ever be completed.",
+      "noTemplates": "No starter flows available.",
+      "fields": "Fields collected on this task type"
     },
     "page": {
       "title": "Task Types",
@@ -3795,6 +3790,22 @@
       "submitToLibrary": "Offer to library",
       "submitHint": "Offer this flow to other organizations. It is reviewed first.",
       "spaceSubtitle": "The flows tasks in this space run through. Editing a shared one changes it everywhere it is offered."
+    },
+    "capabilities": {
+      "gps": "GPS",
+      "gpsHint": "Records the route while the member is at this step. Needs Route tracking.",
+      "timer": "Timer",
+      "timerHint": "Counts time on the job. Needs Time tracking.",
+      "checklist": "Checklist",
+      "checklistHint": "A list to work through. Needs Checklists.",
+      "photos": "Photos",
+      "photosHint": "Before/after or evidence photos. Needs Attachments.",
+      "signature": "Signature",
+      "signatureHint": "Customer sign-off. Needs Service reports.",
+      "report": "Report",
+      "reportHint": "Work performed and parts used. Needs Service reports.",
+      "form": "Form",
+      "formHint": "Visit notes or an outcome form. Needs Custom fields."
     }
   },
   "assets": {

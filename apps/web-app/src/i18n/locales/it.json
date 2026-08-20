@@ -3690,14 +3690,9 @@
         "saveFailed": "Impossibile salvare il flusso di lavoro",
         "createFailedGeneric": "Impossibile creare il flusso di lavoro"
       },
-      "noFinalStatus": "Contrassegna un passaggio come concluso, altrimenti nulla in questo tipo di attività potrà mai essere completato."
-    },
-    "templateLabels": {
-      "simple": "Semplice",
-      "fieldService": "Servizio sul campo",
-      "logistics": "Logistica",
-      "software": "Software",
-      "support": "Assistenza"
+      "noFinalStatus": "Contrassegna un passaggio come concluso, altrimenti nulla in questo tipo di attività potrà mai essere completato.",
+      "noTemplates": "Nessun flusso iniziale disponibile.",
+      "fields": "Campi raccolti su questo tipo di attività"
     },
     "page": {
       "title": "Tipi di attività",
@@ -3770,6 +3765,22 @@
       "submitToLibrary": "Proponi alla libreria",
       "submitHint": "Proponi questo flusso ad altre organizzazioni. Viene prima revisionato.",
       "spaceSubtitle": "I flussi che seguono le attività di questo spazio. Modificarne uno condiviso lo cambia ovunque venga offerto."
+    },
+    "capabilities": {
+      "gps": "GPS",
+      "gpsHint": "Registra il percorso mentre il membro è a questo passaggio. Richiede il tracciamento del percorso.",
+      "timer": "Timer",
+      "timerHint": "Conta il tempo sul lavoro. Richiede il rilevamento presenze.",
+      "checklist": "Checklist",
+      "checklistHint": "Un elenco da completare. Richiede le checklist.",
+      "photos": "Foto",
+      "photosHint": "Foto prima/dopo o di prova. Richiede gli allegati.",
+      "signature": "Firma",
+      "signatureHint": "Approvazione del cliente. Richiede i rapporti di servizio.",
+      "report": "Rapporto",
+      "reportHint": "Lavoro svolto e ricambi usati. Richiede i rapporti di servizio.",
+      "form": "Modulo",
+      "formHint": "Note di visita o modulo di esito. Richiede i campi personalizzati."
     }
   },
   "assets": {
