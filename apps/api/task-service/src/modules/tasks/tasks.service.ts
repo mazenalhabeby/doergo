@@ -13,6 +13,7 @@ import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
+import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 import {
   TaskStatus,
   TaskEventType,
@@ -117,7 +118,8 @@ export class TasksService {
       if (!space) {
         throw new NotFoundException('Space not found');
       }
-      spaceWorkflowId = space.workflowId ?? null;
+      // Through the shared resolver: the join first, the column as fallback.
+      spaceWorkflowId = await resolveSpaceDefaultWorkflowId(this.prisma, data.spaceId);
       if (space.organizationId !== data.organizationId) {
         // Foreign space → allowed ONLY if the caller holds a cross-org CONTRIBUTE/
         // CONTROL grant for THIS exact space (server-authoritative access, checked
@@ -334,10 +336,10 @@ export class TasksService {
     if (!space) {
       throw new NotFoundException('Space not found');
     }
-    if (!space.workflowId) {
+    const targetWorkflowId = await resolveSpaceDefaultWorkflowId(this.prisma, space.id);
+    if (!targetWorkflowId) {
       return success({ updated: 0, remapped: 0, reason: 'space has no workflow' });
     }
-    const targetWorkflowId = space.workflowId;
 
     // 2. Load the target workflow's statuses (ordered by position).
     const statuses = await this.prisma.workflowStatus.findMany({
@@ -591,7 +593,9 @@ export class TasksService {
     // Flow: explicit choice wins; otherwise inherit the space's default flow.
     // null is a valid explicit choice (canonical NEW/ASSIGNED, no workflow).
     const effWorkflowId: string | null =
-      data.workflowId !== undefined ? data.workflowId : (space.workflowId ?? null);
+      data.workflowId !== undefined
+        ? data.workflowId
+        : await resolveSpaceDefaultWorkflowId(this.prisma, space.id);
     if (effWorkflowId) {
       const wf = await this.prisma.statusWorkflow.findFirst({
         where: { id: effWorkflowId, organizationId: data.organizationId },
@@ -1337,11 +1341,7 @@ export class TasksService {
     // space's) when present; otherwise the canonical field-service machine.
     let effWorkflowId: string | null = (task as any).workflowId ?? null;
     if (!effWorkflowId && (task as any).spaceId) {
-      const sp = await this.prisma.companyLocation.findUnique({
-        where: { id: (task as any).spaceId },
-        select: { workflowId: true },
-      });
-      effWorkflowId = sp?.workflowId ?? null;
+      effWorkflowId = await resolveSpaceDefaultWorkflowId(this.prisma, (task as any).spaceId);
     }
     let allowedTransitions: string[] | null = null;
     let workflowStatusKeys: string[] | null = null;

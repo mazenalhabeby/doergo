@@ -1625,6 +1625,8 @@ model CompanyLocation {
   enabledModules Json? // Override org modules for this space, e.g. ["time_tracking", "sprints"]
   workflowId     String?
   workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  // The workflows this space offers (supersedes the single workflowId above).
+  workflows      SpaceWorkflow[]
 
   // Space-driven routing (Phase 3). AccessRole ids whose holders in THIS space
   // are (a) notified about members here, and (b) contactable by members here.
@@ -2745,10 +2747,42 @@ model StatusWorkflow {
   spaces             CompanyLocation[]
   customFields       CustomFieldDefinition[]
   recurringTemplates RecurringTaskTemplate[]
+  spaceOfferings     SpaceWorkflow[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
   @@map("status_workflows")
+}
+
+/**
+ * Which workflows a space offers.
+ *
+ * A workflow stays owned by the ORGANIZATION — one definition, so fixing a typo
+ * fixes it everywhere — and this decides which of them each space presents and
+ * which is its default. Space-owned workflows would mean a copy per space and a
+ * typo fixed once per space; when a space genuinely needs to diverge, it
+ * duplicates the workflow, deliberately.
+ *
+ * Supersedes CompanyLocation.workflowId, which stays as the fallback until this
+ * has run quietly for a while.
+ */
+model SpaceWorkflow {
+  id         String          @id @default(cuid())
+  spaceId    String
+  space      CompanyLocation @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  workflowId String
+  workflow   StatusWorkflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  // At most one per space — enforced by a partial unique index in the migration,
+  // because "the default" being ambiguous is a bug no application code can fix
+  // after the fact.
+  isDefault  Boolean         @default(false)
+  position   Int             @default(0)
+  createdAt  DateTime        @default(now())
+
+  @@unique([spaceId, workflowId]) // offered once, not twice
+  @@index([spaceId])
+  @@index([workflowId])
+  @@map("space_workflows")
 }
 
 // Individual status within a workflow
