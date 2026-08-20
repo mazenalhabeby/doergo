@@ -2924,6 +2924,23 @@ model WorkflowStatus {
   workflowId   String
   workflow     StatusWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   name         String // "New", "In Transit", "Delivered", etc.
+  /**
+   * Translation key, for steps that came from a SHIPPED template.
+   *
+   * A status name is tenant data — someone typed it — so it cannot live in a
+   * locale file. But most names are not typed at all: they arrive from the
+   * library, in English, and then a German org reads "On The Way" forever.
+   *
+   * So a step copied from a shipped template carries the key its name came
+   * from, and the client renders `t(nameKey, { defaultValue: name })`. Costs
+   * nothing: no join, no extra query, no per-locale table — the lookup is a
+   * hash hit in a bundle already in memory. A step someone wrote has no key and
+   * renders exactly what they wrote, which is correct: a name typed in German
+   * must not be "translated" into anything.
+   *
+   * Renaming a shipped step clears the key, because it is then their name.
+   */
+  nameKey      String?
   key          String // "NEW", "IN_TRANSIT", "DELIVERED" — machine-readable
   color        String         @default("#3b82f6")
   icon         String? // optional lucide icon name

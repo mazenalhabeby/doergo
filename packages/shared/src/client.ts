@@ -47,3 +47,4 @@ export * from './access/workflow-modules';
 export * from './access/workflow-validation';
 export * from './access/workflow-template';
 export * from './access/workflow-scope';
+export * from './access/workflow-status-label';

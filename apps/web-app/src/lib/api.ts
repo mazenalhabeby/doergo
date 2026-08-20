@@ -4046,6 +4046,12 @@ export interface WorkflowStatus {
   id: string;
   workflowId: string;
   name: string;
+  /**
+   * Translation key, present only when the step came from a shipped template.
+   * Render with `workflowStatusLabel(status, t)` — never `status.name` directly,
+   * or a German organisation reads "On The Way" in an otherwise German app.
+   */
+  nameKey?: string | null;
   key: string;
   color: string;
   icon: string | null;

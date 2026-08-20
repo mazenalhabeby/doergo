@@ -82,6 +82,8 @@ export class WorkflowsService {
     /** Optional initial statuses — e.g. when starting from a template. */
     statuses?: Array<{
       name: string;
+      /** Set for a step from a shipped template — see workflow-status-label. */
+      nameKey?: string | null;
       key: string;
       color?: string;
       icon?: string;
@@ -151,6 +153,7 @@ export class WorkflowsService {
                 statuses: {
                   create: data.statuses.map((s, i) => ({
                     name: s.name,
+                    nameKey: s.nameKey ?? null,
                     key: s.key.toUpperCase(),
                     color: s.color || '#3b82f6',
                     icon: s.icon,
@@ -446,7 +449,21 @@ export class WorkflowsService {
     const status = await this.prisma.workflowStatus.update({
       where: { id: data.statusId },
       data: {
-        ...(data.name !== undefined && { name: data.name }),
+        ...(data.name !== undefined && {
+          name: data.name,
+          /*
+            A RENAME makes it their name — an identical save does not.
+
+            The key exists so a step from a shipped template reads in the
+            member's language. Keeping it through a rename would show ours and
+            silently discard theirs, with no way to tell why the rename did
+            nothing. But clearing it whenever `name` is merely PRESENT would
+            wipe every key the first time somebody pressed Save without editing
+            anything, because the editor sends every field each time. So the
+            trigger is a difference, not a field.
+          */
+          ...(data.name !== existing.name ? { nameKey: null } : {}),
+        }),
         ...(data.color !== undefined && { color: data.color }),
         ...(data.icon !== undefined && { icon: data.icon }),
         ...(data.position !== undefined && { position: data.position }),
@@ -818,7 +835,9 @@ export class WorkflowsService {
     // because at most one row per space may claim it (a partial unique index
     // makes two an impossible state rather than a merely discouraged one).
     if (data.makeDefault || position === 0) {
-      await this.setSpaceDefaultWorkflow({ ...data, workflowId: data.workflowId });
+      // The space was verified at the top of this method; going through the
+      // public entry point would verify it a second time on the same request.
+      await this.applySpaceDefault(data.spaceId, data.workflowId);
     }
     return success(row);
   }
@@ -954,19 +973,28 @@ export class WorkflowsService {
   /** Which offering new tasks inherit. Exactly one, enforced by the database. */
   async setSpaceDefaultWorkflow(data: { spaceId: string; workflowId: string; organizationId: string }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+    await this.applySpaceDefault(data.spaceId, data.workflowId);
+    return success({ spaceId: data.spaceId, workflowId: data.workflowId });
+  }
 
+  /**
+   * The write itself, with the tenancy check left to the caller.
+   *
+   * Private so the check can never be skipped from outside — the two callers
+   * both make it, and attaching would otherwise make it twice in one request.
+   */
+  private async applySpaceDefault(spaceId: string, workflowId: string) {
     await this.prisma.$transaction([
       // Cleared first: the partial unique index refuses two defaults, so setting
       // before clearing would fail rather than replace.
       this.prisma.spaceWorkflow.updateMany({
-        where: { spaceId: data.spaceId, isDefault: true },
+        where: { spaceId, isDefault: true },
         data: { isDefault: false },
       }),
       this.prisma.spaceWorkflow.updateMany({
-        where: { spaceId: data.spaceId, workflowId: data.workflowId },
+        where: { spaceId, workflowId },
         data: { isDefault: true },
       }),
     ]);
-    return success({ spaceId: data.spaceId, workflowId: data.workflowId });
   }
 }

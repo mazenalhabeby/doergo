@@ -221,6 +221,26 @@ export const AVAILABLE_MODULES = [
   { key: 'space_sharing', label: 'Space Sharing', description: 'Share this space with another organisation (view / contribute / control)', group: 'collaboration' },
 ] as const;
 
+/**
+ * Translation keys for the module catalogue.
+ *
+ * The `label` and `description` on AVAILABLE_MODULES are the ENGLISH SOURCE, not
+ * display strings — they were being rendered straight to the screen, so the
+ * Modules tab and every module name in the workflow editor read in English
+ * whatever language the app was set to.
+ *
+ * Derived from the key rather than listed, so adding a module cannot forget to
+ * add its key, and the English literal is passed as `defaultValue` — a missing
+ * translation degrades to English instead of showing `modules.sprints.label`.
+ */
+export const moduleI18n = {
+  label: (key: string) => `modules.${key}.label`,
+  description: (key: string) => `modules.${key}.description`,
+  groupLabel: (key: string) => `modules.groups.${key}.label`,
+  groupDescription: (key: string) => `modules.groups.${key}.description`,
+  presetLabel: (key: string) => `modules.presets.${key}`,
+} as const;
+
 /** Display groups for the module catalog. */
 export const MODULE_GROUPS = [
   { key: 'task', label: 'Task sections', description: 'Extra detail inside a task' },

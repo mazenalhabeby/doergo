@@ -8,7 +8,7 @@ import { Plus, X, Loader2, AlertCircle, Upload } from "lucide-react"
 
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { resolveTransitions, toStatusKey } from "@/lib/workflow-transitions"
-import { workflowAdvice, validateWorkflow, TYPE_CAPABILITY_MODULE, STEP_CAPABILITY_MODULE } from "@hbcfield/shared/client"
+import { workflowAdvice, validateWorkflow, moduleI18n, TYPE_CAPABILITY_MODULE, STEP_CAPABILITY_MODULE } from "@hbcfield/shared/client"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,14 @@ interface StatusEntry {
   isFinal: boolean
   isCanceled: boolean
   position: number
+  /**
+   * Translation key, for a step that came from a shipped template.
+   *
+   * Carried through untouched so an unedited step keeps reading in the member's
+   * language. Cleared the moment the name is edited — see `nameEdited` below —
+   * because from then on the name is theirs, not ours.
+   */
+  nameKey?: string | null
   /**
    * Where this step can go next.
    *
@@ -83,7 +91,15 @@ interface WorkflowBuilderProps {
 interface Template {
   id: string
   name: string
-  statuses: { name: string; color: string; isFinal: boolean; isCanceled: boolean; capabilities?: string[] }[]
+  statuses: {
+    name: string
+    /** Present on a shipped step — carried into the copy so it stays translated. */
+    nameKey?: string | null
+    color: string
+    isFinal: boolean
+    isCanceled: boolean
+    capabilities?: string[]
+  }[]
 }
 
 
@@ -97,13 +113,16 @@ interface Template {
 
 /** Task-type capabilities, in the order they read best. Keys match shared. */
 const TYPE_CAPABILITY_CHIPS = [
-  { key: "subtasks", labelKey: "modules.subtasks", label: "Subtasks" },
-  { key: "dependencies", labelKey: "modules.dependencies", label: "Dependencies" },
-  { key: "sprint", labelKey: "modules.sprints", label: "Sprints" },
-  { key: "story_points", labelKey: "modules.story_points", label: "Story Points" },
-  { key: "epic", labelKey: "modules.epics", label: "Epics" },
-  { key: "phase", labelKey: "modules.phases", label: "Phases" },
-  { key: "crm", labelKey: "modules.crm", label: "CRM" },
+  // labelKey via moduleI18n so a chip and the Modules tab always read the same
+  // word for the same module — they used a different key convention, and the
+  // one here existed in no locale at all, so every chip fell back to English.
+  { key: "subtasks", labelKey: moduleI18n.label("subtasks"), label: "Subtasks" },
+  { key: "dependencies", labelKey: moduleI18n.label("dependencies"), label: "Dependencies" },
+  { key: "sprint", labelKey: moduleI18n.label("sprints"), label: "Sprints" },
+  { key: "story_points", labelKey: moduleI18n.label("story_points"), label: "Story Points" },
+  { key: "epic", labelKey: moduleI18n.label("epics"), label: "Epics" },
+  { key: "phase", labelKey: moduleI18n.label("phases"), label: "Phases" },
+  { key: "crm", labelKey: moduleI18n.label("crm"), label: "CRM" },
 ] as const
 
 const BUILDER_CAPABILITIES = [
@@ -260,7 +279,9 @@ const StatusRow = memo(function StatusRow({
               title={
                 unmet
                   ? t("workflows.capabilities.moduleOff", {
-                      module: STEP_CAPABILITY_MODULE[cap.key],
+                      module: t(moduleI18n.label(STEP_CAPABILITY_MODULE[cap.key] ?? ""), {
+                        defaultValue: STEP_CAPABILITY_MODULE[cap.key],
+                      }),
                       defaultValue: 'The "{{module}}" module is off in this space, so this step cannot do it yet.',
                     })
                   : t(cap.hintKey, cap.hint)
@@ -339,6 +360,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       .sort((a, b) => a.position - b.position)
       .map((st) => ({
         name: st.name,
+        nameKey: st.nameKey ?? null,
         color: st.color,
         isFinal: st.isFinal,
         isCanceled: st.isCanceled,
@@ -368,6 +390,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
           position: s.position,
           capabilities: s.capabilities ?? [],
           transitions: s.transitions ?? [],
+          nameKey: s.nameKey ?? null,
         }))
     }
     // Empty until the library loads — a starter flow is chosen, not assumed.
@@ -438,7 +461,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
   const handleApplyTemplate = useCallback((template: Template) => {
     // Capabilities come across with the steps. Dropping them was what made a
     // template applied here a hollow copy of the same one applied elsewhere.
-    setStatuses(template.statuses.map((s, i) => ({ ...s, position: i })))
+    setStatuses(template.statuses.map((s, i) => ({ ...s, position: i, nameKey: s.nameKey ?? null })))
     setName((prev) => prev.trim() || template.name)
     setLastAddedIndex(null)
   }, [])
@@ -643,7 +666,9 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
                 title={
                   unmet
                     ? t("workflows.capabilities.moduleOff", {
-                        module: TYPE_CAPABILITY_MODULE[cap.key],
+                        module: t(moduleI18n.label(TYPE_CAPABILITY_MODULE[cap.key] ?? ""), {
+                          defaultValue: TYPE_CAPABILITY_MODULE[cap.key],
+                        }),
                         defaultValue: 'The "{{module}}" module is off in this space, so this step cannot do it yet.',
                       })
                     : undefined

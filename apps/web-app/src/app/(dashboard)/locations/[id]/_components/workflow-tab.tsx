@@ -23,6 +23,7 @@ import { WorkflowSelector } from "../../_components/workflow-selector"
 import { SpaceWorkflowsSection } from "./space-workflows-section"
 import { WorkflowBuilder } from "../../_components/workflow-builder"
 import { SectionHeader } from "./section-header"
+import { workflowStatusLabel } from "@hbcfield/shared/client"
 
 export function WorkflowTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -117,7 +118,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
                   className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-muted text-foreground"
                 >
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: status.color }} />
-                  {status.name}
+                  {workflowStatusLabel(status, t)}
                   {status.isFinal && !status.isCanceled && (
                     <span className="text-[10px] text-emerald-600 ml-0.5">{t("workflows.final")}</span>
                   )}

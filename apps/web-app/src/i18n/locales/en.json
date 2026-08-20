@@ -621,7 +621,8 @@
       "minutes": "{{count}}m ago",
       "hours": "{{count}}h ago",
       "days": "{{count}}d ago"
-    }
+    },
+    "discard": "Discard"
   },
   "auth": {
     "login": {
@@ -3416,7 +3417,10 @@
       "shared": "Shared with the organization",
       "shareFailed": "Could not share that task type"
     },
-    "previewWorkflow": "Preview or edit a task type"
+    "previewWorkflow": "Preview or edit a task type",
+    "moduleRequires": "Requires {{modules}}",
+    "unsavedCount": "{{count}} unsaved change",
+    "unsavedCount_other": "{{count}} unsaved changes"
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",
@@ -5939,5 +5943,132 @@
   },
   "apartments": {
     "removeFailed": "Could not remove this apartment"
+  },
+  "modules": {
+    "subtasks": {
+      "label": "Subtasks",
+      "description": "Break tasks into smaller child tasks"
+    },
+    "checklists": {
+      "label": "Checklists",
+      "description": "Add step-by-step checklists to tasks"
+    },
+    "attachments": {
+      "label": "Attachments",
+      "description": "Upload files and images to tasks"
+    },
+    "dependencies": {
+      "label": "Dependencies",
+      "description": "Define task sequencing and blockers"
+    },
+    "custom_fields": {
+      "label": "Custom Fields",
+      "description": "Add custom data fields to tasks"
+    },
+    "tracking": {
+      "label": "Route Tracking",
+      "description": "GPS tracking, route visualization, and progress card"
+    },
+    "service_reports": {
+      "label": "Service Reports",
+      "description": "Completion reports with photos and signatures"
+    },
+    "time_tracking": {
+      "label": "Time Tracking",
+      "description": "Track estimated and actual hours"
+    },
+    "sprints": {
+      "label": "Sprints",
+      "description": "Organize work into time-boxed iterations"
+    },
+    "story_points": {
+      "label": "Story Points",
+      "description": "Estimate task complexity with fibonacci points"
+    },
+    "epics": {
+      "label": "Epics",
+      "description": "Group related tasks into larger projects"
+    },
+    "phases": {
+      "label": "Phases",
+      "description": "Organize tasks into project phases"
+    },
+    "crm": {
+      "label": "CRM",
+      "description": "Customer records, info & history; sales works them with tasks (calls, visits)"
+    },
+    "apartments": {
+      "label": "Apartments / Units",
+      "description": "A directory of apartments/units in this space — assign a member or a client as resident; work is handled by tasks"
+    },
+    "b2c_portal": {
+      "label": "B2C Portal",
+      "description": "Invite a customer to the app to make orders & follow their jobs"
+    },
+    "space_sharing": {
+      "label": "Space Sharing",
+      "description": "Share this space with another organisation (view / contribute / control)"
+    },
+    "groups": {
+      "task": {
+        "label": "Task sections",
+        "description": "Extra detail inside a task"
+      },
+      "field": {
+        "label": "Field service",
+        "description": "On-site / mobile work"
+      },
+      "agile": {
+        "label": "Project / Agile",
+        "description": "Project-style planning"
+      },
+      "clients": {
+        "label": "Clients",
+        "description": "Customers & client-facing portal"
+      },
+      "collaboration": {
+        "label": "Collaboration",
+        "description": "Work across teams & organisations"
+      }
+    },
+    "presets": {
+      "field_service": "Field Service",
+      "logistics": "Logistics",
+      "project": "Project / Agile",
+      "minimal": "Minimal",
+      "everything": "Everything"
+    }
+  },
+  "workflowStatus": {
+    "assigned": "Assigned",
+    "accepted": "Accepted",
+    "en_route": "On The Way",
+    "arrived": "Arrived",
+    "in_progress": "In Progress",
+    "blocked": "Blocked",
+    "completed": "Completed",
+    "canceled": "Canceled",
+    "picked_up": "Picked Up",
+    "in_transit": "In Transit",
+    "delivered": "Delivered",
+    "todo": "To Do",
+    "doing": "Doing",
+    "done": "Done",
+    "scheduled": "Scheduled",
+    "visited": "Visited",
+    "outcome": "Outcome",
+    "submitted": "Submitted",
+    "new": "New",
+    "open": "Open",
+    "triaging": "Triaging",
+    "waiting": "Waiting",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "working": "Working",
+    "pending": "Pending",
+    "review": "Review",
+    "testing": "Testing",
+    "backlog": "Backlog",
+    "draft": "Draft"
   }
 }

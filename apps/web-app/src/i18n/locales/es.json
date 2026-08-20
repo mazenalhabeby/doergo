@@ -621,7 +621,8 @@
       "minutes": "hace {{count}} min",
       "hours": "hace {{count}} h",
       "days": "hace {{count}} d"
-    }
+    },
+    "discard": "Descartar"
   },
   "auth": {
     "login": {
@@ -3400,7 +3401,10 @@
       "shared": "Compartido con la organización",
       "shareFailed": "No se pudo compartir ese tipo de tarea"
     },
-    "previewWorkflow": "Ver o editar un tipo de tarea"
+    "previewWorkflow": "Ver o editar un tipo de tarea",
+    "moduleRequires": "Necesita {{modules}}",
+    "unsavedCount": "{{count}} cambio sin guardar",
+    "unsavedCount_other": "{{count}} cambios sin guardar"
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",
@@ -5922,5 +5926,132 @@
   },
   "apartments": {
     "removeFailed": "No se pudo eliminar este apartamento"
+  },
+  "modules": {
+    "subtasks": {
+      "label": "Subtareas",
+      "description": "Dividir las tareas en tareas más pequeñas"
+    },
+    "checklists": {
+      "label": "Listas de control",
+      "description": "Añadir listas paso a paso a las tareas"
+    },
+    "attachments": {
+      "label": "Adjuntos",
+      "description": "Subir archivos e imágenes a las tareas"
+    },
+    "dependencies": {
+      "label": "Dependencias",
+      "description": "Definir el orden de las tareas y sus bloqueos"
+    },
+    "custom_fields": {
+      "label": "Campos personalizados",
+      "description": "Añadir campos de datos propios a las tareas"
+    },
+    "tracking": {
+      "label": "Seguimiento de rutas",
+      "description": "Seguimiento GPS, visualización de rutas y tarjeta de progreso"
+    },
+    "service_reports": {
+      "label": "Informes de servicio",
+      "description": "Informes de finalización con fotos y firmas"
+    },
+    "time_tracking": {
+      "label": "Control horario",
+      "description": "Registrar las horas estimadas y reales"
+    },
+    "sprints": {
+      "label": "Sprints",
+      "description": "Organizar el trabajo en iteraciones con plazo"
+    },
+    "story_points": {
+      "label": "Puntos de historia",
+      "description": "Estimar la complejidad con puntos de Fibonacci"
+    },
+    "epics": {
+      "label": "Épicas",
+      "description": "Agrupar tareas relacionadas en proyectos mayores"
+    },
+    "phases": {
+      "label": "Fases",
+      "description": "Organizar las tareas en fases del proyecto"
+    },
+    "crm": {
+      "label": "CRM",
+      "description": "Fichas de cliente, datos e historial; ventas trabaja con tareas (llamadas, visitas)"
+    },
+    "apartments": {
+      "label": "Apartamentos / Unidades",
+      "description": "Un directorio de apartamentos o unidades de este espacio: asigne a un miembro o cliente como residente; el trabajo se gestiona con tareas"
+    },
+    "b2c_portal": {
+      "label": "Portal B2C",
+      "description": "Invitar a un cliente a la app para hacer pedidos y seguir sus trabajos"
+    },
+    "space_sharing": {
+      "label": "Compartir espacio",
+      "description": "Compartir este espacio con otra organización (ver / contribuir / controlar)"
+    },
+    "groups": {
+      "task": {
+        "label": "Secciones de tarea",
+        "description": "Detalle adicional dentro de una tarea"
+      },
+      "field": {
+        "label": "Servicio de campo",
+        "description": "Trabajo in situ o móvil"
+      },
+      "agile": {
+        "label": "Proyecto / Agile",
+        "description": "Planificación tipo proyecto"
+      },
+      "clients": {
+        "label": "Clientes",
+        "description": "Clientes y portal para clientes"
+      },
+      "collaboration": {
+        "label": "Colaboración",
+        "description": "Trabajar entre equipos y organizaciones"
+      }
+    },
+    "presets": {
+      "field_service": "Servicio de campo",
+      "logistics": "Logística",
+      "project": "Proyecto / Agile",
+      "minimal": "Mínimo",
+      "everything": "Todo"
+    }
+  },
+  "workflowStatus": {
+    "assigned": "Asignada",
+    "accepted": "Aceptada",
+    "en_route": "En camino",
+    "arrived": "Ha llegado",
+    "in_progress": "En curso",
+    "blocked": "Bloqueada",
+    "completed": "Completada",
+    "canceled": "Cancelada",
+    "picked_up": "Recogida",
+    "in_transit": "En tránsito",
+    "delivered": "Entregada",
+    "todo": "Por hacer",
+    "doing": "Haciendo",
+    "done": "Hecha",
+    "scheduled": "Programada",
+    "visited": "Visitada",
+    "outcome": "Resultado",
+    "submitted": "Enviada",
+    "new": "Nueva",
+    "open": "Abierta",
+    "triaging": "En triaje",
+    "waiting": "En espera",
+    "resolved": "Resuelta",
+    "closed": "Cerrada",
+    "working": "Trabajando",
+    "pending": "Pendiente",
+    "review": "Revisión",
+    "testing": "Pruebas",
+    "backlog": "Backlog",
+    "draft": "Borrador"
   }
 }

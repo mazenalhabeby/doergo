@@ -621,7 +621,8 @@
       "minutes": "{{count}} min fa",
       "hours": "{{count}} h fa",
       "days": "{{count}} g fa"
-    }
+    },
+    "discard": "Scarta"
   },
   "auth": {
     "login": {
@@ -3391,7 +3392,10 @@
       "shared": "Condiviso con l’organizzazione",
       "shareFailed": "Impossibile condividere quel tipo di attività"
     },
-    "previewWorkflow": "Anteprima o modifica di un tipo di attività"
+    "previewWorkflow": "Anteprima o modifica di un tipo di attività",
+    "moduleRequires": "Richiede {{modules}}",
+    "unsavedCount": "{{count}} modifica non salvata",
+    "unsavedCount_other": "{{count}} modifiche non salvate"
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",
@@ -5913,5 +5917,132 @@
   },
   "apartments": {
     "removeFailed": "Impossibile rimuovere questo appartamento"
+  },
+  "modules": {
+    "subtasks": {
+      "label": "Sottoattività",
+      "description": "Suddividere le attività in attività più piccole"
+    },
+    "checklists": {
+      "label": "Checklist",
+      "description": "Aggiungere checklist passo-passo alle attività"
+    },
+    "attachments": {
+      "label": "Allegati",
+      "description": "Caricare file e immagini nelle attività"
+    },
+    "dependencies": {
+      "label": "Dipendenze",
+      "description": "Definire l’ordine delle attività e i blocchi"
+    },
+    "custom_fields": {
+      "label": "Campi personalizzati",
+      "description": "Aggiungere campi dati propri alle attività"
+    },
+    "tracking": {
+      "label": "Tracciamento percorso",
+      "description": "Tracciamento GPS, visualizzazione del percorso e scheda di avanzamento"
+    },
+    "service_reports": {
+      "label": "Rapporti di servizio",
+      "description": "Rapporti di completamento con foto e firme"
+    },
+    "time_tracking": {
+      "label": "Rilevamento tempi",
+      "description": "Registrare le ore stimate ed effettive"
+    },
+    "sprints": {
+      "label": "Sprint",
+      "description": "Organizzare il lavoro in iterazioni a tempo"
+    },
+    "story_points": {
+      "label": "Story point",
+      "description": "Stimare la complessità con punti di Fibonacci"
+    },
+    "epics": {
+      "label": "Epiche",
+      "description": "Raggruppare attività correlate in progetti più ampi"
+    },
+    "phases": {
+      "label": "Fasi",
+      "description": "Organizzare le attività in fasi di progetto"
+    },
+    "crm": {
+      "label": "CRM",
+      "description": "Schede cliente, dati e cronologia; le vendite ci lavorano con attività (chiamate, visite)"
+    },
+    "apartments": {
+      "label": "Appartamenti / Unità",
+      "description": "Un elenco degli appartamenti o unità di questo spazio: assegna un membro o un cliente come residente; il lavoro si gestisce con le attività"
+    },
+    "b2c_portal": {
+      "label": "Portale B2C",
+      "description": "Invitare un cliente nell’app per fare ordini e seguire i lavori"
+    },
+    "space_sharing": {
+      "label": "Condivisione spazio",
+      "description": "Condividere questo spazio con un’altra organizzazione (vedere / contribuire / gestire)"
+    },
+    "groups": {
+      "task": {
+        "label": "Sezioni attività",
+        "description": "Dettagli aggiuntivi dentro un’attività"
+      },
+      "field": {
+        "label": "Servizio sul campo",
+        "description": "Lavoro in loco o mobile"
+      },
+      "agile": {
+        "label": "Progetto / Agile",
+        "description": "Pianificazione in stile progetto"
+      },
+      "clients": {
+        "label": "Clienti",
+        "description": "Clienti e portale clienti"
+      },
+      "collaboration": {
+        "label": "Collaborazione",
+        "description": "Lavorare tra team e organizzazioni"
+      }
+    },
+    "presets": {
+      "field_service": "Servizio sul campo",
+      "logistics": "Logistica",
+      "project": "Progetto / Agile",
+      "minimal": "Minimo",
+      "everything": "Tutto"
+    }
+  },
+  "workflowStatus": {
+    "assigned": "Assegnata",
+    "accepted": "Accettata",
+    "en_route": "In viaggio",
+    "arrived": "Arrivato",
+    "in_progress": "In corso",
+    "blocked": "Bloccata",
+    "completed": "Completata",
+    "canceled": "Annullata",
+    "picked_up": "Ritirata",
+    "in_transit": "In transito",
+    "delivered": "Consegnata",
+    "todo": "Da fare",
+    "doing": "In corso",
+    "done": "Fatto",
+    "scheduled": "Pianificata",
+    "visited": "Visitato",
+    "outcome": "Esito",
+    "submitted": "Inviata",
+    "new": "Nuova",
+    "open": "Aperta",
+    "triaging": "In triage",
+    "waiting": "In attesa",
+    "resolved": "Risolta",
+    "closed": "Chiusa",
+    "working": "In lavorazione",
+    "pending": "In sospeso",
+    "review": "Revisione",
+    "testing": "Test",
+    "backlog": "Backlog",
+    "draft": "Bozza"
   }
 }

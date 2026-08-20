@@ -143,4 +143,30 @@ describe('ModuleGuard — the SPACE decides, the plan still gates', () => {
       g.canActivate(ctx({ method: 'PATCH', user, params: { id: 'p-legacy' }, url: '/api/v1/sprints/p-legacy' })),
     ).resolves.toBe(true);
   });
+
+  it('judges a task by ITS space, not by a spaceId in the request body', async () => {
+    /*
+      Guards run before validation pipes, so this reads the raw body — including
+      fields a DTO would strip a moment later. If the body won, a mutation on a
+      task in a space with the module OFF could be judged against a space that
+      has it on.
+    */
+    const g = new ModuleGuard(
+      reflector('checklists'),
+      resolver({ 'sp-off': [], 'sp-on': ['checklists'] }, { 't-1': 'sp-off' }),
+    );
+    await expect(
+      g.canActivate(
+        ctx({ method: 'PATCH', user, params: { id: 't-1' }, body: { spaceId: 'sp-on' }, url: '/api/v1/tasks/t-1' }),
+      ),
+    ).rejects.toThrow(HttpException);
+  });
+
+  it('still uses an explicit spaceId when there is no resource yet', async () => {
+    // Creation: the body IS the target, and there is nothing else to ask.
+    const g = new ModuleGuard(reflector('checklists'), resolver({ 'sp-1': [] }));
+    await expect(
+      g.canActivate(ctx({ method: 'POST', user, body: { spaceId: 'sp-1' }, url: '/api/v1/tasks' })),
+    ).rejects.toThrow(HttpException);
+  });
 });

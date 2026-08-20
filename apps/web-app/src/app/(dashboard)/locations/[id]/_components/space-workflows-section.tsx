@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Check, Plus, Trash2, Loader2, Star, Library, GitFork, Globe } from "lucide-react"
 
 import { workflowsApi, type StatusWorkflow } from "@/lib/api"
-import { spaceMayOffer } from "@hbcfield/shared/client"
+import { spaceMayOffer, workflowStatusLabel } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import {
@@ -193,7 +193,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                   </span>
                   {!!wf.statuses?.length && (
                     <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {wf.statuses.map((s) => s.name).join(" → ")}
+                      {wf.statuses.map((s) => workflowStatusLabel(s, t)).join(" → ")}
                     </span>
                   )}
                 </span>
@@ -292,7 +292,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                   <SelectItem key={tpl.id} value={tpl.id}>
                     {tpl.name}
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {tpl.statuses.map((st) => st.name).join(" → ")}
+                      {tpl.statuses.map((st) => workflowStatusLabel(st, t)).join(" → ")}
                     </span>
                   </SelectItem>
                 ))}

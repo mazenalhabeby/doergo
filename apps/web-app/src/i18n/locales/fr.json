@@ -621,7 +621,8 @@
       "minutes": "il y a {{count}} min",
       "hours": "il y a {{count}} h",
       "days": "il y a {{count}} j"
-    }
+    },
+    "discard": "Annuler les modifications"
   },
   "auth": {
     "login": {
@@ -3391,7 +3392,10 @@
       "shared": "Partagé avec l’organisation",
       "shareFailed": "Impossible de partager ce type de tâche"
     },
-    "previewWorkflow": "Aperçu ou modification d’un type de tâche"
+    "previewWorkflow": "Aperçu ou modification d’un type de tâche",
+    "moduleRequires": "Nécessite {{modules}}",
+    "unsavedCount": "{{count}} modification non enregistrée",
+    "unsavedCount_other": "{{count}} modifications non enregistrées"
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",
@@ -5913,5 +5917,132 @@
   },
   "apartments": {
     "removeFailed": "Impossible de supprimer ce logement"
+  },
+  "modules": {
+    "subtasks": {
+      "label": "Sous-tâches",
+      "description": "Découper les tâches en tâches plus petites"
+    },
+    "checklists": {
+      "label": "Checklists",
+      "description": "Ajouter des listes étape par étape aux tâches"
+    },
+    "attachments": {
+      "label": "Pièces jointes",
+      "description": "Joindre des fichiers et des images aux tâches"
+    },
+    "dependencies": {
+      "label": "Dépendances",
+      "description": "Définir l’ordre des tâches et leurs blocages"
+    },
+    "custom_fields": {
+      "label": "Champs personnalisés",
+      "description": "Ajouter vos propres champs aux tâches"
+    },
+    "tracking": {
+      "label": "Suivi d’itinéraire",
+      "description": "Suivi GPS, visualisation du trajet et carte de progression"
+    },
+    "service_reports": {
+      "label": "Rapports d’intervention",
+      "description": "Rapports de fin avec photos et signatures"
+    },
+    "time_tracking": {
+      "label": "Suivi du temps",
+      "description": "Enregistrer les heures estimées et réelles"
+    },
+    "sprints": {
+      "label": "Sprints",
+      "description": "Organiser le travail en itérations limitées dans le temps"
+    },
+    "story_points": {
+      "label": "Story points",
+      "description": "Estimer la complexité avec des points de Fibonacci"
+    },
+    "epics": {
+      "label": "Epics",
+      "description": "Regrouper des tâches liées en projets plus larges"
+    },
+    "phases": {
+      "label": "Phases",
+      "description": "Organiser les tâches en phases de projet"
+    },
+    "crm": {
+      "label": "CRM",
+      "description": "Fiches client, informations et historique ; les ventes les traitent par des tâches (appels, visites)"
+    },
+    "apartments": {
+      "label": "Appartements / Lots",
+      "description": "Un répertoire des appartements ou lots de cet espace — affectez un membre ou un client comme résident ; le travail passe par des tâches"
+    },
+    "b2c_portal": {
+      "label": "Portail B2C",
+      "description": "Inviter un client dans l’application pour passer commande et suivre ses interventions"
+    },
+    "space_sharing": {
+      "label": "Partage d’espace",
+      "description": "Partager cet espace avec une autre organisation (voir / contribuer / gérer)"
+    },
+    "groups": {
+      "task": {
+        "label": "Sections de tâche",
+        "description": "Détails supplémentaires dans une tâche"
+      },
+      "field": {
+        "label": "Intervention terrain",
+        "description": "Travail sur site / mobile"
+      },
+      "agile": {
+        "label": "Projet / Agile",
+        "description": "Planification de type projet"
+      },
+      "clients": {
+        "label": "Clients",
+        "description": "Clients et portail client"
+      },
+      "collaboration": {
+        "label": "Collaboration",
+        "description": "Travailler entre équipes et organisations"
+      }
+    },
+    "presets": {
+      "field_service": "Intervention terrain",
+      "logistics": "Logistique",
+      "project": "Projet / Agile",
+      "minimal": "Minimal",
+      "everything": "Tout"
+    }
+  },
+  "workflowStatus": {
+    "assigned": "Assignée",
+    "accepted": "Acceptée",
+    "en_route": "En route",
+    "arrived": "Arrivé",
+    "in_progress": "En cours",
+    "blocked": "Bloquée",
+    "completed": "Terminée",
+    "canceled": "Annulée",
+    "picked_up": "Récupérée",
+    "in_transit": "En transit",
+    "delivered": "Livrée",
+    "todo": "À faire",
+    "doing": "En cours",
+    "done": "Terminé",
+    "scheduled": "Planifiée",
+    "visited": "Visité",
+    "outcome": "Résultat",
+    "submitted": "Soumise",
+    "new": "Nouvelle",
+    "open": "Ouverte",
+    "triaging": "En triage",
+    "waiting": "En attente",
+    "resolved": "Résolue",
+    "closed": "Clôturée",
+    "working": "En travaux",
+    "pending": "En attente",
+    "review": "Revue",
+    "testing": "Tests",
+    "backlog": "Backlog",
+    "draft": "Brouillon"
   }
 }

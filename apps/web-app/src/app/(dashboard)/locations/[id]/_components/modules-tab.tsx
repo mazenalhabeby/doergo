@@ -7,8 +7,9 @@ import { Blocks, Sparkles, Plus, Minus } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi, type CompanyLocation } from "@/lib/api"
-import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, moduleRequires, resolveModuleDependencies } from "@hbcfield/shared/client"
+import { AVAILABLE_MODULES, MODULE_GROUPS, MODULE_PRESETS, moduleI18n, moduleRequires, resolveModuleDependencies } from "@hbcfield/shared/client"
 
+/** The English source for each module, used as the fallback for its key. */
 const MODULE_LABEL: Record<string, string> = Object.fromEntries(AVAILABLE_MODULES.map((m) => [m.key, m.label]))
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -90,7 +91,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                     : "border-border text-muted-foreground hover:bg-muted/50",
                 )}
               >
-                {p.label}
+                {t(moduleI18n.presetLabel(p.key), { defaultValue: p.label })}
               </button>
             )
           })}
@@ -101,8 +102,8 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {MODULE_GROUPS.map((grp) => (
         <div key={grp.key} className="space-y-2">
           <div className="px-1 pt-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{grp.label}</p>
-            <p className="text-[11px] text-muted-foreground/70">{grp.description}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t(moduleI18n.groupLabel(grp.key), { defaultValue: grp.label })}</p>
+            <p className="text-[11px] text-muted-foreground/70">{t(moduleI18n.groupDescription(grp.key), { defaultValue: grp.description })}</p>
           </div>
           {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => {
             const isEnabled = enabledModules.includes(mod.key)
@@ -120,11 +121,11 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                 )}
               >
                 <div className="flex-1 min-w-0 mr-3">
-                  <span className="text-sm font-medium text-foreground">{mod.label}</span>
-                  <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+                  <span className="text-sm font-medium text-foreground">{t(moduleI18n.label(mod.key), { defaultValue: mod.label })}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t(moduleI18n.description(mod.key), { defaultValue: mod.description })}</p>
                   {locked && (
                     <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">
-                      🔒 {t("locations.moduleRequires", "Requires {{modules}}", { modules: unmet.map((r) => MODULE_LABEL[r] || r).join(", ") })}
+                      🔒 {t("locations.moduleRequires", "Requires {{modules}}", { modules: unmet.map((r) => t(moduleI18n.label(r), { defaultValue: MODULE_LABEL[r] || r })).join(", ") })}
                     </p>
                   )}
                 </div>
@@ -158,12 +159,12 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {added.map((m) => (
                   <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                    <Plus className="h-3 w-3" />{MODULE_LABEL[m] || m}
+                    <Plus className="h-3 w-3" />{t(moduleI18n.label(m), { defaultValue: MODULE_LABEL[m] || m })}
                   </span>
                 ))}
                 {removed.map((m) => (
                   <span key={m} className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-400">
-                    <Minus className="h-3 w-3" />{MODULE_LABEL[m] || m}
+                    <Minus className="h-3 w-3" />{t(moduleI18n.label(m), { defaultValue: MODULE_LABEL[m] || m })}
                   </span>
                 ))}
               </div>

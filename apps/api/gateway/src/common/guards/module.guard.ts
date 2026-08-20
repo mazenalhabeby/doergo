@@ -94,13 +94,20 @@ export class ModuleGuard implements CanActivate {
     const orgId = user.organizationId;
     if (!orgId) return null;
 
-    const explicit =
-      req.body?.spaceId ?? req.params?.spaceId ?? req.query?.spaceId ?? null;
-    if (typeof explicit === 'string' && explicit) {
-      return this.spaceModules.forSpace(explicit, orgId);
-    }
+    /*
+      The RESOURCE decides, and only then the request.
 
-    // A task route carries the task, and the task carries the space.
+      Guards run before validation pipes, so this reads the raw body — including
+      fields a DTO would go on to strip. Trusting a body-supplied spaceId first
+      meant a mutation on a resource in one space could be judged against
+      another space that happens to have the module on. Nothing exploitable
+      today (forbidNonWhitelisted rejects the stray field a moment later), but
+      it is one permissive DTO away from being a real bypass, and the resource's
+      own space is the more correct answer regardless.
+
+      An explicit spaceId still decides where there is no resource yet, which is
+      creation — and there it IS the target.
+    */
     const taskId = req.params?.taskId ?? (this.routeIs(req, '/tasks/') ? req.params?.id : null);
     if (typeof taskId === 'string' && taskId) {
       const spaceId = await this.spaceModules.spaceOfTask(taskId, orgId);
@@ -110,15 +117,19 @@ export class ModuleGuard implements CanActivate {
 
     /*
       Planning objects — a sprint, phase or epic — carry their own space now.
-
-      They were the last routes that could not be judged against a space,
-      because the models were organization-owned. A null spaceId still means
-      organization-wide, which is what every row created before this is.
+      A null spaceId means organization-wide, which is what every row created
+      before they had a space still is.
     */
     const planning = PLANNING_ROUTES.find((r) => this.routeIs(req, r.segment));
     if (planning && typeof req.params?.id === 'string' && req.params.id) {
       const spaceId = await this.spaceModules.spaceOfPlanningObject(planning.cmd, req.params.id, orgId);
       if (spaceId) return this.spaceModules.forSpace(spaceId, orgId);
+      return null;
+    }
+
+    const explicit = req.params?.spaceId ?? req.body?.spaceId ?? req.query?.spaceId ?? null;
+    if (typeof explicit === 'string' && explicit) {
+      return this.spaceModules.forSpace(explicit, orgId);
     }
 
     return null;

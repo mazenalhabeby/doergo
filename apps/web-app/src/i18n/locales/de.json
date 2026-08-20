@@ -621,7 +621,8 @@
       "minutes": "vor {{count}} Min.",
       "hours": "vor {{count}} Std.",
       "days": "vor {{count}} T."
-    }
+    },
+    "discard": "Verwerfen"
   },
   "auth": {
     "login": {
@@ -3416,7 +3417,10 @@
       "shared": "Mit der Organisation geteilt",
       "shareFailed": "Diese Aufgabenart konnte nicht geteilt werden"
     },
-    "previewWorkflow": "Aufgabentyp ansehen oder bearbeiten"
+    "previewWorkflow": "Aufgabentyp ansehen oder bearbeiten",
+    "moduleRequires": "Benötigt {{modules}}",
+    "unsavedCount": "{{count}} nicht gespeicherte Änderung",
+    "unsavedCount_other": "{{count}} nicht gespeicherte Änderungen"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",
@@ -5938,5 +5942,132 @@
   },
   "apartments": {
     "removeFailed": "Diese Wohnung konnte nicht entfernt werden"
+  },
+  "modules": {
+    "subtasks": {
+      "label": "Teilaufgaben",
+      "description": "Aufgaben in kleinere Teilaufgaben zerlegen"
+    },
+    "checklists": {
+      "label": "Checklisten",
+      "description": "Schritt-für-Schritt-Checklisten zu Aufgaben hinzufügen"
+    },
+    "attachments": {
+      "label": "Anhänge",
+      "description": "Dateien und Bilder zu Aufgaben hochladen"
+    },
+    "dependencies": {
+      "label": "Abhängigkeiten",
+      "description": "Reihenfolge und Blocker zwischen Aufgaben festlegen"
+    },
+    "custom_fields": {
+      "label": "Benutzerdefinierte Felder",
+      "description": "Eigene Datenfelder zu Aufgaben hinzufügen"
+    },
+    "tracking": {
+      "label": "Routenverfolgung",
+      "description": "GPS-Verfolgung, Routendarstellung und Fortschrittskarte"
+    },
+    "service_reports": {
+      "label": "Serviceberichte",
+      "description": "Abschlussberichte mit Fotos und Unterschriften"
+    },
+    "time_tracking": {
+      "label": "Zeiterfassung",
+      "description": "Geschätzte und tatsächliche Stunden erfassen"
+    },
+    "sprints": {
+      "label": "Sprints",
+      "description": "Arbeit in zeitlich begrenzte Iterationen gliedern"
+    },
+    "story_points": {
+      "label": "Story Points",
+      "description": "Aufwand von Aufgaben mit Fibonacci-Punkten schätzen"
+    },
+    "epics": {
+      "label": "Epics",
+      "description": "Zusammengehörige Aufgaben zu größeren Vorhaben bündeln"
+    },
+    "phases": {
+      "label": "Phasen",
+      "description": "Aufgaben in Projektphasen gliedern"
+    },
+    "crm": {
+      "label": "CRM",
+      "description": "Kundendaten, Infos und Historie; der Vertrieb bearbeitet sie mit Aufgaben (Anrufe, Besuche)"
+    },
+    "apartments": {
+      "label": "Wohnungen / Einheiten",
+      "description": "Ein Verzeichnis der Wohnungen/Einheiten in diesem Bereich — ein Mitglied oder einen Kunden als Bewohner zuordnen; die Arbeit läuft über Aufgaben"
+    },
+    "b2c_portal": {
+      "label": "B2C-Portal",
+      "description": "Kunden in die App einladen, um Aufträge zu erteilen und zu verfolgen"
+    },
+    "space_sharing": {
+      "label": "Bereich teilen",
+      "description": "Diesen Bereich mit einer anderen Organisation teilen (Ansehen / Mitarbeiten / Steuern)"
+    },
+    "groups": {
+      "task": {
+        "label": "Aufgabenbereiche",
+        "description": "Zusätzliche Details innerhalb einer Aufgabe"
+      },
+      "field": {
+        "label": "Außendienst",
+        "description": "Arbeit vor Ort / mobil"
+      },
+      "agile": {
+        "label": "Projekt / Agil",
+        "description": "Planung im Projektstil"
+      },
+      "clients": {
+        "label": "Kunden",
+        "description": "Kunden und Kundenportal"
+      },
+      "collaboration": {
+        "label": "Zusammenarbeit",
+        "description": "Team- und organisationsübergreifend arbeiten"
+      }
+    },
+    "presets": {
+      "field_service": "Außendienst",
+      "logistics": "Logistik",
+      "project": "Projekt / Agil",
+      "minimal": "Minimal",
+      "everything": "Alles"
+    }
+  },
+  "workflowStatus": {
+    "assigned": "Zugewiesen",
+    "accepted": "Angenommen",
+    "en_route": "Unterwegs",
+    "arrived": "Angekommen",
+    "in_progress": "In Arbeit",
+    "blocked": "Blockiert",
+    "completed": "Abgeschlossen",
+    "canceled": "Storniert",
+    "picked_up": "Abgeholt",
+    "in_transit": "Im Transport",
+    "delivered": "Zugestellt",
+    "todo": "Zu erledigen",
+    "doing": "In Arbeit",
+    "done": "Erledigt",
+    "scheduled": "Geplant",
+    "visited": "Besucht",
+    "outcome": "Ergebnis",
+    "submitted": "Eingereicht",
+    "new": "Neu",
+    "open": "Offen",
+    "triaging": "In Sichtung",
+    "waiting": "Wartet",
+    "resolved": "Gelöst",
+    "closed": "Geschlossen",
+    "working": "In Bearbeitung",
+    "pending": "Ausstehend",
+    "review": "Prüfung",
+    "testing": "Test",
+    "backlog": "Backlog",
+    "draft": "Entwurf"
   }
 }

@@ -23,6 +23,7 @@
  */
 
 import { isStepCapability, isTypeCapability } from './workflow-modules';
+import { workflowStatusKey } from './workflow-status-label';
 
 /**
  * Bounds on what a template may contain.
@@ -41,6 +42,13 @@ export const TEMPLATE_LIMITS = {
 /** A status as it is stored in a template — the shape a clone writes out. */
 export interface TemplateStatusShape {
   name: string;
+  /**
+   * Where this name is published for translation.
+   *
+   * Derived from the key rather than stored, so a shipped template cannot ship
+   * a name and a key that disagree. See `workflow-status-label`.
+   */
+  nameKey: string;
   key: string;
   color: string;
   icon?: string;
@@ -122,6 +130,7 @@ export function normalizeTemplateStatuses(raw: unknown): TemplateStatusShape[] {
 
     out.push({
       key,
+      nameKey: workflowStatusKey(key),
       name: str(s.name, TEMPLATE_LIMITS.maxNameLength) || key,
       color: typeof s.color === 'string' && HEX.test(s.color.trim()) ? s.color.trim() : DEFAULT_COLOR,
       ...(ICON_ALLOWED.test(icon) ? { icon } : {}),
