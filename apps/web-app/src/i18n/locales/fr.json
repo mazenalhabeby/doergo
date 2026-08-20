@@ -6106,7 +6106,9 @@
     "roleParts": "Catalogue de pièces",
     "roleFaults": "Codes défaut",
     "sharedOn": "Identique pour tous",
-    "sharedOff": "Différent sur chacun"
+    "sharedOff": "Différent sur chacun",
+    "template": "Partir d’un type prêt à l’emploi",
+    "templateHint": "Remplit les champs, l’argent et les tableaux. Tout reste modifiable ensuite."
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",

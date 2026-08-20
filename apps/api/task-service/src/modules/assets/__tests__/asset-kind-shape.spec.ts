@@ -277,3 +277,49 @@ describe('catalogues and fault codes', () => {
     expect(partLinkColumn(faultsList(s)!)).toBeNull();
   });
 });
+
+import { KIND_TEMPLATES, kindTemplate } from '@hbcfield/shared';
+
+/**
+ * A template is copied into a kind and then edited, so it has to survive the
+ * same normaliser everything else does — a template that lost half its shape on
+ * the way in would be worse than no template.
+ */
+describe('ready-made kinds', () => {
+  it.each(KIND_TEMPLATES.map((tpl) => [tpl.id, tpl] as const))(
+    '%s survives normalisation unchanged',
+    (_id, tpl) => {
+      expect(shapeOf(tpl.shape)).toEqual(tpl.shape);
+    },
+  );
+
+  it('gives the machine template a catalogue and a fault library, both shared', () => {
+    const machine = kindTemplate('machine')!;
+    const shape = shapeOf(machine.shape);
+    expect(partsList(shape)).toMatchObject({ shared: true });
+    expect(faultsList(shape)).toMatchObject({ shared: true });
+    // The link is what makes the library useful, so the column must be there.
+    expect(partLinkColumn(faultsList(shape)!)).toBe('Part');
+  });
+
+  it('gives the apartment template an address and a client-capable resident', () => {
+    const shape = shapeOf(kindTemplate('apartment')!.shape);
+    expect(shape.hasAddress).toBe(true);
+    expect(shape.holder).toMatchObject({ enabled: true, label: 'Resident', clients: true });
+  });
+
+  it('keeps every template within the limits a kind may hold', () => {
+    for (const tpl of KIND_TEMPLATES) {
+      expect(tpl.shape.fields.length).toBeLessThanOrEqual(KIND_SHAPE_LIMITS.maxFields);
+      expect(tpl.shape.lists.length).toBeLessThanOrEqual(KIND_SHAPE_LIMITS.maxLists);
+      for (const list of tpl.shape.lists) {
+        expect(list.columns.length).toBeLessThanOrEqual(KIND_SHAPE_LIMITS.maxColumns);
+      }
+      expect(tpl.shape.money.categories.length).toBeLessThanOrEqual(KIND_SHAPE_LIMITS.maxMoneyCategories);
+    }
+  });
+
+  it('returns null for an id nobody ships — a stale link, not a crash', () => {
+    expect(kindTemplate('spaceship')).toBeNull();
+  });
+});

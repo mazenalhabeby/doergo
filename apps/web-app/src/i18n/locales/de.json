@@ -6131,7 +6131,9 @@
     "roleParts": "Teilekatalog",
     "roleFaults": "Fehlercodes",
     "sharedOn": "Für alle gleich",
-    "sharedOff": "Je Eintrag anders"
+    "sharedOff": "Je Eintrag anders",
+    "template": "Mit einer fertigen Art beginnen",
+    "templateHint": "Füllt Felder, Geld und Tabellen aus. Alles danach änderbar."
   },
   "assetRecords": {
     "intro": "Alles dieser Art in diesem Space.",

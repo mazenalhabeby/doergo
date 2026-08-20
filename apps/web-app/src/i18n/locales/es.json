@@ -6115,7 +6115,9 @@
     "roleParts": "Catálogo de piezas",
     "roleFaults": "Códigos de error",
     "sharedOn": "Igual para todos",
-    "sharedOff": "Distinto en cada uno"
+    "sharedOff": "Distinto en cada uno",
+    "template": "Empezar desde un tipo ya hecho",
+    "templateHint": "Rellena los campos, el dinero y las tablas. Puede cambiarlo todo después."
   },
   "assetRecords": {
     "intro": "Todo de este tipo en este espacio.",

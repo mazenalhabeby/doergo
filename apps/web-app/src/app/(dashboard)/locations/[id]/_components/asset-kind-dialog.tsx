@@ -7,7 +7,7 @@ import { ArrowDownLeft, ArrowUpRight, ListPlus, Loader2, MapPin, Plus, Table2, T
 
 import { assetsApi, type AssetCategory } from "@/lib/api"
 import {
-  normalizeKindShape, KIND_SHAPE_LIMITS, FAULT_COLUMNS,
+  normalizeKindShape, KIND_SHAPE_LIMITS, FAULT_COLUMNS, PARTS_COLUMNS, KIND_TEMPLATES,
   type KindShape, type MoneyDirection, type KindListRole,
 } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
@@ -112,6 +112,40 @@ export function AssetKindDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-1">
+          {/* Ready-made kinds. Copied in, then yours: everything below stays
+              editable, and nothing links back. Only offered when creating —
+              stamping a template over a kind that already has records would
+              silently rewrite what those records are. */}
+          {!existing && (
+            <div>
+              <Label className="text-xs text-muted-foreground">
+                {t("assetKinds.template", "Start from a ready-made kind")}
+              </Label>
+              <p className="mb-1.5 text-[11px] text-muted-foreground/70">
+                {t("assetKinds.templateHint", "Fills in the fields, the money and the tables. Change anything afterwards.")}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {KIND_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    title={tpl.description}
+                    onClick={() => {
+                      setShape(normalizeKindShape(tpl.shape))
+                      // Only name an unnamed kind: somebody who typed "Presses"
+                      // then picked Machine meant the shape, not the name.
+                      setName((n) => n.trim() || tpl.name)
+                      if (!description.trim()) setDescription(tpl.description)
+                    }}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+                  >
+                    {tpl.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── What it is ─────────────────────────────────────────────── */}
           <div>
             <Label className="text-xs text-muted-foreground">{t("assetKinds.name", "Name")}</Label>
@@ -311,13 +345,17 @@ export function AssetKindDialog({
                     value={list.role}
                     onChange={(e) => {
                       const role = e.target.value as KindListRole
-                      const wantsFaultColumns =
-                        role === "faults" && list.columns.filter((c) => c.label.trim()).length <= 1
+                      // Only when the table is still effectively empty: filling
+                      // in a standard set must never overwrite columns somebody
+                      // has already typed.
+                      const untouched = list.columns.filter((c) => c.label.trim()).length <= 1
+                      const standard =
+                        role === "faults" ? FAULT_COLUMNS : role === "parts" ? PARTS_COLUMNS : null
                       setList(i, {
                         role,
                         shared: role !== "plain",
-                        ...(wantsFaultColumns
-                          ? { columns: FAULT_COLUMNS.map((label) => ({ label })) }
+                        ...(standard && untouched
+                          ? { columns: standard.map((label) => ({ label })) }
                           : {}),
                       })
                     }}

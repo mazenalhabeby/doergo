@@ -6132,7 +6132,9 @@
     "roleParts": "Parts catalogue",
     "roleFaults": "Fault codes",
     "sharedOn": "Same for every one",
-    "sharedOff": "Different on each"
+    "sharedOff": "Different on each",
+    "template": "Start from a ready-made kind",
+    "templateHint": "Fills in the fields, the money and the tables. Change anything afterwards."
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",

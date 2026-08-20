@@ -6106,7 +6106,9 @@
     "roleParts": "Catalogo ricambi",
     "roleFaults": "Codici di errore",
     "sharedOn": "Uguale per tutti",
-    "sharedOff": "Diverso su ciascuno"
+    "sharedOff": "Diverso su ciascuno",
+    "template": "Parti da un tipo già pronto",
+    "templateHint": "Compila campi, denaro e tabelle. Puoi cambiare tutto dopo."
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
