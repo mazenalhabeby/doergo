@@ -229,6 +229,37 @@ function toKey(name: string): string {
     .replace(/^_|_$/g, "")
 }
 
+
+/**
+ * Wire each step to the next one, and every working step to the cancel step.
+ *
+ * This builder holds names, colours and the finished/cancelled marks — it has
+ * no transition editor. It used to write statuses with NO transitions at all,
+ * which was harmless once and is not any more: a step with no way out and no
+ * "finished" mark is a dead end, so the validator refuses the whole task type
+ * the moment somebody offers it in a space. A type you can create and then
+ * never use is worse than one you could not create.
+ *
+ * A straight chain is what this editor's list already implies. Anyone needing
+ * branching gets it in the space's own Task Types editor, which has one.
+ */
+function linearTransitions(
+  statuses: { name: string; isFinal: boolean; isCanceled: boolean }[],
+  index: number,
+): string[] {
+  const current = statuses[index]
+  if (!current || current.isFinal || current.isCanceled) return []
+
+  const out: string[] = []
+  const next = statuses.slice(index + 1).find((s) => !s.isCanceled)
+  if (next) out.push(toKey(next.name))
+
+  const cancel = statuses.find((s) => s.isCanceled)
+  if (cancel && cancel !== current) out.push(toKey(cancel.name))
+
+  return out
+}
+
 const WorkflowBuilder = memo(function WorkflowBuilder({
   mode,
   workflowId,
@@ -325,6 +356,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
             position: i,
             isFinal: s.isFinal,
             isCanceled: s.isCanceled,
+            transitions: linearTransitions(validStatuses, i),
           })
         }
 
@@ -373,6 +405,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
                 position: i,
                 isFinal: s.isFinal,
                 isCanceled: s.isCanceled,
+                transitions: linearTransitions(validStatuses, i),
               })
             }
           } else {
@@ -384,6 +417,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
               position: i,
               isFinal: s.isFinal,
               isCanceled: s.isCanceled,
+              transitions: linearTransitions(validStatuses, i),
             })
           }
         }

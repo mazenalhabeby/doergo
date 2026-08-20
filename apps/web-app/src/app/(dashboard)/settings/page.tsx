@@ -38,8 +38,12 @@ import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 
 // Lazy-load sub-pages so they render inline in the settings content area
-const WorkflowsPage = lazy(() => import("./workflows/page"))
 const AuditLogPage = lazy(() => import("./audit-log/page"))
+// Fields that apply to EVERY task whatever its type — org-wide by definition,
+// so they stay here. Task types themselves moved into the space that owns them.
+const CustomFieldsManager = lazy(() =>
+  import("@/components/custom-fields-manager").then((m) => ({ default: m.CustomFieldsManager })),
+)
 
 function LazyFallback() {
   return (
@@ -56,7 +60,13 @@ function EmbeddedPage({ children }: { children: React.ReactNode }) {
   return <div className="[&>div]:min-h-0 [&>div]:bg-transparent [&>div]:p-0 [&>div>div]:p-0 [&>div>div]:max-w-none">{children}</div>
 }
 
-function LazyWorkflows() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><WorkflowsPage /></EmbeddedPage></Suspense> }
+function LazyTaskFields() {
+  return (
+    <Suspense fallback={<LazyFallback />}>
+      <CustomFieldsManager workflowId={null} />
+    </Suspense>
+  )
+}
 function LazyAuditLog() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><AuditLogPage /></EmbeddedPage></Suspense> }
 import { organizationsApi, usersApi, authApi, JoinPolicy } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
@@ -130,7 +140,7 @@ function allTimezones(): string[] {
 
 type SettingsSection =
   // Organization
-  | "general" | "members" | "modules" | "workflows" | "audit-log"
+  | "general" | "members" | "modules" | "task-fields" | "audit-log"
   // Personal
   | "profile" | "security" | "notifications"
 
@@ -143,7 +153,10 @@ interface NavItem {
 const ORG_NAV_ITEMS: NavItem[] = [
   { key: "general", icon: Building2, labelKey: "settings.nav.general" },
   { key: "members", icon: Users, labelKey: "settings.nav.members" },
-  { key: "workflows", icon: GitBranch, labelKey: "settings.nav.taskTypes" },
+  // Task types are NOT here: they belong to the space that runs them, and are
+  // managed on that space's Task Types tab. What stays is the org-wide field
+  // set, which applies to every task whatever its type.
+  { key: "task-fields", icon: GitBranch, labelKey: "settings.nav.taskFields" },
   // Org-level notification policy (who gets emailed on task/join events) —
   // these prefs are org-scoped + admin-gated, so they belong here, not under
   // Personal (where non-admins would 403 loading/saving them).
@@ -1237,10 +1250,12 @@ export default function SettingsPage() {
   const isAdmin = user?.role === "ADMIN"
   const canManage = user?.canManageUsers
 
-  // Hide settings tabs the org's plan tier doesn't include (workflows = Business,
-  // audit-log = Business). Content is also PlanGate-guarded + API-enforced (402).
+  // Hide settings tabs the org's plan tier doesn't include. Content is also
+  // PlanGate-guarded + API-enforced (402). Org-wide task fields are gated on
+  // custom_fields (Pro+), not on `workflows` — the task-type editor that needed
+  // Business moved out to the space, and this panel is a different feature.
   const SECTION_PLAN_FEATURE: Partial<Record<SettingsSection, string>> = {
-    workflows: "workflows",
+    "task-fields": "custom_fields",
     "audit-log": "audit_log",
   }
   const orgNavItems = ORG_NAV_ITEMS.filter((i) => {
@@ -1364,7 +1379,15 @@ export default function SettingsPage() {
             {activeSection === "members" && <div data-tour="settings-members"><MembersSection /></div>}
             {activeSection === "notifications" && <div data-tour="settings-notifications"><NotificationsSection /></div>}
             {/* Organization sections — lazy loaded from sub-pages */}
-            {activeSection === "workflows" && <div data-tour="settings-workflows"><LazyWorkflows /></div>}
+            {activeSection === "task-fields" && (
+              <div data-tour="settings-workflows" className="space-y-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">{t("workflows.page.globalFields")}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("workflows.page.globalFieldsHint")}</p>
+                </div>
+                <LazyTaskFields />
+              </div>
+            )}
             {activeSection === "audit-log" && <div data-tour="settings-audit"><LazyAuditLog /></div>}
             {/* Personal sections */}
             {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}

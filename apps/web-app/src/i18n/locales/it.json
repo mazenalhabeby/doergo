@@ -2444,7 +2444,8 @@
       "notifications": "Notifiche",
       "auditLog": "Registro delle attività",
       "profile": "Profilo",
-      "security": "Password e sicurezza"
+      "security": "Password e sicurezza",
+      "taskFields": "Campi attività"
     },
     "changeEmail": {
       "title": "Cambia email",
@@ -3769,7 +3770,8 @@
       "loadingLibrary": "Caricamento della libreria…",
       "localTo": "{{count}} passaggi · solo {{space}} lo usa",
       "submitToLibrary": "Proponi alla libreria",
-      "submitHint": "Proponi questo flusso ad altre organizzazioni. Viene prima revisionato."
+      "submitHint": "Proponi questo flusso ad altre organizzazioni. Viene prima revisionato.",
+      "spaceSubtitle": "I flussi che seguono le attività di questo spazio. Modificarne uno condiviso lo cambia ovunque venga offerto."
     }
   },
   "assets": {
@@ -5280,8 +5282,8 @@
           "body": "Scelga quali email e avvisi push a livello di organizzazione vengono inviati — su nuove attività, completamenti e richieste di adesione."
         },
         "workflows": {
-          "title": "Tipi di attività e flussi di lavoro",
-          "body": "Definisca i flussi di stati e i campi personalizzati usati dai suoi interventi — crei tipi di attività, ne imposti gli stati e aggiunga campi."
+          "title": "Campi attività",
+          "body": "Campi raccolti su ogni attività, qualunque sia il tipo. I tipi di attività si trovano in ciascuno spazio, nella scheda Tipi di attività."
         },
         "audit": {
           "title": "Registro di controllo",

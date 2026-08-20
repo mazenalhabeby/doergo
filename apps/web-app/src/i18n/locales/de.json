@@ -2453,7 +2453,8 @@
       "notifications": "Benachrichtigungen",
       "auditLog": "Audit-Protokoll",
       "profile": "Profil",
-      "security": "Passwort & Sicherheit"
+      "security": "Passwort & Sicherheit",
+      "taskFields": "Aufgabenfelder"
     },
     "changeEmail": {
       "title": "E-Mail ändern",
@@ -3794,7 +3795,8 @@
       "loadingLibrary": "Bibliothek wird geladen …",
       "localTo": "{{count}} Schritte · nur {{space}} nutzt ihn",
       "submitToLibrary": "Der Bibliothek anbieten",
-      "submitHint": "Diesen Ablauf anderen Organisationen anbieten. Er wird zuerst geprüft."
+      "submitHint": "Diesen Ablauf anderen Organisationen anbieten. Er wird zuerst geprüft.",
+      "spaceSubtitle": "Die Abläufe, die Aufgaben in diesem Bereich durchlaufen. Eine geteilte Aufgabenart zu ändern wirkt überall, wo sie angeboten wird."
     }
   },
   "assets": {
@@ -5305,8 +5307,8 @@
           "body": "Wählen Sie, welche organisationsweiten E-Mails und Push-Benachrichtigungen versendet werden — bei neuen Aufgaben, Abschlüssen und Beitrittsanfragen."
         },
         "workflows": {
-          "title": "Auftragstypen & Workflows",
-          "body": "Definieren Sie die Statusabläufe und benutzerdefinierten Felder Ihrer Aufträge — Auftragstypen erstellen, Status festlegen und Felder hinzufügen."
+          "title": "Aufgabenfelder",
+          "body": "Felder, die bei jeder Aufgabe erfasst werden, unabhängig von der Aufgabenart. Die Aufgabenarten selbst liegen im jeweiligen Bereich, im Tab „Aufgabenarten“."
         },
         "audit": {
           "title": "Audit-Log",

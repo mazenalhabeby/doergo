@@ -327,7 +327,9 @@ export const TOURS: TourDef[] = [
       { ...step("settingsTour", "general", "settings-general"), enter: "settings-nav-general", optional: true },
       { ...step("settingsTour", "members", "settings-members"), enter: "settings-nav-members", optional: true },
       { ...step("settingsTour", "notifications", "settings-notifications"), enter: "settings-nav-notifications", optional: true },
-      { ...step("settingsTour", "workflows", "settings-workflows"), enter: "settings-nav-workflows", optional: true },
+      // Task types moved to the space that runs them; what is left here is the
+      // org-wide field set that applies to every task whatever its type.
+      { ...step("settingsTour", "workflows", "settings-workflows"), enter: "settings-nav-task-fields", optional: true },
       { ...step("settingsTour", "audit", "settings-audit"), enter: "settings-nav-audit-log", optional: true },
       step("settingsTour", "personalGroup", "settings-personal-group"),
       { ...step("settingsTour", "profile", "settings-profile"), enter: "settings-nav-profile", optional: true },

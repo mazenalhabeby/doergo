@@ -2444,7 +2444,8 @@
       "notifications": "Notifications",
       "auditLog": "Journal d'audit",
       "profile": "Profil",
-      "security": "Mot de passe et sécurité"
+      "security": "Mot de passe et sécurité",
+      "taskFields": "Champs de tâche"
     },
     "changeEmail": {
       "title": "Modifier l'e-mail",
@@ -3769,7 +3770,8 @@
       "loadingLibrary": "Chargement de la bibliothèque…",
       "localTo": "{{count}} étapes · seul {{space}} l’utilise",
       "submitToLibrary": "Proposer à la bibliothèque",
-      "submitHint": "Proposer ce flux à d’autres organisations. Il est d’abord relu."
+      "submitHint": "Proposer ce flux à d’autres organisations. Il est d’abord relu.",
+      "spaceSubtitle": "Les flux que suivent les tâches de cet espace. Modifier un flux partagé le change partout où il est proposé."
     }
   },
   "assets": {
@@ -5280,8 +5282,8 @@
           "body": "Choisissez quels e-mails et alertes push à l’échelle de l’organisation sont envoyés — pour les nouvelles tâches, les tâches terminées et les demandes d’adhésion."
         },
         "workflows": {
-          "title": "Types de tâches et flux de travail",
-          "body": "Définissez les flux de statuts et les champs personnalisés qu’utilisent vos interventions — créez des types de tâches, définissez leurs statuts et ajoutez des champs."
+          "title": "Champs de tâche",
+          "body": "Champs recueillis sur chaque tâche, quel que soit son type. Les types de tâche se trouvent dans chaque espace, sous son onglet Types de tâche."
         },
         "audit": {
           "title": "Journal d’audit",

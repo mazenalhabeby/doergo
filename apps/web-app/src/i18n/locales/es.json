@@ -2447,7 +2447,8 @@
       "notifications": "Notificaciones",
       "auditLog": "Registro de auditoría",
       "profile": "Perfil",
-      "security": "Contraseña y seguridad"
+      "security": "Contraseña y seguridad",
+      "taskFields": "Campos de tarea"
     },
     "changeEmail": {
       "title": "Cambiar correo electrónico",
@@ -3778,7 +3779,8 @@
       "loadingLibrary": "Cargando la biblioteca…",
       "localTo": "{{count}} pasos · solo {{space}} lo usa",
       "submitToLibrary": "Ofrecer a la biblioteca",
-      "submitHint": "Ofrecer este flujo a otras organizaciones. Primero se revisa."
+      "submitHint": "Ofrecer este flujo a otras organizaciones. Primero se revisa.",
+      "spaceSubtitle": "Los flujos por los que pasan las tareas de este espacio. Editar uno compartido lo cambia en todos los espacios que lo ofrecen."
     }
   },
   "assets": {
@@ -5289,8 +5291,8 @@
           "body": "Elige qué correos y alertas push de toda la organización se envían — al crear tareas, completarlas y en solicitudes de acceso."
         },
         "workflows": {
-          "title": "Tipos de trabajo y flujos",
-          "body": "Define los flujos de estado y los campos personalizados de tus trabajos — crea tipos, define sus estados y añade campos."
+          "title": "Campos de tarea",
+          "body": "Campos que se recogen en todas las tareas, sea cual sea su tipo. Los tipos de tarea están en cada espacio, en su pestaña Tipos de tarea."
         },
         "audit": {
           "title": "Registro de auditoría",

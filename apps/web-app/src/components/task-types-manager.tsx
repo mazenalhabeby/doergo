@@ -3,7 +3,6 @@
 import { PlanGate } from "@/components/plan-gate"
 import { useState, useCallback, useEffect, memo, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Plus,
@@ -459,9 +458,12 @@ const WorkflowCard = memo(function WorkflowCard({
 function CreateWorkflowDialog({
   open,
   onOpenChange,
+  spaceId,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Scope: a type made here belongs to this space, and only it offers it. */
+  spaceId: string | null
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -502,11 +504,16 @@ function CreateWorkflowDialog({
   const mutation = useMutation({
     mutationFn: () =>
       selectedTemplate
-        ? workflowsApi.library.use(selectedTemplate.id, { name: name.trim() || undefined })
-        : workflowsApi.create({ name: name.trim() }),
+        ? workflowsApi.library.use(selectedTemplate.id, {
+            name: name.trim() || undefined,
+            // Forked into the space, and offered there in the same call.
+            ...(spaceId ? { spaceId } : {}),
+          })
+        : workflowsApi.create({ name: name.trim(), ...(spaceId ? { spaceId } : {}) }),
     onSuccess: () => {
       notify.success(t("workflows.page.toast.taskTypeCreated"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
+      if (spaceId) queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
       reset()
       onOpenChange(false)
     },
@@ -920,21 +927,32 @@ function StatusDialog({
 }
 
 // ============================================================================
-// Main Page
+// Task types, managed where they live: inside a space.
+//
+// This used to be an Organization Settings screen, which was the wrong place
+// twice over. A task type is now a SPACE's — created there, or forked there
+// from the library — so the only screen that could edit one properly was the
+// one furthest from it. And the space already had a second, weaker editor of
+// its own that could not set transitions or capabilities, plus a third
+// hardcoded list of starter flows. One editor, one library, one place.
+//
+// `spaceId` decides which task types are listed and what a new one is scoped
+// to. Without it the component still works against the organization's shared
+// types, which is what a future org-wide view would want — but nothing renders
+// it that way today.
 // ============================================================================
 
-export default function WorkflowsSettingsPage() {
+export function TaskTypesManager({ spaceId }: { spaceId?: string | null }) {
   return (
     <PlanGate feature="workflows">
-      <WorkflowsSettingsPageInner />
+      <TaskTypesManagerInner spaceId={spaceId ?? null} />
     </PlanGate>
   )
 }
 
-function WorkflowsSettingsPageInner() {
+function TaskTypesManagerInner({ spaceId }: { spaceId: string | null }) {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const router = useRouter()
   const queryClient = useQueryClient()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -951,22 +969,28 @@ function WorkflowsSettingsPageInner() {
     name: string
   } | null>(null)
 
-  // Only ADMIN can access
-  if (user?.role !== "ADMIN") {
-    router.push("/dashboard")
-    return null
-  }
-
+  /*
+    Scoped list: what THIS space offers, which is the set someone editing here
+    can actually change the behaviour of. Falls back to the organization's when
+    nothing scopes it.
+  */
   const { data: workflows, isLoading } = useQuery({
-    queryKey: ["workflows"],
-    queryFn: () => workflowsApi.list(),
+    queryKey: spaceId ? ["space-workflows", spaceId] : ["workflows"],
+    queryFn: () => (spaceId ? workflowsApi.listForSpace(spaceId) : workflowsApi.list()),
   })
+
+  // A change to a space's list also changes the organization's, and the other
+  // way round — a shared type appears in both.
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["workflows"] })
+    if (spaceId) queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
+  }, [queryClient, spaceId])
 
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) => workflowsApi.setDefault(id),
     onSuccess: () => {
       notify.success(t("workflows.page.toast.defaultUpdated"))
-      queryClient.invalidateQueries({ queryKey: ["workflows"] })
+      refresh()
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -975,7 +999,7 @@ function WorkflowsSettingsPageInner() {
     mutationFn: (id: string) => workflowsApi.delete(id),
     onSuccess: () => {
       notify.success(t("workflows.page.toast.taskTypeDeleted"))
-      queryClient.invalidateQueries({ queryKey: ["workflows"] })
+      refresh()
       setDeleteTarget(null)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -986,7 +1010,7 @@ function WorkflowsSettingsPageInner() {
       workflowsApi.deleteStatus(workflowId, statusId),
     onSuccess: () => {
       notify.success(t("workflows.page.toast.statusDeleted"))
-      queryClient.invalidateQueries({ queryKey: ["workflows"] })
+      refresh()
       setDeleteTarget(null)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -1005,34 +1029,26 @@ function WorkflowsSettingsPageInner() {
   }
 
   return (
-    <div className="min-h-full bg-muted/30">
-      <div className="max-w-[1440px] mx-auto px-6 py-6">
+    <div>
+      <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t("workflows.page.title")}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("workflows.page.subtitle")}
+            <h2 className="text-sm font-semibold text-foreground">{t("workflows.page.title")}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {spaceId
+                ? t("workflows.page.spaceSubtitle", "The flows tasks in this space run through. Editing a shared one changes it everywhere it is offered.")
+                : t("workflows.page.subtitle")}
             </p>
           </div>
           <Button
             onClick={() => setShowCreateDialog(true)}
             className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+            size="sm"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t("workflows.page.newTaskType")}
           </Button>
-        </div>
-
-        {/* Global fields — apply to every task, regardless of type */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-semibold text-foreground">{t("workflows.page.globalFields")}</h2>
-            <span className="text-xs text-muted-foreground">
-              {t("workflows.page.globalFieldsHint")}
-            </span>
-          </div>
-          <CustomFieldsManager workflowId={null} />
         </div>
 
         {/* Content */}
@@ -1111,6 +1127,7 @@ function WorkflowsSettingsPageInner() {
       <CreateWorkflowDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
+        spaceId={spaceId}
       />
 
       {statusDialog.open && (

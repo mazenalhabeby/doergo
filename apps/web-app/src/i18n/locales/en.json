@@ -2453,7 +2453,8 @@
       "notifications": "Notifications",
       "auditLog": "Audit Log",
       "profile": "Profile",
-      "security": "Password & Security"
+      "security": "Password & Security",
+      "taskFields": "Task fields"
     },
     "changeEmail": {
       "title": "Change email",
@@ -3794,7 +3795,8 @@
       "loadingLibrary": "Loading the library…",
       "localTo": "{{count}} steps · only {{space}} uses it",
       "submitToLibrary": "Offer to library",
-      "submitHint": "Offer this flow to other organizations. It is reviewed first."
+      "submitHint": "Offer this flow to other organizations. It is reviewed first.",
+      "spaceSubtitle": "The flows tasks in this space run through. Editing a shared one changes it everywhere it is offered."
     }
   },
   "assets": {
@@ -5305,8 +5307,8 @@
           "body": "Choose which org-wide emails and push alerts go out — on new tasks, completions and join requests."
         },
         "workflows": {
-          "title": "Task types & workflows",
-          "body": "Define the status flows and custom fields your jobs use — create task types, set their statuses, and add fields."
+          "title": "Task fields",
+          "body": "Fields collected on every task, whatever its type. Task types themselves live on each space, under its Task Types tab."
         },
         "audit": {
           "title": "Audit log",
