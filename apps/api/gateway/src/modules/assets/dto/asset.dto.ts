@@ -8,8 +8,32 @@ import {
   IsNumber,
   IsEnum,
   IsDateString,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { AssetStatus } from '@hbcfield/shared';
+
+/**
+ * One filled-in field on a record.
+ *
+ * This is a real class, not `unknown[]`, and it has to stay one. With
+ * `transform + enableImplicitConversion` on the global pipe, an array property
+ * with no element type gets each element coerced to the declared type — which
+ * turned `{ label, value }` into `[]`, validated, returned 200 and stored
+ * nothing. Silent data loss with a success toast on top.
+ */
+export class AssetDetailRowDto {
+  @ApiProperty({ example: 'Door code' })
+  @IsString()
+  @MaxLength(60)
+  label: string;
+
+  @ApiPropertyOptional({ example: '1234' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  value?: string;
+}
 
 export class CreateAssetDto {
   @ApiProperty({ example: 'Rooftop HVAC Unit #1', description: 'Asset name' })
@@ -91,12 +115,15 @@ export class CreateAssetDto {
   @IsOptional()
   customerId?: string | null;
 
-  // Values for the fields this record's KIND asks for. Shape is enforced by
-  // normalizeDetailRows() in task-service — one authority, not two.
-  @ApiPropertyOptional({ description: 'Filled-in fields ([{label, value}])' })
+  // Values for the fields this record's KIND asks for. The element type is
+  // declared so the pipe rebuilds real rows; normalizeDetailRows() in
+  // task-service remains the authority on what is kept.
+  @ApiPropertyOptional({ type: [AssetDetailRowDto], description: 'Filled-in fields' })
   @IsArray()
   @IsOptional()
-  details?: unknown[];
+  @ValidateNested({ each: true })
+  @Type(() => AssetDetailRowDto)
+  details?: AssetDetailRowDto[];
 
 }
 
