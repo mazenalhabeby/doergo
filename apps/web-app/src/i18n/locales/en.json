@@ -3700,7 +3700,8 @@
         "updated": "Workflow updated",
         "saveFailed": "Failed to save workflow",
         "createFailedGeneric": "Failed to create workflow"
-      }
+      },
+      "noFinalStatus": "Mark a step as finished — otherwise nothing on this task type can ever be completed."
     },
     "templateLabels": {
       "simple": "Simple",

@@ -3675,7 +3675,8 @@
         "updated": "Flux de travail mis à jour",
         "saveFailed": "Échec de l'enregistrement du flux de travail",
         "createFailedGeneric": "Échec de la création du flux de travail"
-      }
+      },
+      "noFinalStatus": "Marquez une étape comme terminée — sinon rien ne pourra jamais être achevé sur ce type de tâche."
     },
     "templateLabels": {
       "simple": "Simple",

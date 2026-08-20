@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
-import { success, missingModulesForWorkflow, statusesRequiringModule } from '@hbcfield/shared';
+import { success, missingModulesForWorkflow, statusesRequiringModule, validateWorkflow } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 
@@ -652,10 +652,32 @@ export class WorkflowsService {
       }),
       this.prisma.statusWorkflow.findUnique({
         where: { id: data.workflowId },
-        select: { statuses: { select: { name: true, capabilities: true } } },
+        select: {
+          statuses: {
+            select: { key: true, name: true, position: true, isFinal: true, isCanceled: true, transitions: true, capabilities: true },
+          },
+        },
       }),
     ]);
     if (!space || !workflow) throw new NotFoundException('Space or task type not found');
+
+    /*
+      Is it sound enough to run work through?
+
+      Checked HERE rather than on every edit. A workflow with one step is
+      legitimately unfinished, not wrong, and refusing each save would make the
+      builder hostile to the act of building. It becomes a problem the moment
+      someone tries to USE it — which is this call, and task creation.
+
+      Every problem at once, so whoever fixes it sees the whole list instead of
+      discovering the next fault after each attempt.
+    */
+    const problems = validateWorkflow(workflow.statuses);
+    if (problems.length > 0) {
+      throw new BadRequestException(
+        `This task type is not finished: ${problems.map((p) => p.message).join(' ')}`,
+      );
+    }
 
     // A space with no override inherits its organization's modules.
     let enabled = (space.enabledModules as string[] | null) ?? null;

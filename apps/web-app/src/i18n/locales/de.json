@@ -3700,7 +3700,8 @@
         "updated": "Workflow aktualisiert",
         "saveFailed": "Workflow konnte nicht gespeichert werden",
         "createFailedGeneric": "Workflow konnte nicht erstellt werden"
-      }
+      },
+      "noFinalStatus": "Markieren Sie einen Schritt als abgeschlossen — sonst kann bei diesem Aufgabentyp nichts je fertiggestellt werden."
     },
     "templateLabels": {
       "simple": "Einfach",
