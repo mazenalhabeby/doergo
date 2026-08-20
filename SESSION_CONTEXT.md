@@ -3,9 +3,11 @@
 Everything from this session, written so it can be reloaded without losing
 anything. Read this first; it is the index, and it points at the code.
 
-**State:** all work below is **committed and deployed to production**.
-Local `HEAD` == prod (`713d406` = local `24ac0c05`, hashes differ because prod
-is patched, not pulled). 56 commits.
+**State:** everything through `24ac0c05` is **committed and deployed to
+production** (prod `713d406` — hashes differ because prod is patched, not
+pulled). **`1d519bef` (workflow library, Phase 5) is committed but NOT
+deployed** — it carries migration `20260820140000`, so auth-service goes first.
+57 commits.
 
 ---
 
@@ -59,15 +61,24 @@ Plan: <https://claude.ai/code/artifact/a3618d1f-a7e3-41f1-80e1-f9c10f624bcf>
 | 2 | `SpaceWorkflow` join + backfill, invisible | **done** `ae4e467a` |
 | 3 | Per-space selection in the UI + module gate | **done** `d342c9de` |
 | 4 | The validator | **done** `24ac0c05` |
-| 5 | **`WorkflowTemplate` library** | **NOT STARTED** |
+| 5 | `WorkflowTemplate` library | **done** `1d519bef` — NOT DEPLOYED |
 
-Phase 5, from the plan — the two things that must hold:
-- The library is **platform-curated and read-only to tenants**. If tenants can
-  write to it, one org's edit rewrites another's options.
-- "Add from library" **clones** into the org. It must never be a live reference:
-  editing a library row would rewrite the state machine under every tenant's
-  in-flight tasks, and a task whose status vanishes has no transition out.
-- Seed it from the workflows the existing orgs already use.
+Phase 5 as built (the two invariants held):
+- The library has **no organizationId**. Tenants read published rows only; the
+  sole write path is `/platform/library/*` behind `PlatformAuthGuard` + the new
+  `manageLibrary` capability (OWNER, CONTROLLER).
+- Using a template **copies** it. Nothing a tenant holds points back.
+- `normalizeTemplateStatuses` (shared, pure) is a trust boundary, not a
+  formatter — the stored JSON was written by a different party than the one
+  reading it. Bounds sizes, drops unknown capabilities, refuses non-hex colours,
+  renumbers positions so the entry step is not accidental.
+- Publishing runs the Phase 4 validator; so does using. A row that rotted after
+  publication drops out of the picker instead of failing at commit time.
+- The five shipped templates seed themselves at boot via `createMany
+  skipDuplicates` — so a later deploy never overwrites a curator's edits.
+- Built-ins are **retired (unpublished), not deleted**: seeding would bring them
+  back, and appearing to delete something that reappears is worse than saying so.
+- Curation UI: a "Task-type library" tab in `apps/admin`.
 
 ### Other open items (in rough priority order)
 1. **Android 1.0.1 build → Play release.** Android's live train is **1.0.0**;
