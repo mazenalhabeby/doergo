@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { WorkflowSelector } from "../../_components/workflow-selector"
+import { SpaceWorkflowsSection } from "./space-workflows-section"
 import { WorkflowBuilder } from "../../_components/workflow-builder"
 import { SectionHeader } from "./section-header"
 
@@ -77,7 +78,18 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
         description={t("locations.workflowHint")}
       />
 
-      {/* Workflow selector */}
+      {/*
+        Which task types this space offers, and which one new tasks inherit.
+
+        This replaced a single picker: a space pointed at exactly one workflow,
+        so every space in an organization ran the same flow or someone kept
+        near-duplicates at org level. The workflows themselves are still owned
+        by the organization — this decides what is OFFERED here, not what it
+        contains, so editing one still fixes it everywhere.
+      */}
+      <SpaceWorkflowsSection spaceId={space.id} />
+
+      {/* Preview / edit still works against whichever type is selected below. */}
       <WorkflowSelector
         value={selectedId}
         onChange={(id) => {
@@ -87,7 +99,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
         }}
         workflows={workflows}
         allowCreate={false}
-        label={t("locations.currentWorkflow")}
+        label={t("locations.previewWorkflow", "Preview or edit a task type")}
       />
 
       {/* Status preview */}

@@ -66,4 +66,26 @@ export class WorkflowsService extends BaseGatewayService {
   async removeDefinitionOfDone(data: { id: string; organizationId: string }) {
     return this.send({ cmd: 'delete_definition_of_done' }, data);
   }
+  // ── Which task types a space offers ─────────────────────────────────────────
+
+  async listSpaceWorkflows(data: { spaceId: string; organizationId: string }) {
+    return this.send({ cmd: 'list_space_workflows' }, data);
+  }
+
+  async attachSpaceWorkflow(data: {
+    spaceId: string;
+    workflowId: string;
+    organizationId: string;
+    makeDefault?: boolean;
+  }) {
+    return this.send({ cmd: 'attach_space_workflow' }, data);
+  }
+
+  async detachSpaceWorkflow(data: { spaceId: string; workflowId: string; organizationId: string }) {
+    return this.send({ cmd: 'detach_space_workflow' }, data);
+  }
+
+  async setSpaceDefaultWorkflow(data: { spaceId: string; workflowId: string; organizationId: string }) {
+    return this.send({ cmd: 'set_space_default_workflow' }, data);
+  }
 }

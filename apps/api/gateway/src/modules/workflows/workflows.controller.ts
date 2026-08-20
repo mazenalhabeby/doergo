@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import {
   CreateWorkflowDto,
@@ -199,5 +199,57 @@ export class WorkflowsController {
       statusId,
       organizationId: req.user.organizationId,
     });
+  }
+  // ── Which task types a space offers ─────────────────────────────────────────
+  //
+  // Managing a space's task types is administering that space, so it takes the
+  // same permission as the rest of its settings — and RequirePermissionInSpace,
+  // so a space's own manager can do it without org-wide rights. The service
+  // re-checks the real spaceId; this only widens the gate enough to reach it.
+
+  @Get('spaces/:spaceId')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Task types this space offers, default first' })
+  listSpaceWorkflows(@Param('spaceId') spaceId: string, @Request() req: any) {
+    return this.workflowsService.listSpaceWorkflows({ spaceId, organizationId: req.user.organizationId });
+  }
+
+  @Post('spaces/:spaceId/:workflowId')
+  @RequirePermissionInSpace('canManageUsers')
+  @ApiOperation({ summary: 'Offer a task type in this space' })
+  attachSpaceWorkflow(
+    @Param('spaceId') spaceId: string,
+    @Param('workflowId') workflowId: string,
+    @Body() body: { makeDefault?: boolean },
+    @Request() req: any,
+  ) {
+    return this.workflowsService.attachSpaceWorkflow({
+      spaceId,
+      workflowId,
+      makeDefault: body?.makeDefault,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete('spaces/:spaceId/:workflowId')
+  @RequirePermissionInSpace('canManageUsers')
+  @ApiOperation({ summary: 'Stop offering a task type in this space' })
+  detachSpaceWorkflow(
+    @Param('spaceId') spaceId: string,
+    @Param('workflowId') workflowId: string,
+    @Request() req: any,
+  ) {
+    return this.workflowsService.detachSpaceWorkflow({ spaceId, workflowId, organizationId: req.user.organizationId });
+  }
+
+  @Patch('spaces/:spaceId/:workflowId/default')
+  @RequirePermissionInSpace('canManageUsers')
+  @ApiOperation({ summary: 'Make this the task type new tasks inherit here' })
+  setSpaceDefaultWorkflow(
+    @Param('spaceId') spaceId: string,
+    @Param('workflowId') workflowId: string,
+    @Request() req: any,
+  ) {
+    return this.workflowsService.setSpaceDefaultWorkflow({ spaceId, workflowId, organizationId: req.user.organizationId });
   }
 }

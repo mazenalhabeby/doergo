@@ -3361,7 +3361,23 @@
       "deleteFailed": "Impossible de supprimer l’espace"
     },
     "ownershipSection": "Appartenance",
-    "ownershipHint": "S'agit-il d'un projet, de votre propre entreprise ou d'une entreprise cliente pour laquelle vous travaillez ?"
+    "ownershipHint": "S'agit-il d'un projet, de votre propre entreprise ou d'une entreprise cliente pour laquelle vous travaillez ?",
+    "workflows": {
+      "title": "Types de tâche dans cet espace",
+      "hint": "Les nouvelles tâches utilisent ici le type par défaut, sauf choix contraire.",
+      "none": "Aucun type de tâche pour l’instant — le flux standard s’applique.",
+      "default": "Par défaut",
+      "makeDefault": "Définir par défaut",
+      "remove": "Retirer de cet espace",
+      "addPlaceholder": "Ajouter un type de tâche…",
+      "added": "Type de tâche ajouté",
+      "removed": "Type de tâche retiré",
+      "defaultSet": "Valeur par défaut mise à jour",
+      "addFailed": "Impossible d’ajouter ce type de tâche",
+      "removeFailed": "Impossible de retirer ce type de tâche",
+      "defaultFailed": "Impossible de changer la valeur par défaut"
+    },
+    "previewWorkflow": "Aperçu ou modification d’un type de tâche"
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",

@@ -3386,7 +3386,23 @@
     "purge": "Endgültig löschen",
     "archiveAction": "Archivieren",
     "restoreAction": "Wiederherstellen",
-    "archived": "Archiviert"
+    "archived": "Archiviert",
+    "workflows": {
+      "title": "Aufgabentypen in diesem Bereich",
+      "hint": "Neue Aufgaben verwenden hier den Standard, sofern nichts anderes gewählt wird.",
+      "none": "Noch keine Aufgabentypen — Aufgaben nutzen hier den Standardablauf.",
+      "default": "Standard",
+      "makeDefault": "Als Standard",
+      "remove": "Aus diesem Bereich entfernen",
+      "addPlaceholder": "Aufgabentyp hinzufügen…",
+      "added": "Aufgabentyp hinzugefügt",
+      "removed": "Aufgabentyp entfernt",
+      "defaultSet": "Standard aktualisiert",
+      "addFailed": "Aufgabentyp konnte nicht hinzugefügt werden",
+      "removeFailed": "Aufgabentyp konnte nicht entfernt werden",
+      "defaultFailed": "Standard konnte nicht geändert werden"
+    },
+    "previewWorkflow": "Aufgabentyp ansehen oder bearbeiten"
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

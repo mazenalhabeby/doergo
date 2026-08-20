@@ -45,6 +45,7 @@ import {
   type CustomFieldDefinition,
   type OrgMember,
   type RecurringFrequency,
+  workflowsApi,
 } from "@/lib/api"
 import { canReceiveTasks, byAssignableFirst } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
@@ -167,7 +168,23 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   // ── Task Type (workflow) — "inherit" = use the space's default; otherwise the
   // task carries its own flow so one space can hold tasks of different types. ──
   const [workflowId, setWorkflowId] = useState<string>("inherit")
-  const { workflows } = useOrgWorkflow()
+  const { workflows: orgWorkflows } = useOrgWorkflow()
+
+  /*
+    The task types THIS space offers — not every type the organization owns.
+
+    A space chooses its own set now, and the server refuses a type the space
+    does not offer, so listing them all would present choices that fail on
+    submit. Falls back to the organization's list when no space is picked yet,
+    or when a space has no offerings of its own (it still runs on the legacy
+    single default).
+  */
+  const { data: spaceWorkflows } = useQuery({
+    queryKey: ["space-workflows", spaceId],
+    queryFn: () => workflowsApi.listForSpace(spaceId),
+    enabled: open && !!spaceId && spaceId !== "none",
+  })
+  const workflows: { id: string; name: string }[] = spaceWorkflows?.length ? spaceWorkflows : orgWorkflows
 
   // ── Space-aware module resolution ──
   const { hasModule: spaceHasModule } = useSpaceModules(spaceId !== "none" ? spaceId : null)

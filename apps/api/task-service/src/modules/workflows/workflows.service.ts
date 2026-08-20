@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
-import { success } from '@hbcfield/shared';
+import { success, missingModulesForWorkflow, statusesRequiringModule } from '@hbcfield/shared';
+import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
+import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 
 @Injectable()
 export class WorkflowsService {
@@ -594,5 +596,140 @@ export class WorkflowsService {
 
     await this.workflowCache.invalidate(data.organizationId);
     return success(null, 'Status deleted successfully');
+  }
+  // ─── Which workflows a space offers ─────────────────────────────────────────
+
+  /**
+   * The workflows this space offers, default first.
+   *
+   * Falls back to describing CompanyLocation.workflowId as a single offering,
+   * so a space with no rows yet answers exactly as it did before the join
+   * existed.
+   */
+  async listSpaceWorkflows(data: { spaceId: string; organizationId: string }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+
+    const rows = await this.prisma.spaceWorkflow.findMany({
+      where: { spaceId: data.spaceId },
+      orderBy: [{ isDefault: 'desc' }, { position: 'asc' }],
+      include: { workflow: { include: { statuses: { orderBy: { position: 'asc' } } } } },
+    });
+    if (rows.length > 0) {
+      return success(rows.map((r) => ({ ...r.workflow, isDefault: r.isDefault, position: r.position })));
+    }
+
+    const fallbackId = await resolveSpaceDefaultWorkflowId(this.prisma, data.spaceId);
+    if (!fallbackId) return success([]);
+    const wf = await this.prisma.statusWorkflow.findFirst({
+      where: { id: fallbackId, organizationId: data.organizationId },
+      include: { statuses: { orderBy: { position: 'asc' } } },
+    });
+    return success(wf ? [{ ...wf, isDefault: true, position: 0 }] : []);
+  }
+
+  /**
+   * Offer a workflow in a space.
+   *
+   * Refused when the space has not enabled what the workflow's steps need — a
+   * step that asks for a route recording is decoration where route tracking is
+   * off, and a task would reach it and be unable to do the thing it asks for.
+   * The refusal names the modules AND the steps that need them, because "not
+   * allowed" sends someone hunting.
+   */
+  async attachSpaceWorkflow(data: {
+    spaceId: string;
+    workflowId: string;
+    organizationId: string;
+    makeDefault?: boolean;
+  }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+    await assertWorkflowInOrg(this.prisma, data.workflowId, data.organizationId);
+
+    const [space, workflow] = await Promise.all([
+      this.prisma.companyLocation.findUnique({
+        where: { id: data.spaceId },
+        select: { enabledModules: true, organizationId: true },
+      }),
+      this.prisma.statusWorkflow.findUnique({
+        where: { id: data.workflowId },
+        select: { statuses: { select: { name: true, capabilities: true } } },
+      }),
+    ]);
+    if (!space || !workflow) throw new NotFoundException('Space or task type not found');
+
+    // A space with no override inherits its organization's modules.
+    let enabled = (space.enabledModules as string[] | null) ?? null;
+    if (!enabled) {
+      const org = await this.prisma.organization.findUnique({
+        where: { id: space.organizationId },
+        select: { enabledModules: true },
+      });
+      enabled = (org?.enabledModules as string[] | null) ?? [];
+    }
+
+    const missing = missingModulesForWorkflow(workflow.statuses, enabled);
+    if (missing.length > 0) {
+      const detail = missing
+        .map((m) => `${m} (${statusesRequiringModule(workflow.statuses, m).join(', ')})`)
+        .join('; ');
+      throw new BadRequestException(
+        `This task type needs modules this space has not enabled: ${detail}`,
+      );
+    }
+
+    const position = await this.prisma.spaceWorkflow.count({ where: { spaceId: data.spaceId } });
+    const row = await this.prisma.spaceWorkflow.upsert({
+      where: { spaceId_workflowId: { spaceId: data.spaceId, workflowId: data.workflowId } },
+      create: { spaceId: data.spaceId, workflowId: data.workflowId, position, isDefault: false },
+      update: {},
+    });
+
+    // First offering, or asked for — become the default. Cleared elsewhere first
+    // because at most one row per space may claim it (a partial unique index
+    // makes two an impossible state rather than a merely discouraged one).
+    if (data.makeDefault || position === 0) {
+      await this.setSpaceDefaultWorkflow({ ...data, workflowId: data.workflowId });
+    }
+    return success(row);
+  }
+
+  /** Stop offering a workflow here. The default may not be removed while others remain. */
+  async detachSpaceWorkflow(data: { spaceId: string; workflowId: string; organizationId: string }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+
+    const row = await this.prisma.spaceWorkflow.findUnique({
+      where: { spaceId_workflowId: { spaceId: data.spaceId, workflowId: data.workflowId } },
+      select: { isDefault: true },
+    });
+    if (!row) return success({ removed: 0 });
+
+    const total = await this.prisma.spaceWorkflow.count({ where: { spaceId: data.spaceId } });
+    if (row.isDefault && total > 1) {
+      throw new BadRequestException('Make another task type the default before removing this one');
+    }
+
+    await this.prisma.spaceWorkflow.delete({
+      where: { spaceId_workflowId: { spaceId: data.spaceId, workflowId: data.workflowId } },
+    });
+    return success({ removed: 1 });
+  }
+
+  /** Which offering new tasks inherit. Exactly one, enforced by the database. */
+  async setSpaceDefaultWorkflow(data: { spaceId: string; workflowId: string; organizationId: string }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+
+    await this.prisma.$transaction([
+      // Cleared first: the partial unique index refuses two defaults, so setting
+      // before clearing would fail rather than replace.
+      this.prisma.spaceWorkflow.updateMany({
+        where: { spaceId: data.spaceId, isDefault: true },
+        data: { isDefault: false },
+      }),
+      this.prisma.spaceWorkflow.updateMany({
+        where: { spaceId: data.spaceId, workflowId: data.workflowId },
+        data: { isDefault: true },
+      }),
+    ]);
+    return success({ spaceId: data.spaceId, workflowId: data.workflowId });
   }
 }
