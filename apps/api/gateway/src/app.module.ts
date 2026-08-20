@@ -54,12 +54,15 @@ import { CustomerConfinementGuard } from './common/guards/customer-confinement.g
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PlanGuard } from './common/guards/plan.guard';
 import { ModuleGuard } from './common/guards/module.guard';
-import { SpaceModulesService } from './common/space-modules.service';
+import { SpaceModulesModule } from './common/space-modules.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 @Module({
   imports: [
     AuthCacheModule,
+    // Global: ModuleGuard is an APP_GUARD, so it is constructed in every
+    // module's injector and its dependency has to be reachable from all of them.
+    SpaceModulesModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -178,10 +181,6 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
       provide: APP_GUARD,
       useClass: PlanGuard,
     },
-    // ModuleGuard resolves the SPACE a request touches, so it needs the
-    // resolver injected — provided here because a global guard is constructed
-    // by the root injector.
-    SpaceModulesService,
     {
       provide: APP_GUARD,
       useClass: ModuleGuard,

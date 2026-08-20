@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Global, Inject, Injectable, Logger, Module } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
@@ -148,3 +148,21 @@ export class SpaceModulesService {
     this.cache.set(key, { modules, expires: Date.now() + SpaceModulesService.TTL_MS });
   }
 }
+
+/**
+ * Global, because ModuleGuard is registered as APP_GUARD.
+ *
+ * Nest instantiates a guard with dependencies once per module that has
+ * controllers, resolving them in THAT module's injector — so a provider listed
+ * only in AppModule is missing everywhere except AppModule, and the app fails
+ * to boot naming whichever module happens to be first (it was PhasesModule).
+ *
+ * A unit test cannot see this: it constructs the guard directly with a double.
+ * Only starting the application does.
+ */
+@Global()
+@Module({
+  providers: [SpaceModulesService],
+  exports: [SpaceModulesService],
+})
+export class SpaceModulesModule {}
