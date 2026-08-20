@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { WorkflowLibraryService } from '../workflow-library.service';
 
 /**
@@ -45,6 +45,8 @@ describe('WorkflowLibraryService', () => {
       create: async ({ data }: any) => ({ id: 'new', ...data }),
       createMany: async () => ({ count: 0 }),
     },
+    organization: { findMany: async () => [] },
+    statusWorkflow: { findFirst: async () => null, findUnique: async () => null },
   };
 
   let created: any[];
@@ -106,6 +108,26 @@ describe('WorkflowLibraryService', () => {
     it('offers the copy in the space it was added from, when one was named', async () => {
       await svc().useTemplate({ templateId: 'tpl-live', organizationId: ORG, spaceId: 'sp-1' });
       expect(attached).toEqual([{ spaceId: 'sp-1', workflowId: 'wf-new', organizationId: ORG, makeDefault: false }]);
+    });
+
+    it('FORKS into the space: the copy belongs to that space alone', async () => {
+      // Otherwise a second space adding the same template would inherit the
+      // first space's edits — which defeats the point of choosing per space.
+      await svc().useTemplate({ templateId: 'tpl-live', organizationId: ORG, spaceId: 'sp-1' });
+      expect(created[0].ownerSpaceId).toBe('sp-1');
+    });
+
+    it('takes it organization-wide when that is asked for, so several spaces share one definition', async () => {
+      await svc().useTemplate({ templateId: 'tpl-live', organizationId: ORG, spaceId: 'sp-1', shareWithOrganization: true });
+      expect(created[0].ownerSpaceId).toBeNull();
+      // Still offered where it was added from — widening is not the same as
+      // adding it somewhere else.
+      expect(attached[0].spaceId).toBe('sp-1');
+    });
+
+    it('is organization-wide when taken from the organization screen', async () => {
+      await svc().useTemplate({ templateId: 'tpl-live', organizationId: ORG });
+      expect(created[0].ownerSpaceId).toBeNull();
     });
 
     it('does not attach anywhere when no space was named', async () => {
@@ -175,6 +197,94 @@ describe('WorkflowLibraryService', () => {
       const res: any = await new WorkflowLibraryService(p, workflows).curateImportFromOrg({ workflowId: 'wf-1' });
       expect(res.data.isPublished).toBe(false);
       expect(res.data.name).toBe('Their flow');
+    });
+  });
+
+  describe('submitting a task type to the library', () => {
+    const withWorkflow = (statuses: any, extra: any = {}) => ({
+      ...prisma,
+      statusWorkflow: { findFirst: async () => ({ name: 'Our flow', statuses }) },
+      workflowTemplate: { ...prisma.workflowTemplate, ...extra },
+    });
+
+    it('arrives unpublished — a curator reads it before any other org is offered it', async () => {
+      let saved: any = null;
+      const p = withWorkflow(sound, {
+        findFirst: async () => null,
+        findMany: async () => [],
+        create: async ({ data }: any) => { saved = data; return { id: 'tpl-sub', ...data }; },
+      });
+      await new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG });
+      expect(saved.isPublished).toBe(false);
+      expect(saved.submittedByOrgId).toBe(ORG);
+      expect(saved.submittedAt).toBeInstanceOf(Date);
+    });
+
+    it('refuses a flow that traps work, while the person who built it is still looking at it', async () => {
+      const p = withWorkflow(unsound, { findFirst: async () => null, findMany: async () => [] });
+      await expect(new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG }))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('updates the pending row instead of queueing a second copy of the same task type', async () => {
+      let updated: any = null;
+      const p = withWorkflow(sound, {
+        findFirst: async () => ({ id: 'tpl-pending', isPublished: false }),
+        update: async ({ where, data }: any) => { updated = { where, data }; return { id: where.id }; },
+      });
+      const res: any = await new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG });
+      expect(res.data.resubmitted).toBe(true);
+      expect(updated.where.id).toBe('tpl-pending');
+    });
+
+    it('refuses to silently rewrite a template every tenant is already being offered', async () => {
+      const p = withWorkflow(sound, { findFirst: async () => ({ id: 'tpl-x', isPublished: true }) });
+      await expect(new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG }))
+        .rejects.toThrow(ConflictException);
+    });
+
+    it('finds a free slug when the obvious one is taken — submissions collide on common names', async () => {
+      let saved: any = null;
+      const p = withWorkflow(sound, {
+        findFirst: async () => null,
+        findMany: async () => [{ slug: 'our-flow' }, { slug: 'our-flow-2' }],
+        create: async ({ data }: any) => { saved = data; return { id: 'x', ...data }; },
+      });
+      await new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG });
+      expect(saved.slug).toBe('our-flow-3');
+    });
+
+    it('refuses a task type belonging to another organization', async () => {
+      const p = { ...prisma, statusWorkflow: { findFirst: async () => null } };
+      await expect(new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-theirs', organizationId: ORG }))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('what a curator sees', () => {
+    it('never lets provenance reach a tenant', async () => {
+      // A flow's step names are a business's process, and sometimes a person's
+      // name. Who submitted it is the curator's business alone.
+      const p = {
+        ...prisma,
+        workflowTemplate: {
+          ...prisma.workflowTemplate,
+          findMany: async ({ where }: any) =>
+            (where?.isPublished === undefined ? templates : templates.filter((t) => t.isPublished))
+              .map((t) => ({ ...t, submittedByOrgId: 'org-secret', submittedAt: new Date() })),
+        },
+      };
+      const s = new WorkflowLibraryService(p, workflows);
+
+      const tenant: any = await s.listTemplates({ organizationId: ORG });
+      for (const row of tenant.data) {
+        expect(row).not.toHaveProperty('submittedByOrgId');
+        expect(row).not.toHaveProperty('sourceKey');
+      }
+
+      const curator: any = await s.curateList();
+      expect(curator.data[0]).toHaveProperty('submittedByOrgId');
+      expect(curator.data[0]).toHaveProperty('advice');
     });
   });
 });

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
-import { success, missingModulesForWorkflow, statusesRequiringModule, validateWorkflow } from '@hbcfield/shared';
+import { success, missingModulesForWorkflow, statusesRequiringModule, validateWorkflow, spaceMayOffer } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 
@@ -32,6 +32,10 @@ export class WorkflowsService {
       include: {
         statuses: { orderBy: { position: 'asc' } },
         _count: { select: { tasks: true } },
+        // Scope travels with the row so the organization screen can GROUP a
+        // space's own task types under that space, rather than hiding them and
+        // leaving someone hunting for one they know they made.
+        ownerSpace: { select: { id: true, name: true } },
       },
     });
 
@@ -68,6 +72,11 @@ export class WorkflowsService {
     name: string;
     isDefault?: boolean;
     organizationId: string;
+    /**
+     * Scope. Set → this space's own task type; unset → the organization's,
+     * offerable by any of its spaces. See `workflow-scope` in shared.
+     */
+    ownerSpaceId?: string | null;
     /** Optional initial statuses — e.g. when starting from a template. */
     statuses?: Array<{
       name: string;
@@ -86,26 +95,40 @@ export class WorkflowsService {
       throw new BadRequestException('Task type name is required');
     }
 
-    // Friendly duplicate check (the DB also enforces @@unique(organizationId,
-    // name)). Case-insensitive so "field service" and "Field Service" don't
-    // near-collide. Without this the raw Prisma "Unique constraint failed" leaked
-    // into the UI toast.
+    /*
+      A name has to be unique where it is SEEN, not organization-wide.
+
+      Five spaces each forking "Field Service" from the library all want to call
+      it that, and they are five different rows in five different lists. So a
+      local type competes only with that space's other local types, and a shared
+      one only with the organization's other shared ones. Case-insensitive, so
+      "field service" and "Field Service" do not near-collide.
+    */
+    if (data.ownerSpaceId) {
+      await assertSpaceInOrg(this.prisma, data.ownerSpaceId, data.organizationId);
+    }
     const existing = await this.prisma.statusWorkflow.findFirst({
       where: {
         organizationId: data.organizationId,
+        ownerSpaceId: data.ownerSpaceId ?? null,
         name: { equals: name, mode: 'insensitive' },
       },
       select: { id: true },
     });
     if (existing) {
-      throw new ConflictException(`A task type named "${name}" already exists.`);
+      throw new ConflictException(
+        data.ownerSpaceId
+          ? `This space already has a task type named "${name}".`
+          : `A task type named "${name}" already exists.`,
+      );
     }
 
     let workflow;
     try {
       workflow = await this.prisma.$transaction(async (tx) => {
-      // If setting as default, unset previous default
-      if (data.isDefault) {
+      // The organization default is what an org-wide fallback resolves to, so a
+      // type only one space can offer must never become it.
+      if (data.isDefault && !data.ownerSpaceId) {
         await tx.statusWorkflow.updateMany({
           where: { organizationId: data.organizationId, isDefault: true },
           data: { isDefault: false },
@@ -115,8 +138,9 @@ export class WorkflowsService {
       const created = await tx.statusWorkflow.create({
         data: {
           name,
-          isDefault: data.isDefault || false,
+          isDefault: (data.isDefault && !data.ownerSpaceId) || false,
           organizationId: data.organizationId,
+          ownerSpaceId: data.ownerSpaceId ?? null,
           ...(data.statuses?.length
             ? {
                 statuses: {
@@ -263,6 +287,14 @@ export class WorkflowsService {
 
     if (existing.organizationId !== data.organizationId) {
       throw new NotFoundException('Workflow not found');
+    }
+
+    // The organization default is the fallback for anything with no other
+    // answer, so it has to be a type every space could actually use.
+    if (existing.ownerSpaceId) {
+      throw new BadRequestException(
+        'This task type belongs to one space, so it cannot be the organization default. Share it with the organization first.',
+      );
     }
 
     // Unset previous default and set new one in a transaction
@@ -653,6 +685,7 @@ export class WorkflowsService {
       this.prisma.statusWorkflow.findUnique({
         where: { id: data.workflowId },
         select: {
+          ownerSpaceId: true,
           statuses: {
             select: { key: true, name: true, position: true, isFinal: true, isCanceled: true, transitions: true, capabilities: true },
           },
@@ -660,6 +693,20 @@ export class WorkflowsService {
       }),
     ]);
     if (!space || !workflow) throw new NotFoundException('Space or task type not found');
+
+    /*
+      A task type scoped to one space belongs to that space alone.
+
+      Offering it elsewhere would make "local" mean nothing, and would quietly
+      hand a second space edit rights over a flow the first believes is private
+      — the edit would land on both. Widening is a deliberate act ("share with
+      the organization"), not a side effect of adding it somewhere.
+    */
+    if (!spaceMayOffer(workflow, data.spaceId)) {
+      throw new BadRequestException(
+        'That task type belongs to another space. Share it with the organization, or fork your own copy.',
+      );
+    }
 
     /*
       Is it sound enough to run work through?
@@ -713,6 +760,113 @@ export class WorkflowsService {
       await this.setSpaceDefaultWorkflow({ ...data, workflowId: data.workflowId });
     }
     return success(row);
+  }
+
+  /**
+   * Widen a space's own task type to the whole organization.
+   *
+   * Safe in a way narrowing is not: nothing that could offer it before stops
+   * being able to, and no task's state machine changes. Only the set of spaces
+   * ALLOWED to offer it grows.
+   *
+   * The name has to be free at the new level, because it is about to compete
+   * with the organization's other shared types rather than this space's.
+   */
+  async shareWithOrganization(data: { workflowId: string; organizationId: string }) {
+    const wf = await this.prisma.statusWorkflow.findFirst({
+      where: { id: data.workflowId, organizationId: data.organizationId },
+      select: { id: true, name: true, ownerSpaceId: true },
+    });
+    if (!wf) throw new NotFoundException('Task type not found');
+    if (!wf.ownerSpaceId) return success({ workflowId: wf.id, alreadyShared: true });
+
+    const clash = await this.prisma.statusWorkflow.findFirst({
+      where: {
+        organizationId: data.organizationId,
+        ownerSpaceId: null,
+        name: { equals: wf.name, mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    if (clash) {
+      throw new ConflictException(
+        `The organization already has a task type named "${wf.name}". Rename this one before sharing it.`,
+      );
+    }
+
+    await this.prisma.statusWorkflow.update({ where: { id: wf.id }, data: { ownerSpaceId: null } });
+    await this.workflowCache.invalidate(data.organizationId);
+    return success({ workflowId: wf.id, alreadyShared: false });
+  }
+
+  /**
+   * Take a space's own copy of a shared task type, so it can diverge.
+   *
+   * The original is left offered here deliberately. Tasks already moving
+   * through it still point at it, and pulling it out from under them would
+   * leave them on a flow the space no longer presents. So the space shows both
+   * until the old work finishes, and removing the original is a decision
+   * somebody makes when they can see it is empty.
+   */
+  async forkForSpace(data: { workflowId: string; spaceId: string; organizationId: string }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+
+    const source = await this.prisma.statusWorkflow.findFirst({
+      where: { id: data.workflowId, organizationId: data.organizationId },
+      select: {
+        name: true,
+        ownerSpaceId: true,
+        statuses: {
+          orderBy: { position: 'asc' },
+          select: {
+            name: true, key: true, color: true, icon: true, position: true,
+            isFinal: true, isCanceled: true, transitions: true, capabilities: true,
+          },
+        },
+      },
+    });
+    if (!source) throw new NotFoundException('Task type not found');
+    if (source.ownerSpaceId === data.spaceId) {
+      throw new BadRequestException('This task type already belongs to this space.');
+    }
+
+    // A name free among THIS space's own types. The shared original keeps its
+    // name; the copy takes the first free variant so both can be told apart.
+    const name = await this.freeLocalName(source.name, data.spaceId, data.organizationId);
+
+    const created: any = await this.create({
+      name,
+      organizationId: data.organizationId,
+      ownerSpaceId: data.spaceId,
+      statuses: source.statuses.map((st) => ({
+        ...st,
+        icon: st.icon ?? undefined,
+      })),
+    });
+    const forkId = created?.data?.id;
+    if (forkId) {
+      await this.attachSpaceWorkflow({
+        spaceId: data.spaceId,
+        workflowId: forkId,
+        organizationId: data.organizationId,
+      });
+    }
+    return success({ workflowId: forkId, name });
+  }
+
+  /** The first name this space does not already use for one of its own types. */
+  private async freeLocalName(base: string, spaceId: string, organizationId: string): Promise<string> {
+    const rows = await this.prisma.statusWorkflow.findMany({
+      where: { organizationId, ownerSpaceId: spaceId },
+      select: { name: true },
+    });
+    const used = new Set(rows.map((r) => r.name.toLowerCase()));
+    if (!used.has(base.toLowerCase())) return base;
+    for (let i = 2; i < 200; i++) {
+      const candidate = `${base} (${i})`;
+      if (!used.has(candidate.toLowerCase())) return candidate;
+    }
+    throw new ConflictException('Could not find a free name for the copy.');
   }
 
   /** Stop offering a workflow here. The default may not be removed while others remain. */

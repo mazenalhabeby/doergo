@@ -101,7 +101,20 @@ export class WorkflowsService extends BaseGatewayService {
     name?: string;
     isDefault?: boolean;
     spaceId?: string;
+    shareWithOrganization?: boolean;
   }) {
     return this.send({ cmd: 'use_workflow_template' }, data);
+  }
+
+  async shareWithOrganization(data: { workflowId: string; organizationId: string }) {
+    return this.send({ cmd: 'share_workflow_with_org' }, data);
+  }
+
+  async forkForSpace(data: { workflowId: string; spaceId: string; organizationId: string }) {
+    return this.send({ cmd: 'fork_workflow_for_space' }, data);
+  }
+
+  async submitToLibrary(data: { workflowId: string; organizationId: string; note?: string }) {
+    return this.send({ cmd: 'submit_workflow_to_library' }, data);
   }
 }

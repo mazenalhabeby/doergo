@@ -100,6 +100,16 @@ export class WorkflowsController {
     return this.workflowsService.detachSpaceWorkflow(data);
   }
 
+  @MessagePattern({ cmd: 'share_workflow_with_org' })
+  shareWithOrganization(@Payload() data: { workflowId: string; organizationId: string }) {
+    return this.workflowsService.shareWithOrganization(data);
+  }
+
+  @MessagePattern({ cmd: 'fork_workflow_for_space' })
+  forkForSpace(@Payload() data: { workflowId: string; spaceId: string; organizationId: string }) {
+    return this.workflowsService.forkForSpace(data);
+  }
+
   @MessagePattern({ cmd: 'set_space_default_workflow' })
   setSpaceDefaultWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
     return this.workflowsService.setSpaceDefaultWorkflow(data);
@@ -119,9 +129,21 @@ export class WorkflowsController {
   @MessagePattern({ cmd: 'use_workflow_template' })
   useTemplate(
     @Payload()
-    data: { templateId: string; organizationId: string; name?: string; isDefault?: boolean; spaceId?: string },
+    data: {
+      templateId: string;
+      organizationId: string;
+      name?: string;
+      isDefault?: boolean;
+      spaceId?: string;
+      shareWithOrganization?: boolean;
+    },
   ) {
     return this.library.useTemplate(data);
+  }
+
+  @MessagePattern({ cmd: 'submit_workflow_to_library' })
+  submitToLibrary(@Payload() data: { workflowId: string; organizationId: string; note?: string }) {
+    return this.library.submitToLibrary(data);
   }
 
   @MessagePattern({ cmd: 'curate_list_workflow_templates' })

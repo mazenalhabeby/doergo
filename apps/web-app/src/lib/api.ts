@@ -4028,6 +4028,9 @@ export interface StatusWorkflow {
   isDefault: boolean;
   isActive: boolean;
   organizationId: string;
+  /** Set → this space's own task type. Null → the whole organization's. */
+  ownerSpaceId?: string | null;
+  ownerSpace?: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
   statuses?: WorkflowStatus[];
@@ -4074,10 +4077,15 @@ export const workflowsApi = {
       return response.data?.data || [];
     },
 
-    /** Copy a template into this organization. `spaceId` also offers it there. */
+    /**
+     * Copy a template in. With `spaceId` it FORKS into that space — the copy is
+     * that space's own, so editing it there affects nobody else. Pass
+     * `shareWithOrganization` to take it org-wide instead, so several spaces can
+     * offer one definition.
+     */
     use: async (
       templateId: string,
-      opts?: { name?: string; isDefault?: boolean; spaceId?: string },
+      opts?: { name?: string; isDefault?: boolean; spaceId?: string; shareWithOrganization?: boolean },
     ): Promise<StatusWorkflow | undefined> => {
       const response = await api.post<{ success: boolean; data: StatusWorkflow }>(
         `/workflows/library/${templateId}`,
@@ -4112,6 +4120,22 @@ export const workflowsApi = {
     return response.data;
   },
 
+  /** Take this space's own copy of a shared task type, so it can diverge. */
+  forkForSpace: async (spaceId: string, workflowId: string) => {
+    const response = await api.post<{ success: boolean; data: { workflowId: string; name: string } }>(
+      `/workflows/spaces/${spaceId}/${workflowId}/fork`, {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /** Widen a space's own task type so any space in the organization can offer it. */
+  shareWithOrganization: async (workflowId: string) => {
+    const response = await api.post(`/workflows/${workflowId}/share-with-organization`, {});
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
   setSpaceDefault: async (spaceId: string, workflowId: string) => {
     const response = await api.patch(`/workflows/spaces/${spaceId}/${workflowId}/default`, {});
     if (response.error) throw new Error(response.error);
@@ -4133,6 +4157,8 @@ export const workflowsApi = {
   create: async (data: {
     name: string;
     isDefault?: boolean;
+    /** Create it as this space's own. Omit for one the organization can share. */
+    spaceId?: string;
     statuses?: Array<{
       name: string;
       key: string;
@@ -4146,6 +4172,19 @@ export const workflowsApi = {
     }>;
   }) => {
     const response = await api.post<{ success: boolean; data: StatusWorkflow }>('/workflows', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /**
+   * Offer this task type to the shared library. It does NOT publish — a curator
+   * reads it before any other organization is offered it.
+   */
+  submitToLibrary: async (id: string, note?: string) => {
+    const response = await api.post<{ success: boolean; data: { id: string; resubmitted: boolean } }>(
+      `/workflows/${id}/submit-to-library`,
+      { note },
+    );
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },

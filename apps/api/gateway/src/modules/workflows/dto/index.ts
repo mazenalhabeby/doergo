@@ -30,6 +30,14 @@ export class CreateWorkflowDto {
   isDefault?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Create it as this space\'s own task type. Omit for one the whole organization can offer.',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(40)
+  spaceId?: string;
+
+  @ApiPropertyOptional({
     description: 'Optional initial statuses (e.g. when starting from a template)',
     type: () => [CreateWorkflowStatusDto],
   })
@@ -226,10 +234,27 @@ export class UseWorkflowTemplateDto {
   @IsOptional()
   isDefault?: boolean;
 
-  @ApiPropertyOptional({ description: 'Also offer the copy in this space' })
+  @ApiPropertyOptional({ description: 'Fork the copy into this space — only that space offers it' })
   @IsString()
   @IsOptional()
   @MaxLength(40)
   spaceId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Take the copy at organization level instead, so several spaces can offer one definition',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  shareWithOrganization?: boolean;
+}
+
+/** Offering one of the organization's task types to the shared library. */
+export class SubmitToLibraryDto {
+  @ApiPropertyOptional({ description: 'What this flow is for — shown to whoever reviews it' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(280)
+  note?: string;
 }
 

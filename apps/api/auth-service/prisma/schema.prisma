@@ -1627,6 +1627,8 @@ model CompanyLocation {
   workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   // The workflows this space offers (supersedes the single workflowId above).
   workflows      SpaceWorkflow[]
+  // Task types created here, or forked here from the library — this space's own.
+  ownedWorkflows StatusWorkflow[] @relation("SpaceOwnedWorkflows")
 
   // Space-driven routing (Phase 3). AccessRole ids whose holders in THIS space
   // are (a) notified about members here, and (b) contactable by members here.
@@ -2737,6 +2739,21 @@ model StatusWorkflow {
   id                 String                  @id @default(cuid())
   organizationId     String
   organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /**
+   * How far this task type reaches.
+   *
+   * NULL — the organization's: any of its spaces may offer it, and one edit
+   * fixes a typo everywhere. Set — this space's own, created here or forked
+   * from the library, and no other space may offer it. Local is the default
+   * because widening later is easy and narrowing after five spaces adopted it
+   * is not.
+   *
+   * Not a separate ownership model on purpose: a space-scoped type is still an
+   * org-owned row, so every tenancy check, cache key and query cost is the one
+   * that was already there.
+   */
+  ownerSpaceId       String?
+  ownerSpace         CompanyLocation?        @relation("SpaceOwnedWorkflows", fields: [ownerSpaceId], references: [id], onDelete: Cascade)
   name               String // "Default", "Field Service", "Logistics", etc.
   isDefault          Boolean                 @default(false)
   isActive           Boolean                 @default(true)
@@ -2749,8 +2766,12 @@ model StatusWorkflow {
   recurringTemplates RecurringTaskTemplate[]
   spaceOfferings     SpaceWorkflow[]
 
-  @@unique([organizationId, name])
+  // Names are unique per SPACE for a local type and per ORGANIZATION for a
+  // shared one — enforced in the service, because a partial unique index cannot
+  // express "unique within this column's value OR within the org when it is
+  // null" without two indexes that disagree at the boundary.
   @@index([organizationId])
+  @@index([ownerSpaceId])
   @@map("status_workflows")
 }
 
@@ -2819,6 +2840,20 @@ model WorkflowTemplate {
   // Seeded from code. Kept so a curator can tell a shipped template from one
   // they wrote, and so seeding can leave curated edits alone.
   isBuiltIn   Boolean  @default(false)
+  /**
+   * Where a submitted template came from — for the curator only.
+   *
+   * The tenant-facing read selects named fields and never includes these, so a
+   * published template carries no trace of who wrote it. That is deliberate: a
+   * flow's step names are a business's process, and often a customer's name.
+   * The curator needs provenance to review and to tell the submitter it landed;
+   * everybody else does not.
+   */
+  submittedByOrgId String?
+  submittedAt      DateTime?
+  // "<orgId>:<workflowId>" — so re-submitting the same task type updates the row
+  // a curator may already be reading instead of queueing a second copy of it.
+  sourceKey        String?   @unique
   definition  Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

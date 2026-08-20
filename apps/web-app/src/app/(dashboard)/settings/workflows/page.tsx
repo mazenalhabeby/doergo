@@ -19,6 +19,8 @@ import {
   Circle,
   AlertCircle,
   Check,
+  GitFork,
+  Upload,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 
@@ -28,6 +30,7 @@ import {
   type StatusWorkflow,
   type WorkflowStatus,
 } from "@/lib/api"
+import { workflowAdvice, validateWorkflow } from "@hbcfield/shared/client"
 import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -253,6 +256,20 @@ const WorkflowCard = memo(function WorkflowCard({
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["workflows"] }),
   })
 
+  const problems = useMemo(() => validateWorkflow(sorted), [sorted])
+  const advice = useMemo(() => workflowAdvice(sorted), [sorted])
+
+  const submitMutation = useMutation({
+    mutationFn: () => workflowsApi.submitToLibrary(workflow.id),
+    onSuccess: (r) =>
+      notify.success(
+        r?.resubmitted
+          ? t("workflows.page.toast.resubmitted", "Updated — it is waiting to be reviewed.")
+          : t("workflows.page.toast.submitted", "Sent for review. It reaches other organizations once approved."),
+      ),
+    onError: (e: Error) => notify.error(e.message),
+  })
+
   const move = useCallback(
     (statusId: string, dir: -1 | 1) => {
       const index = sorted.findIndex((s) => s.id === statusId)
@@ -286,13 +303,48 @@ const WorkflowCard = memo(function WorkflowCard({
                 {t("workflows.page.default")}
               </span>
             )}
+            {/* A task type belonging to one space is shown here rather than
+                hidden, so nobody hunts for one they know they created. */}
+            {workflow.ownerSpace && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                <GitFork className="h-3 w-3" />
+                {workflow.ownerSpace.name}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t("workflows.page.statusCount", { count: statuses.length })}
+            {workflow.ownerSpace
+              ? t("workflows.page.localTo", {
+                  space: workflow.ownerSpace.name,
+                  count: statuses.length,
+                  defaultValue: "{{count}} steps · only {{space}} uses it",
+                })
+              : t("workflows.page.statusCount", { count: statuses.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {!workflow.isDefault && (
+          {/* Offering it to the library SUBMITS it; a curator reads it before
+              any other organization is offered it. The wording has to say so,
+              or the click reads as "publish". */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs"
+            disabled={submitMutation.isPending}
+            title={t("workflows.page.submitHint", "Offer this flow to other organizations. It is reviewed first.")}
+            onClick={(e) => {
+              e.stopPropagation()
+              submitMutation.mutate()
+            }}
+          >
+            {submitMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Upload className="mr-1 h-3.5 w-3.5" />
+            )}
+            {t("workflows.page.submitToLibrary", "Offer to library")}
+          </Button>
+          {!workflow.isDefault && !workflow.ownerSpace && (
             <Button
               variant="ghost"
               size="sm"
@@ -327,6 +379,30 @@ const WorkflowCard = memo(function WorkflowCard({
       {/* Expanded: Status List */}
       {expanded && (
         <div className="border-t border-border">
+          {/*
+            What is wrong, then what could be better.
+
+            Problems refuse the flow when it is used — a step nothing reaches, a
+            task with no way out — so they are stated plainly. Advice never
+            blocks anything; it is what practised flows have that this one does
+            not, shown while there is still someone here to act on it.
+          */}
+          {(problems.length > 0 || advice.length > 0) && (
+            <div className="border-b border-border px-4 py-3 space-y-1.5">
+              {problems.map((p, i) => (
+                <p key={`p${i}`} className="flex items-start gap-2 text-xs text-red-600 dark:text-red-400">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  {p.message}
+                </p>
+              ))}
+              {advice.map((a) => (
+                <p key={a.code} className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  {a.message}
+                </p>
+              ))}
+            </div>
+          )}
           <div className="p-4 space-y-0.5">
             {statuses.length === 0 ? (
               <div className="text-center py-6">

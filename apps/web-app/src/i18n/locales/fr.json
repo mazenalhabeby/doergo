@@ -3376,9 +3376,21 @@
       "addFailed": "Impossible d’ajouter ce type de tâche",
       "removeFailed": "Impossible de retirer ce type de tâche",
       "defaultFailed": "Impossible de changer la valeur par défaut",
-      "libraryHint": "Ou partez d’un type de tâche prêt à l’emploi. Il est copié dans votre organisation, vous pourrez donc le modifier ensuite.",
+      "libraryHint": "Ou partez d’un type de tâche prêt à l’emploi. Vous obtenez votre propre copie dans cet espace — modifiable librement, sans effet sur les autres.",
       "libraryPlaceholder": "Choisir dans la bibliothèque…",
-      "useTemplate": "Utiliser le modèle"
+      "useTemplate": "Utiliser le modèle",
+      "onlyHere": "Ici seulement",
+      "sharedBadge": "Partagé",
+      "localHint": "Seul cet espace l’utilise. Les modifications restent ici.",
+      "sharedHint": "Partagé avec l’organisation. Le modifier le change partout où il est proposé.",
+      "fork": "Copier ici",
+      "forkHint": "Obtenez une copie propre à cet espace, modifiable sans affecter les autres",
+      "forked": "« {{name}} » est désormais la copie de cet espace — modifiez-la librement.",
+      "forkFailed": "Impossible de copier ce type de tâche",
+      "share": "Partager",
+      "shareHint": "Permettre à tout espace de l’organisation de proposer cette définition",
+      "shared": "Partagé avec l’organisation",
+      "shareFailed": "Impossible de partager ce type de tâche"
     },
     "previewWorkflow": "Aperçu ou modification d’un type de tâche"
   },
@@ -3750,9 +3762,14 @@
         "taskTypeDeleted": "Type de tâche supprimé",
         "statusDeleted": "Statut supprimé",
         "statusAdded": "Statut ajouté",
-        "statusUpdated": "Statut mis à jour"
+        "statusUpdated": "Statut mis à jour",
+        "submitted": "Envoyé pour relecture. Il atteindra d’autres organisations une fois approuvé.",
+        "resubmitted": "Mis à jour — en attente de relecture."
       },
-      "loadingLibrary": "Chargement de la bibliothèque…"
+      "loadingLibrary": "Chargement de la bibliothèque…",
+      "localTo": "{{count}} étapes · seul {{space}} l’utilise",
+      "submitToLibrary": "Proposer à la bibliothèque",
+      "submitHint": "Proposer ce flux à d’autres organisations. Il est d’abord relu."
     }
   },
   "assets": {

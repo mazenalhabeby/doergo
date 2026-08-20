@@ -3385,9 +3385,21 @@
       "addFailed": "No se pudo añadir ese tipo de tarea",
       "removeFailed": "No se pudo eliminar ese tipo de tarea",
       "defaultFailed": "No se pudo cambiar el predeterminado",
-      "libraryHint": "O empiece con un tipo de tarea ya preparado. Se copia en su organización, así que podrá editarlo después.",
+      "libraryHint": "O empiece con un tipo de tarea ya preparado. Obtiene su propia copia en este espacio — edítela libremente, nadie más se ve afectado.",
       "libraryPlaceholder": "Elegir de la biblioteca…",
-      "useTemplate": "Usar plantilla"
+      "useTemplate": "Usar plantilla",
+      "onlyHere": "Solo aquí",
+      "sharedBadge": "Compartido",
+      "localHint": "Solo este espacio lo usa. Los cambios se quedan aquí.",
+      "sharedHint": "Compartido con la organización. Editarlo lo cambia en todos los espacios que lo ofrecen.",
+      "fork": "Copiar aquí",
+      "forkHint": "Obtén una copia propia de este espacio para cambiarla sin afectar a los demás",
+      "forked": "«{{name}}» ya es la copia propia de este espacio — edítala libremente.",
+      "forkFailed": "No se pudo copiar ese tipo de tarea",
+      "share": "Compartir",
+      "shareHint": "Permitir que cualquier espacio de la organización ofrezca esta definición",
+      "shared": "Compartido con la organización",
+      "shareFailed": "No se pudo compartir ese tipo de tarea"
     },
     "previewWorkflow": "Ver o editar un tipo de tarea"
   },
@@ -3759,9 +3771,14 @@
         "taskTypeDeleted": "Tipo de tarea eliminado",
         "statusDeleted": "Estado eliminado",
         "statusAdded": "Estado agregado",
-        "statusUpdated": "Estado actualizado"
+        "statusUpdated": "Estado actualizado",
+        "submitted": "Enviado a revisión. Llegará a otras organizaciones una vez aprobado.",
+        "resubmitted": "Actualizado — pendiente de revisión."
       },
-      "loadingLibrary": "Cargando la biblioteca…"
+      "loadingLibrary": "Cargando la biblioteca…",
+      "localTo": "{{count}} pasos · solo {{space}} lo usa",
+      "submitToLibrary": "Ofrecer a la biblioteca",
+      "submitHint": "Ofrecer este flujo a otras organizaciones. Primero se revisa."
     }
   },
   "assets": {

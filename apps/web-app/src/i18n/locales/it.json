@@ -3376,9 +3376,21 @@
       "addFailed": "Impossibile aggiungere quel tipo di attività",
       "removeFailed": "Impossibile rimuovere quel tipo di attività",
       "defaultFailed": "Impossibile cambiare il predefinito",
-      "libraryHint": "Oppure parti da un tipo di attività già pronto. Viene copiato nella tua organizzazione, quindi potrai modificarlo in seguito.",
+      "libraryHint": "Oppure parti da un tipo di attività già pronto. Ottieni una copia tua in questo spazio — modificala liberamente, nessun altro ne risente.",
       "libraryPlaceholder": "Scegli dalla libreria…",
-      "useTemplate": "Usa modello"
+      "useTemplate": "Usa modello",
+      "onlyHere": "Solo qui",
+      "sharedBadge": "Condiviso",
+      "localHint": "Solo questo spazio lo usa. Le modifiche restano qui.",
+      "sharedHint": "Condiviso con l’organizzazione. Modificarlo lo cambia ovunque venga offerto.",
+      "fork": "Copia qui",
+      "forkHint": "Ottieni una copia propria di questo spazio, modificabile senza toccare gli altri",
+      "forked": "«{{name}}» è ora la copia di questo spazio — modificala liberamente.",
+      "forkFailed": "Impossibile copiare quel tipo di attività",
+      "share": "Condividi",
+      "shareHint": "Consenti a ogni spazio dell’organizzazione di offrire questa definizione",
+      "shared": "Condiviso con l’organizzazione",
+      "shareFailed": "Impossibile condividere quel tipo di attività"
     },
     "previewWorkflow": "Anteprima o modifica di un tipo di attività"
   },
@@ -3750,9 +3762,14 @@
         "taskTypeDeleted": "Tipo di attività eliminato",
         "statusDeleted": "Stato eliminato",
         "statusAdded": "Stato aggiunto",
-        "statusUpdated": "Stato aggiornato"
+        "statusUpdated": "Stato aggiornato",
+        "submitted": "Inviato in revisione. Raggiungerà altre organizzazioni una volta approvato.",
+        "resubmitted": "Aggiornato — in attesa di revisione."
       },
-      "loadingLibrary": "Caricamento della libreria…"
+      "loadingLibrary": "Caricamento della libreria…",
+      "localTo": "{{count}} passaggi · solo {{space}} lo usa",
+      "submitToLibrary": "Proponi alla libreria",
+      "submitHint": "Proponi questo flusso ad altre organizzazioni. Viene prima revisionato."
     }
   },
   "assets": {

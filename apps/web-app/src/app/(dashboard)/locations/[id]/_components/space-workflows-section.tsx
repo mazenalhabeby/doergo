@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Check, Plus, Trash2, Loader2, Star, Library } from "lucide-react"
+import { Check, Plus, Trash2, Loader2, Star, Library, GitFork, Globe } from "lucide-react"
 
 import { workflowsApi, type StatusWorkflow } from "@/lib/api"
+import { spaceMayOffer } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import {
@@ -89,6 +90,28 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
     onError: (e: Error) => notify.error(e.message || t("locations.workflows.addFailed", "Could not add that task type")),
   })
 
+  /*
+    Take this space's own copy of a shared type, so it can diverge here without
+    changing it for every other space that offers it.
+  */
+  const fork = useMutation({
+    mutationFn: (workflowId: string) => workflowsApi.forkForSpace(spaceId, workflowId),
+    onSuccess: (r) => {
+      notify.success(
+        t("locations.workflows.forked", { name: r?.name ?? "", defaultValue: '"{{name}}" is now this space\'s own copy — edit it freely.' }),
+      )
+      refresh()
+    },
+    onError: (e: Error) => notify.error(e.message || t("locations.workflows.forkFailed", "Could not copy that task type")),
+  })
+
+  /* Widen a local type so any space in the organization can offer it. */
+  const share = useMutation({
+    mutationFn: (workflowId: string) => workflowsApi.shareWithOrganization(workflowId),
+    onSuccess: () => { notify.success(t("locations.workflows.shared", "Shared with the organization")); refresh() },
+    onError: (e: Error) => notify.error(e.message || t("locations.workflows.shareFailed", "Could not share that task type")),
+  })
+
   const makeDefault = useMutation({
     mutationFn: (workflowId: string) => workflowsApi.setSpaceDefault(spaceId, workflowId),
     onSuccess: () => { notify.success(t("locations.workflows.defaultSet", "Default updated")); refresh() },
@@ -96,8 +119,17 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
   })
 
   const offeredIds = new Set(offered.map((w) => w.id))
-  const addable = all.filter((w: StatusWorkflow) => !offeredIds.has(w.id))
-  const busy = attach.isPending || detach.isPending || makeDefault.isPending || fromLibrary.isPending
+  /*
+    Another space's own task type is not on offer here.
+
+    Filtered with the same rule the server enforces, so the list never shows
+    something that would be refused on click — and so "local" means the same
+    thing in the interface as it does in the database.
+  */
+  const addable = all.filter(
+    (w: StatusWorkflow) => !offeredIds.has(w.id) && spaceMayOffer(w, spaceId),
+  )
+  const busy = attach.isPending || detach.isPending || makeDefault.isPending || fromLibrary.isPending || fork.isPending || share.isPending
 
   return (
     <div className="space-y-3">
@@ -125,6 +157,10 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
         <ul className="divide-y divide-border rounded-xl border border-border overflow-hidden">
           {offered.map((wf) => {
             const isDefault = (wf as StatusWorkflow & { isDefault?: boolean }).isDefault
+            // Local to this space, or one the whole organization shares? The
+            // difference decides whether editing it here reaches other spaces,
+            // so it is on the row rather than a page away.
+            const isLocal = wf.ownerSpaceId === spaceId
             return (
               <li key={wf.id} className="flex items-center gap-3 bg-card px-3.5 py-2.5">
                 <span className="min-w-0 flex-1">
@@ -136,6 +172,24 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                         {t("locations.workflows.default", "Default")}
                       </span>
                     )}
+                    <span
+                      className={cn(
+                        "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium",
+                        isLocal
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          : "bg-muted text-muted-foreground",
+                      )}
+                      title={
+                        isLocal
+                          ? t("locations.workflows.localHint", "Only this space uses it. Edits stay here.")
+                          : t("locations.workflows.sharedHint", "Shared with the organization. Editing it changes it everywhere it is offered.")
+                      }
+                    >
+                      {isLocal ? <GitFork className="size-2.5" /> : <Globe className="size-2.5" />}
+                      {isLocal
+                        ? t("locations.workflows.onlyHere", "Only here")
+                        : t("locations.workflows.sharedBadge", "Shared")}
+                    </span>
                   </span>
                   {!!wf.statuses?.length && (
                     <span className="mt-0.5 block truncate text-xs text-muted-foreground">
@@ -154,6 +208,31 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                   >
                     <Star className="mr-1 size-3" />
                     {t("locations.workflows.makeDefault", "Make default")}
+                  </Button>
+                )}
+                {isLocal ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 text-xs"
+                    disabled={busy}
+                    title={t("locations.workflows.shareHint", "Let any space in the organization offer this one definition")}
+                    onClick={() => share.mutate(wf.id)}
+                  >
+                    <Globe className="mr-1 size-3" />
+                    {t("locations.workflows.share", "Share")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 text-xs"
+                    disabled={busy}
+                    title={t("locations.workflows.forkHint", "Take this space's own copy so you can change it without affecting other spaces")}
+                    onClick={() => fork.mutate(wf.id)}
+                  >
+                    <GitFork className="mr-1 size-3" />
+                    {t("locations.workflows.fork", "Copy here")}
                   </Button>
                 )}
                 <Button

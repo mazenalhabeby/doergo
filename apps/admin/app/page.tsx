@@ -777,7 +777,7 @@ function PinBox({ onPin, busy }: { onPin: (orgId: string) => void; busy: boolean
 
 interface TplStatus { name: string; key: string; color: string; icon?: string; position: number; isFinal: boolean; isCanceled: boolean; transitions: string[]; capabilities: string[] }
 interface TplProblem { code: string; statusKey?: string; message: string }
-interface Tpl { id: string; slug: string; name: string; description: string | null; industry: string | null; icon: string | null; position: number; isPublished: boolean; isBuiltIn: boolean; statuses: TplStatus[]; problems: TplProblem[] }
+interface Tpl { id: string; slug: string; name: string; description: string | null; industry: string | null; icon: string | null; position: number; isPublished: boolean; isBuiltIn: boolean; submittedByOrgId: string | null; submittedByOrgName: string | null; submittedAt: string | null; statuses: TplStatus[]; problems: TplProblem[]; advice: TplProblem[] }
 
 function LibraryPanel({ onError }: { onError: (s: string) => void }) {
   const [rows, setRows] = useState<Tpl[]>([]);
@@ -798,7 +798,7 @@ function LibraryPanel({ onError }: { onError: (s: string) => void }) {
   };
 
   const open = (t: Tpl | null) => {
-    setEditing(t ?? ({ id: '', slug: '', name: '', description: '', industry: '', icon: '', position: rows.length, isPublished: false, isBuiltIn: false, statuses: [], problems: [] } as Tpl));
+    setEditing(t ?? ({ id: '', slug: '', name: '', description: '', industry: '', icon: '', position: rows.length, isPublished: false, isBuiltIn: false, submittedByOrgId: null, submittedByOrgName: null, submittedAt: null, statuses: [], problems: [], advice: [] } as Tpl));
     setDraft(JSON.stringify(t?.statuses ?? [], null, 2));
   };
 
@@ -821,7 +821,7 @@ function LibraryPanel({ onError }: { onError: (s: string) => void }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Task-type library</h2>
-          <p className="text-xs text-slate-500">Published templates are offered to every organization. Adding one gives them a copy to edit — it is never linked back here.</p>
+          <p className="text-xs text-slate-500">Published templates are offered to every organization. Adding one gives them a copy to edit — it is never linked back here. Submissions from customers arrive unpublished and sort to the top.</p>
         </div>
         <div className="flex items-center gap-2">
           <input value={importId} onChange={(e) => setImportId(e.target.value)} placeholder="Import from workflow id…" className="w-56 rounded bg-slate-800 px-2 py-1.5 text-xs outline-none" />
@@ -843,7 +843,18 @@ function LibraryPanel({ onError }: { onError: (s: string) => void }) {
             {rows.map((t) => (
               <tr key={t.id} className="hover:bg-slate-900/40">
                 <td className="px-3 py-2">
-                  <div className="font-medium">{t.name}{t.isBuiltIn && <span className="ml-2 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">built-in</span>}</div>
+                  <div className="font-medium">
+                    {t.name}
+                    {t.isBuiltIn && <span className="ml-2 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">built-in</span>}
+                    {/* Who sent it, so a reviewer can weigh it and tell them it
+                        landed. Never shown to tenants — a flow's step names are
+                        a business's process. */}
+                    {t.submittedByOrgId && (
+                      <span className="ml-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] text-blue-400">
+                        from {t.submittedByOrgName || t.submittedByOrgId}
+                      </span>
+                    )}
+                  </div>
                   {t.description && <div className="text-xs text-slate-500">{t.description}</div>}
                 </td>
                 <td className="px-3 py-2 text-xs text-slate-400">{t.slug}</td>
@@ -855,7 +866,12 @@ function LibraryPanel({ onError }: { onError: (s: string) => void }) {
                   {/* Every problem at once, so a curator fixes the list rather
                       than discovering the next fault after each attempt. */}
                   {t.problems.length > 0 && (
-                    <div className="mt-1 text-[11px] text-amber-400">{t.problems.map((p) => p.message).join(' ')}</div>
+                    <div className="mt-1 text-[11px] text-red-400">{t.problems.map((p) => p.message).join(' ')}</div>
+                  )}
+                  {/* Advice never blocks publishing — it is what a reviewer
+                      might send back to the submitter, not a refusal. */}
+                  {t.problems.length === 0 && t.advice?.length > 0 && (
+                    <div className="mt-1 text-[11px] text-amber-400">{t.advice.map((a) => a.message).join(' ')}</div>
                   )}
                 </td>
                 <td className="px-3 py-2">

@@ -3401,9 +3401,21 @@
       "addFailed": "Could not add that task type",
       "removeFailed": "Could not remove that task type",
       "defaultFailed": "Could not change the default",
-      "libraryHint": "Or start from a ready-made task type. It is copied into your organization, so you can edit it afterwards.",
+      "libraryHint": "Or start from a ready-made task type. You get your own copy in this space — edit it freely, nobody else is affected.",
       "libraryPlaceholder": "Choose from the library…",
-      "useTemplate": "Use template"
+      "useTemplate": "Use template",
+      "onlyHere": "Only here",
+      "sharedBadge": "Shared",
+      "localHint": "Only this space uses it. Edits stay here.",
+      "sharedHint": "Shared with the organization. Editing it changes it everywhere it is offered.",
+      "fork": "Copy here",
+      "forkHint": "Take this space's own copy so you can change it without affecting other spaces",
+      "forked": "\"{{name}}\" is now this space’s own copy — edit it freely.",
+      "forkFailed": "Could not copy that task type",
+      "share": "Share",
+      "shareHint": "Let any space in the organization offer this one definition",
+      "shared": "Shared with the organization",
+      "shareFailed": "Could not share that task type"
     },
     "previewWorkflow": "Preview or edit a task type"
   },
@@ -3775,9 +3787,14 @@
         "taskTypeDeleted": "Task type deleted",
         "statusDeleted": "Status deleted",
         "statusAdded": "Status added",
-        "statusUpdated": "Status updated"
+        "statusUpdated": "Status updated",
+        "submitted": "Sent for review. It reaches other organizations once approved.",
+        "resubmitted": "Updated — it is waiting to be reviewed."
       },
-      "loadingLibrary": "Loading the library…"
+      "loadingLibrary": "Loading the library…",
+      "localTo": "{{count}} steps · only {{space}} uses it",
+      "submitToLibrary": "Offer to library",
+      "submitHint": "Offer this flow to other organizations. It is reviewed first."
     }
   },
   "assets": {

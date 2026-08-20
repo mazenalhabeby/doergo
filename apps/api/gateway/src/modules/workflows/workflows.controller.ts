@@ -22,6 +22,7 @@ import {
   ReorderStatusesDto,
   UpsertDefinitionOfDoneDto,
   UseWorkflowTemplateDto,
+  SubmitToLibraryDto,
 } from './dto';
 import { WorkflowsService } from './workflows.service';
 
@@ -72,6 +73,7 @@ export class WorkflowsController {
       ...(dto?.name ? { name: dto.name } : {}),
       ...(dto?.isDefault !== undefined ? { isDefault: dto.isDefault } : {}),
       ...(dto?.spaceId ? { spaceId: dto.spaceId } : {}),
+      ...(dto?.shareWithOrganization !== undefined ? { shareWithOrganization: dto.shareWithOrganization } : {}),
     });
   }
 
@@ -133,9 +135,38 @@ export class WorkflowsController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Create a new workflow' })
   async create(@Body() dto: CreateWorkflowDto, @Request() req: any) {
+    const { spaceId, ...rest } = dto as CreateWorkflowDto & { spaceId?: string };
     return this.workflowsService.create({
-      ...dto,
+      ...rest,
+      // Named `spaceId` on the way in because that is what a caller has; stored
+      // as `ownerSpaceId` because that is what it means once it is a row.
+      ...(spaceId ? { ownerSpaceId: spaceId } : {}),
       organizationId: req.user.organizationId,
+    });
+  }
+
+  /**
+   * Offer a task type to the shared library.
+   *
+   * canManageUsers, the same as editing one — but note this only SUBMITS. A
+   * curator reads it before any other organization is offered it, because a
+   * flow's step names are a business's process and sometimes a person's name.
+   */
+  @Post(':id/share-with-organization')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Widen a space's own task type so any space can offer it" })
+  async shareWithOrganization(@Param('id') id: string, @Request() req: any) {
+    return this.workflowsService.shareWithOrganization({ workflowId: id, organizationId: req.user.organizationId });
+  }
+
+  @Post(':id/submit-to-library')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Offer this task type to the shared library (goes to review)' })
+  async submitToLibrary(@Param('id') id: string, @Body() dto: SubmitToLibraryDto, @Request() req: any) {
+    return this.workflowsService.submitToLibrary({
+      workflowId: id,
+      organizationId: req.user.organizationId,
+      ...(dto?.note ? { note: dto.note } : {}),
     });
   }
 
@@ -275,6 +306,13 @@ export class WorkflowsController {
     @Request() req: any,
   ) {
     return this.workflowsService.detachSpaceWorkflow({ spaceId, workflowId, organizationId: req.user.organizationId });
+  }
+
+  @Post('spaces/:spaceId/:workflowId/fork')
+  @RequirePermissionInSpace('canManageUsers')
+  @ApiOperation({ summary: "Take this space's own copy of a shared task type, so it can diverge" })
+  forkForSpace(@Param('spaceId') spaceId: string, @Param('workflowId') workflowId: string, @Request() req: any) {
+    return this.workflowsService.forkForSpace({ spaceId, workflowId, organizationId: req.user.organizationId });
   }
 
   @Patch('spaces/:spaceId/:workflowId/default')

@@ -3401,9 +3401,21 @@
       "addFailed": "Aufgabentyp konnte nicht hinzugefügt werden",
       "removeFailed": "Aufgabentyp konnte nicht entfernt werden",
       "defaultFailed": "Standard konnte nicht geändert werden",
-      "libraryHint": "Oder beginnen Sie mit einer fertigen Aufgabenart. Sie wird in Ihre Organisation kopiert und kann anschließend bearbeitet werden.",
+      "libraryHint": "Oder mit einer fertigen Aufgabenart beginnen. Sie erhalten eine eigene Kopie in diesem Bereich — frei bearbeitbar, ohne Auswirkung auf andere.",
       "libraryPlaceholder": "Aus der Bibliothek wählen …",
-      "useTemplate": "Vorlage verwenden"
+      "useTemplate": "Vorlage verwenden",
+      "onlyHere": "Nur hier",
+      "sharedBadge": "Geteilt",
+      "localHint": "Nur dieser Bereich nutzt ihn. Änderungen bleiben hier.",
+      "sharedHint": "Mit der Organisation geteilt. Eine Änderung wirkt überall, wo er angeboten wird.",
+      "fork": "Hierher kopieren",
+      "forkHint": "Eigene Kopie für diesen Bereich, änderbar ohne Auswirkung auf andere",
+      "forked": "„{{name}}“ ist jetzt die eigene Kopie dieses Bereichs — frei bearbeitbar.",
+      "forkFailed": "Diese Aufgabenart konnte nicht kopiert werden",
+      "share": "Teilen",
+      "shareHint": "Jeder Bereich der Organisation darf diese eine Definition anbieten",
+      "shared": "Mit der Organisation geteilt",
+      "shareFailed": "Diese Aufgabenart konnte nicht geteilt werden"
     },
     "previewWorkflow": "Aufgabentyp ansehen oder bearbeiten"
   },
@@ -3775,9 +3787,14 @@
         "taskTypeDeleted": "Aufgabentyp gelöscht",
         "statusDeleted": "Status gelöscht",
         "statusAdded": "Status hinzugefügt",
-        "statusUpdated": "Status aktualisiert"
+        "statusUpdated": "Status aktualisiert",
+        "submitted": "Zur Prüfung eingereicht. Nach Freigabe erreicht er andere Organisationen.",
+        "resubmitted": "Aktualisiert — wartet auf die Prüfung."
       },
-      "loadingLibrary": "Bibliothek wird geladen …"
+      "loadingLibrary": "Bibliothek wird geladen …",
+      "localTo": "{{count}} Schritte · nur {{space}} nutzt ihn",
+      "submitToLibrary": "Der Bibliothek anbieten",
+      "submitHint": "Diesen Ablauf anderen Organisationen anbieten. Er wird zuerst geprüft."
     }
   },
   "assets": {
