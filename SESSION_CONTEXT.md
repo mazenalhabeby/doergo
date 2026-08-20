@@ -3,11 +3,14 @@
 Everything from this session, written so it can be reloaded without losing
 anything. Read this first; it is the index, and it points at the code.
 
-**State:** everything through `24ac0c05` is **committed and deployed to
-production** (prod `713d406` — hashes differ because prod is patched, not
-pulled). **`1d519bef` (workflow library, Phase 5) is committed but NOT
-deployed** — it carries migration `20260820140000`, so auth-service goes first.
-57 commits.
+**State:** all work below is **committed and deployed to production**.
+Local `HEAD` `9c0152c4` == prod `0154269` (hashes differ because prod is
+patched, not pulled). 58 commits.
+
+Latest deploy: **2026-08-20, workflow library (Phase 5)**. Rollback tag
+`prod-pre-workflow-library` → `713d406`. Migration `20260820140000` applied.
+Five images rebuilt in this order: auth-service (migration) → task-service
+(seeds the library at boot) → api-gateway → web-app → admin-app.
 
 ---
 
@@ -52,7 +55,7 @@ inside the container.
 
 ## 2. Outstanding work
 
-### Workflow migration — Phase 5 is the only phase left
+### Workflow migration — COMPLETE (all five phases deployed)
 Plan: <https://claude.ai/code/artifact/a3618d1f-a7e3-41f1-80e1-f9c10f624bcf>
 
 | Phase | What | State |
@@ -61,7 +64,7 @@ Plan: <https://claude.ai/code/artifact/a3618d1f-a7e3-41f1-80e1-f9c10f624bcf>
 | 2 | `SpaceWorkflow` join + backfill, invisible | **done** `ae4e467a` |
 | 3 | Per-space selection in the UI + module gate | **done** `d342c9de` |
 | 4 | The validator | **done** `24ac0c05` |
-| 5 | `WorkflowTemplate` library | **done** `1d519bef` — NOT DEPLOYED |
+| 5 | `WorkflowTemplate` library | **done** `1d519bef` — deployed |
 
 Phase 5 as built (the two invariants held):
 - The library has **no organizationId**. Tenants read published rows only; the
