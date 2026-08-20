@@ -2,6 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNotEmpty, MaxLength, IsBoolean, IsDateString, IsInt, Min } from 'class-validator';
 
 export class CreatePhaseDto {
+  @ApiPropertyOptional({
+    description: 'The space this belongs to. Omit for one the whole organization shares.',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(40)
+  spaceId?: string;
+
   @ApiProperty({ example: 'Phase 1: Foundation' })
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })

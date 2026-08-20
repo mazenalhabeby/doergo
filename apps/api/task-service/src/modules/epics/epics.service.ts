@@ -18,9 +18,33 @@ export class EpicsService {
   /**
    * List all epics for an organization
    */
-  async findAll(data: { organizationId: string; limit?: number; offset?: number }) {
+  /**
+   * One epic by id, scoped to its organization.
+   *
+   * Added for the gateway's module guard, which has to know which SPACE a
+   * mutation happens in — a epic carries that now. Kept lean: the guard needs
+   * the space, not the whole record, and it runs in front of every mutation.
+   */
+  async findOne(data: { id: string; organizationId: string }) {
+    const row = await this.prisma.epic.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true, spaceId: true, organizationId: true },
+    });
+    // Not found and not yours answer alike — saying which would confirm that
+    // another tenant's row exists.
+    if (!row) throw new NotFoundException('Not found');
+    return success(row);
+  }
+
+  async findAll(data: { organizationId: string; spaceId?: string; limit?: number; offset?: number }) {
     const epics = await this.prisma.epic.findMany({
-      where: { organizationId: data.organizationId },
+      where: {
+        organizationId: data.organizationId,
+      // A space sees its own plus the organization-wide ones. Null spaceId
+      // means organization-wide — what every pre-existing row is, so without
+      // the null arm this would have emptied every board.
+        ...(data.spaceId ? { OR: [{ spaceId: data.spaceId }, { spaceId: null }] } : {}),
+      },
       orderBy: { position: 'asc' },
       take: data.limit || 100,
       skip: data.offset || 0,
@@ -37,6 +61,8 @@ export class EpicsService {
    */
   async create(data: {
     name: string;
+    /** Created inside a space → it belongs there. Omitted → organization-wide. */
+    spaceId?: string | null;
     description?: string;
     color?: string;
     startDate?: string;
@@ -57,6 +83,7 @@ export class EpicsService {
 
     const epic = await this.prisma.epic.create({
       data: {
+        spaceId: data.spaceId ?? null,
         name: data.name,
         description: data.description,
         color: data.color || '#8b5cf6',

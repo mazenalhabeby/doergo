@@ -8,6 +8,7 @@ import {
   Param,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
@@ -28,9 +29,11 @@ export class EpicsController {
   @Get()
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization epics with task counts' })
-  async findAll(@Request() req: any) {
+  async findAll(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
+    // A space sees its own epics plus the organization-wide ones.
     return this.epicsService.findAll({
       organizationId: req.user.organizationId,
+      ...(spaceId && { spaceId }),
     });
   }
 

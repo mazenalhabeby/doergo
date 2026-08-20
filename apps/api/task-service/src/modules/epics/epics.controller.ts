@@ -17,6 +17,11 @@ export class EpicsController {
     return this.epicsService.findAll(data);
   }
 
+  @MessagePattern({ cmd: 'find_epic' })
+  async findOne(@Payload() data: { id: string; organizationId: string }) {
+    return this.epicsService.findOne(data);
+  }
+
   @MessagePattern({ cmd: 'create_epic' })
   async create(@Payload() data: any) {
     return this.epicsService.create(data);

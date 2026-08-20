@@ -16,9 +16,33 @@ export class PhasesService {
   /**
    * List all phases for an organization
    */
-  async findAll(data: { organizationId: string; limit?: number; offset?: number }) {
+  /**
+   * One phase by id, scoped to its organization.
+   *
+   * Added for the gateway's module guard, which has to know which SPACE a
+   * mutation happens in — a phase carries that now. Kept lean: the guard needs
+   * the space, not the whole record, and it runs in front of every mutation.
+   */
+  async findOne(data: { id: string; organizationId: string }) {
+    const row = await this.prisma.phase.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true, spaceId: true, organizationId: true },
+    });
+    // Not found and not yours answer alike — saying which would confirm that
+    // another tenant's row exists.
+    if (!row) throw new NotFoundException('Not found');
+    return success(row);
+  }
+
+  async findAll(data: { organizationId: string; spaceId?: string; limit?: number; offset?: number }) {
     const phases = await this.prisma.phase.findMany({
-      where: { organizationId: data.organizationId },
+      where: {
+        organizationId: data.organizationId,
+      // A space sees its own plus the organization-wide ones. Null spaceId
+      // means organization-wide — what every pre-existing row is, so without
+      // the null arm this would have emptied every board.
+        ...(data.spaceId ? { OR: [{ spaceId: data.spaceId }, { spaceId: null }] } : {}),
+      },
       orderBy: { position: 'asc' },
       take: data.limit || 100,
       skip: data.offset || 0,
@@ -35,6 +59,8 @@ export class PhasesService {
    */
   async create(data: {
     name: string;
+    /** Created inside a space → it belongs there. Omitted → organization-wide. */
+    spaceId?: string | null;
     description?: string;
     color?: string;
     type?: string;
@@ -61,6 +87,7 @@ export class PhasesService {
 
     const phase = await this.prisma.phase.create({
       data: {
+        spaceId: data.spaceId ?? null,
         name: data.name,
         description: data.description,
         color: data.color || '#3b82f6',

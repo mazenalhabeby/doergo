@@ -1629,6 +1629,10 @@ model CompanyLocation {
   workflows      SpaceWorkflow[]
   // Task types created here, or forked here from the library — this space's own.
   ownedWorkflows StatusWorkflow[] @relation("SpaceOwnedWorkflows")
+  // Planning objects scoped to this space (null spaceId = organization-wide).
+  sprints        Sprint[]         @relation("SpaceSprints")
+  phases         Phase[]          @relation("SpacePhases")
+  epics          Epic[]           @relation("SpaceEpics")
 
   // Space-driven routing (Phase 3). AccessRole ids whose holders in THIS space
   // are (a) notified about members here, and (b) contactable by members here.
@@ -2625,6 +2629,20 @@ model Phase {
   type           String       @default("phase") // "phase" or "milestone"
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /**
+   * The space this belongs to.
+   *
+   * NULL means organization-wide — how every one of these worked before spaces
+   * owned anything, and what existing rows stay. Set means it belongs to that
+   * space, and the modules that govern it are that space's rather than the
+   * organization's.
+   *
+   * Nullable on purpose: making it required would have forced every existing
+   * row into some arbitrary space, and "belongs everywhere" is a real answer
+   * for an organization that runs one backlog across its sites.
+   */
+  spaceId        String?
+  space          CompanyLocation? @relation("SpacePhases", fields: [spaceId], references: [id], onDelete: SetNull)
   startDate      DateTime?
   endDate        DateTime?
   position       Int          @default(0)
@@ -2644,6 +2662,20 @@ model Sprint {
   goal           String?
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /**
+   * The space this belongs to.
+   *
+   * NULL means organization-wide — how every one of these worked before spaces
+   * owned anything, and what existing rows stay. Set means it belongs to that
+   * space, and the modules that govern it are that space's rather than the
+   * organization's.
+   *
+   * Nullable on purpose: making it required would have forced every existing
+   * row into some arbitrary space, and "belongs everywhere" is a real answer
+   * for an organization that runs one backlog across its sites.
+   */
+  spaceId        String?
+  space          CompanyLocation? @relation("SpaceSprints", fields: [spaceId], references: [id], onDelete: SetNull)
   startDate      DateTime
   endDate        DateTime
   status         SprintStatus  @default(PLANNING)
@@ -2667,6 +2699,20 @@ model Epic {
   status         String       @default("OPEN") // OPEN, IN_PROGRESS, DONE
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /**
+   * The space this belongs to.
+   *
+   * NULL means organization-wide — how every one of these worked before spaces
+   * owned anything, and what existing rows stay. Set means it belongs to that
+   * space, and the modules that govern it are that space's rather than the
+   * organization's.
+   *
+   * Nullable on purpose: making it required would have forced every existing
+   * row into some arbitrary space, and "belongs everywhere" is a real answer
+   * for an organization that runs one backlog across its sites.
+   */
+  spaceId        String?
+  space          CompanyLocation? @relation("SpaceEpics", fields: [spaceId], references: [id], onDelete: SetNull)
   startDate      DateTime?
   targetDate     DateTime?
   position       Int          @default(0)

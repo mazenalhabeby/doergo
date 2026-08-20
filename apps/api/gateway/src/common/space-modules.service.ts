@@ -86,17 +86,50 @@ export class SpaceModulesService {
         this.taskClient.send({ cmd: 'find_task' }, { id: taskId, organizationId }).pipe(timeout(1_500)),
       );
       const spaceId: string | null = res?.data?.spaceId ?? null;
-      if (this.taskSpace.size >= SpaceModulesService.MAX_ENTRIES) {
-        const oldest = this.taskSpace.keys().next().value;
-        if (oldest) this.taskSpace.delete(oldest);
-      }
-      this.taskSpace.set(key, { spaceId, expires: Date.now() + SpaceModulesService.TASK_TTL_MS });
+      this.rememberSpaceOf(key, spaceId);
       return spaceId;
     } catch {
       // Unresolvable → the caller keeps the organization's modules. A guard that
       // fails closed on a slow lookup takes a working feature away from everyone.
       return null;
     }
+  }
+
+  /**
+   * The space a planning object belongs to — a sprint, phase or epic.
+   *
+   * These carry a nullable spaceId: null means organization-wide, which is what
+   * every row created before spaces owned them still is. Null here therefore
+   * means "no space governs this", not "lookup failed", and the caller falls
+   * back to the organization either way.
+   */
+  async spaceOfPlanningObject(
+    cmd: 'find_sprint' | 'find_phase' | 'find_epic',
+    id: string,
+    organizationId: string,
+  ): Promise<string | null> {
+    const key = `${cmd}:${organizationId}:${id}`;
+    const hit = this.taskSpace.get(key);
+    if (hit && hit.expires > Date.now()) return hit.spaceId;
+
+    try {
+      const res: any = await firstValueFrom(
+        this.taskClient.send({ cmd }, { id, organizationId }).pipe(timeout(1_500)),
+      );
+      const spaceId: string | null = res?.data?.spaceId ?? null;
+      this.rememberSpaceOf(key, spaceId);
+      return spaceId;
+    } catch {
+      return null;
+    }
+  }
+
+  private rememberSpaceOf(key: string, spaceId: string | null): void {
+    if (this.taskSpace.size >= SpaceModulesService.MAX_ENTRIES) {
+      const oldest = this.taskSpace.keys().next().value;
+      if (oldest) this.taskSpace.delete(oldest);
+    }
+    this.taskSpace.set(key, { spaceId, expires: Date.now() + SpaceModulesService.TASK_TTL_MS });
   }
 
   /** Drop a space's entry so a module change is visible immediately. */

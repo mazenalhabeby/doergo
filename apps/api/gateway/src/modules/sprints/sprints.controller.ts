@@ -32,10 +32,17 @@ export class SprintsController {
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization sprints' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by status: PLANNING, ACTIVE, COMPLETED' })
-  async findAll(@Query('status') status: string | undefined, @Request() req: any) {
+  async findAll(
+    @Query('status') status: string | undefined,
+    // A space sees its own sprints plus the organization-wide ones. Omit it and
+    // the answer is everything, which is what it always was.
+    @Query('spaceId') spaceId: string | undefined,
+    @Request() req: any,
+  ) {
     return this.sprintsService.findAll({
       organizationId: req.user.organizationId,
       ...(status && { status }),
+      ...(spaceId && { spaceId }),
     });
   }
 

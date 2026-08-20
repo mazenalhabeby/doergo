@@ -39,10 +39,15 @@ describe('ModuleGuard — the SPACE decides, the plan still gates', () => {
       },
     }) as any;
 
-  const resolver = (spaces: Record<string, string[]>, taskSpace: Record<string, string> = {}) =>
+  const resolver = (
+    spaces: Record<string, string[]>,
+    taskSpace: Record<string, string> = {},
+    planningSpace: Record<string, string> = {},
+  ) =>
     ({
       forSpace: async (spaceId: string) => spaces[spaceId] ?? null,
       spaceOfTask: async (taskId: string) => taskSpace[taskId] ?? null,
+      spaceOfPlanningObject: async (_cmd: string, id: string) => planningSpace[id] ?? null,
       invalidate: () => {},
     }) as any;
 
@@ -117,5 +122,25 @@ describe('ModuleGuard — the SPACE decides, the plan still gates', () => {
   it('passes a route with no module requirement', async () => {
     const g = new ModuleGuard(reflector(undefined), resolver({}));
     await expect(g.canActivate(ctx({ method: 'POST', user }))).resolves.toBe(true);
+  });
+
+  it('resolves the space from a sprint, phase or epic', async () => {
+    // These were the last routes that could not be judged against a space: the
+    // models were organization-owned, so there was nothing to resolve.
+    for (const [segment, mod] of [['/sprints/', 'sprints'], ['/phases/', 'phases'], ['/epics/', 'epics']] as const) {
+      const g = new ModuleGuard(reflector(mod), resolver({ 'sp-9': [] }, {}, { 'p-1': 'sp-9' }));
+      await expect(
+        g.canActivate(ctx({ method: 'PATCH', user, params: { id: 'p-1' }, url: `/api/v1${segment}p-1` })),
+      ).rejects.toThrow(HttpException);
+    }
+  });
+
+  it('treats an organization-wide planning object as the organization`s', async () => {
+    // A null spaceId means organization-wide — what every row created before
+    // spaces owned these still is. It must not read as "lookup failed".
+    const g = new ModuleGuard(reflector('sprints'), resolver({}, {}, {}));
+    await expect(
+      g.canActivate(ctx({ method: 'PATCH', user, params: { id: 'p-legacy' }, url: '/api/v1/sprints/p-legacy' })),
+    ).resolves.toBe(true);
   });
 });

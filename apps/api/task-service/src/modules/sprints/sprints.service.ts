@@ -16,8 +16,17 @@ export class SprintsService {
   /**
    * List all sprints for an organization
    */
-  async findAll(data: { organizationId: string; status?: string; limit?: number; offset?: number }) {
+  async findAll(data: { organizationId: string; status?: string; spaceId?: string; limit?: number; offset?: number }) {
     const where: any = { organizationId: data.organizationId };
+    /*
+      A space sees its own planning objects plus the organization-wide ones.
+
+      Null spaceId means organization-wide — every row created before spaces
+      owned these is one, and an organization running a single backlog across
+      its sites keeps working. Without the null arm, this change would have
+      emptied every existing board.
+    */
+    if (data.spaceId) where.OR = [{ spaceId: data.spaceId }, { spaceId: null }];
     if (data.status) {
       where.status = data.status;
     }
@@ -70,6 +79,8 @@ export class SprintsService {
    */
   async create(data: {
     name: string;
+    /** Created inside a space → it belongs there. Omitted → organization-wide. */
+    spaceId?: string | null;
     goal?: string;
     startDate: string;
     endDate: string;
@@ -96,6 +107,7 @@ export class SprintsService {
 
     const sprint = await this.prisma.sprint.create({
       data: {
+        spaceId: data.spaceId ?? null,
         name: data.name,
         goal: data.goal,
         startDate,

@@ -7,6 +7,13 @@ import { SpaceModulesService } from '../space-modules.service';
 
 const MODULE_KEYS = new Set<string>(AVAILABLE_MODULES.map((m) => m.key));
 
+/** Routes whose `:id` names a planning object that knows its own space. */
+const PLANNING_ROUTES = [
+  { segment: '/sprints', cmd: 'find_sprint' },
+  { segment: '/phases', cmd: 'find_phase' },
+  { segment: '/epics', cmd: 'find_epic' },
+] as const;
+
 /**
  * Rejects mutations whose required FEATURE module is not available.
  *
@@ -94,19 +101,33 @@ export class ModuleGuard implements CanActivate {
     }
 
     // A task route carries the task, and the task carries the space.
-    const taskId = req.params?.taskId ?? (this.isTaskRoute(req) ? req.params?.id : null);
+    const taskId = req.params?.taskId ?? (this.routeIs(req, '/tasks/') ? req.params?.id : null);
     if (typeof taskId === 'string' && taskId) {
       const spaceId = await this.spaceModules.spaceOfTask(taskId, orgId);
+      if (spaceId) return this.spaceModules.forSpace(spaceId, orgId);
+      return null;
+    }
+
+    /*
+      Planning objects — a sprint, phase or epic — carry their own space now.
+
+      They were the last routes that could not be judged against a space,
+      because the models were organization-owned. A null spaceId still means
+      organization-wide, which is what every row created before this is.
+    */
+    const planning = PLANNING_ROUTES.find((r) => this.routeIs(req, r.segment));
+    if (planning && typeof req.params?.id === 'string' && req.params.id) {
+      const spaceId = await this.spaceModules.spaceOfPlanningObject(planning.cmd, req.params.id, orgId);
       if (spaceId) return this.spaceModules.forSpace(spaceId, orgId);
     }
 
     return null;
   }
 
-  /** `:id` means different things per controller; only trust it under /tasks. */
-  private isTaskRoute(req: any): boolean {
+  /** `:id` means a different thing per controller, so match on the path. */
+  private routeIs(req: any, segment: string): boolean {
     const url: string = req.route?.path ?? req.originalUrl ?? req.url ?? '';
-    return url.includes('/tasks/');
+    return url.includes(segment);
   }
 
   private refuse(feature: string, fromSpace = false): HttpException {

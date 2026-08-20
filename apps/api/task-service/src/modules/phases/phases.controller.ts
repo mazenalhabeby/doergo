@@ -17,6 +17,11 @@ export class PhasesController {
     return this.phasesService.findAll(data);
   }
 
+  @MessagePattern({ cmd: 'find_phase' })
+  async findOne(@Payload() data: { id: string; organizationId: string }) {
+    return this.phasesService.findOne(data);
+  }
+
   @MessagePattern({ cmd: 'create_phase' })
   async create(@Payload() data: any) {
     return this.phasesService.create(data);

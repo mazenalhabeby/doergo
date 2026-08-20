@@ -2,6 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNotEmpty, MaxLength, IsDateString, IsInt, Min } from 'class-validator';
 
 export class CreateSprintDto {
+  @ApiPropertyOptional({
+    description: 'The space this belongs to. Omit for one the whole organization shares.',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(40)
+  spaceId?: string;
+
   @ApiProperty({ example: 'Sprint 1' })
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })
