@@ -28,7 +28,7 @@ function money(n: number, currency = "EUR") {
 }
 
 export function InvoicesTab({ spaceId, spaceName }: { spaceId: string; spaceName: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
 
   const { data, isLoading } = useQuery({
@@ -82,7 +82,7 @@ export function InvoicesTab({ spaceId, spaceName }: { spaceId: string; spaceName
               >
                 <span className="text-sm font-mono font-medium text-foreground">{inv.invoiceNumber}</span>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(inv.issueDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  {new Date(inv.issueDate).toLocaleDateString(i18n.language, { day: "2-digit", month: "short", year: "numeric" })}
                 </span>
                 <span className="text-sm font-semibold text-right tabular-nums">{money(inv.total, inv.currency)}</span>
                 <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>

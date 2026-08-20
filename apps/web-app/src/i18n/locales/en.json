@@ -5501,7 +5501,11 @@
     "noCategoriesTitle": "No categories yet",
     "inviteHint": "Just set the {{entity}} and share the code — the client fills in their own name when they register.",
     "resNameOpt": "Client name (optional)",
-    "resNamePlaceholder": "Leave blank — they set it on sign-up"
+    "resNamePlaceholder": "Leave blank — they set it on sign-up",
+    "namePlaceholder": "Rivergate Rentals",
+    "catLabelPlaceholder": "Air Conditioning",
+    "catTeamPlaceholder": "HVAC team",
+    "catIssuesPlaceholder": "Not cooling, No power"
   },
   "scheduling": {
     "title": "Space settings",
@@ -5887,5 +5891,8 @@
       "sendRequest": "Send request",
       "titleRequired": "Enter a title for your request."
     }
+  },
+  "apartments": {
+    "removeFailed": "Could not remove this apartment"
   }
 }

@@ -5476,7 +5476,11 @@
     "noCategoriesTitle": "Ancora nessuna categoria",
     "inviteHint": "Imposta solo l'{{entity}} e condividi il codice: il cliente inserisce il proprio nome al momento della registrazione.",
     "resNameOpt": "Nome del cliente (facoltativo)",
-    "resNamePlaceholder": "Lascia vuoto: lo imposta alla registrazione"
+    "resNamePlaceholder": "Lascia vuoto: lo imposta alla registrazione",
+    "namePlaceholder": "Affitti Rivergate",
+    "catLabelPlaceholder": "Aria condizionata",
+    "catTeamPlaceholder": "Team HVAC",
+    "catIssuesPlaceholder": "Non raffredda, Assenza di corrente"
   },
   "scheduling": {
     "title": "Impostazioni spazio",
@@ -5862,5 +5866,8 @@
       "sendRequest": "Invia richiesta",
       "titleRequired": "Inserisci un titolo per la tua richiesta."
     }
+  },
+  "apartments": {
+    "removeFailed": "Impossibile rimuovere questo appartamento"
   }
 }

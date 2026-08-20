@@ -29,6 +29,10 @@ export function ApartmentsTab({ spaceId, hasB2C }: { spaceId: string; hasB2C?: b
   const del = useMutation({
     mutationFn: (unitId: string) => spaceUnitsApi.remove(spaceId, unitId),
     onSuccess: () => { notify.success(t("apartments.removed", "Removed")); invalidate() },
+    // Without this a failed delete said nothing: the row stayed, and there was
+    // no telling whether it had worked. The only mutation in these tabs that
+    // was missing it.
+    onError: (err: Error) => notify.error(err?.message || t("apartments.removeFailed", "Could not remove this apartment")),
   })
 
   return (

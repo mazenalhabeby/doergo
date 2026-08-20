@@ -5501,7 +5501,11 @@
     "noCategoriesTitle": "Noch keine Kategorien",
     "inviteHint": "Legen Sie nur die {{entity}} fest und teilen Sie den Code — der Kunde trägt seinen Namen bei der Registrierung selbst ein.",
     "resNameOpt": "Kundenname (optional)",
-    "resNamePlaceholder": "Leer lassen — wird bei der Anmeldung gesetzt"
+    "resNamePlaceholder": "Leer lassen — wird bei der Anmeldung gesetzt",
+    "namePlaceholder": "Musterverwaltung GmbH",
+    "catLabelPlaceholder": "Klimaanlage",
+    "catTeamPlaceholder": "HLK-Team",
+    "catIssuesPlaceholder": "Kühlt nicht, Kein Strom"
   },
   "scheduling": {
     "title": "Bereichseinstellungen",
@@ -5887,5 +5891,8 @@
       "sendRequest": "Anfrage senden",
       "titleRequired": "Geben Sie einen Titel für Ihre Anfrage ein."
     }
+  },
+  "apartments": {
+    "removeFailed": "Diese Wohnung konnte nicht entfernt werden"
   }
 }

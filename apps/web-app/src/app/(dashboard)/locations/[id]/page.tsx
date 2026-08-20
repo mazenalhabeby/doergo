@@ -20,6 +20,7 @@ import {
   Workflow,
 } from "lucide-react"
 
+import { accessAllows } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -44,12 +45,18 @@ export default function SpaceSettingsPage() {
   const params = useParams()
   const spaceId = params.id as string
   const { user } = useAuth()
-  // Org-wide managers OR the space's own manager (per-space canManageUsers, from
-  // their space-role) may open this space's settings (delegation).
+  /*
+    Org-wide managers OR this space's own manager may open its settings —
+    delegation, so a space can be administered without org-wide rights.
+
+    Through accessAllows rather than walking the object by hand. The hand-rolled
+    version needed `as any` to reach in, which means a change to the shape of
+    resolved access would not fail to compile — it would quietly evaluate to
+    false and lock every manager out of their own space, or worse, not.
+  */
   const canManage =
     !!user?.canManageUsers ||
-    (user as any)?.access?.org?.canManageUsers === true ||
-    (user as any)?.access?.perSpace?.[spaceId]?.canManageUsers === true
+    accessAllows((user as { access?: Parameters<typeof accessAllows>[0] } | null)?.access, "canManageUsers", spaceId)
 
   // Honor ?tab=… so returning from a portal detail lands back on the Portal tab.
   const searchParams = useSearchParams()
