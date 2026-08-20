@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
@@ -58,13 +60,15 @@ export class AssetCategoriesController {
 
   @Get()
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'List all asset categories' })
-  async findAllCategories(@Request() req: any) {
+  @ApiOperation({ summary: 'List asset kinds — a space\'s own, or the whole org' })
+  @ApiQuery({ name: 'spaceId', required: false, description: "Only this space's kinds" })
+  async findAllCategories(@Request() req: any, @Query('spaceId') spaceId?: string) {
     return this.assetsService.findAllCategories({
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
+      spaceId,
     });
   }
 

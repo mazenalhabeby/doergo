@@ -13,6 +13,7 @@ import {
   FileText,
   Contact,
   Home,
+  Package,
   Loader2,
   Share2,
   ShieldAlert,
@@ -37,6 +38,7 @@ import { InvoicesTab } from "./_components/invoices-tab"
 import { CustomersTab } from "./_components/customers-tab"
 import { PortalTab } from "./_components/portal-tab"
 import { ApartmentsTab } from "./_components/apartments-tab"
+import { AssetsTab } from "./_components/assets-tab"
 import { SharingTab } from "./_components/sharing-tab"
 
 export default function SpaceSettingsPage() {
@@ -81,6 +83,7 @@ export default function SpaceSettingsPage() {
     { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
     { value: "customers", label: t("customers.title", "Customers"), icon: Contact, show: mods.includes("crm") },
     { value: "apartments", label: t("apartments.title", "Apartments"), icon: Home, show: mods.includes("apartments") },
+    { value: "assets", label: t("assetKinds.title", "Assets"), icon: Package, show: mods.includes("assets") },
     { value: "portal", label: t("portal.title", "Client portal"), icon: Building2, show: mods.includes("b2c_portal") },
     { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" },
   ].filter((s) => s.show)
@@ -216,6 +219,12 @@ export default function SpaceSettingsPage() {
                   </PlanGate>
                 </TabsContent>
               )}
+              {space?.enabledModules?.includes("assets") && (
+                <TabsContent value="assets" className="mt-0">
+                  <AssetsTab spaceId={spaceId} />
+                </TabsContent>
+              )}
+
               {space?.enabledModules?.includes("apartments") && (
                 <TabsContent value="apartments" className="mt-0">
                   <PlanGate feature="crm">

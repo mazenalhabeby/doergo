@@ -54,6 +54,7 @@ export const MODULE_MONTHLY_CENTS: Record<string, number> = {
 
   // Field service — the differentiated half, and where the margin is.
   // ServiceTitan bills per truck for this class of thing.
+  assets: 1200,
   time_tracking: 1200,
   service_reports: 1500,
   tracking: 1900,

@@ -66,8 +66,19 @@ describe('what a space costs', () => {
     expect(spaceMonthlyCost(null).monthlyCents).toBe(0);
   });
 
-  it('comes to €157 with everything on', () => {
-    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(15700);
+  it('comes to €169 with everything on', () => {
+    // Moves whenever a module is added or repriced — that is the point. It went
+    // 157 -> 169 when Assets (€12) joined the catalogue.
+    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(16900);
+  });
+
+  it('prices every module in the catalogue — none may be free', () => {
+    // A €0 module is a toggle that silently changes nothing on the bill, which
+    // is the one thing this pricing model must never have.
+    const unpriced = AVAILABLE_MODULES
+      .map((m) => m.key as string)
+      .filter((key) => moduleMonthlyCents(key) <= 0);
+    expect(unpriced).toEqual([]);
   });
 
   it('ignores a key that is not a module — an invoice line nobody could explain', () => {

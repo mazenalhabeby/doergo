@@ -25,6 +25,11 @@ export class CreateAssetCategoryDto {
   @IsOptional()
   @MaxLength(20)
   color?: string;
+
+  @ApiPropertyOptional({ description: 'The space this kind belongs to' })
+  @IsString()
+  @IsOptional()
+  spaceId?: string;
 }
 
 export class UpdateAssetCategoryDto extends PartialType(CreateAssetCategoryDto) {}

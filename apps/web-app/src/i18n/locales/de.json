@@ -622,7 +622,8 @@
       "hours": "vor {{count}} Std.",
       "days": "vor {{count}} T."
     },
-    "discard": "Verwerfen"
+    "discard": "Verwerfen",
+    "saved": "Gespeichert"
   },
   "auth": {
     "login": {
@@ -6077,5 +6078,24 @@
     "spaceCostPending": "Vorher {{was}} — wird beim Speichern der Module übernommen",
     "spaceCostPerModule": "Jedes Modul hat seinen eigenen Preis",
     "seatLine": "Benutzer werden separat mit je {{price}} berechnet"
+  },
+  "assetKinds": {
+    "title": "Objekte",
+    "intro": "Was dieser Space besitzt — Wohnungen, Fahrzeuge, Maschinen. Legen Sie hier eine Art an und fügen Sie dann Ihre hinzu.",
+    "add": "Neue Art",
+    "empty": "Noch keine Arten",
+    "count": "{{count}} enthalten",
+    "removed": "Entfernt",
+    "removeFailed": "Diese Art konnte nicht entfernt werden",
+    "created": "{{name}} hinzugefügt",
+    "newTitle": "Neue Art",
+    "editTitle": "Art bearbeiten",
+    "hint": "Eine Art von Dingen, die dieser Space besitzt. Die einzelnen fügen Sie darin hinzu.",
+    "startFrom": "Beginnen mit",
+    "icon": "Symbol",
+    "name": "Name",
+    "namePlaceholder": "Wohnungen",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Die Wohnungen, die wir vermieten"
   }
 }

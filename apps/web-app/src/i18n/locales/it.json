@@ -622,7 +622,8 @@
       "hours": "{{count}} h fa",
       "days": "{{count}} g fa"
     },
-    "discard": "Scarta"
+    "discard": "Scarta",
+    "saved": "Salvato"
   },
   "auth": {
     "login": {
@@ -6052,5 +6053,24 @@
     "spaceCostPending": "Prima {{was}} — applicato al salvataggio dei moduli",
     "spaceCostPerModule": "Ogni modulo aggiunge il proprio prezzo",
     "seatLine": "Gli utenti sono fatturati a parte, {{price}} ciascuno"
+  },
+  "assetKinds": {
+    "title": "Beni",
+    "intro": "Ciò che questo spazio possiede — appartamenti, veicoli, macchinari. Crea un tipo qui, poi aggiungi i tuoi al suo interno.",
+    "add": "Nuovo tipo",
+    "empty": "Nessun tipo ancora",
+    "count": "{{count}} dentro",
+    "removed": "Rimosso",
+    "removeFailed": "Impossibile rimuovere questo tipo",
+    "created": "{{name}} aggiunto",
+    "newTitle": "Nuovo tipo",
+    "editTitle": "Modifica tipo",
+    "hint": "Un tipo di bene che questo spazio possiede. I singoli si aggiungono dentro.",
+    "startFrom": "Parti da",
+    "icon": "Icona",
+    "name": "Nome",
+    "namePlaceholder": "Appartamenti",
+    "description": "Descrizione",
+    "descriptionPlaceholder": "Gli appartamenti che affittiamo"
   }
 }

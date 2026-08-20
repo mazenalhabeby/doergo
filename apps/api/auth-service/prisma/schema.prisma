@@ -1081,11 +1081,19 @@ model AssetCategory {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  // The SPACE this kind belongs to. Each space defines its own kinds, so the
+  // depot's "Vehicles" is not the Linz office's "Vehicles". Nullable only so
+  // rows that predate this keep working; new ones always carry a space.
+  spaceId String?
+  space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
   types  AssetType[]
   assets Asset[]
 
-  @@unique([organizationId, name])
+  // Unique per SPACE now, not per org — two spaces may both have "Vehicles".
+  @@unique([organizationId, spaceId, name])
   @@index([organizationId])
+  @@index([spaceId])
   @@map("asset_categories")
 }
 
@@ -1673,6 +1681,8 @@ model CompanyLocation {
   @@index([organizationId, kind, name]) // filter by kind + name-sorted lists (pickers, customer directory)
   @@index([sourceCustomerId]) // backfill idempotency + customer-space ↔ Customer lookup
   @@map("company_locations")
+  // Kinds of thing this space tracks (see AssetCategory.spaceId).
+  assetCategories AssetCategory[]
 }
 
 // Technician assignment to company location (many-to-many)

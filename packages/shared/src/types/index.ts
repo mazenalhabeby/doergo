@@ -208,6 +208,9 @@ export const AVAILABLE_MODULES = [
   { key: 'tracking', label: 'Route Tracking', description: 'GPS tracking, route visualization, and progress card', group: 'field' },
   { key: 'service_reports', label: 'Service Reports', description: 'Completion reports with photos and signatures', group: 'field' },
   { key: 'time_tracking', label: 'Time Tracking', description: 'Track estimated and actual hours', group: 'field' },
+  // Assets belong to a SPACE: each space defines its own kinds (apartments,
+  // vehicles, machines) and holds its own. Nothing is shared between spaces.
+  { key: 'assets', label: 'Assets', description: 'Track what this space owns — apartments, vehicles, machines', group: 'field' },
   // Agile
   { key: 'sprints', label: 'Sprints', description: 'Organize work into time-boxed iterations', group: 'agile' },
   { key: 'story_points', label: 'Story Points', description: 'Estimate task complexity with fibonacci points', group: 'agile' },

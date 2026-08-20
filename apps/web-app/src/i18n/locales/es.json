@@ -622,7 +622,8 @@
       "hours": "hace {{count}} h",
       "days": "hace {{count}} d"
     },
-    "discard": "Descartar"
+    "discard": "Descartar",
+    "saved": "Guardado"
   },
   "auth": {
     "login": {
@@ -6061,5 +6062,24 @@
     "spaceCostPending": "Antes {{was}}: se aplica al guardar los módulos",
     "spaceCostPerModule": "Cada módulo añade su propio precio",
     "seatLine": "Los usuarios se facturan aparte, a {{price}} cada uno"
+  },
+  "assetKinds": {
+    "title": "Activos",
+    "intro": "Lo que posee este espacio — apartamentos, vehículos, máquinas. Cree un tipo aquí y luego añada los suyos dentro.",
+    "add": "Nuevo tipo",
+    "empty": "Aún no hay tipos",
+    "count": "{{count}} dentro",
+    "removed": "Eliminado",
+    "removeFailed": "No se pudo eliminar este tipo",
+    "created": "{{name}} añadido",
+    "newTitle": "Nuevo tipo",
+    "editTitle": "Editar tipo",
+    "hint": "Un tipo de cosa que posee este espacio. Los individuales se añaden dentro.",
+    "startFrom": "Empezar desde",
+    "icon": "Icono",
+    "name": "Nombre",
+    "namePlaceholder": "Apartamentos",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Los pisos que alquilamos"
   }
 }

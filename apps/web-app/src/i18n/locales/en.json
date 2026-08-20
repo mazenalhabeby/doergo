@@ -622,7 +622,8 @@
       "hours": "{{count}}h ago",
       "days": "{{count}}d ago"
     },
-    "discard": "Discard"
+    "discard": "Discard",
+    "saved": "Saved"
   },
   "auth": {
     "login": {
@@ -6078,5 +6079,24 @@
     "spaceCostPending": "Was {{was}} — saved when you save modules",
     "spaceCostPerModule": "Each module adds its own price",
     "seatLine": "Users are billed separately at {{price}} each"
+  },
+  "assetKinds": {
+    "title": "Assets",
+    "intro": "What this space owns — apartments, vehicles, machines. Set up a kind here, then add the ones you have inside it.",
+    "add": "New kind",
+    "empty": "No kinds yet",
+    "count": "{{count}} inside",
+    "removed": "Removed",
+    "removeFailed": "Could not remove this kind",
+    "created": "{{name}} added",
+    "newTitle": "New kind",
+    "editTitle": "Edit kind",
+    "hint": "A kind of thing this space owns. You add the individual ones inside it.",
+    "startFrom": "Start from",
+    "icon": "Icon",
+    "name": "Name",
+    "namePlaceholder": "Apartments",
+    "description": "Description",
+    "descriptionPlaceholder": "The flats we rent out"
   }
 }

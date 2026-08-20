@@ -622,7 +622,8 @@
       "hours": "il y a {{count}} h",
       "days": "il y a {{count}} j"
     },
-    "discard": "Annuler les modifications"
+    "discard": "Annuler les modifications",
+    "saved": "Enregistré"
   },
   "auth": {
     "login": {
@@ -6052,5 +6053,24 @@
     "spaceCostPending": "Avant {{was}} — pris en compte à l’enregistrement des modules",
     "spaceCostPerModule": "Chaque module ajoute son propre prix",
     "seatLine": "Les utilisateurs sont facturés séparément, {{price}} chacun"
+  },
+  "assetKinds": {
+    "title": "Biens",
+    "intro": "Ce que cet espace possède — appartements, véhicules, machines. Créez un type ici, puis ajoutez les vôtres à l'intérieur.",
+    "add": "Nouveau type",
+    "empty": "Aucun type pour le moment",
+    "count": "{{count}} à l’intérieur",
+    "removed": "Supprimé",
+    "removeFailed": "Impossible de supprimer ce type",
+    "created": "{{name}} ajouté",
+    "newTitle": "Nouveau type",
+    "editTitle": "Modifier le type",
+    "hint": "Un type de bien que cet espace possède. Vous ajoutez les individuels à l'intérieur.",
+    "startFrom": "Partir de",
+    "icon": "Icône",
+    "name": "Nom",
+    "namePlaceholder": "Appartements",
+    "description": "Description",
+    "descriptionPlaceholder": "Les logements que nous louons"
   }
 }

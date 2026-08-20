@@ -24,6 +24,7 @@ export class AssetsService {
     description?: string;
     icon?: string;
     color?: string;
+    spaceId?: string;
     userId: string;
     userRole: string;
     organizationId: string;
@@ -33,18 +34,32 @@ export class AssetsService {
       throw new ForbiddenException('Only clients and dispatchers can create asset categories');
     }
 
-    // Check for duplicate name in same org
-    const existing = await this.prisma.assetCategory.findUnique({
+    // A kind belongs to a space, so the space must be one of THIS org's. Without
+    // this check a caller could hang their kinds off another tenant's space by
+    // passing its id.
+    if (data.spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: data.spaceId, organizationId: data.organizationId },
+        select: { id: true },
+      });
+      if (!space) {
+        throw new NotFoundException('Space not found in this organization');
+      }
+    }
+
+    // Duplicate names are rejected per SPACE — two spaces may each have their
+    // own "Vehicles", but one space may not have two.
+    const existing = await this.prisma.assetCategory.findFirst({
       where: {
-        organizationId_name: {
-          organizationId: data.organizationId,
-          name: data.name,
-        },
+        organizationId: data.organizationId,
+        spaceId: data.spaceId ?? null,
+        name: data.name,
       },
+      select: { id: true },
     });
 
     if (existing) {
-      throw new ConflictException(`Category "${data.name}" already exists in your organization`);
+      throw new ConflictException(`"${data.name}" already exists in this space`);
     }
 
     const category = await this.prisma.assetCategory.create({
@@ -54,6 +69,7 @@ export class AssetsService {
         icon: data.icon,
         color: data.color,
         organizationId: data.organizationId,
+        spaceId: data.spaceId ?? null,
       },
       include: {
         _count: { select: { types: true, assets: true } },
@@ -70,13 +86,19 @@ export class AssetsService {
     userId: string;
     userRole: string;
     organizationId: string;
+    spaceId?: string;
   }) {
     if (query.userRole !== Role.ADMIN && !(query as any).canViewAllTasks) {
       throw new ForbiddenException('Only clients and dispatchers can view asset categories');
     }
 
     const categories = await this.prisma.assetCategory.findMany({
-      where: { organizationId: query.organizationId },
+      // Asking for a space returns THAT space's kinds only. Asking for none
+      // returns everything the org has, which is what the org-wide screen wants.
+      where: {
+        organizationId: query.organizationId,
+        ...(query.spaceId ? { spaceId: query.spaceId } : {}),
+      },
       orderBy: { name: 'asc' },
       include: {
         _count: { select: { types: true, assets: true } },
@@ -115,19 +137,21 @@ export class AssetsService {
       throw new ForbiddenException('Category does not belong to your organization');
     }
 
-    // Check for duplicate name if changing name
+    // Renaming: the clash is with the OTHER kinds in the same space, not the
+    // whole org — another space is free to have a kind by this name.
     if (data.name && data.name !== category.name) {
-      const existing = await this.prisma.assetCategory.findUnique({
+      const existing = await this.prisma.assetCategory.findFirst({
         where: {
-          organizationId_name: {
-            organizationId: data.organizationId,
-            name: data.name,
-          },
+          organizationId: data.organizationId,
+          spaceId: category.spaceId,
+          name: data.name,
+          id: { not: category.id },
         },
+        select: { id: true },
       });
 
       if (existing) {
-        throw new ConflictException(`Category "${data.name}" already exists in your organization`);
+        throw new ConflictException(`"${data.name}" already exists in this space`);
       }
     }
 

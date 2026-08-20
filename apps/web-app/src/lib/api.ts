@@ -1453,6 +1453,7 @@ export interface AssetCategory {
   icon: string | null;
   color: string | null;
   organizationId: string;
+  spaceId?: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -1521,6 +1522,8 @@ export interface CreateAssetCategoryInput {
   description?: string;
   icon?: string;
   color?: string;
+  /** The space this kind belongs to. */
+  spaceId?: string;
 }
 
 export interface UpdateAssetCategoryInput {
@@ -1588,8 +1591,11 @@ export const assetsApi = {
   // ============================================
 
   // Get all categories for organization
-  getCategories: async () => {
-    const response = await api.get<{ success: boolean; data: AssetCategory[] }>('/asset-categories');
+  // Pass a spaceId for THAT space's kinds; omit it for everything the org has.
+  getCategories: async (spaceId?: string) => {
+    const response = await api.get<{ success: boolean; data: AssetCategory[] }>(
+      spaceId ? `/asset-categories?spaceId=${encodeURIComponent(spaceId)}` : '/asset-categories',
+    );
 
     if (response.error) {
       throw new Error(response.error);
