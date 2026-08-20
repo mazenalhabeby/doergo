@@ -623,7 +623,8 @@
       "days": "hace {{count}} d"
     },
     "discard": "Descartar",
-    "saved": "Guardado"
+    "saved": "Guardado",
+    "remove": "Quitar"
   },
   "auth": {
     "login": {
@@ -6074,12 +6075,26 @@
     "created": "{{name}} añadido",
     "newTitle": "Nuevo tipo",
     "editTitle": "Editar tipo",
-    "hint": "Un tipo de cosa que posee este espacio. Los individuales se añaden dentro.",
-    "startFrom": "Empezar desde",
+    "hint": "Describa cómo es uno de estos. Al añadirlos después se usará exactamente esto.",
     "icon": "Icono",
     "name": "Nombre",
     "namePlaceholder": "Apartamentos",
     "description": "Descripción",
-    "descriptionPlaceholder": "Los pisos que alquilamos"
+    "descriptionPlaceholder": "Los pisos que alquilamos",
+    "shapeTitle": "Qué tiene cada uno",
+    "nameLabel": "Llamar al campo de nombre",
+    "nameLabelPlaceholder": "Nombre / número",
+    "hasAddress": "Tiene dirección",
+    "hasAddressHint": "Añade un campo de dirección y un mapa a cada uno.",
+    "hasHolder": "Alguien puede tenerlo",
+    "hasHolderHint": "Se asigna un miembro o un cliente — residente, conductor, operario.",
+    "holderLabel": "Llamar a esa persona",
+    "holderLabelPlaceholder": "Residente",
+    "holderWho": "Quién puede serlo",
+    "members": "Miembros",
+    "clients": "Clientes",
+    "fields": "Qué registra de cada uno",
+    "fieldsHint": "Planta, habitaciones, alquiler, matrícula, número de serie — lo que necesite.",
+    "fieldLabel": "Planta"
   }
 }

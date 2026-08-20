@@ -623,7 +623,8 @@
       "days": "vor {{count}} T."
     },
     "discard": "Verwerfen",
-    "saved": "Gespeichert"
+    "saved": "Gespeichert",
+    "remove": "Entfernen"
   },
   "auth": {
     "login": {
@@ -6090,12 +6091,26 @@
     "created": "{{name}} hinzugefügt",
     "newTitle": "Neue Art",
     "editTitle": "Art bearbeiten",
-    "hint": "Eine Art von Dingen, die dieser Space besitzt. Die einzelnen fügen Sie darin hinzu.",
-    "startFrom": "Beginnen mit",
+    "hint": "Beschreiben Sie, wie so eines aussieht. Das spätere Hinzufügen nutzt genau diese Angaben.",
     "icon": "Symbol",
     "name": "Name",
     "namePlaceholder": "Wohnungen",
     "description": "Beschreibung",
-    "descriptionPlaceholder": "Die Wohnungen, die wir vermieten"
+    "descriptionPlaceholder": "Die Wohnungen, die wir vermieten",
+    "shapeTitle": "Was so eines hat",
+    "nameLabel": "Namensfeld nennen",
+    "nameLabelPlaceholder": "Name / Nummer",
+    "hasAddress": "Es hat eine Adresse",
+    "hasAddressHint": "Fügt jedem davon ein Adressfeld und eine Karte hinzu.",
+    "hasHolder": "Jemand kann es haben",
+    "hasHolderHint": "Ein Mitglied oder ein Kunde wird zugewiesen — Bewohner, Fahrer, Bediener.",
+    "holderLabel": "Diese Person nennen",
+    "holderLabelPlaceholder": "Bewohner",
+    "holderWho": "Wer das sein kann",
+    "members": "Mitglieder",
+    "clients": "Kunden",
+    "fields": "Was Sie zu jedem erfassen",
+    "fieldsHint": "Etage, Zimmer, Miete, Kennzeichen, Seriennummer — was diese Art braucht.",
+    "fieldLabel": "Etage"
   }
 }

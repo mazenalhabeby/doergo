@@ -623,7 +623,8 @@
       "days": "il y a {{count}} j"
     },
     "discard": "Annuler les modifications",
-    "saved": "Enregistré"
+    "saved": "Enregistré",
+    "remove": "Retirer"
   },
   "auth": {
     "login": {
@@ -6065,12 +6066,26 @@
     "created": "{{name}} ajouté",
     "newTitle": "Nouveau type",
     "editTitle": "Modifier le type",
-    "hint": "Un type de bien que cet espace possède. Vous ajoutez les individuels à l'intérieur.",
-    "startFrom": "Partir de",
+    "hint": "Décrivez à quoi ressemble l'un d'eux. L'ajout se basera exactement là-dessus.",
     "icon": "Icône",
     "name": "Nom",
     "namePlaceholder": "Appartements",
     "description": "Description",
-    "descriptionPlaceholder": "Les logements que nous louons"
+    "descriptionPlaceholder": "Les logements que nous louons",
+    "shapeTitle": "Ce que chacun possède",
+    "nameLabel": "Nommer le champ nom",
+    "nameLabelPlaceholder": "Nom / numéro",
+    "hasAddress": "Il a une adresse",
+    "hasAddressHint": "Ajoute un champ adresse et une carte à chacun.",
+    "hasHolder": "Quelqu’un peut l’avoir",
+    "hasHolderHint": "Un membre ou un client y est affecté — résident, conducteur, opérateur.",
+    "holderLabel": "Nommer cette personne",
+    "holderLabelPlaceholder": "Résident",
+    "holderWho": "Qui peut l’être",
+    "members": "Membres",
+    "clients": "Clients",
+    "fields": "Ce que vous notez sur chacun",
+    "fieldsHint": "Étage, pièces, loyer, plaque, numéro de série — ce dont ce type a besoin.",
+    "fieldLabel": "Étage"
   }
 }

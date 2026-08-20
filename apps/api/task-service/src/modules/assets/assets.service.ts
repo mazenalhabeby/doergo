@@ -5,8 +5,9 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, success, paginated, TaskStatus } from '@hbcfield/shared';
+import { Role, success, paginated, TaskStatus, normalizeKindShape } from '@hbcfield/shared';
 
 @Injectable()
 export class AssetsService {
@@ -25,6 +26,7 @@ export class AssetsService {
     icon?: string;
     color?: string;
     spaceId?: string;
+    config?: unknown;
     userId: string;
     userRole: string;
     organizationId: string;
@@ -70,6 +72,9 @@ export class AssetsService {
         color: data.color,
         organizationId: data.organizationId,
         spaceId: data.spaceId ?? null,
+        // Normalised on the way in, so a malformed shape is rejected once here
+        // rather than surprising every reader of the column later.
+        config: normalizeKindShape(data.config) as unknown as Prisma.InputJsonValue,
       },
       include: {
         _count: { select: { types: true, assets: true } },
@@ -112,6 +117,7 @@ export class AssetsService {
    * Update a category
    */
   async updateCategory(data: {
+    config?: unknown;
     id: string;
     name?: string;
     description?: string;
@@ -162,6 +168,9 @@ export class AssetsService {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.icon !== undefined && { icon: data.icon }),
         ...(data.color !== undefined && { color: data.color }),
+        ...(data.config !== undefined && {
+          config: normalizeKindShape(data.config) as unknown as Prisma.InputJsonValue,
+        }),
       },
       include: {
         _count: { select: { types: true, assets: true } },

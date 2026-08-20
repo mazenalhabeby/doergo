@@ -1454,6 +1454,8 @@ export interface AssetCategory {
   color: string | null;
   organizationId: string;
   spaceId?: string | null;
+  /** What this kind's records look like — read via normalizeKindShape(). */
+  config?: unknown;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -1524,6 +1526,8 @@ export interface CreateAssetCategoryInput {
   color?: string;
   /** The space this kind belongs to. */
   spaceId?: string;
+  /** What this kind's records look like. */
+  config?: unknown;
 }
 
 export interface UpdateAssetCategoryInput {

@@ -1087,6 +1087,12 @@ model AssetCategory {
   spaceId String?
   space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
+  // What this kind's records look like: the name's label, whether they carry an
+  // address (and so a map), who may hold one and what that is called, and the
+  // fields every record is prompted for. Read through normalizeKindShape() —
+  // it is JSON, so nothing may assume it is well formed.
+  config Json?
+
   types  AssetType[]
   assets Asset[]
 

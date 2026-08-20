@@ -623,7 +623,8 @@
       "days": "{{count}} g fa"
     },
     "discard": "Scarta",
-    "saved": "Salvato"
+    "saved": "Salvato",
+    "remove": "Rimuovi"
   },
   "auth": {
     "login": {
@@ -6065,12 +6066,26 @@
     "created": "{{name}} aggiunto",
     "newTitle": "Nuovo tipo",
     "editTitle": "Modifica tipo",
-    "hint": "Un tipo di bene che questo spazio possiede. I singoli si aggiungono dentro.",
-    "startFrom": "Parti da",
+    "hint": "Descrivi com’è fatto uno di questi. Aggiungerli dopo userà esattamente questo.",
     "icon": "Icona",
     "name": "Nome",
     "namePlaceholder": "Appartamenti",
     "description": "Descrizione",
-    "descriptionPlaceholder": "Gli appartamenti che affittiamo"
+    "descriptionPlaceholder": "Gli appartamenti che affittiamo",
+    "shapeTitle": "Cosa ha ciascuno",
+    "nameLabel": "Chiamare il campo nome",
+    "nameLabelPlaceholder": "Nome / numero",
+    "hasAddress": "Ha un indirizzo",
+    "hasAddressHint": "Aggiunge un campo indirizzo e una mappa a ciascuno.",
+    "hasHolder": "Qualcuno può averlo",
+    "hasHolderHint": "Viene assegnato un membro o un cliente — residente, autista, operatore.",
+    "holderLabel": "Chiamare questa persona",
+    "holderLabelPlaceholder": "Residente",
+    "holderWho": "Chi può esserlo",
+    "members": "Membri",
+    "clients": "Clienti",
+    "fields": "Cosa registri di ciascuno",
+    "fieldsHint": "Piano, stanze, affitto, targa, numero di serie — ciò che serve.",
+    "fieldLabel": "Piano"
   }
 }

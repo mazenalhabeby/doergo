@@ -623,7 +623,8 @@
       "days": "{{count}}d ago"
     },
     "discard": "Discard",
-    "saved": "Saved"
+    "saved": "Saved",
+    "remove": "Remove"
   },
   "auth": {
     "login": {
@@ -6091,12 +6092,26 @@
     "created": "{{name}} added",
     "newTitle": "New kind",
     "editTitle": "Edit kind",
-    "hint": "A kind of thing this space owns. You add the individual ones inside it.",
-    "startFrom": "Start from",
+    "hint": "Describe what one of these looks like. Adding them afterwards uses exactly what you set here.",
     "icon": "Icon",
     "name": "Name",
     "namePlaceholder": "Apartments",
     "description": "Description",
-    "descriptionPlaceholder": "The flats we rent out"
+    "descriptionPlaceholder": "The flats we rent out",
+    "shapeTitle": "What one of them has",
+    "nameLabel": "Call the name field",
+    "nameLabelPlaceholder": "Name / number",
+    "hasAddress": "It has an address",
+    "hasAddressHint": "Adds an address box and a map to every one of them.",
+    "hasHolder": "Someone can have it",
+    "hasHolderHint": "A member or a client is assigned to it — a resident, a driver, an operator.",
+    "holderLabel": "Call that person",
+    "holderLabelPlaceholder": "Resident",
+    "holderWho": "Who can be one",
+    "members": "Members",
+    "clients": "Clients",
+    "fields": "What you record about each one",
+    "fieldsHint": "Floor, rooms, rent, plate, serial — whatever this kind needs.",
+    "fieldLabel": "Floor"
   }
 }
