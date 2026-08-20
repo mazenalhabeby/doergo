@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   Role, success, paginated, TaskStatus, normalizeKindShape, normalizeDetailRows, findMoneyCategory,
+  findKindList, normalizeListRow, listRowIsEmpty,
 } from '@hbcfield/shared';
 
 @Injectable()
@@ -706,6 +707,175 @@ export class AssetsService {
     if (!count) throw new NotFoundException('Entry not found');
 
     return success({ id: data.entryId });
+  }
+
+  /**
+   * The rows of one table on a record — a machine's parts, an apartment's keys.
+   *
+   * Paged, because a machine can have hundreds of parts and a record page must
+   * not pay for all of them. Search runs in SQL over the row's JSON rather than
+   * in JavaScript over a fetched page, or it would only ever find what happened
+   * to be on screen.
+   */
+  async listRows(data: {
+    id: string;
+    list: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can view assets');
+    }
+    const { shape, list } = await this.assetList(data.id, data.list, data.organizationId);
+    void shape;
+
+    const page = Math.max(1, data.page ?? 1);
+    const limit = Math.min(Math.max(data.limit ?? 50, 1), 200);
+    const search = data.search?.trim();
+
+    const where: Prisma.AssetListRowWhereInput = {
+      assetId: data.id,
+      list: list.label,
+      // string_contains over the whole row would need a column; matching any
+      // declared column keeps it to the values people actually see.
+      ...(search
+        ? {
+            OR: list.columns.map((c) => ({
+              values: { path: [c.label], string_contains: search } as Prisma.JsonFilter,
+            })),
+          }
+        : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.assetListRow.findMany({
+        where,
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.assetListRow.count({ where }),
+    ]);
+
+    return paginated(rows, { page, limit, total });
+  }
+
+  /** Add a row. Values are cleaned against the columns the list declares. */
+  async addRow(data: {
+    id: string;
+    list: string;
+    values: unknown;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can update assets');
+    }
+    const { list } = await this.assetList(data.id, data.list, data.organizationId);
+
+    const values = normalizeListRow(list, data.values);
+    if (listRowIsEmpty(values)) {
+      throw new BadRequestException('A row needs something in it');
+    }
+
+    // Appended, not inserted: a row lands where somebody expects it to.
+    const last = await this.prisma.assetListRow.findFirst({
+      where: { assetId: data.id, list: list.label },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+
+    const row = await this.prisma.assetListRow.create({
+      data: {
+        organizationId: data.organizationId,
+        assetId: data.id,
+        list: list.label,
+        values: values as unknown as Prisma.InputJsonValue,
+        position: (last?.position ?? 0) + 1,
+      },
+    });
+
+    return success(row);
+  }
+
+  /** Change one row. */
+  async updateRow(data: {
+    id: string;
+    rowId: string;
+    values: unknown;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can update assets');
+    }
+    await this.assetInOrg(data.id, data.organizationId);
+
+    const existing = await this.prisma.assetListRow.findFirst({
+      where: { id: data.rowId, assetId: data.id, organizationId: data.organizationId },
+    });
+    if (!existing) throw new NotFoundException('Row not found');
+
+    const { list } = await this.assetList(data.id, existing.list, data.organizationId);
+    const values = normalizeListRow(list, data.values);
+    if (listRowIsEmpty(values)) {
+      throw new BadRequestException('A row needs something in it');
+    }
+
+    const row = await this.prisma.assetListRow.update({
+      where: { id: data.rowId },
+      data: { values: values as unknown as Prisma.InputJsonValue },
+    });
+
+    return success(row);
+  }
+
+  /** Remove one row. Scoped to the asset, so an id alone is not enough. */
+  async removeRow(data: {
+    id: string;
+    rowId: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can update assets');
+    }
+    await this.assetInOrg(data.id, data.organizationId);
+
+    const { count } = await this.prisma.assetListRow.deleteMany({
+      where: { id: data.rowId, assetId: data.id, organizationId: data.organizationId },
+    });
+    if (!count) throw new NotFoundException('Row not found');
+
+    return success({ id: data.rowId });
+  }
+
+  /**
+   * Resolve an asset and one of the lists its KIND declares.
+   *
+   * The list must be declared, for the same reason a money category must be:
+   * free-text names would split one table into "Parts" and "parts" and neither
+   * would look wrong.
+   */
+  private async assetList(assetId: string, listLabel: string, organizationId: string) {
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: assetId, organizationId },
+      select: { id: true, category: { select: { config: true } } },
+    });
+    if (!asset) throw new NotFoundException('Asset not found in this organization');
+
+    const shape = normalizeKindShape(asset.category?.config);
+    const list = findKindList(shape, listLabel ?? '');
+    if (!list) throw new BadRequestException(`"${listLabel}" is not a list on this kind`);
+
+    return { shape, list };
   }
 
   async create(data: {

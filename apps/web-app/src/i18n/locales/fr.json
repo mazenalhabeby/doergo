@@ -6095,7 +6095,13 @@
     "moneyCategoriesHint": "Loyer, Réparations, Charges — ou Carburant, Entretien, Assurance.",
     "moneyCategoryPh": "Loyer",
     "moneyIn": "Entrée",
-    "moneyOut": "Sortie"
+    "moneyOut": "Sortie",
+    "lists": "Tableaux sur chacun",
+    "listsHint": "Un catalogue de pièces, un jeu de clés — un tableau avec autant de lignes qu’il faut.",
+    "listName": "Pièces",
+    "listColumns": "Colonnes",
+    "listColumn": "Code",
+    "listNeedsColumn": "Un tableau a besoin d’au moins une colonne, sinon il est ignoré."
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",
@@ -6134,5 +6140,12 @@
     "notePh": "Pour quoi ?",
     "empty": "Rien d’enregistré.",
     "noCategories": "Ce type suit l’argent mais n’a pas encore de catégories — ajoutez-en sur le type."
+  },
+  "assetLists": {
+    "search": "Rechercher…",
+    "count": "{{count}} lignes",
+    "empty": "Rien pour le moment",
+    "noMatch": "Aucun résultat",
+    "gone": "Ce tableau ne fait plus partie de ce type."
   }
 }

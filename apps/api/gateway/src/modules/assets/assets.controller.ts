@@ -24,7 +24,9 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
-import { CreateAssetDto, UpdateAssetDto, AssetQueryDto } from './dto';
+import {
+  CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
+} from './dto';
 
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -190,6 +192,83 @@ export class AssetsController {
     return this.assetsService.removeMoney({
       id,
       entryId,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get(':id/rows')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Rows of one table on this asset' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  @ApiQuery({ name: 'list', required: true })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async listRows(
+    @Param('id') id: string,
+    @Query('list') list: string,
+    @Query('search') search?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Request() req?: any,
+  ) {
+    return this.assetsService.listRows({
+      id, list, search, page, limit,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post(':id/rows')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Add a row to one of this asset\'s tables' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async addRow(@Param('id') id: string, @Body() dto: AssetListRowDto, @Request() req: any) {
+    return this.assetsService.addRow({
+      id,
+      list: dto.list,
+      values: dto.values,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Patch(':id/rows/:rowId')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Change one row' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  @ApiParam({ name: 'rowId', description: 'Row ID' })
+  async updateRow(
+    @Param('id') id: string,
+    @Param('rowId') rowId: string,
+    @Body() dto: UpdateAssetListRowDto,
+    @Request() req: any,
+  ) {
+    return this.assetsService.updateRow({
+      id, rowId,
+      values: dto.values,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete(':id/rows/:rowId')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Remove one row' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  @ApiParam({ name: 'rowId', description: 'Row ID' })
+  async removeRow(@Param('id') id: string, @Param('rowId') rowId: string, @Request() req: any) {
+    return this.assetsService.removeRow({
+      id, rowId,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

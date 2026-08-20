@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
-import { ArrowDownLeft, ArrowUpRight, ListPlus, Loader2, MapPin, Plus, Trash2, User, Wallet } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, ListPlus, Loader2, MapPin, Plus, Table2, Trash2, User, Wallet } from "lucide-react"
 
 import { assetsApi, type AssetCategory } from "@/lib/api"
 import { normalizeKindShape, KIND_SHAPE_LIMITS, type KindShape, type MoneyDirection } from "@hbcfield/shared/client"
@@ -54,6 +54,8 @@ export function AssetKindDialog({
     setShape((s) => ({ ...s, fields: s.fields.map((f, idx) => (idx === i ? { label } : f)) }))
   const setMoney = (patch: Partial<KindShape["money"]>) =>
     setShape((s) => ({ ...s, money: { ...s.money, ...patch } }))
+  const setList = (i: number, patch: { label?: string; columns?: { label: string }[] }) =>
+    setShape((s) => ({ ...s, lists: s.lists.map((l, idx) => (idx === i ? { ...l, ...patch } : l)) }))
   const setCategory = (i: number, patch: { label?: string; direction?: MoneyDirection }) =>
     setShape((s) => ({
       ...s,
@@ -261,6 +263,102 @@ export function AssetKindDialog({
             checked={shape.allowExtraFields}
             onChange={(v) => set("allowExtraFields", v)}
           />
+
+          {/* Tables. A field answers "what is this one's floor"; a list answers
+              "what is in it" — a machine's parts, an apartment's keys — which
+              needs rows, not a value. */}
+          <div className="space-y-2 rounded-xl border border-border p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <Table2 className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {t("assetKinds.lists", "Tables on each one")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("assetKinds.listsHint", "A parts catalogue, a set of keys — a table with as many rows as it needs.")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={shape.lists.length >= KIND_SHAPE_LIMITS.maxLists}
+                onClick={() => set("lists", [...shape.lists, { label: "", columns: [{ label: "" }] }])}
+                className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+              >
+                <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
+              </button>
+            </div>
+
+            {shape.lists.map((list, i) => (
+              <div key={i} className="space-y-2 rounded-lg border border-border/70 p-2.5">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={list.label}
+                    onChange={(e) => setList(i, { label: e.target.value })}
+                    placeholder={t("assetKinds.listName", "Parts")}
+                    maxLength={KIND_SHAPE_LIMITS.maxLabel}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set("lists", shape.lists.filter((_, idx) => idx !== i))}
+                    className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"
+                    aria-label={t("common.remove", "Remove")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="pl-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] text-muted-foreground">
+                      {t("assetKinds.listColumns", "Columns")}
+                    </Label>
+                    <button
+                      type="button"
+                      disabled={list.columns.length >= KIND_SHAPE_LIMITS.maxColumns}
+                      onClick={() => setList(i, { columns: [...list.columns, { label: "" }] })}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+                    >
+                      <Plus className="h-3 w-3" /> {t("common.add", "Add")}
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {list.columns.map((col, ci) => (
+                      <div key={ci} className="flex items-center gap-1">
+                        <Input
+                          value={col.label}
+                          onChange={(e) =>
+                            setList(i, {
+                              columns: list.columns.map((c, idx) => (idx === ci ? { label: e.target.value } : c)),
+                            })
+                          }
+                          placeholder={t("assetKinds.listColumn", "Code")}
+                          className="h-8 w-28"
+                          maxLength={KIND_SHAPE_LIMITS.maxLabel}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setList(i, { columns: list.columns.filter((_, idx) => idx !== ci) })}
+                          className="rounded p-1 text-muted-foreground hover:text-destructive"
+                          aria-label={t("common.remove", "Remove")}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {list.columns.filter((c) => c.label.trim()).length === 0 && (
+                    <p className="mt-1 text-[11px] text-destructive">
+                      {t("assetKinds.listNeedsColumn", "A table needs at least one column, or it is dropped.")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
           {/* Money. The kind names the headings, so an Apartments kind logs Rent
               and Repairs while a Vehicles kind logs Fuel and Service — one

@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsEnum,
   IsDateString,
+  IsObject,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -128,6 +129,31 @@ export class CreateAssetDto {
 }
 
 export class UpdateAssetDto extends PartialType(CreateAssetDto) {}
+
+/**
+ * One row of a table on a record.
+ *
+ * `values` is a real object of strings, declared so the pipe rebuilds it — the
+ * same trap that flattened `details` into [] applies to anything the pipe
+ * cannot see the shape of.
+ */
+export class AssetListRowDto {
+  @ApiProperty({ example: 'Parts' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(60)
+  list: string;
+
+  @ApiProperty({ example: { Code: 'HYD-8842', Name: 'Seal kit', Qty: '2' } })
+  @IsObject()
+  values: Record<string, string>;
+}
+
+export class UpdateAssetListRowDto {
+  @ApiProperty({ example: { Code: 'HYD-8842' } })
+  @IsObject()
+  values: Record<string, string>;
+}
 
 export class AssetQueryDto {
   @ApiPropertyOptional({ default: 1 })

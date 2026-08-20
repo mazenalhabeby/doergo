@@ -6104,7 +6104,13 @@
     "moneyCategoriesHint": "Alquiler, Reparaciones, Suministros — o Combustible, Servicio, Seguro.",
     "moneyCategoryPh": "Alquiler",
     "moneyIn": "Entra",
-    "moneyOut": "Sale"
+    "moneyOut": "Sale",
+    "lists": "Tablas en cada uno",
+    "listsHint": "Un catálogo de piezas, un juego de llaves — una tabla con tantas filas como haga falta.",
+    "listName": "Piezas",
+    "listColumns": "Columnas",
+    "listColumn": "Código",
+    "listNeedsColumn": "Una tabla necesita al menos una columna, o se descarta."
   },
   "assetRecords": {
     "intro": "Todo de este tipo en este espacio.",
@@ -6143,5 +6149,12 @@
     "notePh": "¿Para qué?",
     "empty": "Aún no hay registros.",
     "noCategories": "Este tipo registra dinero pero aún no tiene categorías — añádalas en el tipo."
+  },
+  "assetLists": {
+    "search": "Buscar…",
+    "count": "{{count}} filas",
+    "empty": "Aún no hay nada",
+    "noMatch": "Ninguna coincidencia",
+    "gone": "Esa tabla ya no está en este tipo."
   }
 }

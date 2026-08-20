@@ -6095,7 +6095,13 @@
     "moneyCategoriesHint": "Affitto, Riparazioni, Utenze — o Carburante, Manutenzione, Assicurazione.",
     "moneyCategoryPh": "Affitto",
     "moneyIn": "Entrata",
-    "moneyOut": "Uscita"
+    "moneyOut": "Uscita",
+    "lists": "Tabelle su ciascuno",
+    "listsHint": "Un catalogo ricambi, un set di chiavi — una tabella con tutte le righe che servono.",
+    "listName": "Ricambi",
+    "listColumns": "Colonne",
+    "listColumn": "Codice",
+    "listNeedsColumn": "Una tabella ha bisogno di almeno una colonna, altrimenti viene scartata."
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
@@ -6134,5 +6140,12 @@
     "notePh": "Per cosa?",
     "empty": "Nulla registrato.",
     "noCategories": "Questo tipo registra denaro ma non ha ancora categorie — aggiungile sul tipo."
+  },
+  "assetLists": {
+    "search": "Cerca…",
+    "count": "{{count}} righe",
+    "empty": "Non c’è ancora nulla",
+    "noMatch": "Nessun risultato",
+    "gone": "Quella tabella non è più su questo tipo."
   }
 }

@@ -12,6 +12,7 @@ import {
 import { assetsApi, type AssetActivity, type AssetCategory, type AssetMoneyEntry } from "@/lib/api"
 import { normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents, type KindShape } from "@hbcfield/shared/client"
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
+import { AssetListTable } from "@/components/assets/asset-list-table"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -54,7 +55,8 @@ export default function AssetRecordPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ?? ""
   const qc = useQueryClient()
-  const [tab, setTab] = useState<"activity" | "history" | "money">("activity")
+  // A list tab is keyed by its own name, so adding a list adds a tab.
+  const [tab, setTab] = useState<string>("activity")
 
   const assetQ = useQuery({ queryKey: ["asset", id], queryFn: () => assetsApi.getAsset(id), enabled: !!id })
   const asset = assetQ.data as unknown as AssetDetail | undefined
@@ -240,6 +242,7 @@ export default function AssetRecordPage() {
               ...(shape.money.enabled
                 ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.entries.length || null] as const]
                 : []),
+              ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
             ] as const).map(([key, label, count]) => (
               <button
                 key={key}
@@ -257,7 +260,16 @@ export default function AssetRecordPage() {
             ))}
           </div>
 
-          {tab === "money" ? (
+          {tab.startsWith("list:") ? (
+            (() => {
+              const list = shape.lists.find((l) => `list:${l.label}` === tab)
+              // The tab can outlive its list if the kind is edited while the
+              // record is open; fall back rather than render nothing at all.
+              return list
+                ? <AssetListTable assetId={id} list={list} />
+                : <p className="py-8 text-center text-sm text-muted-foreground">{t("assetLists.gone", "That table is no longer on this kind.")}</p>
+            })()
+          ) : tab === "money" ? (
             <MoneyPanel
               assetId={id}
               shape={shape}

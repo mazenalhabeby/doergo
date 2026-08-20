@@ -6121,7 +6121,13 @@
     "moneyCategoriesHint": "Rent, Repairs, Utilities — or Fuel, Service, Insurance.",
     "moneyCategoryPh": "Rent",
     "moneyIn": "In",
-    "moneyOut": "Out"
+    "moneyOut": "Out",
+    "lists": "Tables on each one",
+    "listsHint": "A parts catalogue, a set of keys — a table with as many rows as it needs.",
+    "listName": "Parts",
+    "listColumns": "Columns",
+    "listColumn": "Code",
+    "listNeedsColumn": "A table needs at least one column, or it is dropped."
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",
@@ -6160,5 +6166,12 @@
     "notePh": "What for?",
     "empty": "Nothing logged yet.",
     "noCategories": "This kind tracks money but has no categories yet — add some on the kind."
+  },
+  "assetLists": {
+    "search": "Search…",
+    "count": "{{count}} rows",
+    "empty": "Nothing in here yet",
+    "noMatch": "Nothing matches that",
+    "gone": "That table is no longer on this kind."
   }
 }

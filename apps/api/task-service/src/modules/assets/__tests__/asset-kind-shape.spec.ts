@@ -181,3 +181,54 @@ describe('money on a kind', () => {
     expect(signedCents('in', -90000)).toBe(90000);
   });
 });
+
+import { findKindList, normalizeListRow, listRowIsEmpty } from '@hbcfield/shared';
+
+describe('tables on a kind', () => {
+  it('keeps a list with its columns', () => {
+    const s = shapeOf({ lists: [{ label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] }] });
+    expect(s.lists).toEqual([{ label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] }]);
+  });
+
+  it('drops a table with no columns — there is nothing to put in it', () => {
+    expect(shapeOf({ lists: [{ label: 'Parts', columns: [] }] }).lists).toEqual([]);
+    expect(shapeOf({ lists: [{ label: 'Parts' }] }).lists).toEqual([]);
+  });
+
+  it('drops a duplicate table name — rows are stored under the name and would merge', () => {
+    const s = shapeOf({ lists: [
+      { label: 'Parts', columns: [{ label: 'Code' }] },
+      { label: 'parts', columns: [{ label: 'Other' }] },
+    ] });
+    expect(s.lists).toHaveLength(1);
+    expect(s.lists[0]!.columns[0]!.label).toBe('Code');
+  });
+
+  it('drops a duplicate column — two identical headers, one silently wins', () => {
+    const s = shapeOf({ lists: [{ label: 'Parts', columns: [{ label: 'Code' }, { label: 'code' }] }] });
+    expect(s.lists[0]!.columns).toHaveLength(1);
+  });
+
+  it('finds a list however it was capitalised', () => {
+    const s = shapeOf({ lists: [{ label: 'Parts', columns: [{ label: 'Code' }] }] });
+    expect(findKindList(s, 'PARTS')?.label).toBe('Parts');
+    expect(findKindList(s, 'Keys')).toBeNull();
+  });
+
+  it('keeps only the columns the list declares, and always all of them', () => {
+    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] };
+    const row = normalizeListRow(list, { Code: 'HYD-8842', Qty: '2', Sneaky: 'x' });
+    expect(row).toEqual({ Code: 'HYD-8842', Qty: '2' });
+  });
+
+  it('gives a missing column an empty value rather than leaving it absent', () => {
+    // A column the row has never had must still render as an empty cell.
+    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] };
+    expect(normalizeListRow(list, { Code: 'X' })).toEqual({ Code: 'X', Qty: '' });
+  });
+
+  it('knows a row where every cell is blank is not worth storing', () => {
+    expect(listRowIsEmpty({ Code: '', Qty: '  ' })).toBe(true);
+    expect(listRowIsEmpty({ Code: 'X', Qty: '' })).toBe(false);
+  });
+});

@@ -1127,6 +1127,37 @@ model AssetMoney {
   @@map("asset_money")
 }
 
+/// One row of a table on a record: a part on a machine, a key on an apartment.
+///
+/// A TABLE rather than JSON on the asset, because a machine can have hundreds of
+/// parts: rows are counted, paged and searched without loading every one of them
+/// alongside the record, and "which machines use this part" stays a query rather
+/// than a scan of every asset's JSON.
+///
+/// `list` holds the list's NAME as the kind spelled it, so renaming a list on
+/// the kind does not orphan rows — same reasoning as a money category.
+model AssetListRow {
+  id             String @id @default(cuid())
+  organizationId String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  list String
+  /// Values keyed by COLUMN LABEL. JSON because the columns are the customer's,
+  /// not ours, and a new column must not need a migration.
+  values Json
+
+  /// Explicit ordering: rows are a list somebody arranged, not a set.
+  position Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId, list, position])
+  @@map("asset_list_rows")
+}
+
 model AssetCategory {
   id          String  @id @default(cuid())
   name        String
@@ -1228,6 +1259,7 @@ model Asset {
 
   activities AssetActivity[]
   money      AssetMoney[]
+  listRows   AssetListRow[]
 
   // Tasks linked to this asset (maintenance history)
   tasks          Task[]

@@ -21,6 +21,10 @@ export const KIND_SHAPE_LIMITS = {
   maxHolderLabel: 40,
   /** Enough headings to be useful; few enough that a total stays readable. */
   maxMoneyCategories: 20,
+  /** Tables per kind. More than a handful is a sign it wants its own module. */
+  maxLists: 5,
+  /** Columns per table — enough to be useful, few enough to read on a phone. */
+  maxColumns: 8,
 } as const;
 
 /** Who may hold one of these — the apartment "resident", generalised. */
@@ -53,6 +57,19 @@ export interface KindMoneyCategory {
   direction: MoneyDirection;
 }
 
+/**
+ * A repeating table on every record of a kind: a machine's parts, an
+ * apartment's keys, a van's tyres.
+ *
+ * The kind names the list and its columns; a record then holds as many rows as
+ * it needs. A field answers "what is this one's floor"; a list answers "what is
+ * in it", which is a different question and needs rows, not a value.
+ */
+export interface KindList {
+  label: string;
+  columns: KindField[];
+}
+
 export interface KindMoney {
   /** Does this kind cost or earn anything worth recording? */
   enabled: boolean;
@@ -78,6 +95,7 @@ export interface KindShape {
    */
   allowExtraFields: boolean;
   money: KindMoney;
+  lists: KindList[];
 }
 
 const str = (v: unknown, max: number): string =>
@@ -139,6 +157,36 @@ export function normalizeKindShape(raw: unknown): KindShape {
     categories.push({ label, direction: e.direction === 'in' ? 'in' : 'out' });
   }
 
+  const listSeen = new Set<string>();
+  const lists: KindList[] = [];
+  for (const entry of Array.isArray(src.lists) ? src.lists : []) {
+    if (lists.length >= KIND_SHAPE_LIMITS.maxLists) break;
+    const e = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
+    const label = str(e.label, KIND_SHAPE_LIMITS.maxLabel);
+    if (!label) continue;
+    const key = label.toLowerCase();
+    // Two tables with one name: rows are stored under the name, so the second
+    // would silently share the first's rows.
+    if (listSeen.has(key)) continue;
+    listSeen.add(key);
+
+    const colSeen = new Set<string>();
+    const columns: KindField[] = [];
+    for (const col of Array.isArray(e.columns) ? e.columns : []) {
+      if (columns.length >= KIND_SHAPE_LIMITS.maxColumns) break;
+      const colLabel = str((col as Record<string, unknown>)?.label, KIND_SHAPE_LIMITS.maxLabel);
+      if (!colLabel) continue;
+      const colKey = colLabel.toLowerCase();
+      if (colSeen.has(colKey)) continue;
+      colSeen.add(colKey);
+      columns.push({ label: colLabel });
+    }
+
+    // A table with no columns has nothing to put in it.
+    if (columns.length === 0) continue;
+    lists.push({ label, columns });
+  }
+
   return {
     nameLabel: str(src.nameLabel, KIND_SHAPE_LIMITS.maxLabel),
     hasAddress: bool(src.hasAddress),
@@ -146,6 +194,7 @@ export function normalizeKindShape(raw: unknown): KindShape {
     fields,
     allowExtraFields: bool(src.allowExtraFields, true),
     money: { enabled: bool(moneySrc.enabled), categories },
+    lists,
   };
 }
 
@@ -233,4 +282,33 @@ export function findMoneyCategory(shape: KindShape, label: string): KindMoneyCat
 export function signedCents(direction: MoneyDirection, amountCents: number): number {
   const magnitude = Math.abs(Math.round(amountCents));
   return direction === 'in' ? magnitude : -magnitude;
+}
+
+/** Find a list the kind declares, by name. Case-insensitive. */
+export function findKindList(shape: KindShape, label: string): KindList | null {
+  const key = label.trim().toLowerCase();
+  return shape.lists.find((l) => l.label.toLowerCase() === key) ?? null;
+}
+
+/**
+ * Clean one row against the columns its list declares.
+ *
+ * Values are keyed by COLUMN LABEL, so renaming a column on the kind leaves the
+ * old key behind rather than corrupting the row — the renamed column simply
+ * reads empty, and the old value is still there if the name is put back. Keys
+ * the list no longer declares are dropped from what is shown, not from what is
+ * stored, for the same reason detailRowsForKind keeps retired fields.
+ */
+export function normalizeListRow(list: KindList, raw: unknown): Record<string, string> {
+  const src = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>;
+  const out: Record<string, string> = {};
+  for (const col of list.columns) {
+    out[col.label] = str(src[col.label], 500);
+  }
+  return out;
+}
+
+/** True when every column of a row is blank — nothing worth storing. */
+export function listRowIsEmpty(values: Record<string, string>): boolean {
+  return Object.values(values).every((v) => !v.trim());
 }

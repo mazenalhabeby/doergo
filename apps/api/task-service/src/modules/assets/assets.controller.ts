@@ -67,4 +67,24 @@ export class AssetsController {
   async removeMoney(@Payload() data: any) {
     return this.assetsService.removeMoney(data);
   }
+
+  @MessagePattern({ cmd: 'list_asset_rows' })
+  async listRows(@Payload() data: any) {
+    return this.assetsService.listRows(data);
+  }
+
+  @MessagePattern({ cmd: 'add_asset_row' })
+  async addRow(@Payload() data: any) {
+    return this.assetsService.addRow(data);
+  }
+
+  @MessagePattern({ cmd: 'update_asset_row' })
+  async updateRow(@Payload() data: any) {
+    return this.assetsService.updateRow(data);
+  }
+
+  @MessagePattern({ cmd: 'remove_asset_row' })
+  async removeRow(@Payload() data: any) {
+    return this.assetsService.removeRow(data);
+  }
 }

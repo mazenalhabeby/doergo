@@ -1519,6 +1519,13 @@ export interface MaintenanceHistoryItem {
   duration?: number | null;
 }
 
+export interface AssetListRow {
+  id: string;
+  list: string;
+  values: Record<string, string>;
+  position: number;
+}
+
 export interface AssetMoneyEntry {
   id: string;
   category: string;
@@ -1803,6 +1810,32 @@ export const assetsApi = {
     const response = await api.post<{ success: boolean; data: AssetActivity }>(`/assets/${assetId}/activities`, { body });
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+
+  // Rows of one table on a record — a machine's parts, an apartment's keys.
+  getRows: async (assetId: string, list: string, params?: { search?: string; page?: number; limit?: number }) => {
+    const qs = buildUrlWithQuery(`/assets/${assetId}/rows`, { list, ...(params ?? {}) });
+    const response = await api.get<{ success: boolean; data: AssetListRow[]; meta?: { total: number; page: number; totalPages: number } }>(qs);
+    if (response.error) throw new Error(response.error);
+    return { rows: response.data?.data ?? [], meta: response.data?.meta };
+  },
+
+  addRow: async (assetId: string, list: string, values: Record<string, string>) => {
+    const response = await api.post<{ success: boolean; data: AssetListRow }>(`/assets/${assetId}/rows`, { list, values });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateRow: async (assetId: string, rowId: string, values: Record<string, string>) => {
+    const response = await api.patch<{ success: boolean; data: AssetListRow }>(`/assets/${assetId}/rows/${rowId}`, { values });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeRow: async (assetId: string, rowId: string) => {
+    const response = await api.delete<{ success: boolean }>(`/assets/${assetId}/rows/${rowId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
   },
 
   // Money logged against one asset, with the totals for the whole ledger.
