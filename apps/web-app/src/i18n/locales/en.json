@@ -624,7 +624,8 @@
     },
     "discard": "Discard",
     "saved": "Saved",
-    "remove": "Remove"
+    "remove": "Remove",
+    "saveFailed": "Could not save"
   },
   "auth": {
     "login": {
@@ -6113,5 +6114,23 @@
     "fields": "What you record about each one",
     "fieldsHint": "Floor, rooms, rent, plate, serial — whatever this kind needs.",
     "fieldLabel": "Floor"
+  },
+  "assetRecords": {
+    "intro": "Everything of this kind in this space.",
+    "empty": "Nothing added yet",
+    "added": "Added",
+    "removed": "Removed",
+    "removeFailed": "Could not remove this",
+    "newTitle": "Add to {{kind}}",
+    "editTitle": "Edit {{kind}}",
+    "name": "Name",
+    "namePh": "e.g. Apartment 4B",
+    "holder": "Held by",
+    "nobody": "Nobody",
+    "client": "Client",
+    "noClients": "No clients in this space yet",
+    "fields": "Details",
+    "taken": "Taken",
+    "free": "Free"
   }
 }

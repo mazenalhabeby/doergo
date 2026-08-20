@@ -624,7 +624,8 @@
     },
     "discard": "Scarta",
     "saved": "Salvato",
-    "remove": "Rimuovi"
+    "remove": "Rimuovi",
+    "saveFailed": "Impossibile salvare"
   },
   "auth": {
     "login": {
@@ -6087,5 +6088,23 @@
     "fields": "Cosa registri di ciascuno",
     "fieldsHint": "Piano, stanze, affitto, targa, numero di serie — ciò che serve.",
     "fieldLabel": "Piano"
+  },
+  "assetRecords": {
+    "intro": "Tutto di questo tipo in questo spazio.",
+    "empty": "Non è stato aggiunto nulla",
+    "added": "Aggiunto",
+    "removed": "Rimosso",
+    "removeFailed": "Impossibile rimuovere",
+    "newTitle": "Aggiungi a {{kind}}",
+    "editTitle": "Modifica {{kind}}",
+    "name": "Nome",
+    "namePh": "es. Appartamento 4B",
+    "holder": "Detenuto da",
+    "nobody": "Nessuno",
+    "client": "Cliente",
+    "noClients": "Nessun cliente in questo spazio",
+    "fields": "Dettagli",
+    "taken": "Assegnato",
+    "free": "Libero"
   }
 }

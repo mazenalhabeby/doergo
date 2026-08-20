@@ -624,7 +624,8 @@
     },
     "discard": "Descartar",
     "saved": "Guardado",
-    "remove": "Quitar"
+    "remove": "Quitar",
+    "saveFailed": "No se pudo guardar"
   },
   "auth": {
     "login": {
@@ -6096,5 +6097,23 @@
     "fields": "Qué registra de cada uno",
     "fieldsHint": "Planta, habitaciones, alquiler, matrícula, número de serie — lo que necesite.",
     "fieldLabel": "Planta"
+  },
+  "assetRecords": {
+    "intro": "Todo de este tipo en este espacio.",
+    "empty": "Aún no hay nada",
+    "added": "Añadido",
+    "removed": "Eliminado",
+    "removeFailed": "No se pudo eliminar",
+    "newTitle": "Añadir a {{kind}}",
+    "editTitle": "Editar {{kind}}",
+    "name": "Nombre",
+    "namePh": "p. ej. Piso 4B",
+    "holder": "En poder de",
+    "nobody": "Nadie",
+    "client": "Cliente",
+    "noClients": "Aún no hay clientes en este espacio",
+    "fields": "Detalles",
+    "taken": "Asignado",
+    "free": "Libre"
   }
 }

@@ -624,7 +624,8 @@
     },
     "discard": "Annuler les modifications",
     "saved": "Enregistré",
-    "remove": "Retirer"
+    "remove": "Retirer",
+    "saveFailed": "Impossible d’enregistrer"
   },
   "auth": {
     "login": {
@@ -6087,5 +6088,23 @@
     "fields": "Ce que vous notez sur chacun",
     "fieldsHint": "Étage, pièces, loyer, plaque, numéro de série — ce dont ce type a besoin.",
     "fieldLabel": "Étage"
+  },
+  "assetRecords": {
+    "intro": "Tout ce type dans cet espace.",
+    "empty": "Rien pour le moment",
+    "added": "Ajouté",
+    "removed": "Supprimé",
+    "removeFailed": "Suppression impossible",
+    "newTitle": "Ajouter à {{kind}}",
+    "editTitle": "Modifier {{kind}}",
+    "name": "Nom",
+    "namePh": "ex. Appartement 4B",
+    "holder": "Détenu par",
+    "nobody": "Personne",
+    "client": "Client",
+    "noClients": "Aucun client dans cet espace",
+    "fields": "Détails",
+    "taken": "Attribué",
+    "free": "Libre"
   }
 }

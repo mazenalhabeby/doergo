@@ -1,0 +1,278 @@
+"use client"
+
+import { useState } from "react"
+import dynamic from "next/dynamic"
+import { useTranslation } from "react-i18next"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { Ban, Check, Search, Smartphone, User } from "lucide-react"
+
+import { assetsApi, customersApi, organizationsApi, type AssetCategory, type OrgMember } from "@/lib/api"
+import {
+  normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel, type DetailRow,
+} from "@hbcfield/shared/client"
+import { notify } from "@/lib/toast"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog"
+
+const LocationPicker = dynamic(
+  () => import("../../_components/location-picker"),
+  { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
+) as unknown as React.ComponentType<{
+  lat: number | null; lng: number | null; radius: number; address: string
+  onLocationChange: (lat: number, lng: number) => void
+  onAddressChange: (address: string) => void
+}>
+
+/** One record of a kind — an apartment, a van. */
+export interface AssetRecord {
+  id: string
+  name: string
+  locationAddress?: string | null
+  locationLat?: number | null
+  locationLng?: number | null
+  holderUserId?: string | null
+  customerId?: string | null
+  details?: unknown
+}
+
+// Holder is encoded like the apartment resident: "u:<userId>" or "c:<customerId>".
+const encodeHolder = (r?: AssetRecord) =>
+  r?.holderUserId ? `u:${r.holderUserId}` : r?.customerId ? `c:${r.customerId}` : "none"
+const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
+const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
+
+/**
+ * Add or edit one record, built from what its KIND says.
+ *
+ * Every part is here because the kind asked for it: the name carries the label
+ * that kind chose, the map appears only if it has an address, the holder picker
+ * is called whatever that kind calls it and offers only the sides it allows, and
+ * the fields are the ones that kind prompts for. Nothing here knows what an
+ * apartment is.
+ */
+export function AssetRecordDialog({
+  spaceId,
+  kind,
+  existing,
+  onSaved,
+  trigger,
+}: {
+  spaceId: string
+  kind: AssetCategory
+  existing?: AssetRecord
+  onSaved: () => void
+  trigger: React.ReactNode
+}) {
+  const { t } = useTranslation()
+  const shape = normalizeKindShape(kind.config)
+  const [open, setOpen] = useState(false)
+
+  const [name, setName] = useState(existing?.name ?? "")
+  const [address, setAddress] = useState(existing?.locationAddress ?? "")
+  const [lat, setLat] = useState<number | null>(existing?.locationLat ?? null)
+  const [lng, setLng] = useState<number | null>(existing?.locationLng ?? null)
+  const [holder, setHolder] = useState(encodeHolder(existing))
+  const [tab, setTab] = useState<"members" | "clients">(shape.holder.members ? "members" : "clients")
+  const [q, setQ] = useState("")
+  const [rows, setRows] = useState<DetailRow[]>(detailRowsForKind(shape, existing?.details))
+
+  const setRow = (i: number, value: string) =>
+    setRows((d) => d.map((r, idx) => (idx === i ? { ...r, value } : r)))
+
+  const membersQ = useQuery({
+    queryKey: ["org-members-assignable"],
+    queryFn: () => organizationsApi.getMembers({ limit: 100 }),
+    enabled: open && shape.holder.enabled && shape.holder.members,
+  })
+  const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
+
+  const clientsQ = useQuery({
+    queryKey: ["space-clients", spaceId],
+    queryFn: () => customersApi.list({ spaceId, limit: 100 }),
+    enabled: open && shape.holder.enabled && shape.holder.clients,
+  })
+  const clients = clientsQ.data?.data ?? []
+
+  const save = useMutation({
+    mutationFn: () => {
+      const holderUserId = holder.startsWith("u:") ? holder.slice(2) : null
+      const customerId = holder.startsWith("c:") ? holder.slice(2) : null
+      const base = {
+        name: name.trim() || address.trim(),
+        locationAddress: shape.hasAddress ? address : undefined,
+        locationLat: shape.hasAddress ? lat ?? undefined : undefined,
+        locationLng: shape.hasAddress ? lng ?? undefined : undefined,
+        holderUserId: shape.holder.enabled ? holderUserId : null,
+        customerId: shape.holder.enabled ? customerId : null,
+        // Empty answers are kept, so a prompted field that nobody filled in
+        // still shows as waiting rather than vanishing from the record.
+        details: rows.map((r) => ({ label: r.label, value: r.value.trim() })),
+      }
+      return existing
+        ? assetsApi.updateAsset(existing.id, base)
+        : assetsApi.createAsset({ ...base, categoryId: kind.id })
+    },
+    onSuccess: () => {
+      notify.success(existing ? t("common.saved", "Saved") : t("assetRecords.added", "Added"))
+      onSaved()
+      setOpen(false)
+    },
+    onError: (e: Error) => notify.error(e.message || t("common.saveFailed", "Could not save")),
+  })
+
+  const reset = (next: boolean) => {
+    if (next) {
+      setName(existing?.name ?? "")
+      setAddress(existing?.locationAddress ?? "")
+      setLat(existing?.locationLat ?? null)
+      setLng(existing?.locationLng ?? null)
+      setHolder(encodeHolder(existing))
+      setRows(detailRowsForKind(shape, existing?.details))
+      setQ("")
+    }
+    setOpen(next)
+  }
+
+  const holderLabel = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
+  const list = (tab === "members"
+    ? members.map((m) => ({ value: `u:${m.id}`, name: memberName(m), sub: t("apartments.memberTag", "Member (staff)") }))
+    : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
+  ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
+  const loadingList = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
+
+  return (
+    <Dialog open={open} onOpenChange={reset}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-h-[88vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {existing
+              ? t("assetRecords.editTitle", "Edit {{kind}}", { kind: kind.name })
+              : t("assetRecords.newTitle", "Add to {{kind}}", { kind: kind.name })}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>{kindNameLabel(shape, t("assetRecords.name", "Name"))}</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("assetRecords.namePh", "e.g. Apartment 4B")}
+              autoFocus
+            />
+          </div>
+
+          {shape.hasAddress && (
+            <div className="space-y-1">
+              <Label>{t("customers.address", "Address")}</Label>
+              <LocationPicker
+                lat={lat} lng={lng} radius={0} address={address}
+                onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
+                onAddressChange={setAddress}
+              />
+            </div>
+          )}
+
+          {shape.holder.enabled && (
+            <div className="space-y-1.5">
+              <Label>{holderLabel}</Label>
+              <div className="rounded-xl border border-border">
+                <div className="flex items-center gap-1 border-b border-border p-1">
+                  {shape.holder.members && (
+                    <TabBtn active={tab === "members"} onClick={() => { setTab("members"); setQ("") }}
+                      icon={User} label={t("apartments.members", "Members")} />
+                  )}
+                  {shape.holder.clients && (
+                    <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }}
+                      icon={Smartphone} label={t("apartments.clients", "Clients")} />
+                  )}
+                  <button type="button" onClick={() => setHolder("none")}
+                    className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                      holder === "none" ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                    <Ban className="h-3.5 w-3.5" /> {t("assetRecords.nobody", "Nobody")}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("common.search", "Search…")}
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+                </div>
+                <div className="max-h-52 overflow-y-auto p-1">
+                  {loadingList ? (
+                    <p className="py-6 text-center text-xs text-muted-foreground">{t("common.loading", "Loading…")}</p>
+                  ) : list.length === 0 ? (
+                    <p className="py-6 text-center text-xs text-muted-foreground">
+                      {tab === "clients"
+                        ? t("assetRecords.noClients", "No clients in this space yet")
+                        : t("apartments.noMembers", "No members")}
+                    </p>
+                  ) : list.map((r) => {
+                    const sel = holder === r.value
+                    return (
+                      <button key={r.value} type="button" onClick={() => setHolder(r.value)}
+                        className={cn("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
+                          sel ? "bg-primary/10" : "hover:bg-muted")}>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                          {initials(r.name)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-foreground">{r.name}</span>
+                          <span className="block text-[11px] text-muted-foreground">{r.sub}</span>
+                        </span>
+                        {sel && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {rows.length > 0 && (
+            <div className="space-y-2">
+              <Label>{t("assetRecords.fields", "Details")}</Label>
+              {rows.map((r, i) => (
+                <div key={`${r.label}-${i}`} className="flex items-center gap-2">
+                  <span className="w-2/5 shrink-0 truncate text-sm text-muted-foreground">{r.label}</span>
+                  <Input
+                    value={r.value}
+                    onChange={(e) => setRow(i, e.target.value)}
+                    placeholder={t("customers.fieldValue", "Value")}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+          <Button
+            disabled={(!name.trim() && !address.trim()) || save.isPending}
+            onClick={() => save.mutate()}
+          >
+            {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function TabBtn({ active, onClick, icon: Icon, label }: {
+  active: boolean; onClick: () => void; icon: typeof User; label: string
+}) {
+  return (
+    <button type="button" onClick={onClick}
+      className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}>
+      <Icon className="h-3.5 w-3.5" /> {label}
+    </button>
+  )
+}

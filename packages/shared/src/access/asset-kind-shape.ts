@@ -106,3 +106,60 @@ export function kindNameLabel(shape: KindShape, fallback: string): string {
 export function kindHolderLabel(shape: KindShape, fallback: string): string {
   return shape.holder.label || fallback;
 }
+
+/** One filled-in row on a record: the field's label and what was entered. */
+export interface DetailRow {
+  label: string;
+  value: string;
+}
+
+/**
+ * Clean the label/value rows saved against a record.
+ *
+ * Same trust boundary as the shape: this is JSON off a request. A row with no
+ * label is dropped (it would render as a nameless box holding a value nobody
+ * can interpret), values are kept even when empty so a prompted-but-unanswered
+ * field still shows, and the whole thing is bounded.
+ */
+export function normalizeDetailRows(raw: unknown): DetailRow[] {
+  const rows: DetailRow[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of Array.isArray(raw) ? raw : []) {
+    if (rows.length >= KIND_SHAPE_LIMITS.maxFields) break;
+    const src = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
+    const label = str(src.label, KIND_SHAPE_LIMITS.maxLabel);
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ label, value: str(src.value, 500) });
+  }
+
+  return rows;
+}
+
+/**
+ * The rows to show on a record: every field its kind asks for, in the kind's
+ * order, carrying whatever was saved — followed by anything added ad hoc.
+ *
+ * Built this way so renaming or adding a field on the kind changes every record
+ * immediately, without a migration and without losing what was already entered
+ * under a field that has since been removed.
+ */
+export function detailRowsForKind(shape: KindShape, saved: unknown): DetailRow[] {
+  const rows = normalizeDetailRows(saved);
+  const byLabel = new Map(rows.map((r) => [r.label.toLowerCase(), r]));
+  const out: DetailRow[] = [];
+  const used = new Set<string>();
+
+  for (const field of shape.fields) {
+    const key = field.label.toLowerCase();
+    used.add(key);
+    out.push({ label: field.label, value: byLabel.get(key)?.value ?? '' });
+  }
+  for (const row of rows) {
+    if (!used.has(row.label.toLowerCase())) out.push(row);
+  }
+  return out;
+}

@@ -1153,6 +1153,20 @@ model Asset {
   typeId String?
   type   AssetType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
 
+  // Who has it — the apartment "resident", generalised. The kind decides what
+  // this is called ("Resident", "Driver") and who may be one. EITHER a member
+  // or a client, never both, enforced in the service. holderUserId is a plain
+  // marker id with no FK, exactly as CustomerUnit.residentUserId is, so
+  // removing a member never blocks.
+  holderUserId String?
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Values for the fields the KIND asks for ([{label, value}]), plus anything
+  // added ad hoc on the record. JSON so a new field costs no migration —
+  // mirrors CustomerUnit.details.
+  details Json?
+
   // Tasks linked to this asset (maintenance history)
   tasks          Task[]
   serviceReports ServiceReport[]
@@ -1162,6 +1176,8 @@ model Asset {
   @@index([typeId])
   @@index([status])
   @@index([serialNumber])
+  @@index([holderUserId])
+  @@index([customerId])
   @@map("assets")
 }
 
@@ -1242,6 +1258,8 @@ model Customer {
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
+  // Things this client holds (see Asset.customerId).
+  assets Asset[]
 }
 
 // Kind of CRM timeline entry on a customer.

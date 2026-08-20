@@ -624,7 +624,8 @@
     },
     "discard": "Verwerfen",
     "saved": "Gespeichert",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "saveFailed": "Konnte nicht gespeichert werden"
   },
   "auth": {
     "login": {
@@ -6112,5 +6113,23 @@
     "fields": "Was Sie zu jedem erfassen",
     "fieldsHint": "Etage, Zimmer, Miete, Kennzeichen, Seriennummer — was diese Art braucht.",
     "fieldLabel": "Etage"
+  },
+  "assetRecords": {
+    "intro": "Alles dieser Art in diesem Space.",
+    "empty": "Noch nichts hinzugefügt",
+    "added": "Hinzugefügt",
+    "removed": "Entfernt",
+    "removeFailed": "Konnte nicht entfernt werden",
+    "newTitle": "Zu {{kind}} hinzufügen",
+    "editTitle": "{{kind}} bearbeiten",
+    "name": "Name",
+    "namePh": "z. B. Wohnung 4B",
+    "holder": "Gehalten von",
+    "nobody": "Niemand",
+    "client": "Kunde",
+    "noClients": "Noch keine Kunden in diesem Space",
+    "fields": "Details",
+    "taken": "Vergeben",
+    "free": "Frei"
   }
 }

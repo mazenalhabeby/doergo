@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
+  IsArray,
   IsString,
   IsNotEmpty,
   MaxLength,
@@ -80,6 +81,23 @@ export class CreateAssetDto {
   @IsString()
   @IsOptional()
   typeId?: string;
+  @ApiPropertyOptional({ description: 'Member who holds this (clears any client)' })
+  @IsString()
+  @IsOptional()
+  holderUserId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Client who holds this (clears any member)' })
+  @IsString()
+  @IsOptional()
+  customerId?: string | null;
+
+  // Values for the fields this record's KIND asks for. Shape is enforced by
+  // normalizeDetailRows() in task-service — one authority, not two.
+  @ApiPropertyOptional({ description: 'Filled-in fields ([{label, value}])' })
+  @IsArray()
+  @IsOptional()
+  details?: unknown[];
+
 }
 
 export class UpdateAssetDto extends PartialType(CreateAssetDto) {}

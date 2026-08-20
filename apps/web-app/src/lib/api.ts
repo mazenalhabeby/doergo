@@ -1561,6 +1561,12 @@ export interface CreateAssetInput {
   notes?: string;
   categoryId?: string;
   typeId?: string;
+  /** Member who holds this (clears any client). */
+  holderUserId?: string | null;
+  /** Client who holds this (clears any member). */
+  customerId?: string | null;
+  /** Values for the fields this record's kind asks for. */
+  details?: { label: string; value: string }[];
 }
 
 export interface UpdateAssetInput {

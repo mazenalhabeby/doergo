@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, success, paginated, TaskStatus, normalizeKindShape } from '@hbcfield/shared';
+import {
+  Role, success, paginated, TaskStatus, normalizeKindShape, normalizeDetailRows,
+} from '@hbcfield/shared';
 
 @Injectable()
 export class AssetsService {
@@ -426,6 +428,45 @@ export class AssetsService {
   /**
    * Create a new asset
    */
+  /**
+   * Resolve who holds a record: a member, a client, or nobody.
+   *
+   * EITHER a member or a client, never both — the same rule an apartment's
+   * resident follows. Picking one clears the other rather than rejecting the
+   * request, because both arriving usually means the form sent a stale value,
+   * and refusing would lose the edit the person actually made.
+   *
+   * The client is checked against THIS organization: a customer id is guessable,
+   * and without this a record could be pinned to another tenant's customer.
+   */
+  private async resolveHolder(
+    input: { holderUserId?: string | null; customerId?: string | null },
+    organizationId: string,
+  ): Promise<{ holderUserId: string | null; customerId: string | null }> {
+    const holderUserId = input.holderUserId?.trim() || null;
+    const customerId = input.customerId?.trim() || null;
+
+    if (holderUserId) {
+      const member = await this.prisma.user.findFirst({
+        where: { id: holderUserId, organizationId },
+        select: { id: true },
+      });
+      if (!member) throw new BadRequestException('That member is not in this organization');
+      return { holderUserId, customerId: null };
+    }
+
+    if (customerId) {
+      const client = await this.prisma.customer.findFirst({
+        where: { id: customerId, organizationId },
+        select: { id: true },
+      });
+      if (!client) throw new BadRequestException('That client is not in this organization');
+      return { holderUserId: null, customerId };
+    }
+
+    return { holderUserId: null, customerId: null };
+  }
+
   async create(data: {
     name: string;
     serialNumber?: string;
@@ -440,6 +481,9 @@ export class AssetsService {
     notes?: string;
     categoryId?: string;
     typeId?: string;
+    holderUserId?: string | null;
+    customerId?: string | null;
+    details?: unknown;
     userId: string;
     userRole: string;
     organizationId: string;
@@ -492,6 +536,8 @@ export class AssetsService {
         categoryId: data.categoryId,
         typeId: data.typeId,
         organizationId: data.organizationId,
+        ...(await this.resolveHolder(data, data.organizationId)),
+        details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
       },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
@@ -596,6 +642,9 @@ export class AssetsService {
    */
   async update(data: {
     id: string;
+    holderUserId?: string | null;
+    customerId?: string | null;
+    details?: unknown;
     name?: string;
     serialNumber?: string;
     model?: string;
@@ -672,6 +721,13 @@ export class AssetsService {
         ...(data.notes !== undefined && { notes: data.notes }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.typeId !== undefined && { typeId: data.typeId }),
+        // Holder is resolved together: sending either side re-decides both, so
+        // moving a thing from a member to a client clears the member in one go.
+        ...((data.holderUserId !== undefined || data.customerId !== undefined) &&
+          (await this.resolveHolder(data, data.organizationId))),
+        ...(data.details !== undefined && {
+          details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
+        }),
       },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
