@@ -3361,7 +3361,23 @@
       "deleteFailed": "Impossibile eliminare lo spazio"
     },
     "ownershipSection": "Appartenenza",
-    "ownershipHint": "È un progetto, la tua azienda o un'azienda cliente per cui lavori?"
+    "ownershipHint": "È un progetto, la tua azienda o un'azienda cliente per cui lavori?",
+    "workflows": {
+      "title": "Tipi di attività in questo spazio",
+      "hint": "Le nuove attività qui usano il predefinito, salvo diversa scelta.",
+      "none": "Nessun tipo di attività — qui si usa il flusso standard.",
+      "default": "Predefinito",
+      "makeDefault": "Rendi predefinito",
+      "remove": "Rimuovi da questo spazio",
+      "addPlaceholder": "Aggiungi un tipo di attività…",
+      "added": "Tipo di attività aggiunto",
+      "removed": "Tipo di attività rimosso",
+      "defaultSet": "Predefinito aggiornato",
+      "addFailed": "Impossibile aggiungere quel tipo di attività",
+      "removeFailed": "Impossibile rimuovere quel tipo di attività",
+      "defaultFailed": "Impossibile cambiare il predefinito"
+    },
+    "previewWorkflow": "Anteprima o modifica di un tipo di attività"
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",

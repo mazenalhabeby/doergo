@@ -3386,7 +3386,23 @@
     "purge": "Delete permanently",
     "archiveAction": "Archive",
     "restoreAction": "Restore",
-    "archived": "Archived"
+    "archived": "Archived",
+    "workflows": {
+      "title": "Task types in this space",
+      "hint": "New tasks here use the default unless another is chosen.",
+      "none": "No task types yet — tasks here use the standard flow.",
+      "default": "Default",
+      "makeDefault": "Make default",
+      "remove": "Remove from this space",
+      "addPlaceholder": "Add a task type…",
+      "added": "Task type added",
+      "removed": "Task type removed",
+      "defaultSet": "Default updated",
+      "addFailed": "Could not add that task type",
+      "removeFailed": "Could not remove that task type",
+      "defaultFailed": "Could not change the default"
+    },
+    "previewWorkflow": "Preview or edit a task type"
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",

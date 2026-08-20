@@ -77,4 +77,27 @@ export class WorkflowsController {
   async removeDefinitionOfDone(@Payload() data: { id: string; organizationId: string }) {
     return this.workflowsService.removeDefinitionOfDone(data);
   }
+  // ── Which workflows a space offers ──────────────────────────────────────────
+
+  @MessagePattern({ cmd: 'list_space_workflows' })
+  listSpaceWorkflows(@Payload() data: { spaceId: string; organizationId: string }) {
+    return this.workflowsService.listSpaceWorkflows(data);
+  }
+
+  @MessagePattern({ cmd: 'attach_space_workflow' })
+  attachSpaceWorkflow(
+    @Payload() data: { spaceId: string; workflowId: string; organizationId: string; makeDefault?: boolean },
+  ) {
+    return this.workflowsService.attachSpaceWorkflow(data);
+  }
+
+  @MessagePattern({ cmd: 'detach_space_workflow' })
+  detachSpaceWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
+    return this.workflowsService.detachSpaceWorkflow(data);
+  }
+
+  @MessagePattern({ cmd: 'set_space_default_workflow' })
+  setSpaceDefaultWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
+    return this.workflowsService.setSpaceDefaultWorkflow(data);
+  }
 }

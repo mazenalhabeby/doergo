@@ -4050,6 +4050,36 @@ export interface WorkflowStatus {
 }
 
 export const workflowsApi = {
+  // ── Which task types a space offers ─────────────────────────────────────────
+
+  /** This space's task types, default first. */
+  listForSpace: async (spaceId: string) => {
+    const response = await api.get<{ success: boolean; data: (StatusWorkflow & { isDefault?: boolean })[] }>(
+      `/workflows/spaces/${spaceId}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  /** Offer a task type here. Refused when the space lacks a module its steps need. */
+  attachToSpace: async (spaceId: string, workflowId: string, makeDefault?: boolean) => {
+    const response = await api.post(`/workflows/spaces/${spaceId}/${workflowId}`, { makeDefault });
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  detachFromSpace: async (spaceId: string, workflowId: string) => {
+    const response = await api.delete(`/workflows/spaces/${spaceId}/${workflowId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  setSpaceDefault: async (spaceId: string, workflowId: string) => {
+    const response = await api.patch(`/workflows/spaces/${spaceId}/${workflowId}/default`, {});
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
   list: async () => {
     const response = await api.get<{ success: boolean; data: StatusWorkflow[] }>('/workflows');
     if (response.error) throw new Error(response.error);

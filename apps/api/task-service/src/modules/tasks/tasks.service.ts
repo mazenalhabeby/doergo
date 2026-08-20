@@ -13,7 +13,7 @@ import Redis from 'ioredis';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
-import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../common/space-workflow.util';
 import {
   TaskStatus,
   TaskEventType,
@@ -168,6 +168,26 @@ export class TasksService {
       path has always done this; creation had not.
     */
     await assertWorkflowInOrg(this.prisma, effWorkflowId, effectiveOrgId);
+
+    /*
+      And it must be a task type this SPACE offers — not merely one the
+      organization owns.
+
+      Owning it is no longer enough now that each space chooses its own set: a
+      space that deliberately does not offer "Logistics" should not receive a
+      task running on it because someone passed the id. One level stricter than
+      the ownership check above, and the same shape — an id from a client says
+      nothing about where it may be used.
+
+      Only when the space HAS offerings. A space still on the legacy column has
+      none, and its inherited default already passed the ownership check.
+    */
+    if (effWorkflowId && data.spaceId) {
+      const offered = await listSpaceWorkflowIds(this.prisma, data.spaceId);
+      if (offered.length > 0 && !offered.includes(effWorkflowId)) {
+        throw new BadRequestException('That task type is not available in this space');
+      }
+    }
 
     let initialStatus: string = hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW;
     if (effWorkflowId) {

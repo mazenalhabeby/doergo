@@ -3370,7 +3370,23 @@
     "purge": "Eliminar permanentemente",
     "archiveAction": "Archivar",
     "restoreAction": "Restaurar",
-    "archived": "Archivado"
+    "archived": "Archivado",
+    "workflows": {
+      "title": "Tipos de tarea en este espacio",
+      "hint": "Las nuevas tareas aquí usan el predeterminado salvo que se elija otro.",
+      "none": "Aún no hay tipos de tarea: aquí se usa el flujo estándar.",
+      "default": "Predeterminado",
+      "makeDefault": "Hacer predeterminado",
+      "remove": "Quitar de este espacio",
+      "addPlaceholder": "Añadir un tipo de tarea…",
+      "added": "Tipo de tarea añadido",
+      "removed": "Tipo de tarea eliminado",
+      "defaultSet": "Predeterminado actualizado",
+      "addFailed": "No se pudo añadir ese tipo de tarea",
+      "removeFailed": "No se pudo eliminar ese tipo de tarea",
+      "defaultFailed": "No se pudo cambiar el predeterminado"
+    },
+    "previewWorkflow": "Ver o editar un tipo de tarea"
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",
