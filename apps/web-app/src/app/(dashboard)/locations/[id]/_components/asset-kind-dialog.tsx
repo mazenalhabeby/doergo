@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
-import { Loader2, MapPin, Plus, Trash2, User } from "lucide-react"
+import { ListPlus, Loader2, MapPin, Plus, Trash2, User } from "lucide-react"
 
 import { assetsApi, type AssetCategory } from "@/lib/api"
 import { normalizeKindShape, KIND_SHAPE_LIMITS, type KindShape } from "@hbcfield/shared/client"
@@ -249,6 +249,17 @@ export function AssetKindDialog({
               </div>
             )}
           </div>
+
+          {/* Whether a single record may carry a field this kind never asked
+              for. Off keeps every record of the kind identical, which is what
+              you want when the data gets compared or exported. */}
+          <Row
+            icon={ListPlus}
+            title={t("assetKinds.allowExtra", "Allow extra fields on a record")}
+            hint={t("assetKinds.allowExtraHint", "Off, every one of them holds exactly the fields above — nothing more.")}
+            checked={shape.allowExtraFields}
+            onChange={(v) => set("allowExtraFields", v)}
+          />
         </div>
 
         <DialogFooter>

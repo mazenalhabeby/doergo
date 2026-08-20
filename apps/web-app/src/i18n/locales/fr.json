@@ -6087,7 +6087,9 @@
     "clients": "Clients",
     "fields": "Ce que vous notez sur chacun",
     "fieldsHint": "Étage, pièces, loyer, plaque, numéro de série — ce dont ce type a besoin.",
-    "fieldLabel": "Étage"
+    "fieldLabel": "Étage",
+    "allowExtra": "Autoriser des champs supplémentaires par fiche",
+    "allowExtraHint": "Désactivé : chacun contient exactement les champs ci-dessus, rien de plus."
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",
@@ -6107,6 +6109,7 @@
     "taken": "Attribué",
     "free": "Libre",
     "fieldsHint": "Tout ce qui mérite d’être noté sur celui-ci.",
-    "duplicateField": "Un champ porte déjà ce nom — renommez-le, sinon il sera ignoré."
+    "duplicateField": "Un champ porte déjà ce nom — renommez-le, sinon il sera ignoré.",
+    "noFields": "Ce type n’enregistre rien de plus."
   }
 }

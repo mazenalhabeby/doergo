@@ -113,3 +113,24 @@ describe('detailRowsForKind', () => {
     expect(normalizeDetailRows([{ label: '', value: 'orphan' }])).toEqual([]);
   });
 });
+
+describe('allowExtraFields', () => {
+  it('defaults to on, so kinds saved before this keep what they could already do', () => {
+    // A default of off would silently withdraw one-off fields from every
+    // existing kind the first time its config was read.
+    expect(shapeOf(null).allowExtraFields).toBe(true);
+    expect(shapeOf({ fields: [{ label: 'Floor' }] }).allowExtraFields).toBe(true);
+  });
+
+  it('is off only when somebody turned it off', () => {
+    expect(shapeOf({ allowExtraFields: false }).allowExtraFields).toBe(false);
+  });
+
+  it('does not change what a record already holds', () => {
+    // Turning it off stops NEW one-off fields; it must not hide or drop the
+    // ones already recorded, or the data would be stranded.
+    const strict = shapeOf({ fields: [{ label: 'Floor' }], allowExtraFields: false });
+    const rows = detailRowsForKind(strict, [{ label: 'Door code', value: '1234' }]);
+    expect(rows).toContainEqual({ label: 'Door code', value: '1234' });
+  });
+});

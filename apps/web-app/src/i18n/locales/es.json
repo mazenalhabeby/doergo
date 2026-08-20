@@ -6096,7 +6096,9 @@
     "clients": "Clientes",
     "fields": "Qué registra de cada uno",
     "fieldsHint": "Planta, habitaciones, alquiler, matrícula, número de serie — lo que necesite.",
-    "fieldLabel": "Planta"
+    "fieldLabel": "Planta",
+    "allowExtra": "Permitir campos adicionales en un registro",
+    "allowExtraHint": "Desactivado: cada uno tendrá exactamente los campos de arriba, nada más."
   },
   "assetRecords": {
     "intro": "Todo de este tipo en este espacio.",
@@ -6116,6 +6118,7 @@
     "taken": "Asignado",
     "free": "Libre",
     "fieldsHint": "Cualquier cosa que merezca registrarse sobre este.",
-    "duplicateField": "Ya existe un campo con este nombre — renómbrelo o se descartará."
+    "duplicateField": "Ya existe un campo con este nombre — renómbrelo o se descartará.",
+    "noFields": "Este tipo no registra nada adicional."
   }
 }

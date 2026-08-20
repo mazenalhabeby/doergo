@@ -6087,7 +6087,9 @@
     "clients": "Clienti",
     "fields": "Cosa registri di ciascuno",
     "fieldsHint": "Piano, stanze, affitto, targa, numero di serie — ciò che serve.",
-    "fieldLabel": "Piano"
+    "fieldLabel": "Piano",
+    "allowExtra": "Consenti campi extra su un record",
+    "allowExtraHint": "Disattivato: ognuno avrà esattamente i campi qui sopra, nulla di più."
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
@@ -6107,6 +6109,7 @@
     "taken": "Assegnato",
     "free": "Libero",
     "fieldsHint": "Tutto ciò che vale la pena annotare su questo.",
-    "duplicateField": "Esiste già un campo con questo nome — rinominalo o verrà scartato."
+    "duplicateField": "Esiste già un campo con questo nome — rinominalo o verrà scartato.",
+    "noFields": "Questo tipo non registra nulla di extra."
   }
 }

@@ -256,18 +256,25 @@ export function AssetRecordDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>{t("assetRecords.fields", "Details")}</Label>
-              <button
-                type="button"
-                onClick={addRow}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              >
-                <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
-              </button>
+              {/* Only when the kind allows it. Extras already on a record stay
+                  editable either way — switching this off must not strand data
+                  somebody can no longer correct. */}
+              {shape.allowExtraFields && (
+                <button
+                  type="button"
+                  onClick={addRow}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
+                </button>
+              )}
             </div>
 
             {rows.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                {t("assetRecords.fieldsHint", "Anything worth recording about this one.")}
+                {shape.allowExtraFields
+                  ? t("assetRecords.fieldsHint", "Anything worth recording about this one.")
+                  : t("assetRecords.noFields", "This kind records nothing extra.")}
               </p>
             ) : (
               rows.map((r, i) => {

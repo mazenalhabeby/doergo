@@ -6112,7 +6112,9 @@
     "clients": "Kunden",
     "fields": "Was Sie zu jedem erfassen",
     "fieldsHint": "Etage, Zimmer, Miete, Kennzeichen, Seriennummer — was diese Art braucht.",
-    "fieldLabel": "Etage"
+    "fieldLabel": "Etage",
+    "allowExtra": "Zusätzliche Felder je Eintrag erlauben",
+    "allowExtraHint": "Aus: Jeder Eintrag hat genau die Felder oben — nicht mehr."
   },
   "assetRecords": {
     "intro": "Alles dieser Art in diesem Space.",
@@ -6132,6 +6134,7 @@
     "taken": "Vergeben",
     "free": "Frei",
     "fieldsHint": "Alles, was zu diesem festgehalten werden sollte.",
-    "duplicateField": "Es gibt bereits ein Feld mit diesem Namen — bitte umbenennen, sonst geht es verloren."
+    "duplicateField": "Es gibt bereits ein Feld mit diesem Namen — bitte umbenennen, sonst geht es verloren.",
+    "noFields": "Diese Art erfasst nichts Zusätzliches."
   }
 }

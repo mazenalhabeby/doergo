@@ -44,6 +44,17 @@ export interface KindShape {
   hasAddress: boolean;
   holder: KindHolder;
   fields: KindField[];
+  /**
+   * May a record carry a field its kind never asked for?
+   *
+   * On, somebody can note a door code on one flat. Off, every record of this
+   * kind holds exactly the same fields — which is the point when the data is
+   * meant to be compared, exported or reported on.
+   *
+   * Defaults to ON: records could always do this, and a default of off would
+   * silently withdraw it from every kind that already exists.
+   */
+  allowExtraFields: boolean;
 }
 
 const str = (v: unknown, max: number): string =>
@@ -94,6 +105,7 @@ export function normalizeKindShape(raw: unknown): KindShape {
     hasAddress: bool(src.hasAddress),
     holder,
     fields,
+    allowExtraFields: bool(src.allowExtraFields, true),
   };
 }
 

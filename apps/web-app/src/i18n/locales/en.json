@@ -6113,7 +6113,9 @@
     "clients": "Clients",
     "fields": "What you record about each one",
     "fieldsHint": "Floor, rooms, rent, plate, serial — whatever this kind needs.",
-    "fieldLabel": "Floor"
+    "fieldLabel": "Floor",
+    "allowExtra": "Allow extra fields on a record",
+    "allowExtraHint": "Off, every one of them holds exactly the fields above — nothing more."
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",
@@ -6133,6 +6135,7 @@
     "taken": "Taken",
     "free": "Free",
     "fieldsHint": "Anything worth recording about this one.",
-    "duplicateField": "Already a field with this name — rename it or it will be dropped."
+    "duplicateField": "Already a field with this name — rename it or it will be dropped.",
+    "noFields": "This kind records nothing extra."
   }
 }
