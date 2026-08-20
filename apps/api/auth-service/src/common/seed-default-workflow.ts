@@ -13,9 +13,13 @@ type WorkflowSeedClient = {
 /**
  * Seed a brand-new organization with its default task type (Field Service),
  * so the org starts with a usable, capability-rich flow instead of an empty
- * Task Types screen. ONE source of truth — the template lives in
- * `@hbcfield/shared` (`DEFAULT_WORKFLOW_TEMPLATE`) and is reused by the web
- * "New Task Type" picker too.
+ * Task Types screen.
+ *
+ * The definition lives in `@hbcfield/shared` (`DEFAULT_WORKFLOW_TEMPLATE`) —
+ * the same constant task-service seeds into the shared LIBRARY at boot, so
+ * "Field Service" means one thing whether an org is given it or picks it.
+ * Bootstrapping cannot read the library: an organization is created before
+ * anyone could choose from it.
  */
 export async function seedDefaultWorkflow(
   client: WorkflowSeedClient,

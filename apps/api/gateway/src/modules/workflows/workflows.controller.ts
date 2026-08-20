@@ -21,6 +21,7 @@ import {
   UpdateWorkflowStatusDto,
   ReorderStatusesDto,
   UpsertDefinitionOfDoneDto,
+  UseWorkflowTemplateDto,
 } from './dto';
 import { WorkflowsService } from './workflows.service';
 
@@ -37,6 +38,40 @@ export class WorkflowsController {
   async findAll(@Request() req: any) {
     return this.workflowsService.findAll({
       organizationId: req.user.organizationId,
+    });
+  }
+
+  // ==================== Task-type library (before :id routes) ================
+  //
+  // The library is platform-curated and shared by every tenant, so both routes
+  // here are one-directional: read what is published, or take a COPY of it. No
+  // tenant route writes to it — see the WorkflowTemplate model comment for why a
+  // live reference would be unsafe as well as a cross-tenant write.
+
+  @Get('library')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Published task-type templates to start from' })
+  async listTemplates(@Request() req: any) {
+    return this.workflowsService.listTemplates({ organizationId: req.user.organizationId });
+  }
+
+  @Post('library/:templateId')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Copy a library template into this organization' })
+  async useTemplate(
+    @Param('templateId') templateId: string,
+    @Body() dto: UseWorkflowTemplateDto,
+    @Request() req: any,
+  ) {
+    // Same permission as creating a task type outright, because that is what
+    // this is. The optional space attachment is strictly narrower than what
+    // canManageUsers already allows in this organization.
+    return this.workflowsService.useTemplate({
+      templateId,
+      organizationId: req.user.organizationId,
+      ...(dto?.name ? { name: dto.name } : {}),
+      ...(dto?.isDefault !== undefined ? { isDefault: dto.isDefault } : {}),
+      ...(dto?.spaceId ? { spaceId: dto.spaceId } : {}),
     });
   }
 

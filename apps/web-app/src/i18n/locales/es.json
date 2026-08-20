@@ -3384,7 +3384,10 @@
       "defaultSet": "Predeterminado actualizado",
       "addFailed": "No se pudo añadir ese tipo de tarea",
       "removeFailed": "No se pudo eliminar ese tipo de tarea",
-      "defaultFailed": "No se pudo cambiar el predeterminado"
+      "defaultFailed": "No se pudo cambiar el predeterminado",
+      "libraryHint": "O empiece con un tipo de tarea ya preparado. Se copia en su organización, así que podrá editarlo después.",
+      "libraryPlaceholder": "Elegir de la biblioteca…",
+      "useTemplate": "Usar plantilla"
     },
     "previewWorkflow": "Ver o editar un tipo de tarea"
   },
@@ -3757,7 +3760,8 @@
         "statusDeleted": "Estado eliminado",
         "statusAdded": "Estado agregado",
         "statusUpdated": "Estado actualizado"
-      }
+      },
+      "loadingLibrary": "Cargando la biblioteca…"
     }
   },
   "assets": {

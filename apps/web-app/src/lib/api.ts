@@ -4049,7 +4049,45 @@ export interface WorkflowStatus {
   createdAt: string;
 }
 
+/** A task type in the shared library, as a tenant sees it. */
+export interface WorkflowLibraryTemplate {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  industry: string | null;
+  icon: string | null;
+  statuses: WorkflowStatus[];
+}
+
 export const workflowsApi = {
+  // ── The shared task-type library ────────────────────────────────────────────
+  //
+  // Read and copy only. The statuses are never sent from here — using a template
+  // sends its id, and the server reads the definition itself, so what a new task
+  // type looks like is not something the browser decides.
+
+  library: {
+    list: async (): Promise<WorkflowLibraryTemplate[]> => {
+      const response = await api.get<{ success: boolean; data: WorkflowLibraryTemplate[] }>('/workflows/library');
+      if (response.error) throw new Error(response.error);
+      return response.data?.data || [];
+    },
+
+    /** Copy a template into this organization. `spaceId` also offers it there. */
+    use: async (
+      templateId: string,
+      opts?: { name?: string; isDefault?: boolean; spaceId?: string },
+    ): Promise<StatusWorkflow | undefined> => {
+      const response = await api.post<{ success: boolean; data: StatusWorkflow }>(
+        `/workflows/library/${templateId}`,
+        opts ?? {},
+      );
+      if (response.error) throw new Error(response.error);
+      return response.data?.data;
+    },
+  },
+
   // ── Which task types a space offers ─────────────────────────────────────────
 
   /** This space's task types, default first. */

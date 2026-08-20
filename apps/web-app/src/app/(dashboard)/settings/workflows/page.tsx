@@ -1,7 +1,7 @@
 "use client"
 
 import { PlanGate } from "@/components/plan-gate"
-import { useState, useCallback, memo, useMemo } from "react"
+import { useState, useCallback, useEffect, memo, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -28,7 +28,6 @@ import {
   type StatusWorkflow,
   type WorkflowStatus,
 } from "@/lib/api"
-import { WORKFLOW_TEMPLATES } from "@hbcfield/shared/client"
 import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -391,24 +390,44 @@ function CreateWorkflowDialog({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
-  // null = "Blank" (start with no statuses); otherwise a template id.
-  const [templateId, setTemplateId] = useState<string | null>(
-    WORKFLOW_TEMPLATES[0]?.id ?? null,
-  )
+  // null = "Blank" (start with no statuses); otherwise a library template id.
+  const [templateId, setTemplateId] = useState<string | null>(null)
 
-  const selectedTemplate = WORKFLOW_TEMPLATES.find((t) => t.id === templateId) ?? null
+  /*
+    The library comes from the server, not from a constant in the bundle.
+
+    It is platform-curated, so a new template reaches every tenant without a web
+    deploy — and, more importantly, the statuses of a template are read
+    server-side when it is used. The browser sends an id; it does not get to say
+    what the resulting state machine looks like.
+  */
+  const { data: templates = [], isLoading: loadingTemplates } = useQuery({
+    queryKey: ["workflow-library"],
+    queryFn: workflowsApi.library.list,
+    enabled: open,
+    staleTime: 5 * 60_000,
+  })
+
+  const selectedTemplate = templates.find((tpl) => tpl.id === templateId) ?? null
+
+  // Preselect the first template once the library arrives, without overriding a
+  // choice already made — including the deliberate choice of "Blank".
+  const [touched, setTouched] = useState(false)
+  useEffect(() => {
+    if (!touched && templateId === null && templates.length > 0) setTemplateId(templates[0]!.id)
+  }, [templates, templateId, touched])
 
   const reset = () => {
     setName("")
-    setTemplateId(WORKFLOW_TEMPLATES[0]?.id ?? null)
+    setTemplateId(null)
+    setTouched(false)
   }
 
   const mutation = useMutation({
     mutationFn: () =>
-      workflowsApi.create({
-        name: name.trim() || selectedTemplate?.name || "",
-        statuses: selectedTemplate?.statuses,
-      }),
+      selectedTemplate
+        ? workflowsApi.library.use(selectedTemplate.id, { name: name.trim() || undefined })
+        : workflowsApi.create({ name: name.trim() }),
     onSuccess: () => {
       notify.success(t("workflows.page.toast.taskTypeCreated"))
       queryClient.invalidateQueries({ queryKey: ["workflows"] })
@@ -440,15 +459,21 @@ function CreateWorkflowDialog({
           <div className="space-y-2">
             <Label>{t("workflows.page.startFrom")}</Label>
             <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1">
-              {WORKFLOW_TEMPLATES.map((tpl) => {
+              {loadingTemplates && (
+                <div className="flex items-center gap-2 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t("workflows.page.loadingLibrary")}
+                </div>
+              )}
+              {templates.map((tpl) => {
                 const active = templateId === tpl.id
                 return (
                   <button
                     key={tpl.id}
                     type="button"
                     onClick={() => {
+                      setTouched(true)
                       setTemplateId(tpl.id)
-                      if (!name.trim()) setName("")
                     }}
                     className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
                       active
@@ -470,7 +495,9 @@ function CreateWorkflowDialog({
                           {t("workflows.page.steps", { count: tpl.statuses.length })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{tpl.description}</p>
+                      {tpl.description && (
+                        <p className="text-xs text-muted-foreground">{tpl.description}</p>
+                      )}
                       <div className="mt-1.5 flex flex-wrap items-center gap-1">
                         {tpl.statuses.map((s, i) => (
                           <span key={s.key} className="flex items-center gap-1">
@@ -492,7 +519,10 @@ function CreateWorkflowDialog({
               {/* Blank option */}
               <button
                 type="button"
-                onClick={() => setTemplateId(null)}
+                onClick={() => {
+                  setTouched(true)
+                  setTemplateId(null)
+                }}
                 className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
                   templateId === null
                     ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500 dark:bg-blue-900/20"

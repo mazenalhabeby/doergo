@@ -14,17 +14,18 @@ export type PlatformCapability =
   | 'billingOps' // refunds / credits / coupons
   | 'manageSupport' // tickets / live chat
   | 'manageSupportTeams' // create teams, routing rules, pin orgs, assign members
+  | 'manageLibrary' // curate the shared task-type library every tenant copies from
   | 'managePlatformUsers'; // add/remove staff, set roles
 
 export const PLATFORM_ROLES: PlatformRole[] = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'];
 
 const ALL: PlatformCapability[] = [
-  'view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps', 'manageSupport', 'manageSupportTeams', 'managePlatformUsers',
+  'view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps', 'manageSupport', 'manageSupportTeams', 'manageLibrary', 'managePlatformUsers',
 ];
 
 export const PLATFORM_PERMISSIONS: Record<PlatformRole, PlatformCapability[]> = {
   OWNER: ALL,
-  CONTROLLER: ['view', 'extendTrial', 'manageOrgs', 'manageSupport', 'manageSupportTeams'],
+  CONTROLLER: ['view', 'extendTrial', 'manageOrgs', 'manageSupport', 'manageSupportTeams', 'manageLibrary'],
   SUPPORT: ['view', 'extendTrial', 'manageSupport'],
   BILLING: ['view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps'],
 };

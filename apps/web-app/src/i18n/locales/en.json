@@ -3400,7 +3400,10 @@
       "defaultSet": "Default updated",
       "addFailed": "Could not add that task type",
       "removeFailed": "Could not remove that task type",
-      "defaultFailed": "Could not change the default"
+      "defaultFailed": "Could not change the default",
+      "libraryHint": "Or start from a ready-made task type. It is copied into your organization, so you can edit it afterwards.",
+      "libraryPlaceholder": "Choose from the library…",
+      "useTemplate": "Use template"
     },
     "previewWorkflow": "Preview or edit a task type"
   },
@@ -3773,7 +3776,8 @@
         "statusDeleted": "Status deleted",
         "statusAdded": "Status added",
         "statusUpdated": "Status updated"
-      }
+      },
+      "loadingLibrary": "Loading the library…"
     }
   },
   "assets": {
