@@ -171,15 +171,37 @@ function TaskTableRowInner({
         data-no-navigate
         className="flex items-center gap-2 min-w-0 w-[160px] flex-shrink-0 rounded-md px-1.5 py-1 -mx-1.5 hover:bg-muted/60 cursor-pointer transition-colors"
         onClick={(e) => { e.stopPropagation(); onAssign(task.id) }}
-        title={t("tasks.row.manageAssignees")}
+        /* A truncated name is unreadable on its own, so the tooltip carries who
+           is on the task as well as what clicking does. */
+        title={
+          [
+            task.assignees?.length
+              ? task.assignees.map((a) => `${a.user.firstName} ${a.user.lastName}`).join(", ")
+              : task.assignedTo
+                ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
+                : "",
+            t("tasks.row.manageAssignees"),
+          ].filter(Boolean).join(" — ")
+        }
       >
         {task.assignees && task.assignees.length > 0 ? (
-          <div className="flex items-center">
-            <StackedAvatars
-              users={task.assignees.map((a) => ({ id: a.user.id, firstName: a.user.firstName, lastName: a.user.lastName, avatarUrl: a.user.avatarUrl }))}
-              max={3}
-              size="xs"
-            />
+          /*
+            min-w-0 on the INNER row too, not just the cell.
+
+            A flex item's default min-width is auto, so this div refused to
+            shrink below its content and the `truncate` on the name never
+            engaged — a long name simply overflowed the 160px cell and ran
+            across the due date beside it. The outer cell had min-w-0; the row
+            inside it did not, and that is the one the text lives in.
+          */
+          <div className="flex items-center min-w-0">
+            <span className="flex-shrink-0">
+              <StackedAvatars
+                users={task.assignees.map((a) => ({ id: a.user.id, firstName: a.user.firstName, lastName: a.user.lastName, avatarUrl: a.user.avatarUrl }))}
+                max={3}
+                size="xs"
+              />
+            </span>
             {task.assignees.length <= 2 && (
               <span className="text-xs text-muted-foreground truncate ml-2">
                 {task.assignees[0]!.user.firstName} {task.assignees[0]!.user.lastName}
@@ -187,7 +209,7 @@ function TaskTableRowInner({
             )}
           </div>
         ) : task.assignedTo ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <UserAvatar
               firstName={task.assignedTo.firstName}
               lastName={task.assignedTo.lastName}
