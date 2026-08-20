@@ -141,3 +141,73 @@ describe('remove — a space keeps its default', () => {
     await expect(makeService(false, 3).remove({ id: 'wf-1', organizationId: ORG })).rejects.toThrow(/task/i);
   });
 });
+
+/**
+ * Deleting a step must delete every route TO it.
+ *
+ * It used to delete only the row, leaving siblings pointing at a key that no
+ * longer existed. Invisible until the validator arrived, then fatal: a dangling
+ * target is an unknown_transition, so ONE deletion refused the whole task type
+ * the next time anyone tried to offer it. A real database already had a flow
+ * broken this way — a Cancelled step removed, every route to it left behind.
+ */
+describe('removeStatus — routes to the deleted step go with it', () => {
+  const ORG = 'org-1';
+
+  const makeService = (rows: { id: string; key: string; transitions: string[] }[], taskCount = 0) => {
+    const deleted: string[] = [];
+    const updated: { id: string; transitions: string[] }[] = [];
+    const prisma: any = {
+      statusWorkflow: { findUnique: async () => ({ id: 'wf-1', organizationId: ORG }) },
+      workflowStatus: {
+        findUnique: async ({ where }: any) => {
+          const r = rows.find((x) => x.id === where.id);
+          return r ? { ...r, workflowId: 'wf-1', name: r.key } : null;
+        },
+        findMany: async ({ where }: any) =>
+          rows.filter((r) => r.transitions.includes(where.transitions.has) && !deleted.includes(r.id)),
+        delete: async ({ where }: any) => { deleted.push(where.id); return {}; },
+        update: async ({ where, data }: any) => { updated.push({ id: where.id, transitions: data.transitions }); return {}; },
+      },
+      task: { count: async () => taskCount },
+      $transaction: async (fn: any) => fn(prisma),
+    };
+    const svc = new WorkflowsService(prisma, { invalidate: async () => {} } as any);
+    return { svc, deleted, updated };
+  };
+
+  it('strips the deleted key from every sibling that pointed at it', async () => {
+    const { svc, deleted, updated } = makeService([
+      { id: 's1', key: 'OPEN', transitions: ['DOING', 'CANCELED'] },
+      { id: 's2', key: 'DOING', transitions: ['DONE', 'CANCELED'] },
+      { id: 's3', key: 'CANCELED', transitions: [] },
+    ]);
+    await svc.removeStatus({ workflowId: 'wf-1', statusId: 's3', organizationId: ORG });
+
+    expect(deleted).toEqual(['s3']);
+    expect(updated).toEqual([
+      { id: 's1', transitions: ['DOING'] },
+      { id: 's2', transitions: ['DONE'] },
+    ]);
+  });
+
+  it('leaves siblings alone when nothing pointed at the deleted step', async () => {
+    // A step nothing routes to — removing it changes no other row.
+    const { svc, deleted, updated } = makeService([
+      { id: 's1', key: 'OPEN', transitions: ['DONE'] },
+      { id: 's2', key: 'ORPHAN', transitions: [] },
+      { id: 's3', key: 'DONE', transitions: [] },
+    ]);
+    await svc.removeStatus({ workflowId: 'wf-1', statusId: 's2', organizationId: ORG });
+    expect(deleted).toEqual(['s2']);
+    expect(updated).toEqual([]);
+  });
+
+  it('still refuses to delete a step tasks are sitting in', async () => {
+    const { svc, deleted } = makeService([{ id: 's1', key: 'OPEN', transitions: [] }], 4);
+    await expect(
+      svc.removeStatus({ workflowId: 'wf-1', statusId: 's1', organizationId: ORG }),
+    ).rejects.toThrow(/task/i);
+    expect(deleted).toEqual([]);
+  });
+});

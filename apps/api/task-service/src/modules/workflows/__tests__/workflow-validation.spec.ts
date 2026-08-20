@@ -137,3 +137,69 @@ describe('validateWorkflow', () => {
     });
   });
 });
+
+/**
+ * The refusal a person actually reads.
+ *
+ * `validateWorkflow` returns one entry per fault, which is right for an editor
+ * that marks each step and wrong for a toast. A six-step flow with no
+ * transitions produced TEN near-identical sentences on one line — the thing a
+ * user reported as unreadable, and they were right: the repetition hides the
+ * one fact that matters.
+ */
+describe('summarizeWorkflowProblems', () => {
+  const { summarizeWorkflowProblems, validateWorkflow: v } = require('@hbcfield/shared');
+
+  const noTransitions = [
+    { key: 'NEW', name: 'New', position: 0, transitions: [] },
+    { key: 'ASSIGNED', name: 'Assigned', position: 1, transitions: [] },
+    { key: 'EN_ROUTE', name: 'En Route', position: 2, transitions: [] },
+    { key: 'ARRIVED', name: 'Arrived', position: 3, transitions: [] },
+    { key: 'WORKING', name: 'Working', position: 4, transitions: [] },
+    { key: 'DONE', name: 'Done', position: 5, isFinal: true, transitions: [] },
+  ];
+
+  it('says nothing when there is nothing wrong', () => {
+    expect(summarizeWorkflowProblems([])).toBe('');
+  });
+
+  it('collapses ten sentences into one short statement', () => {
+    const problems = v(noTransitions);
+    expect(problems.length).toBeGreaterThanOrEqual(10);
+    const summary = summarizeWorkflowProblems(problems);
+    expect(summary.length).toBeLessThan(200);
+    expect(summary).toContain('5 steps have no next step');
+    expect(summary).toContain('cannot be reached');
+  });
+
+  it('uses the step NAME, not its key — the key reads like a fault itself', () => {
+    const summary = summarizeWorkflowProblems(v(noTransitions));
+    expect(summary).toContain('En Route');
+    expect(summary).not.toContain('EN_ROUTE');
+  });
+
+  it('trims a long list rather than naming thirty steps', () => {
+    const summary = summarizeWorkflowProblems(v(noTransitions));
+    expect(summary).toMatch(/and \d+ more/);
+  });
+
+  it('reads naturally when only one step is at fault', () => {
+    const one = [
+      { key: 'A', name: 'Open', position: 0, transitions: ['B'] },
+      { key: 'B', name: 'Doing', position: 1, transitions: [] },
+      { key: 'C', name: 'Done', position: 2, isFinal: true, transitions: [] },
+    ];
+    // Singular, not "1 steps have no next step".
+    expect(summarizeWorkflowProblems(v(one))).toBe('Doing has no next step; nothing leads to Done');
+  });
+
+  it('leads with the fault that has no step to blame', () => {
+    const endless = [
+      { key: 'A', name: 'Open', position: 0, transitions: ['B'] },
+      { key: 'B', name: 'Doing', position: 1, transitions: ['A'] },
+    ];
+    expect(summarizeWorkflowProblems(v(endless))).toBe(
+      'no step is marked as finished, so nothing can be completed',
+    );
+  });
+});

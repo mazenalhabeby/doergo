@@ -37,6 +37,8 @@ export interface WorkflowProblem {
   code: WorkflowProblemCode;
   /** The status this is about, where one is to blame. */
   statusKey?: string;
+  /** What that status is CALLED — what a reader recognises, not its key. */
+  statusName?: string;
   /** Ready to read: says what is wrong and, where it can, which step. */
   message: string;
 }
@@ -69,7 +71,12 @@ export function validateWorkflow(statuses: ValidatableStatus[] | null | undefine
   const seen = new Set<string>();
   for (const s of list) {
     if (seen.has(s.key)) {
-      problems.push({ code: 'duplicate_key', statusKey: s.key, message: `Two steps share the key "${s.key}".` });
+      problems.push({
+        code: 'duplicate_key',
+        statusKey: s.key,
+        statusName: label(s),
+        message: `Two steps share the key "${s.key}".`,
+      });
     }
     seen.add(s.key);
   }
@@ -86,6 +93,7 @@ export function validateWorkflow(statuses: ValidatableStatus[] | null | undefine
         problems.push({
           code: 'unknown_transition',
           statusKey: s.key,
+          statusName: label(s),
           message: `"${label(s)}" points to a step that does not exist ("${target}").`,
         });
       }
@@ -100,6 +108,7 @@ export function validateWorkflow(statuses: ValidatableStatus[] | null | undefine
       problems.push({
         code: 'dead_end',
         statusKey: s.key,
+        statusName: label(s),
         message: `"${label(s)}" has no next step and is not marked finished — a task here could not move again.`,
       });
     }
@@ -126,6 +135,7 @@ export function validateWorkflow(statuses: ValidatableStatus[] | null | undefine
       problems.push({
         code: 'unreachable',
         statusKey: s.key,
+        statusName: label(s),
         message: `Nothing leads to "${label(s)}", so no task can ever be in it.`,
       });
     }
@@ -137,4 +147,75 @@ export function validateWorkflow(statuses: ValidatableStatus[] | null | undefine
 /** Shorthand for the places that only need a yes or no. */
 export function isWorkflowUsable(statuses: ValidatableStatus[] | null | undefined): boolean {
   return validateWorkflow(statuses).length === 0;
+}
+
+/**
+ * The same problems, as one short sentence a person can read.
+ *
+ * `validateWorkflow` returns one entry per fault, which is right for an editor
+ * that marks each step — and wrong for a toast. Ten steps with no route out
+ * produced ten near-identical sentences in a single line, which nobody reads
+ * and which hides the one fact that matters: what to go and fix.
+ *
+ * Grouped by kind, with the steps named once. Long lists are trimmed, because a
+ * refusal naming thirty steps is the same wall in a different shape.
+ */
+export function summarizeWorkflowProblems(problems: WorkflowProblem[], maxNamed = 3): string {
+  if (problems.length === 0) return '';
+
+  // The NAME, because that is what the reader is looking at. The key is what
+  // the machine uses, and "EN_ROUTE" in a sentence reads like a fault in itself.
+  const named = (code: WorkflowProblemCode): string[] => [
+    ...new Set(
+      problems
+        .filter((p) => p.code === code && (p.statusName || p.statusKey))
+        .map((p) => p.statusName || p.statusKey!),
+    ),
+  ];
+
+  const list = (keys: string[]): string =>
+    keys.length <= maxNamed
+      ? keys.join(', ')
+      : `${keys.slice(0, maxNamed).join(', ')} and ${keys.length - maxNamed} more`;
+
+  const parts: string[] = [];
+
+  if (problems.some((p) => p.code === 'empty')) parts.push('it has no steps yet');
+  if (problems.some((p) => p.code === 'no_final')) {
+    parts.push('no step is marked as finished, so nothing can be completed');
+  }
+
+  const dead = named('dead_end');
+  if (dead.length > 0) {
+    parts.push(
+      dead.length === 1
+        ? `${list(dead)} has no next step`
+        : `${dead.length} steps have no next step (${list(dead)})`,
+    );
+  }
+
+  const unreachable = named('unreachable');
+  if (unreachable.length > 0) {
+    parts.push(
+      unreachable.length === 1
+        ? `nothing leads to ${list(unreachable)}`
+        : `${unreachable.length} steps cannot be reached (${list(unreachable)})`,
+    );
+  }
+
+  const unknown = named('unknown_transition');
+  if (unknown.length > 0) {
+    parts.push(
+      unknown.length === 1
+        ? `${list(unknown)} points at a step that does not exist`
+        : `${unknown.length} steps point at steps that do not exist (${list(unknown)})`,
+    );
+  }
+
+  const dupes = named('duplicate_key');
+  if (dupes.length > 0) parts.push(`two steps share a key (${list(dupes)})`);
+
+  // Joined with semicolons rather than full stops: it is one statement about
+  // one task type, not a list of separate findings.
+  return parts.join('; ');
 }

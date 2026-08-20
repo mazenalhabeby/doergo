@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
-import { success, missingModulesForWorkflow, explainModuleRequirement, validateWorkflow, spaceMayOffer, isTypeCapability } from '@hbcfield/shared';
+import { success, missingModulesForWorkflow, explainModuleRequirement, validateWorkflow, summarizeWorkflowProblems, spaceMayOffer, isTypeCapability } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 
@@ -652,7 +652,33 @@ export class WorkflowsService {
       );
     }
 
-    await this.prisma.workflowStatus.delete({ where: { id: data.statusId } });
+    /*
+      Deleting a step also deletes every route TO it.
+
+      It used to delete only the row, leaving its siblings pointing at a key
+      that no longer existed. That was invisible until the validator arrived,
+      and then it was fatal: a dangling target is an unknown_transition, so one
+      deletion refused the whole task type the next time anyone tried to offer
+      it. One of the seeded flows in a real database was already broken this
+      way — a Cancelled step removed, and every route to it left behind.
+
+      In a transaction, because a half-done version of this is exactly the state
+      it is meant to prevent.
+    */
+    await this.prisma.$transaction(async (tx) => {
+      await tx.workflowStatus.delete({ where: { id: data.statusId } });
+
+      const pointingAtIt = await tx.workflowStatus.findMany({
+        where: { workflowId: data.workflowId, transitions: { has: existing.key } },
+        select: { id: true, transitions: true },
+      });
+      for (const sibling of pointingAtIt) {
+        await tx.workflowStatus.update({
+          where: { id: sibling.id },
+          data: { transitions: sibling.transitions.filter((k) => k !== existing.key) },
+        });
+      }
+    });
 
     await this.workflowCache.invalidate(data.organizationId);
     return success(null, 'Status deleted successfully');
@@ -750,8 +776,11 @@ export class WorkflowsService {
     */
     const problems = validateWorkflow(workflow.statuses);
     if (problems.length > 0) {
+      // Summarised, not listed. One sentence per fault meant ten near-identical
+      // sentences in a toast, which hides the one fact that matters. The editor
+      // still marks each step individually, where per-step detail belongs.
       throw new BadRequestException(
-        `This task type is not finished: ${problems.map((p) => p.message).join(' ')}`,
+        `This task type is not finished — ${summarizeWorkflowProblems(problems)}.`,
       );
     }
 

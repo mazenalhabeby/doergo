@@ -3715,10 +3715,11 @@
         "saveFailed": "Workflow konnte nicht gespeichert werden",
         "createFailedGeneric": "Workflow konnte nicht erstellt werden"
       },
-      "noFinalStatus": "Markieren Sie einen Schritt als abgeschlossen — sonst kann bei diesem Aufgabentyp nichts je fertiggestellt werden.",
       "noTemplates": "Keine Startabläufe verfügbar.",
       "fields": "Felder, die bei dieser Aufgabenart erfasst werden",
-      "typeCapabilities": "Diese Aufgabenart nutzt"
+      "typeCapabilities": "Diese Aufgabenart nutzt",
+      "problemsTitle": "Diese Aufgabenart ist noch nicht verwendbar",
+      "moreProblems": "und {{count}} weitere"
     },
     "page": {
       "title": "Aufgabentypen",

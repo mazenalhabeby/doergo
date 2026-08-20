@@ -3690,10 +3690,11 @@
         "saveFailed": "Échec de l'enregistrement du flux de travail",
         "createFailedGeneric": "Échec de la création du flux de travail"
       },
-      "noFinalStatus": "Marquez une étape comme terminée — sinon rien ne pourra jamais être achevé sur ce type de tâche.",
       "noTemplates": "Aucun flux de départ disponible.",
       "fields": "Champs recueillis sur ce type de tâche",
-      "typeCapabilities": "Ce type de tâche utilise"
+      "typeCapabilities": "Ce type de tâche utilise",
+      "problemsTitle": "Ce type de tâche n’est pas encore utilisable",
+      "moreProblems": "et {{count}} de plus"
     },
     "page": {
       "title": "Types de tâche",

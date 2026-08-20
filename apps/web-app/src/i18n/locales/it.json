@@ -3690,10 +3690,11 @@
         "saveFailed": "Impossibile salvare il flusso di lavoro",
         "createFailedGeneric": "Impossibile creare il flusso di lavoro"
       },
-      "noFinalStatus": "Contrassegna un passaggio come concluso, altrimenti nulla in questo tipo di attività potrà mai essere completato.",
       "noTemplates": "Nessun flusso iniziale disponibile.",
       "fields": "Campi raccolti su questo tipo di attività",
-      "typeCapabilities": "Questo tipo di attività usa"
+      "typeCapabilities": "Questo tipo di attività usa",
+      "problemsTitle": "Questo tipo di attività non è ancora utilizzabile",
+      "moreProblems": "e altri {{count}}"
     },
     "page": {
       "title": "Tipi di attività",

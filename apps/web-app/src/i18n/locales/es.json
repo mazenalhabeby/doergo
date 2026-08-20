@@ -3699,10 +3699,11 @@
         "saveFailed": "No se pudo guardar el flujo de trabajo",
         "createFailedGeneric": "No se pudo crear el flujo de trabajo"
       },
-      "noFinalStatus": "Marca un paso como finalizado; de lo contrario, nada en este tipo de tarea podrá completarse.",
       "noTemplates": "No hay flujos iniciales disponibles.",
       "fields": "Campos que se recogen en este tipo de tarea",
-      "typeCapabilities": "Este tipo de tarea usa"
+      "typeCapabilities": "Este tipo de tarea usa",
+      "problemsTitle": "Este tipo de tarea todavía no se puede usar",
+      "moreProblems": "y {{count}} más"
     },
     "page": {
       "title": "Tipos de tarea",

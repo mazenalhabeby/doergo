@@ -3715,10 +3715,11 @@
         "saveFailed": "Failed to save workflow",
         "createFailedGeneric": "Failed to create workflow"
       },
-      "noFinalStatus": "Mark a step as finished — otherwise nothing on this task type can ever be completed.",
       "noTemplates": "No starter flows available.",
       "fields": "Fields collected on this task type",
-      "typeCapabilities": "This task type uses"
+      "typeCapabilities": "This task type uses",
+      "problemsTitle": "This task type cannot be used yet",
+      "moreProblems": "and {{count}} more"
     },
     "page": {
       "title": "Task Types",

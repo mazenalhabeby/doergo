@@ -8,7 +8,7 @@ import { Plus, X, Loader2, AlertCircle, Upload } from "lucide-react"
 
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { resolveTransitions, toStatusKey } from "@/lib/workflow-transitions"
-import { workflowAdvice, TYPE_CAPABILITY_MODULE, STEP_CAPABILITY_MODULE } from "@hbcfield/shared/client"
+import { workflowAdvice, validateWorkflow, TYPE_CAPABILITY_MODULE, STEP_CAPABILITY_MODULE } from "@hbcfield/shared/client"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
@@ -384,7 +384,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
     a refusal: a two-step flow is a legitimate choice, and an editor that argues
     with every decision stops being read.
   */
-  const advice = workflowAdvice(
+  const asFlow = () =>
     statuses.map((st, i) => ({
       key: toKey(st.name),
       name: st.name,
@@ -393,8 +393,19 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       isCanceled: st.isCanceled,
       transitions: resolveTransitions(statuses, i),
       capabilities: st.capabilities ?? [],
-    })),
-  )
+    }))
+
+  /*
+    What would REFUSE this task type, shown while it is being built.
+
+    It was only ever shown at the moment somebody tried to offer the type in a
+    space — as one sentence per fault, in a toast, which is unreadable at five
+    steps and useless at ten. Here there is room, and the person is already
+    looking at the thing to change.
+  */
+  const problems = validateWorkflow(asFlow())
+
+  const advice = workflowAdvice(asFlow())
 
   const handleStatusChange = useCallback((index: number, updates: Partial<StatusEntry>) => {
     setStatuses((prev) =>
@@ -582,14 +593,28 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         type is attached to a space. Guessing at transitions here to run the
         full validator would be asserting on data the builder does not have.
       */}
-      {statuses.length > 0 && !statuses.some((st) => st.isFinal) && (
-        <p className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          <AlertCircle className="mt-px size-3.5 shrink-0" />
-          {t(
-            "workflows.builder.noFinalStatus",
-            "Mark a step as finished — otherwise nothing on this task type can ever be completed.",
+      {statuses.length > 0 && problems.length > 0 && (
+        <div className="space-y-1 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-500/30 dark:bg-red-500/10">
+          <p className="text-xs font-medium text-red-800 dark:text-red-300">
+            {t("workflows.builder.problemsTitle", "This task type cannot be used yet")}
+          </p>
+          {problems.slice(0, 4).map((p, i) => (
+            <p key={`${p.code}-${p.statusKey ?? i}`} className="flex items-start gap-2 text-xs text-red-700 dark:text-red-400">
+              <AlertCircle className="mt-px size-3.5 shrink-0" />
+              {p.message}
+            </p>
+          ))}
+          {/* Four is enough to act on. The rest are usually the same fault
+              repeated, and a list of twelve is the wall this replaced. */}
+          {problems.length > 4 && (
+            <p className="pl-5 text-xs text-red-700/80 dark:text-red-400/80">
+              {t("workflows.builder.moreProblems", {
+                count: problems.length - 4,
+                defaultValue: "and {{count}} more",
+              })}
+            </p>
           )}
-        </p>
+        </div>
       )}
 
       {/*
