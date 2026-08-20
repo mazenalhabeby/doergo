@@ -1103,6 +1103,8 @@ export class AssetsService {
     typeId?: string;
     status?: string;
     search?: string;
+    /** Only whole machines, not the parts inside them. */
+    topLevel?: boolean;
     userId: string;
     userRole: string;
     organizationId: string;
@@ -1117,6 +1119,9 @@ export class AssetsService {
 
     const where: any = {
       organizationId: query.organizationId,
+      // A gearbox belongs under its press, not beside it. The kind's list shows
+      // whole machines; the parts inside are reached through the machine.
+      ...(query.topLevel ? { parentId: null } : {}),
     };
 
     if (query.categoryId) where.categoryId = query.categoryId;
