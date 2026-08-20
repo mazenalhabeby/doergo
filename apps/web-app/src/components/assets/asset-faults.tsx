@@ -60,6 +60,12 @@ export function AssetFaults({
     enabled: !!target,
   })
 
+  // A catalogue longer than the window we fetched would make perfectly good
+  // links read as "not in the catalogue" — the one message a technician must be
+  // able to trust. Say the truth instead: we did not look at all of it.
+  const catalogueTruncated =
+    !!partsQ.data?.meta && partsQ.data.meta.total > partsQ.data.rows.length
+
   const linkCol = linkColumn?.label ?? null
   const codeCol = target ? keyColumn(target)?.label ?? null : null
   const parts = target
@@ -234,7 +240,9 @@ export function AssetFaults({
                       </span>
                     ) : (
                       <span className="text-[11px] text-amber-600 dark:text-amber-400">
-                        {t("assetFaults.partMissing", "not in the parts catalogue")}
+                        {catalogueTruncated
+                          ? t("assetFaults.partUnchecked", "not among the first {{count}} — search the catalogue", { count: partsQ.data?.rows.length ?? 0 })
+                          : t("assetFaults.partMissing", "not in the catalogue")}
                       </span>
                     )}
                   </p>

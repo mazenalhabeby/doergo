@@ -6192,11 +6192,12 @@
     "empty": "Noch keine Fehlercodes",
     "cause": "Ursache",
     "fix": "Behebung",
-    "partMissing": "nicht im Teilekatalog",
+    "partMissing": "nicht im Katalog",
     "add": "Code hinzufügen",
     "noPart": "— kein Teil —",
     "sharedNote": "Diese Bibliothek gehört zur Art — alle lesen sie, und eine Änderung hier gilt für alle.",
-    "noCatalogue": "Noch kein Teilekatalog für diese Art — legen Sie einen an, dann sind seine Codes hier wählbar."
+    "noCatalogue": "Noch kein Teilekatalog für diese Art — legen Sie einen an, dann sind seine Codes hier wählbar.",
+    "partUnchecked": "nicht unter den ersten {{count}} — Katalog durchsuchen"
   },
   "assetStructure": {
     "title": "Darin",

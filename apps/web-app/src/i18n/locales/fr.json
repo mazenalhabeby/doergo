@@ -6167,11 +6167,12 @@
     "empty": "Aucun code défaut",
     "cause": "Cause",
     "fix": "Solution",
-    "partMissing": "absent du catalogue de pièces",
+    "partMissing": "absent du catalogue",
     "add": "Ajouter un code",
     "noPart": "— aucune pièce —",
     "sharedNote": "Cette bibliothèque appartient au type — tous la lisent, et une modification ici vaut pour tous.",
-    "noCatalogue": "Pas encore de catalogue de pièces sur ce type — créez-en un et ses codes seront sélectionnables ici."
+    "noCatalogue": "Pas encore de catalogue de pièces sur ce type — créez-en un et ses codes seront sélectionnables ici.",
+    "partUnchecked": "pas parmi les {{count}} premiers — cherchez dans le catalogue"
   },
   "assetStructure": {
     "title": "À l’intérieur",

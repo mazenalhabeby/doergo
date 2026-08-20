@@ -27,8 +27,40 @@ export interface StructureNode {
   children: StructureNode[];
 }
 
+/** Nobody may ask for more than this in one request, however they ask. */
+const MAX_PAGE = 200;
+
 @Injectable()
 export class AssetsService {
+  /**
+   * Who may read, and who may change.
+   *
+   * This check was written out 25 times, each with its own message and its own
+   * `as any` cast. Once is enough: a rule copied 25 times is a rule that will
+   * eventually be copied wrong, and the cast hid that the caller's type never
+   * admitted the flag it was reading.
+   */
+  private assertMay(
+    actor: { userRole: string; canViewAllTasks?: boolean },
+    doing: string,
+  ): void {
+    if (actor.userRole === Role.ADMIN || actor.canViewAllTasks) return;
+    throw new ForbiddenException(`You do not have permission to ${doing}`);
+  }
+
+  /**
+   * A page size somebody actually gets.
+   *
+   * `limit || 20` honoured whatever arrived, so ?limit=100000 returned the
+   * table. Clamped in the service rather than only at the edge, because the
+   * queue path reaches these methods without passing a DTO.
+   */
+  private pageSize(limit: unknown, fallback = 20): number {
+    const n = Number(limit);
+    if (!Number.isFinite(n) || n < 1) return fallback;
+    return Math.min(Math.floor(n), MAX_PAGE);
+  }
+
   constructor(private readonly prisma: PrismaService) {}
 
   // ============================================
@@ -50,9 +82,7 @@ export class AssetsService {
     organizationId: string;
   }) {
     // Only CLIENT and DISPATCHER can create categories
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can create asset categories');
-    }
+    this.assertMay(data as any, 'create asset categories');
 
     // A kind belongs to a space, so the space must be one of THIS org's. Without
     // this check a caller could hang their kinds off another tenant's space by
@@ -111,9 +141,7 @@ export class AssetsService {
     organizationId: string;
     spaceId?: string;
   }) {
-    if (query.userRole !== Role.ADMIN && !(query as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view asset categories');
-    }
+    this.assertMay(query as any, 'view asset categories');
 
     const categories = await this.prisma.assetCategory.findMany({
       // Asking for a space returns THAT space's kinds only. Asking for none
@@ -145,9 +173,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update asset categories');
-    }
+    this.assertMay(data as any, 'update asset categories');
 
     const category = await this.prisma.assetCategory.findUnique({
       where: { id: data.id },
@@ -207,9 +233,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can delete asset categories');
-    }
+    this.assertMay(data as any, 'delete asset categories');
 
     const category = await this.prisma.assetCategory.findUnique({
       where: { id: data.id },
@@ -253,9 +277,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can create asset types');
-    }
+    this.assertMay(data as any, 'create asset types');
 
     // Verify category exists and belongs to org
     const category = await this.prisma.assetCategory.findUnique({
@@ -308,9 +330,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (query.userRole !== Role.ADMIN && !(query as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view asset types');
-    }
+    this.assertMay(query as any, 'view asset types');
 
     // Verify category belongs to org
     const category = await this.prisma.assetCategory.findUnique({
@@ -347,9 +367,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update asset types');
-    }
+    this.assertMay(data as any, 'update asset types');
 
     const type = await this.prisma.assetType.findUnique({
       where: { id: data.id },
@@ -404,9 +422,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can delete asset types');
-    }
+    this.assertMay(data as any, 'delete asset types');
 
     const type = await this.prisma.assetType.findUnique({
       where: { id: data.id },
@@ -510,9 +526,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view assets');
-    }
+    this.assertMay(data as any, 'view assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     const activities = await this.prisma.assetActivity.findMany({
@@ -541,9 +555,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     const body = (data.body ?? '').trim();
@@ -606,9 +618,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view assets');
-    }
+    this.assertMay(data as any, 'view assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     const take = Math.min(Math.max(data.limit ?? 100, 1), 200);
@@ -655,9 +665,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
 
     const asset = await this.prisma.asset.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
@@ -711,9 +719,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     const { count } = await this.prisma.assetMoney.deleteMany({
@@ -742,9 +748,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view assets');
-    }
+    this.assertMay(data as any, 'view assets');
     const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const page = Math.max(1, data.page ?? 1);
@@ -787,9 +791,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
     const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const values = normalizeListRow(list, data.values);
@@ -826,9 +828,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     // Scoped to the ORG, then re-checked against the resolved owner below: a
@@ -867,9 +867,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
     const asset = await this.assetInOrg(data.id, data.organizationId);
 
     // Either this record's own row, or a row of a catalogue this record's kind
@@ -935,9 +933,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view assets');
-    }
+    this.assertMay(data as any, 'view assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     // One recursive walk down, depth-bounded so a corrupted parent chain costs
@@ -1049,9 +1045,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
     await this.assetInOrg(data.id, data.organizationId);
 
     const parentId = data.parentId?.trim() || null;
@@ -1077,8 +1071,10 @@ export class AssetsService {
         }
         if (seen.has(cursor)) break;
         seen.add(cursor);
-        const next: { parentId: string | null } | null = await this.prisma.asset.findUnique({
-          where: { id: cursor },
+        // Scoped: an unscoped walk follows a parent chain into another tenant's
+        // records, and the ids it reads are the ids somebody guessed.
+        const next: { parentId: string | null } | null = await this.prisma.asset.findFirst({
+          where: { id: cursor, organizationId: data.organizationId },
           select: { parentId: true },
         });
         cursor = next?.parentId ?? null;
@@ -1115,9 +1111,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can create assets');
-    }
+    this.assertMay(data as any, 'create assets');
 
     // Verify category if provided
     if (data.categoryId) {
@@ -1191,12 +1185,10 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (query.userRole !== Role.ADMIN && !(query as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view assets');
-    }
+    this.assertMay(query as any, 'view assets');
 
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = Math.max(1, query.page || 1);
+    const limit = this.pageSize(query.limit);
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -1245,9 +1237,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view assets');
-    }
+    this.assertMay(data as any, 'view assets');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1307,9 +1297,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can update assets');
-    }
+    this.assertMay(data as any, 'update assets');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1409,9 +1397,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can delete assets');
-    }
+    this.assertMay(data as any, 'delete assets');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1450,9 +1436,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
-      throw new ForbiddenException('Only clients and dispatchers can view maintenance history');
-    }
+    this.assertMay(data as any, 'view maintenance history');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1466,8 +1450,8 @@ export class AssetsService {
       throw new ForbiddenException('Asset does not belong to your organization');
     }
 
-    const page = data.page || 1;
-    const limit = data.limit || 20;
+    const page = Math.max(1, data.page || 1);
+    const limit = this.pageSize(data.limit);
     const skip = (page - 1) * limit;
 
     const [tasks, total] = await Promise.all([

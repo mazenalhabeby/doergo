@@ -6193,11 +6193,12 @@
     "empty": "No fault codes yet",
     "cause": "Cause",
     "fix": "Fix",
-    "partMissing": "not in the parts catalogue",
+    "partMissing": "not in the catalogue",
     "add": "Add a code",
     "noPart": "— no part —",
     "sharedNote": "This library belongs to the kind — every one of them reads it, and a change here changes it for all.",
-    "noCatalogue": "No parts catalogue on this kind yet — add one and its codes can be picked here."
+    "noCatalogue": "No parts catalogue on this kind yet — add one and its codes can be picked here.",
+    "partUnchecked": "not among the first {{count}} — search the catalogue"
   },
   "assetStructure": {
     "title": "Inside",

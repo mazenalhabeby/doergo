@@ -6167,11 +6167,12 @@
     "empty": "Nessun codice di errore",
     "cause": "Causa",
     "fix": "Soluzione",
-    "partMissing": "non è nel catalogo ricambi",
+    "partMissing": "non è nel catalogo",
     "add": "Aggiungi un codice",
     "noPart": "— nessun ricambio —",
     "sharedNote": "Questa libreria appartiene al tipo — tutti la leggono, e una modifica qui vale per tutti.",
-    "noCatalogue": "Nessun catalogo ricambi su questo tipo — creane uno e i suoi codici saranno selezionabili qui."
+    "noCatalogue": "Nessun catalogo ricambi su questo tipo — creane uno e i suoi codici saranno selezionabili qui.",
+    "partUnchecked": "non tra i primi {{count}} — cerca nel catalogo"
   },
   "assetStructure": {
     "title": "Dentro",

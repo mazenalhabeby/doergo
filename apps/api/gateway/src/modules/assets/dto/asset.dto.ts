@@ -9,6 +9,8 @@ import {
   IsEnum,
   IsDateString,
   IsBoolean,
+  Max,
+  Min,
   IsObject,
   ValidateNested,
 } from 'class-validator';
@@ -163,6 +165,8 @@ export class AssetQueryDto {
 
   @ApiPropertyOptional({ default: 20 })
   @IsOptional()
+  @Max(200)
+  @Min(1)
   limit?: number;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })

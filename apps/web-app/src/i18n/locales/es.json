@@ -6176,11 +6176,12 @@
     "empty": "Aún no hay códigos de error",
     "cause": "Causa",
     "fix": "Solución",
-    "partMissing": "no está en el catálogo de piezas",
+    "partMissing": "no está en el catálogo",
     "add": "Añadir un código",
     "noPart": "— sin pieza —",
     "sharedNote": "Esta biblioteca pertenece al tipo — todos la leen, y un cambio aquí vale para todos.",
-    "noCatalogue": "Este tipo aún no tiene catálogo de piezas — cree uno y sus códigos se podrán elegir aquí."
+    "noCatalogue": "Este tipo aún no tiene catálogo de piezas — cree uno y sus códigos se podrán elegir aquí.",
+    "partUnchecked": "no está entre los primeros {{count}} — busque en el catálogo"
   },
   "assetStructure": {
     "title": "Dentro",
