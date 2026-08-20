@@ -6109,6 +6109,12 @@
     "free": "Libero",
     "fieldsHint": "Tutto ciò che vale la pena annotare su questo.",
     "duplicateField": "Esiste già un campo con questo nome — rinominalo o verrà scartato.",
-    "noFields": "Questo tipo non registra nulla di extra."
+    "noFields": "Questo tipo non registra nulla di extra.",
+    "notFound": "Non trovato",
+    "noHistory": "Nessuna attività per questo.",
+    "notePh": "Aggiungi una nota — ispezione, danno, consegna…",
+    "handedOver": "Ha cambiato mano",
+    "someone": "Un membro",
+    "aClient": "Un cliente"
   }
 }

@@ -1519,6 +1519,16 @@ export interface MaintenanceHistoryItem {
   duration?: number | null;
 }
 
+export interface AssetActivity {
+  id: string;
+  type: string;
+  body: string | null;
+  authorId: string | null;
+  author?: { id: string; firstName: string; lastName: string } | null;
+  metadata?: unknown;
+  createdAt: string;
+}
+
 export interface CreateAssetCategoryInput {
   name: string;
   description?: string;
@@ -1766,6 +1776,20 @@ export const assetsApi = {
   },
 
   // Get maintenance history for an asset (completed tasks)
+  // What happened to one asset — notes people wrote, plus events such as it
+  // changing hands.
+  getActivities: async (assetId: string) => {
+    const response = await api.get<{ success: boolean; data: AssetActivity[] }>(`/assets/${assetId}/activities`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  addActivity: async (assetId: string, body: string) => {
+    const response = await api.post<{ success: boolean; data: AssetActivity }>(`/assets/${assetId}/activities`, { body });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   getAssetHistory: async (assetId: string) => {
     const response = await api.get<{ success: boolean; data: MaintenanceHistoryItem[] }>(
       `/assets/${assetId}/history`

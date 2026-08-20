@@ -6135,6 +6135,12 @@
     "free": "Free",
     "fieldsHint": "Anything worth recording about this one.",
     "duplicateField": "Already a field with this name — rename it or it will be dropped.",
-    "noFields": "This kind records nothing extra."
+    "noFields": "This kind records nothing extra.",
+    "notFound": "Not found",
+    "noHistory": "No tasks for this yet.",
+    "notePh": "Add a note — inspection, damage, handover…",
+    "handedOver": "Changed hands",
+    "someone": "A member",
+    "aClient": "A client"
   }
 }

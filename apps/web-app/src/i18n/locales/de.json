@@ -6134,6 +6134,12 @@
     "free": "Frei",
     "fieldsHint": "Alles, was zu diesem festgehalten werden sollte.",
     "duplicateField": "Es gibt bereits ein Feld mit diesem Namen — bitte umbenennen, sonst geht es verloren.",
-    "noFields": "Diese Art erfasst nichts Zusätzliches."
+    "noFields": "Diese Art erfasst nichts Zusätzliches.",
+    "notFound": "Nicht gefunden",
+    "noHistory": "Noch keine Aufgaben dazu.",
+    "notePh": "Notiz hinzufügen — Prüfung, Schaden, Übergabe…",
+    "handedOver": "Besitzer gewechselt",
+    "someone": "Ein Mitglied",
+    "aClient": "Ein Kunde"
   }
 }

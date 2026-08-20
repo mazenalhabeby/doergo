@@ -6109,6 +6109,12 @@
     "free": "Libre",
     "fieldsHint": "Tout ce qui mérite d’être noté sur celui-ci.",
     "duplicateField": "Un champ porte déjà ce nom — renommez-le, sinon il sera ignoré.",
-    "noFields": "Ce type n’enregistre rien de plus."
+    "noFields": "Ce type n’enregistre rien de plus.",
+    "notFound": "Introuvable",
+    "noHistory": "Aucune tâche pour le moment.",
+    "notePh": "Ajouter une note — inspection, dommage, remise…",
+    "handedOver": "A changé de mains",
+    "someone": "Un membre",
+    "aClient": "Un client"
   }
 }

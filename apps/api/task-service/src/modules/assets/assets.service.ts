@@ -467,6 +467,115 @@ export class AssetsService {
     return { holderUserId: null, customerId: null };
   }
 
+  /**
+   * Confirm an asset is this organization's before anything reads or writes it.
+   *
+   * Ids are guessable, so every activity call goes through here rather than
+   * trusting the id in the URL. Returns the row, since callers need it anyway.
+   */
+  private async assetInOrg(id: string, organizationId: string) {
+    const asset = await this.prisma.asset.findFirst({
+      where: { id, organizationId },
+      select: { id: true, holderUserId: true, customerId: true },
+    });
+    if (!asset) throw new NotFoundException('Asset not found in this organization');
+    return asset;
+  }
+
+  /**
+   * What happened to one asset, newest first.
+   *
+   * Authors are resolved in one query rather than per row — a timeline is the
+   * screen most likely to grow long, and N+1 here would be felt.
+   */
+  async listActivities(data: {
+    id: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can view assets');
+    }
+    await this.assetInOrg(data.id, data.organizationId);
+
+    const activities = await this.prisma.assetActivity.findMany({
+      where: { assetId: data.id },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    const authorIds = [...new Set(activities.map((a) => a.authorId).filter(Boolean))] as string[];
+    const authors = authorIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: authorIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : [];
+    const byId = new Map(authors.map((a) => [a.id, a]));
+
+    return success(activities.map((a) => ({ ...a, author: a.authorId ? byId.get(a.authorId) ?? null : null })));
+  }
+
+  /** Write a note against an asset. */
+  async addActivity(data: {
+    id: string;
+    body: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    if (data.userRole !== Role.ADMIN && !(data as any).canViewAllTasks) {
+      throw new ForbiddenException('Only clients and dispatchers can update assets');
+    }
+    await this.assetInOrg(data.id, data.organizationId);
+
+    const body = (data.body ?? '').trim();
+    if (!body) throw new BadRequestException('A note needs something in it');
+
+    const activity = await this.prisma.assetActivity.create({
+      data: {
+        organizationId: data.organizationId,
+        assetId: data.id,
+        type: 'NOTE',
+        body: body.slice(0, 4000),
+        authorId: data.userId,
+      },
+    });
+
+    return success(activity);
+  }
+
+  /**
+   * Record that an asset changed hands.
+   *
+   * Best effort: a timeline entry that fails must never fail the change it was
+   * describing, or moving a van to a different driver would error after the
+   * move had already been written.
+   */
+  private async logHolderChange(
+    assetId: string,
+    organizationId: string,
+    authorId: string,
+    from: { holderUserId: string | null; customerId: string | null },
+    to: { holderUserId: string | null; customerId: string | null },
+  ) {
+    if (from.holderUserId === to.holderUserId && from.customerId === to.customerId) return;
+    try {
+      await this.prisma.assetActivity.create({
+        data: {
+          organizationId,
+          assetId,
+          type: 'HOLDER_CHANGED',
+          authorId,
+          metadata: { from, to } as unknown as Prisma.InputJsonValue,
+        },
+      });
+    } catch {
+      // Deliberately swallowed — see above.
+    }
+  }
+
   async create(data: {
     name: string;
     serialNumber?: string;
@@ -705,6 +814,14 @@ export class AssetsService {
       }
     }
 
+    // Resolved before the write, so the OLD holder is still readable and the
+    // timeline entry can say what it changed from.
+    const holderChange =
+      data.holderUserId !== undefined || data.customerId !== undefined
+        ? await this.resolveHolder(data, data.organizationId)
+        : null;
+    const before = holderChange ? await this.assetInOrg(data.id, data.organizationId) : null;
+
     const updated = await this.prisma.asset.update({
       where: { id: data.id },
       data: {
@@ -723,8 +840,7 @@ export class AssetsService {
         ...(data.typeId !== undefined && { typeId: data.typeId }),
         // Holder is resolved together: sending either side re-decides both, so
         // moving a thing from a member to a client clears the member in one go.
-        ...((data.holderUserId !== undefined || data.customerId !== undefined) &&
-          (await this.resolveHolder(data, data.organizationId))),
+        ...(holderChange ?? {}),
         ...(data.details !== undefined && {
           details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
         }),
@@ -734,6 +850,16 @@ export class AssetsService {
         type: { select: { id: true, name: true } },
       },
     });
+
+    if (holderChange && before) {
+      await this.logHolderChange(
+        data.id,
+        data.organizationId,
+        data.userId,
+        { holderUserId: before.holderUserId, customerId: before.customerId },
+        holderChange,
+      );
+    }
 
     return success(updated);
   }

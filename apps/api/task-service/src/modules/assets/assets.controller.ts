@@ -42,4 +42,14 @@ export class AssetsController {
   async getMaintenanceHistory(@Payload() data: any) {
     return this.assetsService.getMaintenanceHistory(data);
   }
+
+  @MessagePattern({ cmd: 'list_asset_activities' })
+  async listActivities(@Payload() data: any) {
+    return this.assetsService.listActivities(data);
+  }
+
+  @MessagePattern({ cmd: 'add_asset_activity' })
+  async addActivity(@Payload() data: any) {
+    return this.assetsService.addActivity(data);
+  }
 }

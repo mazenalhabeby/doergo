@@ -1068,6 +1068,33 @@ model LocationHistory {
 }
 
 // Dynamic category created by organization (e.g., "HVAC", "Electrical", "Plumbing")
+/// What happened to one asset: notes people wrote, and the events worth keeping
+/// (who it passed to, when). Mirrors CustomerActivity, minus the reminder
+/// machinery, which belongs to sales rather than to a thing you own.
+model AssetActivity {
+  id             String @id @default(cuid())
+  organizationId String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  /// NOTE (somebody wrote it) or a system event such as HOLDER_CHANGED.
+  type String @default("NOTE")
+  body String?
+
+  /// Who logged it — a plain marker id with no FK, so removing a member never
+  /// blocks and never erases the record of what they did.
+  authorId String?
+
+  /// Event detail, e.g. { from, to } on a holder change.
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([assetId, createdAt])
+  @@map("asset_activities")
+}
+
 model AssetCategory {
   id          String  @id @default(cuid())
   name        String
@@ -1166,6 +1193,8 @@ model Asset {
   // added ad hoc on the record. JSON so a new field costs no migration —
   // mirrors CustomerUnit.details.
   details Json?
+
+  activities AssetActivity[]
 
   // Tasks linked to this asset (maintenance history)
   tasks          Task[]

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, ChevronRight, Package, Plus, Pencil, Trash2, User } from "lucide-react"
@@ -140,6 +141,7 @@ function KindContents({
   onChanged: () => void
 }) {
   const { t } = useTranslation()
+  const router = useRouter()
   const qc = useQueryClient()
   const shape = normalizeKindShape(kind.config)
 
@@ -195,15 +197,20 @@ function KindContents({
         <div className="space-y-2">
           {records.map((r) => (
             <div key={r.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
-                <Package className="h-4 w-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
-                {r.locationAddress && r.locationAddress !== r.name && (
-                  <p className="truncate text-xs text-muted-foreground">{r.locationAddress}</p>
-                )}
-              </div>
+              <button
+                onClick={() => router.push(`/assets/${r.id}`)}
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                  <Package className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{r.name}</p>
+                  {r.locationAddress && r.locationAddress !== r.name && (
+                    <p className="truncate text-xs text-muted-foreground">{r.locationAddress}</p>
+                  )}
+                </div>
+              </button>
               {shape.holder.enabled && <HolderBadge record={r} />}
               <AssetRecordDialog
                 spaceId={spaceId}

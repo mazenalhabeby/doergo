@@ -109,6 +109,41 @@ export class AssetsController {
     });
   }
 
+  // Both are ':id'-prefixed, so they cannot be swallowed by the ':id' route the
+  // way a literal segment would be.
+  @Get(':id/activities')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'What happened to this asset' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async listActivities(@Param('id') id: string, @Request() req: any) {
+    return this.assetsService.listActivities({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post(':id/activities')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Write a note against this asset' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async addActivity(
+    @Param('id') id: string,
+    @Body() body: { body?: string },
+    @Request() req: any,
+  ) {
+    return this.assetsService.addActivity({
+      id,
+      body: body?.body ?? '',
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id/history')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get maintenance history for an asset' })

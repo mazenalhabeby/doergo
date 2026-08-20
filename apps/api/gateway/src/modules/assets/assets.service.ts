@@ -32,4 +32,14 @@ export class AssetsService extends BaseGatewayService {
   async getMaintenanceHistory(data: Record<string, any>) {
     return this.send({ cmd: 'get_asset_maintenance_history' }, data);
   }
+
+  async listActivities(data: Record<string, any>) {
+    return this.send({ cmd: 'list_asset_activities' }, data);
+  }
+
+  // A note is small and wanted on screen immediately, so it goes straight to
+  // the service rather than through the queue — the same call shape as a read.
+  async addActivity(data: Record<string, any>) {
+    return this.send({ cmd: 'add_asset_activity' }, data);
+  }
 }
