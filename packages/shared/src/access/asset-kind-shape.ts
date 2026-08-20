@@ -43,6 +43,30 @@ export interface KindField {
   label: string;
 }
 
+/**
+ * What a column of a table is.
+ *
+ *   'text' plain
+ *   'key'  the code that identifies a row — "HYD-8842". A table with a key can
+ *          be pointed at by other tables.
+ *   'link' points at a row of another table, chosen from its keys rather than
+ *          typed. This is what ties a fault code to the part it needs.
+ *
+ * These replace the two hard-coded table types this once had. "Parts catalogue"
+ * and "Fault codes" were names in OUR code, so a customer who owned something
+ * else was stuck. A table with a key IS a catalogue; a table with a link to it
+ * IS a fault library — and a table linking suppliers to consumables works the
+ * same day somebody thinks of it, without us shipping anything.
+ */
+export type KindColumnType = 'text' | 'key' | 'link';
+
+export interface KindColumn {
+  label: string;
+  type: KindColumnType;
+  /** For 'link': the label of the table this points at. */
+  linkTo?: string;
+}
+
 /** Money in or money out. Rent comes in; a repair goes out. */
 export type MoneyDirection = 'in' | 'out';
 
@@ -65,21 +89,11 @@ export interface KindMoneyCategory {
  * it needs. A field answers "what is this one's floor"; a list answers "what is
  * in it", which is a different question and needs rows, not a value.
  */
-/**
- * What a table is FOR.
- *
- * 'parts'  a catalogue of spare parts, keyed by a code
- * 'faults' an error-code lookup: code -> what it means, why, what to do, which
- *          part. Maintenance systems keep this library against the equipment
- *          CLASS, not each machine, which is why it lives on the kind.
- * 'plain'  anything else the customer invents.
- */
-export type KindListRole = 'plain' | 'parts' | 'faults';
-
 export interface KindList {
   label: string;
-  columns: KindField[];
-  role: KindListRole;
+  columns: KindColumn[];
+  /** How the rows read: a grid, or a card each. A display choice, not a type. */
+  display: 'table' | 'cards';
   /**
    * Shared by every record of this kind, or filled in per record?
    *
@@ -194,32 +208,76 @@ export function normalizeKindShape(raw: unknown): KindShape {
     if (listSeen.has(key)) continue;
     listSeen.add(key);
 
+    // A kind saved before column types existed carries `role` instead. Upgrade
+    // it here rather than migrating the column: the shape is JSON that gets
+    // rewritten on every save anyway, and a reader that cannot cope with the
+    // older form would break every kind made before today.
+    const legacyRole = e.role === 'parts' || e.role === 'faults' ? e.role : null;
+
     const colSeen = new Set<string>();
-    const columns: KindField[] = [];
+    const columns: KindColumn[] = [];
     for (const col of Array.isArray(e.columns) ? e.columns : []) {
       if (columns.length >= KIND_SHAPE_LIMITS.maxColumns) break;
-      const colLabel = str((col as Record<string, unknown>)?.label, KIND_SHAPE_LIMITS.maxLabel);
+      const c = (col && typeof col === 'object' ? col : {}) as Record<string, unknown>;
+      const colLabel = str(c.label, KIND_SHAPE_LIMITS.maxLabel);
       if (!colLabel) continue;
       const colKey = colLabel.toLowerCase();
       if (colSeen.has(colKey)) continue;
       colSeen.add(colKey);
-      columns.push({ label: colLabel });
+
+      let type: KindColumnType =
+        c.type === 'key' || c.type === 'link' ? c.type : 'text';
+      let linkTo = str(c.linkTo, KIND_SHAPE_LIMITS.maxLabel) || undefined;
+
+      // Upgrade: a parts/faults table's "Code" was its key, and a faults
+      // table's "Part" pointed at the parts catalogue.
+      if (legacyRole && c.type === undefined) {
+        if (colKey === 'code') type = 'key';
+        if (legacyRole === 'faults' && colKey === 'part') type = 'link';
+      }
+      if (type !== 'link') linkTo = undefined;
+
+      columns.push({ label: colLabel, type, ...(linkTo ? { linkTo } : {}) });
     }
 
     // A table with no columns has nothing to put in it.
     if (columns.length === 0) continue;
 
-    const role: KindListRole =
-      e.role === 'parts' || e.role === 'faults' ? e.role : 'plain';
+    // At most one key: two rows identified two ways is no identity at all.
+    let keySeen = false;
+    for (const c of columns) {
+      if (c.type !== 'key') continue;
+      if (keySeen) c.type = 'text';
+      keySeen = true;
+    }
 
     lists.push({
       label,
       columns,
-      role,
-      // A fault library is reference data by nature: default it to shared so the
-      // common case needs no thought, while a plain table stays per record.
-      shared: typeof e.shared === 'boolean' ? e.shared : role !== 'plain',
+      display: e.display === 'cards' ? 'cards' : legacyRole === 'faults' ? 'cards' : 'table',
+      // Reference data is shared by nature; a table nobody points at defaults to
+      // per record. A key is the signal that other tables may point at it.
+      shared: typeof e.shared === 'boolean' ? e.shared : keySeen,
     });
+  }
+
+  // A link needs somewhere to point. One left without a target — upgraded from
+  // the old hard-coded types, or hand-edited — is aimed at the first other
+  // table that has a key, and demoted to text when there is none. A link that
+  // points nowhere would render an empty picker with no way to tell why.
+  const keyed = lists.filter((l) => l.columns.some((c) => c.type === 'key'));
+  for (const list of lists) {
+    for (const col of list.columns) {
+      if (col.type !== 'link') continue;
+      const named = col.linkTo && lists.some((l) => l.label.toLowerCase() === col.linkTo!.toLowerCase());
+      if (named) continue;
+      const fallback = keyed.find((l) => l.label !== list.label);
+      if (fallback) col.linkTo = fallback.label;
+      else {
+        col.type = 'text';
+        delete col.linkTo;
+      }
+    }
   }
 
   return {
@@ -348,30 +406,30 @@ export function listRowIsEmpty(values: Record<string, string>): boolean {
   return Object.values(values).every((v) => !v.trim());
 }
 
-/** The kind's parts catalogue, if it declares one. */
-export function partsList(shape: KindShape): KindList | null {
-  return shape.lists.find((l) => l.role === 'parts') ?? null;
+/** The column that identifies a row of this table, if it has one. */
+export function keyColumn(list: KindList): KindColumn | null {
+  return list.columns.find((c) => c.type === 'key') ?? null;
 }
 
-/** The kind's fault-code library, if it declares one. */
-export function faultsList(shape: KindShape): KindList | null {
-  return shape.lists.find((l) => l.role === 'faults') ?? null;
+/** Every column of this table that points at another table. */
+export function linkColumns(list: KindList): KindColumn[] {
+  return list.columns.filter((c) => c.type === 'link' && c.linkTo);
+}
+
+/** A table by name. Case-insensitive, because a link stores the label. */
+export function listByLabel(shape: KindShape, label: string): KindList | null {
+  const key = (label ?? '').trim().toLowerCase();
+  if (!key) return null;
+  return shape.lists.find((l) => l.label.toLowerCase() === key) ?? null;
 }
 
 /**
- * Which column of a table holds the part code that ties a fault to a part.
+ * Tables a link column may point at: any OTHER table that has a key.
  *
- * Matched by name rather than position so a customer may reorder or rename
- * around it; absent simply means the two are not linked, which is a valid
- * kind rather than an error.
+ * Self-links are excluded — a row pointing into its own table is a foot-gun
+ * with no use case here — and a table with no key cannot be pointed at, because
+ * there would be nothing to pick.
  */
-export function partLinkColumn(list: KindList): string | null {
-  const hit = list.columns.find((c) => c.label.trim().toLowerCase() === 'part');
-  return hit?.label ?? null;
-}
-
-/** Which column of the parts catalogue is its code. */
-export function partCodeColumn(list: KindList): string | null {
-  const hit = list.columns.find((c) => c.label.trim().toLowerCase() === 'code');
-  return hit?.label ?? list.columns[0]?.label ?? null;
+export function linkTargets(shape: KindShape, from: KindList): KindList[] {
+  return shape.lists.filter((l) => l.label !== from.label && keyColumn(l));
 }

@@ -6111,13 +6111,16 @@
     "listColumns": "Columnas",
     "listColumn": "Código",
     "listNeedsColumn": "Una tabla necesita al menos una columna, o se descarta.",
-    "rolePlain": "Una tabla",
-    "roleParts": "Catálogo de piezas",
-    "roleFaults": "Códigos de error",
     "sharedOn": "Igual para todos",
     "sharedOff": "Distinto en cada uno",
     "template": "Empezar desde un tipo ya hecho",
-    "templateHint": "Rellena los campos, el dinero y las tablas. Puede cambiarlo todo después."
+    "templateHint": "Rellena los campos, el dinero y las tablas. Puede cambiarlo todo después.",
+    "displayTable": "Como cuadrícula",
+    "displayCards": "Como tarjetas",
+    "colText": "Texto",
+    "colKey": "Código (identifica la fila)",
+    "colLink": "Apunta a otra tabla",
+    "noKeyHint": "Ninguna columna marcada como código — otras tablas no pueden apuntar a esta."
   },
   "assetRecords": {
     "intro": "Todo de este tipo en este espacio.",
@@ -6163,7 +6166,8 @@
     "empty": "Aún no hay nada",
     "noMatch": "Ninguna coincidencia",
     "gone": "Esa tabla ya no está en este tipo.",
-    "sharedNote": "Este es el catálogo del tipo — todos lo leen, y un cambio aquí vale para todos."
+    "sharedNote": "Este es el catálogo del tipo — todos lo leen, y un cambio aquí vale para todos.",
+    "isKey": "código"
   },
   "assetFaults": {
     "search": "Buscar un código o un síntoma…",

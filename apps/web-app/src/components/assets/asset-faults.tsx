@@ -6,7 +6,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Loader2, Package, Pencil, Plus, Search, ShieldAlert, Trash2, Wrench, X } from "lucide-react"
 
 import { assetsApi, type AssetListRow } from "@/lib/api"
-import { partLinkColumn, partCodeColumn, type KindList } from "@hbcfield/shared/client"
+import {
+  keyColumn, linkColumns, listByLabel,
+  type KindList, type KindShape,
+} from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
@@ -26,12 +29,12 @@ import { Skeleton } from "@/components/ui/skeleton"
  * to the equipment class, not to one machine.
  */
 export function AssetFaults({
-  assetId, list, parts,
+  assetId, list, shape,
 }: {
   assetId: string
   list: KindList
-  /** The kind's parts catalogue, when it declares one. */
-  parts: KindList | null
+  /** The whole kind, so a link column can find the table it points at. */
+  shape: KindShape
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -44,16 +47,22 @@ export function AssetFaults({
     queryFn: () => assetsApi.getRows(assetId, list.label, { search: search || undefined, limit: 100 }),
   })
 
-  // The whole catalogue, once: a fault names a part code, and looking each one
-  // up separately would be a request per row on screen.
+  // The first link column, whatever the customer called it, and the table it
+  // points at. Nothing here knows the words "part" or "fault".
+  const linkColumn = linkColumns(list)[0] ?? null
+  const target = linkColumn?.linkTo ? listByLabel(shape, linkColumn.linkTo) : null
+
+  // The whole target table, once: a row names a key, and resolving each one
+  // separately would be a request per row on screen.
   const partsQ = useQuery({
-    queryKey: ["asset-rows", assetId, parts?.label],
-    queryFn: () => assetsApi.getRows(assetId, parts!.label, { limit: 200 }),
-    enabled: !!parts,
+    queryKey: ["asset-rows", assetId, target?.label],
+    queryFn: () => assetsApi.getRows(assetId, target!.label, { limit: 200 }),
+    enabled: !!target,
   })
 
-  const linkCol = partLinkColumn(list)
-  const codeCol = parts ? partCodeColumn(parts) : null
+  const linkCol = linkColumn?.label ?? null
+  const codeCol = target ? keyColumn(target)?.label ?? null : null
+  const parts = target
   const partByCode = new Map<string, AssetListRow>()
   if (codeCol) {
     for (const row of partsQ.data?.rows ?? []) {
@@ -85,18 +94,18 @@ export function AssetFaults({
 
   // Every part code the catalogue knows, for the picker below.
   const partOptions = useMemo(() => {
-    if (!codeCol || !parts) return []
+    if (!codeCol || !target) return []
     return (partsQ.data?.rows ?? [])
       .map((r) => ({
         code: (r.values?.[codeCol] ?? "").trim(),
-        label: parts.columns
+        label: target.columns
           .filter((c) => c.label !== codeCol)
           .map((c) => (r.values?.[c.label] ?? "").trim())
           .filter(Boolean)
           .join(" · "),
       }))
       .filter((o) => o.code)
-  }, [partsQ.data, parts, codeCol])
+  }, [partsQ.data, target, codeCol])
 
   return (
     <div className="space-y-3">
@@ -126,6 +135,7 @@ export function AssetFaults({
           assetId={assetId}
           list={list}
           partOptions={partOptions}
+          linkCol={linkCol}
           onDone={() => { setEditing(null); refresh() }}
           onCancel={() => setEditing(null)}
         />
@@ -158,6 +168,7 @@ export function AssetFaults({
                   list={list}
                   existing={row}
                   partOptions={partOptions}
+                  linkCol={linkCol}
                   onDone={() => { setEditing(null); refresh() }}
                   onCancel={() => setEditing(null)}
                 />
@@ -252,12 +263,14 @@ export function AssetFaults({
  * the moment they least need it.
  */
 function FaultForm({
-  assetId, list, existing, partOptions, onDone, onCancel,
+  assetId, list, existing, partOptions, linkCol, onDone, onCancel,
 }: {
   assetId: string
   list: KindList
   existing?: AssetListRow
   partOptions: { code: string; label: string }[]
+  /** The column that points at another table, if this one has any. */
+  linkCol: string | null
   onDone: () => void
   onCancel: () => void
 }) {
@@ -268,7 +281,6 @@ function FaultForm({
     return start
   })
 
-  const linkCol = partLinkColumn(list)
   const set = (col: string, v: string) => setValues((s) => ({ ...s, [col]: v }))
 
   const save = useMutation({

@@ -6127,13 +6127,16 @@
     "listColumns": "Spalten",
     "listColumn": "Code",
     "listNeedsColumn": "Eine Tabelle braucht mindestens eine Spalte, sonst entfällt sie.",
-    "rolePlain": "Eine Tabelle",
-    "roleParts": "Teilekatalog",
-    "roleFaults": "Fehlercodes",
     "sharedOn": "Für alle gleich",
     "sharedOff": "Je Eintrag anders",
     "template": "Mit einer fertigen Art beginnen",
-    "templateHint": "Füllt Felder, Geld und Tabellen aus. Alles danach änderbar."
+    "templateHint": "Füllt Felder, Geld und Tabellen aus. Alles danach änderbar.",
+    "displayTable": "Als Raster",
+    "displayCards": "Als Karten",
+    "colText": "Text",
+    "colKey": "Code (identifiziert die Zeile)",
+    "colLink": "Verweist auf eine andere Tabelle",
+    "noKeyHint": "Keine Spalte als Code markiert — andere Tabellen können nicht darauf verweisen."
   },
   "assetRecords": {
     "intro": "Alles dieser Art in diesem Space.",
@@ -6179,7 +6182,8 @@
     "empty": "Noch nichts vorhanden",
     "noMatch": "Keine Treffer",
     "gone": "Diese Tabelle gehört nicht mehr zu dieser Art.",
-    "sharedNote": "Das ist der Katalog der Art — alle lesen ihn, und eine Änderung hier gilt für alle."
+    "sharedNote": "Das ist der Katalog der Art — alle lesen ihn, und eine Änderung hier gilt für alle.",
+    "isKey": "Code"
   },
   "assetFaults": {
     "search": "Code oder Symptom suchen…",

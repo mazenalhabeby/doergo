@@ -27,7 +27,27 @@ export interface KindTemplate {
 /** The columns a parts catalogue needs to be worth keeping. */
 export const PARTS_COLUMNS = ['Code', 'Name', 'Qty', 'Supplier'] as const;
 
-const cols = (labels: readonly string[]) => labels.map((label) => ({ label }));
+/** Record fields — a label each, no column type: those belong to tables. */
+const fields = (labels: readonly string[]) => labels.map((label) => ({ label }));
+
+/** Plain table columns. */
+const cols = (labels: readonly string[]) => labels.map((label) => ({ label, type: 'text' as const }));
+
+/**
+ * Columns for a catalogue: the first one identifies a row, so other tables can
+ * point at it. Nothing here is special-cased in the product — a key is a column
+ * type anybody can choose.
+ */
+const catalogue = (labels: readonly string[]) =>
+  labels.map((label, i) => ({ label, type: (i === 0 ? 'key' : 'text') as 'key' | 'text' }));
+
+/** Columns for a lookup that points at a catalogue. */
+const lookup = (labels: readonly string[], linkLabel: string, linkTo: string) =>
+  labels.map((label, i) => {
+    if (i === 0) return { label, type: 'key' as const };
+    if (label === linkLabel) return { label, type: 'link' as const, linkTo };
+    return { label, type: 'text' as const };
+  });
 
 export const KIND_TEMPLATES: KindTemplate[] = [
   {
@@ -38,7 +58,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       nameLabel: 'Machine name',
       hasAddress: false,
       holder: { enabled: true, label: 'Operator', members: true, clients: false },
-      fields: cols(['Maker', 'Model', 'Installed', 'Serial']),
+      fields: fields(['Maker', 'Model', 'Installed', 'Serial']),
       allowExtraFields: true,
       money: {
         enabled: true,
@@ -49,10 +69,10 @@ export const KIND_TEMPLATES: KindTemplate[] = [
         ],
       },
       lists: [
-        { label: 'Parts', role: 'parts', shared: true, columns: cols(PARTS_COLUMNS) },
+        { label: 'Parts', display: 'table', shared: true, columns: catalogue(PARTS_COLUMNS) },
         {
-          label: 'Fault codes', role: 'faults', shared: true,
-          columns: cols(['Code', 'Meaning', 'Cause', 'Fix', 'Part', 'Safety']),
+          label: 'Fault codes', display: 'cards', shared: true,
+          columns: lookup(['Code', 'Meaning', 'Cause', 'Fix', 'Part', 'Safety'], 'Part', 'Parts'),
         },
       ],
     },
@@ -65,7 +85,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       nameLabel: 'Flat',
       hasAddress: true,
       holder: { enabled: true, label: 'Resident', members: true, clients: true },
-      fields: cols(['Floor', 'Rooms', 'Size', 'Door code']),
+      fields: fields(['Floor', 'Rooms', 'Size', 'Door code']),
       allowExtraFields: true,
       money: {
         enabled: true,
@@ -76,7 +96,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
         ],
       },
       lists: [
-        { label: 'Keys', role: 'plain', shared: false, columns: cols(['Key', 'Held by']) },
+        { label: 'Keys', display: 'table', shared: false, columns: cols(['Key', 'Held by']) },
       ],
     },
   },
@@ -88,7 +108,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       nameLabel: 'Plate',
       hasAddress: false,
       holder: { enabled: true, label: 'Driver', members: true, clients: false },
-      fields: cols(['Make', 'Model', 'Year', 'Next test']),
+      fields: fields(['Make', 'Model', 'Year', 'Next test']),
       allowExtraFields: true,
       money: {
         enabled: true,
@@ -99,7 +119,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
         ],
       },
       lists: [
-        { label: 'Parts', role: 'parts', shared: true, columns: cols(PARTS_COLUMNS) },
+        { label: 'Parts', display: 'table', shared: true, columns: catalogue(PARTS_COLUMNS) },
       ],
     },
   },
@@ -111,7 +131,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       nameLabel: 'Tool',
       hasAddress: false,
       holder: { enabled: true, label: 'Held by', members: true, clients: false },
-      fields: cols(['Make', 'Model', 'Serial']),
+      fields: fields(['Make', 'Model', 'Serial']),
       allowExtraFields: true,
       money: { enabled: true, categories: [{ label: 'Repairs', direction: 'out' }] },
       lists: [],
@@ -125,7 +145,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       nameLabel: 'Name',
       hasAddress: true,
       holder: { enabled: true, label: 'Manager', members: true, clients: false },
-      fields: cols(['Type', 'Floors', 'Built']),
+      fields: fields(['Type', 'Floors', 'Built']),
       allowExtraFields: true,
       money: {
         enabled: true,
@@ -136,7 +156,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
         ],
       },
       lists: [
-        { label: 'Fault codes', role: 'faults', shared: true, columns: cols(['Code', 'Meaning', 'Cause', 'Fix', 'Part', 'Safety']) },
+        { label: 'Fault codes', display: 'cards', shared: true, columns: catalogue(['Code', 'Meaning', 'Cause', 'Fix', 'Safety']) },
       ],
     },
   },

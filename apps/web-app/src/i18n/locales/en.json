@@ -6128,13 +6128,16 @@
     "listColumns": "Columns",
     "listColumn": "Code",
     "listNeedsColumn": "A table needs at least one column, or it is dropped.",
-    "rolePlain": "A table",
-    "roleParts": "Parts catalogue",
-    "roleFaults": "Fault codes",
     "sharedOn": "Same for every one",
     "sharedOff": "Different on each",
     "template": "Start from a ready-made kind",
-    "templateHint": "Fills in the fields, the money and the tables. Change anything afterwards."
+    "templateHint": "Fills in the fields, the money and the tables. Change anything afterwards.",
+    "displayTable": "As a grid",
+    "displayCards": "As cards",
+    "colText": "Text",
+    "colKey": "Code (identifies the row)",
+    "colLink": "Points at another table",
+    "noKeyHint": "No column marked as the code — other tables cannot point at this one."
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",
@@ -6180,7 +6183,8 @@
     "empty": "Nothing in here yet",
     "noMatch": "Nothing matches that",
     "gone": "That table is no longer on this kind.",
-    "sharedNote": "This is the kind's catalogue — every one of them reads it, and a change here changes it for all."
+    "sharedNote": "This is the kind's catalogue — every one of them reads it, and a change here changes it for all.",
+    "isKey": "code"
   },
   "assetFaults": {
     "search": "Search a code or a symptom…",

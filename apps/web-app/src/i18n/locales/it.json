@@ -6102,13 +6102,16 @@
     "listColumns": "Colonne",
     "listColumn": "Codice",
     "listNeedsColumn": "Una tabella ha bisogno di almeno una colonna, altrimenti viene scartata.",
-    "rolePlain": "Una tabella",
-    "roleParts": "Catalogo ricambi",
-    "roleFaults": "Codici di errore",
     "sharedOn": "Uguale per tutti",
     "sharedOff": "Diverso su ciascuno",
     "template": "Parti da un tipo già pronto",
-    "templateHint": "Compila campi, denaro e tabelle. Puoi cambiare tutto dopo."
+    "templateHint": "Compila campi, denaro e tabelle. Puoi cambiare tutto dopo.",
+    "displayTable": "A griglia",
+    "displayCards": "A schede",
+    "colText": "Testo",
+    "colKey": "Codice (identifica la riga)",
+    "colLink": "Punta a un’altra tabella",
+    "noKeyHint": "Nessuna colonna segnata come codice — altre tabelle non possono puntare a questa."
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
@@ -6154,7 +6157,8 @@
     "empty": "Non c’è ancora nulla",
     "noMatch": "Nessun risultato",
     "gone": "Quella tabella non è più su questo tipo.",
-    "sharedNote": "Questo è il catalogo del tipo — tutti lo leggono, e una modifica qui vale per tutti."
+    "sharedNote": "Questo è il catalogo del tipo — tutti lo leggono, e una modifica qui vale per tutti.",
+    "isKey": "codice"
   },
   "assetFaults": {
     "search": "Cerca un codice o un sintomo…",

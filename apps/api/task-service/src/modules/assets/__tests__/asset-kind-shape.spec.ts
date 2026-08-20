@@ -185,11 +185,14 @@ describe('money on a kind', () => {
 import { findKindList, normalizeListRow, listRowIsEmpty } from '@hbcfield/shared';
 
 describe('tables on a kind', () => {
-  it('keeps a list with its columns, plain and per-record unless told otherwise', () => {
+  it('keeps a list with its columns, as text and per-record unless told otherwise', () => {
     const s = shapeOf({ lists: [{ label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }] }] });
-    expect(s.lists).toEqual([
-      { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }], role: 'plain', shared: false },
-    ]);
+    expect(s.lists).toEqual([{
+      label: 'Parts',
+      columns: [{ label: 'Code', type: 'text' }, { label: 'Qty', type: 'text' }],
+      display: 'table',
+      shared: false,
+    }]);
   });
 
   it('drops a table with no columns — there is nothing to put in it', () => {
@@ -218,14 +221,14 @@ describe('tables on a kind', () => {
   });
 
   it('keeps only the columns the list declares, and always all of them', () => {
-    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }], role: 'plain' as const, shared: false };
+    const list = { label: 'Parts', columns: [{ label: 'Code', type: 'text' as const }, { label: 'Qty', type: 'text' as const }], display: 'table' as const, shared: false };
     const row = normalizeListRow(list, { Code: 'HYD-8842', Qty: '2', Sneaky: 'x' });
     expect(row).toEqual({ Code: 'HYD-8842', Qty: '2' });
   });
 
   it('gives a missing column an empty value rather than leaving it absent', () => {
     // A column the row has never had must still render as an empty cell.
-    const list = { label: 'Parts', columns: [{ label: 'Code' }, { label: 'Qty' }], role: 'plain' as const, shared: false };
+    const list = { label: 'Parts', columns: [{ label: 'Code', type: 'text' as const }, { label: 'Qty', type: 'text' as const }], display: 'table' as const, shared: false };
     expect(normalizeListRow(list, { Code: 'X' })).toEqual({ Code: 'X', Qty: '' });
   });
 
@@ -235,56 +238,91 @@ describe('tables on a kind', () => {
   });
 });
 
-import { partsList, faultsList, partLinkColumn, partCodeColumn } from '@hbcfield/shared';
-
-describe('catalogues and fault codes', () => {
-  const kind = shapeOf({ lists: [
-    { label: 'Parts', role: 'parts', columns: [{ label: 'Code' }, { label: 'Name' }] },
-    { label: 'Fault codes', role: 'faults', columns: [{ label: 'Code' }, { label: 'Meaning' }, { label: 'Part' }] },
-    { label: 'Keys', columns: [{ label: 'Code' }] },
-  ] });
-
-  it('shares a catalogue by default and keeps a plain table per record', () => {
-    // A parts list and a fault library are identical for every machine of a
-    // model; typing them into each one guarantees they drift apart.
-    expect(partsList(kind)!.shared).toBe(true);
-    expect(faultsList(kind)!.shared).toBe(true);
-    expect(kind.lists.find((l) => l.label === 'Keys')!.shared).toBe(false);
-  });
-
-  it('lets an explicit choice override the default either way', () => {
-    const s = shapeOf({ lists: [
-      { label: 'Parts', role: 'parts', shared: false, columns: [{ label: 'Code' }] },
-      { label: 'Keys', shared: true, columns: [{ label: 'Code' }] },
-    ] });
-    expect(partsList(s)!.shared).toBe(false);
-    expect(s.lists.find((l) => l.label === 'Keys')!.shared).toBe(true);
-  });
-
-  it('treats an unknown role as a plain table', () => {
-    const s = shapeOf({ lists: [{ label: 'X', role: 'nonsense', columns: [{ label: 'A' }] }] });
-    expect(s.lists[0]!.role).toBe('plain');
-  });
-
-  it('finds the columns that tie a fault to a part', () => {
-    expect(partLinkColumn(faultsList(kind)!)).toBe('Part');
-    expect(partCodeColumn(partsList(kind)!)).toBe('Code');
-  });
-
-  it('reports no link when the fault table has no Part column', () => {
-    // Not an error: a kind may list faults without naming parts.
-    const s = shapeOf({ lists: [{ label: 'F', role: 'faults', columns: [{ label: 'Code' }] }] });
-    expect(partLinkColumn(faultsList(s)!)).toBeNull();
-  });
-});
-
+import { keyColumn, linkColumns, listByLabel, linkTargets } from '@hbcfield/shared';
 import { KIND_TEMPLATES, kindTemplate } from '@hbcfield/shared';
 
 /**
- * A template is copied into a kind and then edited, so it has to survive the
- * same normaliser everything else does — a template that lost half its shape on
- * the way in would be worse than no template.
+ * "Parts catalogue" and "Fault codes" used to be types written into our code,
+ * so a customer who owned something else was stuck. They are derived now: a
+ * table with a KEY is a catalogue, and a column that LINKS to it makes a
+ * lookup. These tests pin that nothing is special-cased by name.
  */
+describe('catalogues and links, derived rather than named', () => {
+  const kind = shapeOf({ lists: [
+    { label: 'Parts', columns: [{ label: 'Code', type: 'key' }, { label: 'Name' }] },
+    { label: 'Fault codes', display: 'cards', columns: [
+      { label: 'Code', type: 'key' }, { label: 'Meaning' },
+      { label: 'Part', type: 'link', linkTo: 'Parts' },
+    ] },
+    { label: 'Keys', columns: [{ label: 'Which' }] },
+  ] });
+
+  it('finds the column that identifies a row', () => {
+    expect(keyColumn(listByLabel(kind, 'Parts')!)?.label).toBe('Code');
+    expect(keyColumn(listByLabel(kind, 'Keys')!)).toBeNull();
+  });
+
+  it('finds a link and the table it points at, whatever they are called', () => {
+    const faults = listByLabel(kind, 'Fault codes')!;
+    const link = linkColumns(faults)[0]!;
+    expect(link).toMatchObject({ label: 'Part', linkTo: 'Parts' });
+    expect(listByLabel(kind, link.linkTo!)!.label).toBe('Parts');
+  });
+
+  it('works the same for words we never wrote down', () => {
+    // The whole point: a customer invents Consumables and Suppliers and it
+    // behaves identically, with nothing shipped.
+    const other = shapeOf({ lists: [
+      { label: 'Suppliers', columns: [{ label: 'Ref', type: 'key' }, { label: 'Name' }] },
+      { label: 'Consumables', columns: [
+        { label: 'SKU', type: 'key' },
+        { label: 'Bought from', type: 'link', linkTo: 'Suppliers' },
+      ] },
+    ] });
+    const link = linkColumns(listByLabel(other, 'Consumables')!)[0]!;
+    expect(keyColumn(listByLabel(other, link.linkTo!)!)?.label).toBe('Ref');
+  });
+
+  it('shares a table that has a key, and keeps a plain one per record', () => {
+    // A key is the signal that other tables may point at it, which makes it
+    // reference data — so that is what decides the default, not a type name.
+    expect(listByLabel(kind, 'Parts')!.shared).toBe(true);
+    expect(listByLabel(kind, 'Keys')!.shared).toBe(false);
+  });
+
+  it('allows only one key — two identities is no identity', () => {
+    const s = shapeOf({ lists: [{ label: 'X', columns: [
+      { label: 'A', type: 'key' }, { label: 'B', type: 'key' },
+    ] }] });
+    expect(s.lists[0]!.columns.filter((c) => c.type === 'key')).toHaveLength(1);
+  });
+
+  it('offers as link targets only other tables that have a key', () => {
+    const faults = listByLabel(kind, 'Fault codes')!;
+    const targets = linkTargets(kind, faults).map((l) => l.label);
+    expect(targets).toEqual(['Parts']);          // not Keys — it has no key
+    expect(targets).not.toContain('Fault codes'); // and never itself
+  });
+
+  it('drops a linkTo on a column that is not a link', () => {
+    const s = shapeOf({ lists: [{ label: 'X', columns: [{ label: 'A', type: 'text', linkTo: 'Parts' }] }] });
+    expect(s.lists[0]!.columns[0]).toEqual({ label: 'A', type: 'text' });
+  });
+
+  it('upgrades a kind saved with the old hard-coded types', () => {
+    // Kinds made before this change carry role: 'parts' / 'faults'. They must
+    // keep working, with Code becoming the key and Part becoming the link.
+    const legacy = shapeOf({ lists: [
+      { label: 'Parts', role: 'parts', columns: [{ label: 'Code' }, { label: 'Name' }] },
+      { label: 'Fault codes', role: 'faults', columns: [{ label: 'Code' }, { label: 'Part' }] },
+    ] });
+    expect(keyColumn(listByLabel(legacy, 'Parts')!)?.label).toBe('Code');
+    const link = linkColumns(listByLabel(legacy, 'Fault codes')!)[0];
+    expect(link?.label).toBe('Part');
+    expect(listByLabel(legacy, 'Fault codes')!.display).toBe('cards');
+  });
+});
+
 describe('ready-made kinds', () => {
   it.each(KIND_TEMPLATES.map((tpl) => [tpl.id, tpl] as const))(
     '%s survives normalisation unchanged',
@@ -294,12 +332,15 @@ describe('ready-made kinds', () => {
   );
 
   it('gives the machine template a catalogue and a fault library, both shared', () => {
-    const machine = kindTemplate('machine')!;
-    const shape = shapeOf(machine.shape);
-    expect(partsList(shape)).toMatchObject({ shared: true });
-    expect(faultsList(shape)).toMatchObject({ shared: true });
-    // The link is what makes the library useful, so the column must be there.
-    expect(partLinkColumn(faultsList(shape)!)).toBe('Part');
+    const shape = shapeOf(kindTemplate('machine')!.shape);
+    const parts = listByLabel(shape, 'Parts')!;
+    const faults = listByLabel(shape, 'Fault codes')!;
+    expect(parts.shared).toBe(true);
+    expect(faults.shared).toBe(true);
+    // The link is what makes the library useful, and it must resolve.
+    const link = linkColumns(faults)[0]!;
+    expect(link.linkTo).toBe('Parts');
+    expect(keyColumn(parts)?.label).toBe('Code');
   });
 
   it('gives the apartment template an address and a client-capable resident', () => {

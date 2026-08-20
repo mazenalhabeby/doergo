@@ -11,7 +11,7 @@ import {
 
 import { assetsApi, type AssetActivity, type AssetCategory, type AssetMoneyEntry } from "@/lib/api"
 import {
-  normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents, partsList,
+  normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents,
   type KindShape,
 } from "@hbcfield/shared/client"
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
@@ -276,11 +276,11 @@ export default function AssetRecordPage() {
               if (!list) {
                 return <p className="py-8 text-center text-sm text-muted-foreground">{t("assetLists.gone", "That table is no longer on this kind.")}</p>
               }
-              // A fault library gets the lookup a technician can act on; every
-              // other table is a table.
-              return list.role === "faults"
-                ? <AssetFaults assetId={id} list={list} parts={partsList(shape)} />
-                : <AssetListTable assetId={id} list={list} />
+              // Cards or a grid — a display choice the kind makes, not a type
+              // we recognise. Both read the same rows.
+              return list.display === "cards"
+                ? <AssetFaults assetId={id} list={list} shape={shape} />
+                : <AssetListTable assetId={id} list={list} shape={shape} />
             })()
           ) : tab === "money" ? (
             <MoneyPanel

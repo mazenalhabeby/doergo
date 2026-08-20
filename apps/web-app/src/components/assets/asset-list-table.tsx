@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Loader2, Plus, Search, Trash2 } from "lucide-react"
 
 import { assetsApi, type AssetListRow } from "@/lib/api"
-import { type KindList } from "@hbcfield/shared/client"
+import { keyColumn, type KindList, type KindShape } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,14 @@ import { Skeleton } from "@/components/ui/skeleton"
  * rows, and filtering a fetched page in the browser would quietly only search
  * what had already been loaded.
  */
-export function AssetListTable({ assetId, list }: { assetId: string; list: KindList }) {
+export function AssetListTable({
+  assetId, list, shape,
+}: {
+  assetId: string
+  list: KindList
+  /** Present for symmetry with the card view; links are resolved there. */
+  shape?: KindShape
+}) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
@@ -86,7 +93,14 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
           <thead>
             <tr className="border-b border-border bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground">
               {list.columns.map((c) => (
-                <th key={c.label} className="px-3 py-2 text-left font-medium">{c.label}</th>
+                <th key={c.label} className="px-3 py-2 text-left font-medium">
+                  {c.label}
+                  {keyColumn(list)?.label === c.label && (
+                    <span className="ml-1 text-[9px] text-muted-foreground/60">
+                      {t("assetLists.isKey", "code")}
+                    </span>
+                  )}
+                </th>
               ))}
               <th className="w-10 px-3 py-2" />
             </tr>
