@@ -2440,12 +2440,10 @@
       "personalGroup": "Personnel",
       "general": "Général",
       "members": "Membres",
-      "taskTypes": "Types de tâches",
       "notifications": "Notifications",
       "auditLog": "Journal d'audit",
       "profile": "Profil",
-      "security": "Mot de passe et sécurité",
-      "taskFields": "Champs de tâche"
+      "security": "Mot de passe et sécurité"
     },
     "changeEmail": {
       "title": "Modifier l'e-mail",
@@ -4359,10 +4357,6 @@
       "spaces": {
         "label": "Espaces",
         "desc": "Gérez les espaces de travail et les listes de membres"
-      },
-      "taskTypes": {
-        "label": "Types de tâches",
-        "desc": "Flux de travail + widgets par étape"
       }
     }
   },
@@ -5280,10 +5274,6 @@
         "notifications": {
           "title": "Notifications",
           "body": "Choisissez quels e-mails et alertes push à l’échelle de l’organisation sont envoyés — pour les nouvelles tâches, les tâches terminées et les demandes d’adhésion."
-        },
-        "workflows": {
-          "title": "Champs de tâche",
-          "body": "Champs recueillis sur chaque tâche, quel que soit son type. Les types de tâche se trouvent dans chaque espace, sous son onglet Types de tâche."
         },
         "audit": {
           "title": "Journal d’audit",

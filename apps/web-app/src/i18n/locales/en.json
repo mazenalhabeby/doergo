@@ -2449,12 +2449,10 @@
       "personalGroup": "Personal",
       "general": "General",
       "members": "Members",
-      "taskTypes": "Task Types",
       "notifications": "Notifications",
       "auditLog": "Audit Log",
       "profile": "Profile",
-      "security": "Password & Security",
-      "taskFields": "Task fields"
+      "security": "Password & Security"
     },
     "changeEmail": {
       "title": "Change email",
@@ -4384,10 +4382,6 @@
       "spaces": {
         "label": "Spaces",
         "desc": "Manage workspaces and rosters"
-      },
-      "taskTypes": {
-        "label": "Task Types",
-        "desc": "Workflows + per-step widgets"
       }
     }
   },
@@ -5305,10 +5299,6 @@
         "notifications": {
           "title": "Notifications",
           "body": "Choose which org-wide emails and push alerts go out — on new tasks, completions and join requests."
-        },
-        "workflows": {
-          "title": "Task fields",
-          "body": "Fields collected on every task, whatever its type. Task types themselves live on each space, under its Task Types tab."
         },
         "audit": {
           "title": "Audit log",

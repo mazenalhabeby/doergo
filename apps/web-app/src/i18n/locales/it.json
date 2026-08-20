@@ -2440,12 +2440,10 @@
       "personalGroup": "Personale",
       "general": "Generale",
       "members": "Membri",
-      "taskTypes": "Tipi di attività",
       "notifications": "Notifiche",
       "auditLog": "Registro delle attività",
       "profile": "Profilo",
-      "security": "Password e sicurezza",
-      "taskFields": "Campi attività"
+      "security": "Password e sicurezza"
     },
     "changeEmail": {
       "title": "Cambia email",
@@ -4359,10 +4357,6 @@
       "spaces": {
         "label": "Spazi",
         "desc": "Gestisci gli spazi di lavoro e gli elenchi di personale"
-      },
-      "taskTypes": {
-        "label": "Tipi di attività",
-        "desc": "Flussi di lavoro + widget per ogni passaggio"
       }
     }
   },
@@ -5280,10 +5274,6 @@
         "notifications": {
           "title": "Notifiche",
           "body": "Scelga quali email e avvisi push a livello di organizzazione vengono inviati — su nuove attività, completamenti e richieste di adesione."
-        },
-        "workflows": {
-          "title": "Campi attività",
-          "body": "Campi raccolti su ogni attività, qualunque sia il tipo. I tipi di attività si trovano in ciascuno spazio, nella scheda Tipi di attività."
         },
         "audit": {
           "title": "Registro di controllo",

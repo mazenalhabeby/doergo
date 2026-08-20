@@ -2449,12 +2449,10 @@
       "personalGroup": "Persönlich",
       "general": "Allgemein",
       "members": "Mitglieder",
-      "taskTypes": "Aufgabentypen",
       "notifications": "Benachrichtigungen",
       "auditLog": "Audit-Protokoll",
       "profile": "Profil",
-      "security": "Passwort & Sicherheit",
-      "taskFields": "Aufgabenfelder"
+      "security": "Passwort & Sicherheit"
     },
     "changeEmail": {
       "title": "E-Mail ändern",
@@ -4384,10 +4382,6 @@
       "spaces": {
         "label": "Bereiche",
         "desc": "Arbeitsbereiche und Teamlisten verwalten"
-      },
-      "taskTypes": {
-        "label": "Aufgabentypen",
-        "desc": "Workflows + Widgets pro Schritt"
       }
     }
   },
@@ -5305,10 +5299,6 @@
         "notifications": {
           "title": "Benachrichtigungen",
           "body": "Wählen Sie, welche organisationsweiten E-Mails und Push-Benachrichtigungen versendet werden — bei neuen Aufgaben, Abschlüssen und Beitrittsanfragen."
-        },
-        "workflows": {
-          "title": "Aufgabenfelder",
-          "body": "Felder, die bei jeder Aufgabe erfasst werden, unabhängig von der Aufgabenart. Die Aufgabenarten selbst liegen im jeweiligen Bereich, im Tab „Aufgabenarten“."
         },
         "audit": {
           "title": "Audit-Log",

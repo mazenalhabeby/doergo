@@ -2443,12 +2443,10 @@
       "personalGroup": "Personal",
       "general": "General",
       "members": "Miembros",
-      "taskTypes": "Tipos de tarea",
       "notifications": "Notificaciones",
       "auditLog": "Registro de auditoría",
       "profile": "Perfil",
-      "security": "Contraseña y seguridad",
-      "taskFields": "Campos de tarea"
+      "security": "Contraseña y seguridad"
     },
     "changeEmail": {
       "title": "Cambiar correo electrónico",
@@ -4368,10 +4366,6 @@
       "spaces": {
         "label": "Espacios",
         "desc": "Gestiona espacios de trabajo y sus miembros"
-      },
-      "taskTypes": {
-        "label": "Tipos de tarea",
-        "desc": "Flujos de trabajo + widgets por paso"
       }
     }
   },
@@ -5289,10 +5283,6 @@
         "notifications": {
           "title": "Notificaciones",
           "body": "Elige qué correos y alertas push de toda la organización se envían — al crear tareas, completarlas y en solicitudes de acceso."
-        },
-        "workflows": {
-          "title": "Campos de tarea",
-          "body": "Campos que se recogen en todas las tareas, sea cual sea su tipo. Los tipos de tarea están en cada espacio, en su pestaña Tipos de tarea."
         },
         "audit": {
           "title": "Registro de auditoría",
