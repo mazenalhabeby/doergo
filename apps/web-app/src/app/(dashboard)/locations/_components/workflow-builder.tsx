@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { notify } from "@/lib/toast"
-import { Plus, X, Loader2 } from "lucide-react"
+import { Plus, X, Loader2, AlertCircle } from "lucide-react"
 
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -422,6 +422,25 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
           autoFocus={mode === "create"}
         />
       </div>
+
+      {/*
+        What is still missing, said while building rather than on save.
+
+        Only the rules this editor can honestly evaluate: it holds names,
+        colours and the finished/cancelled marks, not transitions, so the
+        reachability and dead-end rules are checked server-side when the task
+        type is attached to a space. Guessing at transitions here to run the
+        full validator would be asserting on data the builder does not have.
+      */}
+      {statuses.length > 0 && !statuses.some((st) => st.isFinal) && (
+        <p className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          <AlertCircle className="mt-px size-3.5 shrink-0" />
+          {t(
+            "workflows.builder.noFinalStatus",
+            "Mark a step as finished — otherwise nothing on this task type can ever be completed.",
+          )}
+        </p>
+      )}
 
       {/* Statuses */}
       <div className="space-y-1.5">

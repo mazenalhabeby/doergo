@@ -54,3 +54,4 @@ export * from './access/task-access';
 export * from './access/cross-org-chat';
 export * from './access/legacy-flag-migration';
 export * from './access/workflow-modules';
+export * from './access/workflow-validation';

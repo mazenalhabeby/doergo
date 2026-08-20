@@ -3675,7 +3675,8 @@
         "updated": "Flusso di lavoro aggiornato",
         "saveFailed": "Impossibile salvare il flusso di lavoro",
         "createFailedGeneric": "Impossibile creare il flusso di lavoro"
-      }
+      },
+      "noFinalStatus": "Contrassegna un passaggio come concluso, altrimenti nulla in questo tipo di attività potrà mai essere completato."
     },
     "templateLabels": {
       "simple": "Semplice",
