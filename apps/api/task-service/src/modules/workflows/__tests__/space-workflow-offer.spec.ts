@@ -100,3 +100,44 @@ describe('setDefault — a local task type cannot become the organization defaul
     await expect(makeService(null).setDefault({ id: 'wf-1', organizationId: ORG })).resolves.toBeTruthy();
   });
 });
+
+/**
+ * Deleting a task type must not empty a space's default.
+ *
+ * SpaceWorkflow cascades on delete, so removing the type takes the offering row
+ * with it and the space is left with no default at all — new tasks there fall
+ * back to whatever the legacy column still says, silently. Detaching already
+ * refused this; deleting had to as well, or the guard is one somebody routes
+ * around without meaning to.
+ */
+describe('remove — a space keeps its default', () => {
+  const ORG = 'org-1';
+
+  const makeService = (isDefaultSomewhere: boolean, taskCount = 0) => {
+    const prisma: any = {
+      statusWorkflow: {
+        findUnique: async () => ({
+          id: 'wf-1', organizationId: ORG, isDefault: false, ownerSpaceId: null,
+          _count: { tasks: taskCount },
+        }),
+        delete: async () => ({}),
+      },
+      spaceWorkflow: {
+        findFirst: async () => (isDefaultSomewhere ? { space: { name: 'Warehouse' } } : null),
+      },
+    };
+    return new WorkflowsService(prisma, { invalidate: async () => {} } as any);
+  };
+
+  it("refuses while it is a space's default, and names the space", async () => {
+    await expect(makeService(true).remove({ id: 'wf-1', organizationId: ORG })).rejects.toThrow(/Warehouse/);
+  });
+
+  it('allows one no space depends on', async () => {
+    await expect(makeService(false).remove({ id: 'wf-1', organizationId: ORG })).resolves.toBeTruthy();
+  });
+
+  it('still refuses one that has tasks, before it even looks at defaults', async () => {
+    await expect(makeService(false, 3).remove({ id: 'wf-1', organizationId: ORG })).rejects.toThrow(/task/i);
+  });
+});

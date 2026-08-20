@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { SpaceWorkflowsSection } from "./space-workflows-section"
 import { TaskTypesManager } from "@/components/task-types-manager"
 import { SectionHeader } from "./section-header"
 
@@ -52,24 +51,16 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
       />
 
       {/*
-        Which task types this space offers, and which one new tasks inherit.
+        One list, one editor.
 
-        This replaced a single picker: a space pointed at exactly one workflow,
-        so every space in an organization ran the same flow or someone kept
-        near-duplicates at org level. The workflows themselves are still owned
-        by the organization — this decides what is OFFERED here, not what it
-        contains, so editing one still fixes it everywhere.
-      */}
-      <SpaceWorkflowsSection spaceId={space.id} />
-
-      {/*
-        The editor itself.
-
-        There used to be two: this tab had a builder that could not set
+        There used to be two of each: this tab had a builder that could not set
         transitions or capabilities, and Organization Settings had the capable
-        one — the screen furthest from the space that owns the flow. The weak
-        one is gone, along with its own hardcoded list of starter flows, which
-        was a third source of templates beside the library.
+        one — the screen furthest from the space that owns the flow. Moving the
+        capable one here briefly made it worse, not better: the offerings list
+        and the editor showed the SAME task types, one above the other, with two
+        separate ways to add from the library. Both lists are now the one below,
+        which carries the relationship actions (default here, copy here, share,
+        remove) on the same rows that edit the steps.
       */}
       <div className="rounded-xl border border-border bg-card p-4">
         <TaskTypesManager spaceId={space.id} />

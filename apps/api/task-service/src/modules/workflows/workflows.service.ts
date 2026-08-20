@@ -267,6 +267,25 @@ export class WorkflowsService {
       );
     }
 
+    /*
+      A space's default must not vanish by deleting the type behind it.
+
+      SpaceWorkflow cascades on delete, so the offering row goes with it and the
+      space is left with no default at all — new tasks there would silently fall
+      back to whatever the legacy column still says. Detaching already refuses
+      this; deleting has to refuse it too, or the guard is one someone routes
+      around without meaning to.
+    */
+    const defaultFor = await this.prisma.spaceWorkflow.findFirst({
+      where: { workflowId: data.id, isDefault: true },
+      select: { space: { select: { name: true } } },
+    });
+    if (defaultFor) {
+      throw new BadRequestException(
+        `This is the default task type in "${defaultFor.space.name}". Make another one the default there first.`,
+      );
+    }
+
     await this.prisma.statusWorkflow.delete({ where: { id: data.id } });
 
     await this.workflowCache.invalidate(data.organizationId);

@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Check,
   GitFork,
+  Globe,
   Upload,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
@@ -29,8 +30,15 @@ import {
   type StatusWorkflow,
   type WorkflowStatus,
 } from "@/lib/api"
-import { workflowAdvice, validateWorkflow } from "@hbcfield/shared/client"
+import { workflowAdvice, validateWorkflow, spaceMayOffer } from "@hbcfield/shared/client"
 import { CustomFieldsManager } from "@/components/custom-fields-manager"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -203,15 +211,26 @@ const StatusRow = memo(function StatusRow({
 
 const WorkflowCard = memo(function WorkflowCard({
   workflow,
+  spaceId,
   onSetDefault,
   onDelete,
+  onRemoveFromSpace,
+  onFork,
+  onShare,
+  busy,
   onAddStatus,
   onEditStatus,
   onDeleteStatus,
 }: {
   workflow: StatusWorkflow
+  /** Set when this list belongs to a space — enables the per-space actions. */
+  spaceId: string | null
   onSetDefault: (id: string) => void
   onDelete: (id: string) => void
+  onRemoveFromSpace: (id: string) => void
+  onFork: (id: string) => void
+  onShare: (id: string) => void
+  busy: boolean
   onAddStatus: (workflowId: string) => void
   onEditStatus: (workflowId: string, status: WorkflowStatus) => void
   onDeleteStatus: (workflowId: string, status: WorkflowStatus) => void
@@ -219,6 +238,8 @@ const WorkflowCard = memo(function WorkflowCard({
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const queryClient = useQueryClient()
+  const isLocal = !!workflow.ownerSpaceId
+  const isSpaceDefault = (workflow as StatusWorkflow & { isDefault?: boolean }).isDefault
   const statuses = workflow.statuses || []
   const sorted = useMemo(
     () => [...statuses].sort((a, b) => a.position - b.position),
@@ -302,12 +323,29 @@ const WorkflowCard = memo(function WorkflowCard({
                 {t("workflows.page.default")}
               </span>
             )}
-            {/* A task type belonging to one space is shown here rather than
-                hidden, so nobody hunts for one they know they created. */}
-            {workflow.ownerSpace && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+            {/*
+              Local to this space, or shared with the organization?
+
+              It decides whether editing the steps below reaches other spaces,
+              so it belongs next to the name rather than a page away.
+            */}
+            {isLocal ? (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                title={t("locations.workflows.localHint", "Only this space uses it. Edits stay here.")}
+              >
                 <GitFork className="h-3 w-3" />
-                {workflow.ownerSpace.name}
+                {spaceId
+                  ? t("locations.workflows.onlyHere", "Only here")
+                  : (workflow.ownerSpace?.name ?? t("locations.workflows.onlyHere", "Only here"))}
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                title={t("locations.workflows.sharedHint", "Shared with the organization. Editing it changes it everywhere it is offered.")}
+              >
+                <Globe className="h-3 w-3" />
+                {t("locations.workflows.sharedBadge", "Shared")}
               </span>
             )}
           </div>
@@ -343,30 +381,81 @@ const WorkflowCard = memo(function WorkflowCard({
             )}
             {t("workflows.page.submitToLibrary", "Offer to library")}
           </Button>
-          {!workflow.isDefault && !workflow.ownerSpace && (
+          {/* "Default" means a different thing in each list: the type new tasks
+              in THIS space inherit, or the organization's fallback. */}
+          {!isSpaceDefault && !(!spaceId && workflow.isDefault) && (
             <Button
               variant="ghost"
               size="sm"
               className="h-8 text-xs"
+              disabled={busy}
               onClick={(e) => {
                 e.stopPropagation()
                 onSetDefault(workflow.id)
               }}
             >
+              <Star className="mr-1 h-3 w-3" />
               {t("workflows.page.setDefault")}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(workflow.id)
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+
+          {spaceId &&
+            (isLocal ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                disabled={busy}
+                title={t("locations.workflows.shareHint", "Let any space in the organization offer this one definition")}
+                onClick={(e) => { e.stopPropagation(); onShare(workflow.id) }}
+              >
+                <Globe className="mr-1 h-3 w-3" />
+                {t("locations.workflows.share", "Share")}
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                disabled={busy}
+                title={t("locations.workflows.forkHint", "Take this space's own copy so you can change it without affecting other spaces")}
+                onClick={(e) => { e.stopPropagation(); onFork(workflow.id) }}
+              >
+                <GitFork className="mr-1 h-3 w-3" />
+                {t("locations.workflows.fork", "Copy here")}
+              </Button>
+            ))}
+
+          {/*
+            Two different destructive acts, and conflating them loses work.
+
+            Removing a SHARED type stops this space offering it; the definition
+            and every other space keep it. Deleting is only offered for a type
+            this space owns, because there is nothing else holding it.
+          */}
+          {spaceId && !isLocal ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600"
+              disabled={busy}
+              title={t("locations.workflows.remove", "Remove from this space")}
+              onClick={(e) => { e.stopPropagation(); onRemoveFromSpace(workflow.id) }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+              disabled={busy}
+              title={t("common.delete", "Delete")}
+              onClick={(e) => { e.stopPropagation(); onDelete(workflow.id) }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {expanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
@@ -983,8 +1072,54 @@ function TaskTypesManagerInner({ spaceId }: { spaceId: string | null }) {
   // way round — a shared type appears in both.
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["workflows"] })
-    if (spaceId) queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
+    if (spaceId) {
+      queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
+      queryClient.invalidateQueries({ queryKey: ["location", spaceId] })
+    }
   }, [queryClient, spaceId])
+
+  /*
+    The organization's shared types, so a space can offer one it does not have
+    yet. Only fetched in space mode — in organization mode this list IS that.
+  */
+  const { data: orgWorkflows = [] } = useQuery({
+    queryKey: ["workflows"],
+    queryFn: () => workflowsApi.list(),
+    enabled: !!spaceId,
+  })
+
+  const spaceMutation = <T,>(fn: (arg: T) => Promise<unknown>, successKey: string, fallback: string) =>
+    ({
+      mutationFn: fn,
+      onSuccess: () => { notify.success(t(successKey, fallback)); refresh() },
+      // The server refuses when the space has not enabled a module the flow's
+      // steps need, and says which. Show that: it names the switch to turn on.
+      onError: (e: Error) => notify.error(e.message),
+    })
+
+  const attach = useMutation(
+    spaceMutation((id: string) => workflowsApi.attachToSpace(spaceId!, id), "locations.workflows.added", "Task type added"),
+  )
+  const detach = useMutation(
+    spaceMutation((id: string) => workflowsApi.detachFromSpace(spaceId!, id), "locations.workflows.removed", "Task type removed"),
+  )
+  const fork = useMutation(
+    spaceMutation((id: string) => workflowsApi.forkForSpace(spaceId!, id), "locations.workflows.added", "Task type added"),
+  )
+  const share = useMutation(
+    spaceMutation((id: string) => workflowsApi.shareWithOrganization(id), "locations.workflows.shared", "Shared with the organization"),
+  )
+  const spaceDefault = useMutation(
+    spaceMutation((id: string) => workflowsApi.setSpaceDefault(spaceId!, id), "locations.workflows.defaultSet", "Default updated"),
+  )
+  const spaceBusy =
+    attach.isPending || detach.isPending || fork.isPending || share.isPending || spaceDefault.isPending
+
+  const [adding, setAdding] = useState("")
+  const offeredIds = new Set((workflows ?? []).map((w) => w.id))
+  const spaceOnlyAddable = spaceId
+    ? orgWorkflows.filter((w) => !offeredIds.has(w.id) && spaceMayOffer(w, spaceId))
+    : []
 
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) => workflowsApi.setDefault(id),
@@ -1079,11 +1214,47 @@ function TaskTypesManagerInner({ spaceId }: { spaceId: string | null }) {
           </div>
         ) : (
           <div className="space-y-4">
+            {spaceOnlyAddable.length > 0 && (
+              /*
+                Offer one the organization already has, rather than building a
+                second copy of it. Only shared types appear — another space's
+                own is not on offer here, which is the rule the server enforces
+                too, so the list never shows something that would be refused.
+              */
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-3">
+                <Select value={adding} onValueChange={setAdding} disabled={spaceBusy}>
+                  <SelectTrigger className="h-9 flex-1">
+                    <SelectValue placeholder={t("locations.workflows.addPlaceholder", "Add a task type…")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {spaceOnlyAddable.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 shrink-0"
+                  disabled={!adding || spaceBusy}
+                  onClick={() => { attach.mutate(adding); setAdding("") }}
+                >
+                  {attach.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />}
+                  {t("common.add", "Add")}
+                </Button>
+              </div>
+            )}
             {workflows.map((workflow) => (
               <WorkflowCard
                 key={workflow.id}
                 workflow={workflow}
-                onSetDefault={(id) => setDefaultMutation.mutate(id)}
+                spaceId={spaceId}
+                busy={spaceBusy}
+                // "Default" is the space's here and the organization's there.
+                onSetDefault={(id) => (spaceId ? spaceDefault.mutate(id) : setDefaultMutation.mutate(id))}
+                onRemoveFromSpace={(id) => detach.mutate(id)}
+                onFork={(id) => fork.mutate(id)}
+                onShare={(id) => share.mutate(id)}
                 onDelete={(id) =>
                   setDeleteTarget({
                     type: "workflow",
