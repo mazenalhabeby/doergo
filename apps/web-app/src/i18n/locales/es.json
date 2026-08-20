@@ -625,7 +625,9 @@
     "discard": "Descartar",
     "saved": "Guardado",
     "remove": "Quitar",
-    "saveFailed": "No se pudo guardar"
+    "saveFailed": "No se pudo guardar",
+    "expand": "Expandir",
+    "collapse": "Contraer"
   },
   "auth": {
     "login": {
@@ -6184,6 +6186,15 @@
     "title": "Dentro",
     "here": "aquí",
     "inside": "{{count}} dentro",
-    "empty": "Nada dentro. Cree un registro y colóquelo aquí desde su propia página."
+    "empty": "Nada dentro. Cree un registro y colóquelo aquí desde su propia página.",
+    "totalOut": "Gastado, en total",
+    "totalIn": "Ingresado, en total",
+    "ofWhichOwn": "{{amount}} en este",
+    "records": "Dentro",
+    "recordsSub": "en todos los niveles",
+    "emptyShort": "Aún no hay nada dentro.",
+    "addInside": "Añadir uno dentro",
+    "namePh": "Unidad hidráulica, Bomba, Motor…",
+    "addFailed": "No se pudo añadir"
   }
 }

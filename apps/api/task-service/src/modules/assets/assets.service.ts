@@ -19,6 +19,14 @@ import {
  */
 const MAX_STRUCTURE_DEPTH = 8;
 
+/** One record in a machine's breakdown, with whatever sits inside it. */
+export interface StructureNode {
+  id: string;
+  name: string;
+  serialNumber: string | null;
+  children: StructureNode[];
+}
+
 @Injectable()
 export class AssetsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -911,8 +919,15 @@ export class AssetsService {
   }
 
   /**
-   * The parts of one machine: its subunits and components, plus the path back
-   * up to the top so a technician always knows where they are.
+   * The whole breakdown of one machine, with what it has cost.
+   *
+   * The entire subtree in ONE query, not a level per click: a technician
+   * standing at a press wants to see that the fault is two levels down, and
+   * walking the tree a request at a time turns that into a series of guesses.
+   *
+   * Money rolls UP. "What has this press cost" has to include its pump and its
+   * gearbox, or the number is quietly wrong in the direction that matters —
+   * every sub-unit's spend invisible at the level anybody looks.
    */
   async structure(data: {
     id: string;
@@ -925,14 +940,68 @@ export class AssetsService {
     }
     await this.assetInOrg(data.id, data.organizationId);
 
-    const children = await this.prisma.asset.findMany({
-      where: { parentId: data.id, organizationId: data.organizationId },
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true, serialNumber: true, _count: { select: { children: true } } },
-    });
+    // One recursive walk down, depth-bounded so a corrupted parent chain costs
+    // a query rather than the process. Scoped to the org at every level: a
+    // parent id is guessable, and an unscoped walk would happily cross tenants.
+    const rows = await this.prisma.$queryRaw<
+      { id: string; name: string; serialNumber: string | null; parentId: string | null; depth: number }[]
+    >(Prisma.sql`
+      WITH RECURSIVE subtree AS (
+        SELECT a."id", a."name", a."serialNumber", a."parentId", 0 AS depth
+          FROM "assets" a
+         WHERE a."id" = ${data.id} AND a."organizationId" = ${data.organizationId}
+        UNION ALL
+        SELECT c."id", c."name", c."serialNumber", c."parentId", s.depth + 1
+          FROM "assets" c
+          JOIN subtree s ON c."parentId" = s."id"
+         WHERE c."organizationId" = ${data.organizationId}
+           AND s.depth < ${MAX_STRUCTURE_DEPTH}
+      )
+      SELECT * FROM subtree ORDER BY depth, "name"
+    `);
 
-    // Walk up rather than recurse down: the ancestors of one node are at most
-    // as deep as the tree, while the descendants could be the whole estate.
+    const ids = rows.map((r) => r.id);
+
+    // Totals over the whole subtree, from the database rather than by adding up
+    // what happened to be fetched.
+    const [sums, ownSums] = await Promise.all([
+      this.prisma.assetMoney.groupBy({
+        by: ['direction'],
+        where: { assetId: { in: ids }, organizationId: data.organizationId },
+        _sum: { amountCents: true },
+      }),
+      this.prisma.assetMoney.groupBy({
+        by: ['direction'],
+        where: { assetId: data.id, organizationId: data.organizationId },
+        _sum: { amountCents: true },
+      }),
+    ]);
+    const totalOf = (g: typeof sums, d: string) =>
+      g.find((x) => x.direction === d)?._sum.amountCents ?? 0;
+
+    // Nest by parent. The root is the record itself, which the caller already
+    // has, so only its children are returned as the tree.
+    const byId = new Map<string, StructureNode>(
+      rows.map((r) => [r.id, { id: r.id, name: r.name, serialNumber: r.serialNumber, children: [] }]),
+    );
+    const tree: StructureNode[] = [];
+    for (const r of rows) {
+      if (r.id === data.id) continue;
+      const node = byId.get(r.id)!;
+      // A child of the record itself is a TOP-level branch of the returned
+      // tree. Attaching it to the root's own node instead put every branch
+      // inside an object the caller never sees — the count said seven and the
+      // screen said nothing.
+      if (r.parentId === data.id) {
+        tree.push(node);
+        continue;
+      }
+      const parent = r.parentId ? byId.get(r.parentId) : undefined;
+      if (parent) parent.children.push(node);
+      else tree.push(node);
+    }
+
+    // The path back up, so somebody two levels down knows where they are.
     const path: { id: string; name: string }[] = [];
     let cursor = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -950,7 +1019,20 @@ export class AssetsService {
       cursor = { parentId: parent.parentId };
     }
 
-    return success({ children, path });
+    return success({
+      tree,
+      path,
+      // children kept for callers that only want the level below.
+      children: tree,
+      rollup: {
+        records: Math.max(0, rows.length - 1),
+        inCents: totalOf(sums, 'IN'),
+        outCents: totalOf(sums, 'OUT'),
+        netCents: totalOf(sums, 'IN') - totalOf(sums, 'OUT'),
+        ownOutCents: totalOf(ownSums, 'OUT'),
+        ownInCents: totalOf(ownSums, 'IN'),
+      },
+    });
   }
 
   /**

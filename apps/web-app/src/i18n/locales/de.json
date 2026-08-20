@@ -625,7 +625,9 @@
     "discard": "Verwerfen",
     "saved": "Gespeichert",
     "remove": "Entfernen",
-    "saveFailed": "Konnte nicht gespeichert werden"
+    "saveFailed": "Konnte nicht gespeichert werden",
+    "expand": "Ausklappen",
+    "collapse": "Einklappen"
   },
   "auth": {
     "login": {
@@ -6200,6 +6202,15 @@
     "title": "Darin",
     "here": "hier",
     "inside": "{{count}} darin",
-    "empty": "Nichts darin. Legen Sie einen Eintrag an und ordnen Sie ihn hier von seiner eigenen Seite aus ein."
+    "empty": "Nichts darin. Legen Sie einen Eintrag an und ordnen Sie ihn hier von seiner eigenen Seite aus ein.",
+    "totalOut": "Ausgaben gesamt",
+    "totalIn": "Einnahmen gesamt",
+    "ofWhichOwn": "{{amount}} davon hier",
+    "records": "Enthalten",
+    "recordsSub": "auf allen Ebenen",
+    "emptyShort": "Noch nichts darin.",
+    "addInside": "Etwas darin anlegen",
+    "namePh": "Hydraulikeinheit, Pumpe, Motor…",
+    "addFailed": "Konnte nicht angelegt werden"
   }
 }

@@ -625,7 +625,9 @@
     "discard": "Annuler les modifications",
     "saved": "Enregistré",
     "remove": "Retirer",
-    "saveFailed": "Impossible d’enregistrer"
+    "saveFailed": "Impossible d’enregistrer",
+    "expand": "Développer",
+    "collapse": "Réduire"
   },
   "auth": {
     "login": {
@@ -6175,6 +6177,15 @@
     "title": "À l’intérieur",
     "here": "ici",
     "inside": "{{count}} à l’intérieur",
-    "empty": "Rien à l’intérieur. Créez une fiche et placez-la ici depuis sa propre page."
+    "empty": "Rien à l’intérieur. Créez une fiche et placez-la ici depuis sa propre page.",
+    "totalOut": "Dépensé, au total",
+    "totalIn": "Gagné, au total",
+    "ofWhichOwn": "{{amount}} sur celui-ci",
+    "records": "À l’intérieur",
+    "recordsSub": "à tous les niveaux",
+    "emptyShort": "Rien à l’intérieur pour le moment.",
+    "addInside": "Ajouter à l’intérieur",
+    "namePh": "Unité hydraulique, Pompe, Moteur…",
+    "addFailed": "Impossible de l’ajouter"
   }
 }

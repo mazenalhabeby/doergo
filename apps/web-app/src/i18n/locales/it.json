@@ -625,7 +625,9 @@
     "discard": "Scarta",
     "saved": "Salvato",
     "remove": "Rimuovi",
-    "saveFailed": "Impossibile salvare"
+    "saveFailed": "Impossibile salvare",
+    "expand": "Espandi",
+    "collapse": "Comprimi"
   },
   "auth": {
     "login": {
@@ -6175,6 +6177,15 @@
     "title": "Dentro",
     "here": "qui",
     "inside": "{{count}} dentro",
-    "empty": "Niente dentro. Crea un record e mettilo qui dalla sua pagina."
+    "empty": "Niente dentro. Crea un record e mettilo qui dalla sua pagina.",
+    "totalOut": "Speso, in tutto",
+    "totalIn": "Guadagnato, in tutto",
+    "ofWhichOwn": "{{amount}} su questo",
+    "records": "Dentro",
+    "recordsSub": "a ogni livello",
+    "emptyShort": "Non c’è ancora nulla dentro.",
+    "addInside": "Aggiungi uno dentro",
+    "namePh": "Unità idraulica, Pompa, Motore…",
+    "addFailed": "Impossibile aggiungerlo"
   }
 }

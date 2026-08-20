@@ -625,7 +625,9 @@
     "discard": "Discard",
     "saved": "Saved",
     "remove": "Remove",
-    "saveFailed": "Could not save"
+    "saveFailed": "Could not save",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "auth": {
     "login": {
@@ -6201,6 +6203,15 @@
     "title": "Inside",
     "here": "here",
     "inside": "{{count}} inside",
-    "empty": "Nothing inside this one. Add a record and put it in here from its own page."
+    "empty": "Nothing inside this one. Add a record and put it in here from its own page.",
+    "totalOut": "Spent, all of it",
+    "totalIn": "Earned, all of it",
+    "ofWhichOwn": "{{amount}} on this one",
+    "records": "Inside",
+    "recordsSub": "at every level",
+    "emptyShort": "Nothing inside this one yet.",
+    "addInside": "Add one inside",
+    "namePh": "Hydraulic unit, Pump, Motor…",
+    "addFailed": "Could not add it"
   }
 }

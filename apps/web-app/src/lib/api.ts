@@ -1519,6 +1519,26 @@ export interface MaintenanceHistoryItem {
   duration?: number | null;
 }
 
+export interface StructureNode {
+  id: string;
+  name: string;
+  serialNumber?: string | null;
+  children: StructureNode[];
+}
+
+export interface AssetStructure {
+  tree: StructureNode[];
+  path: { id: string; name: string }[];
+  rollup: {
+    records: number;
+    inCents: number;
+    outCents: number;
+    netCents: number;
+    ownInCents: number;
+    ownOutCents: number;
+  };
+}
+
 export interface AssetListRow {
   id: string;
   list: string;
@@ -1840,11 +1860,15 @@ export const assetsApi = {
     return response.data;
   },
 
-  // This record's parts, and the path back up to the top.
+  // The whole breakdown of one record, the path back up, and what it has cost
+  // including everything inside it.
   getStructure: async (assetId: string) => {
-    const response = await api.get<{ success: boolean; data: { children: { id: string; name: string; serialNumber?: string | null; _count?: { children: number } }[]; path: { id: string; name: string }[] } }>(`/assets/${assetId}/structure`);
+    const response = await api.get<{ success: boolean; data: AssetStructure }>(`/assets/${assetId}/structure`);
     if (response.error) throw new Error(response.error);
-    return response.data?.data ?? { children: [], path: [] };
+    return response.data?.data ?? {
+      tree: [], path: [],
+      rollup: { records: 0, inCents: 0, outCents: 0, netCents: 0, ownInCents: 0, ownOutCents: 0 },
+    };
   },
 
   setParent: async (assetId: string, parentId: string | null) => {

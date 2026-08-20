@@ -267,7 +267,7 @@ export default function AssetRecordPage() {
           </div>
 
           {tab === "structure" ? (
-            <AssetStructure assetId={id} />
+            <AssetStructure assetId={id} kindId={kind?.id} />
           ) : tab.startsWith("list:") ? (
             (() => {
               const list = shape.lists.find((l) => `list:${l.label}` === tab)
