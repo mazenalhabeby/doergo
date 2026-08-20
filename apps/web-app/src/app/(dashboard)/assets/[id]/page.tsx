@@ -248,7 +248,7 @@ export default function AssetRecordPage() {
                 ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.entries.length || null] as const]
                 : []),
               ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
-              ["structure", t("assetStructure.title", "Parts of it"), null] as const,
+              ["structure", t("assetStructure.title", "Inside"), null] as const,
             ] as const).map(([key, label, count]) => (
               <button
                 key={key}

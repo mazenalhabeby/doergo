@@ -6198,7 +6198,7 @@
     "noCatalogue": "No parts catalogue on this kind yet — add one and its codes can be picked here."
   },
   "assetStructure": {
-    "title": "Parts of it",
+    "title": "Inside",
     "here": "here",
     "inside": "{{count}} inside",
     "empty": "Nothing inside this one. Add a record and put it in here from its own page."

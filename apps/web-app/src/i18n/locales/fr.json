@@ -6172,7 +6172,7 @@
     "noCatalogue": "Pas encore de catalogue de pièces sur ce type — créez-en un et ses codes seront sélectionnables ici."
   },
   "assetStructure": {
-    "title": "Ses composants",
+    "title": "À l’intérieur",
     "here": "ici",
     "inside": "{{count}} à l’intérieur",
     "empty": "Rien à l’intérieur. Créez une fiche et placez-la ici depuis sa propre page."

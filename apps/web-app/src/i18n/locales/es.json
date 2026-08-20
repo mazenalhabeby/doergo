@@ -6181,7 +6181,7 @@
     "noCatalogue": "Este tipo aún no tiene catálogo de piezas — cree uno y sus códigos se podrán elegir aquí."
   },
   "assetStructure": {
-    "title": "Sus partes",
+    "title": "Dentro",
     "here": "aquí",
     "inside": "{{count}} dentro",
     "empty": "Nada dentro. Cree un registro y colóquelo aquí desde su propia página."

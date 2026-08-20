@@ -6172,7 +6172,7 @@
     "noCatalogue": "Nessun catalogo ricambi su questo tipo — creane uno e i suoi codici saranno selezionabili qui."
   },
   "assetStructure": {
-    "title": "Le sue parti",
+    "title": "Dentro",
     "here": "qui",
     "inside": "{{count}} dentro",
     "empty": "Niente dentro. Crea un record e mettilo qui dalla sua pagina."

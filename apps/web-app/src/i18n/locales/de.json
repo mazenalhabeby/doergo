@@ -6197,9 +6197,9 @@
     "noCatalogue": "Noch kein Teilekatalog für diese Art — legen Sie einen an, dann sind seine Codes hier wählbar."
   },
   "assetStructure": {
-    "title": "Bestandteile",
+    "title": "Darin",
     "here": "hier",
-    "inside": "{{count}} enthalten",
+    "inside": "{{count}} darin",
     "empty": "Nichts darin. Legen Sie einen Eintrag an und ordnen Sie ihn hier von seiner eigenen Seite aus ein."
   }
 }
