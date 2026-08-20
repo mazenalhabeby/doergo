@@ -1,10 +1,20 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AssetsService } from './assets.service';
+import { AssetCatalogService } from './asset-catalog.service';
+import { AssetRowsService } from './asset-rows.service';
+import { AssetLedgerService } from './asset-ledger.service';
+import { AssetActivityService } from './asset-activity.service';
 
 @Controller()
 export class AssetsController {
-  constructor(private readonly assetsService: AssetsService) {}
+  constructor(
+    private readonly assetsService: AssetsService,
+    private readonly catalog: AssetCatalogService,
+    private readonly rows: AssetRowsService,
+    private readonly ledger: AssetLedgerService,
+    private readonly activity: AssetActivityService,
+  ) {}
 
   // ============================================
   // CATEGORIES (READ operations via MessagePattern)
@@ -12,7 +22,7 @@ export class AssetsController {
 
   @MessagePattern({ cmd: 'find_all_asset_categories' })
   async findAllCategories(@Payload() data: any) {
-    return this.assetsService.findAllCategories(data);
+    return this.catalog.findAllCategories(data);
   }
 
   // ============================================
@@ -21,7 +31,7 @@ export class AssetsController {
 
   @MessagePattern({ cmd: 'find_types_by_category' })
   async findTypesByCategory(@Payload() data: any) {
-    return this.assetsService.findTypesByCategory(data);
+    return this.catalog.findTypesByCategory(data);
   }
 
   // ============================================
@@ -45,47 +55,47 @@ export class AssetsController {
 
   @MessagePattern({ cmd: 'list_asset_activities' })
   async listActivities(@Payload() data: any) {
-    return this.assetsService.listActivities(data);
+    return this.activity.listActivities(data);
   }
 
   @MessagePattern({ cmd: 'add_asset_activity' })
   async addActivity(@Payload() data: any) {
-    return this.assetsService.addActivity(data);
+    return this.activity.addActivity(data);
   }
 
   @MessagePattern({ cmd: 'list_asset_money' })
   async listMoney(@Payload() data: any) {
-    return this.assetsService.listMoney(data);
+    return this.ledger.listMoney(data);
   }
 
   @MessagePattern({ cmd: 'add_asset_money' })
   async addMoney(@Payload() data: any) {
-    return this.assetsService.addMoney(data);
+    return this.ledger.addMoney(data);
   }
 
   @MessagePattern({ cmd: 'remove_asset_money' })
   async removeMoney(@Payload() data: any) {
-    return this.assetsService.removeMoney(data);
+    return this.ledger.removeMoney(data);
   }
 
   @MessagePattern({ cmd: 'list_asset_rows' })
   async listRows(@Payload() data: any) {
-    return this.assetsService.listRows(data);
+    return this.rows.listRows(data);
   }
 
   @MessagePattern({ cmd: 'add_asset_row' })
   async addRow(@Payload() data: any) {
-    return this.assetsService.addRow(data);
+    return this.rows.addRow(data);
   }
 
   @MessagePattern({ cmd: 'update_asset_row' })
   async updateRow(@Payload() data: any) {
-    return this.assetsService.updateRow(data);
+    return this.rows.updateRow(data);
   }
 
   @MessagePattern({ cmd: 'remove_asset_row' })
   async removeRow(@Payload() data: any) {
-    return this.assetsService.removeRow(data);
+    return this.rows.removeRow(data);
   }
 
   @MessagePattern({ cmd: 'asset_structure' })

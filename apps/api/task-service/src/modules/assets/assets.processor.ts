@@ -3,12 +3,16 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, ASSET_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { AssetsService } from './assets.service';
+import { AssetCatalogService } from './asset-catalog.service';
 
 @Processor(QUEUE_NAMES.ASSETS)
 export class AssetsProcessor extends WorkerHost {
   private readonly logger = new Logger(AssetsProcessor.name);
 
-  constructor(private readonly assetsService: AssetsService) {
+  constructor(
+    private readonly assetsService: AssetsService,
+    private readonly catalog: AssetCatalogService,
+  ) {
     super();
   }
 
@@ -28,23 +32,23 @@ export class AssetsProcessor extends WorkerHost {
     switch (job.name) {
       // Categories
       case ASSET_JOB_TYPES.CREATE_CATEGORY:
-        return this.assetsService.createCategory(job.data);
+        return this.catalog.createCategory(job.data);
 
       case ASSET_JOB_TYPES.UPDATE_CATEGORY:
-        return this.assetsService.updateCategory(job.data);
+        return this.catalog.updateCategory(job.data);
 
       case ASSET_JOB_TYPES.DELETE_CATEGORY:
-        return this.assetsService.deleteCategory(job.data);
+        return this.catalog.deleteCategory(job.data);
 
       // Types
       case ASSET_JOB_TYPES.CREATE_TYPE:
-        return this.assetsService.createType(job.data);
+        return this.catalog.createType(job.data);
 
       case ASSET_JOB_TYPES.UPDATE_TYPE:
-        return this.assetsService.updateType(job.data);
+        return this.catalog.updateType(job.data);
 
       case ASSET_JOB_TYPES.DELETE_TYPE:
-        return this.assetsService.deleteType(job.data);
+        return this.catalog.deleteType(job.data);
 
       // Assets
       case ASSET_JOB_TYPES.CREATE:

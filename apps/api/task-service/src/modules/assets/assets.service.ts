@@ -1,16 +1,14 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
   ForbiddenException,
-  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  Role, success, paginated, TaskStatus, normalizeKindShape, normalizeDetailRows, findMoneyCategory,
-  findKindList, normalizeListRow, listRowIsEmpty,
-} from '@hbcfield/shared';
+import { Role, success, paginated, TaskStatus, normalizeDetailRows } from '@hbcfield/shared';
+import { AssetAccessService } from './asset-access.service';
+import { AssetActivityService } from './asset-activity.service';
 
 /**
  * How deep a machine may nest. ISO 14224 breaks equipment down four levels
@@ -27,435 +25,21 @@ export interface StructureNode {
   children: StructureNode[];
 }
 
-/** Nobody may ask for more than this in one request, however they ask. */
-const MAX_PAGE = 200;
-
+/**
+ * The records themselves: the things an organization owns, what they are made
+ * of, and who has them.
+ *
+ * Tables, money and activity moved out to services of their own; this one asks
+ * them for what it needs. It kept the name so every existing import and message
+ * pattern still resolves.
+ */
 @Injectable()
 export class AssetsService {
-  /**
-   * Who may read, and who may change.
-   *
-   * This check was written out 25 times, each with its own message and its own
-   * `as any` cast. Once is enough: a rule copied 25 times is a rule that will
-   * eventually be copied wrong, and the cast hid that the caller's type never
-   * admitted the flag it was reading.
-   */
-  private assertMay(
-    actor: { userRole: string; canViewAllTasks?: boolean },
-    doing: string,
-  ): void {
-    if (actor.userRole === Role.ADMIN || actor.canViewAllTasks) return;
-    throw new ForbiddenException(`You do not have permission to ${doing}`);
-  }
-
-  /**
-   * A page size somebody actually gets.
-   *
-   * `limit || 20` honoured whatever arrived, so ?limit=100000 returned the
-   * table. Clamped in the service rather than only at the edge, because the
-   * queue path reaches these methods without passing a DTO.
-   */
-  private pageSize(limit: unknown, fallback = 20): number {
-    const n = Number(limit);
-    if (!Number.isFinite(n) || n < 1) return fallback;
-    return Math.min(Math.floor(n), MAX_PAGE);
-  }
-
-  constructor(private readonly prisma: PrismaService) {}
-
-  // ============================================
-  // ASSET CATEGORIES
-  // ============================================
-
-  /**
-   * Create a new asset category
-   */
-  async createCategory(data: {
-    name: string;
-    description?: string;
-    icon?: string;
-    color?: string;
-    spaceId?: string;
-    config?: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    // Only CLIENT and DISPATCHER can create categories
-    this.assertMay(data as any, 'create asset categories');
-
-    // A kind belongs to a space, so the space must be one of THIS org's. Without
-    // this check a caller could hang their kinds off another tenant's space by
-    // passing its id.
-    if (data.spaceId) {
-      const space = await this.prisma.companyLocation.findFirst({
-        where: { id: data.spaceId, organizationId: data.organizationId },
-        select: { id: true },
-      });
-      if (!space) {
-        throw new NotFoundException('Space not found in this organization');
-      }
-    }
-
-    // Duplicate names are rejected per SPACE — two spaces may each have their
-    // own "Vehicles", but one space may not have two.
-    const existing = await this.prisma.assetCategory.findFirst({
-      where: {
-        organizationId: data.organizationId,
-        spaceId: data.spaceId ?? null,
-        name: data.name,
-      },
-      select: { id: true },
-    });
-
-    if (existing) {
-      throw new ConflictException(`"${data.name}" already exists in this space`);
-    }
-
-    const category = await this.prisma.assetCategory.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        icon: data.icon,
-        color: data.color,
-        organizationId: data.organizationId,
-        spaceId: data.spaceId ?? null,
-        // Normalised on the way in, so a malformed shape is rejected once here
-        // rather than surprising every reader of the column later.
-        config: normalizeKindShape(data.config) as unknown as Prisma.InputJsonValue,
-      },
-      include: {
-        _count: { select: { types: true, assets: true } },
-      },
-    });
-
-    return success(category);
-  }
-
-  /**
-   * Get all categories for an organization
-   */
-  async findAllCategories(query: {
-    userId: string;
-    userRole: string;
-    organizationId: string;
-    spaceId?: string;
-  }) {
-    this.assertMay(query as any, 'view asset categories');
-
-    const categories = await this.prisma.assetCategory.findMany({
-      // Asking for a space returns THAT space's kinds only. Asking for none
-      // returns everything the org has, which is what the org-wide screen wants.
-      where: {
-        organizationId: query.organizationId,
-        ...(query.spaceId ? { spaceId: query.spaceId } : {}),
-      },
-      orderBy: { name: 'asc' },
-      include: {
-        _count: { select: { types: true, assets: true } },
-      },
-    });
-
-    return success(categories);
-  }
-
-  /**
-   * Update a category
-   */
-  async updateCategory(data: {
-    config?: unknown;
-    id: string;
-    name?: string;
-    description?: string;
-    icon?: string;
-    color?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update asset categories');
-
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: data.id },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
-    }
-
-    // Renaming: the clash is with the OTHER kinds in the same space, not the
-    // whole org — another space is free to have a kind by this name.
-    if (data.name && data.name !== category.name) {
-      const existing = await this.prisma.assetCategory.findFirst({
-        where: {
-          organizationId: data.organizationId,
-          spaceId: category.spaceId,
-          name: data.name,
-          id: { not: category.id },
-        },
-        select: { id: true },
-      });
-
-      if (existing) {
-        throw new ConflictException(`"${data.name}" already exists in this space`);
-      }
-    }
-
-    const updated = await this.prisma.assetCategory.update({
-      where: { id: data.id },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.icon !== undefined && { icon: data.icon }),
-        ...(data.color !== undefined && { color: data.color }),
-        ...(data.config !== undefined && {
-          config: normalizeKindShape(data.config) as unknown as Prisma.InputJsonValue,
-        }),
-      },
-      include: {
-        _count: { select: { types: true, assets: true } },
-      },
-    });
-
-    return success(updated);
-  }
-
-  /**
-   * Delete a category (and its types)
-   */
-  async deleteCategory(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'delete asset categories');
-
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: data.id },
-      include: { _count: { select: { assets: true } } },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
-    }
-
-    // Warn if there are assets (they will be orphaned, not deleted)
-    if (category._count.assets > 0) {
-      // Set assets' categoryId to null instead of blocking delete
-      await this.prisma.asset.updateMany({
-        where: { categoryId: data.id },
-        data: { categoryId: null, typeId: null },
-      });
-    }
-
-    await this.prisma.assetCategory.delete({ where: { id: data.id } });
-
-    return success(null, 'Category deleted successfully');
-  }
-
-  // ============================================
-  // ASSET TYPES
-  // ============================================
-
-  /**
-   * Create a new asset type within a category
-   */
-  async createType(data: {
-    categoryId: string;
-    name: string;
-    description?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'create asset types');
-
-    // Verify category exists and belongs to org
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: data.categoryId },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
-    }
-
-    // Check for duplicate name in same category
-    const existing = await this.prisma.assetType.findUnique({
-      where: {
-        categoryId_name: {
-          categoryId: data.categoryId,
-          name: data.name,
-        },
-      },
-    });
-
-    if (existing) {
-      throw new ConflictException(`Type "${data.name}" already exists in this category`);
-    }
-
-    const type = await this.prisma.assetType.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        categoryId: data.categoryId,
-      },
-      include: {
-        category: { select: { id: true, name: true } },
-        _count: { select: { assets: true } },
-      },
-    });
-
-    return success(type);
-  }
-
-  /**
-   * Get all types for a category
-   */
-  async findTypesByCategory(query: {
-    categoryId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(query as any, 'view asset types');
-
-    // Verify category belongs to org
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: query.categoryId },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== query.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
-    }
-
-    const types = await this.prisma.assetType.findMany({
-      where: { categoryId: query.categoryId },
-      orderBy: { name: 'asc' },
-      include: {
-        _count: { select: { assets: true } },
-      },
-    });
-
-    return success(types);
-  }
-
-  /**
-   * Update a type
-   */
-  async updateType(data: {
-    id: string;
-    name?: string;
-    description?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update asset types');
-
-    const type = await this.prisma.assetType.findUnique({
-      where: { id: data.id },
-      include: { category: true },
-    });
-
-    if (!type) {
-      throw new NotFoundException('Type not found');
-    }
-
-    if (type.category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Type does not belong to your organization');
-    }
-
-    // Check for duplicate name if changing name
-    if (data.name && data.name !== type.name) {
-      const existing = await this.prisma.assetType.findUnique({
-        where: {
-          categoryId_name: {
-            categoryId: type.categoryId,
-            name: data.name,
-          },
-        },
-      });
-
-      if (existing) {
-        throw new ConflictException(`Type "${data.name}" already exists in this category`);
-      }
-    }
-
-    const updated = await this.prisma.assetType.update({
-      where: { id: data.id },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description }),
-      },
-      include: {
-        category: { select: { id: true, name: true } },
-        _count: { select: { assets: true } },
-      },
-    });
-
-    return success(updated);
-  }
-
-  /**
-   * Delete a type
-   */
-  async deleteType(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'delete asset types');
-
-    const type = await this.prisma.assetType.findUnique({
-      where: { id: data.id },
-      include: {
-        category: true,
-        _count: { select: { assets: true } },
-      },
-    });
-
-    if (!type) {
-      throw new NotFoundException('Type not found');
-    }
-
-    if (type.category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Type does not belong to your organization');
-    }
-
-    // Set assets' typeId to null instead of blocking delete
-    if (type._count.assets > 0) {
-      await this.prisma.asset.updateMany({
-        where: { typeId: data.id },
-        data: { typeId: null },
-      });
-    }
-
-    await this.prisma.assetType.delete({ where: { id: data.id } });
-
-    return success(null, 'Type deleted successfully');
-  }
-
-  // ============================================
-  // ASSETS
-  // ============================================
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly activity: AssetActivityService,
+  ) {}
 
   /**
    * Create a new asset
@@ -500,423 +84,6 @@ export class AssetsService {
   }
 
   /**
-   * Confirm an asset is this organization's before anything reads or writes it.
-   *
-   * Ids are guessable, so every activity call goes through here rather than
-   * trusting the id in the URL. Returns the row, since callers need it anyway.
-   */
-  private async assetInOrg(id: string, organizationId: string) {
-    const asset = await this.prisma.asset.findFirst({
-      where: { id, organizationId },
-      select: { id: true, holderUserId: true, customerId: true, categoryId: true },
-    });
-    if (!asset) throw new NotFoundException('Asset not found in this organization');
-    return asset;
-  }
-
-  /**
-   * What happened to one asset, newest first.
-   *
-   * Authors are resolved in one query rather than per row — a timeline is the
-   * screen most likely to grow long, and N+1 here would be felt.
-   */
-  async listActivities(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'view assets');
-    await this.assetInOrg(data.id, data.organizationId);
-
-    const activities = await this.prisma.assetActivity.findMany({
-      where: { assetId: data.id },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
-
-    const authorIds = [...new Set(activities.map((a) => a.authorId).filter(Boolean))] as string[];
-    const authors = authorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: authorIds } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
-    const byId = new Map(authors.map((a) => [a.id, a]));
-
-    return success(activities.map((a) => ({ ...a, author: a.authorId ? byId.get(a.authorId) ?? null : null })));
-  }
-
-  /** Write a note against an asset. */
-  async addActivity(data: {
-    id: string;
-    body: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update assets');
-    await this.assetInOrg(data.id, data.organizationId);
-
-    const body = (data.body ?? '').trim();
-    if (!body) throw new BadRequestException('A note needs something in it');
-
-    const activity = await this.prisma.assetActivity.create({
-      data: {
-        organizationId: data.organizationId,
-        assetId: data.id,
-        type: 'NOTE',
-        body: body.slice(0, 4000),
-        authorId: data.userId,
-      },
-    });
-
-    return success(activity);
-  }
-
-  /**
-   * Record that an asset changed hands.
-   *
-   * Best effort: a timeline entry that fails must never fail the change it was
-   * describing, or moving a van to a different driver would error after the
-   * move had already been written.
-   */
-  private async logHolderChange(
-    assetId: string,
-    organizationId: string,
-    authorId: string,
-    from: { holderUserId: string | null; customerId: string | null },
-    to: { holderUserId: string | null; customerId: string | null },
-  ) {
-    if (from.holderUserId === to.holderUserId && from.customerId === to.customerId) return;
-    try {
-      await this.prisma.assetActivity.create({
-        data: {
-          organizationId,
-          assetId,
-          type: 'HOLDER_CHANGED',
-          authorId,
-          metadata: { from, to } as unknown as Prisma.InputJsonValue,
-        },
-      });
-    } catch {
-      // Deliberately swallowed — see above.
-    }
-  }
-
-  /**
-   * The money logged against one asset, newest first, with the totals.
-   *
-   * Totals come from a groupBy over the WHOLE ledger, not from summing the page
-   * — a total that only counted the rows currently on screen would be wrong the
-   * moment there were more than a page of them, and wrong quietly.
-   */
-  async listMoney(data: {
-    id: string;
-    limit?: number;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'view assets');
-    await this.assetInOrg(data.id, data.organizationId);
-
-    const take = Math.min(Math.max(data.limit ?? 100, 1), 200);
-
-    const [entries, sums] = await Promise.all([
-      this.prisma.assetMoney.findMany({
-        where: { assetId: data.id },
-        orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
-        take,
-      }),
-      this.prisma.assetMoney.groupBy({
-        by: ['direction'],
-        where: { assetId: data.id },
-        _sum: { amountCents: true },
-      }),
-    ]);
-
-    const totalFor = (direction: string) =>
-      sums.find((s) => s.direction === direction)?._sum.amountCents ?? 0;
-    const inCents = totalFor('IN');
-    const outCents = totalFor('OUT');
-
-    return success({
-      entries,
-      totals: { inCents, outCents, netCents: inCents - outCents },
-    });
-  }
-
-  /**
-   * Log money against an asset.
-   *
-   * The category must be one its KIND declares. A free-text heading would split
-   * a total between "Repairs" and "repair" and neither half would look wrong.
-   * The label is then STORED, so renaming the category later leaves history
-   * reading as it did at the time.
-   */
-  async addMoney(data: {
-    id: string;
-    category: string;
-    amountCents: number;
-    note?: string;
-    occurredAt?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update assets');
-
-    const asset = await this.prisma.asset.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
-      select: { id: true, category: { select: { config: true } } },
-    });
-    if (!asset) throw new NotFoundException('Asset not found in this organization');
-
-    const shape = normalizeKindShape(asset.category?.config);
-    if (!shape.money.enabled) {
-      throw new BadRequestException('This kind does not track money');
-    }
-
-    const category = findMoneyCategory(shape, data.category ?? '');
-    if (!category) {
-      throw new BadRequestException(`"${data.category}" is not a category on this kind`);
-    }
-
-    // Cents, and never negative — the direction decides the sign, so a negative
-    // amount here would silently invert an entry.
-    const amountCents = Math.abs(Math.round(Number(data.amountCents)));
-    if (!Number.isFinite(amountCents) || amountCents <= 0) {
-      throw new BadRequestException('An amount is needed');
-    }
-
-    const occurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date();
-    if (Number.isNaN(occurredAt.getTime())) {
-      throw new BadRequestException('That date could not be read');
-    }
-
-    const entry = await this.prisma.assetMoney.create({
-      data: {
-        organizationId: data.organizationId,
-        assetId: data.id,
-        category: category.label,
-        direction: category.direction === 'in' ? 'IN' : 'OUT',
-        amountCents,
-        note: data.note?.trim().slice(0, 500) || null,
-        occurredAt,
-        authorId: data.userId,
-      },
-    });
-
-    return success(entry);
-  }
-
-  /** Remove one entry. Scoped to the asset, so an id alone is not enough. */
-  async removeMoney(data: {
-    id: string;
-    entryId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update assets');
-    await this.assetInOrg(data.id, data.organizationId);
-
-    const { count } = await this.prisma.assetMoney.deleteMany({
-      where: { id: data.entryId, assetId: data.id, organizationId: data.organizationId },
-    });
-    if (!count) throw new NotFoundException('Entry not found');
-
-    return success({ id: data.entryId });
-  }
-
-  /**
-   * The rows of one table on a record — a machine's parts, an apartment's keys.
-   *
-   * Paged, because a machine can have hundreds of parts and a record page must
-   * not pay for all of them. Search runs in SQL over the row's JSON rather than
-   * in JavaScript over a fetched page, or it would only ever find what happened
-   * to be on screen.
-   */
-  async listRows(data: {
-    id: string;
-    list: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'view assets');
-    const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
-
-    const page = Math.max(1, data.page ?? 1);
-    const limit = Math.min(Math.max(data.limit ?? 50, 1), 200);
-    const search = data.search?.trim();
-
-    const where: Prisma.AssetListRowWhereInput = {
-      ...owner,
-      list: list.label,
-      // string_contains over the whole row would need a column; matching any
-      // declared column keeps it to the values people actually see.
-      ...(search
-        ? {
-            OR: list.columns.map((c) => ({
-              values: { path: [c.label], string_contains: search } as Prisma.JsonFilter,
-            })),
-          }
-        : {}),
-    };
-
-    const [rows, total] = await Promise.all([
-      this.prisma.assetListRow.findMany({
-        where,
-        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.assetListRow.count({ where }),
-    ]);
-
-    return paginated(rows, { page, limit, total });
-  }
-
-  /** Add a row. Values are cleaned against the columns the list declares. */
-  async addRow(data: {
-    id: string;
-    list: string;
-    values: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update assets');
-    const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
-
-    const values = normalizeListRow(list, data.values);
-    if (listRowIsEmpty(values)) {
-      throw new BadRequestException('A row needs something in it');
-    }
-
-    // Appended, not inserted: a row lands where somebody expects it to.
-    const last = await this.prisma.assetListRow.findFirst({
-      where: { ...owner, list: list.label },
-      orderBy: { position: 'desc' },
-      select: { position: true },
-    });
-
-    const row = await this.prisma.assetListRow.create({
-      data: {
-        organizationId: data.organizationId,
-        ...owner,
-        list: list.label,
-        values: values as unknown as Prisma.InputJsonValue,
-        position: (last?.position ?? 0) + 1,
-      },
-    });
-
-    return success(row);
-  }
-
-  /** Change one row. */
-  async updateRow(data: {
-    id: string;
-    rowId: string;
-    values: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update assets');
-    await this.assetInOrg(data.id, data.organizationId);
-
-    // Scoped to the ORG, then re-checked against the resolved owner below: a
-    // shared row belongs to the kind, so scoping the lookup to this asset would
-    // make the catalogue read-only from every record that uses it.
-    const existing = await this.prisma.assetListRow.findFirst({
-      where: { id: data.rowId, organizationId: data.organizationId },
-    });
-    if (!existing) throw new NotFoundException('Row not found');
-
-    const { list, owner } = await this.assetList(data.id, existing.list, data.organizationId);
-    if (
-      (owner.assetId && existing.assetId !== owner.assetId) ||
-      (owner.categoryId && existing.categoryId !== owner.categoryId)
-    ) {
-      throw new NotFoundException('Row not found');
-    }
-    const values = normalizeListRow(list, data.values);
-    if (listRowIsEmpty(values)) {
-      throw new BadRequestException('A row needs something in it');
-    }
-
-    const row = await this.prisma.assetListRow.update({
-      where: { id: data.rowId },
-      data: { values: values as unknown as Prisma.InputJsonValue },
-    });
-
-    return success(row);
-  }
-
-  /** Remove one row, from this record or from the kind's shared catalogue. */
-  async removeRow(data: {
-    id: string;
-    rowId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.assertMay(data as any, 'update assets');
-    const asset = await this.assetInOrg(data.id, data.organizationId);
-
-    // Either this record's own row, or a row of a catalogue this record's kind
-    // owns. Never another kind's, and never another record's.
-    const { count } = await this.prisma.assetListRow.deleteMany({
-      where: {
-        id: data.rowId,
-        organizationId: data.organizationId,
-        OR: [{ assetId: data.id }, ...(asset.categoryId ? [{ categoryId: asset.categoryId }] : [])],
-      },
-    });
-    if (!count) throw new NotFoundException('Row not found');
-
-    return success({ id: data.rowId });
-  }
-
-  /**
-   * Resolve an asset and one of the lists its KIND declares.
-   *
-   * The list must be declared, for the same reason a money category must be:
-   * free-text names would split one table into "Parts" and "parts" and neither
-   * would look wrong.
-   */
-  private async assetList(assetId: string, listLabel: string, organizationId: string) {
-    const asset = await this.prisma.asset.findFirst({
-      where: { id: assetId, organizationId },
-      select: { id: true, categoryId: true, category: { select: { config: true } } },
-    });
-    if (!asset) throw new NotFoundException('Asset not found in this organization');
-
-    const shape = normalizeKindShape(asset.category?.config);
-    const list = findKindList(shape, listLabel ?? '');
-    if (!list) throw new BadRequestException(`"${listLabel}" is not a list on this kind`);
-
-    // A shared table's rows hang off the KIND, so every record of that kind
-    // reads the same catalogue. Resolving the owner here means every caller
-    // below is identical whichever sort of table it is.
-    const owner = list.shared
-      ? { categoryId: asset.categoryId, assetId: null }
-      : { assetId: asset.id, categoryId: null };
-
-    if (list.shared && !asset.categoryId) {
-      throw new BadRequestException('This record has no kind, so it has no shared catalogue');
-    }
-
-    return { shape, list, owner };
-  }
-
-  /**
    * The whole breakdown of one machine, with what it has cost.
    *
    * The entire subtree in ONE query, not a level per click: a technician
@@ -933,8 +100,8 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'view assets');
-    await this.assetInOrg(data.id, data.organizationId);
+    this.access.assertMay(data as any, 'view assets');
+    await this.access.assetInOrg(data.id, data.organizationId);
 
     // One recursive walk down, depth-bounded so a corrupted parent chain costs
     // a query rather than the process. Scoped to the org at every level: a
@@ -1045,8 +212,8 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'update assets');
-    await this.assetInOrg(data.id, data.organizationId);
+    this.access.assertMay(data as any, 'update assets');
+    await this.access.assetInOrg(data.id, data.organizationId);
 
     const parentId = data.parentId?.trim() || null;
 
@@ -1111,7 +278,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'create assets');
+    this.access.assertMay(data as any, 'create assets');
 
     // Verify category if provided
     if (data.categoryId) {
@@ -1185,10 +352,10 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(query as any, 'view assets');
+    this.access.assertMay(query as any, 'view assets');
 
     const page = Math.max(1, query.page || 1);
-    const limit = this.pageSize(query.limit);
+    const limit = this.access.pageSize(query.limit);
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -1237,7 +404,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'view assets');
+    this.access.assertMay(data as any, 'view assets');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1297,7 +464,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'update assets');
+    this.access.assertMay(data as any, 'update assets');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1344,7 +511,7 @@ export class AssetsService {
       data.holderUserId !== undefined || data.customerId !== undefined
         ? await this.resolveHolder(data, data.organizationId)
         : null;
-    const before = holderChange ? await this.assetInOrg(data.id, data.organizationId) : null;
+    const before = holderChange ? await this.access.assetInOrg(data.id, data.organizationId) : null;
 
     const updated = await this.prisma.asset.update({
       where: { id: data.id },
@@ -1376,7 +543,7 @@ export class AssetsService {
     });
 
     if (holderChange && before) {
-      await this.logHolderChange(
+      await this.activity.logHolderChange(
         data.id,
         data.organizationId,
         data.userId,
@@ -1397,7 +564,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'delete assets');
+    this.access.assertMay(data as any, 'delete assets');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1436,7 +603,7 @@ export class AssetsService {
     userRole: string;
     organizationId: string;
   }) {
-    this.assertMay(data as any, 'view maintenance history');
+    this.access.assertMay(data as any, 'view maintenance history');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -1451,7 +618,7 @@ export class AssetsService {
     }
 
     const page = Math.max(1, data.page || 1);
-    const limit = this.pageSize(data.limit);
+    const limit = this.access.pageSize(data.limit);
     const skip = (page - 1) * limit;
 
     const [tasks, total] = await Promise.all([

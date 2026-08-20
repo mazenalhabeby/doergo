@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { AssetsService } from '../assets.service';
+import { AssetAccessService } from '../asset-access.service';
 
 /**
  * The two rules that were spread across 25 copies and one missing clamp.
@@ -7,9 +7,9 @@ import { AssetsService } from '../assets.service';
  * Reached through the class rather than reimplemented here — a test that
  * rewrites the rule it is testing passes whatever the code does.
  */
-describe('assets service guards', () => {
+describe('asset access rules', () => {
   // Only the guards are exercised; nothing here touches the database.
-  const svc = new AssetsService({} as never);
+  const svc = new AssetAccessService({} as never);
   const may = (actor: unknown) => (svc as any).assertMay(actor, 'do the thing');
   const page = (limit: unknown, fallback?: number) => (svc as any).pageSize(limit, fallback);
 
