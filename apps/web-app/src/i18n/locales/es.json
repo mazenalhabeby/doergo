@@ -6097,7 +6097,14 @@
     "fieldsHint": "Planta, habitaciones, alquiler, matrícula, número de serie — lo que necesite.",
     "fieldLabel": "Planta",
     "allowExtra": "Permitir campos adicionales en un registro",
-    "allowExtraHint": "Desactivado: cada uno tendrá exactamente los campos de arriba, nada más."
+    "allowExtraHint": "Desactivado: cada uno tendrá exactamente los campos de arriba, nada más.",
+    "money": "Cuesta o genera dinero",
+    "moneyHint": "Registre entradas y salidas, con fechas y un total acumulado.",
+    "moneyCategories": "Bajo qué se registra el dinero",
+    "moneyCategoriesHint": "Alquiler, Reparaciones, Suministros — o Combustible, Servicio, Seguro.",
+    "moneyCategoryPh": "Alquiler",
+    "moneyIn": "Entra",
+    "moneyOut": "Sale"
   },
   "assetRecords": {
     "intro": "Todo de este tipo en este espacio.",
@@ -6126,5 +6133,15 @@
     "someone": "Un miembro",
     "aClient": "Un cliente",
     "nobodyHas": "Nadie tiene este."
+  },
+  "assetMoney": {
+    "title": "Dinero",
+    "in": "Entradas",
+    "out": "Salidas",
+    "net": "Neto",
+    "amount": "Importe",
+    "notePh": "¿Para qué?",
+    "empty": "Aún no hay registros.",
+    "noCategories": "Este tipo registra dinero pero aún no tiene categorías — añádalas en el tipo."
   }
 }

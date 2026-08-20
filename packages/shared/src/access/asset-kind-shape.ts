@@ -19,6 +19,8 @@ export const KIND_SHAPE_LIMITS = {
   maxFields: 20,
   maxLabel: 60,
   maxHolderLabel: 40,
+  /** Enough headings to be useful; few enough that a total stays readable. */
+  maxMoneyCategories: 20,
 } as const;
 
 /** Who may hold one of these — the apartment "resident", generalised. */
@@ -35,6 +37,26 @@ export interface KindHolder {
 /** One prompted field on every record of this kind — "Floor", "Plate", "Rent". */
 export interface KindField {
   label: string;
+}
+
+/** Money in or money out. Rent comes in; a repair goes out. */
+export type MoneyDirection = 'in' | 'out';
+
+/**
+ * A heading money is logged under: "Rent", "Repairs", "Fuel", "Service".
+ *
+ * The kind names these, so nothing in the code knows what rent is — an
+ * Apartments kind and a Vehicles kind run the same ledger under different words.
+ */
+export interface KindMoneyCategory {
+  label: string;
+  direction: MoneyDirection;
+}
+
+export interface KindMoney {
+  /** Does this kind cost or earn anything worth recording? */
+  enabled: boolean;
+  categories: KindMoneyCategory[];
 }
 
 export interface KindShape {
@@ -55,6 +77,7 @@ export interface KindShape {
    * silently withdraw it from every kind that already exists.
    */
   allowExtraFields: boolean;
+  money: KindMoney;
 }
 
 const str = (v: unknown, max: number): string =>
@@ -100,12 +123,29 @@ export function normalizeKindShape(raw: unknown): KindShape {
     fields.push({ label });
   }
 
+  const moneySrc = (src.money && typeof src.money === 'object' ? src.money : {}) as Record<string, unknown>;
+  const moneySeen = new Set<string>();
+  const categories: KindMoneyCategory[] = [];
+  for (const entry of Array.isArray(moneySrc.categories) ? moneySrc.categories : []) {
+    if (categories.length >= KIND_SHAPE_LIMITS.maxMoneyCategories) break;
+    const e = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
+    const label = str(e.label, KIND_SHAPE_LIMITS.maxLabel);
+    if (!label) continue;
+    const key = label.toLowerCase();
+    // Two categories with one name would split a total in half and neither
+    // half would look wrong.
+    if (moneySeen.has(key)) continue;
+    moneySeen.add(key);
+    categories.push({ label, direction: e.direction === 'in' ? 'in' : 'out' });
+  }
+
   return {
     nameLabel: str(src.nameLabel, KIND_SHAPE_LIMITS.maxLabel),
     hasAddress: bool(src.hasAddress),
     holder,
     fields,
     allowExtraFields: bool(src.allowExtraFields, true),
+    money: { enabled: bool(moneySrc.enabled), categories },
   };
 }
 
@@ -174,4 +214,23 @@ export function detailRowsForKind(shape: KindShape, saved: unknown): DetailRow[]
     if (!used.has(row.label.toLowerCase())) out.push(row);
   }
   return out;
+}
+
+/** Find a category the kind declares, by name. Case-insensitive. */
+export function findMoneyCategory(shape: KindShape, label: string): KindMoneyCategory | null {
+  const key = label.trim().toLowerCase();
+  return shape.money.categories.find((c) => c.label.toLowerCase() === key) ?? null;
+}
+
+/**
+ * What an entry is worth to the total: money in counts up, money out counts down.
+ *
+ * Amounts are stored positive with a direction beside them rather than signed,
+ * so a row reads the way somebody would say it out loud — and a total is a
+ * deliberate calculation rather than a sum that quietly depends on every sign
+ * having been written correctly.
+ */
+export function signedCents(direction: MoneyDirection, amountCents: number): number {
+  const magnitude = Math.abs(Math.round(amountCents));
+  return direction === 'in' ? magnitude : -magnitude;
 }

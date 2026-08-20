@@ -52,4 +52,19 @@ export class AssetsController {
   async addActivity(@Payload() data: any) {
     return this.assetsService.addActivity(data);
   }
+
+  @MessagePattern({ cmd: 'list_asset_money' })
+  async listMoney(@Payload() data: any) {
+    return this.assetsService.listMoney(data);
+  }
+
+  @MessagePattern({ cmd: 'add_asset_money' })
+  async addMoney(@Payload() data: any) {
+    return this.assetsService.addMoney(data);
+  }
+
+  @MessagePattern({ cmd: 'remove_asset_money' })
+  async removeMoney(@Payload() data: any) {
+    return this.assetsService.removeMoney(data);
+  }
 }

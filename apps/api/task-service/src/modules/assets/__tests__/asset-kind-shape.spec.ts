@@ -134,3 +134,50 @@ describe('allowExtraFields', () => {
     expect(rows).toContainEqual({ label: 'Door code', value: '1234' });
   });
 });
+
+import { findMoneyCategory, signedCents } from '@hbcfield/shared';
+
+describe('money on a kind', () => {
+  it('is off until somebody turns it on, and starts with no categories', () => {
+    expect(shapeOf(null).money).toEqual({ enabled: false, categories: [] });
+  });
+
+  it('keeps the headings the kind named, with their direction', () => {
+    const s = shapeOf({ money: { enabled: true, categories: [
+      { label: 'Rent', direction: 'in' },
+      { label: 'Repairs', direction: 'out' },
+    ] } });
+    expect(s.money.categories).toEqual([
+      { label: 'Rent', direction: 'in' },
+      { label: 'Repairs', direction: 'out' },
+    ]);
+  });
+
+  it('treats anything that is not "in" as money going out', () => {
+    // A junk direction must not become a third state nobody handles.
+    const s = shapeOf({ money: { categories: [{ label: 'X', direction: 'sideways' }] } });
+    expect(s.money.categories[0]!.direction).toBe('out');
+  });
+
+  it('drops a duplicate heading — a total split in half looks wrong nowhere', () => {
+    const s = shapeOf({ money: { categories: [
+      { label: 'Rent', direction: 'in' },
+      { label: 'rent', direction: 'out' },
+    ] } });
+    expect(s.money.categories).toHaveLength(1);
+  });
+
+  it('finds a category however it was capitalised', () => {
+    const s = shapeOf({ money: { enabled: true, categories: [{ label: 'Rent', direction: 'in' }] } });
+    expect(findMoneyCategory(s, 'RENT')?.label).toBe('Rent');
+    expect(findMoneyCategory(s, 'Fuel')).toBeNull();
+  });
+
+  it('counts money in up and money out down, whatever sign was passed', () => {
+    expect(signedCents('in', 90000)).toBe(90000);
+    expect(signedCents('out', 8500)).toBe(-8500);
+    // A negative amount must not invert an entry.
+    expect(signedCents('out', -8500)).toBe(-8500);
+    expect(signedCents('in', -90000)).toBe(90000);
+  });
+});

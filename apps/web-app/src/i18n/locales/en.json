@@ -6114,7 +6114,14 @@
     "fieldsHint": "Floor, rooms, rent, plate, serial — whatever this kind needs.",
     "fieldLabel": "Floor",
     "allowExtra": "Allow extra fields on a record",
-    "allowExtraHint": "Off, every one of them holds exactly the fields above — nothing more."
+    "allowExtraHint": "Off, every one of them holds exactly the fields above — nothing more.",
+    "money": "It costs or earns money",
+    "moneyHint": "Log what comes in and what goes out, with dates and a running total.",
+    "moneyCategories": "What money gets logged under",
+    "moneyCategoriesHint": "Rent, Repairs, Utilities — or Fuel, Service, Insurance.",
+    "moneyCategoryPh": "Rent",
+    "moneyIn": "In",
+    "moneyOut": "Out"
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",
@@ -6143,5 +6150,15 @@
     "someone": "A member",
     "aClient": "A client",
     "nobodyHas": "Nobody has this one."
+  },
+  "assetMoney": {
+    "title": "Money",
+    "in": "In",
+    "out": "Out",
+    "net": "Net",
+    "amount": "Amount",
+    "notePh": "What for?",
+    "empty": "Nothing logged yet.",
+    "noCategories": "This kind tracks money but has no categories yet — add some on the kind."
   }
 }

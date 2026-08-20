@@ -1095,6 +1095,38 @@ model AssetActivity {
   @@map("asset_activities")
 }
 
+/// Money logged against one asset: rent coming in, a repair going out.
+///
+/// The heading is stored as TEXT, not a foreign key, so renaming or removing a
+/// category on the kind never rewrites history — an entry keeps the word it was
+/// filed under. Amounts are integer cents: money in floating point is a
+/// rounding bug waiting for a large total.
+model AssetMoney {
+  id             String @id @default(cuid())
+  organizationId String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  /// The kind's category label, as it read when the entry was made.
+  category String
+  /// IN (rent, a deposit) or OUT (a repair, fuel).
+  direction String
+  /// Always positive. The direction beside it decides what it does to a total.
+  amountCents Int
+  note        String?
+
+  /// When the money moved, which is not when somebody typed it in.
+  occurredAt DateTime @default(now())
+  /// Plain marker id, no FK — removing a member must not erase the books.
+  authorId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([assetId, occurredAt])
+  @@map("asset_money")
+}
+
 model AssetCategory {
   id          String  @id @default(cuid())
   name        String
@@ -1195,6 +1227,7 @@ model Asset {
   details Json?
 
   activities AssetActivity[]
+  money      AssetMoney[]
 
   // Tasks linked to this asset (maintenance history)
   tasks          Task[]

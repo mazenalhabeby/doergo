@@ -6088,7 +6088,14 @@
     "fieldsHint": "Piano, stanze, affitto, targa, numero di serie — ciò che serve.",
     "fieldLabel": "Piano",
     "allowExtra": "Consenti campi extra su un record",
-    "allowExtraHint": "Disattivato: ognuno avrà esattamente i campi qui sopra, nulla di più."
+    "allowExtraHint": "Disattivato: ognuno avrà esattamente i campi qui sopra, nulla di più.",
+    "money": "Costa o rende denaro",
+    "moneyHint": "Registra entrate e uscite, con date e un totale corrente.",
+    "moneyCategories": "Sotto cosa si registra il denaro",
+    "moneyCategoriesHint": "Affitto, Riparazioni, Utenze — o Carburante, Manutenzione, Assicurazione.",
+    "moneyCategoryPh": "Affitto",
+    "moneyIn": "Entrata",
+    "moneyOut": "Uscita"
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
@@ -6117,5 +6124,15 @@
     "someone": "Un membro",
     "aClient": "Un cliente",
     "nobodyHas": "Nessuno ha questo."
+  },
+  "assetMoney": {
+    "title": "Denaro",
+    "in": "Entrate",
+    "out": "Uscite",
+    "net": "Netto",
+    "amount": "Importo",
+    "notePh": "Per cosa?",
+    "empty": "Nulla registrato.",
+    "noCategories": "Questo tipo registra denaro ma non ha ancora categorie — aggiungile sul tipo."
   }
 }

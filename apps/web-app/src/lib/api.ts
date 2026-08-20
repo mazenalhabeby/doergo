@@ -1519,6 +1519,21 @@ export interface MaintenanceHistoryItem {
   duration?: number | null;
 }
 
+export interface AssetMoneyEntry {
+  id: string;
+  category: string;
+  direction: 'IN' | 'OUT';
+  amountCents: number;
+  note: string | null;
+  occurredAt: string;
+  authorId: string | null;
+}
+
+export interface AssetMoneySummary {
+  entries: AssetMoneyEntry[];
+  totals: { inCents: number; outCents: number; netCents: number };
+}
+
 export interface AssetActivity {
   id: string;
   type: string;
@@ -1788,6 +1803,25 @@ export const assetsApi = {
     const response = await api.post<{ success: boolean; data: AssetActivity }>(`/assets/${assetId}/activities`, { body });
     if (response.error) throw new Error(response.error);
     return response.data?.data;
+  },
+
+  // Money logged against one asset, with the totals for the whole ledger.
+  getMoney: async (assetId: string) => {
+    const response = await api.get<{ success: boolean; data: AssetMoneySummary }>(`/assets/${assetId}/money`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? { entries: [], totals: { inCents: 0, outCents: 0, netCents: 0 } };
+  },
+
+  addMoney: async (assetId: string, input: { category: string; amountCents: number; note?: string; occurredAt?: string }) => {
+    const response = await api.post<{ success: boolean; data: AssetMoneyEntry }>(`/assets/${assetId}/money`, input);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeMoney: async (assetId: string, entryId: string) => {
+    const response = await api.delete<{ success: boolean }>(`/assets/${assetId}/money/${entryId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
   },
 
   getAssetHistory: async (assetId: string) => {

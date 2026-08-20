@@ -6088,7 +6088,14 @@
     "fieldsHint": "Étage, pièces, loyer, plaque, numéro de série — ce dont ce type a besoin.",
     "fieldLabel": "Étage",
     "allowExtra": "Autoriser des champs supplémentaires par fiche",
-    "allowExtraHint": "Désactivé : chacun contient exactement les champs ci-dessus, rien de plus."
+    "allowExtraHint": "Désactivé : chacun contient exactement les champs ci-dessus, rien de plus.",
+    "money": "Cela coûte ou rapporte de l’argent",
+    "moneyHint": "Enregistrez les entrées et les sorties, avec dates et total courant.",
+    "moneyCategories": "Sous quoi l’argent est enregistré",
+    "moneyCategoriesHint": "Loyer, Réparations, Charges — ou Carburant, Entretien, Assurance.",
+    "moneyCategoryPh": "Loyer",
+    "moneyIn": "Entrée",
+    "moneyOut": "Sortie"
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",
@@ -6117,5 +6124,15 @@
     "someone": "Un membre",
     "aClient": "Un client",
     "nobodyHas": "Personne ne l’a."
+  },
+  "assetMoney": {
+    "title": "Argent",
+    "in": "Entrées",
+    "out": "Sorties",
+    "net": "Net",
+    "amount": "Montant",
+    "notePh": "Pour quoi ?",
+    "empty": "Rien d’enregistré.",
+    "noCategories": "Ce type suit l’argent mais n’a pas encore de catégories — ajoutez-en sur le type."
   }
 }

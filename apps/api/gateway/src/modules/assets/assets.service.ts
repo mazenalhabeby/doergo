@@ -42,4 +42,16 @@ export class AssetsService extends BaseGatewayService {
   async addActivity(data: Record<string, any>) {
     return this.send({ cmd: 'add_asset_activity' }, data);
   }
+
+  async listMoney(data: Record<string, any>) {
+    return this.send({ cmd: 'list_asset_money' }, data);
+  }
+
+  async addMoney(data: Record<string, any>) {
+    return this.send({ cmd: 'add_asset_money' }, data);
+  }
+
+  async removeMoney(data: Record<string, any>) {
+    return this.send({ cmd: 'remove_asset_money' }, data);
+  }
 }

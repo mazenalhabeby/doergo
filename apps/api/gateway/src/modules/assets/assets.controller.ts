@@ -144,6 +144,59 @@ export class AssetsController {
     });
   }
 
+  @Get(':id/money')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Money logged against this asset, with totals' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async listMoney(@Param('id') id: string, @Query('limit') limit: number, @Request() req: any) {
+    return this.assetsService.listMoney({
+      id,
+      limit,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post(':id/money')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Log money against this asset' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async addMoney(
+    @Param('id') id: string,
+    @Body() body: { category?: string; amountCents?: number; note?: string; occurredAt?: string },
+    @Request() req: any,
+  ) {
+    return this.assetsService.addMoney({
+      id,
+      category: body?.category ?? '',
+      amountCents: body?.amountCents ?? 0,
+      note: body?.note,
+      occurredAt: body?.occurredAt,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete(':id/money/:entryId')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Remove one money entry' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  @ApiParam({ name: 'entryId', description: 'Entry ID' })
+  async removeMoney(@Param('id') id: string, @Param('entryId') entryId: string, @Request() req: any) {
+    return this.assetsService.removeMoney({
+      id,
+      entryId,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id/history')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get maintenance history for an asset' })

@@ -6113,7 +6113,14 @@
     "fieldsHint": "Etage, Zimmer, Miete, Kennzeichen, Seriennummer — was diese Art braucht.",
     "fieldLabel": "Etage",
     "allowExtra": "Zusätzliche Felder je Eintrag erlauben",
-    "allowExtraHint": "Aus: Jeder Eintrag hat genau die Felder oben — nicht mehr."
+    "allowExtraHint": "Aus: Jeder Eintrag hat genau die Felder oben — nicht mehr.",
+    "money": "Es kostet oder bringt Geld",
+    "moneyHint": "Erfassen Sie Ein- und Ausgaben mit Datum und laufender Summe.",
+    "moneyCategories": "Wofür Geld erfasst wird",
+    "moneyCategoriesHint": "Miete, Reparaturen, Nebenkosten — oder Kraftstoff, Service, Versicherung.",
+    "moneyCategoryPh": "Miete",
+    "moneyIn": "Ein",
+    "moneyOut": "Aus"
   },
   "assetRecords": {
     "intro": "Alles dieser Art in diesem Space.",
@@ -6142,5 +6149,15 @@
     "someone": "Ein Mitglied",
     "aClient": "Ein Kunde",
     "nobodyHas": "Niemand hat dieses."
+  },
+  "assetMoney": {
+    "title": "Geld",
+    "in": "Einnahmen",
+    "out": "Ausgaben",
+    "net": "Saldo",
+    "amount": "Betrag",
+    "notePh": "Wofür?",
+    "empty": "Noch nichts erfasst.",
+    "noCategories": "Diese Art erfasst Geld, hat aber noch keine Kategorien — legen Sie welche an der Art an."
   }
 }
