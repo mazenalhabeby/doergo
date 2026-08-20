@@ -6177,14 +6177,19 @@
     "count": "{{count}} rows",
     "empty": "Nothing in here yet",
     "noMatch": "Nothing matches that",
-    "gone": "That table is no longer on this kind."
+    "gone": "That table is no longer on this kind.",
+    "sharedNote": "This is the kind's catalogue — every one of them reads it, and a change here changes it for all."
   },
   "assetFaults": {
     "search": "Search a code or a symptom…",
     "empty": "No fault codes yet",
     "cause": "Cause",
     "fix": "Fix",
-    "partMissing": "not in the parts catalogue"
+    "partMissing": "not in the parts catalogue",
+    "add": "Add a code",
+    "noPart": "— no part —",
+    "sharedNote": "This library belongs to the kind — every one of them reads it, and a change here changes it for all.",
+    "noCatalogue": "No parts catalogue on this kind yet — add one and its codes can be picked here."
   },
   "assetStructure": {
     "title": "Parts of it",

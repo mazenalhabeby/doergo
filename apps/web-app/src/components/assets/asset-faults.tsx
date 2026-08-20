@@ -1,13 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery } from "@tanstack/react-query"
-import { AlertTriangle, Package, Search, ShieldAlert, Wrench } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { AlertTriangle, Loader2, Package, Pencil, Plus, Search, ShieldAlert, Trash2, Wrench, X } from "lucide-react"
 
 import { assetsApi, type AssetListRow } from "@/lib/api"
 import { partLinkColumn, partCodeColumn, type KindList } from "@hbcfield/shared/client"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { notify } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
 /**
@@ -31,7 +34,10 @@ export function AssetFaults({
   parts: KindList | null
 }) {
   const { t } = useTranslation()
+  const qc = useQueryClient()
   const [search, setSearch] = useState("")
+  // null = closed, "new" = adding, otherwise the id of the row being edited.
+  const [editing, setEditing] = useState<string | null>(null)
 
   const faultsQ = useQuery({
     queryKey: ["asset-rows", assetId, list.label, search],
@@ -69,18 +75,61 @@ export function AssetFaults({
   }
 
   const rows = faultsQ.data?.rows ?? []
+  const refresh = () => qc.invalidateQueries({ queryKey: ["asset-rows", assetId, list.label] })
+
+  const remove = useMutation({
+    mutationFn: (rowId: string) => assetsApi.removeRow(assetId, rowId),
+    onSuccess: refresh,
+    onError: (e: Error) => notify.error(e.message),
+  })
+
+  // Every part code the catalogue knows, for the picker below.
+  const partOptions = useMemo(() => {
+    if (!codeCol || !parts) return []
+    return (partsQ.data?.rows ?? [])
+      .map((r) => ({
+        code: (r.values?.[codeCol] ?? "").trim(),
+        label: parts.columns
+          .filter((c) => c.label !== codeCol)
+          .map((c) => (r.values?.[c.label] ?? "").trim())
+          .filter(Boolean)
+          .join(" · "),
+      }))
+      .filter((o) => o.code)
+  }, [partsQ.data, parts, codeCol])
 
   return (
     <div className="space-y-3">
-      <div className="relative max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t("assetFaults.search", "Search a code or a symptom…")}
-          className="h-9 pl-8"
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("assetFaults.search", "Search a code or a symptom…")}
+            className="h-9 pl-8"
+          />
+        </div>
+        <Button size="sm" onClick={() => setEditing(editing === "new" ? null : "new")}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> {t("assetFaults.add", "Add a code")}
+        </Button>
       </div>
+
+      {list.shared && (
+        <p className="text-[11px] text-muted-foreground">
+          {t("assetFaults.sharedNote", "This library belongs to the kind — every one of them reads it, and a change here changes it for all.")}
+        </p>
+      )}
+
+      {editing === "new" && (
+        <FaultForm
+          assetId={assetId}
+          list={list}
+          partOptions={partOptions}
+          onDone={() => { setEditing(null); refresh() }}
+          onCancel={() => setEditing(null)}
+        />
+      )}
 
       {faultsQ.isLoading ? (
         <div className="space-y-2">
@@ -101,13 +150,43 @@ export function AssetFaults({
             const partCode = linkCol ? col(row, linkCol) : ""
             const part = partCode ? partByCode.get(partCode.toLowerCase()) : undefined
 
+            if (editing === row.id) {
+              return (
+                <FaultForm
+                  key={row.id}
+                  assetId={assetId}
+                  list={list}
+                  existing={row}
+                  partOptions={partOptions}
+                  onDone={() => { setEditing(null); refresh() }}
+                  onCancel={() => setEditing(null)}
+                />
+              )
+            }
+
             return (
-              <div key={row.id} className="rounded-xl border border-border bg-card p-3">
+              <div key={row.id} className="group rounded-xl border border-border bg-card p-3">
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <span className="rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-sm font-semibold text-amber-600 dark:text-amber-400">
                     {code || "—"}
                   </span>
                   <span className="text-sm font-medium text-foreground">{meaning}</span>
+                  <span className="ml-auto flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => setEditing(row.id)}
+                      className="rounded p-1 text-muted-foreground hover:text-foreground"
+                      aria-label={t("common.edit", "Edit")}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => remove.mutate(row.id)}
+                      className="rounded p-1 text-muted-foreground hover:text-destructive"
+                      aria-label={t("common.remove", "Remove")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
                 </div>
 
                 <div className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
@@ -160,6 +239,99 @@ export function AssetFaults({
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Add or change one fault code.
+ *
+ * The Part field is a PICKER over the kind's catalogue, not a box to type a
+ * code into. Typed by hand it drifts — a transposed digit, a renamed part — and
+ * the technician standing at the machine gets "not in the parts catalogue" at
+ * the moment they least need it.
+ */
+function FaultForm({
+  assetId, list, existing, partOptions, onDone, onCancel,
+}: {
+  assetId: string
+  list: KindList
+  existing?: AssetListRow
+  partOptions: { code: string; label: string }[]
+  onDone: () => void
+  onCancel: () => void
+}) {
+  const { t } = useTranslation()
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const start: Record<string, string> = {}
+    for (const c of list.columns) start[c.label] = existing?.values?.[c.label] ?? ""
+    return start
+  })
+
+  const linkCol = partLinkColumn(list)
+  const set = (col: string, v: string) => setValues((s) => ({ ...s, [col]: v }))
+
+  const save = useMutation({
+    mutationFn: () =>
+      existing
+        ? assetsApi.updateRow(assetId, existing.id, values)
+        : assetsApi.addRow(assetId, list.label, values),
+    onSuccess: onDone,
+    onError: (e: Error) => notify.error(e.message),
+  })
+
+  const filled = Object.values(values).some((v) => v.trim())
+
+  return (
+    <div className="space-y-2 rounded-xl border border-primary/40 bg-card p-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {list.columns.map((c) => {
+          const isPart = linkCol && c.label === linkCol
+          return (
+            <div key={c.label} className={cn(c.label.toLowerCase() === "safety" && "sm:col-span-2")}>
+              <label className="text-[11px] text-muted-foreground">{c.label}</label>
+              {isPart && partOptions.length > 0 ? (
+                // Chosen from the catalogue, so the link always resolves.
+                <select
+                  value={values[c.label] ?? ""}
+                  onChange={(e) => set(c.label, e.target.value)}
+                  className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                >
+                  <option value="">{t("assetFaults.noPart", "— no part —")}</option>
+                  {partOptions.map((o) => (
+                    <option key={o.code} value={o.code}>
+                      {o.code}{o.label ? ` · ${o.label}` : ""}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  className="mt-1 h-9"
+                  value={values[c.label] ?? ""}
+                  onChange={(e) => set(c.label, e.target.value)}
+                  placeholder={c.label}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {linkCol && partOptions.length === 0 && (
+        <p className="text-[11px] text-amber-600 dark:text-amber-400">
+          {t("assetFaults.noCatalogue", "No parts catalogue on this kind yet — add one and its codes can be picked here.")}
+        </p>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel}>
+          <X className="mr-1 h-3.5 w-3.5" /> {t("common.cancel", "Cancel")}
+        </Button>
+        <Button size="sm" disabled={!filled || save.isPending} onClick={() => save.mutate()}>
+          {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+          {t("common.save", "Save")}
+        </Button>
+      </div>
     </div>
   )
 }

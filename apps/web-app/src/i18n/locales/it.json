@@ -6151,14 +6151,19 @@
     "count": "{{count}} righe",
     "empty": "Non c’è ancora nulla",
     "noMatch": "Nessun risultato",
-    "gone": "Quella tabella non è più su questo tipo."
+    "gone": "Quella tabella non è più su questo tipo.",
+    "sharedNote": "Questo è il catalogo del tipo — tutti lo leggono, e una modifica qui vale per tutti."
   },
   "assetFaults": {
     "search": "Cerca un codice o un sintomo…",
     "empty": "Nessun codice di errore",
     "cause": "Causa",
     "fix": "Soluzione",
-    "partMissing": "non è nel catalogo ricambi"
+    "partMissing": "non è nel catalogo ricambi",
+    "add": "Aggiungi un codice",
+    "noPart": "— nessun ricambio —",
+    "sharedNote": "Questa libreria appartiene al tipo — tutti la leggono, e una modifica qui vale per tutti.",
+    "noCatalogue": "Nessun catalogo ricambi su questo tipo — creane uno e i suoi codici saranno selezionabili qui."
   },
   "assetStructure": {
     "title": "Le sue parti",

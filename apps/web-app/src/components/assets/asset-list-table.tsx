@@ -58,6 +58,12 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
 
   return (
     <div className="space-y-3">
+      {list.shared && (
+        <p className="text-[11px] text-muted-foreground">
+          {t("assetLists.sharedNote", "This is the kind's catalogue — every one of them reads it, and a change here changes it for all.")}
+        </p>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />

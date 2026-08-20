@@ -6151,14 +6151,19 @@
     "count": "{{count}} lignes",
     "empty": "Rien pour le moment",
     "noMatch": "Aucun résultat",
-    "gone": "Ce tableau ne fait plus partie de ce type."
+    "gone": "Ce tableau ne fait plus partie de ce type.",
+    "sharedNote": "Ceci est le catalogue du type — tous le lisent, et une modification ici vaut pour tous."
   },
   "assetFaults": {
     "search": "Rechercher un code ou un symptôme…",
     "empty": "Aucun code défaut",
     "cause": "Cause",
     "fix": "Solution",
-    "partMissing": "absent du catalogue de pièces"
+    "partMissing": "absent du catalogue de pièces",
+    "add": "Ajouter un code",
+    "noPart": "— aucune pièce —",
+    "sharedNote": "Cette bibliothèque appartient au type — tous la lisent, et une modification ici vaut pour tous.",
+    "noCatalogue": "Pas encore de catalogue de pièces sur ce type — créez-en un et ses codes seront sélectionnables ici."
   },
   "assetStructure": {
     "title": "Ses composants",

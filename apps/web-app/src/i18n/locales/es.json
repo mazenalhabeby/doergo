@@ -6160,14 +6160,19 @@
     "count": "{{count}} filas",
     "empty": "Aún no hay nada",
     "noMatch": "Ninguna coincidencia",
-    "gone": "Esa tabla ya no está en este tipo."
+    "gone": "Esa tabla ya no está en este tipo.",
+    "sharedNote": "Este es el catálogo del tipo — todos lo leen, y un cambio aquí vale para todos."
   },
   "assetFaults": {
     "search": "Buscar un código o un síntoma…",
     "empty": "Aún no hay códigos de error",
     "cause": "Causa",
     "fix": "Solución",
-    "partMissing": "no está en el catálogo de piezas"
+    "partMissing": "no está en el catálogo de piezas",
+    "add": "Añadir un código",
+    "noPart": "— sin pieza —",
+    "sharedNote": "Esta biblioteca pertenece al tipo — todos la leen, y un cambio aquí vale para todos.",
+    "noCatalogue": "Este tipo aún no tiene catálogo de piezas — cree uno y sus códigos se podrán elegir aquí."
   },
   "assetStructure": {
     "title": "Sus partes",

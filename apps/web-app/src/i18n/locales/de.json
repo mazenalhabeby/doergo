@@ -6176,14 +6176,19 @@
     "count": "{{count}} Zeilen",
     "empty": "Noch nichts vorhanden",
     "noMatch": "Keine Treffer",
-    "gone": "Diese Tabelle gehört nicht mehr zu dieser Art."
+    "gone": "Diese Tabelle gehört nicht mehr zu dieser Art.",
+    "sharedNote": "Das ist der Katalog der Art — alle lesen ihn, und eine Änderung hier gilt für alle."
   },
   "assetFaults": {
     "search": "Code oder Symptom suchen…",
     "empty": "Noch keine Fehlercodes",
     "cause": "Ursache",
     "fix": "Behebung",
-    "partMissing": "nicht im Teilekatalog"
+    "partMissing": "nicht im Teilekatalog",
+    "add": "Code hinzufügen",
+    "noPart": "— kein Teil —",
+    "sharedNote": "Diese Bibliothek gehört zur Art — alle lesen sie, und eine Änderung hier gilt für alle.",
+    "noCatalogue": "Noch kein Teilekatalog für diese Art — legen Sie einen an, dann sind seine Codes hier wählbar."
   },
   "assetStructure": {
     "title": "Bestandteile",
