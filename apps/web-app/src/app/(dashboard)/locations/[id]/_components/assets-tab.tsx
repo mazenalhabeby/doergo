@@ -87,8 +87,8 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
                 onClick={() => setOpenKindId(kind.id)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-lg">
-                  {kind.icon || "📦"}
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                  <Package className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{kind.name}</p>
@@ -173,7 +173,7 @@ function KindContents({
       <SectionHeader
         icon={Package}
         accent="sky"
-        title={`${kind.icon ? kind.icon + " " : ""}${kind.name}`}
+        title={kind.name}
         description={kind.description || t("assetRecords.intro", "Everything of this kind in this space.")}
         action={
           <AssetRecordDialog
@@ -195,8 +195,8 @@ function KindContents({
         <div className="space-y-2">
           {records.map((r) => (
             <div key={r.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-lg">
-                {kind.icon || "📦"}
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                <Package className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">{r.name}</p>

@@ -44,7 +44,6 @@ export function AssetKindDialog({
 
   const start = normalizeKindShape(existing?.config)
   const [name, setName] = useState(existing?.name ?? "")
-  const [icon, setIcon] = useState(existing?.icon ?? "")
   const [description, setDescription] = useState(existing?.description ?? "")
   const [shape, setShape] = useState<KindShape>(start)
 
@@ -58,7 +57,6 @@ export function AssetKindDialog({
     mutationFn: () => {
       const input = {
         name: name.trim(),
-        icon: icon.trim() || undefined,
         description: description.trim() || undefined,
         config: normalizeKindShape(shape) as unknown as Record<string, unknown>,
       }
@@ -77,7 +75,6 @@ export function AssetKindDialog({
   const reset = (next: boolean) => {
     if (next) {
       setName(existing?.name ?? "")
-      setIcon(existing?.icon ?? "")
       setDescription(existing?.description ?? "")
       setShape(normalizeKindShape(existing?.config))
     }
@@ -101,21 +98,15 @@ export function AssetKindDialog({
 
         <div className="space-y-5 py-1">
           {/* ── What it is ─────────────────────────────────────────────── */}
-          <div className="flex gap-2">
-            <div className="w-20">
-              <Label className="text-xs text-muted-foreground">{t("assetKinds.icon", "Icon")}</Label>
-              <Input className="mt-1" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🏠" maxLength={4} />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs text-muted-foreground">{t("assetKinds.name", "Name")}</Label>
-              <Input
-                className="mt-1"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("assetKinds.namePlaceholder", "Apartments")}
-                autoFocus
-              />
-            </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">{t("assetKinds.name", "Name")}</Label>
+            <Input
+              className="mt-1"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("assetKinds.namePlaceholder", "Apartments")}
+              autoFocus
+            />
           </div>
 
           <div>
