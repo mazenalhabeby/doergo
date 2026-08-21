@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { SectionHeader } from "./section-header"
-import { ModuleUsagePanel } from "./module-usage-panel"
+import { ModuleUsageTabs } from "./module-usage-tabs"
 
 export function ModulesTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -173,10 +173,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {/* The counted modules, priced in full. Directly under the space total,
           because that total is only their BASE and a number that is not the
           whole number has to be followed immediately by the rest of it. */}
-      {usageData &&
-        usageModules.map((key) => (
-          <ModuleUsagePanel key={key} moduleKey={key} units={unitsFor(key)} />
-        ))}
+      {usageData && <ModuleUsageTabs moduleKeys={usageModules} unitsFor={unitsFor} />}
 
       {/* Presets — one click to set a sensible bundle */}
       <div className="space-y-1.5">

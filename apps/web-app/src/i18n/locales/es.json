@@ -6215,7 +6215,6 @@
       "effective": "Sale a {{price}} cada uno",
       "allIncluded": "Todo incluido por ahora: no pagas nada extra",
       "perUnitShort": "+{{price}} cada uno",
-      "orgWideNote": "Solo cuenta este espacio. Cada espacio con {{module}} activado paga su propia base y tiene sus propios {{perSpace}} gratis, así que lo que ves aquí es todo.",
       "count": {
         "asset_one": "{{count}} activo",
         "asset_other": "{{count}} activos",
@@ -6226,7 +6225,8 @@
       },
       "chargingStarts": "{{count}} más antes de que se cobre nada, luego {{price}} cada uno",
       "otherSpacesSeparate": "Los demás espacios se cuentan y se cobran por separado",
-      "includesCounted": "Incluye lo que añaden los activos de este espacio"
+      "includesCounted": "Incluye lo que añaden los activos de este espacio",
+      "perMonthShort": "/mes"
     }
   },
   "assetKinds": {

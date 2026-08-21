@@ -6224,7 +6224,6 @@
       "effective": "Risulta {{price}} ciascuno",
       "allIncluded": "Finora tutto incluso — non paghi nulla in più",
       "perUnitShort": "+{{price}} ciascuno",
-      "orgWideNote": "Conteggiato solo per questo spazio. Ogni spazio con {{module}} attivo paga la propria base e ha i propri {{perSpace}} gratis: quello che vedi qui è tutto.",
       "count": {
         "asset_one": "{{count}} bene",
         "asset_other": "{{count}} beni",
@@ -6235,7 +6234,8 @@
       },
       "chargingStarts": "Ancora {{count}} prima che venga addebitato qualcosa, poi {{price}} ciascuno",
       "otherSpacesSeparate": "Gli altri spazi vengono conteggiati e addebitati separatamente",
-      "includesCounted": "Include quanto aggiungono i beni di questo spazio"
+      "includesCounted": "Include quanto aggiungono i beni di questo spazio",
+      "perMonthShort": "/mese"
     }
   },
   "assetKinds": {

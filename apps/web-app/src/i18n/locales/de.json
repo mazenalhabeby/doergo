@@ -6215,7 +6215,6 @@
       "effective": "Ergibt {{price}} pro Stück",
       "allIncluded": "Bisher alles enthalten — es fällt nichts zusätzlich an",
       "perUnitShort": "+{{price}} je Stück",
-      "orgWideNote": "Gilt nur für diesen Bereich. Jeder Bereich mit {{module}} zahlt seine eigene Grundgebühr und erhält seine eigenen {{perSpace}} kostenlos — was Sie hier sehen, ist alles.",
       "count": {
         "asset_one": "{{count}} Objekt",
         "asset_other": "{{count}} Objekte",
@@ -6226,7 +6225,8 @@
       },
       "chargingStarts": "Noch {{count}}, bevor etwas berechnet wird — danach je {{price}}",
       "otherSpacesSeparate": "Andere Bereiche werden separat gezählt und berechnet",
-      "includesCounted": "Enthält, was die Objekte dieses Bereichs hinzufügen"
+      "includesCounted": "Enthält, was die Objekte dieses Bereichs hinzufügen",
+      "perMonthShort": "/Mon."
     }
   },
   "assetKinds": {

@@ -6224,7 +6224,6 @@
       "effective": "Revient à {{price}} chacun",
       "allIncluded": "Tout est inclus pour l’instant — rien de plus à payer",
       "perUnitShort": "+{{price}} chacun",
-      "orgWideNote": "Compté pour cet espace uniquement. Chaque espace où {{module}} est activé paie sa propre base et dispose de ses propres {{perSpace}} gratuits : ce que vous voyez ici est le total.",
       "count": {
         "asset_one": "{{count}} actif",
         "asset_other": "{{count}} actifs",
@@ -6235,7 +6234,8 @@
       },
       "chargingStarts": "{{count}} de plus avant toute facturation, puis {{price}} chacun",
       "otherSpacesSeparate": "Les autres espaces sont comptés et facturés séparément",
-      "includesCounted": "Inclut ce qu’ajoutent les actifs de cet espace"
+      "includesCounted": "Inclut ce qu’ajoutent les actifs de cet espace",
+      "perMonthShort": "/mois"
     }
   },
   "assetKinds": {

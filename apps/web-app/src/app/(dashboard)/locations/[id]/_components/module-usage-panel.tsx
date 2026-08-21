@@ -173,14 +173,6 @@ export function ModuleUsagePanel({ moduleKey, units }: { moduleKey: string; unit
         )}
       </div>
 
-      <p className="text-[11px] leading-relaxed text-muted-foreground/70">
-        {t("billing.usage.orgWideNote", {
-          defaultValue:
-            "Counted for this space only. Every space with {{module}} on pays its own base price and gets its own {{perSpace}} free, so what you see here is all of it.",
-          module: moduleLabel,
-          perSpace: price.included,
-        })}
-      </p>
     </div>
   )
 }
