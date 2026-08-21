@@ -5082,8 +5082,8 @@ export const billingApi = {
   },
 
   /** Start Stripe Checkout for a self-serve plan → returns a redirect URL. */
-  checkout: async (tier: Exclude<PlanTier, 'enterprise'>, interval: BillingInterval): Promise<{ url: string }> => {
-    const response = await api.post<{ url: string }>('/billing/checkout', { tier, interval });
+  checkout: async (interval: BillingInterval): Promise<{ url: string }> => {
+    const response = await api.post<{ url: string }>('/billing/checkout', { interval });
     if (response.error) throw new Error(response.error);
     return response.data as { url: string };
   },
@@ -5096,8 +5096,9 @@ export const billingApi = {
   },
 
   /** Change the active plan/interval (returns a portal/checkout URL to confirm). */
-  changePlan: async (tier: Exclude<PlanTier, 'enterprise'>, interval: BillingInterval): Promise<{ url?: string }> => {
-    const response = await api.post<{ url?: string }>('/billing/change-plan', { tier, interval });
+  /** Switch between monthly and annual — the only billing choice left. */
+  changePlan: async (interval: BillingInterval): Promise<{ url?: string }> => {
+    const response = await api.post<{ url?: string }>('/billing/change-plan', { interval });
     if (response.error) throw new Error(response.error);
     return (response.data as { url?: string }) ?? {};
   },

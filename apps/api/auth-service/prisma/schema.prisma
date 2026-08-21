@@ -3593,6 +3593,12 @@ model Subscription {
   status               SubscriptionStatus @default(TRIALING)
   interval             BillingInterval    @default(MONTHLY)
 
+  /// What this organization's bill last came to, in monthly EUR cents.
+  /// Read for ONE decision: whether an annual change is an increase, which
+  /// decides between charging the proration now and banking it. Comparing line
+  /// counts cannot answer that — swapping a €29 module for a €9 one is fewer
+  /// euros and the same number of lines.
+  lastBilledCents   Int @default(0)
   officeSeats       Int @default(0)
   fieldSeats        Int @default(0) // external/freelancer field seats (€15)
   fieldInhouseSeats Int @default(0) // in-house/employed field seats (€9)

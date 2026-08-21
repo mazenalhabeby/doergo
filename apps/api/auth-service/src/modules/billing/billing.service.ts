@@ -5,6 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { StripeService } from './stripe.service';
 import { OrgBillService } from './org-bill.service';
 import {
+  stripeLinesForBill,
   isAddOn,
   ADD_ON_KEYS,
   countSeats,
@@ -345,10 +346,31 @@ export class BillingService {
   }
 
   // ── checkout / portal ─────────────────────────────────────────────────────────
-  async createCheckout(organizationId: string, req: CheckoutRequest, successUrl: string, cancelUrl: string) {
+  /**
+   * Start Checkout for what the organization already has.
+   *
+   * There is nothing to pick. Under the tier model this call took a tier, because
+   * the tier WAS the purchase; here the purchase is the seats, modules and
+   * add-ons already switched on, and Checkout exists only to collect a card for
+   * them. So the only choice left is monthly or annual.
+   *
+   * The line-up is computed at this moment rather than trusted from the client:
+   * a body that could name its own lines would let a customer subscribe to a
+   * cheaper bill than the one they are using.
+   */
+  async createCheckout(organizationId: string, req: { interval: BillingInterval }, successUrl: string, cancelUrl: string) {
     if (!this.stripe.isConfigured) return fail(HttpStatus.SERVICE_UNAVAILABLE, 'Billing is not configured');
     const org = await this.prisma.organization.findUnique({ where: { id: organizationId } });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
+
+    const bill = await this.bill.compute(organizationId);
+    const lines = stripeLinesForBill(bill, req.interval);
+    if (!lines.length) {
+      return fail(
+        HttpStatus.BAD_REQUEST,
+        'There is nothing to subscribe to yet — add a member, or switch a module on in a space.',
+      );
+    }
 
     const customerId = await this.stripe.ensureCustomer({
       customerId: org.stripeCustomerId,
@@ -360,20 +382,26 @@ export class BillingService {
       await this.prisma.organization.update({ where: { id: organizationId }, data: { stripeCustomerId: customerId } });
     }
 
-    const seats = await this.countOrgSeats(organizationId);
-    const trialEnd = org.subStatus === 'TRIALING' && org.trialEndsAt ? Math.floor(org.trialEndsAt.getTime() / 1000) : null;
+    // Carry the remaining trial across so subscribing early never costs somebody
+    // days they were given.
+    const trialDays =
+      org.subStatus === 'TRIALING' && org.trialEndsAt
+        ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - Date.now()) / 86_400_000))
+        : 0;
 
-    const session = await this.stripe.createCheckoutSession({
+    const session = await this.stripe.createCheckoutSessionForLines({
       customerId,
-      tier: req.tier,
-      interval: req.interval,
-      officeSeats: seats.office,
-      fieldSeats: seats.field,
-      fieldInhouseSeats: seats.fieldInhouse,
+      lines,
       successUrl,
       cancelUrl,
-      trialEnd,
+      ...(trialDays > 0 ? { trialDays } : {}),
     });
+
+    await this.prisma.subscription.updateMany({
+      where: { organizationId },
+      data: { interval: INTERVAL_TO_PRISMA[req.interval], lastBilledCents: bill.monthlyCents },
+    });
+
     return ok({ url: session.url });
   }
 
@@ -386,16 +414,44 @@ export class BillingService {
   }
 
   // ── change plan / cancel ───────────────────────────────────────────────────────
-  async changePlan(organizationId: string, req: ChangePlanRequest, successUrl: string, cancelUrl: string) {
-    // No active Stripe subscription yet → this is effectively a first checkout.
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
+  /**
+   * Switch between monthly and annual.
+   *
+   * All that is left of "change plan". There are no tiers to move between, and
+   * the rest of the bill changes by switching modules on and off where they
+   * live — this is the one billing choice that is not also a product choice.
+   *
+   * Every line moves together: a subscription holding a mix of monthly and
+   * annual prices renews on two different clocks and is impossible to explain on
+   * an invoice.
+   */
+  async changePlan(organizationId: string, req: { interval: BillingInterval }, successUrl: string, cancelUrl: string) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: { subscription: true },
+    });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
+
+    // No subscription yet → this is a first checkout, not a change.
     if (!org.subscription?.stripeSubscriptionId) {
       return this.createCheckout(organizationId, req, successUrl, cancelUrl);
     }
-    // Active subscription: swap prices via the Customer Portal is safest; expose portal.
-    // (A direct in-app upgrade with proration can be added; portal covers it for launch.)
-    return this.createPortal(organizationId, successUrl);
+
+    const bill = await this.bill.compute(organizationId);
+    const lines = stripeLinesForBill(bill, req.interval);
+
+    await this.prisma.subscription.update({
+      where: { organizationId },
+      data: { interval: INTERVAL_TO_PRISMA[req.interval], lastBilledCents: bill.monthlyCents },
+    });
+
+    // Switching TO annual is charged now: the customer is buying a year, and
+    // banking that proration would give the year away and collect at renewal.
+    await this.stripe.setSubscriptionLines(org.subscription.stripeSubscriptionId, lines, {
+      invoiceNow: req.interval === 'annual',
+    });
+
+    return ok({ interval: req.interval }, 'Billing interval updated');
   }
 
   async cancel(organizationId: string) {
@@ -410,54 +466,70 @@ export class BillingService {
   }
 
   // ── seat reconciliation (debounced target — runs once per burst) ───────────────
+  /**
+   * Make Stripe hold exactly what the organization now owes.
+   *
+   * Called (debounced) whenever anything that can move a bill moves: a member
+   * added or removed, a module switched on in a space, an add-on bought, an
+   * asset or client created. It used to be seats only — which is why it is still
+   * named for them at the call sites — but under this model a module toggle
+   * changes the bill just as much as a hire does.
+   *
+   * The line-up is recomputed from scratch rather than diffed, because working
+   * out "what changed" is exactly the arithmetic that drifts. Stripe is told the
+   * whole target and works out the proration itself.
+   */
   async reconcileSeats(organizationId: string) {
-    const seats = await this.countOrgSeats(organizationId);
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
-    if (!org?.subscription) {
-      return ok(seats);
-    }
-    const sub = org.subscription;
-    const changed =
-      sub.officeSeats !== seats.office ||
-      sub.fieldSeats !== seats.field ||
-      sub.fieldInhouseSeats !== seats.fieldInhouse;
+    const bill = await this.bill.compute(organizationId);
 
-    // Nothing to do — many member edits (rename, schedule) don't touch seat
-    // counts, so we skip the DB write AND the Stripe round-trip entirely.
-    if (!changed) return ok(seats);
-
-    await this.prisma.subscription.update({
-      where: { organizationId },
-      data: { officeSeats: seats.office, fieldSeats: seats.field, fieldInhouseSeats: seats.fieldInhouse },
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: { subscription: true },
     });
+    const sub = org?.subscription;
+    if (!sub) return ok(bill);
 
-    // Push the new quantities to Stripe only when there's a live subscription and
-    // the count actually changed.
-    if (sub.stripeSubscriptionId && this.stripe.isConfigured && sub.planTier !== 'ENTERPRISE') {
-      const tier = tierFromPrisma(sub.planTier)!;
-      const interval = intervalFromPrisma(sub.interval);
-
-      // Charge immediately only for an annual INCREASE (a mid-year added seat).
-      // Annual DECREASES and all monthly changes bank the proration → the credit
-      // (or charge) lands on the next invoice/renewal.
-      const oldTotal = subscriptionTotalCents(tier, interval, sub.officeSeats, sub.fieldSeats, sub.fieldInhouseSeats) ?? 0;
-      const newTotal = subscriptionTotalCents(tier, interval, seats.office, seats.field, seats.fieldInhouse) ?? 0;
-      const invoiceNow = interval === 'annual' && newTotal > oldTotal;
-
-      await this.stripe.setSubscriptionQuantities(
-        sub.stripeSubscriptionId,
-        {
-          officePriceId: this.stripe.priceId('office', tier, interval),
-          officeQty: seats.office,
-          fieldPriceId: this.stripe.priceId('field', tier, interval),
-          fieldQty: seats.field,
-          fieldInhousePriceId: this.stripe.priceId('field_inhouse', tier, interval),
-          fieldInhouseQty: seats.fieldInhouse,
-        },
-        { invoiceNow },
-      );
+    // Keep the stored seat count in step — the operator console and the trial
+    // logic both read it, and it is the cheapest possible "has anything moved?".
+    if (sub.officeSeats !== bill.seatCount) {
+      await this.prisma.subscription.update({
+        where: { organizationId },
+        data: { officeSeats: bill.seatCount },
+      });
     }
-    return ok(seats);
+
+    if (!sub.stripeSubscriptionId || !this.stripe.isConfigured) return ok(bill);
+
+    const interval = intervalFromPrisma(sub.interval);
+    const lines = stripeLinesForBill(bill, interval);
+
+    /*
+      Charge immediately only for an annual INCREASE.
+
+      Annual decreases and every monthly change bank the proration onto the next
+      invoice — a monthly customer's next invoice is days away, and banking a
+      decrease lets the credit reduce the renewal rather than cutting an
+      immediate credit note. An annual increase is the one case where waiting
+      would give away most of a year: without this, a module switched on in
+      February is free until the following January.
+    */
+    const previous = sub.lastBilledCents ?? 0;
+    const invoiceNow = interval === 'annual' && bill.monthlyCents > previous;
+
+    try {
+      await this.stripe.setSubscriptionLines(sub.stripeSubscriptionId, lines, { invoiceNow });
+      await this.prisma.subscription.update({
+        where: { organizationId },
+        data: { lastBilledCents: bill.monthlyCents },
+      });
+    } catch (e) {
+      // Never let a billing sync take down the action that triggered it. A member
+      // must still be addable when Stripe is unreachable; the next reconcile —
+      // or the nightly one — repairs the subscription.
+      this.logger.error(`Stripe reconcile failed for org ${organizationId}: ${(e as Error).message}`);
+    }
+
+    return ok(bill);
   }
 
   // ── webhook (verified event applied idempotently) ──────────────────────────────

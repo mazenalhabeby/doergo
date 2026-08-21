@@ -2,14 +2,17 @@ import { IsIn, IsArray, ArrayUnique, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ADD_ON_KEYS } from '@hbcfield/shared';
 
-const SELF_SERVE_TIERS = ['starter', 'professional', 'business'] as const;
 const INTERVALS = ['monthly', 'annual'] as const;
 
+/**
+ * Checkout no longer takes a tier — there are none.
+ *
+ * The purchase is whatever the organization already has switched on, computed
+ * server-side at the moment of checkout. A body that could name its own lines
+ * would let a customer subscribe to a cheaper bill than the one they are using.
+ * Monthly or annual is the only choice left.
+ */
 export class CheckoutDto {
-  @ApiProperty({ enum: SELF_SERVE_TIERS })
-  @IsIn(SELF_SERVE_TIERS as unknown as string[])
-  tier!: (typeof SELF_SERVE_TIERS)[number];
-
   @ApiProperty({ enum: INTERVALS })
   @IsIn(INTERVALS as unknown as string[])
   interval!: (typeof INTERVALS)[number];

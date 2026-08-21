@@ -84,7 +84,7 @@ export class BillingController {
           { cmd: 'billing_create_checkout' },
           {
             organizationId: user.organizationId,
-            req: { tier: dto.tier, interval: dto.interval },
+            req: { interval: dto.interval },
             successUrl: `${base}/settings/billing?checkout=success`,
             cancelUrl: `${base}/settings/billing?checkout=cancel`,
           },
@@ -117,7 +117,7 @@ export class BillingController {
           { cmd: 'billing_change_plan' },
           {
             organizationId: user.organizationId,
-            req: { tier: dto.tier, interval: dto.interval },
+            req: { interval: dto.interval },
             successUrl: `${base}/settings/billing`,
             cancelUrl: `${base}/settings/billing`,
           },

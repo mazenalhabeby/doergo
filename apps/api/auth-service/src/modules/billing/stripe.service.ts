@@ -1,7 +1,8 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { STRIPE_PRICE_ENV_KEYS } from '@hbcfield/shared';
+import { createHash } from 'node:crypto';
+import { STRIPE_PRICE_ENV_KEYS, type StripeLine } from '@hbcfield/shared';
 import type { PlanTier, BillingInterval, SeatType } from '@hbcfield/shared';
 
 /**
@@ -57,6 +58,142 @@ export class StripeService {
       );
     }
     return id;
+  }
+
+  // ── the module model: prices resolved by lookup key ─────────────────────────
+
+  /**
+   * Stripe Price IDs, keyed by the lookup key the catalogue derives.
+   *
+   * Cached for the life of the process. Prices are immutable in Stripe and the
+   * catalogue is static, so a hit is permanently valid — and this is read on
+   * every seat change, module toggle and add-on purchase, which would otherwise
+   * be a round trip each.
+   *
+   * A MISS is never cached. A price created after boot must be findable without
+   * a restart, and a negative cache would make the first sync after a deploy
+   * fail forever.
+   */
+  private readonly priceIdCache = new Map<string, string>();
+
+  /**
+   * Resolve the Price IDs for a set of lines, in one request per page.
+   *
+   * Deliberately batch: a bill can have twenty lines, and `prices.retrieve` per
+   * line turns saving one add-on into twenty round trips against Stripe's rate
+   * limit.
+   *
+   * Throws on a lookup key Stripe does not have, naming it. That state means the
+   * sync script has not been run for a module the code already prices — and the
+   * honest failure is a loud error, not a subscription quietly missing a line
+   * the customer is using.
+   */
+  async resolvePriceIds(lookupKeys: string[]): Promise<Map<string, string>> {
+    const wanted = [...new Set(lookupKeys)];
+    const missing = wanted.filter((k) => !this.priceIdCache.has(k));
+
+    if (missing.length) {
+      // Stripe caps lookup_keys at 10 per request.
+      for (let i = 0; i < missing.length; i += 10) {
+        const page = await this.stripe.prices.list({ lookup_keys: missing.slice(i, i + 10), active: true, limit: 100 });
+        for (const price of page.data) {
+          if (price.lookup_key) this.priceIdCache.set(price.lookup_key, price.id);
+        }
+      }
+    }
+
+    const out = new Map<string, string>();
+    const unresolved: string[] = [];
+    for (const key of wanted) {
+      const id = this.priceIdCache.get(key);
+      if (id) out.set(key, id);
+      else unresolved.push(key);
+    }
+    if (unresolved.length) {
+      throw new InternalServerErrorException(
+        `No Stripe price for: ${unresolved.join(', ')}. Run tools/stripe/sync-modules.mjs --apply.`,
+      );
+    }
+    return out;
+  }
+
+  /**
+   * Make a subscription hold exactly these lines, prorated.
+   *
+   * "Exactly" is the important word: a line that is no longer in the bill is
+   * DELETED, not left at its old quantity. A module switched off in the last
+   * space that had it must stop being charged, and the failure mode of forgetting
+   * is charging somebody for something they cannot see.
+   *
+   * Proration timing follows the rule the seat sync already used:
+   *   • invoiceNow → `always_invoice`, charge now. For annual INCREASES, so a
+   *     mid-term addition is not free until the yearly renewal.
+   *   • otherwise → `create_prorations`, banked onto the next invoice. Monthly
+   *     (the next invoice is soon) and annual DECREASES, so a credit accrues
+   *     against the renewal instead of cutting an immediate credit note.
+   *
+   * The idempotency key is derived from the target line-up, so a retry of the
+   * same change is free and a different change is not mistaken for one.
+   */
+  async setSubscriptionLines(
+    subscriptionId: string,
+    lines: StripeLine[],
+    opts?: { invoiceNow?: boolean },
+  ): Promise<Stripe.Subscription> {
+    const priceIds = await this.resolvePriceIds(lines.map((l) => l.lookupKey));
+    const wanted = new Map(lines.map((l) => [priceIds.get(l.lookupKey)!, l.quantity]));
+
+    const sub = await this.stripe.subscriptions.retrieve(subscriptionId);
+    const items: Stripe.SubscriptionUpdateParams.Item[] = [];
+
+    // Update or delete what is already there.
+    for (const item of sub.items.data) {
+      const qty = wanted.get(item.price.id);
+      if (qty == null) {
+        items.push({ id: item.id, deleted: true });
+      } else {
+        if (item.quantity !== qty) items.push({ id: item.id, quantity: qty });
+        wanted.delete(item.price.id);
+      }
+    }
+    // Whatever is left is new.
+    for (const [price, quantity] of wanted) items.push({ price, quantity });
+
+    if (!items.length) return sub; // nothing moved — do not bill a no-op
+
+    const fingerprint = lines
+      .map((l) => `${l.lookupKey}:${l.quantity}`)
+      .sort()
+      .join('|');
+
+    return this.stripe.subscriptions.update(
+      subscriptionId,
+      { items, proration_behavior: opts?.invoiceNow ? 'always_invoice' : 'create_prorations' },
+      { idempotencyKey: `lines_${subscriptionId}_${createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)}` },
+    );
+  }
+
+  /** Checkout for the module model: one session carrying every line of the bill. */
+  async createCheckoutSessionForLines(p: {
+    customerId: string;
+    lines: StripeLine[];
+    successUrl: string;
+    cancelUrl: string;
+    trialDays?: number;
+  }): Promise<Stripe.Checkout.Session> {
+    const priceIds = await this.resolvePriceIds(p.lines.map((l) => l.lookupKey));
+    return this.stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: p.customerId,
+      line_items: p.lines.map((l) => ({ price: priceIds.get(l.lookupKey)!, quantity: l.quantity })),
+      success_url: p.successUrl,
+      cancel_url: p.cancelUrl,
+      allow_promotion_codes: true,
+      tax_id_collection: { enabled: true },
+      customer_update: { address: 'auto', name: 'auto' },
+      automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },
+      ...(p.trialDays ? { subscription_data: { trial_period_days: p.trialDays } } : {}),
+    });
   }
 
   // ── C3 pricing-sync primitives ──────────────────────────────────────────────

@@ -54,3 +54,15 @@ WHERE "planTier" = 'ENTERPRISE'
 
 -- Read by the gate on every premium mutation.
 CREATE INDEX IF NOT EXISTS "organizations_addOns_idx" ON "organizations" USING GIN ("addOns");
+
+-- What the bill last came to, so an annual change can be judged an increase or
+-- a decrease. Comparing line COUNTS cannot answer that: swapping a €29 module
+-- for a €9 one is the same number of lines and less money, and treating it as
+-- an increase would charge a proration for a downgrade.
+--
+-- Defaults to 0, which reads as "we have never billed this org" and makes the
+-- first change after deploy an increase. That is the safe direction: on annual
+-- it charges a proration that is genuinely owed, rather than giving away the
+-- rest of the year.
+ALTER TABLE "subscriptions"
+  ADD COLUMN IF NOT EXISTS "lastBilledCents" INTEGER NOT NULL DEFAULT 0;

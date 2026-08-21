@@ -25,14 +25,14 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       router.replace('/login');
       return;
     }
-    // A completed user should never sit on the onboarding screens. Exceptions:
-    // create-org (hands off to /welcome) and choose-plan (the final owner step
-    // reached from /welcome — the org already exists and is on a trial).
-    if (
-      user?.onboardingCompleted &&
-      !pathname.startsWith('/onboarding/create-org') &&
-      !pathname.startsWith('/onboarding/choose-plan')
-    ) {
+    // A completed user should never sit on the onboarding screens. One
+    // exception: create-org, which hands off to /welcome.
+    //
+    // choose-plan used to be the other. It existed to make a new owner pick a
+    // tier, and there are no tiers — the trial now simply runs, and what the
+    // organization pays for is decided later by switching modules on where they
+    // are used. Nothing routed to it any more either.
+    if (user?.onboardingCompleted && !pathname.startsWith('/onboarding/create-org')) {
       router.replace('/dashboard');
     }
   }, [isLoading, isAuthenticated, user?.onboardingCompleted, pathname, router]);
