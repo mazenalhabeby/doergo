@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { SupportMessage } from "@hbcfield/shared/client"
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Headset, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
@@ -56,7 +57,7 @@ export function SupportButton() {
   useEffect(() => {
     if (!enabled) return;
     const offs = [
-      subscribe(SocketEvents.SUPPORT_MESSAGE, (d: any) => {
+      subscribe<{ ticketId?: string; message?: SupportMessage }>(SocketEvents.SUPPORT_MESSAGE, (d) => {
         qc.invalidateQueries({ queryKey: ['support', 'tickets'] });
         if (d?.ticketId) qc.invalidateQueries({ queryKey: ['support', 'ticket', d.ticketId] });
       }),
@@ -64,7 +65,7 @@ export function SupportButton() {
         qc.invalidateQueries({ queryKey: ['support', 'tickets'] });
         if (activeId) qc.invalidateQueries({ queryKey: ['support', 'ticket', activeId] });
       }),
-      subscribe(SocketEvents.SUPPORT_AGENT_PRESENCE, (d: any) => setAgentOnline(!!d?.online)),
+      subscribe<{ online?: boolean }>(SocketEvents.SUPPORT_AGENT_PRESENCE, (d) => setAgentOnline(!!d?.online)),
     ];
     return () => offs.forEach((off) => off());
   }, [enabled, subscribe, qc, activeId]);

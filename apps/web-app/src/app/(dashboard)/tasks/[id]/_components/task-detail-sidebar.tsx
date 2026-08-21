@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import type { Task } from "@/lib/api"
 import { useTranslation } from "react-i18next"
 import {
   Calendar,
@@ -23,7 +24,7 @@ import { InlineEditField } from "./inline-edit-field"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
 
 interface TaskDetailSidebarProps {
-  task: any
+  task: Task
   canEdit: boolean
   /** Adding/removing assignees is a different permission from editing fields —
    *  the server requires canAssignTasks for it, not canCreateTasks. */
@@ -79,7 +80,7 @@ export function TaskDetailSidebar({
   const hasAgile = hasModule("sprints") || hasModule("phases") || hasModule("epics") || hasModule("story_points")
   const assignees = task.assignees || []
   const hasMultiple = assignees.length > 1
-  const leadCount = assignees.filter((a: any) => a.role === "LEAD").length
+  const leadCount = assignees.filter((a) => a.role === "LEAD").length
 
   return (
     <div className="space-y-4">
@@ -112,7 +113,7 @@ export function TaskDetailSidebar({
 
             {assignees.length > 0 ? (
               <div className="space-y-1">
-                {assignees.map((a: any) => {
+                {assignees.map((a) => {
                   const isLead = a.role === "LEAD"
                   // Assignment permission, not edit permission — and never
                   // strip the last lead from a multi-assignee task.

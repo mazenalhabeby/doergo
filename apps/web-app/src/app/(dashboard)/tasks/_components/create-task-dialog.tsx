@@ -345,8 +345,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   useEffect(() => {
     if (open && spaceId === "none" && !defaultSpaceId && availableSpaces.length) {
       const def =
-        availableSpaces.find((s: any) => s.isDefault) ??
-        availableSpaces.find((s: any) => s.name === "General") ??
+        availableSpaces.find((s) => s.isDefault) ??
+        availableSpaces.find((s) => s.name === "General") ??
         availableSpaces[0]
       if (def?.id) setSpaceId(def.id)
     }

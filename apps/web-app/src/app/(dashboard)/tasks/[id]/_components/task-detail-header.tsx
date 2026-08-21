@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import type { Task } from "@/lib/api"
+import type { User as AuthUser } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import {
@@ -38,8 +40,8 @@ import { InlineEditField } from "./inline-edit-field"
 import type { WorkflowStatus } from "@/lib/api"
 
 interface TaskDetailHeaderProps {
-  task: any
-  user: any
+  task: Task
+  user: AuthUser | null
   canEdit: boolean
   canAssign: boolean
   isCompleted: boolean

@@ -259,7 +259,7 @@ export default function TaskDetailPage({
   }
 
   const comments = task.comments || []
-  const checklistDone = task.checklistItems?.filter((i: any) => i.isCompleted).length ?? 0
+  const checklistDone = task.checklistItems?.filter((i) => i.isCompleted).length ?? 0
   const checklistTotal = task.checklistItems?.length ?? 0
   const depCount = (task.predecessors?.length || 0) + (task.successors?.length || 0)
   const subtaskCount = task.subtasks?.length ?? task._count?.subtasks ?? 0
@@ -288,11 +288,11 @@ export default function TaskDetailPage({
         taskId={id}
         spaceId={task?.spaceId}
         currentAssigneeId={task?.assignedToId}
-        currentAssigneeIds={task?.assignees?.map((a: any) => a.userId) || []}
+        currentAssigneeIds={task?.assignees?.map((a) => a.userId) || []}
         isAssigning={assignMutation.isPending}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
         onSave={async (added, removed) => {
-          const ops: Promise<any>[] = [
+          const ops: Promise<unknown>[] = [
             ...removed.map(uid => tasksApi.removeAssignee(id, uid)),
             ...added.map(uid => tasksApi.addAssignee(id, uid)),
           ]
@@ -464,7 +464,7 @@ export default function TaskDetailPage({
               onFieldSave={handleFieldSave}
               onAssignClick={() => setShowAssignModal(true)}
               onRemoveAssignee={(assigneeId) => {
-                const assignee = task.assignees?.find((a: any) => a.id === assigneeId)
+                const assignee = task.assignees?.find((a) => a.id === assigneeId)
                 if (assignee) {
                   tasksApi.removeAssignee(id, assignee.userId).then(() => {
                     notify.success(t("tasks.detail.assigneeRemoved"))
@@ -473,7 +473,7 @@ export default function TaskDetailPage({
                 }
               }}
               onSetLead={(assigneeId) => {
-                const assignee = task.assignees?.find((a: any) => a.id === assigneeId)
+                const assignee = task.assignees?.find((a) => a.id === assigneeId)
                 if (assignee) {
                   tasksApi.removeAssignee(id, assignee.userId).then(() =>
                     tasksApi.addAssignee(id, assignee.userId, "LEAD")

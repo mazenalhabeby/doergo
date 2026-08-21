@@ -12,13 +12,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface InlineEditFieldProps {
-  value: string | number | null
+  /** `undefined` means the same as null here — the field is simply not set. */
+  value: string | number | null | undefined
   onSave: (value: string) => Promise<void> | void
   type?: "text" | "textarea" | "number" | "date" | "select"
   disabled?: boolean
   placeholder?: string
   options?: { value: string; label: string; color?: string }[]
-  renderDisplay?: (value: string | number | null) => ReactNode
+  renderDisplay?: (value: string | number | null | undefined) => ReactNode
   className?: string
 }
 

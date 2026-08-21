@@ -161,7 +161,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!enabled || !isConnected) return; // wait for the socket, else subscribe() no-ops
-    const off = subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
+    const off = subscribe<{ conversationId?: string; message?: ChatMessage }>(SocketEvents.CHAT_MESSAGE, (d) => {
       qc.invalidateQueries({ queryKey: ['chat', 'conversations'] });
       if (d?.conversationId) qc.invalidateQueries({ queryKey: ['chat', 'thread', d.conversationId] });
       // Toast for an INCOMING message you're not already looking at.
@@ -174,7 +174,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         description: (msg.body ?? '').slice(0, 80),
         action: {
           label: t('chat.open', 'Open'),
-          onClick: () => { setOpen(true); setShowContacts(false); setActiveId(d.conversationId); },
+          onClick: () => { setOpen(true); setShowContacts(false); setActiveId(d.conversationId ?? null); },
         },
       });
     });
@@ -503,15 +503,23 @@ function Thread({ conversation, meId }: { conversation: ChatConversation; meId: 
   }, [messages.length, peerTyping]);
 
   // Typing indicator from the peer.
+  const typingTimer = useRef<number | undefined>(undefined);
+
   useEffect(() => {
     if (!isConnected) return;
-    const off = subscribe(SocketEvents.CHAT_TYPING, (d: any) => {
+    const off = subscribe<{ conversationId?: string; from?: string }>(SocketEvents.CHAT_TYPING, (d) => {
       if (d?.conversationId !== conversationId || d?.from === meId) return;
       setPeerTyping(true);
-      window.clearTimeout((off as any)._tt);
-      (off as any)._tt = window.setTimeout(() => setPeerTyping(false), 3500);
+      // The timer lives in a ref, not stapled onto the unsubscribe function.
+      // `(off as any)._tt = …` worked, but it hid a piece of state on a value
+      // whose only job is to be called once.
+      window.clearTimeout(typingTimer.current);
+      typingTimer.current = window.setTimeout(() => setPeerTyping(false), 3500);
     });
-    return () => off();
+    return () => {
+      off();
+      window.clearTimeout(typingTimer.current);
+    };
   }, [isConnected, subscribe, conversationId, meId]);
 
   const onType = (v: string) => {
