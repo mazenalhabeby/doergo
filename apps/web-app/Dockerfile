@@ -17,12 +17,21 @@ ARG NEXT_PUBLIC_SOCKET_URL
 ARG NEXT_PUBLIC_APP_NAME=HBCField
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+# Map tiles. Unset, the app falls back to OpenStreetMap's public servers, which
+# their Tile Usage Policy does not permit at commercial volume. These must be
+# declared here as well as passed by compose: an ARG that is not declared is
+# silently dropped by Docker, so the paid tile host would be configured, billed
+# for, and never actually used.
+ARG NEXT_PUBLIC_MAP_TILE_URL
+ARG NEXT_PUBLIC_MAP_TILE_ATTRIBUTION
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_AUTH_URL=$NEXT_PUBLIC_AUTH_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_MAP_TILE_URL=$NEXT_PUBLIC_MAP_TILE_URL
+ENV NEXT_PUBLIC_MAP_TILE_ATTRIBUTION=$NEXT_PUBLIC_MAP_TILE_ATTRIBUTION
 COPY packages/shared/ ./packages/shared/
 COPY apps/web-app/ ./apps/web-app/
 COPY tsconfig.base.json ./

@@ -121,6 +121,13 @@ services:
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION:-15m}
+      # Role is the sole source of permissions; the legacy per-member
+      # columns are no longer read. Unset to fall back within one restart.
+      #
+      # This lived only in the copy on the production box, which meant
+      # deploying this file would have quietly turned it off and handed every
+      # member their pre-migration permissions back.
+      - ACCESS_IGNORE_LEGACY_FLAGS=${ACCESS_IGNORE_LEGACY_FLAGS:-false}
       - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-90d}
       # Platform-staff auth (admin.hbcfield.com) — SEPARATE secret from customer JWT.
       - PLATFORM_JWT_SECRET=${PLATFORM_JWT_SECRET}
@@ -301,9 +308,16 @@ services:
       # self-hosted OSRM (or a provider you have a contract with) for real road
       # distances.
       - OSRM_URL=${OSRM_URL:-}
+      # Geocoding. Google serves BOTH halves — Places API for address search,
+      # Geocoding API for reverse — and needs both enabled on the key.
+      #
+      # This was missing entirely: the key sat in .env.production and never
+      # reached the container, so GOOGLE_KEY was '' and Photon was silently
+      # doing all of it behind a default URL. Nothing said so.
+      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY:-}
       # Self-hosted Photon geocoder, OPTIONAL. Unset = Google is the only
-      # geocoder (worldwide, already the primary). Set it only while a Photon
-      # container is actually running; see docker-compose.photon.yml.
+      # geocoder. Set it only while a Photon container is actually running;
+      # see docker-compose.photon.yml.
       - PHOTON_URL=${PHOTON_URL:-}
     depends_on:
       auth-service:
