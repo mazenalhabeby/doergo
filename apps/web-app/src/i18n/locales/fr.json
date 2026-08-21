@@ -6202,5 +6202,15 @@
     "addInside": "Ajouter à l’intérieur",
     "namePh": "Unité hydraulique, Pompe, Moteur…",
     "addFailed": "Impossible de l’ajouter"
+  },
+  "assetJobs": {
+    "raise": "Créer une intervention",
+    "title": "Créer une intervention",
+    "hint": "À propos de {{name}}. Elle part dans l’espace auquel il appartient.",
+    "what": "Ce qu’il faut faire",
+    "whatPh": "Remplacer la courroie",
+    "detail": "Détail",
+    "detailPh": "Ce que la personne sur place doit savoir",
+    "raised": "Intervention créée"
   }
 }

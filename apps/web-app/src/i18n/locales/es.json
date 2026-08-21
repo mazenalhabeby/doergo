@@ -6211,5 +6211,15 @@
     "addInside": "Añadir uno dentro",
     "namePh": "Unidad hidráulica, Bomba, Motor…",
     "addFailed": "No se pudo añadir"
+  },
+  "assetJobs": {
+    "raise": "Crear un trabajo",
+    "title": "Crear un trabajo",
+    "hint": "Sobre {{name}}. Va al espacio al que pertenece.",
+    "what": "Qué hay que hacer",
+    "whatPh": "Sustituir la correa",
+    "detail": "Detalle",
+    "detailPh": "Lo que deba saber quien vaya",
+    "raised": "Trabajo creado"
   }
 }

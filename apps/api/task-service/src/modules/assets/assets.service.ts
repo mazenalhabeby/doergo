@@ -599,6 +599,13 @@ export class AssetsService {
     id: string;
     page?: number;
     limit?: number;
+    /**
+     * 'done' — finished work only, which is what a maintenance history means.
+     * 'all'  — everything, including work still open. The record page wants
+     *          this: somebody standing at the machine needs to know a job is
+     *          already raised before raising a second one.
+     */
+    scope?: 'done' | 'all';
     userId: string;
     userRole: string;
     organizationId: string;
@@ -621,12 +628,15 @@ export class AssetsService {
     const limit = this.access.pageSize(data.limit);
     const skip = (page - 1) * limit;
 
+    const finishedOnly = data.scope !== 'all';
+    const where = {
+      assetId: data.id,
+      ...(finishedOnly ? { status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] } } : {}),
+    };
+
     const [tasks, total] = await Promise.all([
       this.prisma.task.findMany({
-        where: {
-          assetId: data.id,
-          status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
-        },
+        where,
         skip,
         take: limit,
         orderBy: { updatedAt: 'desc' },
@@ -634,12 +644,7 @@ export class AssetsService {
           assignedTo: { select: { id: true, firstName: true, lastName: true } },
         },
       }),
-      this.prisma.task.count({
-        where: {
-          assetId: data.id,
-          status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
-        },
-      }),
+      this.prisma.task.count({ where }),
     ]);
 
     // Transform to maintenance history format

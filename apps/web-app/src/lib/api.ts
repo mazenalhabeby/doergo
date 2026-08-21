@@ -1896,9 +1896,11 @@ export const assetsApi = {
     return response.data;
   },
 
-  getAssetHistory: async (assetId: string) => {
+  // scope 'all' includes work still open — the record page needs it, or a
+  // technician cannot tell that a job is already raised.
+  getAssetHistory: async (assetId: string, scope: 'done' | 'all' = 'all') => {
     const response = await api.get<{ success: boolean; data: MaintenanceHistoryItem[] }>(
-      `/assets/${assetId}/history`
+      `/assets/${assetId}/history?scope=${scope}`
     );
 
     if (response.error) {

@@ -315,16 +315,19 @@ export class AssetsController {
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'scope', required: false, enum: ['done', 'all'] })
   async getMaintenanceHistory(
     @Param('id') id: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('scope') scope?: 'done' | 'all',
     @Request() req?: any,
   ) {
     return this.assetsService.getMaintenanceHistory({
       id,
       page,
       limit,
+      scope,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

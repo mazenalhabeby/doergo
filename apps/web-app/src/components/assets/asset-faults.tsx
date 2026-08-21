@@ -10,6 +10,7 @@ import {
   keyColumn, linkColumns, listByLabel,
   type KindList, type KindShape,
 } from "@hbcfield/shared/client"
+import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
@@ -29,9 +30,12 @@ import { Skeleton } from "@/components/ui/skeleton"
  * to the equipment class, not to one machine.
  */
 export function AssetFaults({
-  assetId, list, shape,
+  assetId, assetName, spaceId, list, shape,
 }: {
   assetId: string
+  assetName: string
+  /** The space this asset's type belongs to, so a raised job lands there. */
+  spaceId?: string | null
   list: KindList
   /** The whole kind, so a link column can find the table it points at. */
   shape: KindShape
@@ -188,17 +192,26 @@ export function AssetFaults({
                     {code || "—"}
                   </span>
                   <span className="text-sm font-medium text-foreground">{meaning}</span>
-                  <span className="ml-auto flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="ml-auto flex shrink-0 items-center gap-1">
+                    {/* The whole point of standing here with a code: turn it
+                        into the job, with what it means and what to do already
+                        written down. */}
+                    <AssetRaiseJob
+                      assetId={assetId}
+                      assetName={assetName}
+                      spaceId={spaceId}
+                      faultCode={{ code, meaning, fix }}
+                    />
                     <button
                       onClick={() => setEditing(row.id)}
-                      className="rounded p-1 text-muted-foreground hover:text-foreground"
+                      className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
                       aria-label={t("common.edit", "Edit")}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => remove.mutate(row.id)}
-                      className="rounded p-1 text-muted-foreground hover:text-destructive"
+                      className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                       aria-label={t("common.remove", "Remove")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

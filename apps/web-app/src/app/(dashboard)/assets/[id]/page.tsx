@@ -9,7 +9,10 @@ import {
   ArrowLeft, Clock, ListChecks, Loader2, Mail, MapPin, Package, Phone, Plus, Settings2, Smartphone, Trash2, UserCheck,
 } from "lucide-react"
 
-import { assetsApi, type AssetActivity, type AssetCategory, type AssetMoneyEntry } from "@/lib/api"
+import {
+  assetsApi,
+  type AssetActivity, type AssetCategory, type AssetMoneyEntry, type MaintenanceHistoryItem,
+} from "@/lib/api"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents,
   type KindShape,
@@ -18,6 +21,7 @@ import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { AssetListTable } from "@/components/assets/asset-list-table"
 import { AssetFaults } from "@/components/assets/asset-faults"
 import { AssetStructure } from "@/components/assets/asset-structure"
+import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -107,8 +111,11 @@ export default function AssetRecordPage() {
   const client = asset.customer
   const hasMap = shape.hasAddress && asset.locationLat != null && asset.locationLng != null
 
-  const tasks = ((tasksQ.data as unknown as { data?: unknown[] })?.data ?? []) as Record<string, unknown>[]
-  const openCount = tasks.filter((tk) => !DONE.includes(String(tk.status))).length
+  // getAssetHistory already unwraps the envelope, so this IS the array. Reaching
+  // for .data on it "defensively" is what made the tab read empty while the API
+  // was returning the job perfectly well.
+  const tasks: MaintenanceHistoryItem[] = Array.isArray(tasksQ.data) ? tasksQ.data : []
+  const openCount = tasks.filter((tk) => !DONE.includes(tk.status)).length
 
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -136,6 +143,15 @@ export default function AssetRecordPage() {
         {/* Editing has to be reachable from the record itself. Without this the
             only way to correct anything — or add a field — was to go back to the
             space and find the row again. */}
+        {kind && (
+          <AssetRaiseJob
+            assetId={id}
+            assetName={asset.name}
+            spaceId={kind.spaceId}
+            onRaised={() => qc.invalidateQueries({ queryKey: ["asset-tasks", id] })}
+          />
+        )}
+
         {kind && (
           <AssetRecordDialog
             spaceId={kind.spaceId ?? ""}
@@ -279,7 +295,7 @@ export default function AssetRecordPage() {
               // Cards or a grid — a display choice the kind makes, not a type
               // we recognise. Both read the same rows.
               return list.display === "cards"
-                ? <AssetFaults assetId={id} list={list} shape={shape} />
+                ? <AssetFaults assetId={id} assetName={asset.name} spaceId={kind?.spaceId} list={list} shape={shape} />
                 : <AssetListTable assetId={id} list={list} shape={shape} />
             })()
           ) : tab === "money" ? (
@@ -307,13 +323,27 @@ export default function AssetRecordPage() {
           ) : (
             <div className="space-y-2">
               {tasks.map((tk) => (
-                <div key={String(tk.id)} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                <button
+                  key={tk.id}
+                  onClick={() => router.push(`/tasks/${tk.id}`)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
+                >
                   <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">{String(tk.title ?? "")}</span>
-                  <Badge variant="outline" className="shrink-0 text-[10px] text-muted-foreground">
-                    {String(tk.status ?? "")}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-foreground">{tk.title}</span>
+                    {tk.assignedTo && (
+                      <span className="block truncate text-[11px] text-muted-foreground">
+                        {`${tk.assignedTo.firstName} ${tk.assignedTo.lastName}`.trim()}
+                      </span>
+                    )}
+                  </span>
+                  <Badge
+                    variant={DONE.includes(tk.status) ? "outline" : "secondary"}
+                    className="shrink-0 text-[10px]"
+                  >
+                    {tk.status}
                   </Badge>
-                </div>
+                </button>
               ))}
             </div>
           )}

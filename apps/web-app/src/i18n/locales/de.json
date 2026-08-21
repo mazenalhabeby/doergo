@@ -6227,5 +6227,15 @@
     "addInside": "Etwas darin anlegen",
     "namePh": "Hydraulikeinheit, Pumpe, Motor…",
     "addFailed": "Konnte nicht angelegt werden"
+  },
+  "assetJobs": {
+    "raise": "Auftrag anlegen",
+    "title": "Auftrag anlegen",
+    "hint": "Zu {{name}}. Er geht an den Space, zu dem dieses gehört.",
+    "what": "Was zu tun ist",
+    "whatPh": "Antriebsriemen tauschen",
+    "detail": "Details",
+    "detailPh": "Alles, was die Person vor Ort wissen sollte",
+    "raised": "Auftrag angelegt"
   }
 }

@@ -6228,5 +6228,15 @@
     "addInside": "Add one inside",
     "namePh": "Hydraulic unit, Pump, Motor…",
     "addFailed": "Could not add it"
+  },
+  "assetJobs": {
+    "raise": "Raise a job",
+    "title": "Raise a job",
+    "hint": "About {{name}}. It goes to the space this one belongs to.",
+    "what": "What needs doing",
+    "whatPh": "Replace the drive belt",
+    "detail": "Detail",
+    "detailPh": "Anything the person going should know",
+    "raised": "Job raised"
   }
 }

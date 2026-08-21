@@ -6202,5 +6202,15 @@
     "addInside": "Aggiungi uno dentro",
     "namePh": "Unità idraulica, Pompa, Motore…",
     "addFailed": "Impossibile aggiungerlo"
+  },
+  "assetJobs": {
+    "raise": "Crea un lavoro",
+    "title": "Crea un lavoro",
+    "hint": "Su {{name}}. Va allo spazio a cui appartiene.",
+    "what": "Cosa fare",
+    "whatPh": "Sostituire la cinghia",
+    "detail": "Dettaglio",
+    "detailPh": "Ciò che deve sapere chi ci va",
+    "raised": "Lavoro creato"
   }
 }
