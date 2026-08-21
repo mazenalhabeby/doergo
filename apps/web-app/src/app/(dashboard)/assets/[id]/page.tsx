@@ -107,6 +107,13 @@ export default function AssetRecordPage() {
 
   const kind = asset.category ?? undefined
   const shape = normalizeKindShape(kind?.config)
+
+  // The list this record came from: its type, inside its space's Assets tab.
+  // Falls back to the spaces list for an asset whose type was deleted out from
+  // under it — an orphan, which has no list to go back to.
+  const backHref = kind?.spaceId
+    ? `/locations/${kind.spaceId}?tab=assets&type=${kind.id}`
+    : "/locations"
   const rows = detailRowsForKind(shape, asset.details).filter((r) => r.value)
   const member = asset.holderUser
   const client = asset.customer
@@ -120,8 +127,18 @@ export default function AssetRecordPage() {
 
   return (
     <div className="mx-auto max-w-6xl p-6">
+      {/*
+        Back goes where the label says, not wherever the browser last was.
+
+        `router.back()` looked equivalent and was not: the space page keeps its
+        open tab and open type in the URL, but only a history entry created
+        AFTER that was true carries them. Arriving here from a task, a search
+        result or a pasted link left Back pointing at something that had nothing
+        to do with the word next to the arrow. A button naming a destination has
+        to go to that destination every time.
+      */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push(backHref)}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> {kind?.name ?? t("assetKinds.title", "Assets")}

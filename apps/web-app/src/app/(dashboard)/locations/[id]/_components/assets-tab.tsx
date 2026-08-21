@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, Package, Plus, Pencil, Search, Trash2, User } from "lucide-react"
@@ -30,9 +30,28 @@ import { OrphanAssetsCard } from "./orphan-assets-card"
 export function AssetsTab({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  // Which kind is open. Kept here rather than in the URL because this is a
-  // settings pane inside the space, and the tab already owns its own state.
-  const [openKindId, setOpenKindId] = useState<string | null>(null)
+  const router = useRouter()
+  /*
+    Which type is open lives in the URL.
+
+    It used to be component state, on the reasoning that a settings pane owns
+    its own view. That held right up until a record opened its own page: coming
+    back, there was nothing anywhere saying which type had been open, so the
+    back button landed on the space's first tab instead of the list the record
+    came from. A sub-view somebody can navigate away from and return to is a
+    place, and a place needs an address.
+  */
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const openKindId = searchParams.get("type")
+
+  const showKind = (id: string | null) => {
+    const next = new URLSearchParams(searchParams.toString())
+    next.set("tab", "assets")
+    if (id) next.set("type", id)
+    else next.delete("type")
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false })
+  }
 
   const kindsQ = useQuery({
     queryKey: ["space-asset-kinds", spaceId],
@@ -49,7 +68,7 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
 
   const openKind = kinds.find((k: AssetCategory) => k.id === openKindId)
   if (openKind) {
-    return <KindContents spaceId={spaceId} kind={openKind} onBack={() => setOpenKindId(null)} onChanged={invalidate} />
+    return <KindContents spaceId={spaceId} kind={openKind} onBack={() => showKind(null)} onChanged={invalidate} />
   }
 
   return (
@@ -108,7 +127,7 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
 
             return (
               <div key={kind.id} className="group relative rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40">
-                <button onClick={() => setOpenKindId(kind.id)} className="block w-full text-left">
+                <button onClick={() => showKind(kind.id)} className="block w-full text-left">
                   <div className="flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
                       <Package className="h-4.5 w-4.5" />

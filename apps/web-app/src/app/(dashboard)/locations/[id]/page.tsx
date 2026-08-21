@@ -59,9 +59,29 @@ export default function SpaceSettingsPage() {
     !!user?.canManageUsers ||
     accessAllows((user as { access?: Parameters<typeof accessAllows>[0] } | null)?.access, "canManageUsers", spaceId)
 
-  // Honor ?tab=… so returning from a portal detail lands back on the Portal tab.
+  /*
+    The open tab lives in the URL, not only in state.
+
+    It was read from `?tab=` on the way in but never written on the way round,
+    so any screen wanting to send somebody back to a particular tab had to hope
+    browser history happened to hold the right entry. It did not: a record page
+    calling router.back() landed here on General, because the entry it went back
+    to had no idea which tab — or which asset type — had been open.
+
+    `replace`, not `push`: switching tabs is not a place somebody wants the Back
+    button to walk through one at a time.
+  */
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general")
+
+  const openTab = (tab: string) => {
+    setActiveTab(tab)
+    const next = new URLSearchParams(searchParams.toString())
+    next.set("tab", tab)
+    // A tab's own sub-view belongs to the tab that opened it.
+    if (tab !== "assets") next.delete("type")
+    router.replace(`?${next.toString()}`, { scroll: false })
+  }
 
   const { data: space, isLoading } = useQuery({
     queryKey: ["location", spaceId],
@@ -144,7 +164,7 @@ export default function SpaceSettingsPage() {
             <p className="text-sm text-muted-foreground mt-2">{t("scheduling.notFound.description")}</p>
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="lg:flex lg:items-start lg:gap-7">
+          <Tabs value={activeTab} onValueChange={openTab} className="lg:flex lg:items-start lg:gap-7">
             {/* Section nav — sticky framed rail on desktop, scrollable row on mobile. */}
             <div className="mb-5 lg:sticky lg:top-4 lg:mb-0 lg:w-60 lg:shrink-0 lg:self-start">
               <p className="hidden px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 lg:block">
@@ -225,7 +245,7 @@ export default function SpaceSettingsPage() {
               {space?.enabledModules?.includes("b2c_portal") && (
                 <TabsContent value="portal" className="mt-0">
                   <PlanGate feature="crm">
-                    <PortalTab spaceId={spaceId} hasApartments onOpenModules={() => setActiveTab("modules")} />
+                    <PortalTab spaceId={spaceId} hasApartments onOpenModules={() => openTab("modules")} />
                   </PlanGate>
                 </TabsContent>
               )}
