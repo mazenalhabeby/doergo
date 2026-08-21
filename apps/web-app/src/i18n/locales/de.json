@@ -3491,7 +3491,8 @@
     "billingLoadFailed": "Abrechnungsdaten konnten nicht geladen werden.",
     "billingUpdated": "Abrechnung aktualisiert.",
     "checkoutFailed": "Bezahlvorgang konnte nicht gestartet werden.",
-    "accessUpdated": "Deine Zugriffsrechte wurden aktualisiert"
+    "accessUpdated": "Deine Zugriffsrechte wurden aktualisiert",
+    "addOnsUpdated": "Zusatzmodule aktualisiert."
   },
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",
@@ -6227,7 +6228,44 @@
       "otherSpacesSeparate": "Andere Bereiche werden separat gezählt und berechnet",
       "includesCounted": "Enthält, was die Objekte dieses Bereichs hinzufügen",
       "perMonthShort": "/Mon."
-    }
+    },
+    "bill": {
+      "total": "Ihre monatliche Summe",
+      "perMonth": "/Monat",
+      "annualNote": "{{price}} pro Jahr — zwei Monate gratis",
+      "seats": "Personen",
+      "seatsDetail": "{{count}} × {{price}}",
+      "spaces": "Bereiche",
+      "spacesDetail_one": "{{count}} Bereich",
+      "spacesDetail_other": "{{count}} Bereiche",
+      "addOns": "Zusatzmodule",
+      "addOnsDetail_one": "{{count}} gebucht",
+      "addOnsDetail_other": "{{count}} gebucht",
+      "bySpace": "Nach Bereich",
+      "usageLine": "{{module}} Nutzung {{price}}",
+      "noModules": "Nichts aktiviert — dieser Bereich ist kostenlos",
+      "addOnsBought": "Zusatzmodule"
+    },
+    "addOns": {
+      "title": "Zusatzmodule",
+      "subtitle": "Einmal für die gesamte Organisation gebucht, nicht pro Bereich",
+      "perMonth": "/Mon."
+    },
+    "status": {
+      "trialing": "Testphase",
+      "active": "Aktiv",
+      "pastDue": "Zahlung offen",
+      "canceled": "Gekündigt",
+      "incomplete": "Inaktiv"
+    },
+    "title": "Abrechnung",
+    "subtitle": "Sie zahlen für die Personen, die HBCField nutzen, für das, was jeder Bereich aktiviert hat, und für Zusatzmodule.",
+    "paymentAndInvoices": "Zahlung & Rechnungen",
+    "cancel": "Kündigen",
+    "adminOnly": "Nur ein Organisations-Admin kann ändern, wofür Sie zahlen.",
+    "trialDaysLeft": "Noch {{count}} Tage in Ihrer Testphase",
+    "cancelsOn": "Endet am {{date}}",
+    "modulesElsewhere": "Module gehören zu einem Bereich — aktivieren Sie sie im Reiter „Module“ des Bereichs, direkt neben der Anzahl, nach der sie berechnet werden."
   },
   "assetKinds": {
     "title": "Objekte",
@@ -6667,5 +6705,65 @@
     "user": "Benutzer",
     "view": "Ansehen",
     "pdfSummaryBottom": "Tabellenende"
+  },
+  "addOns": {
+    "workflows": {
+      "label": "Eigene Workflows",
+      "description": "Eigene Aufgabenstatus und deren Übergänge festlegen"
+    },
+    "recurring": {
+      "label": "Wiederkehrende Aufgaben",
+      "description": "Arbeiten planen, die sich wiederholen — täglich, wöchentlich, monatlich"
+    },
+    "shift_scheduling": {
+      "label": "Schichtplanung",
+      "description": "Schichten, Dienstpläne und die Erinnerungen für offene Schichten"
+    },
+    "overtime": {
+      "label": "Mehrarbeit-Freigaben",
+      "description": "Mitarbeitende beantragen Zeit über die Schicht hinaus; eine Führungskraft genehmigt sie"
+    },
+    "invoicing": {
+      "label": "Rechnungsstellung",
+      "description": "Erledigte Arbeit in Rechnungen verwandeln und offene Posten verfolgen"
+    },
+    "reports_builder": {
+      "label": "Berichts-Baukasten",
+      "description": "Eigene Berichte erstellen und speichern. Die Standardberichte sind kostenlos."
+    },
+    "report_scheduling": {
+      "label": "Geplante Berichte",
+      "description": "Berichte automatisch per E-Mail zustellen lassen"
+    },
+    "audit_log": {
+      "label": "Änderungsprotokoll",
+      "description": "Wer hat was wann geändert — in der ganzen Organisation"
+    },
+    "priority_routing": {
+      "label": "Priorisierter Support",
+      "description": "Ihre Anfragen werden vorgezogen"
+    },
+    "live_chat": {
+      "label": "Live-Chat-Support",
+      "description": "In Echtzeit mit einer Person sprechen statt per Ticket"
+    },
+    "dedicated_support": {
+      "label": "Persönlicher Support",
+      "description": "Feste Ansprechperson und ein Onboarding-Gespräch"
+    },
+    "groups": {
+      "work": {
+        "label": "Arbeitsabläufe"
+      },
+      "money": {
+        "label": "Finanzen"
+      },
+      "insight": {
+        "label": "Auswertung"
+      },
+      "support": {
+        "label": "Support"
+      }
+    }
   }
 }

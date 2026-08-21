@@ -5053,9 +5053,27 @@ export { TimeEntryStatus, BreakType, InvitationStatus, JoinRequestStatus, JoinPo
 // ──────────────────────────────────────────────────────────────────────────────
 // Billing / Subscriptions
 // ──────────────────────────────────────────────────────────────────────────────
-import type { SubscriptionView, PlanTier, BillingInterval } from '@hbcfield/shared/client';
+import type { SubscriptionView, PlanTier, BillingInterval, OrgCostBreakdown } from '@hbcfield/shared/client';
 
 export const billingApi = {
+  /** The itemised bill: seats, every space's modules and ladders, org add-ons. */
+  getBill: async (): Promise<OrgCostBreakdown> => {
+    const response = await api.get<OrgCostBreakdown>('/billing/bill');
+    if (response.error) throw new Error(response.error);
+    return response.data as OrgCostBreakdown;
+  },
+
+  /**
+   * Replace the organization's add-ons. The WHOLE list — sending a subset
+   * removes the rest, which is what the screen means by "these are the ones
+   * I want".
+   */
+  setAddOns: async (addOns: string[]): Promise<string[]> => {
+    const response = await api.put<string[]>('/billing/add-ons', { addOns });
+    if (response.error) throw new Error(response.error);
+    return response.data as string[];
+  },
+
   /** Current org subscription/billing status. */
   getSubscription: async (): Promise<SubscriptionView> => {
     const response = await api.get<SubscriptionView>('/billing/subscription');

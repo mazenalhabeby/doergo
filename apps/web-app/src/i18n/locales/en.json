@@ -3491,7 +3491,8 @@
     "billingLoadFailed": "Couldn't load billing details.",
     "billingUpdated": "Billing updated.",
     "checkoutFailed": "Couldn't start checkout.",
-    "accessUpdated": "Your access was updated"
+    "accessUpdated": "Your access was updated",
+    "addOnsUpdated": "Add-ons updated."
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -6227,7 +6228,44 @@
       "otherSpacesSeparate": "Other spaces are counted and charged separately",
       "includesCounted": "Includes what this space's assets add",
       "perMonthShort": "/mo"
-    }
+    },
+    "bill": {
+      "total": "Your monthly total",
+      "perMonth": "/month",
+      "annualNote": "{{price}} a year — two months free",
+      "seats": "People",
+      "seatsDetail": "{{count}} × {{price}}",
+      "spaces": "Spaces",
+      "spacesDetail_one": "{{count}} space",
+      "spacesDetail_other": "{{count}} spaces",
+      "addOns": "Add-ons",
+      "addOnsDetail_one": "{{count}} bought",
+      "addOnsDetail_other": "{{count}} bought",
+      "bySpace": "By space",
+      "usageLine": "{{module}} usage {{price}}",
+      "noModules": "Nothing switched on — this space is free",
+      "addOnsBought": "Add-ons"
+    },
+    "addOns": {
+      "title": "Add-ons",
+      "subtitle": "Bought once for the whole organization, not per space",
+      "perMonth": "/mo"
+    },
+    "status": {
+      "trialing": "Trial",
+      "active": "Active",
+      "pastDue": "Payment due",
+      "canceled": "Canceled",
+      "incomplete": "Inactive"
+    },
+    "title": "Billing",
+    "subtitle": "You pay for the people who use HBCField, what each space switches on, and any add-ons.",
+    "paymentAndInvoices": "Payment & invoices",
+    "cancel": "Cancel",
+    "adminOnly": "Only an organization admin can change what you pay for.",
+    "trialDaysLeft": "{{count}} days left in your trial",
+    "cancelsOn": "Cancels on {{date}}",
+    "modulesElsewhere": "Modules belong to a space — switch them on in that space's Modules tab, next to the count they are priced by."
   },
   "assetKinds": {
     "title": "Assets",
@@ -6667,5 +6705,65 @@
     "user": "User",
     "view": "View",
     "pdfSummaryBottom": "End of table"
+  },
+  "addOns": {
+    "workflows": {
+      "label": "Custom Workflows",
+      "description": "Design your own task statuses and the transitions between them"
+    },
+    "recurring": {
+      "label": "Recurring Tasks",
+      "description": "Schedule work that repeats — daily, weekly, monthly"
+    },
+    "shift_scheduling": {
+      "label": "Shift Scheduling",
+      "description": "Shifts, rotas, and the reminder loop that chases an open shift"
+    },
+    "overtime": {
+      "label": "Extra-time Approvals",
+      "description": "Members request time beyond their shift; a manager approves it"
+    },
+    "invoicing": {
+      "label": "Invoicing",
+      "description": "Turn completed work into invoices, and track what is owed"
+    },
+    "reports_builder": {
+      "label": "Report Builder",
+      "description": "Build and save your own reports. Running the standard ones is free."
+    },
+    "report_scheduling": {
+      "label": "Scheduled Reports",
+      "description": "Have a report arrive by email on a schedule"
+    },
+    "audit_log": {
+      "label": "Audit Log",
+      "description": "Who changed what, and when — across the whole organization"
+    },
+    "priority_routing": {
+      "label": "Priority Support",
+      "description": "Your tickets jump the queue"
+    },
+    "live_chat": {
+      "label": "Live Chat Support",
+      "description": "Talk to a person in real time, not a ticket thread"
+    },
+    "dedicated_support": {
+      "label": "Dedicated Support",
+      "description": "A named contact and an onboarding call"
+    },
+    "groups": {
+      "work": {
+        "label": "How work runs"
+      },
+      "money": {
+        "label": "Money"
+      },
+      "insight": {
+        "label": "Insight"
+      },
+      "support": {
+        "label": "Support"
+      }
+    }
   }
 }

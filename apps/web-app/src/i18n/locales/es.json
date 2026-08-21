@@ -3491,7 +3491,8 @@
     "billingLoadFailed": "No se pudieron cargar los datos de facturación.",
     "billingUpdated": "Facturación actualizada.",
     "checkoutFailed": "No se pudo iniciar el pago.",
-    "accessUpdated": "Se actualizaron tus permisos de acceso"
+    "accessUpdated": "Se actualizaron tus permisos de acceso",
+    "addOnsUpdated": "Complementos actualizados."
   },
   "errors": {
     "somethingWentWrong": "Algo salió mal",
@@ -6227,7 +6228,44 @@
       "otherSpacesSeparate": "Los demás espacios se cuentan y se cobran por separado",
       "includesCounted": "Incluye lo que añaden los activos de este espacio",
       "perMonthShort": "/mes"
-    }
+    },
+    "bill": {
+      "total": "Tu total mensual",
+      "perMonth": "/mes",
+      "annualNote": "{{price}} al año: dos meses gratis",
+      "seats": "Personas",
+      "seatsDetail": "{{count}} × {{price}}",
+      "spaces": "Espacios",
+      "spacesDetail_one": "{{count}} espacio",
+      "spacesDetail_other": "{{count}} espacios",
+      "addOns": "Complementos",
+      "addOnsDetail_one": "{{count}} contratado",
+      "addOnsDetail_other": "{{count}} contratados",
+      "bySpace": "Por espacio",
+      "usageLine": "Uso de {{module}} {{price}}",
+      "noModules": "Nada activado: este espacio es gratuito",
+      "addOnsBought": "Complementos"
+    },
+    "addOns": {
+      "title": "Complementos",
+      "subtitle": "Se contratan una vez para toda la organización, no por espacio",
+      "perMonth": "/mes"
+    },
+    "status": {
+      "trialing": "Prueba",
+      "active": "Activo",
+      "pastDue": "Pago pendiente",
+      "canceled": "Cancelado",
+      "incomplete": "Inactivo"
+    },
+    "title": "Facturación",
+    "subtitle": "Pagas por las personas que usan HBCField, por lo que cada espacio activa y por los complementos.",
+    "paymentAndInvoices": "Pago y facturas",
+    "cancel": "Cancelar",
+    "adminOnly": "Solo un administrador de la organización puede cambiar lo que se paga.",
+    "trialDaysLeft": "Te quedan {{count}} días de prueba",
+    "cancelsOn": "Se cancela el {{date}}",
+    "modulesElsewhere": "Los módulos pertenecen a un espacio: actívalos en la pestaña Módulos de ese espacio, junto al recuento por el que se cobran."
   },
   "assetKinds": {
     "title": "Activos",
@@ -6667,5 +6705,65 @@
     "user": "Usuario",
     "view": "Ver",
     "pdfSummaryBottom": "Fin de la tabla"
+  },
+  "addOns": {
+    "workflows": {
+      "label": "Flujos personalizados",
+      "description": "Define tus propios estados de tarea y sus transiciones"
+    },
+    "recurring": {
+      "label": "Tareas recurrentes",
+      "description": "Programa trabajo que se repite: diario, semanal, mensual"
+    },
+    "shift_scheduling": {
+      "label": "Planificación de turnos",
+      "description": "Turnos, cuadrantes y los recordatorios de un turno abierto"
+    },
+    "overtime": {
+      "label": "Aprobación de horas extra",
+      "description": "El equipo solicita tiempo más allá de su turno; un responsable lo aprueba"
+    },
+    "invoicing": {
+      "label": "Facturación",
+      "description": "Convierte el trabajo terminado en facturas y controla lo pendiente"
+    },
+    "reports_builder": {
+      "label": "Creador de informes",
+      "description": "Crea y guarda tus propios informes. Los estándar son gratuitos."
+    },
+    "report_scheduling": {
+      "label": "Informes programados",
+      "description": "Recibe un informe por correo de forma periódica"
+    },
+    "audit_log": {
+      "label": "Registro de auditoría",
+      "description": "Quién cambió qué y cuándo, en toda la organización"
+    },
+    "priority_routing": {
+      "label": "Soporte prioritario",
+      "description": "Tus tickets pasan al principio de la cola"
+    },
+    "live_chat": {
+      "label": "Soporte por chat",
+      "description": "Habla con una persona en tiempo real, no por ticket"
+    },
+    "dedicated_support": {
+      "label": "Soporte dedicado",
+      "description": "Un contacto asignado y una llamada de incorporación"
+    },
+    "groups": {
+      "work": {
+        "label": "Cómo funciona el trabajo"
+      },
+      "money": {
+        "label": "Dinero"
+      },
+      "insight": {
+        "label": "Análisis"
+      },
+      "support": {
+        "label": "Soporte"
+      }
+    }
   }
 }

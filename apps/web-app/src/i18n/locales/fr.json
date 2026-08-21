@@ -3500,7 +3500,8 @@
     "billingLoadFailed": "Impossible de charger les informations de facturation.",
     "billingUpdated": "Facturation mise à jour.",
     "checkoutFailed": "Impossible de démarrer le paiement.",
-    "accessUpdated": "Vos accès ont été mis à jour"
+    "accessUpdated": "Vos accès ont été mis à jour",
+    "addOnsUpdated": "Options mises à jour."
   },
   "errors": {
     "somethingWentWrong": "Une erreur s'est produite",
@@ -6236,7 +6237,44 @@
       "otherSpacesSeparate": "Les autres espaces sont comptés et facturés séparément",
       "includesCounted": "Inclut ce qu’ajoutent les actifs de cet espace",
       "perMonthShort": "/mois"
-    }
+    },
+    "bill": {
+      "total": "Votre total mensuel",
+      "perMonth": "/mois",
+      "annualNote": "{{price}} par an — deux mois offerts",
+      "seats": "Personnes",
+      "seatsDetail": "{{count}} × {{price}}",
+      "spaces": "Espaces",
+      "spacesDetail_one": "{{count}} espace",
+      "spacesDetail_other": "{{count}} espaces",
+      "addOns": "Options",
+      "addOnsDetail_one": "{{count}} souscrite",
+      "addOnsDetail_other": "{{count}} souscrites",
+      "bySpace": "Par espace",
+      "usageLine": "Usage {{module}} {{price}}",
+      "noModules": "Rien d’activé — cet espace est gratuit",
+      "addOnsBought": "Options"
+    },
+    "addOns": {
+      "title": "Options",
+      "subtitle": "Souscrites une fois pour toute l’organisation, pas par espace",
+      "perMonth": "/mois"
+    },
+    "status": {
+      "trialing": "Essai",
+      "active": "Actif",
+      "pastDue": "Paiement dû",
+      "canceled": "Annulé",
+      "incomplete": "Inactif"
+    },
+    "title": "Facturation",
+    "subtitle": "Vous payez pour les personnes qui utilisent HBCField, pour ce que chaque espace active, et pour les options.",
+    "paymentAndInvoices": "Paiement et factures",
+    "cancel": "Annuler",
+    "adminOnly": "Seul un administrateur de l’organisation peut modifier ce que vous payez.",
+    "trialDaysLeft": "Il vous reste {{count}} jours d’essai",
+    "cancelsOn": "Se termine le {{date}}",
+    "modulesElsewhere": "Les modules appartiennent à un espace — activez-les dans l’onglet Modules de cet espace, à côté du décompte qui les facture."
   },
   "assetKinds": {
     "title": "Biens",
@@ -6676,5 +6714,65 @@
     "user": "Utilisateur",
     "view": "Voir",
     "pdfSummaryBottom": "Fin du tableau"
+  },
+  "addOns": {
+    "workflows": {
+      "label": "Flux personnalisés",
+      "description": "Définissez vos propres statuts de tâche et leurs transitions"
+    },
+    "recurring": {
+      "label": "Tâches récurrentes",
+      "description": "Planifiez le travail qui se répète — quotidien, hebdomadaire, mensuel"
+    },
+    "shift_scheduling": {
+      "label": "Planification des postes",
+      "description": "Postes, plannings et les rappels pour un poste resté ouvert"
+    },
+    "overtime": {
+      "label": "Validation des heures supplémentaires",
+      "description": "Un membre demande du temps au-delà de son poste ; un responsable valide"
+    },
+    "invoicing": {
+      "label": "Facturation",
+      "description": "Transformez le travail terminé en factures et suivez les impayés"
+    },
+    "reports_builder": {
+      "label": "Générateur de rapports",
+      "description": "Créez et enregistrez vos propres rapports. Les rapports standards sont gratuits."
+    },
+    "report_scheduling": {
+      "label": "Rapports programmés",
+      "description": "Recevez un rapport par e-mail selon un calendrier"
+    },
+    "audit_log": {
+      "label": "Journal d'audit",
+      "description": "Qui a changé quoi, et quand — dans toute l’organisation"
+    },
+    "priority_routing": {
+      "label": "Support prioritaire",
+      "description": "Vos tickets passent devant"
+    },
+    "live_chat": {
+      "label": "Support par chat",
+      "description": "Parlez à une personne en direct, pas par ticket"
+    },
+    "dedicated_support": {
+      "label": "Support dédié",
+      "description": "Un contact attitré et un appel de mise en route"
+    },
+    "groups": {
+      "work": {
+        "label": "Organisation du travail"
+      },
+      "money": {
+        "label": "Finances"
+      },
+      "insight": {
+        "label": "Analyse"
+      },
+      "support": {
+        "label": "Support"
+      }
+    }
   }
 }

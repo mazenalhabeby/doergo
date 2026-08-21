@@ -3500,7 +3500,8 @@
     "billingLoadFailed": "Impossibile caricare i dati di fatturazione.",
     "billingUpdated": "Fatturazione aggiornata.",
     "checkoutFailed": "Impossibile avviare il pagamento.",
-    "accessUpdated": "I tuoi permessi di accesso sono stati aggiornati"
+    "accessUpdated": "I tuoi permessi di accesso sono stati aggiornati",
+    "addOnsUpdated": "Componenti aggiornati."
   },
   "errors": {
     "somethingWentWrong": "Qualcosa è andato storto",
@@ -6236,7 +6237,44 @@
       "otherSpacesSeparate": "Gli altri spazi vengono conteggiati e addebitati separatamente",
       "includesCounted": "Include quanto aggiungono i beni di questo spazio",
       "perMonthShort": "/mese"
-    }
+    },
+    "bill": {
+      "total": "Totale mensile",
+      "perMonth": "/mese",
+      "annualNote": "{{price}} all’anno — due mesi gratis",
+      "seats": "Persone",
+      "seatsDetail": "{{count}} × {{price}}",
+      "spaces": "Spazi",
+      "spacesDetail_one": "{{count}} spazio",
+      "spacesDetail_other": "{{count}} spazi",
+      "addOns": "Componenti aggiuntivi",
+      "addOnsDetail_one": "{{count}} attivo",
+      "addOnsDetail_other": "{{count}} attivi",
+      "bySpace": "Per spazio",
+      "usageLine": "Utilizzo {{module}} {{price}}",
+      "noModules": "Niente attivato — questo spazio è gratuito",
+      "addOnsBought": "Componenti aggiuntivi"
+    },
+    "addOns": {
+      "title": "Componenti aggiuntivi",
+      "subtitle": "Si attivano una volta per tutta l’organizzazione, non per spazio",
+      "perMonth": "/mese"
+    },
+    "status": {
+      "trialing": "Prova",
+      "active": "Attivo",
+      "pastDue": "Pagamento dovuto",
+      "canceled": "Annullato",
+      "incomplete": "Inattivo"
+    },
+    "title": "Fatturazione",
+    "subtitle": "Paghi per le persone che usano HBCField, per ciò che ogni spazio attiva e per i componenti aggiuntivi.",
+    "paymentAndInvoices": "Pagamenti e fatture",
+    "cancel": "Annulla",
+    "adminOnly": "Solo un amministratore dell’organizzazione può cambiare ciò per cui si paga.",
+    "trialDaysLeft": "Ti restano {{count}} giorni di prova",
+    "cancelsOn": "Termina il {{date}}",
+    "modulesElsewhere": "I moduli appartengono a uno spazio: attivali nella scheda Moduli di quello spazio, accanto al conteggio con cui vengono addebitati."
   },
   "assetKinds": {
     "title": "Beni",
@@ -6676,5 +6714,65 @@
     "user": "Utente",
     "view": "Visualizza",
     "pdfSummaryBottom": "Fine tabella"
+  },
+  "addOns": {
+    "workflows": {
+      "label": "Flussi personalizzati",
+      "description": "Definisci i tuoi stati delle attività e le transizioni"
+    },
+    "recurring": {
+      "label": "Attività ricorrenti",
+      "description": "Pianifica il lavoro che si ripete — giornaliero, settimanale, mensile"
+    },
+    "shift_scheduling": {
+      "label": "Pianificazione turni",
+      "description": "Turni, rotazioni e i promemoria per un turno rimasto aperto"
+    },
+    "overtime": {
+      "label": "Approvazione straordinari",
+      "description": "I membri richiedono tempo oltre il turno; un responsabile approva"
+    },
+    "invoicing": {
+      "label": "Fatturazione",
+      "description": "Trasforma il lavoro concluso in fatture e tieni traccia degli insoluti"
+    },
+    "reports_builder": {
+      "label": "Creatore di report",
+      "description": "Crea e salva i tuoi report. Quelli standard sono gratuiti."
+    },
+    "report_scheduling": {
+      "label": "Report programmati",
+      "description": "Ricevi un report via email con una pianificazione"
+    },
+    "audit_log": {
+      "label": "Registro attività",
+      "description": "Chi ha cambiato cosa, e quando — in tutta l’organizzazione"
+    },
+    "priority_routing": {
+      "label": "Supporto prioritario",
+      "description": "I tuoi ticket saltano la coda"
+    },
+    "live_chat": {
+      "label": "Supporto via chat",
+      "description": "Parla con una persona in tempo reale, non via ticket"
+    },
+    "dedicated_support": {
+      "label": "Supporto dedicato",
+      "description": "Un contatto dedicato e una call di avvio"
+    },
+    "groups": {
+      "work": {
+        "label": "Come funziona il lavoro"
+      },
+      "money": {
+        "label": "Denaro"
+      },
+      "insight": {
+        "label": "Analisi"
+      },
+      "support": {
+        "label": "Supporto"
+      }
+    }
   }
 }
