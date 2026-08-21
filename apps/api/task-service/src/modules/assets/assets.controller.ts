@@ -5,6 +5,7 @@ import { AssetCatalogService } from './asset-catalog.service';
 import { AssetRowsService } from './asset-rows.service';
 import { AssetLedgerService } from './asset-ledger.service';
 import { AssetActivityService } from './asset-activity.service';
+import { AssetUsageService } from './asset-usage.service';
 
 @Controller()
 export class AssetsController {
@@ -14,6 +15,7 @@ export class AssetsController {
     private readonly rows: AssetRowsService,
     private readonly ledger: AssetLedgerService,
     private readonly activity: AssetActivityService,
+    private readonly usage: AssetUsageService,
   ) {}
 
   // ============================================
@@ -46,6 +48,12 @@ export class AssetsController {
   @MessagePattern({ cmd: 'find_asset' })
   async findOne(@Payload() data: any) {
     return this.assetsService.findOne(data);
+  }
+
+  /** How many assets this org is billed for — the count only; pricing is shared. */
+  @MessagePattern({ cmd: 'asset_billing_usage' })
+  async billingUsage(@Payload() data: any) {
+    return this.usage.count(data.organizationId, data.spaceId);
   }
 
   @MessagePattern({ cmd: 'get_asset_maintenance_history' })

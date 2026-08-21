@@ -7,7 +7,13 @@
  *   SPACES — the sum of the modules switched on in that space. Switch one on
  *            and the space costs more; switch it off and it costs less.
  *
- *     bill = users × seat price  +  Σ spaces ( Σ enabled modules ( price ) )
+ *     bill = users × seat price
+ *          + Σ spaces ( Σ enabled modules ( price ) )
+ *          + Σ usage-billed modules ( ladder(count) )
+ *
+ * The third term is the exception, not the rule: a couple of modules carry a
+ * count whose size IS the value — assets is the first — and are priced with a
+ * base here plus a volume ladder in usage-pricing.ts.
  *
  * One flat seat means nothing has to decide whether somebody is an "office" or
  * a "field" user — a whole category of argument, and of code, that simply does
@@ -26,6 +32,7 @@
  */
 
 import { AVAILABLE_MODULES } from '../types';
+import { billsByUsage, usageCost, type UsageCost } from './usage-pricing';
 
 /** Per user, per month. The same for everyone. */
 export const SEAT_MONTHLY_CENTS = 999;
@@ -54,7 +61,12 @@ export const MODULE_MONTHLY_CENTS: Record<string, number> = {
 
   // Field service — the differentiated half, and where the margin is.
   // ServiceTitan bills per truck for this class of thing.
-  assets: 1200,
+  //
+  // `assets` is a BASE, not the whole price: it covers the first ten assets and
+  // the count is priced on top of it (see usage-pricing.ts). It is lower than
+  // the switches around it for exactly that reason — the module is cheap to
+  // start and grows with what is in it.
+  assets: 900,
   time_tracking: 1200,
   service_reports: 1500,
   tracking: 1900,
@@ -73,6 +85,12 @@ export function moduleMonthlyCents(moduleKey: string): number {
 export interface SpaceCostLine {
   moduleKey: string;
   monthlyCents: number;
+  /**
+   * True when this line is only a BASE and a count is charged on top of it at
+   * org level. Anything showing a per-space total has to say so, or the number
+   * reads as the whole price of a module whose price is not yet whole.
+   */
+  usageBilled?: boolean;
 }
 
 export interface SpaceCost {
@@ -95,7 +113,9 @@ export function spaceMonthlyCost(enabledModules: string[] | null | undefined): S
   for (const key of enabledModules ?? []) {
     if (!known.has(key) || seen.has(key)) continue;
     seen.add(key);
-    lines.push({ moduleKey: key, monthlyCents: moduleMonthlyCents(key) });
+    const line: SpaceCostLine = { moduleKey: key, monthlyCents: moduleMonthlyCents(key) };
+    if (billsByUsage(key)) line.usageBilled = true;
+    lines.push(line);
   }
 
   // Dearest first, then alphabetical: the expensive lines are the ones somebody
@@ -115,9 +135,12 @@ export interface OrgCostBreakdown {
   seatCount: number;
   seatMonthlyCents: number;
   spacesMonthlyCents: number;
+  /** The volume ladders — assets and anything else billed by a count. */
+  usageMonthlyCents: number;
   monthlyCents: number;
   annualCents: number;
   spaces: Array<{ spaceId: string; spaceName: string; cost: SpaceCost }>;
+  usage: UsageCost[];
 }
 
 /**
@@ -132,6 +155,15 @@ export function orgMonthlyCost(input: {
   spaces: SpaceModules[];
   /** Override for a negotiated seat price; defaults to the list price. */
   seatMonthlyCents?: number;
+  /**
+   * Counts for the usage-billed modules, org-wide — `{ assets: 17 }`.
+   *
+   * ORG-WIDE, not per space, and deliberately: the volume break is the whole
+   * point of a ladder, and a customer with five hundred assets spread over ten
+   * sites who is charged as ten small customers has been given the wrong bill.
+   * A count is only charged when at least one space has that module switched on.
+   */
+  usage?: Record<string, number>;
 }): OrgCostBreakdown {
   const seatPrice = input.seatMonthlyCents ?? SEAT_MONTHLY_CENTS;
 
@@ -141,17 +173,30 @@ export function orgMonthlyCost(input: {
     cost: spaceMonthlyCost(s.enabledModules),
   }));
 
+  // Only modules somebody actually switched on somewhere can carry a usage
+  // charge — otherwise turning the last space off would still bill the count.
+  const switchedOn = new Set<string>();
+  for (const s of input.spaces) for (const key of s.enabledModules ?? []) switchedOn.add(key);
+
+  const usage = Object.entries(input.usage ?? {})
+    .filter(([key]) => billsByUsage(key) && switchedOn.has(key))
+    .map(([key, units]) => usageCost(key, units))
+    .sort((a, b) => b.monthlyCents - a.monthlyCents || a.moduleKey.localeCompare(b.moduleKey));
+
   const seatMonthlyCents = Math.max(0, input.seatCount) * seatPrice;
   const spacesMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.monthlyCents, 0);
-  const monthlyCents = seatMonthlyCents + spacesMonthlyCents;
+  const usageMonthlyCents = usage.reduce((sum, u) => sum + u.monthlyCents, 0);
+  const monthlyCents = seatMonthlyCents + spacesMonthlyCents + usageMonthlyCents;
 
   return {
     seatCount: input.seatCount,
     seatMonthlyCents,
     spacesMonthlyCents,
+    usageMonthlyCents,
     monthlyCents,
     annualCents: monthlyCents * ANNUAL_MONTHS_CHARGED,
     spaces,
+    usage,
   };
 }
 

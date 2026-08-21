@@ -5,14 +5,16 @@ import { AssetCatalogService } from './asset-catalog.service';
 import { AssetRowsService } from './asset-rows.service';
 import { AssetLedgerService } from './asset-ledger.service';
 import { AssetActivityService } from './asset-activity.service';
+import { AssetUsageService } from './asset-usage.service';
 import { AssetsController } from './assets.controller';
 import { AssetsProcessor } from './assets.processor';
 
 /**
- * One 1,500-line service became six, split by subject rather than by layer:
+ * One 1,500-line service became several, split by subject rather than by layer:
  * the rules everything shares, the kinds, the records, their tables, their
- * money, and what happened to them. Each is injected where it is needed, so a
- * dependency is visible in a constructor rather than implied by a file.
+ * money, what happened to them, and how many of them are billable. Each is
+ * injected where it is needed, so a dependency is visible in a constructor
+ * rather than implied by a file.
  */
 const SERVICES = [
   AssetAccessService,
@@ -21,6 +23,7 @@ const SERVICES = [
   AssetRowsService,
   AssetLedgerService,
   AssetActivityService,
+  AssetUsageService,
 ];
 
 @Module({

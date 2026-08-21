@@ -6081,7 +6081,28 @@
     "spaceCostLabel": "Dieser Bereich kostet",
     "spaceCostPending": "Vorher {{was}} — wird beim Speichern der Module übernommen",
     "spaceCostPerModule": "Jedes Modul hat seinen eigenen Preis",
-    "seatLine": "Benutzer werden separat mit je {{price}} berechnet"
+    "seatLine": "Benutzer werden separat mit je {{price}} berechnet",
+    "usage": {
+      "heading": "{{module}} — organisationsweit gezählt",
+      "onTop": "zusätzlich zur Grundgebühr von {{base}}",
+      "included": "Die ersten {{count}} sind enthalten",
+      "free": "Kostenlos",
+      "bandRange": "{{from}}–{{to}}",
+      "bandOpen": "ab {{from}}",
+      "each": "je {{price}}",
+      "nextBreak": "Noch {{count}} — danach kostet jedes weitere {{price}}",
+      "lastBand": "Sie sind bereits im günstigsten Tarif",
+      "effective": "Ergibt {{price}} pro Stück",
+      "allIncluded": "Bisher alles enthalten — es fällt nichts zusätzlich an",
+      "perUnitShort": "+{{price}} je Stück",
+      "orgWideNote": "Gezählt wird für die gesamte Organisation, nicht pro Bereich — so profitiert jeder Bereich vom selben Mengenrabatt.",
+      "thisSpace": "Davon {{count}} in diesem Bereich",
+      "count": {
+        "asset_one": "{{count}} Objekt",
+        "asset_other": "{{count}} Objekte"
+      },
+      "plusCounted": "Zuzüglich dessen, was die unten gezählten Module hinzufügen"
+    }
   },
   "assetKinds": {
     "title": "Objekte",

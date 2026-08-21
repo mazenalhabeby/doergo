@@ -6082,7 +6082,28 @@
     "spaceCostLabel": "This space costs",
     "spaceCostPending": "Was {{was}} — saved when you save modules",
     "spaceCostPerModule": "Each module adds its own price",
-    "seatLine": "Users are billed separately at {{price}} each"
+    "seatLine": "Users are billed separately at {{price}} each",
+    "usage": {
+      "heading": "{{module}}, counted across the organization",
+      "onTop": "on top of the {{base}} base",
+      "included": "First {{count}} included",
+      "free": "Free",
+      "bandRange": "{{from}}–{{to}}",
+      "bandOpen": "{{from}} and up",
+      "each": "{{price}} each",
+      "nextBreak": "{{count}} more and every one after that is {{price}}",
+      "lastBand": "You are on the lowest rate there is",
+      "effective": "Works out at {{price}} each",
+      "allIncluded": "All included so far — nothing extra to pay",
+      "perUnitShort": "+{{price}} each",
+      "orgWideNote": "Counted for the whole organization, not per space, so every space shares the same volume discount.",
+      "thisSpace": "{{count}} of them are in this space",
+      "count": {
+        "asset_one": "{{count}} asset",
+        "asset_other": "{{count}} assets"
+      },
+      "plusCounted": "Plus what the counted modules below add"
+    }
   },
   "assetKinds": {
     "title": "Assets",

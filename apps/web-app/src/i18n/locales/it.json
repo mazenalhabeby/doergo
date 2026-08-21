@@ -6056,7 +6056,28 @@
     "spaceCostLabel": "Questo spazio costa",
     "spaceCostPending": "Prima {{was}} — applicato al salvataggio dei moduli",
     "spaceCostPerModule": "Ogni modulo aggiunge il proprio prezzo",
-    "seatLine": "Gli utenti sono fatturati a parte, {{price}} ciascuno"
+    "seatLine": "Gli utenti sono fatturati a parte, {{price}} ciascuno",
+    "usage": {
+      "heading": "{{module}}, contati su tutta l’organizzazione",
+      "onTop": "oltre alla base di {{base}}",
+      "included": "I primi {{count}} sono inclusi",
+      "free": "Gratis",
+      "bandRange": "{{from}}–{{to}}",
+      "bandOpen": "da {{from}} in su",
+      "each": "{{price}} ciascuno",
+      "nextBreak": "Ancora {{count}} e ognuno successivo costa {{price}}",
+      "lastBand": "Sei già alla tariffa più bassa",
+      "effective": "Risulta {{price}} ciascuno",
+      "allIncluded": "Finora tutto incluso — non paghi nulla in più",
+      "perUnitShort": "+{{price}} ciascuno",
+      "orgWideNote": "Contati su tutta l’organizzazione, non per spazio: così ogni spazio beneficia dello stesso sconto sul volume.",
+      "thisSpace": "Di cui {{count}} in questo spazio",
+      "count": {
+        "asset_one": "{{count}} bene",
+        "asset_other": "{{count}} beni"
+      },
+      "plusCounted": "Più quanto aggiungono i moduli conteggiati qui sotto"
+    }
   },
   "assetKinds": {
     "title": "Beni",

@@ -64,6 +64,27 @@ export class AssetsController {
     });
   }
 
+  /*
+    Declared BEFORE `:id`, and it has to stay there.
+
+    Express matches in declaration order, so a static segment placed after a
+    parameter route is never reached — `/assets/usage` would be read as an asset
+    whose id is "usage" and answer 404. It has happened here before; the test in
+    __tests__/route-order.spec.ts exists to stop it happening again.
+  */
+  @Get('usage')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: "How many assets this organization is billed for" })
+  @ApiQuery({ name: 'spaceId', required: false, description: "Also return that space's own share of the count" })
+  async billingUsage(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
+    return this.assetsService.billingUsage({
+      organizationId: req.user.organizationId,
+      // A space id from the URL only ever narrows a count already scoped to the
+      // caller's org, so a foreign id returns zero rather than anything leaking.
+      spaceId: spaceId || null,
+    });
+  }
+
   @Get(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get asset by ID' })

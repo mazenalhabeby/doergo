@@ -6065,7 +6065,28 @@
     "spaceCostLabel": "Este espacio cuesta",
     "spaceCostPending": "Antes {{was}}: se aplica al guardar los módulos",
     "spaceCostPerModule": "Cada módulo añade su propio precio",
-    "seatLine": "Los usuarios se facturan aparte, a {{price}} cada uno"
+    "seatLine": "Los usuarios se facturan aparte, a {{price}} cada uno",
+    "usage": {
+      "heading": "{{module}}, contados en toda la organización",
+      "onTop": "además de la base de {{base}}",
+      "included": "Los primeros {{count}} están incluidos",
+      "free": "Gratis",
+      "bandRange": "{{from}}–{{to}}",
+      "bandOpen": "a partir de {{from}}",
+      "each": "{{price}} cada uno",
+      "nextBreak": "{{count}} más y cada uno a partir de ahí cuesta {{price}}",
+      "lastBand": "Ya tienes la tarifa más baja",
+      "effective": "Sale a {{price}} cada uno",
+      "allIncluded": "Todo incluido por ahora: no pagas nada extra",
+      "perUnitShort": "+{{price}} cada uno",
+      "orgWideNote": "Se cuentan en toda la organización, no por espacio, así que todos los espacios comparten el mismo descuento por volumen.",
+      "thisSpace": "{{count}} de ellos están en este espacio",
+      "count": {
+        "asset_one": "{{count}} activo",
+        "asset_other": "{{count}} activos"
+      },
+      "plusCounted": "Más lo que añaden los módulos contados abajo"
+    }
   },
   "assetKinds": {
     "title": "Activos",

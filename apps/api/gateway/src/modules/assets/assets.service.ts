@@ -29,6 +29,10 @@ export class AssetsService extends BaseGatewayService {
     return this.send({ cmd: 'find_asset' }, data);
   }
 
+  async billingUsage(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_billing_usage' }, data);
+  }
+
   async getMaintenanceHistory(data: Record<string, any>) {
     return this.send({ cmd: 'get_asset_maintenance_history' }, data);
   }

@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Blocks, Sparkles, Plus, Minus } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import { locationsApi, type CompanyLocation } from "@/lib/api"
+import { assetsApi, locationsApi, type CompanyLocation } from "@/lib/api"
 import {
   AVAILABLE_MODULES,
   MODULE_GROUPS,
@@ -18,6 +18,9 @@ import {
   spaceMonthlyCost,
   formatCents,
   SEAT_MONTHLY_CENTS,
+  billsByUsage,
+  usagePriceFor,
+  marginalUnitCents,
 } from "@hbcfield/shared/client"
 
 /** The English source for each module, used as the fallback for its key. */
@@ -26,6 +29,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { SectionHeader } from "./section-header"
+import { ModuleUsagePanel } from "./module-usage-panel"
 
 export function ModulesTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -54,6 +58,23 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
   const liveCost = spaceMonthlyCost(enabledModules)
   const savedCost = spaceMonthlyCost(saved)
   const costChanged = liveCost.monthlyCents !== savedCost.monthlyCents
+
+  /*
+    The counted modules — assets today — need a number the toggles cannot supply.
+
+    Fetched only when one of them is actually in play (switched on, or being
+    switched on right now), so a space that never touches assets never pays for
+    the query. It is a count of the whole ORGANIZATION, because that is the
+    level the volume ladder is charged at; the space's own share comes back with
+    it so the screen can say how much of the bill is coming from here.
+  */
+  const usageModules = enabledModules.filter(billsByUsage)
+  const { data: assetUsage } = useQuery({
+    queryKey: ["asset-usage", space.id],
+    queryFn: () => assetsApi.getUsage(space.id),
+    enabled: usageModules.includes("assets"),
+    staleTime: 60000,
+  })
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) => {
@@ -120,7 +141,11 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
               })}
             </p>
           ) : (
-            <p>{t("billing.spaceCostPerModule", "Each module adds its own price")}</p>
+            <p>
+              {usageModules.length > 0
+                ? t("billing.usage.plusCounted", "Plus what the counted modules below add")
+                : t("billing.spaceCostPerModule", "Each module adds its own price")}
+            </p>
           )}
           <p className="mt-0.5">
             {t("billing.seatLine", "Users are billed separately at {{price}} each", {
@@ -129,6 +154,17 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
           </p>
         </div>
       </div>
+
+      {/* The counted modules, priced in full. Directly under the space total,
+          because that total is only their BASE and a number that is not the
+          whole number has to be followed immediately by the rest of it. */}
+      {usageModules.includes("assets") && assetUsage && (
+        <ModuleUsagePanel
+          moduleKey="assets"
+          orgUnits={assetUsage.orgUnits}
+          spaceUnits={assetUsage.spaceUnits}
+        />
+      )}
 
       {/* Presets — one click to set a sensible bundle */}
       <div className="space-y-1.5">
@@ -198,6 +234,21 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                     {formatCents(moduleMonthlyCents(mod.key))}
                     <span className="opacity-70">{t("billing.perMonthShort", "/mo")}</span>
                   </span>
+                  {/* A counted module's row price is only its base, so the row
+                      says what the count costs too — otherwise the cheapest
+                      badge on the screen belongs to the module that can grow
+                      the largest bill. */}
+                  {billsByUsage(mod.key) && (
+                    <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                      {assetUsage && marginalUnitCents(mod.key, assetUsage.orgUnits) > 0
+                        ? t("billing.usage.perUnitShort", "+{{price}} each", {
+                            price: formatCents(marginalUnitCents(mod.key, assetUsage.orgUnits)),
+                          })
+                        : t("billing.usage.included", "First {{count}} included", {
+                            count: usagePriceFor(mod.key)?.included ?? 0,
+                          })}
+                    </span>
+                  )}
                   <p className="text-xs text-muted-foreground mt-0.5">{t(moduleI18n.description(mod.key), { defaultValue: mod.description })}</p>
                   {locked && (
                     <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">

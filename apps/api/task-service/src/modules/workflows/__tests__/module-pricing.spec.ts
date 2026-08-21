@@ -66,11 +66,18 @@ describe('what a space costs', () => {
     expect(spaceMonthlyCost(null).monthlyCents).toBe(0);
   });
 
-  it('comes to €157 with everything on', () => {
+  it('comes to €154 with everything on', () => {
     // Moves whenever a module is added, removed or repriced — that is the point.
-    // 157 -> 169 when Assets (€12) arrived, and back to 157 when Apartments
-    // (€12) was retired into it.
-    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(15700);
+    // 157 -> 169 when Assets (€12) arrived, back to 157 when Apartments (€12)
+    // was retired into it, and 157 -> 154 when Assets became a €9 base with the
+    // count priced on top of it.
+    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(15400);
+  });
+
+  it('flags a base-only line, so a space total never reads as the whole price', () => {
+    const { lines } = spaceMonthlyCost(['assets', 'tracking']);
+    expect(lines.find((l) => l.moduleKey === 'assets')?.usageBilled).toBe(true);
+    expect(lines.find((l) => l.moduleKey === 'tracking')?.usageBilled).toBeUndefined();
   });
 
   it('prices every module in the catalogue — none may be free', () => {
