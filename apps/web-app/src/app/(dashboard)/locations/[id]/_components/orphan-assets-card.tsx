@@ -79,7 +79,7 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
           </div>
         </div>
         <Button size="sm" variant="outline" className="shrink-0" onClick={() => setOpen(true)}>
-          {t("orphanAssets.review", "Review")}
+          {t("orphanAssets.review", "Review them")}
         </Button>
       </div>
 

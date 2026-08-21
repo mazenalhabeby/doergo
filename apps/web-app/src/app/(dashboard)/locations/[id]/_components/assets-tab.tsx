@@ -355,7 +355,7 @@ function HolderBadge({ record, shape }: { record: AssetRecord; shape: KindShape 
   }
   return (
     <Badge variant="outline" className="shrink-0 text-muted-foreground">
-      {t("assetRecords.free", "Free")}
+      {t("assetRecords.free", "Nobody")}
     </Badge>
   )
 }

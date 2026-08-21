@@ -195,7 +195,7 @@ export function AssetRecordDialog({
 
   const holderLabel = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
   const list = (tab === "members"
-    ? members.map((m) => ({ value: `u:${m.id}`, name: memberName(m), sub: t("apartments.memberTag", "Member (staff)") }))
+    ? members.map((m) => ({ value: `u:${m.id}`, name: memberName(m), sub: t("assetRecords.memberTag", "Member (staff)") }))
     : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
   ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
   const loadingList = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
@@ -241,7 +241,7 @@ export function AssetRecordDialog({
 
           {shape.hasAddress && (
             <div className="space-y-1">
-              <Label>{t("customers.address", "Address")}</Label>
+              <Label>{t("assetRecords.address", "Address")}</Label>
               <LocationPicker
                 lat={lat} lng={lng} radius={0} address={address}
                 onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
@@ -275,11 +275,11 @@ export function AssetRecordDialog({
                 <div className="flex items-center gap-1 border-b border-border p-1">
                   {shape.holder.members && (
                     <TabBtn active={tab === "members"} onClick={() => { setTab("members"); setQ("") }}
-                      icon={User} label={t("apartments.members", "Members")} />
+                      icon={User} label={t("assetRecords.members", "Members")} />
                   )}
                   {shape.holder.clients && (
                     <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }}
-                      icon={Smartphone} label={t("apartments.clients", "Clients")} />
+                      icon={Smartphone} label={t("assetRecords.clients", "Clients")} />
                   )}
                   <button type="button" onClick={() => setHolders([])}
                     className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
@@ -299,7 +299,7 @@ export function AssetRecordDialog({
                     <p className="py-6 text-center text-xs text-muted-foreground">
                       {tab === "clients"
                         ? t("assetRecords.noClients", "No clients in this space yet")
-                        : t("apartments.noMembers", "No members")}
+                        : t("assetRecords.noMembers", "No members to choose from")}
                     </p>
                   ) : list.map((r) => {
                     const sel = holders.includes(r.value)
@@ -335,7 +335,7 @@ export function AssetRecordDialog({
                   onClick={addRow}
                   className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                 >
-                  <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
+                  <Plus className="h-3.5 w-3.5" /> {t("assetRecords.addField", "Add field")}
                 </button>
               )}
             </div>
@@ -361,14 +361,14 @@ export function AssetRecordDialog({
                         <Input
                           value={r.label}
                           onChange={(e) => setRow(i, { label: e.target.value })}
-                          placeholder={t("customers.fieldLabel", "Label")}
+                          placeholder={t("assetRecords.fieldName", "Field name")}
                           className={cn("w-2/5", clash && "border-destructive")}
                         />
                       )}
                       <Input
                         value={r.value}
                         onChange={(e) => setRow(i, { value: e.target.value })}
-                        placeholder={t("customers.fieldValue", "Value")}
+                        placeholder={t("assetRecords.fieldValue", "What it says")}
                         className="flex-1"
                       />
                       {fixed ? (

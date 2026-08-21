@@ -148,7 +148,7 @@ export function AssetKindDialog({
 
           {/* ── What it is ─────────────────────────────────────────────── */}
           <div>
-            <Label className="text-xs text-muted-foreground">{t("assetKinds.name", "Name")}</Label>
+            <Label className="text-xs text-muted-foreground">{t("assetKinds.name", "Type name")}</Label>
             <Input
               className="mt-1"
               value={name}
@@ -160,7 +160,7 @@ export function AssetKindDialog({
 
           <div>
             <Label className="text-xs text-muted-foreground">
-              {t("assetKinds.description", "Description")}{" "}
+              {t("assetKinds.description", "What this type is for")}{" "}
               <span className="text-muted-foreground/60">{t("common.optional", "(optional)")}</span>
             </Label>
             <Input
@@ -292,7 +292,7 @@ export function AssetKindDialog({
                 onClick={() => set("fields", [...shape.fields, { label: "" }])}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
               >
-                <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
+                <Plus className="h-3.5 w-3.5" /> {t("assetRecords.addField", "Add field")}
               </button>
             </div>
 
@@ -407,7 +407,7 @@ export function AssetKindDialog({
                 <div className="pl-1">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] text-muted-foreground">
-                      {t("assetKinds.listColumns", "Columns")}
+                      {t("assetKinds.listColumns", "Columns in this table")}
                     </Label>
                     <button
                       type="button"
@@ -450,7 +450,7 @@ export function AssetKindDialog({
                             }}
                             className="h-8 shrink-0 rounded-md border border-border bg-background px-1.5 text-xs text-foreground"
                           >
-                            <option value="text">{t("assetKinds.colText", "Text")}</option>
+                            <option value="text">{t("assetKinds.colText", "Plain text")}</option>
                             <option value="key">{t("assetKinds.colKey", "Code (identifies the row)")}</option>
                             <option value="link" disabled={targets.length === 0}>
                               {t("assetKinds.colLink", "Points at another table")}
@@ -542,14 +542,14 @@ export function AssetKindDialog({
                         active={c.direction === "in"}
                         onClick={() => setCategory(i, { direction: "in" })}
                         icon={ArrowDownLeft}
-                        label={t("assetKinds.moneyIn", "In")}
+                        label={t("assetKinds.moneyIn", "Money in")}
                         tone="in"
                       />
                       <DirBtn
                         active={c.direction === "out"}
                         onClick={() => setCategory(i, { direction: "out" })}
                         icon={ArrowUpRight}
-                        label={t("assetKinds.moneyOut", "Out")}
+                        label={t("assetKinds.moneyOut", "Money out")}
                         tone="out"
                       />
                     </div>

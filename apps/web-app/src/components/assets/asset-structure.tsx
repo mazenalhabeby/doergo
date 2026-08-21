@@ -63,7 +63,7 @@ export function AssetStructure({ assetId, kindId }: { assetId: string; kindId?: 
               <ChevronRight className="h-3 w-3" />
             </span>
           ))}
-          <span className="text-foreground">{t("assetStructure.here", "here")}</span>
+          <span className="text-foreground">{t("assetStructure.here", "this one")}</span>
         </nav>
       )}
 

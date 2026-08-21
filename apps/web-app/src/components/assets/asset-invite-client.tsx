@@ -157,7 +157,7 @@ export function AssetInviteClient({
                 className="mt-1"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder={t("assetInvite.emailPh", "name@example.com")}
                 type="email"
               />
             </div>

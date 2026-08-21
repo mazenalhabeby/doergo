@@ -247,7 +247,7 @@ export default function AssetRecordPage() {
                           <span className="block truncate text-sm font-medium text-foreground hover:text-primary">
                             {`${h.user.firstName} ${h.user.lastName}`.trim()}
                           </span>
-                          <span className="text-xs text-muted-foreground">{t("apartments.memberTag", "Member (staff)")}</span>
+                          <span className="text-xs text-muted-foreground">{t("assetRecords.memberTag", "Member (staff)")}</span>
                         </span>
                       </button>
                     ) : h.customer ? (
@@ -258,7 +258,7 @@ export default function AssetRecordPage() {
                         >
                           {h.customer.name}
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                            <Smartphone className="h-2.5 w-2.5" /> {t("customers.appAccess", "App access")}
+                            <Smartphone className="h-2.5 w-2.5" /> {t("assetRecords.appAccess", "App access")}
                           </span>
                         </button>
                         {h.customer.email && (
@@ -300,8 +300,8 @@ export default function AssetRecordPage() {
         <main className="min-w-0 space-y-4">
           <div className="flex items-center gap-1 border-b border-border/70">
             {([
-              ["activity", t("apartments.activity", "Activity"), (actQ.data ?? []).length],
-              ["history", t("apartments.history", "History"), openCount || null],
+              ["activity", t("assetRecords.activity", "Activity"), (actQ.data ?? []).length],
+              ["history", t("assetRecords.jobs", "Jobs"), openCount || null],
               ...(shape.money.enabled
                 ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.entries.length || null] as const]
                 : []),
@@ -417,7 +417,7 @@ function NoteBox({ assetId, onAdded }: { assetId: string; onAdded: () => void })
         placeholder={t("assetRecords.notePh", "Add a note — inspection, damage, handover…")}
       />
       <Button disabled={!body.trim() || add.isPending} onClick={() => add.mutate()}>
-        {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("apartments.addNote", "Add note")}</>}
+        {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("assetRecords.addNote", "Add note")}</>}
       </Button>
     </div>
   )
@@ -434,20 +434,20 @@ function Timeline({ loading, activities }: { loading: boolean; activities: Asset
     )
   }
   if (activities.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">{t("apartments.noActivity", "No activity yet.")}</p>
+    return <p className="py-8 text-center text-sm text-muted-foreground">{t("assetRecords.noActivity", "Nothing has happened to this one yet.")}</p>
   }
 
   return (
     <div className="space-y-2">
       {activities.map((a) => {
-        const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("customers.system", "System")
+        const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("assetRecords.systemAuthor", "Automatic")
         return (
           <div key={a.id} className="rounded-xl border border-border bg-card p-3">
             <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">
                 {a.type === "HOLDER_CHANGED"
                   ? t("assetRecords.handedOver", "Changed hands")
-                  : t("apartments.note", "Note")}
+                  : t("assetRecords.note", "Note")}
               </span>
               <span>·</span>
               <span>{author}</span>
