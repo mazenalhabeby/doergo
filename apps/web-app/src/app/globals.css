@@ -18,6 +18,75 @@
   z-index: auto !important;
 }
 
+/*
+  Map credit — collapsed to an icon, not removed.
+
+  "© MapTiler © OpenStreetMap" is a licence condition, not styling. OSM's data
+  is ODbL and MapTiler's terms require their credit; a map that drops it is
+  being used outside the terms of both, and the consequence is the key being
+  withdrawn — which would take every map in the product down at once, not
+  produce an invoice.
+
+  What the OSM Foundation's attribution guidelines do allow on a small
+  interactive map is placing the credit behind a clearly visible icon that
+  reveals it. So it collapses to a 'ⓘ' disc in the corner and expands on hover
+  or keyboard focus. The markup is untouched: the links stay in the DOM, stay
+  focusable, and stay readable to a screen reader — this is a visual collapse,
+  not a hiding trick.
+
+  font-size:0 rather than visibility, because Leaflet puts bare text nodes
+  (the ' © ' separators) between the anchors and a child selector cannot
+  reach those.
+*/
+.leaflet-control-attribution {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  max-width: 18px;
+  overflow: hidden;
+  padding: 0 !important;
+  margin: 0 6px 6px 0 !important;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.9) !important;
+  font-size: 0 !important;
+  line-height: 1;
+  transition: max-width 200ms ease, padding 200ms ease, border-radius 200ms ease;
+}
+
+.leaflet-control-attribution::before {
+  content: "ⓘ";
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+}
+
+.leaflet-control-attribution:hover,
+.leaflet-control-attribution:focus-within {
+  max-width: 44ch;
+  padding: 0 7px !important;
+  border-radius: 4px;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution:hover::before,
+.leaflet-control-attribution:focus-within::before {
+  content: none;
+}
+
+.leaflet-control-attribution a {
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+}
+.leaflet-control-attribution a:hover {
+  text-decoration: underline;
+}
+
+/* Someone who prefers less motion gets the same two states, just instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-control-attribution { transition: none; }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -339,75 +408,6 @@
 
   .leaflet-popup-tip {
     @apply bg-white;
-  }
-
-  /*
-    Map credit — collapsed to an icon, not removed.
-
-    "© MapTiler © OpenStreetMap" is a licence condition, not styling. OSM's data
-    is ODbL and MapTiler's terms require their credit; a map that drops it is
-    being used outside the terms of both, and the consequence is the key being
-    withdrawn — which would take every map in the product down at once, not
-    produce an invoice.
-
-    What the OSM Foundation's attribution guidelines do allow on a small
-    interactive map is placing the credit behind a clearly visible icon that
-    reveals it. So it collapses to a 'ⓘ' disc in the corner and expands on hover
-    or keyboard focus. The markup is untouched: the links stay in the DOM, stay
-    focusable, and stay readable to a screen reader — this is a visual collapse,
-    not a hiding trick.
-
-    font-size:0 rather than visibility, because Leaflet puts bare text nodes
-    (the ' © ' separators) between the anchors and a child selector cannot
-    reach those.
-  */
-  .leaflet-control-attribution {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 18px;
-    max-width: 18px;
-    overflow: hidden;
-    padding: 0 !important;
-    margin: 0 6px 6px 0 !important;
-    border-radius: 999px;
-    border: 1px solid hsl(var(--border));
-    background: hsl(var(--card) / 0.9) !important;
-    font-size: 0 !important;
-    line-height: 1;
-    transition: max-width 200ms ease, padding 200ms ease, border-radius 200ms ease;
-  }
-
-  .leaflet-control-attribution::before {
-    content: "ⓘ";
-    font-size: 11px;
-    color: hsl(var(--muted-foreground));
-  }
-
-  .leaflet-control-attribution:hover,
-  .leaflet-control-attribution:focus-within {
-    max-width: 44ch;
-    padding: 0 7px !important;
-    border-radius: 4px;
-    font-size: 10px !important;
-  }
-
-  .leaflet-control-attribution:hover::before,
-  .leaflet-control-attribution:focus-within::before {
-    content: none;
-  }
-
-  .leaflet-control-attribution a {
-    color: hsl(var(--muted-foreground));
-    text-decoration: none;
-  }
-  .leaflet-control-attribution a:hover {
-    text-decoration: underline;
-  }
-
-  /* Someone who prefers less motion gets the same two states, just instantly. */
-  @media (prefers-reduced-motion: reduce) {
-    .leaflet-control-attribution { transition: none; }
   }
 
   /* Custom technician marker */
