@@ -338,7 +338,7 @@ export default function AssetRecordPage() {
               // we recognise. Both read the same rows.
               return list.display === "cards"
                 ? <AssetFaults assetId={id} assetName={asset.name} spaceId={kind?.spaceId} list={list} shape={shape} />
-                : <AssetListTable assetId={id} list={list} shape={shape} />
+                : <AssetListTable assetId={id} list={list} />
             })()
           ) : tab === "money" ? (
             <MoneyPanel

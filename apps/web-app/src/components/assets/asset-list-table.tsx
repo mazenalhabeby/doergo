@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Loader2, Plus, Search, Trash2 } from "lucide-react"
 
 import { assetsApi, type AssetListRow } from "@/lib/api"
-import { keyColumn, type KindList, type KindShape } from "@hbcfield/shared/client"
+import { keyColumn, type KindList } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,14 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
  * rows, and filtering a fetched page in the browser would quietly only search
  * what had already been loaded.
  */
-export function AssetListTable({
-  assetId, list, shape,
-}: {
-  assetId: string
-  list: KindList
-  /** Present for symmetry with the card view; links are resolved there. */
-  shape?: KindShape
-}) {
+export function AssetListTable({ assetId, list }: { assetId: string; list: KindList }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
