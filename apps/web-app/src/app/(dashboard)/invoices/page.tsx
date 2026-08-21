@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invoicesApi } from "@/lib/api"
+import { invoicesApi, type Invoice } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -97,21 +97,21 @@ function InvoicesPageInner() {
     onError: (e: Error) => notify.error(e.message),
   })
 
-  const invoices = (data as any)?.data || []
+  const invoices: Invoice[] = data?.data ?? []
   const filtered = search
-    ? invoices.filter((inv: any) =>
+    ? invoices.filter((inv) =>
         inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
         inv.clientName?.toLowerCase().includes(search.toLowerCase())
       )
     : invoices
 
   // Summary stats
-  const totalDraft = invoices.filter((i: any) => i.status === "DRAFT").length
-  const totalSent = invoices.filter((i: any) => i.status === "SENT").length
-  const totalPaid = invoices.filter((i: any) => i.status === "PAID").length
-  const totalOverdue = invoices.filter((i: any) => i.status === "OVERDUE").length
-  const totalRevenue = invoices.filter((i: any) => i.status === "PAID").reduce((sum: number, i: any) => sum + (i.total || 0), 0)
-  const totalPending = invoices.filter((i: any) => i.status === "SENT").reduce((sum: number, i: any) => sum + (i.total || 0), 0)
+  const totalDraft = invoices.filter((i) => i.status === "DRAFT").length
+  const totalSent = invoices.filter((i) => i.status === "SENT").length
+  const totalPaid = invoices.filter((i) => i.status === "PAID").length
+  const totalOverdue = invoices.filter((i) => i.status === "OVERDUE").length
+  const totalRevenue = invoices.filter((i) => i.status === "PAID").reduce((sum: number, i: Invoice) => sum + (i.total || 0), 0)
+  const totalPending = invoices.filter((i) => i.status === "SENT").reduce((sum: number, i: Invoice) => sum + (i.total || 0), 0)
 
   return (
     <div className="min-h-full bg-background">
@@ -199,7 +199,7 @@ function InvoicesPageInner() {
               {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.emptyHint")}</p>}
             </div>
           ) : (
-            filtered.map((inv: any) => {
+            filtered.map((inv) => {
               const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
               return (
                 <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">

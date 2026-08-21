@@ -9,7 +9,8 @@ import autoTable from "jspdf-autotable"
  */
 
 export interface InvoiceBranding {
-  name?: string
+  /** Nullable like the rest: it comes straight off the organization profile. */
+  name?: string | null
   logoUrl?: string | null
   addressLine1?: string | null
   addressLine2?: string | null

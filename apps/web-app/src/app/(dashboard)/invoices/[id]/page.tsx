@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next"
 import { ArrowLeft, Download, Printer, Send, CheckCircle, XCircle, Trash2, Loader2 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invoicesApi, organizationsApi } from "@/lib/api"
+import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   )
 }
 
-function toPdfData(inv: any): InvoicePdfData {
+function toPdfData(inv: Invoice): InvoicePdfData {
   return {
     invoiceNumber: inv.invoiceNumber,
     status: inv.status,
@@ -61,7 +61,7 @@ function toPdfData(inv: any): InvoicePdfData {
     issueDate: inv.issueDate,
     dueDate: inv.dueDate,
     notes: inv.notes,
-    items: (inv.items || []).map((i: any) => ({
+    items: (inv.items || []).map((i) => ({
       description: i.description,
       quantity: i.quantity,
       unitPrice: i.unitPrice,
@@ -106,12 +106,12 @@ function InvoiceDetailInner({ id }: { id: string }) {
     onError: (e: Error) => notify.error(e.message),
   })
 
-  const branding: InvoiceBranding = (org as any) || {}
+  const branding: InvoiceBranding = org ?? {}
 
   const download = async () => {
     if (!inv) return
     setBusy(true)
-    try { await exportInvoicePdf(toPdfData(inv), branding) } catch (e: any) { notify.error(e?.message || "PDF failed") } finally { setBusy(false) }
+    try { await exportInvoicePdf(toPdfData(inv), branding) } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
   }
   const print = async () => {
     if (!inv) return
@@ -120,7 +120,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
       const url = await renderInvoicePdfUrl(toPdfData(inv), branding)
       const w = window.open(url, "_blank")
       if (w) { w.onload = () => { try { w.focus(); w.print() } catch { /* pop-up print blocked */ } } }
-    } catch (e: any) { notify.error(e?.message || "PDF failed") } finally { setBusy(false) }
+    } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
   }
 
   if (isLoading) {
@@ -212,7 +212,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
               <div className="text-right">{t("invoices.create.unitPrice")}</div>
               <div className="text-right">{t("invoices.columns.amount")}</div>
             </div>
-            {(inv.items || []).map((it: any) => (
+            {(inv.items || []).map((it) => (
               <div key={it.id} className="grid grid-cols-[1fr_70px_100px_100px] gap-2 px-4 py-2 border-t border-border/20 text-sm items-center">
                 <div className="text-foreground">{it.description}</div>
                 <div className="text-right tabular-nums text-muted-foreground">{it.quantity}</div>

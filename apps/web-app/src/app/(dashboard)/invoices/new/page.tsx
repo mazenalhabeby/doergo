@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Loader2, Clock, Package, FileText, ChevronDown, ChevronRight } from "lucide-react"
 
-import { invoicesApi, locationsApi } from "@/lib/api"
+import { invoicesApi, locationsApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -94,22 +94,25 @@ function NewInvoiceInner() {
 
   useEffect(() => {
     if (space && !seeded) {
-      setClientName((p) => p || (space as any).contactName || (space as any).name || "")
-      setClientEmail((p) => p || (space as any).contactEmail || "")
-      setClientAddress((p) => p || (space as any).address || "")
+      setClientName((p) => p || space.contactName || space.name || "")
+      setClientEmail((p) => p || space.contactEmail || "")
+      setClientAddress((p) => p || space.address || "")
     }
   }, [space, seeded])
 
   useEffect(() => {
     if (gather && !seeded) {
-      const g = gather as any
-      if (g.clientName) setClientName((p) => p || g.clientName)
-      if (g.clientEmail) setClientEmail((p) => p || g.clientEmail)
-      if (g.clientAddress) setClientAddress((p) => p || g.clientAddress)
+      const g = gather
+      // `?? ""` because these three are nullable on the server. The `as any`
+      // let a null through into string state, which turns a controlled input
+      // into an uncontrolled one — React warns and the field stops updating.
+      if (g.clientName) setClientName((p) => p || g.clientName || "")
+      if (g.clientEmail) setClientEmail((p) => p || g.clientEmail || "")
+      if (g.clientAddress) setClientAddress((p) => p || g.clientAddress || "")
       if (g.currency) setCurrency(g.currency)
       if (g.rate != null) setRate(String(g.rate))
       setEntries(
-        (g.workEntries || []).map((w: any) => ({
+        (g.workEntries || []).map((w) => ({
           taskId: w.taskId,
           taskTitle: w.taskTitle,
           reportId: w.reportId,
@@ -164,7 +167,7 @@ function NewInvoiceInner() {
 
   const createMutation = useMutation({
     mutationFn: () => {
-      const items: any[] = []
+      const items: InvoiceItemInput[] = []
       for (const e of entries) {
         if (!e.include) continue
         if (e.hours > 0 && rateNum > 0) {
@@ -215,7 +218,7 @@ function NewInvoiceInner() {
         items,
       })
     },
-    onSuccess: (inv: any) => {
+    onSuccess: (inv: Invoice) => {
       notify.success(t("invoices.create.created"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
       router.push(`/invoices/${inv.id}`)
@@ -237,7 +240,7 @@ function NewInvoiceInner() {
             </Button>
             <div>
               <h1 className="text-2xl font-semibold text-foreground">{t("invoices.create.title")}</h1>
-              {space && <p className="text-sm text-muted-foreground mt-0.5">{t("invoices.create.forSpace", { name: (space as any).name })}</p>}
+              {space && <p className="text-sm text-muted-foreground mt-0.5">{t("invoices.create.forSpace", { name: space.name })}</p>}
             </div>
           </div>
           <Button disabled={!canSave || createMutation.isPending} onClick={() => createMutation.mutate()}>

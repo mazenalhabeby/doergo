@@ -4833,12 +4833,50 @@ export interface InvoiceItemInput {
   reportId?: string | null;
 }
 
-/** Uninvoiced work the gather endpoint proposes as invoice lines. */
+/** A part fitted during a job, priced for the invoice. */
+export interface InvoiceGatherPart {
+  name: string;
+  partNumber?: string | null;
+  quantity: number;
+  unitCost: number;
+  amount: number;
+}
+
+/** One completed job the gather endpoint offers as billable work. */
+export interface InvoiceGatherEntry {
+  taskId: string;
+  taskTitle: string;
+  reportId?: string | null;
+  workerId?: string | null;
+  workerName?: string | null;
+  hours: number;
+  laborAmount: number;
+  completedAt?: string | null;
+  notes?: string | null;
+  parts: InvoiceGatherPart[];
+  hasReport: boolean;
+}
+
+/**
+ * Uninvoiced work for a space, with the client details pre-filled.
+ *
+ * Matches the gather handler field for field — it returns rather more than the
+ * "list of lines" the screen's `as any` implied, including the hourly rate and
+ * a per-worker hours summary.
+ */
 export interface InvoiceGatherResult {
-  items: InvoiceItemInput[];
-  clientName?: string;
-  clientEmail?: string;
-  clientAddress?: string;
+  spaceId: string;
+  clientName?: string | null;
+  clientEmail?: string | null;
+  clientAddress?: string | null;
+  currency: string;
+  billableRateCents?: number | null;
+  /** Currency units per hour, already divided out of the cents. */
+  rate?: number | null;
+  taskCount: number;
+  totalHours: number;
+  workerSummary: Array<{ name: string; hours: number }>;
+  workEntries: InvoiceGatherEntry[];
 }
 
 export const invoicesApi = {
@@ -4859,10 +4897,14 @@ export const invoicesApi = {
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
-  create: async (data: CreateInvoiceInput) => {
+  create: async (data: CreateInvoiceInput): Promise<Invoice> => {
     const response = await api.post<{ success: boolean; data: Invoice }>('/invoices', data);
     if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    // A create that comes back with no invoice is a failure, not a success with
+    // nothing in it. The caller redirects to `invoice.id`, so returning
+    // undefined here sent it to /invoices/undefined.
+    if (!response.data?.data) throw new Error('The invoice was not created');
+    return response.data.data;
   },
   update: async (id: string, data: UpdateInvoiceInput) => {
     const response = await api.patch<{ success: boolean; data: Invoice }>(`/invoices/${id}`, data);

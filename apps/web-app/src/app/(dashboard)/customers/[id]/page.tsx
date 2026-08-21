@@ -10,8 +10,10 @@ import {
   Smartphone, CheckCircle2, AlertTriangle, CalendarClock, Plus,
   Building2, Bell,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import type { TFunction } from "i18next"
 
-import { customersApi, locationsApi, organizationsApi, tasksApi, spacePortalApi, type CustomerActivity, type Customer, type PortalSummary } from "@/lib/api"
+import { customersApi, locationsApi, organizationsApi, tasksApi, spacePortalApi, type CustomerActivity, type Customer, type PortalSummary, type Task } from "@/lib/api"
 import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
 import { CreateTaskDialog } from "../../tasks/_components/create-task-dialog"
 import { CheckSquare, Repeat, ChevronDown as ChevronDownIcon } from "lucide-react"
@@ -61,7 +63,7 @@ function relTime(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 const dayKey = (iso: string) => { const d = new Date(iso); d.setHours(0, 0, 0, 0); return d.getTime() }
-function dayLabel(iso: string, t: any) {
+function dayLabel(iso: string, t: TFunction) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const diff = (today.getTime() - dayKey(iso)) / 86400000
   if (diff === 0) return t("customers.today", "Today")
@@ -90,6 +92,21 @@ const REPEAT_OPTIONS: { v: string; label: string }[] = [
   { v: "MONTHLY", label: "Monthly" },
 ]
 
+/**
+ * One row of the customer feed.
+ *
+ * The feed mixes two sources — activity records and this customer's tasks — so
+ * a task is wrapped as an activity-shaped row with the task attached. That
+ * wrapping used to be `as any` twice over, which meant the sort and the
+ * renderer below were both reading fields nothing checked.
+ */
+type FeedItem = CustomerActivity | {
+  id: string
+  type: "TASK"
+  createdAt: string
+  task: Task
+}
+
 // Dynamic lead time — alert this many minutes before the due time.
 const LEAD_OPTIONS: { v: number; label: string }[] = [
   { v: 0, label: "At time" },
@@ -102,7 +119,7 @@ const LEAD_OPTIONS: { v: number; label: string }[] = [
   { v: 2880, label: "2 days before" },
   { v: 10080, label: "1 week before" },
 ]
-const REMINDER_KIND_META: Record<string, { label: string; icon: any }> = {
+const REMINDER_KIND_META: Record<string, { label: string; icon: LucideIcon }> = {
   CALL: { label: "Call", icon: PhoneCall },
   EMAIL: { label: "Email", icon: Mails },
   MEETING: { label: "Meeting", icon: Users },
@@ -144,7 +161,7 @@ export default function CustomerRecordPage() {
   const setStatus = useMutation({
     mutationFn: (status: string) => customersApi.update(id, { status }),
     onSuccess: refresh,
-    onError: (e: any) => notify.error(e.message || "Could not update status"),
+    onError: (e: Error) => notify.error(e.message || "Could not update status"),
   })
 
   if (customerQ.isLoading) {
@@ -165,8 +182,15 @@ export default function CustomerRecordPage() {
   const websiteHref = website ? (website.startsWith("http") ? website : `https://${website}`) : undefined
 
   // Unified feed: activities + this customer's tasks, newest first.
-  const taskItems = tasks.map((tk: any) => ({ id: `task-${tk.id}`, type: "TASK", createdAt: tk.createdAt, task: tk } as any))
-  const feed = [...activities, ...taskItems].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const taskItems: FeedItem[] = tasks.map((tk) => ({
+    id: `task-${tk.id}`,
+    type: "TASK",
+    createdAt: tk.createdAt,
+    task: tk,
+  }))
+  const feed: FeedItem[] = [...activities, ...taskItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
 
   // Smart nudges (only while sales works the customer — not an app customer).
   const lastAt = activities[0]?.createdAt ? new Date(activities[0].createdAt).getTime() : 0
@@ -335,7 +359,7 @@ function StatusPill({ current, onSet, pending }: { current: string; onSet: (s: s
   )
 }
 
-function IconBtn({ icon: Icon, href, label }: { icon: any; href: string; label: string }) {
+function IconBtn({ icon: Icon, href, label }: { icon: LucideIcon; href: string; label: string }) {
   return (
     <a href={href} title={label} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
       <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{label}</span>
@@ -389,7 +413,7 @@ function Composer({ customer, onAdded }: { customer: Customer; onAdded: () => vo
       repeat: isReminder ? repeat : undefined,
     }),
     onSuccess: () => { setBody(""); setDueAt(""); setRepeat("NONE"); setAssigneeId(""); setFocused(false); onAdded() },
-    onError: (e: any) => notify.error(e.message || "Could not add"),
+    onError: (e: Error) => notify.error(e.message || "Could not add"),
   })
 
   const selectCls = "h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -487,7 +511,7 @@ function QuickRemind({ customerId, onAdded }: { customerId: string; onAdded: () 
       return customersApi.addActivity(customerId, { type: "REMINDER", reminderKind: "CALL", dueAt: d.toISOString(), remindBeforeMin: 0 })
     },
     onSuccess: onAdded,
-    onError: (e: any) => notify.error(e.message || "Could not add"),
+    onError: (e: Error) => notify.error(e.message || "Could not add"),
   })
   return (
     <Button size="sm" variant="outline" disabled={add.isPending} onClick={() => add.mutate()}>
@@ -497,7 +521,7 @@ function QuickRemind({ customerId, onAdded }: { customerId: string; onAdded: () 
 }
 
 // ── Timeline ────────────────────────────────────────────────────────────────
-const ACT_META: Record<string, { icon: any; tone: string }> = {
+const ACT_META: Record<string, { icon: LucideIcon; tone: string }> = {
   NOTE: { icon: StickyNote, tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
   CALL: { icon: PhoneCall, tone: "bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300" },
   EMAIL: { icon: Mails, tone: "bg-violet-100 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300" },
@@ -507,7 +531,7 @@ const ACT_META: Record<string, { icon: any; tone: string }> = {
   SYSTEM: { icon: Settings2, tone: "bg-muted text-muted-foreground" },
 }
 function Timeline({ customerId, loading, activities, empty, onChanged }: {
-  customerId: string; loading: boolean; activities: any[]; empty: string; onChanged: () => void
+  customerId: string; loading: boolean; activities: FeedItem[]; empty: string; onChanged: () => void
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -515,13 +539,13 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
   const toggleDone = useMutation({ mutationFn: ({ actId, done }: { actId: string; done: boolean }) => customersApi.updateActivity(customerId, actId, { done }), onSuccess: onChanged })
   const del = useMutation({ mutationFn: (actId: string) => customersApi.removeActivity(customerId, actId), onSuccess: onChanged })
   const snooze = useMutation({ mutationFn: ({ actId, dueAt }: { actId: string; dueAt: string }) => customersApi.updateActivity(customerId, actId, { dueAt }), onSuccess: onChanged })
-  const doSnooze = (a: any, addMin: number) => {
+  const doSnooze = (a: CustomerActivity, addMin: number) => {
     const base = a.dueAt && new Date(a.dueAt).getTime() > now ? new Date(a.dueAt) : new Date()
     snooze.mutate({ actId: a.id, dueAt: new Date(base.getTime() + addMin * 60000).toISOString() })
   }
 
   const groups = useMemo(() => {
-    const m = new Map<number, any[]>()
+    const m = new Map<number, FeedItem[]>()
     for (const a of activities) { const k = dayKey(a.createdAt); if (!m.has(k)) m.set(k, []); m.get(k)!.push(a) }
     return Array.from(m.entries()).sort((a, b) => b[0] - a[0])
   }, [activities])
@@ -548,12 +572,15 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
           </div>
           <ol className="relative space-y-1.5 pl-1 before:absolute before:left-[13px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
             {items.map((a) => {
-              const meta = ACT_META[a.type] ?? ACT_META.NOTE
-              const Icon = meta.icon
-              const overdue = a.type === "REMINDER" && a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < now
-              const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("customers.system", "System")
-              const isSystem = a.type === "STATUS" || a.type === "SYSTEM"
+              /*
+                Task rows come first, before any activity-only field is read.
 
+                The feed mixes activities and tasks, and `author`, `overdue`
+                and `isSystem` only exist on an activity. Computing them above
+                this branch read three fields off task rows that never had
+                them — harmless while the row was `any`, and a type error the
+                moment the union was written down.
+              */
               // Task item (from the customer's task feed) — clickable card.
               if (a.type === "TASK") {
                 const tk = a.task
@@ -578,6 +605,12 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
                   </li>
                 )
               }
+              const meta = ACT_META[a.type] ?? ACT_META.NOTE
+              const Icon = meta.icon
+              const overdue = a.type === "REMINDER" && a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < now
+              const author = a.author ? `${a.author.firstName} ${a.author.lastName ?? ""}`.trim() : t("customers.system", "System")
+              const isSystem = a.type === "STATUS" || a.type === "SYSTEM"
+
 
               // System events (stage changes, invites) = subtle inline lines, no card.
               if (isSystem) {
@@ -664,7 +697,7 @@ function InviteCard({ customer, hasB2C, onChanged }: { customer: Customer; hasB2
   const invite = useMutation({
     mutationFn: (portalId?: string) => customersApi.invite(customer.id, portalId ? { portalId } : undefined),
     onSuccess: (res) => { setCode(res.code ?? null); setPickerOpen(false); notify.success(t("customers.invited", "Invite sent")); onChanged() },
-    onError: (e: any) => notify.error(e.message || "Could not invite"),
+    onError: (e: Error) => notify.error(e.message || "Could not invite"),
   })
   const copy = () => { if (code) { navigator.clipboard?.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) } }
 

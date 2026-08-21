@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { FileText, Plus } from "lucide-react"
 
-import { invoicesApi } from "@/lib/api"
+import { invoicesApi, type Invoice } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -35,12 +35,12 @@ export function InvoicesTab({ spaceId, spaceName }: { spaceId: string; spaceName
     queryKey: ["invoices", "space", spaceId],
     queryFn: () => invoicesApi.list({ spaceId, limit: 100 }),
   })
-  const invoices = (data as any)?.data || []
+  const invoices: Invoice[] = data?.data ?? []
 
   const outstanding = invoices
-    .filter((i: any) => i.status === "SENT" || i.status === "OVERDUE")
-    .reduce((s: number, i: any) => s + (i.total || 0), 0)
-  const paid = invoices.filter((i: any) => i.status === "PAID").reduce((s: number, i: any) => s + (i.total || 0), 0)
+    .filter((i) => i.status === "SENT" || i.status === "OVERDUE")
+    .reduce((s: number, i: Invoice) => s + (i.total || 0), 0)
+  const paid = invoices.filter((i) => i.status === "PAID").reduce((s: number, i: Invoice) => s + (i.total || 0), 0)
 
   return (
     <div className="space-y-5">
@@ -72,7 +72,7 @@ export function InvoicesTab({ spaceId, spaceName }: { spaceId: string; spaceName
             <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.emptyForSpaceHint")}</p>
           </div>
         ) : (
-          invoices.map((inv: any) => {
+          invoices.map((inv) => {
             const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
             return (
               <div

@@ -191,16 +191,36 @@ function AuditRow({ log }: { log: AuditLogEntry }) {
   )
 }
 
+/**
+ * The handful of metadata fields this row knows how to summarise.
+ *
+ * The column is free-form JSON written by a dozen different handlers, so the
+ * read stays best-effort — but naming the fields it looks for turns twelve
+ * `as any` casts into one shape somebody can check against the writers.
+ */
+interface AuditRowMetadata {
+  from?: unknown
+  to?: unknown
+  oldStatus?: unknown
+  previousStatus?: unknown
+  newStatus?: unknown
+  status?: unknown
+  role?: unknown
+  reason?: unknown
+  email?: unknown
+}
+
 /** Pull a short, human-readable detail out of the metadata (best effort). */
 function auditRowDetail(log: AuditLogEntry): string | null {
   const m = log.metadata
   if (!m || typeof m !== "object") return null
-  const from = (m as any).from ?? (m as any).oldStatus ?? (m as any).previousStatus
-  const to = (m as any).to ?? (m as any).newStatus ?? (m as any).status
-  if (from && to && from !== to) return `${from} → ${to}`
-  if ((m as any).role) return String((m as any).role)
-  if ((m as any).reason) return String((m as any).reason)
-  if ((m as any).email) return String((m as any).email)
+  const meta = m as AuditRowMetadata
+  const from = meta.from ?? meta.oldStatus ?? meta.previousStatus
+  const to = meta.to ?? meta.newStatus ?? meta.status
+  if (from && to && from !== to) return `${String(from)} → ${String(to)}`
+  if (meta.role) return String(meta.role)
+  if (meta.reason) return String(meta.reason)
+  if (meta.email) return String(meta.email)
   if (log.targetUser) return `${log.targetUser.firstName} ${log.targetUser.lastName}`.trim()
   return null
 }
