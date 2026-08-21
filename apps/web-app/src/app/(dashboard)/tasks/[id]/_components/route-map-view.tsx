@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo } from "react"
-import { MAP_TILE_URL, MAP_TILE_ATTRIBUTION } from "@/lib/map-tiles"
+import { BaseTiles } from "@/components/map/base-tiles"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat } from "@/hooks"
-import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
+import { MapContainer, Polyline, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import { Navigation, Flag, Clock } from "lucide-react"
 import { renderToStaticMarkup } from "react-dom/server"
@@ -112,12 +112,9 @@ export default function RouteMapView({ points, matchedPath, isLive = false }: Ro
         scrollWheelZoom={false}
         bounds={bounds || undefined}
         boundsOptions={{ padding: [50, 50] }}
-        attributionControl
+        attributionControl={false}
       >
-        <TileLayer
-          url={MAP_TILE_URL}
-            attribution={MAP_TILE_ATTRIBUTION}
-        />
+        <BaseTiles />
 
         {/* Road-snapped route (main path) */}
         <Polyline

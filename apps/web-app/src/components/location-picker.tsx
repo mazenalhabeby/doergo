@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
-import { MAP_TILE_URL, MAP_TILE_ATTRIBUTION } from "@/lib/map-tiles"
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
+import { BaseTiles } from "@/components/map/base-tiles"
+import { MapContainer, Marker, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
 import { MapPin, Search, X, Loader2, Navigation } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -294,12 +294,9 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
           zoom={lat && lng ? 15 : 4}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom={true}
-          attributionControl
+          attributionControl={false}
         >
-          <TileLayer
-            url={MAP_TILE_URL}
-            attribution={MAP_TILE_ATTRIBUTION}
-          />
+          <BaseTiles />
           <MapClickHandler onClick={handleMapClick} />
           {lat && lng && (
             <>

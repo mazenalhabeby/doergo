@@ -1,7 +1,7 @@
 "use client"
 
-import { MapContainer, TileLayer, Marker } from "react-leaflet"
-import { MAP_TILE_URL, MAP_TILE_ATTRIBUTION } from "@/lib/map-tiles"
+import { MapContainer, Marker } from "react-leaflet"
+import { BaseTiles } from "@/components/map/base-tiles"
 import L from "leaflet"
 
 // Leaflet CSS is imported globally (app/globals.css). Default marker icons.
@@ -22,10 +22,9 @@ export default function AddressMap({ lat, lng }: { lat: number; lng: number }) {
       zoom={15}
       scrollWheelZoom={false}
       style={{ height: "100%", width: "100%" }}
-      attributionControl
+      attributionControl={false}
     >
-      <TileLayer url={MAP_TILE_URL}
-            attribution={MAP_TILE_ATTRIBUTION} />
+      <BaseTiles />
       <Marker position={[lat, lng]} icon={icon} />
     </MapContainer>
   )
