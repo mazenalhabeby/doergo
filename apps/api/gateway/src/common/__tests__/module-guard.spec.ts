@@ -13,7 +13,7 @@ import { MODULE_KEY } from '../decorators/require-module.decorator';
  * the two directions it has to get right — a space that switched something OFF
  * and a space that switched something ON.
  */
-describe('ModuleGuard — the SPACE decides, the plan still gates', () => {
+describe('ModuleGuard — the space decides, and only the space', () => {
   const ORG = 'org-1';
 
   const ctx = (req: any) => ({
@@ -110,12 +110,30 @@ describe('ModuleGuard — the SPACE decides, the plan still gates', () => {
     ).resolves.toBe(true);
   });
 
-  it('still refuses on TIER regardless of what a space switched on', async () => {
-    // A space cannot grant what the plan does not include.
-    const starter = { ...user, planTier: 'starter' };
+  it('lets a space grant a module regardless of any tier the caller carries', async () => {
+    /*
+      This asserted the opposite until the tier model was removed, and the
+      reversal is the point of the new pricing: switching a module on in a space
+      IS the purchase, and the space is billed for it. Asking a tier as well
+      meant asking the same question of two tables that could disagree.
+
+      A legacy `planTier` may still be sitting on a cached token for up to the
+      auth-cache TTL after the switch — it must be ignored, not obeyed.
+    */
+    const legacyStarter = { ...user, planTier: 'starter' };
     const g = new ModuleGuard(reflector('sprints'), resolver({ 'sp-1': ['sprints'] }));
     await expect(
-      g.canActivate(ctx({ method: 'POST', user: starter, body: { spaceId: 'sp-1' } })),
+      g.canActivate(ctx({ method: 'POST', user: legacyStarter, body: { spaceId: 'sp-1' } })),
+    ).resolves.toBe(true);
+  });
+
+  it('still refuses a module the space switched OFF, whatever the tier says', async () => {
+    // The other direction, and the one that protects the bill: a space that has
+    // not switched something on is not paying for it and cannot use it.
+    const legacyEnterprise = { ...user, planTier: 'enterprise' };
+    const g = new ModuleGuard(reflector('sprints'), resolver({ 'sp-1': [] }));
+    await expect(
+      g.canActivate(ctx({ method: 'POST', user: legacyEnterprise, body: { spaceId: 'sp-1' } })),
     ).rejects.toThrow(HttpException);
   });
 

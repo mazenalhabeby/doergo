@@ -330,7 +330,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true, suspendedAt: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           // isActive so a deactivated role stops granting (M1). Space grants are
           // filtered to their effective window so expired/future grants don't
@@ -543,6 +543,9 @@ export class AuthService {
             // Billing tier + subscription status (lowercase) — drives plan gating.
             subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
+            // Capabilities the org has BOUGHT — the only thing PlanGuard reads.
+            // Resolved here, server-side, so it can never be a client claim.
+            orgAddOns: user.organization?.addOns ?? [],
             // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
             access: loginAccess,
             // …and the permission fields derived from it, so what the client
@@ -596,7 +599,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, usesExternalWorkers: true, suspendedAt: true } },
+              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true } },
             },
           },
         },
@@ -805,6 +808,7 @@ export class AuthService {
             orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
             subStatus: storedToken.user.organization?.suspendedAt ? 'canceled' : (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
+            orgAddOns: storedToken.user.organization?.addOns ?? [],
           },
         },
       };
@@ -1079,7 +1083,7 @@ export class AuthService {
           // can scope to it the way they already scope to a unit. Without this
           // req.user.assetId is undefined and the binding does nothing.
           assetId: true,
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true } },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
@@ -1212,6 +1216,11 @@ export class AuthService {
           // the read-only lock with zero extra DB reads (cached with the user).
           subStatus: organization?.suspendedAt ? 'canceled' : (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
           planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
+          // Bought capabilities — PlanGuard reads ONLY this. It has to be set on
+          // every path that builds a request context, including this one: an
+          // undefined list is an empty list, and an empty list 402s every
+          // premium mutation for that caller.
+          orgAddOns: organization?.addOns ?? [],
           // Org-level portal opt-in (customers only exist when enabled).
           customerPortalEnabled: organization?.customerPortalEnabled ?? false,
         },

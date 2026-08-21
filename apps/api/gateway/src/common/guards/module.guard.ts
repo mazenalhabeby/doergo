@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY, minTierForFeature, AVAILABLE_MODULES, tierAllows, type PlanTier } from '@hbcfield/shared';
+import { IS_PUBLIC_KEY, AVAILABLE_MODULES, moduleMonthlyCents, formatCents } from '@hbcfield/shared';
 import { MODULE_KEY } from '../decorators/require-module.decorator';
 import { isFeatureEntitled } from '../entitlements';
 import { SpaceModulesService } from '../space-modules.service';
@@ -64,12 +64,19 @@ export class ModuleGuard implements CanActivate {
     const user = req.user;
     if (!user) return true;
 
-    // The tier question is the organization's, whatever space this touches.
-    if (!tierAllows((user.planTier ?? null) as PlanTier | null, required)) {
-      throw this.refuse(required);
-    }
-    // Capabilities (recurring, invoicing…) are tier-gated only — nothing to
-    // switch on per space, so there is no space to resolve.
+    /*
+      No tier check any more.
+
+      A module is bought by switching it on in a space, and the space is billed
+      for it — so "is it on here?" IS the entitlement question, and asking a
+      tier as well was asking the same thing twice from two tables that could
+      disagree. What stops an unpaid organization switching everything on is
+      SubscriptionGuard, which locks writes before this guard is ever reached.
+
+      Anything that is not a per-space module is an org ADD-ON, and PlanGuard
+      owns those. Letting them through here is not a hole: a route gated on a
+      capability carries @RequirePlan, and that guard runs in the same chain.
+    */
     if (!MODULE_KEYS.has(required)) return true;
 
     const spaceModules = await this.resolveSpaceModules(req, user);
@@ -142,15 +149,20 @@ export class ModuleGuard implements CanActivate {
   }
 
   private refuse(feature: string, fromSpace = false): HttpException {
+    // Both cases name a module and a price, because both are now answered the
+    // same way: switch it on in the space, and the space is billed for it.
+    // There is no tier to upgrade to any more, so nothing here says so.
+    const price = moduleMonthlyCents(feature);
+    const priced = price > 0 ? ` (${formatCents(price)}/month)` : '';
     return new HttpException(
       {
         statusCode: HttpStatus.PAYMENT_REQUIRED,
         message: fromSpace
           ? `The "${feature}" module is switched off in this space.`
-          : `The "${feature}" feature is not available on your plan.`,
-        error: fromSpace ? 'ModuleDisabled' : 'PlanUpgradeRequired',
+          : `The "${feature}" module is not switched on${priced}.`,
+        error: 'ModuleDisabled',
         feature,
-        ...(fromSpace ? {} : { requiredTier: minTierForFeature(feature) }),
+        moduleMonthlyCents: price,
       },
       HttpStatus.PAYMENT_REQUIRED,
     );

@@ -17,7 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { getSpaceScope } from '@hbcfield/shared';
-import { capModulesToTier } from '../../common/entitlements';
+import { capModulesToCatalogue } from '../../common/entitlements';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
 import {
@@ -42,7 +42,7 @@ export class LocationsController {
   async create(@Body() dto: CreateLocationDto, @Request() req: any) {
     // A space can never enable a module the org's plan tier doesn't include.
     if (Array.isArray((dto as any).enabledModules)) {
-      (dto as any).enabledModules = capModulesToTier(req.user.planTier, (dto as any).enabledModules);
+      (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
     }
     return this.locationsQueueService.create({
       ...dto,
@@ -141,7 +141,7 @@ export class LocationsController {
     @Request() req: any,
   ) {
     if (Array.isArray((dto as any).enabledModules)) {
-      (dto as any).enabledModules = capModulesToTier(req.user.planTier, (dto as any).enabledModules);
+      (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
     }
     return this.locationsQueueService.update({
       id,

@@ -1,27 +1,43 @@
-import { tierAllows, hasFeatureModule, AVAILABLE_MODULES, type PlanTier } from '@hbcfield/shared';
+import { orgHasAddOn, hasFeatureModule, AVAILABLE_MODULES, isAddOn } from '@hbcfield/shared';
 
-/** Catalog module keys (toggleable via enabledModules). Capabilities are NOT here. */
+/** Catalog module keys (switched on per space / per org). Add-ons are NOT here. */
 const MODULE_KEYS = new Set<string>(AVAILABLE_MODULES.map((m) => m.key));
 
 /**
  * Single source of truth for "can this org use feature <key>?".
  *
- * A feature is available iff the org's TIER entitles it AND — for catalog
- * modules — the org has it enabled. Capabilities (recurring, invoicing, …) are
- * gated by tier alone. O(1): reads planTier/orgModules off the cached req.user,
- * no DB. Used by ModuleGuard, the task-field gate and inline read-gates so tier
- * enforcement can never diverge across call sites.
+ * Two kinds of thing, two different questions, and neither of them is a tier:
+ *
+ *   • a MODULE is switched on where it is used and billed there → is it on?
+ *   • an ADD-ON is bought once for the organization → is it in what they bought?
+ *
+ * O(1) against values already on the cached `req.user` — `orgModules` and
+ * `orgAddOns`, both resolved server-side by validateToken, neither influenced by
+ * the caller. Used by ModuleGuard, the task-field gate and the inline read-gates
+ * so enforcement cannot diverge between call sites.
+ *
+ * Fails closed on anything it does not recognise. A key that is neither a module
+ * nor an add-on is a typo or a deleted feature, and the safe answer to both is
+ * no — the old version returned `true` for an unknown key, which quietly granted
+ * every organization anything spelled wrong.
  */
 export function isFeatureEntitled(
-  user: { planTier?: string | null; orgModules?: string[] | null } | undefined,
+  user: { orgModules?: string[] | null; orgAddOns?: string[] | null } | undefined,
   key: string,
 ): boolean {
-  if (!tierAllows((user?.planTier ?? null) as PlanTier | null, key)) return false;
   if (MODULE_KEYS.has(key)) return hasFeatureModule(user ?? {}, key);
-  return true; // capability → tier suffices
+  if (isAddOn(key)) return orgHasAddOn(user?.orgAddOns, key);
+  return false;
 }
 
-/** Filter a proposed module list down to what the tier actually allows. */
-export function capModulesToTier(planTier: string | null | undefined, modules: string[]): string[] {
-  return modules.filter((m) => tierAllows((planTier ?? null) as PlanTier | null, m));
+/**
+ * Filter a proposed module list down to the catalogue.
+ *
+ * There is no tier left to cap against: a space may switch on any module in the
+ * catalogue and is billed for what it switched on. What still must not survive
+ * is a key that is not a module at all — that would put a line on an invoice
+ * nobody can switch off, and grant a feature nobody priced.
+ */
+export function capModulesToCatalogue(modules: string[]): string[] {
+  return modules.filter((m) => MODULE_KEYS.has(m));
 }

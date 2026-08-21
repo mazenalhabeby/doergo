@@ -399,7 +399,12 @@ model Organization {
 
   // ── SaaS billing (denormalized for fast guard reads; Subscription + Stripe are source of truth) ──
   stripeCustomerId  String?            @unique
-  planTier          PlanTier? // null = no paid plan chosen yet
+  planTier          PlanTier? // LEGACY. Kept only so historic rows stay readable; nothing reads it to decide access. Gating is `addOns` + per-space modules.
+  /// Capabilities bought once for the whole organization (invoicing, workflows,
+  /// audit log…). Replaced tier-based gating: a thing is bought or it is not,
+  /// so there is no ranking to reason about and no bundle table to keep in step
+  /// with the price list. See packages/shared/src/billing/add-ons.ts.
+  addOns            String[]           @default([])
   subStatus         SubscriptionStatus @default(TRIALING)
   billingInterval   BillingInterval    @default(MONTHLY)
   trialEndsAt       DateTime?

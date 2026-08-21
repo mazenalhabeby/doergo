@@ -34,6 +34,7 @@
 
 import { AVAILABLE_MODULES } from '../types';
 import { billsByUsage, usageCost, type UsageCost } from './usage-pricing';
+import { addOnsMonthlyCost, type AddOnCostLine } from './add-ons';
 
 /** Per user, per month. The same for everyone. */
 export const SEAT_MONTHLY_CENTS = 999;
@@ -173,11 +174,15 @@ export interface OrgCostBreakdown {
   spacesMonthlyCents: number;
   /** The volume ladders — assets and anything else billed by a count. */
   usageMonthlyCents: number;
+  /** Capabilities bought once for the whole organization, not per space. */
+  addOnsMonthlyCents: number;
   monthlyCents: number;
   annualCents: number;
   spaces: Array<{ spaceId: string; spaceName: string; cost: SpaceCost }>;
   /** Every space's counted modules, flattened — one entry per space per module. */
   usage: UsageCost[];
+  /** Each purchased add-on priced. */
+  addOns: AddOnCostLine[];
 }
 
 /**
@@ -190,6 +195,8 @@ export interface OrgCostBreakdown {
 export function orgMonthlyCost(input: {
   seatCount: number;
   spaces: SpaceModules[];
+  /** Capabilities bought once for the organization — see add-ons.ts. */
+  addOns?: string[] | null;
   /** Override for a negotiated seat price; defaults to the list price. */
   seatMonthlyCents?: number;
 }): OrgCostBreakdown {
@@ -201,20 +208,24 @@ export function orgMonthlyCost(input: {
     cost: spaceMonthlyCost(s.enabledModules, s.usage),
   }));
 
+  const addOnCost = addOnsMonthlyCost(input.addOns);
+
   const seatMonthlyCents = Math.max(0, input.seatCount) * seatPrice;
   const spacesMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.baseMonthlyCents, 0);
   const usageMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.usageMonthlyCents, 0);
-  const monthlyCents = seatMonthlyCents + spacesMonthlyCents + usageMonthlyCents;
+  const monthlyCents = seatMonthlyCents + spacesMonthlyCents + usageMonthlyCents + addOnCost.monthlyCents;
 
   return {
     seatCount: input.seatCount,
     seatMonthlyCents,
     spacesMonthlyCents,
     usageMonthlyCents,
+    addOnsMonthlyCents: addOnCost.monthlyCents,
     monthlyCents,
     annualCents: monthlyCents * ANNUAL_MONTHS_CHARGED,
     spaces,
     usage: spaces.flatMap((s) => s.cost.usage),
+    addOns: addOnCost.lines,
   };
 }
 
