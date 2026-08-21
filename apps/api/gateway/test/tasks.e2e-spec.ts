@@ -7,7 +7,14 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
-import { Role, TaskStatus, TaskPriority, PermissionsGuard } from '@hbcfield/shared';
+import { Role, TaskStatus, TaskPriority } from '@hbcfield/shared';
+// The gateway's own guard, NOT the one in @hbcfield/shared. Only this one reads
+// PERMISSIONS_IN_SPACE_KEY, and the routes below moved to
+// @RequirePermissionInSpace. Wiring the shared guard here made the suite assert
+// against a guard production does not use: it saw no metadata it recognised,
+// allowed everything, and reported a field worker updating and assigning tasks
+// as a 200 — a permissions hole in the test harness rather than the product.
+import { PermissionsGuard } from '../src/common/guards/permissions.guard';
 import { TasksController } from '../src/modules/tasks/tasks.controller';
 import { TasksService } from '../src/modules/tasks/tasks.service';
 import { TasksQueueService } from '../src/modules/tasks/tasks.queue.service';

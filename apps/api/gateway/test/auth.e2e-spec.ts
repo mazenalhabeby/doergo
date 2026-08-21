@@ -8,6 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
 import { AuthController } from '../src/modules/auth/auth.controller';
+import { AuthTokenCache } from '../src/common/cache/auth-token-cache.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -98,6 +99,16 @@ describe('AuthController (e2e)', () => {
           // etc.). Provide a no-op mock so the test module compiles.
           provide: 'NOTIFICATION_SERVICE',
           useValue: { send: jest.fn(), emit: jest.fn(), connect: jest.fn() },
+        },
+        {
+          // Third constructor argument, added with the per-request token cache.
+          // It must be a mock rather than the real class: AuthTokenCache opens a
+          // Redis connection from its constructor, so importing it here would
+          // make the suite depend on a running Redis. Without this provider Nest
+          // cannot build the module at all, and every test in the file failed
+          // during setup — a red suite that said nothing about the product.
+          provide: AuthTokenCache,
+          useValue: { invalidateUser: jest.fn(), get: jest.fn(), set: jest.fn(), ttl: 60 },
         },
         {
           provide: APP_GUARD,
