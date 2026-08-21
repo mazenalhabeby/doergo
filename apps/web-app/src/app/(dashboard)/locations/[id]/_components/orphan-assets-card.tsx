@@ -137,7 +137,6 @@ function OrphanRow({
   // rather than making somebody open the record to find out.
   const attached = [
     asset._count.tasks > 0 && t("orphanAssets.taskCount", "{{count}} task", { count: asset._count.tasks }),
-    asset._count.children > 0 && t("orphanAssets.partCount", "{{count}} part inside", { count: asset._count.children }),
   ].filter(Boolean) as string[]
 
   return (

@@ -248,21 +248,17 @@ export function nextUsageBreak(
 /**
  * The rule, written once.
  *
- * Two exclusions, both deliberate, because a count is a promise and this is the
- * promise:
+ * One exclusion, deliberate, because a count is a promise and this is the
+ * promise: RETIRED DOESN'T COUNT. Stop using it, stop paying for it — and the
+ * record stays, so its history survives without becoming a bill.
  *
- *   • SUB-ASSETS DON'T COUNT. A press broken down into four subunits and thirty
- *     components is ONE asset. Charging for the breakdown would make describing
- *     equipment properly the most expensive thing a customer could do, and the
- *     breakdown is what makes the fault codes and the cost roll-up work at all.
- *   • RETIRED DOESN'T COUNT. Stop using it, stop paying for it — and the record
- *     stays, so its history survives without becoming a bill.
+ * (It used to exclude sub-assets too, back when an asset could sit inside
+ * another. Nesting is gone, so every asset is simply an asset.)
  *
  * A plain object, not a Prisma import: shared must not depend on the ORM, and a
  * `where` clause is JSON. Both the billing service and the assets service spread
  * it into their own queries, so neither can drift from the other.
  */
 export const BILLABLE_ASSET_WHERE = {
-  parentId: null,
   status: { not: 'RETIRED' },
 } as const;

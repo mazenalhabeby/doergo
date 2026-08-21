@@ -6372,21 +6372,6 @@
     "noCatalogue": "Este tipo aún no tiene catálogo de piezas — cree uno y sus códigos se podrán elegir aquí.",
     "partUnchecked": "no está entre los primeros {{count}} — busque en el catálogo"
   },
-  "assetStructure": {
-    "title": "Dentro",
-    "here": "este",
-    "inside": "{{count}} dentro",
-    "empty": "Nada dentro. Cree un registro y colóquelo aquí desde su propia página.",
-    "totalOut": "Gastado, en total",
-    "totalIn": "Ingresado, en total",
-    "ofWhichOwn": "{{amount}} en este",
-    "records": "Dentro",
-    "recordsSub": "en todos los niveles",
-    "emptyShort": "Aún no hay nada dentro.",
-    "addInside": "Añadir uno dentro",
-    "namePh": "Unidad hidráulica, Bomba, Motor…",
-    "addFailed": "No se pudo añadir"
-  },
   "assetJobs": {
     "raise": "Crear un trabajo",
     "title": "Crear un trabajo",
@@ -6427,8 +6412,6 @@
     "noType": "Sin tipo",
     "taskCount_one": "{{count}} tarea",
     "taskCount_other": "{{count}} tareas",
-    "partCount_one": "{{count}} pieza dentro",
-    "partCount_other": "{{count}} piezas dentro",
     "confirmDelete": "¿Eliminar?"
   },
   "appPrompt": {

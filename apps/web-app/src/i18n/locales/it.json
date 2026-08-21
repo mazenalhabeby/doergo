@@ -6381,21 +6381,6 @@
     "noCatalogue": "Nessun catalogo ricambi su questo tipo — creane uno e i suoi codici saranno selezionabili qui.",
     "partUnchecked": "non tra i primi {{count}} — cerca nel catalogo"
   },
-  "assetStructure": {
-    "title": "Dentro",
-    "here": "questo",
-    "inside": "{{count}} dentro",
-    "empty": "Niente dentro. Crea un record e mettilo qui dalla sua pagina.",
-    "totalOut": "Speso, in tutto",
-    "totalIn": "Guadagnato, in tutto",
-    "ofWhichOwn": "{{amount}} su questo",
-    "records": "Dentro",
-    "recordsSub": "a ogni livello",
-    "emptyShort": "Non c’è ancora nulla dentro.",
-    "addInside": "Aggiungi uno dentro",
-    "namePh": "Unità idraulica, Pompa, Motore…",
-    "addFailed": "Impossibile aggiungerlo"
-  },
   "assetJobs": {
     "raise": "Crea un lavoro",
     "title": "Crea un lavoro",
@@ -6436,8 +6421,6 @@
     "noType": "Nessun tipo",
     "taskCount_one": "{{count}} attività",
     "taskCount_other": "{{count}} attività",
-    "partCount_one": "{{count}} parte all’interno",
-    "partCount_other": "{{count}} parti all’interno",
     "confirmDelete": "Eliminare?"
   },
   "appPrompt": {

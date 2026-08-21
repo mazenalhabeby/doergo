@@ -79,11 +79,5 @@ export class AssetsService extends BaseGatewayService {
     return this.send({ cmd: 'remove_asset_row' }, data);
   }
 
-  async structure(data: Record<string, any>) {
-    return this.send({ cmd: 'asset_structure' }, data);
-  }
 
-  async setParent(data: Record<string, any>) {
-    return this.send({ cmd: 'set_asset_parent' }, data);
-  }
 }

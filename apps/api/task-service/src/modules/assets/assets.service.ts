@@ -12,23 +12,7 @@ import { AssetHoldersService, type HolderInput } from './asset-holders.service';
 import { AssetActivityService } from './asset-activity.service';
 
 /**
- * How deep a machine may nest. ISO 14224 breaks equipment down four levels
- * (unit, subunit, component, part); double that is generous, and a bound means
- * a corrupted parent chain costs one query per level rather than hanging.
- */
-const MAX_STRUCTURE_DEPTH = 8;
-
-/** One record in a machine's breakdown, with whatever sits inside it. */
-export interface StructureNode {
-  id: string;
-  name: string;
-  serialNumber: string | null;
-  children: StructureNode[];
-}
-
-/**
- * The records themselves: the things an organization owns, what they are made
- * of, and who has them.
+ * The records themselves: the things an organization owns and who has them.
  *
  * Tables, money and activity moved out to services of their own; this one asks
  * them for what it needs. It kept the name so every existing import and message
@@ -120,180 +104,6 @@ export class AssetsService {
       .filter((h) => h.user || h.customer);
 
     return { ...asset, holders };
-  }
-
-  /**
-   * The whole breakdown of one machine, with what it has cost.
-   *
-   * The entire subtree in ONE query, not a level per click: a technician
-   * standing at a press wants to see that the fault is two levels down, and
-   * walking the tree a request at a time turns that into a series of guesses.
-   *
-   * Money rolls UP. "What has this press cost" has to include its pump and its
-   * gearbox, or the number is quietly wrong in the direction that matters —
-   * every sub-unit's spend invisible at the level anybody looks.
-   */
-  async structure(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
-
-    // One recursive walk down, depth-bounded so a corrupted parent chain costs
-    // a query rather than the process. Scoped to the org at every level: a
-    // parent id is guessable, and an unscoped walk would happily cross tenants.
-    const rows = await this.prisma.$queryRaw<
-      { id: string; name: string; serialNumber: string | null; parentId: string | null; depth: number }[]
-    >(Prisma.sql`
-      WITH RECURSIVE subtree AS (
-        SELECT a."id", a."name", a."serialNumber", a."parentId", 0 AS depth
-          FROM "assets" a
-         WHERE a."id" = ${data.id} AND a."organizationId" = ${data.organizationId}
-        UNION ALL
-        SELECT c."id", c."name", c."serialNumber", c."parentId", s.depth + 1
-          FROM "assets" c
-          JOIN subtree s ON c."parentId" = s."id"
-         WHERE c."organizationId" = ${data.organizationId}
-           AND s.depth < ${MAX_STRUCTURE_DEPTH}
-      )
-      SELECT * FROM subtree ORDER BY depth, "name"
-    `);
-
-    const ids = rows.map((r) => r.id);
-
-    // Totals over the whole subtree, from the database rather than by adding up
-    // what happened to be fetched.
-    const [sums, ownSums] = await Promise.all([
-      this.prisma.assetMoney.groupBy({
-        by: ['direction'],
-        where: { assetId: { in: ids }, organizationId: data.organizationId },
-        _sum: { amountCents: true },
-      }),
-      this.prisma.assetMoney.groupBy({
-        by: ['direction'],
-        where: { assetId: data.id, organizationId: data.organizationId },
-        _sum: { amountCents: true },
-      }),
-    ]);
-    const totalOf = (g: typeof sums, d: string) =>
-      g.find((x) => x.direction === d)?._sum.amountCents ?? 0;
-
-    // Nest by parent. The root is the record itself, which the caller already
-    // has, so only its children are returned as the tree.
-    const byId = new Map<string, StructureNode>(
-      rows.map((r) => [r.id, { id: r.id, name: r.name, serialNumber: r.serialNumber, children: [] }]),
-    );
-    const tree: StructureNode[] = [];
-    for (const r of rows) {
-      if (r.id === data.id) continue;
-      const node = byId.get(r.id)!;
-      // A child of the record itself is a TOP-level branch of the returned
-      // tree. Attaching it to the root's own node instead put every branch
-      // inside an object the caller never sees — the count said seven and the
-      // screen said nothing.
-      if (r.parentId === data.id) {
-        tree.push(node);
-        continue;
-      }
-      const parent = r.parentId ? byId.get(r.parentId) : undefined;
-      if (parent) parent.children.push(node);
-      else tree.push(node);
-    }
-
-    // The path back up, so somebody two levels down knows where they are.
-    const path: { id: string; name: string }[] = [];
-    let cursor = await this.prisma.asset.findUnique({
-      where: { id: data.id },
-      select: { parentId: true },
-    });
-    const seen = new Set<string>([data.id]);
-    while (cursor?.parentId && !seen.has(cursor.parentId) && path.length < MAX_STRUCTURE_DEPTH) {
-      seen.add(cursor.parentId);
-      const parent = await this.prisma.asset.findFirst({
-        where: { id: cursor.parentId, organizationId: data.organizationId },
-        select: { id: true, name: true, parentId: true },
-      });
-      if (!parent) break;
-      path.unshift({ id: parent.id, name: parent.name });
-      cursor = { parentId: parent.parentId };
-    }
-
-    return success({
-      tree,
-      path,
-      // children kept for callers that only want the level below.
-      children: tree,
-      rollup: {
-        records: Math.max(0, rows.length - 1),
-        inCents: totalOf(sums, 'IN'),
-        outCents: totalOf(sums, 'OUT'),
-        netCents: totalOf(sums, 'IN') - totalOf(sums, 'OUT'),
-        ownOutCents: totalOf(ownSums, 'OUT'),
-        ownInCents: totalOf(ownSums, 'IN'),
-      },
-    });
-  }
-
-  /**
-   * Put one record under another, or back at the top.
-   *
-   * Refuses to make a record its own ancestor. Without that check a two-node
-   * cycle is one careless drag away, and every walk of the tree afterwards
-   * either loops forever or stops at an arbitrary depth.
-   */
-  async setParent(data: {
-    id: string;
-    parentId: string | null;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
-
-    const parentId = data.parentId?.trim() || null;
-
-    if (parentId) {
-      if (parentId === data.id) {
-        throw new BadRequestException('A record cannot be inside itself');
-      }
-      const parent = await this.prisma.asset.findFirst({
-        where: { id: parentId, organizationId: data.organizationId },
-        select: { id: true },
-      });
-      if (!parent) throw new BadRequestException('That parent is not in this organization');
-
-      // Walk up from the proposed parent: if we meet this record, the move
-      // would close a loop.
-      let cursor: string | null = parentId;
-      const seen = new Set<string>();
-      let depth = 0;
-      while (cursor && depth++ < MAX_STRUCTURE_DEPTH) {
-        if (cursor === data.id) {
-          throw new BadRequestException('That would put this record inside one of its own parts');
-        }
-        if (seen.has(cursor)) break;
-        seen.add(cursor);
-        // Scoped: an unscoped walk follows a parent chain into another tenant's
-        // records, and the ids it reads are the ids somebody guessed.
-        const next: { parentId: string | null } | null = await this.prisma.asset.findFirst({
-          where: { id: cursor, organizationId: data.organizationId },
-          select: { parentId: true },
-        });
-        cursor = next?.parentId ?? null;
-      }
-    }
-
-    const updated = await this.prisma.asset.update({
-      where: { id: data.id },
-      data: { parentId },
-      select: { id: true, parentId: true },
-    });
-
-    return success(updated);
   }
 
   async create(data: {
@@ -402,8 +212,6 @@ export class AssetsService {
     typeId?: string;
     status?: string;
     search?: string;
-    /** Only whole machines, not the parts inside them. */
-    topLevel?: boolean;
     userId: string;
     userRole: string;
     organizationId: string;
@@ -416,9 +224,6 @@ export class AssetsService {
 
     const where: any = {
       organizationId: query.organizationId,
-      // A gearbox belongs under its press, not beside it. The kind's list shows
-      // whole machines; the parts inside are reached through the machine.
-      ...(query.topLevel ? { parentId: null } : {}),
     };
 
     if (query.categoryId) where.categoryId = query.categoryId;
@@ -473,7 +278,6 @@ export class AssetsService {
     const assets = await this.prisma.asset.findMany({
       where: {
         organizationId: data.organizationId,
-        parentId: null,
         OR: [{ categoryId: null }, { category: { spaceId: null } }],
       },
       // Capped rather than paged: this is a cleanup list that should end at
@@ -488,7 +292,7 @@ export class AssetsService {
         createdAt: true,
         category: { select: { id: true, name: true } },
         type: { select: { id: true, name: true } },
-        _count: { select: { tasks: true, children: true } },
+        _count: { select: { tasks: true } },
       },
     });
 

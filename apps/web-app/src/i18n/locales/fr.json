@@ -6381,21 +6381,6 @@
     "noCatalogue": "Pas encore de catalogue de pièces sur ce type — créez-en un et ses codes seront sélectionnables ici.",
     "partUnchecked": "pas parmi les {{count}} premiers — cherchez dans le catalogue"
   },
-  "assetStructure": {
-    "title": "À l’intérieur",
-    "here": "celui-ci",
-    "inside": "{{count}} à l’intérieur",
-    "empty": "Rien à l’intérieur. Créez une fiche et placez-la ici depuis sa propre page.",
-    "totalOut": "Dépensé, au total",
-    "totalIn": "Gagné, au total",
-    "ofWhichOwn": "{{amount}} sur celui-ci",
-    "records": "À l’intérieur",
-    "recordsSub": "à tous les niveaux",
-    "emptyShort": "Rien à l’intérieur pour le moment.",
-    "addInside": "Ajouter à l’intérieur",
-    "namePh": "Unité hydraulique, Pompe, Moteur…",
-    "addFailed": "Impossible de l’ajouter"
-  },
   "assetJobs": {
     "raise": "Créer une intervention",
     "title": "Créer une intervention",
@@ -6436,8 +6421,6 @@
     "noType": "Aucun type",
     "taskCount_one": "{{count}} tâche",
     "taskCount_other": "{{count}} tâches",
-    "partCount_one": "{{count}} pièce à l’intérieur",
-    "partCount_other": "{{count}} pièces à l’intérieur",
     "confirmDelete": "Supprimer ?"
   },
   "appPrompt": {

@@ -163,8 +163,11 @@ describe('the assets ladder', () => {
 });
 
 describe('what counts as a billable asset', () => {
-  it('excludes sub-assets and retired ones — written once, shared by both services', () => {
-    expect(BILLABLE_ASSET_WHERE).toEqual({ parentId: null, status: { not: 'RETIRED' } });
+  it('excludes retired ones — written once, shared by both services', () => {
+    // It also excluded sub-assets, until assets stopped nesting. Asserted as a
+    // whole object so an exclusion cannot be added or dropped unnoticed: this
+    // clause decides what a customer is charged for.
+    expect(BILLABLE_ASSET_WHERE).toEqual({ status: { not: 'RETIRED' } });
   });
 });
 

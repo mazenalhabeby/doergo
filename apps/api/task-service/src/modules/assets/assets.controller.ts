@@ -112,13 +112,5 @@ export class AssetsController {
     return this.rows.removeRow(data);
   }
 
-  @MessagePattern({ cmd: 'asset_structure' })
-  async structure(@Payload() data: any) {
-    return this.assetsService.structure(data);
-  }
 
-  @MessagePattern({ cmd: 'set_asset_parent' })
-  async setParent(@Payload() data: any) {
-    return this.assetsService.setParent(data);
-  }
 }

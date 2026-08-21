@@ -218,8 +218,4 @@ export class AssetQueryDto {
   @IsString()
   @IsOptional()
   search?: string;
-  @ApiPropertyOptional({ description: 'Only whole machines, not the parts inside them' })
-  @IsBoolean()
-  @IsOptional()
-  topLevel?: boolean;
 }

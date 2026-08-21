@@ -1306,14 +1306,6 @@ model Asset {
   // mirrors CustomerUnit.details.
   details Json?
 
-  /// Structure. A machine breaks down into subunits and components, to whatever
-  /// depth the equipment warrants (ISO 14224 levels 6-9). Self-referencing
-  /// rather than a fixed set of levels, because a pump needs one level and a
-  /// press needs four.
-  parentId String?
-  parent   Asset?  @relation("AssetStructure", fields: [parentId], references: [id], onDelete: SetNull)
-  children Asset[] @relation("AssetStructure")
-
   /// Who has it. A kind decides whether that is one person or several; the
   /// join table carries both cases, so "several" is not a second code path.
   holders    AssetHolder[]
@@ -1334,7 +1326,6 @@ model Asset {
   @@index([serialNumber])
   @@index([holderUserId])
   @@index([customerId])
-  @@index([parentId])
   @@map("assets")
 }
 

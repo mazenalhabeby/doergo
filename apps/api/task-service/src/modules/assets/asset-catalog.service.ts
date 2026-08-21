@@ -84,7 +84,7 @@ export class AssetCatalogService {
       include: {
         // Counted the way the list is READ: whole records, not the sub-units
         // inside them. A card saying 9 over a list of 2 is a card nobody trusts.
-        _count: { select: { types: true, assets: { where: { parentId: null } } } },
+        _count: { select: { types: true, assets: true } },
       },
     });
 
@@ -113,7 +113,7 @@ export class AssetCatalogService {
       include: {
         // Counted the way the list is READ: whole records, not the sub-units
         // inside them. A card saying 9 over a list of 2 is a card nobody trusts.
-        _count: { select: { types: true, assets: { where: { parentId: null } } } },
+        _count: { select: { types: true, assets: true } },
       },
     });
 
@@ -180,7 +180,7 @@ export class AssetCatalogService {
       include: {
         // Counted the way the list is READ: whole records, not the sub-units
         // inside them. A card saying 9 over a list of 2 is a card nobody trusts.
-        _count: { select: { types: true, assets: { where: { parentId: null } } } },
+        _count: { select: { types: true, assets: true } },
       },
     });
 

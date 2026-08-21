@@ -6372,21 +6372,6 @@
     "noCatalogue": "Noch kein Teilekatalog für diese Art — legen Sie einen an, dann sind seine Codes hier wählbar.",
     "partUnchecked": "nicht unter den ersten {{count}} — Katalog durchsuchen"
   },
-  "assetStructure": {
-    "title": "Darin",
-    "here": "dieses hier",
-    "inside": "{{count}} darin",
-    "empty": "Nichts darin. Legen Sie einen Eintrag an und ordnen Sie ihn hier von seiner eigenen Seite aus ein.",
-    "totalOut": "Ausgaben gesamt",
-    "totalIn": "Einnahmen gesamt",
-    "ofWhichOwn": "{{amount}} davon hier",
-    "records": "Enthalten",
-    "recordsSub": "auf allen Ebenen",
-    "emptyShort": "Noch nichts darin.",
-    "addInside": "Etwas darin anlegen",
-    "namePh": "Hydraulikeinheit, Pumpe, Motor…",
-    "addFailed": "Konnte nicht angelegt werden"
-  },
   "assetJobs": {
     "raise": "Auftrag anlegen",
     "title": "Auftrag anlegen",
@@ -6427,8 +6412,6 @@
     "noType": "Kein Typ",
     "taskCount_one": "{{count}} Aufgabe",
     "taskCount_other": "{{count}} Aufgaben",
-    "partCount_one": "{{count}} Teil enthalten",
-    "partCount_other": "{{count}} Teile enthalten",
     "confirmDelete": "Löschen?"
   },
   "appPrompt": {

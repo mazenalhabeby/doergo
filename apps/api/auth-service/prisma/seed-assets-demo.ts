@@ -148,22 +148,6 @@ async function main() {
     },
   });
 
-  const child = (name: string, parentId: string, serial?: string, extra?: Record<string, string>) =>
-    prisma.asset.create({
-      data: {
-        organizationId: orgId, categoryId: machines.id, name, parentId, serialNumber: serial ?? null,
-        details: Object.entries(extra ?? {}).map(([label, value]) => ({ label, value })) as unknown as Prisma.InputJsonValue,
-      },
-    });
-
-  const hydraulics = await child('Hydraulic unit', press4.id, 'HU-441');
-  await child('Pump', hydraulics.id, 'P-88231', { Maker: 'Bosch Rexroth', Model: 'A10VSO' });
-  await child('Valve block', hydraulics.id, 'VB-2210');
-  const drive = await child('Drive', press4.id, 'DR-119');
-  await child('Motor', drive.id, 'M-7745', { Maker: 'Siemens', Model: '1LE1' });
-  await child('Gearbox', drive.id, 'G-3390', { Maker: 'SEW', Model: 'K87' });
-  await child('Control cabinet', press4.id, 'CC-556');
-
   // A second machine, to prove the catalogue is shared rather than retyped.
   const press5 = await prisma.asset.create({
     data: {

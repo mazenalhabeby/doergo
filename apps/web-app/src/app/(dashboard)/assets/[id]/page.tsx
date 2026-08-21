@@ -20,7 +20,6 @@ import {
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { AssetListTable } from "@/components/assets/asset-list-table"
 import { AssetFaults } from "@/components/assets/asset-faults"
-import { AssetStructure } from "@/components/assets/asset-structure"
 import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
 import { AssetInviteClient } from "@/components/assets/asset-invite-client"
 import { notify } from "@/lib/toast"
@@ -306,7 +305,6 @@ export default function AssetRecordPage() {
                 ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.entries.length || null] as const]
                 : []),
               ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
-              ["structure", t("assetStructure.title", "Inside"), null] as const,
             ] as const).map(([key, label, count]) => (
               <button
                 key={key}
@@ -324,9 +322,7 @@ export default function AssetRecordPage() {
             ))}
           </div>
 
-          {tab === "structure" ? (
-            <AssetStructure assetId={id} kindId={kind?.id} />
-          ) : tab.startsWith("list:") ? (
+          {tab.startsWith("list:") ? (
             (() => {
               const list = shape.lists.find((l) => `list:${l.label}` === tab)
               // The tab can outlive its list if the kind is edited while the

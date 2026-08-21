@@ -6373,21 +6373,6 @@
     "noCatalogue": "No parts catalogue on this kind yet — add one and its codes can be picked here.",
     "partUnchecked": "not among the first {{count}} — search the catalogue"
   },
-  "assetStructure": {
-    "title": "Inside",
-    "here": "this one",
-    "inside": "{{count}} inside",
-    "empty": "Nothing inside this one. Add a record and put it in here from its own page.",
-    "totalOut": "Spent, all of it",
-    "totalIn": "Earned, all of it",
-    "ofWhichOwn": "{{amount}} on this one",
-    "records": "Inside",
-    "recordsSub": "at every level",
-    "emptyShort": "Nothing inside this one yet.",
-    "addInside": "Add one inside",
-    "namePh": "Hydraulic unit, Pump, Motor…",
-    "addFailed": "Could not add it"
-  },
   "assetJobs": {
     "raise": "Raise a job",
     "title": "Raise a job",
@@ -6428,8 +6413,6 @@
     "noType": "No type",
     "taskCount_one": "{{count}} task",
     "taskCount_other": "{{count}} tasks",
-    "partCount_one": "{{count}} part inside",
-    "partCount_other": "{{count}} parts inside",
     "confirmDelete": "Delete?"
   },
   "appPrompt": {
