@@ -78,7 +78,19 @@ export function ModuleUsagePanel({
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-            {t("billing.usage.heading", "{{module}}, priced on your total across every space", { module: moduleLabel })}
+            {/*
+              Both rules in the first line somebody reads.
+
+              There are two, and they pull in opposite directions: the free
+              allowance is per space, the RATE comes from the organization's
+              total. A heading that names only the total reads as though the
+              free ones were pooled too — which is the question this line kept
+              being asked.
+            */}
+            {t("billing.usage.heading", "{{module}} — {{perSpace}} free per space, then priced on your total", {
+              module: moduleLabel,
+              perSpace: price.included,
+            })}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground tabular-nums">{units(orgUnits)}</span>

@@ -6083,7 +6083,7 @@
     "spaceCostPerModule": "Jedes Modul hat seinen eigenen Preis",
     "seatLine": "Benutzer werden separat mit je {{price}} berechnet",
     "usage": {
-      "heading": "{{module}} — berechnet auf Ihre Gesamtzahl über alle Bereiche",
+      "heading": "{{module}} — {{perSpace}} pro Bereich kostenlos, danach nach Ihrer Gesamtzahl berechnet",
       "onTop": "zusätzlich zur Grundgebühr von {{base}}",
       "included": "Die ersten {{count}} sind enthalten",
       "free": "Kostenlos",

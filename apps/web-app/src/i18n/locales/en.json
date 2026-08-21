@@ -6084,7 +6084,7 @@
     "spaceCostPerModule": "Each module adds its own price",
     "seatLine": "Users are billed separately at {{price}} each",
     "usage": {
-      "heading": "{{module}}, priced on your total across every space",
+      "heading": "{{module}} — {{perSpace}} free per space, then priced on your total",
       "onTop": "on top of the {{base}} base",
       "included": "First {{count}} included",
       "free": "Free",

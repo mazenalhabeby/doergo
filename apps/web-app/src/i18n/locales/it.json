@@ -6058,7 +6058,7 @@
     "spaceCostPerModule": "Ogni modulo aggiunge il proprio prezzo",
     "seatLine": "Gli utenti sono fatturati a parte, {{price}} ciascuno",
     "usage": {
-      "heading": "{{module}}, con prezzo calcolato sul tuo totale in tutti gli spazi",
+      "heading": "{{module}} — {{perSpace}} gratis per spazio, poi il prezzo si calcola sul tuo totale",
       "onTop": "oltre alla base di {{base}}",
       "included": "I primi {{count}} sono inclusi",
       "free": "Gratis",
