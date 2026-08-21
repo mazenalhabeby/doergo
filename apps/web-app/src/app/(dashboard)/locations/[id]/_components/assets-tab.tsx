@@ -211,7 +211,7 @@ function KindContents({
   const recordsQ = useQuery({
     queryKey: ["asset-records", kind.id],
     // Whole machines only — a gearbox is reached through its press.
-    queryFn: () => assetsApi.getAssets({ categoryId: kind.id, topLevel: true }),
+    queryFn: () => assetsApi.getAssets({ categoryId: kind.id }),
   })
 
   // The list endpoint has returned both a bare array and a wrapped page, so

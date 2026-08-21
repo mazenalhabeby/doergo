@@ -1663,8 +1663,6 @@ export interface AssetsQueryParams {
   search?: string;
   page?: number;
   limit?: number;
-  /** Only whole machines, not the parts inside them. */
-  topLevel?: boolean;
 }
 
 // Assets API methods
