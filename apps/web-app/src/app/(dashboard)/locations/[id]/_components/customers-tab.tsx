@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import type { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -167,7 +168,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
           {!personOnly && (
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
             {([["PERSON", User, t("customers.typePerson", "Person")], ["COMPANY", Building2, t("customers.typeCompany", "Company")]] as const).map(([val, Icon, label]) => (
-              <button key={val} type="button" onClick={() => setType(val as any)}
+              <button key={val} type="button" onClick={() => setType(val)}
                 className={cn("inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   type === val ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
                 <Icon className="h-4 w-4" /> {label}
@@ -251,7 +252,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
   )
 }
 
-function IconField({ icon: Icon, label, value, onChange, placeholder }: { icon: any; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function IconField({ icon: Icon, label, value, onChange, placeholder }: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="space-y-1">
       <Label className="flex items-center gap-1.5"><Icon className="h-3.5 w-3.5 text-muted-foreground" /> {label}</Label>

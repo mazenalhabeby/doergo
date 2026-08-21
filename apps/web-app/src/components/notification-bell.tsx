@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import type { TaskEventPayload } from "@/types/socket-events"
 import {
   Bell, UserPlus, ClipboardList, MessageSquare, CheckCircle,
   AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck,
@@ -34,15 +35,6 @@ import { cn } from "@/lib/utils"
   reason they were `any`. Optional-everything says the same thing while still
   catching a typo'd field name, which `any` never did.
 */
-interface TaskEventPayload {
-  id?: string
-  taskId?: string
-  title?: string
-  newStatus?: string
-  task?: { id?: string; title?: string } | null
-  comment?: { content?: string } | null
-  attachment?: { fileName?: string } | null
-}
 
 interface ChatEventPayload {
   message?: {

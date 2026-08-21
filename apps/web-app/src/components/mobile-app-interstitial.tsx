@@ -17,7 +17,8 @@ type Phone = "ios" | "android"
  *  on tablets). iPhone/iPod for iOS; Android UAs carry "Mobile" only on phones. */
 function detectPhone(): Phone | null {
   if (typeof navigator === "undefined") return null
-  const ua = navigator.userAgent || (navigator as any).vendor || ""
+  // `vendor` is non-standard but present on Safari/iOS, hence the widened read.
+  const ua = navigator.userAgent || (navigator as Navigator & { vendor?: string }).vendor || ""
   if (/iphone|ipod/i.test(ua)) return "ios"
   if (/android/i.test(ua) && /mobile/i.test(ua)) return "android"
   return null

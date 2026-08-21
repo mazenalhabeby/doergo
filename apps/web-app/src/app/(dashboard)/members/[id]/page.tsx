@@ -180,7 +180,7 @@ export default function MemberProfilePage({
   })
 
   const spaceNames = useMemo(
-    () => memberAssignments.map((a: any) => a.location?.name).filter(Boolean),
+    () => memberAssignments.map((a) => a.location?.name).filter(Boolean),
     [memberAssignments],
   )
 

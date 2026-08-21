@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import type { LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
@@ -191,7 +192,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   )
 }
 
-function TabBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
+function TabBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: LucideIcon; label: string }) {
   return (
     <button type="button" onClick={onClick}
       className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",

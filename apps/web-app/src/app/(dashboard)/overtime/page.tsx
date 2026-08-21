@@ -1,6 +1,7 @@
 "use client"
 
 import { PlanGate } from "@/components/plan-gate"
+import type { LucideIcon } from "lucide-react"
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -50,7 +51,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-const STATUS_BADGES: Record<string, { labelKey: string; className: string; icon: any }> = {
+const STATUS_BADGES: Record<string, { labelKey: string; className: string; icon: LucideIcon }> = {
   PENDING_TECHNICIAN: { labelKey: "overtime.badges.awaitingEmployee", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
   PENDING_APPROVAL: { labelKey: "overtime.badges.needsApproval", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400", icon: AlertTriangle },
   APPROVED: { labelKey: "overtime.badges.active", className: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },

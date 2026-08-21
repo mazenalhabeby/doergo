@@ -24,6 +24,22 @@ import { Input } from "@/components/ui/input"
 import { Combobox } from "@/components/ui/combobox"
 
 // Color per event type — labels are translated via t("auditLog.events.<TYPE>").
+/**
+ * A one-line summary of a log entry's metadata.
+ *
+ * The column is free-form JSON written by every mutating route, so the fields
+ * are read as unknown and coerced for display — reading `.email` straight into
+ * JSX renders `{}` for anything that is not already a string.
+ */
+function auditDetail(metadata: unknown): string {
+  if (!metadata || typeof metadata !== "object") return ""
+  const m = metadata as { email?: unknown; reason?: unknown; method?: unknown; path?: unknown }
+  if (typeof m.email === "string" && m.email) return m.email
+  if (typeof m.reason === "string" && m.reason) return m.reason
+  if (typeof m.method === "string" && typeof m.path === "string") return `${m.method} ${m.path}`
+  return ""
+}
+
 const EVENT_COLORS: Record<string, string> = {
   USER_LOGIN: "text-green-600",
   USER_LOGOUT: "text-slate-500",
@@ -217,7 +233,7 @@ function AuditLogPageInner() {
               <p className="text-sm text-muted-foreground">{t("auditLog.noEvents")}</p>
             </div>
           ) : (
-            logs.map((log: any) => {
+            logs.map((log) => {
               const evt = { label: evtLabel(log.eventType), color: EVENT_COLORS[log.eventType] || "text-foreground" }
               return (
                 <div key={log.id} className="grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors text-sm">
@@ -226,10 +242,9 @@ function AuditLogPageInner() {
                     <span className={cn("text-xs font-semibold", evt.color)}>{evt.label}</span>
                     {log.metadata && (
                       <span className="text-[11px] text-muted-foreground truncate">
-                        {log.metadata.email || log.metadata.reason ||
-                          (log.metadata.method && log.metadata.path
-                            ? `${log.metadata.method} ${log.metadata.path}`
-                            : "")}
+                        {/* Free-form JSON: coerced for display rather than
+                            trusted to already be a string. */}
+                        {auditDetail(log.metadata)}
                       </span>
                     )}
                   </div>

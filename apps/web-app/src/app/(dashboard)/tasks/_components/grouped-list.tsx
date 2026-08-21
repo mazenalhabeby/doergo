@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useRef, useCallback } from "react"
+import type { Phase } from "@/lib/api"
 import { useTranslation } from "react-i18next"
 import { ChevronRight, User, Archive, Layers, Plus, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -32,7 +33,7 @@ interface GroupedListProps {
   onCreateSprint?: () => void
   onCreateEpic?: () => void
   contextActions?: TaskContextMenuActions
-  phases?: any[]
+  phases?: Phase[]
   recentAssignees?: { id: string; firstName: string; lastName: string }[]
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useCallback } from "react"
+import type { Task } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Check, Plus, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -108,7 +109,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
     onMutate: async ({ itemId, isCompleted }) => {
       // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["task", taskId] })
-      queryClient.setQueryData(["task", taskId], (old: any) => {
+      queryClient.setQueryData<Task | undefined>(["task", taskId], (old) => {
         if (!old?.checklistItems) return old
         return {
           ...old,

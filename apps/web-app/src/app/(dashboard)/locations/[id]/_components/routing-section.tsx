@@ -36,8 +36,8 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
   const [contactIds, setContactIds] = useState<string[]>([])
   useEffect(() => {
     if (space) {
-      setNotifyIds((space as any).notifyRoleIds || [])
-      setContactIds((space as any).contactRoleIds || [])
+      setNotifyIds(space.notifyRoleIds || [])
+      setContactIds(space.contactRoleIds || [])
     }
   }, [space])
 
@@ -55,8 +55,8 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
 
   const dirty =
     space != null &&
-    (JSON.stringify([...notifyIds].sort()) !== JSON.stringify([...(((space as any).notifyRoleIds) || [])].sort()) ||
-      JSON.stringify([...contactIds].sort()) !== JSON.stringify([...(((space as any).contactRoleIds) || [])].sort()))
+    (JSON.stringify([...notifyIds].sort()) !== JSON.stringify([...(space.notifyRoleIds || [])].sort()) ||
+      JSON.stringify([...contactIds].sort()) !== JSON.stringify([...(space.contactRoleIds || [])].sort()))
 
   const isLoading = spaceLoading || rolesLoading
 

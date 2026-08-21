@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useCallback, useRef } from "react"
+import type { TaskEventPayload } from "@/types/socket-events"
 import { useQueryClient } from "@tanstack/react-query"
 import { useSocketContext } from "@/contexts/socket-context"
 
@@ -167,7 +168,7 @@ export function useRealtimeSync() {
   }, [flushInvalidations])
 
   // Also handle task-specific detail invalidation
-  const handleTaskEvent = useCallback((event: string, data: any) => {
+  const handleTaskEvent = useCallback((event: string, data: TaskEventPayload) => {
     // Get the task ID from the event payload. Some events (task.created,
     // task.assigned) arrive as the raw task object, so fall back to data.id.
     const taskId = data?.task?.id || data?.taskId || data?.id
@@ -200,7 +201,7 @@ export function useRealtimeSync() {
       const isTaskEvent = eventName.startsWith("task.")
 
       unsubs.push(
-        subscribe(eventName, (data: any) => {
+        subscribe<TaskEventPayload>(eventName, (data) => {
           if (isTaskEvent) {
             handleTaskEvent(eventName, data)
           } else {

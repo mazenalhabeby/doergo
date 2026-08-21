@@ -342,7 +342,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!user) return false;
     // Satisfied by EITHER a direct user flag or the unified org access (a
     // superset of the flags — never narrower).
-    if ((user as any)[perm] === true) return true;
+    // The permission flags are named columns on the user; indexing by a
+    // runtime string needs the record view of it, not a hole in the type.
+    if ((user as unknown as Record<string, unknown>)[perm] === true) return true;
     return user.access?.org?.[perm] === true;
   }, [user]);
 

@@ -721,11 +721,11 @@ function WorkerDropdownContent({
     enabled: !isSelf,
   })
 
-  const emp = (detail as any)?.data || detail
+  const emp = detail
   const stats = emp?.stats
   const tasksCompleted = stats?.tasks?.completed ?? 0
   const tasksActive = stats?.tasks?.inProgress ?? 0
-  const hoursWeek = stats?.attendance?.hoursThisWeek ?? 0
+  const hoursWeek = stats?.attendance?.totalHoursThisWeek ?? 0
   const onTimeRate = stats?.performance?.onTimeRate ?? 0
   const rating = stats?.performance?.customerRating ?? 0
   const ratingCount = stats?.performance?.ratingCount ?? 0
@@ -833,17 +833,22 @@ function WorkerDropdownContent({
         <div className="px-4 pb-3">
           <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">{t("workspace.recent")}</p>
           <div className="space-y-0.5">
-            {recentActivity.map((item: any, i: number) => (
+            {recentActivity.map((item, i) => (
               <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/30 transition-colors">
+                {/* The API sends these UPPERCASE. Compared against lowercase,
+                    every branch was false, so each row drew the grey default
+                    dot — and `item.title` / `item.time` are not fields this
+                    type has ever had, so the text and the date came out empty
+                    whenever `description` was missing. */}
                 <div className={cn(
                   "size-1.5 rounded-full shrink-0",
-                  item.type === "task_completed" ? "bg-green-500" :
-                  item.type === "task_started" ? "bg-blue-500" :
-                  item.type === "clock_in" ? "bg-emerald-500" : "bg-muted-foreground/40",
+                  item.type === "TASK_COMPLETED" ? "bg-green-500" :
+                  item.type === "TASK_STARTED" ? "bg-blue-500" :
+                  item.type === "CLOCK_IN" ? "bg-emerald-500" : "bg-muted-foreground/40",
                 )} />
-                <p className="text-[10px] text-foreground/70 truncate flex-1">{item.description || item.title || t("workspace.activity")}</p>
+                <p className="text-[10px] text-foreground/70 truncate flex-1">{item.description || t("workspace.activity")}</p>
                 <span className="text-[9px] text-muted-foreground/50 shrink-0 tabular-nums">
-                  {item.time || item.createdAt?.split("T")[0] || ""}
+                  {item.timestamp?.split("T")[0] ?? ""}
                 </span>
               </div>
             ))}
