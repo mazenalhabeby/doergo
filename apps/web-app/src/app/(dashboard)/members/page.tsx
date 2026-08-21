@@ -24,6 +24,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
+import { errorMessage } from "@/lib/errors"
 import { useTranslation } from "react-i18next"
 
 import { UserAvatar } from "@/components/user-avatar"
@@ -596,8 +597,8 @@ export default function MembersPage() {
       setSelectedIds(new Set())
       if (failed === 0) notify.bulk(ok, t("members.toast.roleUpdated"))
       else notify.error(t("members.toast.bulkPartial", { ok, failed }))
-    } catch (error: any) {
-      notify.error(error.message || t("members.toast.updateRolesFailed"))
+    } catch (error) {
+      notify.error(errorMessage(error, t("members.toast.updateRolesFailed")))
     }
   }, [queryClient])
 
@@ -612,8 +613,8 @@ export default function MembersPage() {
       setSelectedIds(new Set())
       if (failed === 0) notify.success(t("members.toast.assignedToSpace", { count: ok }))
       else notify.error(t("members.toast.bulkPartial", { ok, failed }))
-    } catch (error: any) {
-      notify.error(error.message || t("members.toast.assignFailed"))
+    } catch (error) {
+      notify.error(errorMessage(error, t("members.toast.assignFailed")))
     }
   }, [queryClient])
 
@@ -626,8 +627,8 @@ export default function MembersPage() {
       setSelectedIds(new Set())
       if (failed === 0) notify.success(t("members.toast.removedCount", { count: ok }))
       else notify.error(t("members.toast.bulkPartial", { ok, failed }))
-    } catch (error: any) {
-      notify.error(error.message || t("members.toast.removeMembersFailed"))
+    } catch (error) {
+      notify.error(errorMessage(error, t("members.toast.removeMembersFailed")))
     }
   }, [queryClient])
 

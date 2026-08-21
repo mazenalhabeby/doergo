@@ -30,7 +30,7 @@ export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Cust
   const setManagers = useMutation({
     mutationFn: (ids: string[]) => customersApi.update(customer.id, { managerIds: ids }),
     onSuccess: onChanged,
-    onError: (e: any) => notify.error(e.message || "Could not update managers"),
+    onError: (e: Error) => notify.error(e.message || "Could not update managers"),
   })
   const toggle = (id: string) =>
     setManagers.mutate(assignedIds.includes(id) ? assignedIds.filter((x) => x !== id) : [...assignedIds, id])

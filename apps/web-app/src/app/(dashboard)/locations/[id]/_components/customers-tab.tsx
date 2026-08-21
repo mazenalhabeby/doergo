@@ -154,7 +154,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
       return existing ? customersApi.update(existing.id, payload) : customersApi.create({ ...payload, spaceId })
     },
     onSuccess: (customer) => { notify.success(existing ? t("customers.updated", "Customer updated") : t("customers.created", "Customer added")); onSaved(customer); setOpen(false) },
-    onError: (e: any) => notify.error(e.message || "Could not save"),
+    onError: (e: Error) => notify.error(e.message || "Could not save"),
   })
 
   return (

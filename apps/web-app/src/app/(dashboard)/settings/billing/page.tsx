@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { errorMessage } from "@/lib/errors"
 import { Check, Loader2, ExternalLink, ArrowUpRight, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notify } from '@/lib/toast';
@@ -63,8 +64,8 @@ export default function BillingPage() {
         setSub(await billingApi.getSubscription());
         notify.success(t('toast.billingUpdated', 'Billing updated.'));
       }
-    } catch (e: any) {
-      notify.error(e?.message);
+    } catch (e) {
+      notify.error(errorMessage(e));
     } finally {
       setBusy(null);
     }

@@ -78,7 +78,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
         : (existing ? t("apartments.updated", "Apartment updated") : t("apartments.added", "Apartment added")))
       onSaved(unit); setOpen(false)
     },
-    onError: (e: any) => notify.error(e.message || "Could not save"),
+    onError: (e: Error) => notify.error(e.message || "Could not save"),
   })
 
   // Rows for the active tab.

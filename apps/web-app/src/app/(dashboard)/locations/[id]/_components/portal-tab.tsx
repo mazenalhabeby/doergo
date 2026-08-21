@@ -103,7 +103,7 @@ function CreatePortalDialog({ spaceId, hasApartments, onOpenModules, open, onOpe
   const create = useMutation({
     mutationFn: () => spacePortalApi.createPortal(spaceId, tpl, name.trim() || undefined),
     onSuccess: (p) => { onOpenChange(false); setName(""); setTpl("rental"); onCreated(p.id) },
-    onError: (e: any) => notify.error(e.message || "Could not create"),
+    onError: (e: Error) => notify.error(e.message || "Could not create"),
   })
 
   return (

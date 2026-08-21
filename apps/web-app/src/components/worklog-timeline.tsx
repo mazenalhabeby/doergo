@@ -7,6 +7,7 @@ import { Loader2, Plus, ImagePlus, Trash2, FileText, X, LogOut } from "lucide-re
 
 import { worklogApi, uploadToS3, type WorkLogNote } from "@/lib/api"
 import { notify } from "@/lib/toast"
+import { errorMessage } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -46,8 +47,8 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
         await worklogApi.confirmAttachment(note.id, { fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: f.name, fileSize: f.size, mimeType: f.type })
       }
       setDraft(""); setFiles([]); invalidate()
-    } catch (e: any) {
-      notify.error(e?.message || t("common.error", "Something went wrong"))
+    } catch (e) {
+      notify.error(errorMessage(e, t("common.error", "Something went wrong")))
     } finally {
       setBusy(false)
     }

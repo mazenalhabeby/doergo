@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { errorMessage } from "@/lib/errors"
 import { useRouter } from 'next/navigation';
 import { Check, Loader2, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -32,8 +33,8 @@ export default function ChoosePlanPage() {
       const { url } = await billingApi.checkout(tier, interval);
       if (url) window.location.href = url;
       else notify.error(t('toast.checkoutFailed', "Couldn't start checkout."));
-    } catch (e: any) {
-      notify.error(e?.message || t('toast.checkoutFailed', "Couldn't start checkout."));
+    } catch (e) {
+      notify.error(errorMessage(e, t('toast.checkoutFailed', "Couldn't start checkout.")));
       setBusy(null);
     }
   };

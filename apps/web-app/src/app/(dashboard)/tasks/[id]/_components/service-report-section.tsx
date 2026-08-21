@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef } from "react"
+import { errorMessage } from "@/lib/errors"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   CheckCircle2,
@@ -283,8 +284,8 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
 
       toast.success(t("tasks.serviceReport.upload.success"))
       queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
-    } catch (e: any) {
-      toast.error(e.message || t("tasks.serviceReport.upload.failed"))
+    } catch (e) {
+      toast.error(errorMessage(e, t("tasks.serviceReport.upload.failed")))
     } finally {
       setIsUploading(false)
     }

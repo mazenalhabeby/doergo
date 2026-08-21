@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import NextLink from "next/link"
 import { notify } from "@/lib/toast"
+import { errorMessage } from "@/lib/errors"
 import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -878,8 +879,8 @@ function ChangeEmailDialog({
       onChanged()
       reset()
       onOpenChange(false)
-    } catch (e: any) {
-      notify.error(e.message || t("settings.changeEmail.failed"))
+    } catch (e) {
+      notify.error(errorMessage(e, t("settings.changeEmail.failed")))
     } finally {
       setSaving(false)
     }
@@ -972,8 +973,8 @@ function ProfileSection() {
       notify.success(t("settings.profile.updated"))
       queryClient.invalidateQueries({ queryKey: ["user"] })
       refreshUser()
-    } catch (e: any) {
-      notify.error(e.message || t("settings.profile.failed"))
+    } catch (e) {
+      notify.error(errorMessage(e, t("settings.profile.failed")))
     } finally {
       setSaving(false)
     }
@@ -1003,8 +1004,8 @@ function ProfileSection() {
       // Refresh user data
       await refreshUser()
       notify.success(t("settings.profile.avatarUpdated"))
-    } catch (err: any) {
-      notify.error(err.message || t("settings.profile.avatarUploadFailed"))
+    } catch (err) {
+      notify.error(errorMessage(err, t("settings.profile.avatarUploadFailed")))
     } finally {
       setAvatarUploading(false)
       // Reset the input so the same file can be selected again
@@ -1018,8 +1019,8 @@ function ProfileSection() {
       await usersApi.removeAvatar()
       await refreshUser()
       notify.success(t("settings.profile.avatarRemoved"))
-    } catch (err: any) {
-      notify.error(err.message || t("settings.profile.avatarRemoveFailed"))
+    } catch (err) {
+      notify.error(errorMessage(err, t("settings.profile.avatarRemoveFailed")))
     } finally {
       setAvatarRemoving(false)
     }
@@ -1183,8 +1184,8 @@ function SecuritySection() {
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
-    } catch (e: any) {
-      notify.error(e.message || t("settings.security.changeFailed"))
+    } catch (e) {
+      notify.error(errorMessage(e, t("settings.security.changeFailed")))
     } finally {
       setSaving(false)
     }

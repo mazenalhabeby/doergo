@@ -178,7 +178,7 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
       }
     },
     onSuccess: () => { notify.success(existing ? t("customers.addressUpdated", "Address updated") : t("customers.addressAdded", "Address added")); onSaved(); setOpen(false) },
-    onError: (e: any) => notify.error(e.message || "Could not save"),
+    onError: (e: Error) => notify.error(e.message || "Could not save"),
   })
 
   return (
@@ -236,7 +236,7 @@ function AssignDialog({ spaceId, customerId, entityLabel, onSaved, trigger }: {
   const assign = useMutation({
     mutationFn: (unitId: string) => spacePortalApi.assign(spaceId, unitId, customerId),
     onSuccess: () => { notify.success(t("customers.assigned", "Assigned")); onSaved(); setOpen(false) },
-    onError: (e: any) => notify.error(e.message || "Could not assign"),
+    onError: (e: Error) => notify.error(e.message || "Could not assign"),
   })
 
   return (
