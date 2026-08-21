@@ -25,22 +25,26 @@ export function displayName(m: Pick<OrgMember, "firstName" | "lastName">): strin
 }
 
 /**
- * What to print under a name that isn't unique.
+ * What to print under a person's name.
  *
- * Two accounts can share a first name and a surname initial — and in practice
- * a whole name, when one person holds two accounts in the same organization.
- * The dashboard then shows the same label twice, in different states, and it
- * reads as one person being in two places at once rather than as two records.
+ * Everyone with a position or a specialty shows it — a roster reads far better
+ * when it says who does what, and "Electrician" under a name is useful whether
+ * or not anyone else shares that name.
  *
- * Position first, because it is the thing a colleague would actually say to
- * tell them apart. Specialty next. Role last: it is always present, so there
- * is always something, even for a member nobody has filled in a title for.
- * Deliberately NOT email — it is the most reliably unique field and the worst
+ * The fallback to ROLE is the part that stays conditional. "Member" under every
+ * name is noise: it repeats what the card already implies and pushes a line
+ * into every node to say nothing. It earns its place in exactly one case — when
+ * two people display the same name and neither has a title, so without it the
+ * dashboard shows the same label twice, in different states, and reads as one
+ * person being in two places at once.
+ *
+ * Deliberately never the email: the most reliably unique field, and the worst
  * one to paint across a shared screen.
  */
-export function disambiguatorFor(m: OrgMember): string {
+export function subtitleFor(m: OrgMember, ambiguous: boolean): string | undefined {
   const own = m.position?.trim() || m.specialty?.trim()
   if (own) return own
+  if (!ambiguous) return undefined
   return m.role === "EMPLOYEE"
     ? i18n.t("dashboard.presence.roleMember")
     : i18n.t("dashboard.presence.roleAdmin")
@@ -119,6 +123,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
     /*
       Names that more than one active member answers to.
 
+      Only decides the ROLE fallback — a title is shown to everyone who has one.
       Computed once over the whole directory rather than per card, so a member
       whose name clashes is labelled identically in every card they appear in.
       Deciding per card would label the same person inconsistently depending on
@@ -148,7 +153,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
         tag,
         currentTask,
         clockedIn,
-        ambiguousNames.has(displayName(member)) ? disambiguatorFor(member) : undefined,
+        subtitleFor(member, ambiguousNames.has(displayName(member))),
       )
 
     // The viewer is, by definition, online right now (they're looking at this

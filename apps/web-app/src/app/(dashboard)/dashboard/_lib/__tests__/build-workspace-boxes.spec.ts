@@ -1,4 +1,4 @@
-import { buildWorkspaceBoxes, displayName, disambiguatorFor, type BuildWorkspaceBoxesInput } from '../build-workspace-boxes'
+import { buildWorkspaceBoxes, displayName, subtitleFor, type BuildWorkspaceBoxesInput } from '../build-workspace-boxes'
 
 /**
  * The grouping rules the dashboard is actually judged on: a clocked-in member
@@ -205,31 +205,44 @@ describe('buildWorkspaceBoxes', () => {
 })
 
 
-describe('telling two people apart when their names do not', () => {
+describe('what goes under a name', () => {
   const m = (over: Record<string, unknown> = {}) =>
     ({ id: 'u', firstName: 'Andreas', lastName: 'Holub', role: 'EMPLOYEE', isActive: true, ...over }) as never
 
+  it('shows a title to everyone who has one, shared name or not', () => {
+    // A roster reads better when it says who does what. This is not a
+    // disambiguation feature that happens to show titles — it shows titles.
+    expect(subtitleFor(m({ position: 'Electrician' }), false)).toBe('Electrician')
+    expect(subtitleFor(m({ position: 'Electrician' }), true)).toBe('Electrician')
+  })
+
+  it('prefers the position, then the specialty', () => {
+    expect(subtitleFor(m({ position: 'Sales', specialty: 'HVAC' }), false)).toBe('Sales')
+    expect(subtitleFor(m({ position: '  ', specialty: 'HVAC' }), false)).toBe('HVAC')
+  })
+
+  it('says nothing about someone with no title and a name of their own', () => {
+    // "Member" under every name repeats what the card already implies and
+    // pushes a line into every node to say nothing.
+    expect(subtitleFor(m(), false)).toBeUndefined()
+  })
+
+  it('falls back to the role only when the name is shared and there is no title', () => {
+    // The real case: two accounts, one full name, one of them with no position.
+    // Without this they render identically, in different states, and read as
+    // one person in two places.
+    expect(subtitleFor(m({ role: 'ADMIN' }), true)).toBeTruthy()
+    expect(subtitleFor(m({ role: 'ADMIN' }), true)).not.toBe(subtitleFor(m({ position: 'Sales' }), true))
+  })
+
   it('renders the same label for two accounts of the same name', () => {
-    // The premise of the whole feature: these collide, so something else has
-    // to separate them. Both real accounts here share a FULL name, so falling
-    // back to the surname would not have helped.
+    // The premise: these collide, so something else has to separate them. Both
+    // real accounts share a FULL name, so the surname would not have helped.
     expect(displayName(m())).toBe(displayName(m({ id: 'other' })))
   })
 
-  it('prefers the position, which is what a colleague would actually say', () => {
-    expect(disambiguatorFor(m({ position: 'Sales' }))).toBe('Sales')
-  })
-
-  it('falls back to specialty, then to role, so there is always something', () => {
-    expect(disambiguatorFor(m({ position: '  ', specialty: 'Electrician' }))).toBe('Electrician')
-    // The real .eu account has neither — it must still be distinguishable.
-    expect(disambiguatorFor(m({ role: 'ADMIN' }))).toBeTruthy()
-    expect(disambiguatorFor(m({ role: 'ADMIN' }))).not.toBe(disambiguatorFor(m({ position: 'Sales' })))
-  })
-
   it('never falls back to the email', () => {
-    // The most unique field, and the worst one to paint across a shared screen.
-    expect(disambiguatorFor(m({ email: 'a.holub@hbc-group.eu' }))).not.toContain('@')
+    expect(subtitleFor(m({ email: 'a.holub@hbc-group.eu' }), true)).not.toContain('@')
   })
 
   it('survives a member with no surname', () => {
