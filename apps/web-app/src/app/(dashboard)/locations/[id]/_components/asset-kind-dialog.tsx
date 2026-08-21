@@ -241,22 +241,26 @@ export function AssetKindDialog({
                     />
                   </div>
                 </div>
-                {/* One or several. Two named choices rather than a switch: "one
-                    at a time" and "several at once" are both real answers, and a
-                    toggle labelled "multiple" makes the off state look like the
-                    absence of a decision. */}
+                {/* Phrased against the switch above it — "Someone can have it",
+                    then "How many can have it". "How many at a time" read like a
+                    rate limit: it never said what was being counted.
+
+                    Two named choices rather than a toggle, because "just one"
+                    and "more than one" are both real answers; a switch labelled
+                    "multiple" makes its off state look like a decision nobody
+                    made. */}
                 <div>
                   <Label className="text-xs text-muted-foreground">
-                    {t("assetKinds.holderCount", "How many at a time")}
+                    {t("assetKinds.holderCount", "How many can have it")}
                   </Label>
                   <div className="mt-1.5 flex gap-2">
                     <Pick
-                      label={t("assetKinds.holderOne", "One")}
+                      label={t("assetKinds.holderOne", "Just one")}
                       active={!shape.holder.multiple}
                       onClick={() => setHolder({ multiple: false })}
                     />
                     <Pick
-                      label={t("assetKinds.holderSeveral", "Several")}
+                      label={t("assetKinds.holderSeveral", "More than one")}
                       active={shape.holder.multiple}
                       onClick={() => setHolder({ multiple: true })}
                     />

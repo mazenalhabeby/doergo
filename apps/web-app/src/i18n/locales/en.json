@@ -6175,9 +6175,9 @@
     "summaryFields_other": "{{count}} details",
     "count_one": "1 inside",
     "count_other": "{{count}} inside",
-    "holderCount": "How many at a time",
-    "holderOne": "One",
-    "holderSeveral": "Several",
+    "holderCount": "How many can have it",
+    "holderOne": "Just one",
+    "holderSeveral": "More than one",
     "holderOneHint": "One van, one driver. Assigning someone new replaces whoever is there.",
     "holderSeveralHint": "A shared flat, a shift of operators — records can list more than one."
   },

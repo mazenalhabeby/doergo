@@ -6149,8 +6149,8 @@
     "summaryFields_other": "{{count}} détails",
     "count_one": "1 à l’intérieur",
     "count_other": "{{count}} à l’intérieur",
-    "holderCount": "Combien à la fois",
-    "holderOne": "Une personne",
+    "holderCount": "Combien peuvent l’avoir",
+    "holderOne": "Une seule personne",
     "holderSeveral": "Plusieurs",
     "holderOneHint": "Un véhicule, un conducteur. Désigner quelqu’un remplace la personne en place.",
     "holderSeveralHint": "Une colocation, une équipe d’opérateurs — les fiches peuvent en lister plusieurs."

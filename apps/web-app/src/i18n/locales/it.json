@@ -6149,9 +6149,9 @@
     "summaryFields_other": "{{count}} dettagli",
     "count_one": "1 dentro",
     "count_other": "{{count}} dentro",
-    "holderCount": "Quanti alla volta",
-    "holderOne": "Uno",
-    "holderSeveral": "Diversi",
+    "holderCount": "Quanti possono averlo",
+    "holderOne": "Solo uno",
+    "holderSeveral": "Più di uno",
     "holderOneHint": "Un furgone, un autista. Assegnarne uno nuovo sostituisce quello attuale.",
     "holderSeveralHint": "Un appartamento condiviso, un turno di operatori: le schede possono elencarne più di uno."
   },

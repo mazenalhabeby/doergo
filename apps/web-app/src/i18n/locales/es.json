@@ -6158,9 +6158,9 @@
     "summaryFields_other": "{{count}} datos",
     "count_one": "1 dentro",
     "count_other": "{{count}} dentro",
-    "holderCount": "Cuántos a la vez",
-    "holderOne": "Uno",
-    "holderSeveral": "Varios",
+    "holderCount": "Cuántos pueden tenerlo",
+    "holderOne": "Solo uno",
+    "holderSeveral": "Más de uno",
     "holderOneHint": "Una furgoneta, un conductor. Asignar a alguien nuevo sustituye al anterior.",
     "holderSeveralHint": "Un piso compartido, un turno de operarios: los registros pueden incluir varios."
   },

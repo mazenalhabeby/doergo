@@ -6174,8 +6174,8 @@
     "summaryFields_other": "{{count}} Angaben",
     "count_one": "1 enthalten",
     "count_other": "{{count}} enthalten",
-    "holderCount": "Wie viele gleichzeitig",
-    "holderOne": "Eine Person",
+    "holderCount": "Wie viele können es haben",
+    "holderOne": "Nur eine Person",
     "holderSeveral": "Mehrere",
     "holderOneHint": "Ein Fahrzeug, ein Fahrer. Wer neu zugewiesen wird, ersetzt die bisherige Person.",
     "holderSeveralHint": "Eine WG, eine Schicht von Bedienern — Einträge können mehrere aufführen."
