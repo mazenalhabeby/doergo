@@ -87,37 +87,52 @@ export function ModuleUsageTabs({
   return (
     <Tabs value={active} onValueChange={setChosen} className="w-full">
       {/*
-        Scrolls rather than wraps. A wrapped strip changes height as modules are
-        switched on and shifts everything below it — and this sits directly
-        above the toggles doing the switching.
+        Full width, equal columns. Sized to its content the strip read as a
+        narrow grey blob floating between two full-width cards, and left-aligned
+        two-line labels made the prices look ragged rather than tabulated.
+        Spanning the panel it introduces, in even columns, it reads as that
+        panel's header instead of as loose furniture between two things.
+
+        Equal columns rather than a scrolling row: three or four counted modules
+        is the realistic ceiling, and a grid cannot change height when one is
+        switched on — which matters, because this sits directly above the
+        toggles doing the switching.
       */}
-      <div className="overflow-x-auto">
-        <TabsList className="h-auto w-auto justify-start gap-1 p-1">
-          {priced.map((m) => {
-            const englishLabel = AVAILABLE_MODULES.find((x) => x.key === m.key)?.label ?? m.key
-            const label = t(moduleI18n.label(m.key), { defaultValue: englishLabel })
-            return (
-              <TabsTrigger key={m.key} value={m.key} className="flex-col items-start gap-0.5 px-3 py-1.5">
-                <span className="text-sm font-medium leading-none">{label}</span>
-                <span
-                  className={cn(
-                    "text-[11px] leading-none tabular-nums",
-                    // Over its allowance is the state worth noticing, so it is
-                    // the only one that gets colour.
-                    m.usageCents > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground",
-                  )}
-                >
-                  {formatCents(m.totalCents)}
-                  {t("billing.usage.perMonthShort", "/mo")}
-                </span>
-              </TabsTrigger>
-            )
-          })}
-        </TabsList>
-      </div>
+      <TabsList
+        className="grid h-auto w-full gap-1 p-1"
+        style={{ gridTemplateColumns: `repeat(${priced.length}, minmax(0, 1fr))` }}
+      >
+        {priced.map((m) => {
+          const englishLabel = AVAILABLE_MODULES.find((x) => x.key === m.key)?.label ?? m.key
+          const label = t(moduleI18n.label(m.key), { defaultValue: englishLabel })
+          return (
+            <TabsTrigger
+              key={m.key}
+              value={m.key}
+              className="flex-col items-center gap-1 px-2 py-2 data-[state=active]:shadow-sm"
+            >
+              {/* Truncates rather than wraps: "Kundenportal" and "B2C-Portal"
+                  are not the same width, and a label that wraps in one column
+                  makes every tab in the row taller. */}
+              <span className="w-full truncate text-center text-sm font-medium leading-none">{label}</span>
+              <span
+                className={cn(
+                  "text-[11px] leading-none tabular-nums",
+                  // Over its allowance is the state worth noticing, so it is
+                  // the only one that gets colour.
+                  m.usageCents > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground",
+                )}
+              >
+                {formatCents(m.totalCents)}
+                {t("billing.usage.perMonthShort", "/mo")}
+              </span>
+            </TabsTrigger>
+          )
+        })}
+      </TabsList>
 
       {priced.map((m) => (
-        <TabsContent key={m.key} value={m.key} className="mt-3">
+        <TabsContent key={m.key} value={m.key} className="mt-2">
           <ModuleUsagePanel moduleKey={m.key} units={m.units} />
         </TabsContent>
       ))}
