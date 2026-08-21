@@ -6227,7 +6227,11 @@
       "orgWideNote": "Conteggiato solo per questo spazio. Ogni spazio con {{module}} attivo paga la propria base e ha i propri {{perSpace}} gratis: quello che vedi qui è tutto.",
       "count": {
         "asset_one": "{{count}} bene",
-        "asset_other": "{{count}} beni"
+        "asset_other": "{{count}} beni",
+        "client_one": "{{count}} cliente",
+        "client_other": "{{count}} clienti",
+        "portal_one": "{{count}} portale",
+        "portal_other": "{{count}} portali"
       },
       "chargingStarts": "Ancora {{count}} prima che venga addebitato qualcosa, poi {{price}} ciascuno",
       "otherSpacesSeparate": "Gli altri spazi vengono conteggiati e addebitati separatamente",

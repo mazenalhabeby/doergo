@@ -6227,7 +6227,11 @@
       "orgWideNote": "Compté pour cet espace uniquement. Chaque espace où {{module}} est activé paie sa propre base et dispose de ses propres {{perSpace}} gratuits : ce que vous voyez ici est le total.",
       "count": {
         "asset_one": "{{count}} actif",
-        "asset_other": "{{count}} actifs"
+        "asset_other": "{{count}} actifs",
+        "client_one": "{{count}} client",
+        "client_other": "{{count}} clients",
+        "portal_one": "{{count}} portail",
+        "portal_other": "{{count}} portails"
       },
       "chargingStarts": "{{count}} de plus avant toute facturation, puis {{price}} chacun",
       "otherSpacesSeparate": "Les autres espaces sont comptés et facturés séparément",

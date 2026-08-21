@@ -1636,12 +1636,24 @@ export interface UpdateAssetInput {
   holders?: AssetHolderInput[];
 }
 
-/** Billable assets per space — see `assetsApi.getUsage`. */
-export interface AssetUsage {
+/** One counted module's numbers — the same shape for assets, clients and portals. */
+export interface ModuleUsageCounts {
   total: number;
-  /** In types with no space — billed by nobody, listed by `getOrphans`. */
+  /** Records in no space — billed by nobody. For assets, listed by `getOrphans`. */
   unassigned: number;
+  /** spaceId → how many. */
   spaces: Record<string, number>;
+}
+
+/**
+ * What each counted module has in it — see `assetsApi.getUsage`.
+ *
+ * The asset numbers are repeated at the top level because the orphan card and
+ * the space header read them there; `modules` is the shape everything new
+ * should use, keyed by the same module keys the pricing ladders are.
+ */
+export interface AssetUsage extends ModuleUsageCounts {
+  modules?: Record<string, ModuleUsageCounts>;
 }
 
 /** An asset that belongs to no space — see `assetsApi.getOrphans`. */

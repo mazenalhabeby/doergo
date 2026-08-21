@@ -215,19 +215,19 @@ describe('the usage ladder on the whole bill', () => {
     // 3 users × €9.99 = 29.97 | assets €9 + tracking €19 = €28 | 17 assets = €8.40
     const bill = orgMonthlyCost({ seatCount: 3, spaces: [{ ...withAssets[0]!, usage: { assets: 17 } }] });
     expect(bill.seatMonthlyCents).toBe(2997);
-    expect(bill.spacesMonthlyCents).toBe(2800);
+    expect(bill.spacesMonthlyCents).toBe(900 + 2500); // assets base + tracking
     expect(bill.usageMonthlyCents).toBe(840);
-    expect(bill.monthlyCents).toBe(6637);
-    expect(bill.annualCents).toBe(6637 * 10);
+    expect(bill.monthlyCents).toBe(2997 + 900 + 2500 + 840);
+    expect(bill.annualCents).toBe((2997 + 900 + 2500 + 840) * 10);
   });
 
   it('makes a space total the whole truth about that space', () => {
     // The invariant this model exists to keep: what a space costs is the sum of
     // what that space switched on, with nothing decided somewhere else.
     const cost = spaceMonthlyCost(['assets', 'tracking'], { assets: 40 });
-    expect(cost.baseMonthlyCents).toBe(900 + 1900);
+    expect(cost.baseMonthlyCents).toBe(900 + 2500);
     expect(cost.usageMonthlyCents).toBe(3600);
-    expect(cost.monthlyCents).toBe(6400);
+    expect(cost.monthlyCents).toBe(900 + 2500 + 3600);
   });
 
   it('ignores a count for a module that has no ladder', () => {
@@ -238,6 +238,121 @@ describe('the usage ladder on the whole bill', () => {
   it('stays exactly as it was for an org with no usage at all', () => {
     const bill = orgMonthlyCost({ seatCount: 3, spaces: withAssets });
     expect(bill.usageMonthlyCents).toBe(0);
-    expect(bill.monthlyCents).toBe(2997 + 2800);
+    expect(bill.monthlyCents).toBe(2997 + 900 + 2500);
+  });
+});
+
+/**
+ * The two ladders added alongside assets. Same arithmetic, two different shapes:
+ * CRM is a long tail over a big allowance, Client Portal is "first one dearer,
+ * every one after it cheaper" expressed as a single open band.
+ */
+describe('the CRM ladder', () => {
+  const BASE = 1500; // €15, and it buys the first 50 clients
+
+  it('charges nothing extra up to the allowance', () => {
+    expect(usageCost('crm', 0).monthlyCents).toBe(0);
+    expect(usageCost('crm', 50).monthlyCents).toBe(0);
+    expect(includedUnits('crm')).toBe(50);
+  });
+
+  it('has no cliff at the allowance — client 51 costs what the first 50 implicitly did', () => {
+    // €15 over 50 clients is €0.30 each, and the first band is €0.30. That
+    // equality is the design, not a coincidence: crossing 50 must not make the
+    // effective price jump, or the boundary needs explaining to every customer
+    // who reaches it.
+    const atAllowance = (BASE + usageCost('crm', 50).monthlyCents) / 50;
+    const justOver = (BASE + usageCost('crm', 51).monthlyCents) / 51;
+    expect(atAllowance).toBeCloseTo(0.3 * 100, 5);
+    expect(justOver).toBeCloseTo(0.3 * 100, 5);
+    expect(marginalUnitCents('crm', 50)).toBe(30);
+  });
+
+  it('prices 1,000 clients at €210 — 200 × 30c then 750 × 18c, plus the base', () => {
+    // 50 free. 51–250 = 200 × 30 = 6000. 251–1000 = 750 × 18 = 13500.
+    const cost = usageCost('crm', 1000);
+    expect(cost.monthlyCents).toBe(200 * 30 + 750 * 18);
+    expect(BASE + cost.monthlyCents).toBe(21000);
+  });
+
+  it('gets cheaper per client as it crosses each band, and never dearer', () => {
+    const each = (n: number) => (BASE + usageCost('crm', n).monthlyCents) / n;
+    // Flat WITHIN a band — 100 and 250 clients are both on the 30c rung, so
+    // both work out at exactly 30c. Only crossing into a cheaper band moves it.
+    expect(each(100)).toBeCloseTo(each(250), 5);
+    // Strictly cheaper across the breaks.
+    for (const [a, b] of [[250, 1000], [1000, 5000], [5000, 10000]]) {
+      expect(each(b!)).toBeLessThan(each(a!));
+    }
+  });
+
+  it('re-prices only the band it crosses into, so the bill never falls on growth', () => {
+    for (const n of [49, 50, 51, 249, 250, 251, 999, 1000, 1001, 4999, 5000, 5001]) {
+      expect(usageCost('crm', n + 1).monthlyCents).toBeGreaterThanOrEqual(
+        usageCost('crm', n).monthlyCents,
+      );
+    }
+  });
+});
+
+describe('the Client Portal ladder', () => {
+  const BASE = 4900; // €49, and it buys the first portal
+
+  it('is €49 for the first portal and €29 for every one after', () => {
+    expect(moduleMonthlyCents('b2c_portal')).toBe(BASE);
+    expect(BASE + usageCost('b2c_portal', 1).monthlyCents).toBe(4900);
+    expect(BASE + usageCost('b2c_portal', 2).monthlyCents).toBe(4900 + 2900);
+    expect(BASE + usageCost('b2c_portal', 5).monthlyCents).toBe(4900 + 4 * 2900);
+  });
+
+  it('charges the base even before a portal exists, like every other switch', () => {
+    // Switching the module on is what is being paid for; assets behaves the
+    // same way at zero. Anything else would make the toggle free until used.
+    expect(usageCost('b2c_portal', 0).monthlyCents).toBe(0);
+  });
+
+  it('tells an operator the next portal costs €29, not €49', () => {
+    expect(marginalUnitCents('b2c_portal', 1)).toBe(2900);
+    expect(marginalUnitCents('b2c_portal', 4)).toBe(2900);
+  });
+
+  it('has no further break to promise, and says so', () => {
+    // One open band: there is no cheaper rung to advertise, and the panel must
+    // not invent one.
+    expect(nextUsageBreak('b2c_portal', 3)).toBeNull();
+  });
+});
+
+describe('the modules that stayed switches', () => {
+  it('prices route tracking and time tracking level with each other', () => {
+    expect(moduleMonthlyCents('tracking')).toBe(2500);
+    expect(moduleMonthlyCents('time_tracking')).toBe(2500);
+    expect(billsByUsage('tracking')).toBe(false);
+    expect(billsByUsage('time_tracking')).toBe(false);
+  });
+
+  it('prices space sharing as a differentiator', () => {
+    expect(moduleMonthlyCents('space_sharing')).toBe(2900);
+    expect(billsByUsage('space_sharing')).toBe(false);
+  });
+});
+
+describe('a space that switched on everything counted', () => {
+  it('adds every base and every ladder, and nothing else', () => {
+    const cost = spaceMonthlyCost(['assets', 'crm', 'b2c_portal'], {
+      assets: 10,   // exactly the allowance → nothing on top
+      crm: 100,     // 50 over → 50 × 30 = 1500
+      b2c_portal: 2, // one over → 2900
+    });
+    expect(cost.baseMonthlyCents).toBe(900 + 1500 + 4900);
+    expect(cost.usageMonthlyCents).toBe(0 + 1500 + 2900);
+    expect(cost.monthlyCents).toBe(cost.baseMonthlyCents + cost.usageMonthlyCents);
+  });
+
+  it('ignores a count for a module the space has switched off', () => {
+    // Otherwise turning CRM off in a space would still bill for the clients
+    // sitting in it — the toggle has to actually stop the money.
+    const cost = spaceMonthlyCost(['assets'], { crm: 5000, b2c_portal: 9 });
+    expect(cost.usageMonthlyCents).toBe(0);
   });
 });

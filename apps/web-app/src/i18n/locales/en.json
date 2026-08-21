@@ -6218,7 +6218,11 @@
       "orgWideNote": "Counted for this space only. Every space with {{module}} on pays its own base price and gets its own {{perSpace}} free, so what you see here is all of it.",
       "count": {
         "asset_one": "{{count}} asset",
-        "asset_other": "{{count}} assets"
+        "asset_other": "{{count}} assets",
+        "client_one": "{{count}} client",
+        "client_other": "{{count}} clients",
+        "portal_one": "{{count}} portal",
+        "portal_other": "{{count}} portals"
       },
       "chargingStarts": "{{count}} more before anything is charged, then {{price}} each",
       "otherSpacesSeparate": "Other spaces are counted and charged separately",

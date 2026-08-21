@@ -6218,7 +6218,11 @@
       "orgWideNote": "Gilt nur für diesen Bereich. Jeder Bereich mit {{module}} zahlt seine eigene Grundgebühr und erhält seine eigenen {{perSpace}} kostenlos — was Sie hier sehen, ist alles.",
       "count": {
         "asset_one": "{{count}} Objekt",
-        "asset_other": "{{count}} Objekte"
+        "asset_other": "{{count}} Objekte",
+        "client_one": "{{count}} Kunde",
+        "client_other": "{{count}} Kunden",
+        "portal_one": "{{count}} Portal",
+        "portal_other": "{{count}} Portale"
       },
       "chargingStarts": "Noch {{count}}, bevor etwas berechnet wird — danach je {{price}}",
       "otherSpacesSeparate": "Andere Bereiche werden separat gezählt und berechnet",

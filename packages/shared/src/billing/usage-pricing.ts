@@ -88,6 +88,55 @@ export const MODULE_USAGE_PRICING: Record<string, UsagePrice> = {
       { upTo: null, unitCents: 30 },
     ],
   },
+
+  /*
+    CRM: €15 per space covers the first 50 clients in it, then €0.30 → €0.05.
+
+    The first band is €0.30 on purpose — €15 spread over 50 clients IS €0.30
+    each, so client 51 costs exactly what clients 1–50 implicitly did. No cliff
+    at the boundary, and nobody has to be talked through why crossing 50 made
+    the price jump. Every rung below is a genuine discount from that rate.
+
+    A tradesman with forty regulars pays €15 and never thinks about it. A firm
+    with a thousand pays €210 — about €0.21 a client — which is far less than
+    per-contact CRMs charge and, more to the point, less than the value of
+    having those thousand relationships in the same place as the work.
+
+    Deliberately NOT per seat, the usual CRM model: the people who most need a
+    client list here — a dispatcher, an office manager — are already paying for
+    a seat, and charging again for the same person to open a different tab is
+    the kind of pricing customers resent long before they cancel.
+  */
+  crm: {
+    unit: 'client',
+    included: 50,
+    bands: [
+      { upTo: 250, unitCents: 30 },
+      { upTo: 1000, unitCents: 18 },
+      { upTo: 5000, unitCents: 10 },
+      { upTo: null, unitCents: 5 },
+    ],
+  },
+
+  /*
+    Client Portal: €49 for the first, €29 for every one after it.
+
+    A ladder rather than a flat switch, because portals are not interchangeable
+    with each other the way assets are with each other. The FIRST portal is the
+    expensive part of the work — a customer-facing front door, its own branding,
+    its own intake — and the second one is largely the same machinery pointed at
+    a different audience. So the base carries the first portal and the ladder
+    prices the rest, which is what an operator running a rental portal and a
+    logistics portal actually experiences: the second one is cheaper.
+
+    Same shape as every other counted module, so it needs no special case
+    anywhere: `included: 1` means the base price already bought one.
+  */
+  b2c_portal: {
+    unit: 'portal',
+    included: 1,
+    bands: [{ upTo: null, unitCents: 2900 }],
+  },
 };
 
 /** Units a space gets before its ladder starts. Zero for a plain switch. */
@@ -261,4 +310,21 @@ export function nextUsageBreak(
  */
 export const BILLABLE_ASSET_WHERE = {
   status: { not: 'RETIRED' },
+} as const;
+
+/**
+ * A client counts while it is active. Deactivate one and it stops being billed;
+ * the record and its history stay, exactly as with a retired asset.
+ */
+export const BILLABLE_CLIENT_WHERE = {
+  isActive: true,
+} as const;
+
+/**
+ * A portal counts while it is switched on. A portal that is off serves nobody,
+ * so it is not charged for — turning it off has to be a real lever, or nobody
+ * turns anything off and the count only ever grows.
+ */
+export const BILLABLE_PORTAL_WHERE = {
+  isActive: true,
 } as const;

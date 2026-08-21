@@ -57,8 +57,10 @@ export const MODULE_MONTHLY_CENTS: Record<string, number> = {
   epics: 500,
   phases: 500,
 
-  // Collaboration.
-  space_sharing: 900,
+  // Collaboration. Sharing a space across organizations is the feature that
+  // makes two companies work in one place instead of emailing each other — it
+  // is priced as the differentiator it is, not as a toggle.
+  space_sharing: 2900,
 
   // Field service — the differentiated half, and where the margin is.
   // ServiceTitan bills per truck for this class of thing.
@@ -68,14 +70,24 @@ export const MODULE_MONTHLY_CENTS: Record<string, number> = {
   // the switches around it for exactly that reason — the module is cheap to
   // start and grows with what is in it.
   assets: 900,
-  time_tracking: 1200,
   service_reports: 1500,
-  tracking: 1900,
+  // The two that replace a second product outright — a timesheet system and a
+  // vehicle tracker are each bought separately, by the same customer, for more
+  // than this. They are level with each other because neither is the junior
+  // partner: one answers "how long", the other "where".
+  time_tracking: 2500,
+  tracking: 2500,
 
   // Client-facing — highest willingness to pay: a customer logging into the app
   // is worth more than any internal screen.
-  crm: 1900,
-  b2c_portal: 2900,
+  //
+  // Both are BASES, not whole prices; the count is charged on top (see
+  // usage-pricing.ts). `crm` is €15 covering the first 50 clients in the space,
+  // which is why it now reads lower than the switches around it — the module
+  // starts cheap and grows with the list. `b2c_portal` is €49 covering the
+  // first portal, with each additional one at €29.
+  crm: 1500,
+  b2c_portal: 4900,
 };
 
 /** A module's monthly price. An unknown key costs nothing rather than breaking a bill. */

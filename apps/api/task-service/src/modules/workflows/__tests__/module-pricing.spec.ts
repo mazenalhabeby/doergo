@@ -37,11 +37,15 @@ describe('the price list', () => {
   });
 
   it('holds the agreed prices', () => {
-    expect(moduleMonthlyCents('tracking')).toBe(1900);
+    expect(moduleMonthlyCents('tracking')).toBe(2500);
+    expect(moduleMonthlyCents('time_tracking')).toBe(2500);
+    expect(moduleMonthlyCents('space_sharing')).toBe(2900);
     expect(moduleMonthlyCents('service_reports')).toBe(1500);
-    expect(moduleMonthlyCents('time_tracking')).toBe(1200);
-    expect(moduleMonthlyCents('b2c_portal')).toBe(2900);
     expect(moduleMonthlyCents('subtasks')).toBe(300);
+    // Bases, not whole prices — the count is charged on top of each.
+    expect(moduleMonthlyCents('crm')).toBe(1500);
+    expect(moduleMonthlyCents('b2c_portal')).toBe(4900);
+    expect(moduleMonthlyCents('assets')).toBe(900);
   });
 
   it('treats an unknown module as free rather than crashing a bill', () => {
@@ -52,9 +56,10 @@ describe('the price list', () => {
 describe('what a space costs', () => {
   const field = ['checklists', 'attachments', 'tracking', 'service_reports', 'time_tracking'];
 
-  it('adds up the modules switched on — the typical field space is €55', () => {
-    // 4 + 5 + 19 + 15 + 12
-    expect(spaceMonthlyCost(field).monthlyCents).toBe(5500);
+  it('adds up the modules switched on — the typical field space is €74', () => {
+    // 4 + 5 + 25 + 15 + 25. Was €55 while route and time tracking were €19 and
+    // €12; both moved to €25, each replacing a product bought separately.
+    expect(spaceMonthlyCost(field).monthlyCents).toBe(7400);
   });
 
   it('costs less with fewer modules on', () => {
@@ -66,12 +71,14 @@ describe('what a space costs', () => {
     expect(spaceMonthlyCost(null).monthlyCents).toBe(0);
   });
 
-  it('comes to €154 with everything on', () => {
+  it('comes to €209 with everything on', () => {
     // Moves whenever a module is added, removed or repriced — that is the point.
     // 157 -> 169 when Assets (€12) arrived, back to 157 when Apartments (€12)
     // was retired into it, and 157 -> 154 when Assets became a €9 base with the
     // count priced on top of it.
-    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(15400);
+    // ...and 154 -> 209 when route/time tracking went to €25, sharing to €29,
+    // and Client Portal became a €49 base with further portals priced on top.
+    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(20900);
   });
 
   it('flags a base-only line, so a space total never reads as the whole price', () => {
@@ -90,19 +97,21 @@ describe('what a space costs', () => {
   });
 
   it('ignores a key that is not a module — an invoice line nobody could explain', () => {
-    expect(spaceMonthlyCost(['tracking', 'ghost_module']).monthlyCents).toBe(1900);
+    expect(spaceMonthlyCost(['tracking', 'ghost_module']).monthlyCents).toBe(2500);
   });
 
   it('charges a duplicated module once', () => {
-    expect(spaceMonthlyCost(['tracking', 'tracking']).monthlyCents).toBe(1900);
+    expect(spaceMonthlyCost(['tracking', 'tracking']).monthlyCents).toBe(2500);
   });
 
   it('lists the dearest line first, so a total can be checked', () => {
     const { lines } = spaceMonthlyCost(field);
+    // time_tracking and tracking are both €25 now, so the tie breaks
+    // alphabetically — a stable order keeps an invoice comparable month to month.
     expect(lines.map((l) => l.moduleKey)).toEqual([
-      'tracking', 'service_reports', 'time_tracking', 'attachments', 'checklists',
+      'time_tracking', 'tracking', 'service_reports', 'attachments', 'checklists',
     ]);
-    expect(lines.reduce((s, l) => s + l.monthlyCents, 0)).toBe(5500);
+    expect(lines.reduce((s, l) => s + l.monthlyCents, 0)).toBe(7400);
   });
 });
 
@@ -113,15 +122,15 @@ describe('what an organization pays', () => {
     { spaceId: 'b', spaceName: 'Site B', enabledModules: field },
   ];
 
-  it('is users × €9.99 plus every space — 10 users, two €55 sites = €209.90', () => {
+  it('is users × €9.99 plus every space — 10 users, two €74 sites = €247.90', () => {
     const bill = orgMonthlyCost({ seatCount: 10, spaces: twoSites });
     expect(bill.seatMonthlyCents).toBe(9990);
-    expect(bill.spacesMonthlyCents).toBe(11000);
-    expect(bill.monthlyCents).toBe(20990);
+    expect(bill.spacesMonthlyCents).toBe(14800);
+    expect(bill.monthlyCents).toBe(24790);
   });
 
   it('gives two months free on annual', () => {
-    expect(orgMonthlyCost({ seatCount: 10, spaces: twoSites }).annualCents).toBe(20990 * 10);
+    expect(orgMonthlyCost({ seatCount: 10, spaces: twoSites }).annualCents).toBe(24790 * 10);
   });
 
   it('reports the halves as well as the total', () => {
@@ -129,7 +138,7 @@ describe('what an organization pays', () => {
     const bill = orgMonthlyCost({ seatCount: 10, spaces: twoSites });
     expect(bill.seatMonthlyCents + bill.spacesMonthlyCents).toBe(bill.monthlyCents);
     expect(bill.spaces).toHaveLength(2);
-    expect(bill.spaces[0]!.cost.monthlyCents).toBe(5500);
+    expect(bill.spaces[0]!.cost.monthlyCents).toBe(7400);
   });
 
   it('bills nothing for an organization with nobody and nothing', () => {

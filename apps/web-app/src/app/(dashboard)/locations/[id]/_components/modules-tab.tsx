@@ -60,24 +60,36 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
   const costChanged = liveCost.monthlyCents !== savedCost.monthlyCents
 
   /*
-    The counted modules — assets today — need a number the toggles cannot supply.
+    The counted modules — assets, CRM clients, portals — need numbers the
+    toggles cannot supply.
 
-    Fetched only when one of them is actually in play (switched on, or being
-    switched on right now), so a space that never touches assets never pays for
-    the query. Counts come back per space; this screen uses its own, because the
-    base price, the free allowance and the ladder are all per space.
+    One request covers all three, fetched only when at least one of them is in
+    play, so a space that touches none of them never pays for the query. Counts
+    come back per space; this screen uses its own, because the base price, the
+    free allowance and the ladder are all per space.
   */
   const usageModules = enabledModules.filter(billsByUsage)
-  const { data: assetUsage } = useQuery({
-    queryKey: ["asset-usage"],
+  const { data: usageData } = useQuery({
+    queryKey: ["module-usage"],
     queryFn: () => assetsApi.getUsage(),
-    enabled: usageModules.includes("assets"),
+    enabled: usageModules.length > 0,
     staleTime: 60000,
   })
-  const assetUnits = assetUsage?.spaces?.[space.id] ?? 0
+
+  /*
+    This space's count for a module. Falls back to the top-level asset numbers
+    so a client still reads the right figure against a server that predates
+    `modules` — during a rolling deploy that is a real window, and the wrong
+    answer here is a wrong price on screen rather than a broken page.
+  */
+  const unitsFor = (key: string) =>
+    usageData?.modules?.[key]?.spaces?.[space.id] ??
+    (key === "assets" ? usageData?.spaces?.[space.id] ?? 0 : 0)
+
+  const usageUnits = Object.fromEntries(usageModules.map((k) => [k, unitsFor(k)]))
 
   // What this space really costs: its switches plus what its own counts add.
-  const liveUsageCents = spaceMonthlyCost(enabledModules, { assets: assetUnits }).usageMonthlyCents
+  const liveUsageCents = spaceMonthlyCost(enabledModules, usageUnits).usageMonthlyCents
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) => {
@@ -161,9 +173,10 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {/* The counted modules, priced in full. Directly under the space total,
           because that total is only their BASE and a number that is not the
           whole number has to be followed immediately by the rest of it. */}
-      {usageModules.includes("assets") && assetUsage && (
-        <ModuleUsagePanel moduleKey="assets" units={assetUnits} />
-      )}
+      {usageData &&
+        usageModules.map((key) => (
+          <ModuleUsagePanel key={key} moduleKey={key} units={unitsFor(key)} />
+        ))}
 
       {/* Presets — one click to set a sensible bundle */}
       <div className="space-y-1.5">
@@ -239,9 +252,9 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                       the largest bill. */}
                   {billsByUsage(mod.key) && (
                     <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                      {assetUsage && marginalUnitCents(mod.key, assetUnits) > 0
+                      {usageData && marginalUnitCents(mod.key, unitsFor(mod.key)) > 0
                         ? t("billing.usage.perUnitShort", "+{{price}} each", {
-                            price: formatCents(marginalUnitCents(mod.key, assetUnits)),
+                            price: formatCents(marginalUnitCents(mod.key, unitsFor(mod.key))),
                           })
                         : t("billing.usage.included", "First {{count}} included", {
                             count: includedUnits(mod.key),
