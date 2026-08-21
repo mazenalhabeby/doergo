@@ -6247,5 +6247,26 @@
     "code": "Il suo codice",
     "handOver": "Consegnaglielo — non verrà mostrato di nuovo.",
     "alsoEmailed": "Inviato anche a {{email}}."
+  },
+  "orphanAssets": {
+    "title_one": "{{count}} bene non è in nessuno spazio",
+    "title_other": "{{count}} beni non sono in nessuno spazio",
+    "subtitle": "Non compaiono in nessuna scheda Beni, ma continuano a incidere su quanto paghi. Spostali qui oppure eliminali.",
+    "review": "Esamina",
+    "dialogTitle": "Beni senza spazio",
+    "dialogHint": "Scegli un tipo per spostare un bene in questo spazio, oppure eliminalo. Cronologia e attività lo seguono.",
+    "noTypes": "Questo spazio non ha ancora tipi di bene. Creane uno prima, oppure elimina questi record.",
+    "moveInto": "Sposta in…",
+    "move": "Sposta",
+    "moved": "Spostato in questo spazio",
+    "moveFailed": "Impossibile spostare questo bene",
+    "deleted": "Eliminato",
+    "deleteFailed": "Impossibile eliminare questo bene",
+    "noType": "Nessun tipo",
+    "taskCount_one": "{{count}} attività",
+    "taskCount_other": "{{count}} attività",
+    "partCount_one": "{{count}} parte all’interno",
+    "partCount_other": "{{count}} parti all’interno",
+    "confirmDelete": "Eliminare?"
   }
 }

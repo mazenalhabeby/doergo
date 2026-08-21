@@ -1637,6 +1637,18 @@ export interface UpdateAssetInput {
   typeId?: string | null;
 }
 
+/** An asset that belongs to no space — see `assetsApi.getOrphans`. */
+export interface OrphanAsset {
+  id: string;
+  name: string;
+  status: AssetStatus;
+  serialNumber: string | null;
+  createdAt: string;
+  category: { id: string; name: string } | null;
+  type: { id: string; name: string } | null;
+  _count: { tasks: number; children: number };
+}
+
 export interface AssetsQueryParams {
   categoryId?: string;
   typeId?: string;
@@ -1650,6 +1662,27 @@ export interface AssetsQueryParams {
 
 // Assets API methods
 export const assetsApi = {
+  // ============================================
+  // ORPHANS — assets that belong to no space
+  // ============================================
+
+  /**
+   * Assets no space can show.
+   *
+   * A type carries the space, so an asset whose type has none (or which lost
+   * its type) sits outside every space's Assets tab while still being billed.
+   * This is the list that makes them reachable again.
+   */
+  getOrphans: async () => {
+    const response = await api.get<{ success: boolean; data: OrphanAsset[] }>('/assets/orphans');
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data?.data ?? [];
+  },
+
   // ============================================
   // BILLING USAGE
   // ============================================

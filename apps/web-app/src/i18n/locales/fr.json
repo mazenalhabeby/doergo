@@ -6247,5 +6247,26 @@
     "code": "Son code",
     "handOver": "Remettez-le-lui — il ne sera plus affiché.",
     "alsoEmailed": "Également envoyé à {{email}}."
+  },
+  "orphanAssets": {
+    "title_one": "{{count}} actif n’appartient à aucun espace",
+    "title_other": "{{count}} actifs n’appartiennent à aucun espace",
+    "subtitle": "Ils n’apparaissent dans aucun onglet Actifs, mais comptent toujours dans ce que vous payez. Déplacez-les ici ou supprimez-les.",
+    "review": "Examiner",
+    "dialogTitle": "Actifs sans espace",
+    "dialogHint": "Choisissez un type pour déplacer un actif dans cet espace, ou supprimez-le. Son historique et ses tâches le suivent.",
+    "noTypes": "Cet espace n’a pas encore de types d’actif. Créez-en un d’abord, ou supprimez ces enregistrements.",
+    "moveInto": "Déplacer vers…",
+    "move": "Déplacer",
+    "moved": "Déplacé dans cet espace",
+    "moveFailed": "Impossible de déplacer cet actif",
+    "deleted": "Supprimé",
+    "deleteFailed": "Impossible de supprimer cet actif",
+    "noType": "Aucun type",
+    "taskCount_one": "{{count}} tâche",
+    "taskCount_other": "{{count}} tâches",
+    "partCount_one": "{{count}} pièce à l’intérieur",
+    "partCount_other": "{{count}} pièces à l’intérieur",
+    "confirmDelete": "Supprimer ?"
   }
 }

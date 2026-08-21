@@ -6256,5 +6256,26 @@
     "code": "Su código",
     "handOver": "Entrégueselo — no se vuelve a mostrar.",
     "alsoEmailed": "También enviado a {{email}}."
+  },
+  "orphanAssets": {
+    "title_one": "{{count}} activo no está en ningún espacio",
+    "title_other": "{{count}} activos no están en ningún espacio",
+    "subtitle": "No aparecen en ninguna pestaña de Activos, pero siguen contando en lo que pagas. Muévelos aquí o elimínalos.",
+    "review": "Revisar",
+    "dialogTitle": "Activos sin espacio",
+    "dialogHint": "Elige un tipo para mover un activo a este espacio, o elimínalo. Su historial y sus tareas van con él.",
+    "noTypes": "Este espacio aún no tiene tipos de activo. Crea uno primero o elimina estos registros.",
+    "moveInto": "Mover a…",
+    "move": "Mover",
+    "moved": "Movido a este espacio",
+    "moveFailed": "No se pudo mover este activo",
+    "deleted": "Eliminado",
+    "deleteFailed": "No se pudo eliminar este activo",
+    "noType": "Sin tipo",
+    "taskCount_one": "{{count}} tarea",
+    "taskCount_other": "{{count}} tareas",
+    "partCount_one": "{{count}} pieza dentro",
+    "partCount_other": "{{count}} piezas dentro",
+    "confirmDelete": "¿Eliminar?"
   }
 }

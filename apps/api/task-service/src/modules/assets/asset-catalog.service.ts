@@ -211,13 +211,23 @@ export class AssetCatalogService {
       throw new ForbiddenException('Category does not belong to your organization');
     }
 
-    // Warn if there are assets (they will be orphaned, not deleted)
+    /*
+      A type may only be deleted once it is empty.
+
+      This used to detach its assets instead — categoryId to null — and that is
+      where every orphaned asset came from. The space lives on the TYPE, so an
+      asset without one belongs to no space: it disappears from every screen
+      while remaining a real record, still attached to its tasks, and still
+      counted on the bill. Silently invisible and chargeable.
+
+      Refusing is the same rule a space already follows (empty-only hard
+      delete), and it leaves the person with a choice they can actually act on:
+      move the assets into another type, or delete them first.
+    */
     if (category._count.assets > 0) {
-      // Set assets' categoryId to null instead of blocking delete
-      await this.prisma.asset.updateMany({
-        where: { categoryId: data.id },
-        data: { categoryId: null, typeId: null },
-      });
+      throw new BadRequestException(
+        `This type still holds ${category._count.assets} ${category._count.assets === 1 ? 'asset' : 'assets'}. Move or delete them first.`,
+      );
     }
 
     await this.prisma.assetCategory.delete({ where: { id: data.id } });

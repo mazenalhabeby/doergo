@@ -50,6 +50,12 @@ export class AssetsController {
     return this.assetsService.findOne(data);
   }
 
+  /** Assets in no space — invisible on every screen, still on the bill. */
+  @MessagePattern({ cmd: 'list_orphan_assets' })
+  async listOrphans(@Payload() data: any) {
+    return this.assetsService.listOrphans(data);
+  }
+
   /** How many assets this org is billed for — the count only; pricing is shared. */
   @MessagePattern({ cmd: 'asset_billing_usage' })
   async billingUsage(@Payload() data: any) {

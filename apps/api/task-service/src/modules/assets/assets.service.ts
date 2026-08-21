@@ -396,6 +396,47 @@ export class AssetsService {
   }
 
   /**
+   * Assets that belong to no space, and so appear on no screen.
+   *
+   * A type carries the space; an asset reaches its space through its type. Rows
+   * created before types were space-scoped — and any asset that lost its type
+   * when one was deleted — therefore sit outside every space's Assets tab while
+   * still being real records, still linked to tasks, and still counted on the
+   * bill. Invisible and chargeable is the worst pair of properties a record can
+   * have, so they are listed here to be moved into a space or deleted.
+   *
+   * Top-level only, exactly like the billing count: a part inside a machine is
+   * reached through the machine, so moving the machine takes it with it.
+   */
+  async listOrphans(data: { userId: string; userRole: string; organizationId: string; canViewAllTasks?: boolean }) {
+    this.access.assertMay(data as any, 'view assets');
+
+    const assets = await this.prisma.asset.findMany({
+      where: {
+        organizationId: data.organizationId,
+        parentId: null,
+        OR: [{ categoryId: null }, { category: { spaceId: null } }],
+      },
+      // Capped rather than paged: this is a cleanup list that should end at
+      // zero, and a page control on a list nobody wants to have is noise.
+      take: 200,
+      orderBy: [{ createdAt: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        serialNumber: true,
+        createdAt: true,
+        category: { select: { id: true, name: true } },
+        type: { select: { id: true, name: true } },
+        _count: { select: { tasks: true, children: true } },
+      },
+    });
+
+    return success(assets);
+  }
+
+  /**
    * Get a single asset by ID
    */
   async findOne(data: {

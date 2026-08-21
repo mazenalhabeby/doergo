@@ -6272,5 +6272,26 @@
     "code": "Sein Code",
     "handOver": "Geben Sie ihn weiter — er wird nicht erneut angezeigt.",
     "alsoEmailed": "Auch an {{email}} gesendet."
+  },
+  "orphanAssets": {
+    "title_one": "{{count}} Objekt gehört zu keinem Bereich",
+    "title_other": "{{count}} Objekte gehören zu keinem Bereich",
+    "subtitle": "Sie erscheinen in keinem Assets-Tab, zählen aber weiterhin zu Ihren Kosten. Verschieben Sie sie hierher oder löschen Sie sie.",
+    "review": "Ansehen",
+    "dialogTitle": "Objekte ohne Bereich",
+    "dialogHint": "Wählen Sie einen Typ, um ein Objekt in diesen Bereich zu verschieben, oder löschen Sie es. Verlauf und Aufgaben kommen mit.",
+    "noTypes": "Dieser Bereich hat noch keine Objekttypen. Legen Sie zuerst einen an oder löschen Sie diese Einträge.",
+    "moveInto": "Verschieben nach …",
+    "move": "Verschieben",
+    "moved": "In diesen Bereich verschoben",
+    "moveFailed": "Objekt konnte nicht verschoben werden",
+    "deleted": "Gelöscht",
+    "deleteFailed": "Objekt konnte nicht gelöscht werden",
+    "noType": "Kein Typ",
+    "taskCount_one": "{{count}} Aufgabe",
+    "taskCount_other": "{{count}} Aufgaben",
+    "partCount_one": "{{count}} Teil enthalten",
+    "partCount_other": "{{count}} Teile enthalten",
+    "confirmDelete": "Löschen?"
   }
 }

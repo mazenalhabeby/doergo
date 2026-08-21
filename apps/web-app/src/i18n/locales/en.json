@@ -6273,5 +6273,26 @@
     "code": "Their code",
     "handOver": "Hand this to them — it is not shown again.",
     "alsoEmailed": "Also emailed to {{email}}."
+  },
+  "orphanAssets": {
+    "title_one": "{{count}} asset is not in any space",
+    "title_other": "{{count}} assets are not in any space",
+    "subtitle": "They appear on no Assets tab, but they still count towards what you pay. Move them here or delete them.",
+    "review": "Review",
+    "dialogTitle": "Assets without a space",
+    "dialogHint": "Pick a type to move an asset into this space, or delete it. Its history and tasks come with it.",
+    "noTypes": "This space has no asset types yet. Create one first, or delete these records.",
+    "moveInto": "Move into…",
+    "move": "Move",
+    "moved": "Moved into this space",
+    "moveFailed": "Could not move this asset",
+    "deleted": "Deleted",
+    "deleteFailed": "Could not delete this asset",
+    "noType": "No type",
+    "taskCount_one": "{{count}} task",
+    "taskCount_other": "{{count}} tasks",
+    "partCount_one": "{{count}} part inside",
+    "partCount_other": "{{count}} parts inside",
+    "confirmDelete": "Delete?"
   }
 }

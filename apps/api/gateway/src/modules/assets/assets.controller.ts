@@ -85,6 +85,19 @@ export class AssetsController {
     });
   }
 
+  /** Also before `:id` — see the note above. */
+  @Get('orphans')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Assets that belong to no space' })
+  async listOrphans(@Request() req: any) {
+    return this.assetsService.listOrphans({
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get asset by ID' })

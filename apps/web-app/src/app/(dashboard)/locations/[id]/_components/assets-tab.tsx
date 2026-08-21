@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { SectionHeader, EmptyState } from "./section-header"
 import { AssetKindDialog } from "./asset-kind-dialog"
 import { AssetRecordDialog, type AssetRecord } from "@/components/assets/asset-record-dialog"
+import { OrphanAssetsCard } from "./orphan-assets-card"
 
 /**
  * What this space owns.
@@ -73,6 +74,11 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
           />
         }
       />
+
+      {/* Assets that belong to no space, and so show on no other screen. Above
+          the types rather than below them: it is a problem to clear, not a
+          section to browse, and nothing under a list of cards gets read. */}
+      <OrphanAssetsCard spaceId={spaceId} types={kinds} />
 
       {kindsQ.isLoading ? (
         <div className="space-y-2">
