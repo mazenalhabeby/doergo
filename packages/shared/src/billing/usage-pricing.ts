@@ -11,19 +11,21 @@
  * So the module keeps its (small) base price, and the count is priced on top,
  * on a ladder that gets cheaper as it grows:
  *
- *     bill = Σ spaces ( base ) + Σ bands ( units in band × band price )
+ *     space bill = base + Σ bands ( units in band × band price )
  *
- * TWO LEVELS, deliberately, because the two halves answer to different things:
+ * EVERYTHING IS PER SPACE — the base, the included units, and the ladder — and
+ * that consistency is the point. The module is switched on per space and paid
+ * for per space, so counting somewhere else to decide the rate makes the one
+ * number on the screen impossible to check: the person looking at a space can
+ * see what is in it, and cannot see what is in the others.
  *
- *   • The ALLOWANCE follows the base price. Every space that switches the
- *     module on pays its base, so every space that pays gets its own included
- *     units. Pooling it would bill five small sites with eight assets each for
- *     thirty assets, while one site with eight pays nothing — the same product,
- *     more money, for being organised into sites.
- *   • The LADDER is pooled across the organization. Priced per space, a
- *     landlord with five hundred flats over ten sites is billed as ten small
- *     customers and never reaches the cheap bands — punished, again, for how
- *     the work is arranged rather than for how much of it there is.
+ * An earlier version pooled the ladder across the organization, so a landlord
+ * with five hundred flats over ten sites reached the cheap bands instead of
+ * being billed as ten small customers. It is a real saving — around half — but
+ * it cost the invariant every other module keeps, that a space's price is the
+ * sum of what that space switched on, and it made the panel need two counts to
+ * explain one number. Per space it still lands near €1.14 an asset at that
+ * size, which is where per-unit software of this kind sits anyway.
  *
  * GRADUATED, like income tax: crossing into a cheaper band re-prices only the
  * units in that band, never the ones below it. The alternative — one rate for
@@ -60,7 +62,7 @@ export interface UsageBand {
 export interface UsagePrice {
   /** What is being counted, for labels and i18n keys: `asset`. */
   unit: string;
-  /** Units each space's base price covers, charged at nothing. */
+  /** Units the space's base price covers, charged at nothing. */
   included: number;
   /** Ascending, the last one open-ended. */
   bands: UsageBand[];
@@ -70,9 +72,10 @@ export interface UsagePrice {
  * The ladders. One entry per module that bills by use — everything absent from
  * this table is a plain switch and is priced by MODULE_MONTHLY_CENTS alone.
  *
- * Assets: €9/space base covers the first 10, then €1.20 → €0.30 as it grows.
- * At ten assets it costs nothing extra; at a thousand it works out near €0.59
- * each, which is under what per-unit property software charges for far less.
+ * Assets: €9 per space covers the first 10 in it, then €1.20 → €0.30 as that
+ * space grows. Ten assets in a space cost nothing extra; a thousand in one
+ * works out near €0.59 each, under what per-unit property software charges for
+ * far less.
  */
 export const MODULE_USAGE_PRICING: Record<string, UsagePrice> = {
   assets: {
@@ -87,19 +90,9 @@ export const MODULE_USAGE_PRICING: Record<string, UsagePrice> = {
   },
 };
 
-/**
- * Units included before the ladder starts.
- *
- * One allowance per space that pays the module's base price — see the note
- * above. `spacesWithModule` is clamped to at least one so a caller that does
- * not know (or care) how many spaces are involved gets the single-space
- * allowance rather than nothing.
- */
-export function includedUnits(moduleKey: string, spacesWithModule = 1): number {
-  const price = usagePriceFor(moduleKey);
-  if (!price) return 0;
-  const spaces = Math.max(1, Math.floor(Number(spacesWithModule) || 0));
-  return price.included * spaces;
+/** Units a space gets before its ladder starts. Zero for a plain switch. */
+export function includedUnits(moduleKey: string): number {
+  return usagePriceFor(moduleKey)?.included ?? 0;
 }
 
 /** The ladder for a module, or `null` when it is a plain on/off switch. */
@@ -125,11 +118,9 @@ export interface UsageCostLine {
 export interface UsageCost {
   moduleKey: string;
   unit: string;
-  /** What was counted. */
+  /** What was counted in this space. */
   units: number;
-  /** Spaces paying the module's base price, and so carrying an allowance each. */
-  spacesWithModule: number;
-  /** How many of those were free — the allowance for all of those spaces. */
+  /** How many of those were free. */
   included: number;
   /** How many were charged for. */
   billableUnits: number;
@@ -145,11 +136,10 @@ export interface UsageCost {
   lines: UsageCostLine[];
 }
 
-const EMPTY = (moduleKey: string, unit: string, included: number, spacesWithModule: number): UsageCost => ({
+const EMPTY = (moduleKey: string, unit: string, included: number): UsageCost => ({
   moduleKey,
   unit,
   units: 0,
-  spacesWithModule,
   included,
   billableUnits: 0,
   monthlyCents: 0,
@@ -165,18 +155,17 @@ const EMPTY = (moduleKey: string, unit: string, included: number, spacesWithModu
  * returning zero rather than throwing keeps an unknown key off an invoice
  * instead of taking the invoice down.
  */
-export function usageCost(moduleKey: string, units: number, spacesWithModule = 1): UsageCost {
+export function usageCost(moduleKey: string, units: number): UsageCost {
   const price = usagePriceFor(moduleKey);
-  if (!price) return EMPTY(moduleKey, 'unit', 0, 0);
+  if (!price) return EMPTY(moduleKey, 'unit', 0);
 
-  const spaces = Math.max(1, Math.floor(Number(spacesWithModule) || 0));
-  const included = includedUnits(moduleKey, spaces);
+  const included = price.included;
   const count = Math.max(0, Math.floor(Number(units) || 0));
   if (count <= included) {
     return {
-      ...EMPTY(moduleKey, price.unit, included, spaces),
+      ...EMPTY(moduleKey, price.unit, included),
       units: count,
-      marginalUnitCents: marginalUnitCents(moduleKey, count, spaces),
+      marginalUnitCents: marginalUnitCents(moduleKey, count),
     };
   }
 
@@ -203,11 +192,10 @@ export function usageCost(moduleKey: string, units: number, spacesWithModule = 1
     moduleKey,
     unit: price.unit,
     units: count,
-    spacesWithModule: spaces,
     included,
     billableUnits: count - included,
     monthlyCents,
-    marginalUnitCents: marginalUnitCents(moduleKey, count, spaces),
+    marginalUnitCents: marginalUnitCents(moduleKey, count),
     effectiveUnitCents: Math.round(monthlyCents / count),
     lines,
   };
@@ -217,11 +205,11 @@ export function usageCost(moduleKey: string, units: number, spacesWithModule = 1
  * What the NEXT unit costs — the price of the decision somebody is actually
  * making, which is never the average and rarely the headline rate.
  */
-export function marginalUnitCents(moduleKey: string, currentUnits: number, spacesWithModule = 1): number {
+export function marginalUnitCents(moduleKey: string, currentUnits: number): number {
   const price = usagePriceFor(moduleKey);
   if (!price) return 0;
   const next = Math.max(0, Math.floor(Number(currentUnits) || 0)) + 1;
-  if (next <= includedUnits(moduleKey, spacesWithModule)) return 0;
+  if (next <= price.included) return 0;
   for (const band of price.bands) {
     if (band.upTo == null || next <= band.upTo) return band.unitCents;
   }
@@ -238,7 +226,6 @@ export function marginalUnitCents(moduleKey: string, currentUnits: number, space
 export function nextUsageBreak(
   moduleKey: string,
   currentUnits: number,
-  spacesWithModule = 1,
 ): { atUnits: number; unitsAway: number; unitCents: number } | null {
   const price = usagePriceFor(moduleKey);
   if (!price) return null;
@@ -246,7 +233,7 @@ export function nextUsageBreak(
 
   // The next unit that would actually be CHARGED — below the included allowance
   // the ladder has not started, so the break is measured from where it does.
-  const nextUnit = Math.max(count, includedUnits(moduleKey, spacesWithModule)) + 1;
+  const nextUnit = Math.max(count, price.included) + 1;
   const idx = price.bands.findIndex((b) => b.upTo == null || nextUnit <= b.upTo);
   const band = idx >= 0 ? price.bands[idx] : undefined;
   const following = idx >= 0 ? price.bands[idx + 1] : undefined;

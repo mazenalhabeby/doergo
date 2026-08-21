@@ -74,15 +74,9 @@ export class AssetsController {
   */
   @Get('usage')
   @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: "How many assets this organization is billed for" })
-  @ApiQuery({ name: 'spaceId', required: false, description: "Also return that space's own share of the count" })
-  async billingUsage(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
-    return this.assetsService.billingUsage({
-      organizationId: req.user.organizationId,
-      // A space id from the URL only ever narrows a count already scoped to the
-      // caller's org, so a foreign id returns zero rather than anything leaking.
-      spaceId: spaceId || null,
-    });
+  @ApiOperation({ summary: 'Billable assets per space' })
+  async billingUsage(@Request() req: any) {
+    return this.assetsService.billingUsage({ organizationId: req.user.organizationId });
   }
 
   /** Also before `:id` — see the note above. */

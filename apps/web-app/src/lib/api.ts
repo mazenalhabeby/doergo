@@ -1637,6 +1637,14 @@ export interface UpdateAssetInput {
   typeId?: string | null;
 }
 
+/** Billable assets per space — see `assetsApi.getUsage`. */
+export interface AssetUsage {
+  total: number;
+  /** In types with no space — billed by nobody, listed by `getOrphans`. */
+  unassigned: number;
+  spaces: Record<string, number>;
+}
+
 /** An asset that belongs to no space — see `assetsApi.getOrphans`. */
 export interface OrphanAsset {
   id: string;
@@ -1688,23 +1696,19 @@ export const assetsApi = {
   // ============================================
 
   /**
-   * How many assets the organization is billed for, this space's share, and how
-   * many spaces are paying the module's base price (one allowance each).
+   * Billable assets per space — `{ total, unassigned, spaces: { [spaceId]: n } }`.
    *
-   * Counts only — the ladder that turns them into money lives in
+   * Counts only. The ladder that turns them into money lives in
    * `@hbcfield/shared/client`, so the screen and the invoice cannot disagree.
    */
-  getUsage: async (spaceId?: string) => {
-    const response = await api.get<{
-      success: boolean;
-      data: { orgUnits: number; spaceUnits: number | null; spacesWithModule: number };
-    }>(spaceId ? `/assets/usage?spaceId=${encodeURIComponent(spaceId)}` : '/assets/usage');
+  getUsage: async () => {
+    const response = await api.get<{ success: boolean; data: AssetUsage }>('/assets/usage');
 
     if (response.error) {
       throw new Error(response.error);
     }
 
-    return response.data?.data ?? { orgUnits: 0, spaceUnits: null, spacesWithModule: 0 };
+    return response.data?.data ?? { total: 0, unassigned: 0, spaces: {} };
   },
 
   // ============================================

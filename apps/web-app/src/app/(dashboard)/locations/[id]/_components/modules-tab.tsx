@@ -64,17 +64,20 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
 
     Fetched only when one of them is actually in play (switched on, or being
     switched on right now), so a space that never touches assets never pays for
-    the query. It is a count of the whole ORGANIZATION, because that is the
-    level the volume ladder is charged at; the space's own share comes back with
-    it so the screen can say how much of the bill is coming from here.
+    the query. Counts come back per space; this screen uses its own, because the
+    base price, the free allowance and the ladder are all per space.
   */
   const usageModules = enabledModules.filter(billsByUsage)
   const { data: assetUsage } = useQuery({
-    queryKey: ["asset-usage", space.id],
-    queryFn: () => assetsApi.getUsage(space.id),
+    queryKey: ["asset-usage"],
+    queryFn: () => assetsApi.getUsage(),
     enabled: usageModules.includes("assets"),
     staleTime: 60000,
   })
+  const assetUnits = assetUsage?.spaces?.[space.id] ?? 0
+
+  // What this space really costs: its switches plus what its own counts add.
+  const liveUsageCents = spaceMonthlyCost(enabledModules, { assets: assetUnits }).usageMonthlyCents
 
   const toggleModule = (key: string) => {
     setEnabledModules((prev) => {
@@ -125,7 +128,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
             {t("billing.spaceCostLabel", "This space costs")}
           </p>
           <p className="text-2xl font-semibold tabular-nums text-foreground">
-            {formatCents(liveCost.monthlyCents)}
+            {formatCents(liveCost.monthlyCents + liveUsageCents)}
             <span className="ml-1 text-sm font-normal text-muted-foreground">
               {t("billing.perMonth", "/month")}
             </span>
@@ -137,13 +140,13 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
             // reads as a number already applied.
             <p className="text-amber-600 dark:text-amber-500">
               {t("billing.spaceCostPending", "Was {{was}} — saved when you save modules", {
-                was: formatCents(savedCost.monthlyCents),
+                was: formatCents(savedCost.monthlyCents + (saved.includes("assets") ? liveUsageCents : 0)),
               })}
             </p>
           ) : (
             <p>
               {usageModules.length > 0
-                ? t("billing.usage.plusCounted", "Plus what the counted modules below add")
+                ? t("billing.usage.includesCounted", "Includes what this space's assets add")
                 : t("billing.spaceCostPerModule", "Each module adds its own price")}
             </p>
           )}
@@ -159,15 +162,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
           because that total is only their BASE and a number that is not the
           whole number has to be followed immediately by the rest of it. */}
       {usageModules.includes("assets") && assetUsage && (
-        <ModuleUsagePanel
-          moduleKey="assets"
-          orgUnits={assetUsage.orgUnits}
-          spaceUnits={assetUsage.spaceUnits}
-          /* The server counts the SAVED state. Switching the module on here adds
-             this space's allowance straight away, because the panel exists to
-             answer "what will this cost me" before Save, not after it. */
-          spacesWithModule={assetUsage.spacesWithModule + (saved.includes("assets") ? 0 : 1)}
-        />
+        <ModuleUsagePanel moduleKey="assets" units={assetUnits} />
       )}
 
       {/* Presets — one click to set a sensible bundle */}
@@ -244,14 +239,12 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                       the largest bill. */}
                   {billsByUsage(mod.key) && (
                     <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                      {assetUsage && marginalUnitCents(mod.key, assetUsage.orgUnits, assetUsage.spacesWithModule) > 0
+                      {assetUsage && marginalUnitCents(mod.key, assetUnits) > 0
                         ? t("billing.usage.perUnitShort", "+{{price}} each", {
-                            price: formatCents(
-                              marginalUnitCents(mod.key, assetUsage.orgUnits, assetUsage.spacesWithModule),
-                            ),
+                            price: formatCents(marginalUnitCents(mod.key, assetUnits)),
                           })
                         : t("billing.usage.included", "First {{count}} included", {
-                            count: includedUnits(mod.key, assetUsage?.spacesWithModule ?? 1),
+                            count: includedUnits(mod.key),
                           })}
                     </span>
                   )}

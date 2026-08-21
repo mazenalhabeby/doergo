@@ -8,6 +8,7 @@ import {
   marginalUnitCents,
   nextUsageBreak,
   orgMonthlyCost,
+  spaceMonthlyCost,
   moduleMonthlyCents,
 } from '@hbcfield/shared';
 
@@ -116,51 +117,30 @@ describe('the assets ladder', () => {
     expect(marginalUnitCents('not_a_module', 10)).toBe(0);
   });
 
-  it('gives every space that pays the base price its own allowance', () => {
-    expect(includedUnits('assets', 1)).toBe(10);
-    expect(includedUnits('assets', 5)).toBe(50);
-    // A caller that does not know how many spaces are involved gets one space's
-    // worth, never nothing — an allowance of zero would bill from asset one.
-    expect(includedUnits('assets', 0)).toBe(10);
-    expect(includedUnits('assets', -3)).toBe(10);
-    expect(includedUnits('not_a_module', 5)).toBe(0);
+  it('gives each space its own allowance', () => {
+    expect(includedUnits('assets')).toBe(10);
+    expect(includedUnits('not_a_module')).toBe(0);
   });
 
-  it('does not charge small sites for units a single site would get free', () => {
-    // 5 spaces × 8 assets = 40, and 5 × 10 included = 50. This is the case the
-    // pooled allowance got wrong: it billed €36 for assets that cost nothing
-    // had the same 40 been in one space.
-    expect(usageCost('assets', 40, 5).monthlyCents).toBe(0);
-    expect(usageCost('assets', 30, 3).monthlyCents).toBe(0);
-    // and pooling it would NOT have been free, which is why this test exists
-    expect(usageCost('assets', 40, 1).monthlyCents).toBe(3600);
+  it('prices each space on its own count, so small sites stay free', () => {
+    // Five sites with eight assets each: every one of them is inside its own
+    // allowance, so the ladder charges nothing anywhere.
+    expect(usageCost('assets', 8).monthlyCents).toBe(0);
+    // The same forty assets in ONE space are not free — 30 past the allowance.
+    expect(usageCost('assets', 40).monthlyCents).toBe(3600);
   });
 
-  it('still pools the LADDER, so splitting sites does not lose the volume break', () => {
-    // 10 spaces × 50 = 500 assets. 100 included, then 150 × €0.80 + 250 × €0.50.
-    expect(usageCost('assets', 500, 10).monthlyCents).toBe(24500);
-    // Priced as ten separate small customers it would be far more.
-    expect(usageCost('assets', 50, 1).monthlyCents * 10).toBe(48000);
-  });
-
-  it('measures the marginal rate and the next break from the real allowance', () => {
-    expect(marginalUnitCents('assets', 40, 5)).toBe(0); // still inside 50 included
-
-    /*
-      A large allowance swallows the bands beneath it, and that is correct.
-
-      With five spaces the first 50 assets are free, so the €1.20 band (11-50)
-      is entirely inside the allowance and nobody ever pays it: the 51st asset
-      is priced at €0.80, the rate its position on the ladder says. The five
-      spaces paid five base prices to get there — the allowance is what that
-      bought, and charging them €1.20 for an asset a smaller customer would
-      also be charged €1.20 for would make the base prices buy nothing.
-    */
-    expect(marginalUnitCents('assets', 50, 5)).toBe(80);
-    expect(nextUsageBreak('assets', 40, 5)).toEqual({ atUnits: 251, unitsAway: 211, unitCents: 50 });
-
-    expect(marginalUnitCents('assets', 100, 10)).toBe(80);
-    expect(nextUsageBreak('assets', 100, 10)).toEqual({ atUnits: 251, unitsAway: 151, unitCents: 50 });
+  it('costs more spread over sites than gathered in one — the price of per-space', () => {
+    // 10 x 50 vs 1 x 500. Accepted deliberately: a space's price has to be the
+    // sum of what that space switched on, or the number on its screen cannot be
+    // checked from that screen. Recorded here so a change to it is a decision.
+    const spreadOut = usageCost('assets', 50).monthlyCents * 10;
+    const gathered = usageCost('assets', 500).monthlyCents;
+    expect(spreadOut).toBe(48000);
+    expect(gathered).toBe(33300);
+    expect(spreadOut).toBeGreaterThan(gathered);
+    // Still lands near a euro an asset once the ten €9 bases are counted in.
+    expect(Math.round((spreadOut + 900 * 10) / 500)).toBe(114);
   });
 
   it('has a well-formed ladder: ascending, open-ended, and cheaper each rung', () => {
@@ -191,35 +171,46 @@ describe('what counts as a billable asset', () => {
 describe('the usage ladder on the whole bill', () => {
   const withAssets = [{ spaceId: 'a', spaceName: 'Depot', enabledModules: ['assets', 'tracking'] }];
 
-  it('counts one allowance per space that has the module on', () => {
+  it('gives every space its own allowance, and charges none of them for 8', () => {
     const fiveSmallSites = Array.from({ length: 5 }, (_, i) => ({
       spaceId: `s${i}`,
       spaceName: `Site ${i}`,
       enabledModules: ['assets'],
+      usage: { assets: 8 },
     }));
-    // 40 assets over five paying spaces — 50 included, so nothing on the ladder.
-    const bill = orgMonthlyCost({ seatCount: 0, spaces: fiveSmallSites, usage: { assets: 40 } });
+    const bill = orgMonthlyCost({ seatCount: 0, spaces: fiveSmallSites });
     expect(bill.usageMonthlyCents).toBe(0);
-    expect(bill.usage[0]?.included).toBe(50);
-    expect(bill.usage[0]?.spacesWithModule).toBe(5);
     // The five base prices are still charged — the allowance is what they buy.
     expect(bill.spacesMonthlyCents).toBe(900 * 5);
+    expect(bill.monthlyCents).toBe(4500);
   });
 
-  it('gives no allowance for a space that has the module switched off', () => {
-    const mixed = [
-      { spaceId: 'a', spaceName: 'Depot', enabledModules: ['assets'] },
-      { spaceId: 'b', spaceName: 'Office', enabledModules: ['tracking'] },
-    ];
-    const bill = orgMonthlyCost({ seatCount: 0, spaces: mixed, usage: { assets: 40 } });
-    expect(bill.usage[0]?.spacesWithModule).toBe(1);
-    expect(bill.usage[0]?.included).toBe(10);
+  it('charges each space for its own overflow only', () => {
+    const bill = orgMonthlyCost({
+      seatCount: 0,
+      spaces: [
+        { spaceId: 'a', spaceName: 'Depot', enabledModules: ['assets'], usage: { assets: 40 } },
+        { spaceId: 'b', spaceName: 'Office', enabledModules: ['assets'], usage: { assets: 8 } },
+      ],
+    });
+    // Depot: 30 x €1.20. Office: inside its own allowance, nothing.
     expect(bill.usageMonthlyCents).toBe(3600);
+    expect(bill.spaces[0]!.cost.usageMonthlyCents).toBe(3600);
+    expect(bill.spaces[1]!.cost.usageMonthlyCents).toBe(0);
+  });
+
+  it('does not charge a space for a count when it has the module switched off', () => {
+    const bill = orgMonthlyCost({
+      seatCount: 0,
+      spaces: [{ spaceId: 'a', spaceName: 'Office', enabledModules: ['tracking'], usage: { assets: 500 } }],
+    });
+    expect(bill.usageMonthlyCents).toBe(0);
+    expect(bill.usage).toEqual([]);
   });
 
   it('adds the ladder to the seats and the spaces', () => {
     // 3 users × €9.99 = 29.97 | assets €9 + tracking €19 = €28 | 17 assets = €8.40
-    const bill = orgMonthlyCost({ seatCount: 3, spaces: withAssets, usage: { assets: 17 } });
+    const bill = orgMonthlyCost({ seatCount: 3, spaces: [{ ...withAssets[0]!, usage: { assets: 17 } }] });
     expect(bill.seatMonthlyCents).toBe(2997);
     expect(bill.spacesMonthlyCents).toBe(2800);
     expect(bill.usageMonthlyCents).toBe(840);
@@ -227,28 +218,17 @@ describe('the usage ladder on the whole bill', () => {
     expect(bill.annualCents).toBe(6637 * 10);
   });
 
-  it('does not charge for a count when nobody has the module switched on', () => {
-    const noAssets = [{ spaceId: 'a', spaceName: 'Depot', enabledModules: ['tracking'] }];
-    const bill = orgMonthlyCost({ seatCount: 0, spaces: noAssets, usage: { assets: 500 } });
-    expect(bill.usageMonthlyCents).toBe(0);
-    expect(bill.usage).toEqual([]);
-  });
-
-  it('counts ORG-WIDE, so splitting sites does not cost the volume break', () => {
-    const fiveSites = Array.from({ length: 5 }, (_, i) => ({
-      spaceId: `s${i}`,
-      spaceName: `Site ${i}`,
-      enabledModules: ['assets'],
-    }));
-    // 500 assets priced once as 500 with five allowances, not five times as 100
-    const together = orgMonthlyCost({ seatCount: 0, spaces: fiveSites, usage: { assets: 500 } });
-    const asFiveSmallCustomers = usageCost('assets', 100).monthlyCents * 5;
-    expect(together.usageMonthlyCents).toBe(usageCost('assets', 500, 5).monthlyCents);
-    expect(together.usageMonthlyCents).toBeLessThan(asFiveSmallCustomers);
+  it('makes a space total the whole truth about that space', () => {
+    // The invariant this model exists to keep: what a space costs is the sum of
+    // what that space switched on, with nothing decided somewhere else.
+    const cost = spaceMonthlyCost(['assets', 'tracking'], { assets: 40 });
+    expect(cost.baseMonthlyCents).toBe(900 + 1900);
+    expect(cost.usageMonthlyCents).toBe(3600);
+    expect(cost.monthlyCents).toBe(6400);
   });
 
   it('ignores a count for a module that has no ladder', () => {
-    const bill = orgMonthlyCost({ seatCount: 0, spaces: withAssets, usage: { tracking: 900 } });
+    const bill = orgMonthlyCost({ seatCount: 0, spaces: [{ ...withAssets[0]!, usage: { tracking: 900 } }] });
     expect(bill.usageMonthlyCents).toBe(0);
   });
 

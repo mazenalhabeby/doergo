@@ -6083,7 +6083,7 @@
     "spaceCostPerModule": "Jedes Modul hat seinen eigenen Preis",
     "seatLine": "Benutzer werden separat mit je {{price}} berechnet",
     "usage": {
-      "heading": "{{module}} — {{perSpace}} pro Bereich kostenlos, danach nach Ihrer Gesamtzahl berechnet",
+      "heading": "{{module}} in diesem Bereich — die ersten {{included}} kostenlos",
       "onTop": "zusätzlich zur Grundgebühr von {{base}}",
       "included": "Die ersten {{count}} sind enthalten",
       "free": "Kostenlos",
@@ -6095,15 +6095,14 @@
       "effective": "Ergibt {{price}} pro Stück",
       "allIncluded": "Bisher alles enthalten — es fällt nichts zusätzlich an",
       "perUnitShort": "+{{price}} je Stück",
-      "orgWideNote": "Der Preis richtet sich nach Ihrer Gesamtzahl über alle Bereiche, sodass alle denselben Mengenrabatt erhalten. Jeder Bereich mit diesem Modul enthält {{perSpace}} kostenlos.",
-      "thisSpace": "Davon {{count}} in diesem Bereich",
+      "orgWideNote": "Gilt nur für diesen Bereich. Jeder Bereich mit {{module}} zahlt seine eigene Grundgebühr und erhält seine eigenen {{perSpace}} kostenlos — was Sie hier sehen, ist alles.",
       "count": {
         "asset_one": "{{count}} Objekt",
         "asset_other": "{{count}} Objekte"
       },
-      "plusCounted": "Zuzüglich dessen, was die unten gezählten Module hinzufügen",
-      "includedPerSpace": "{{perSpace}} je Bereich × {{spaces}} Bereiche",
-      "chargingStarts": "Noch {{count}}, bevor etwas berechnet wird — danach je {{price}}"
+      "chargingStarts": "Noch {{count}}, bevor etwas berechnet wird — danach je {{price}}",
+      "otherSpacesSeparate": "Andere Bereiche werden separat gezählt und berechnet",
+      "includesCounted": "Enthält, was die Objekte dieses Bereichs hinzufügen"
     }
   },
   "assetKinds": {

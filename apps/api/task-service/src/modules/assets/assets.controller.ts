@@ -56,10 +56,10 @@ export class AssetsController {
     return this.assetsService.listOrphans(data);
   }
 
-  /** How many assets this org is billed for — the count only; pricing is shared. */
+  /** Billable assets per space — the counts only; pricing is shared. */
   @MessagePattern({ cmd: 'asset_billing_usage' })
   async billingUsage(@Payload() data: any) {
-    return this.usage.count(data.organizationId, data.spaceId);
+    return this.usage.count(data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_asset_maintenance_history' })

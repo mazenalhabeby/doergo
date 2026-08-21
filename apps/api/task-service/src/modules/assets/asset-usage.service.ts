@@ -3,61 +3,61 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { BILLABLE_ASSET_WHERE, success } from '@hbcfield/shared';
 
 /**
- * How many assets an organization is billed for.
+ * How many assets each space is billed for.
  *
- * The assets module is not a flat switch: it carries a base price and then a
- * volume ladder over the count (see `usage-pricing.ts` in shared, which owns
- * every number). This service owns only the COUNT — what is billable, and how
- * much of it belongs to the space somebody is currently looking at. Pricing
- * lives in one place and it is not here, so a screen and an invoice can never
- * disagree about what an asset costs.
+ * The assets module is not a flat switch: a space pays a base price and then a
+ * volume ladder over the assets in it (see `usage-pricing.ts` in shared, which
+ * owns every number). This service owns only the COUNT. Pricing lives in one
+ * place and it is not here, so a screen and an invoice can never disagree about
+ * what an asset costs.
+ *
+ * PER SPACE, because that is how the module is switched on and paid for. The
+ * one number a space's screen shows has to be checkable from that screen, and
+ * nobody standing in one space can see what is in the others.
  *
  * The exclusions — sub-assets and retired records — come from the shared
  * `BILLABLE_ASSET_WHERE` clause rather than being re-typed, because a count
  * that drifts from the one on the invoice is the worst kind of bug to find.
  */
-/** The catalogue key this service counts for. */
-const ASSETS_MODULE = 'assets';
-
 @Injectable()
 export class AssetUsageService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * The org's billable total, one space's share of it, and how many spaces are
-   * paying for the module.
+   * Billable assets per space, in three queries however many spaces there are.
    *
-   * All three in one round trip, because the space modules screen answers three
-   * questions at once: what the whole ladder costs, what THIS space is putting
-   * on it, and how large the included allowance is — one per space that pays
-   * the base price. Assets reach a space through their kind, which is where
-   * `spaceId` lives; an asset has no space of its own.
+   * An asset reaches its space through its TYPE, and Prisma cannot group by a
+   * relation's column, so the counts come back per type and are folded onto
+   * spaces here. `unassigned` is the ones whose type has no space — they belong
+   * to nothing, are billed by nobody, and are listed by `listOrphans` so they
+   * can be moved or deleted rather than sitting outside the product.
    */
-  async count(organizationId: string, spaceId?: string | null) {
-    const billable = { ...BILLABLE_ASSET_WHERE, organizationId };
-
-    const [orgUnits, spaceUnits, spaces] = await Promise.all([
-      this.prisma.asset.count({ where: billable }),
-      spaceId
-        ? this.prisma.asset.count({ where: { ...billable, category: { spaceId } } })
-        : Promise.resolve(null),
-      // `enabledModules` is a JSON column, so the membership test happens here
-      // rather than in SQL. An organization has a handful of spaces, not a
-      // table's worth, and reading them plainly beats a JSON operator that
-      // behaves differently on a null column than on an empty array.
-      this.prisma.companyLocation.findMany({
+  async count(organizationId: string) {
+    const [types, grouped] = await Promise.all([
+      this.prisma.assetCategory.findMany({
         where: { organizationId },
-        select: { enabledModules: true },
+        select: { id: true, spaceId: true },
+      }),
+      this.prisma.asset.groupBy({
+        by: ['categoryId'],
+        where: { ...BILLABLE_ASSET_WHERE, organizationId },
+        _count: { _all: true },
       }),
     ]);
 
-    const spacesWithModule = spaces.filter(
-      (s) => Array.isArray(s.enabledModules) && (s.enabledModules as unknown[]).includes(ASSETS_MODULE),
-    ).length;
+    const spaceOfType = new Map(types.map((t) => [t.id, t.spaceId]));
+    const spaces: Record<string, number> = {};
+    let unassigned = 0;
+    let total = 0;
 
-    // The same `{ success, data }` envelope as every other assets read. A bare
-    // object here would be unwrapped as `undefined` by the web client and land
-    // on screen as a confident zero, which is the worst way for a count to fail.
-    return success({ orgUnits, spaceUnits, spacesWithModule });
+    for (const row of grouped) {
+      const units = row._count._all;
+      total += units;
+      const spaceId = row.categoryId ? spaceOfType.get(row.categoryId) ?? null : null;
+      if (spaceId) spaces[spaceId] = (spaces[spaceId] ?? 0) + units;
+      else unassigned += units;
+    }
+
+    return success({ total, unassigned, spaces });
   }
 }

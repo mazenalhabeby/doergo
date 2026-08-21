@@ -27,24 +27,13 @@ import { cn } from "@/lib/utils"
  * Every figure here comes from the shared pricing module. Nothing is computed
  * on this screen, so the screen cannot disagree with the invoice.
  */
-export function ModuleUsagePanel({
-  moduleKey,
-  orgUnits,
-  spaceUnits,
-  spacesWithModule,
-}: {
-  moduleKey: string
-  orgUnits: number
-  spaceUnits: number | null
-  /** Spaces paying the module's base price — one included allowance each. */
-  spacesWithModule: number
-}) {
+export function ModuleUsagePanel({ moduleKey, units }: { moduleKey: string; units: number }) {
   const { t } = useTranslation()
   const price = usagePriceFor(moduleKey)
   if (!price) return null
 
-  const cost = usageCost(moduleKey, orgUnits, spacesWithModule)
-  const nextBreak = nextUsageBreak(moduleKey, orgUnits, spacesWithModule)
+  const cost = usageCost(moduleKey, units)
+  const nextBreak = nextUsageBreak(moduleKey, units)
   const base = moduleMonthlyCents(moduleKey)
   // The catalogue's English label is the fallback, not the raw key — an
   // untranslated heading should read "Assets", never "assets".
@@ -52,7 +41,7 @@ export function ModuleUsagePanel({
   const moduleLabel = t(moduleI18n.label(moduleKey), { defaultValue: englishLabel })
 
   // The count in the unit's own words — "17 assets", not "17".
-  const units = (n: number) => t(`billing.usage.count.${price.unit}`, { count: n, defaultValue: `${n}` })
+  const unitLabel = (n: number) => t(`billing.usage.count.${price.unit}`, { count: n, defaultValue: `${n}` })
 
   // Every rung, not only the ones being paid for: the bands below explain the
   // total, and the ones above are the reason to keep going.
@@ -87,19 +76,15 @@ export function ModuleUsagePanel({
               free ones were pooled too — which is the question this line kept
               being asked.
             */}
-            {t("billing.usage.heading", "{{module}} — {{perSpace}} free per space, then priced on your total", {
+            {t("billing.usage.heading", "{{module}} in this space — first {{included}} free", {
               module: moduleLabel,
-              perSpace: price.included,
+              included: price.included,
             })}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground tabular-nums">{units(orgUnits)}</span>
-            {spaceUnits != null && (
-              <>
-                <span className="mx-1.5 text-border">·</span>
-                {t("billing.usage.thisSpace", "{{count}} of them are in this space", { count: spaceUnits })}
-              </>
-            )}
+            <span className="font-medium text-foreground tabular-nums">{unitLabel(cost.units)}</span>
+            <span className="mx-1.5 text-border">·</span>
+            {t("billing.usage.otherSpacesSeparate", "Other spaces are counted and charged separately")}
           </p>
         </div>
         <div className="text-right">
@@ -124,14 +109,6 @@ export function ModuleUsagePanel({
         >
           <span className="text-muted-foreground">
             {t("billing.usage.included", "First {{count}} included", { count: cost.included })}
-            {cost.spacesWithModule > 1 && (
-              <span className="ml-1.5 text-muted-foreground/60">
-                {t("billing.usage.includedPerSpace", "{{perSpace}} per space × {{spaces}} spaces", {
-                  perSpace: price.included,
-                  spaces: cost.spacesWithModule,
-                })}
-              </span>
-            )}
           </span>
           <span className="font-medium text-emerald-700 dark:text-emerald-400">{t("billing.usage.free", "Free")}</span>
         </div>
@@ -180,7 +157,7 @@ export function ModuleUsagePanel({
           <span className="flex items-center gap-1 font-medium text-foreground">
             {t("billing.usage.chargingStarts", "{{count}} more before anything is charged, then {{price}} each", {
               count: cost.included - cost.units,
-              price: formatCents(marginalUnitCents(moduleKey, cost.included, spacesWithModule)),
+              price: formatCents(marginalUnitCents(moduleKey, cost.included)),
             })}
           </span>
         ) : nextBreak ? (
@@ -199,7 +176,8 @@ export function ModuleUsagePanel({
       <p className="text-[11px] leading-relaxed text-muted-foreground/70">
         {t("billing.usage.orgWideNote", {
           defaultValue:
-            "The rate is set by your total across every space, so all of them share the same volume discount. Each space with this module on includes {{perSpace}} free.",
+            "Counted for this space only. Every space with {{module}} on pays its own base price and gets its own {{perSpace}} free, so what you see here is all of it.",
+          module: moduleLabel,
           perSpace: price.included,
         })}
       </p>

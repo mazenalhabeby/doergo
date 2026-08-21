@@ -8,12 +8,13 @@
  *            and the space costs more; switch it off and it costs less.
  *
  *     bill = users × seat price
- *          + Σ spaces ( Σ enabled modules ( price ) )
- *          + Σ usage-billed modules ( ladder(count) )
+ *          + Σ spaces ( Σ enabled modules ( price + ladder(count in that space) ) )
  *
- * The third term is the exception, not the rule: a couple of modules carry a
- * count whose size IS the value — assets is the first — and are priced with a
- * base here plus a volume ladder in usage-pricing.ts.
+ * A couple of modules carry a count whose size IS the value — assets is the
+ * first — and cost their base here plus a volume ladder in usage-pricing.ts.
+ * The ladder is per space, like everything else about a module, so a space's
+ * price stays the sum of what THAT space switched on and can be checked from
+ * the screen it is shown on.
  *
  * One flat seat means nothing has to decide whether somebody is an "office" or
  * a "field" user — a whole category of argument, and of code, that simply does
@@ -94,9 +95,16 @@ export interface SpaceCostLine {
 }
 
 export interface SpaceCost {
+  /** Everything this space costs: its modules, plus what its counts add. */
   monthlyCents: number;
+  /** The switches alone. */
+  baseMonthlyCents: number;
+  /** The volume ladders alone. */
+  usageMonthlyCents: number;
   /** Each enabled module priced, so a total can be checked rather than trusted. */
   lines: SpaceCostLine[];
+  /** Each counted module, itemised band by band. */
+  usage: UsageCost[];
 }
 
 /**
@@ -105,7 +113,11 @@ export interface SpaceCost {
  * Deduplicated and filtered to the catalogue: a stale key left behind in a
  * space's list must never reach an invoice as a line nobody can explain.
  */
-export function spaceMonthlyCost(enabledModules: string[] | null | undefined): SpaceCost {
+export function spaceMonthlyCost(
+  enabledModules: string[] | null | undefined,
+  /** Counts for this space's usage-billed modules — `{ assets: 9 }`. */
+  usageUnits?: Record<string, number>,
+): SpaceCost {
   const known = new Set(AVAILABLE_MODULES.map((m) => m.key as string));
   const seen = new Set<string>();
   const lines: SpaceCostLine[] = [];
@@ -122,13 +134,25 @@ export function spaceMonthlyCost(enabledModules: string[] | null | undefined): S
   // is looking for, and a stable order keeps an invoice comparable month to month.
   lines.sort((a, b) => b.monthlyCents - a.monthlyCents || a.moduleKey.localeCompare(b.moduleKey));
 
-  return { monthlyCents: lines.reduce((sum, l) => sum + l.monthlyCents, 0), lines };
+  // Only a module this space actually switched on can carry a count — otherwise
+  // turning it off here would still bill for what is sitting in the space.
+  const usage = Object.entries(usageUnits ?? {})
+    .filter(([key]) => billsByUsage(key) && seen.has(key))
+    .map(([key, units]) => usageCost(key, units))
+    .sort((a, b) => b.monthlyCents - a.monthlyCents || a.moduleKey.localeCompare(b.moduleKey));
+
+  const baseMonthlyCents = lines.reduce((sum, l) => sum + l.monthlyCents, 0);
+  const usageMonthlyCents = usage.reduce((sum, u) => sum + u.monthlyCents, 0);
+
+  return { monthlyCents: baseMonthlyCents + usageMonthlyCents, baseMonthlyCents, usageMonthlyCents, lines, usage };
 }
 
 export interface SpaceModules {
   spaceId: string;
   spaceName: string;
   enabledModules: string[];
+  /** Counts for this space's usage-billed modules — `{ assets: 9 }`. */
+  usage?: Record<string, number>;
 }
 
 export interface OrgCostBreakdown {
@@ -140,6 +164,7 @@ export interface OrgCostBreakdown {
   monthlyCents: number;
   annualCents: number;
   spaces: Array<{ spaceId: string; spaceName: string; cost: SpaceCost }>;
+  /** Every space's counted modules, flattened — one entry per space per module. */
   usage: UsageCost[];
 }
 
@@ -155,44 +180,18 @@ export function orgMonthlyCost(input: {
   spaces: SpaceModules[];
   /** Override for a negotiated seat price; defaults to the list price. */
   seatMonthlyCents?: number;
-  /**
-   * Counts for the usage-billed modules, org-wide — `{ assets: 17 }`.
-   *
-   * ORG-WIDE, not per space, and deliberately: the volume break is the whole
-   * point of a ladder, and a customer with five hundred assets spread over ten
-   * sites who is charged as ten small customers has been given the wrong bill.
-   * The included ALLOWANCE still follows the base price — one per space that
-   * has the module on — so the same customer split into small sites is not
-   * charged for units a single site would have got free. A count is only
-   * charged when at least one space has that module switched on.
-   */
-  usage?: Record<string, number>;
 }): OrgCostBreakdown {
   const seatPrice = input.seatMonthlyCents ?? SEAT_MONTHLY_CENTS;
 
   const spaces = input.spaces.map((s) => ({
     spaceId: s.spaceId,
     spaceName: s.spaceName,
-    cost: spaceMonthlyCost(s.enabledModules),
+    cost: spaceMonthlyCost(s.enabledModules, s.usage),
   }));
 
-  // How many spaces switched each module on. Two jobs: a module nobody has on
-  // carries no usage charge at all (otherwise turning the last space off would
-  // still bill the count), and every space that pays the base price brings its
-  // own included allowance with it.
-  const spacesWith: Record<string, number> = {};
-  for (const s of input.spaces) {
-    for (const key of new Set(s.enabledModules ?? [])) spacesWith[key] = (spacesWith[key] ?? 0) + 1;
-  }
-
-  const usage = Object.entries(input.usage ?? {})
-    .filter(([key]) => billsByUsage(key) && (spacesWith[key] ?? 0) > 0)
-    .map(([key, units]) => usageCost(key, units, spacesWith[key]))
-    .sort((a, b) => b.monthlyCents - a.monthlyCents || a.moduleKey.localeCompare(b.moduleKey));
-
   const seatMonthlyCents = Math.max(0, input.seatCount) * seatPrice;
-  const spacesMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.monthlyCents, 0);
-  const usageMonthlyCents = usage.reduce((sum, u) => sum + u.monthlyCents, 0);
+  const spacesMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.baseMonthlyCents, 0);
+  const usageMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.usageMonthlyCents, 0);
   const monthlyCents = seatMonthlyCents + spacesMonthlyCents + usageMonthlyCents;
 
   return {
@@ -203,7 +202,7 @@ export function orgMonthlyCost(input: {
     monthlyCents,
     annualCents: monthlyCents * ANNUAL_MONTHS_CHARGED,
     spaces,
-    usage,
+    usage: spaces.flatMap((s) => s.cost.usage),
   };
 }
 
