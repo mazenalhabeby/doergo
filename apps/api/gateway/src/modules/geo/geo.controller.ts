@@ -13,9 +13,20 @@ const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
 // resolve coordinates on selection) is billed — 10k/month free.
 // Fallback: self-hosted full-planet Photon over the docker network — used when
 // no Google key is configured (local dev) or Google errors.
-const PHOTON_URL = process.env.PHOTON_URL || 'http://photon:2322';
+/*
+  Self-hosted Photon, if there is one.
+
+  OPT-IN. It used to default to `http://photon:2322`, so with the container
+  gone every Google miss still spent a connection attempt and a timeout proving
+  nothing was listening. Unset simply means Google is the only geocoder.
+*/
+const PHOTON_URL = process.env.PHOTON_URL?.trim() || null;
 const GOOGLE_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
 const GOOGLE_BASE = 'https://places.googleapis.com/v1';
+// Reverse geocoding is the Geocoding API, a different product from Places —
+// it must be enabled on the key separately, and it bills per request rather
+// than per session.
+const GOOGLE_GEOCODE_BASE = 'https://maps.googleapis.com/maps/api/geocode/json';
 const TIMEOUT_MS = 5000;
 
 interface GeoResult {
@@ -123,7 +134,8 @@ export class GeoController {
       }
     }
 
-    // Fallback: Photon (returns coordinates inline; no place lookup needed).
+    // Fallback: Photon, when one is configured (returns coordinates inline).
+    if (!PHOTON_URL) return { results: [], provider: 'google' };
     try {
       const params = new URLSearchParams({ q: query, limit: String(max), lang: 'en' });
       if (lat && lon && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lon))) {
@@ -191,6 +203,43 @@ export class GeoController {
   @Get('reverse')
   async reverse(@Query('lat') lat?: string, @Query('lon') lon?: string): Promise<{ result: GeoResult | null }> {
     if (!lat || !lon || Number.isNaN(Number(lat)) || Number.isNaN(Number(lon))) return { result: null };
+
+    /*
+      Google first, our own Photon second, and neither is required.
+
+      This used to be Photon-only, which meant reverse geocoding died with the
+      container — taking map-click auto-fill and the "Remote · city" label on a
+      clock-in with it. Either provider alone is now enough, so Photon can be
+      removed without anything going quiet.
+    */
+    if (GOOGLE_KEY) {
+      try {
+        const url = `${GOOGLE_GEOCODE_BASE}?latlng=${encodeURIComponent(`${lat},${lon}`)}&language=en&key=${GOOGLE_KEY}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+        if (res.ok) {
+          const data: any = await res.json();
+          const first = (data?.results || [])[0];
+          if (first?.formatted_address) {
+            const comp: any[] = first.address_components || [];
+            const pick = (type: string) =>
+              comp.find((c) => (c.types || []).includes(type))?.long_name as string | undefined;
+            return {
+              result: {
+                label: first.formatted_address as string,
+                lat: Number(first.geometry?.location?.lat ?? lat),
+                lon: Number(first.geometry?.location?.lng ?? lon),
+                city: pick('locality') || pick('postal_town') || pick('administrative_area_level_2'),
+                country: pick('country'),
+              },
+            };
+          }
+        }
+      } catch {
+        /* fall through to Photon */
+      }
+    }
+
+    if (!PHOTON_URL) return { result: null };
     try {
       const res = await fetch(
         `${PHOTON_URL}/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&lang=en`,

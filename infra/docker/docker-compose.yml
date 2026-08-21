@@ -171,10 +171,10 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}
       - S3_BUCKET=${S3_BUCKET:-hbcfield}
       - S3_REGION=${S3_REGION:-eu-central-1}
-      # Reverse geocoding for the "Remote · city" label on a clock-in. Our own
-      # Photon, in-network — no public geocoder on a path that grows with every
-      # remote shift. Unreachable simply means no place name is recorded.
-      - PHOTON_URL=${PHOTON_URL:-http://photon:2322}
+      # The gateway, in-network. Used for the "Remote · city" label on a
+      # clock-in, which goes through its /geo/reverse so the geocoder chain
+      # lives in one place. Unreachable simply means no place name is recorded.
+      - INTERNAL_API_URL=${INTERNAL_API_URL:-http://api-gateway:4000/api/v1}
       # AI reports (Phase 4) — natural-language → report via Claude. Optional:
       # feature returns a graceful 402/400 until this is set in .env.production.
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -301,6 +301,10 @@ services:
       # self-hosted OSRM (or a provider you have a contract with) for real road
       # distances.
       - OSRM_URL=${OSRM_URL:-}
+      # Self-hosted Photon geocoder, OPTIONAL. Unset = Google is the only
+      # geocoder (worldwide, already the primary). Set it only while a Photon
+      # container is actually running; see docker-compose.photon.yml.
+      - PHOTON_URL=${PHOTON_URL:-}
     depends_on:
       auth-service:
         condition: service_healthy
@@ -343,6 +347,12 @@ services:
         - NEXT_PUBLIC_AUTH_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}/api/v1
         - NEXT_PUBLIC_SOCKET_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
         - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
+        # Map tiles. Unset falls back to OpenStreetMap's public servers, which
+        # their usage policy does not permit for commercial traffic — set both
+        # in .env.production. The attribution is a licence condition of whatever
+        # host you use, not a preference.
+        - NEXT_PUBLIC_MAP_TILE_URL=${MAP_TILE_URL:-}
+        - NEXT_PUBLIC_MAP_TILE_ATTRIBUTION=${MAP_TILE_ATTRIBUTION:-}
     container_name: hbcfield-web-app
     restart: unless-stopped
     logging: *default-logging

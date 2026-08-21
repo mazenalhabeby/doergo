@@ -433,17 +433,20 @@ export class AttendanceService {
   private readonly geocodeCache = new Map<string, string>();
 
   /**
-   * Turn a coordinate into "City, CC" using OUR geocoder.
+   * Turn a coordinate into "City, CC".
    *
-   * This used to call nominatim.openstreetmap.org. It was the careful version
-   * of that — server-side, identifying User-Agent, cached, short timeout — but
-   * it was still a public service on a path that grows with every remote
-   * clock-in, under a policy that permits neither heavy nor commercial use.
+   * Through the gateway's own /geo/reverse rather than any geocoder directly,
+   * so the provider chain lives in ONE place: this service does not need the
+   * Google key, does not need to know whether Photon exists, and follows
+   * whatever that endpoint is configured to use. It is a @Public() route on the
+   * internal network — no credentials cross the wire.
    *
-   * Photon runs in this network already and answers reverse queries. Nothing
-   * leaves the cluster now, and there is no public fallback on purpose: if
-   * Photon cannot answer, the entry simply records no place name, which is
-   * exactly what a Nominatim timeout did anyway.
+   * Previously this called nominatim.openstreetmap.org itself: a public service
+   * under a policy permitting neither heavy nor commercial use, on a path that
+   * grows with every remote clock-in.
+   *
+   * No fallback on purpose. If the chain has nothing, the entry records no
+   * place name — which is exactly what a geocoder timeout always did.
    */
   private async reverseGeocode(lat: number, lng: number): Promise<string | null> {
     const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
@@ -452,19 +455,18 @@ export class AttendanceService {
 
     let place: string | null = null;
     try {
-      const base = process.env.PHOTON_URL?.trim() || 'http://photon:2322';
+      const base = process.env.INTERNAL_API_URL?.trim() || 'http://api-gateway:4000/api/v1';
       // Hard 1.5s timeout so a slow geocoder cannot stall the (shared)
       // attendance queue slot, including the reminder/no-show sweep.
-      const res = await fetch(`${base}/reverse?lat=${lat}&lon=${lng}&limit=1&lang=en`, {
+      const res = await fetch(`${base}/geo/reverse?lat=${lat}&lon=${lng}`, {
         signal: AbortSignal.timeout(1500),
       });
       if (res.ok) {
         const j: any = await res.json();
-        const a = j?.features?.[0]?.properties ?? {};
         // City granularity, never a street — this is a privacy boundary, not a
         // formatting choice.
-        const city = a.city || a.town || a.village || a.district || a.county || a.state;
-        const country = (a.countrycode || '').toUpperCase();
+        const city = j?.result?.city;
+        const country = j?.result?.country;
         if (city) place = country ? `${city}, ${country}` : city;
       }
     } catch {
