@@ -190,6 +190,11 @@ export class CreateInvitationDto {
   @IsOptional()
   unitId?: string;
 
+  @ApiPropertyOptional({ description: 'Default asset for the customer login (optional)' })
+  @IsString()
+  @IsOptional()
+  assetId?: string;
+
   @ApiPropertyOptional({
     example: 5,
     description: 'Maximum daily jobs for technician',

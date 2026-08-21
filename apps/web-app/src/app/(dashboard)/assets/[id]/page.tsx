@@ -22,6 +22,7 @@ import { AssetListTable } from "@/components/assets/asset-list-table"
 import { AssetFaults } from "@/components/assets/asset-faults"
 import { AssetStructure } from "@/components/assets/asset-structure"
 import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
+import { AssetInviteClient } from "@/components/assets/asset-invite-client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -143,6 +144,13 @@ export default function AssetRecordPage() {
         {/* Editing has to be reachable from the record itself. Without this the
             only way to correct anything — or add a field — was to go back to the
             space and find the row again. */}
+        {/* Only when this type says a client may hold one — inviting somebody
+            into an app to see a machine no client is allowed to hold is an
+            offer with nothing behind it. */}
+        {kind && shape.holder.enabled && shape.holder.clients && (
+          <AssetInviteClient assetId={id} assetName={asset.name} spaceId={kind.spaceId} />
+        )}
+
         {kind && (
           <AssetRaiseJob
             assetId={id}

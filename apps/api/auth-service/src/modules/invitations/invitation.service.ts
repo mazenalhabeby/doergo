@@ -100,6 +100,8 @@ export class InvitationService {
     // Customer-portal invite (targetRole = CUSTOMER)
     customerId?: string;
     unitId?: string;
+    /** Invite the client to one ASSET — any type whose records a client holds. */
+    assetId?: string;
     // When present, the invite code is ALSO emailed to this address automatically.
     email?: string;
   }) {
@@ -151,6 +153,17 @@ export class InvitationService {
         });
         if (!unit) {
           return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Unit not found in this organization' };
+        }
+      }
+      // Same check for an asset: an id from another tenant must not become the
+      // place a login is confined to.
+      if (data.assetId) {
+        const asset = await this.prisma.asset.findFirst({
+          where: { id: data.assetId, organizationId: data.organizationId },
+          select: { id: true },
+        });
+        if (!asset) {
+          return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Asset not found in this organization' };
         }
       }
     }
@@ -300,6 +313,7 @@ export class InvitationService {
         // Customer-portal invite target (bound to the new login on accept).
         customerId: isCustomerInvite ? (data.customerId || null) : null,
         unitId: isCustomerInvite ? (data.unitId || null) : null,
+        assetId: isCustomerInvite ? (data.assetId || null) : null,
       },
       include: {
         organization: { select: { id: true, name: true } },
@@ -335,6 +349,11 @@ export class InvitationService {
         targetRole: invitation.targetRole,
         status: invitation.status,
         expiresAt: invitation.expiresAt.toISOString(),
+        // What this login will be tied to, echoed back so the caller can show
+        // it — and so a test can tell "stored" from "silently dropped".
+        customerId: invitation.customerId,
+        unitId: invitation.unitId,
+        assetId: invitation.assetId,
 
         position: invitation.position,
         specialty: invitation.specialty,
@@ -576,6 +595,7 @@ export class InvitationService {
             ? {
                 customerId: invitation.customerId,
                 unitId: invitation.unitId,
+                assetId: invitation.assetId,
               }
             : {}),
         },
@@ -593,6 +613,7 @@ export class InvitationService {
           canManageUsers: true,
           customerId: true,
           unitId: true,
+          assetId: true,
         },
       });
 

@@ -6212,5 +6212,17 @@
     "detail": "Détail",
     "detailPh": "Ce que la personne sur place doit savoir",
     "raised": "Intervention créée"
+  },
+  "assetInvite": {
+    "invite": "Inviter un client",
+    "title": "Inviter un client",
+    "hint": "Il se connecte et voit {{name}} et les demandes le concernant.",
+    "who": "Quel client",
+    "email": "L’envoyer à",
+    "create": "Créer l’invitation",
+    "sent": "Invitation créée",
+    "code": "Son code",
+    "handOver": "Remettez-le-lui — il ne sera plus affiché.",
+    "alsoEmailed": "Également envoyé à {{email}}."
   }
 }

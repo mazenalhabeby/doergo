@@ -6238,5 +6238,17 @@
     "detail": "Detail",
     "detailPh": "Anything the person going should know",
     "raised": "Job raised"
+  },
+  "assetInvite": {
+    "invite": "Invite a client",
+    "title": "Invite a client",
+    "hint": "They sign in and see {{name}} and the requests raised about it.",
+    "who": "Which client",
+    "email": "Email it to",
+    "create": "Create invitation",
+    "sent": "Invitation created",
+    "code": "Their code",
+    "handOver": "Hand this to them — it is not shown again.",
+    "alsoEmailed": "Also emailed to {{email}}."
   }
 }

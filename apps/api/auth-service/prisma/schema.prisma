@@ -693,6 +693,10 @@ model User {
   customer   Customer?     @relation("CustomerPortalUsers", fields: [customerId], references: [id], onDelete: Cascade)
   unitId     String?
   unit       CustomerUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  // The ASSET this login is confined to, for kinds that let a client hold one.
+  // Same shape as unitId: an asset removed leaves the login, not a dangling id.
+  assetId    String?
+  asset      Asset?        @relation("AssetPortalUsers", fields: [assetId], references: [id], onDelete: SetNull)
 
   // Unified org-wide role (Phase 1) — supersedes orgRole
   memberRoleId String?
@@ -1278,6 +1282,8 @@ model Asset {
   activities AssetActivity[]
   money      AssetMoney[]
   listRows   AssetListRow[]
+  /// Portal logins confined to this asset (see User.assetId).
+  portalUsers User[] @relation("AssetPortalUsers")
 
   // Tasks linked to this asset (maintenance history)
   tasks          Task[]
@@ -2464,6 +2470,9 @@ model Invitation {
   // (validated on accept) — the invitation is transient so no FK relation is kept.
   customerId String?
   unitId     String?
+  /// Invite a client to one ASSET — the generalisation of unitId, for any type
+  /// whose records a client may hold.
+  assetId    String?
   portalId   String?
 
   // Status tracking
@@ -2487,6 +2496,7 @@ model Invitation {
   @@index([expiresAt])
   @@index([organizationId, status])
   @@map("invitations")
+  @@index([assetId])
 }
 
 // ==================== JOIN REQUEST SYSTEM ====================

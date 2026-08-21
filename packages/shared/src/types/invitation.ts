@@ -77,6 +77,8 @@ export interface CreateInvitationInput {
   /** Customer-portal invite (targetRole=CUSTOMER): the Customer + optional unit. */
   customerId?: string;
   unitId?: string;
+  /** …or one ASSET, for any type whose records a client may hold. */
+  assetId?: string;
   /**
    * Pre-configured Access Profile applied to the member on accept, so their
    * first screen already matches their final access (no post-registration

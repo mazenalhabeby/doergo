@@ -6237,5 +6237,17 @@
     "detail": "Details",
     "detailPh": "Alles, was die Person vor Ort wissen sollte",
     "raised": "Auftrag angelegt"
+  },
+  "assetInvite": {
+    "invite": "Kunden einladen",
+    "title": "Kunden einladen",
+    "hint": "Er meldet sich an und sieht {{name}} und die dazu gemeldeten Anfragen.",
+    "who": "Welcher Kunde",
+    "email": "Per E-Mail an",
+    "create": "Einladung erstellen",
+    "sent": "Einladung erstellt",
+    "code": "Sein Code",
+    "handOver": "Geben Sie ihn weiter — er wird nicht erneut angezeigt.",
+    "alsoEmailed": "Auch an {{email}} gesendet."
   }
 }

@@ -6221,5 +6221,17 @@
     "detail": "Detalle",
     "detailPh": "Lo que deba saber quien vaya",
     "raised": "Trabajo creado"
+  },
+  "assetInvite": {
+    "invite": "Invitar a un cliente",
+    "title": "Invitar a un cliente",
+    "hint": "Inicia sesión y ve {{name}} y las solicitudes sobre ello.",
+    "who": "Qué cliente",
+    "email": "Enviar por correo a",
+    "create": "Crear invitación",
+    "sent": "Invitación creada",
+    "code": "Su código",
+    "handOver": "Entrégueselo — no se vuelve a mostrar.",
+    "alsoEmailed": "También enviado a {{email}}."
   }
 }
