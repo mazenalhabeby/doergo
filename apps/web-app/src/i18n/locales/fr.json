@@ -6060,14 +6060,14 @@
   },
   "assetKinds": {
     "title": "Biens",
-    "intro": "Ce que cet espace possède — appartements, véhicules, machines. Créez un type ici, puis ajoutez les vôtres à l'intérieur.",
+    "intro": "Ce que cet espace possède — appartements, véhicules, machines. Créez un type, puis ajoutez les vôtres.",
     "add": "Nouveau type",
-    "empty": "Aucun type pour le moment",
+    "empty": "Aucun type",
     "count": "{{count}} à l’intérieur",
     "removed": "Supprimé",
     "removeFailed": "Impossible de supprimer ce type",
     "created": "{{name}} ajouté",
-    "newTitle": "Nouveau type",
+    "newTitle": "Nouveau type de bien",
     "editTitle": "Modifier le type",
     "hint": "Décrivez à quoi ressemble l'un d'eux. L'ajout se basera exactement là-dessus.",
     "name": "Nom",
@@ -6113,7 +6113,20 @@
     "colText": "Texte",
     "colKey": "Code (identifie la ligne)",
     "colLink": "Pointe vers un autre tableau",
-    "noKeyHint": "Aucune colonne marquée comme code — les autres tableaux ne peuvent pas pointer vers celui-ci."
+    "noKeyHint": "Aucune colonne marquée comme code — les autres tableaux ne peuvent pas pointer vers celui-ci.",
+    "summaryFields": "{{count}} détails",
+    "summaryTables": "{{count}} tableaux",
+    "summaryMoney": "argent",
+    "summaryHolder": "{{label}}",
+    "summaryAddress": "adresse",
+    "summaryNothing": "rien de configuré",
+    "open": "Ouvrir",
+    "summaryTables_one": "1 tableau",
+    "summaryTables_other": "{{count}} tableaux",
+    "summaryFields_one": "1 détail",
+    "summaryFields_other": "{{count}} détails",
+    "count_one": "1 à l’intérieur",
+    "count_other": "{{count}} à l’intérieur"
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",
@@ -6141,7 +6154,8 @@
     "handedOver": "A changé de mains",
     "someone": "Un membre",
     "aClient": "Un client",
-    "nobodyHas": "Personne ne l’a."
+    "nobodyHas": "Personne ne l’a.",
+    "search": "Rechercher…"
   },
   "assetMoney": {
     "title": "Argent",

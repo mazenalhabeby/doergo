@@ -104,7 +104,7 @@ export function AssetKindDialog({
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {existing ? t("assetKinds.editTitle", "Edit kind") : t("assetKinds.newTitle", "New kind")}
+            {existing ? t("assetKinds.editTitle", "Edit type") : t("assetKinds.newTitle", "New asset type")}
           </DialogTitle>
           <DialogDescription>
             {t("assetKinds.hint", "Describe what one of these looks like. Adding them afterwards uses exactly what you set here.")}
@@ -119,7 +119,7 @@ export function AssetKindDialog({
           {!existing && (
             <div>
               <Label className="text-xs text-muted-foreground">
-                {t("assetKinds.template", "Start from a ready-made kind")}
+                {t("assetKinds.template", "Start from a ready-made type")}
               </Label>
               <p className="mb-1.5 text-[11px] text-muted-foreground/70">
                 {t("assetKinds.templateHint", "Fills in the fields, the money and the tables. Change anything afterwards.")}

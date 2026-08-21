@@ -82,7 +82,9 @@ export class AssetCatalogService {
         config: normalizeKindShape(data.config) as unknown as Prisma.InputJsonValue,
       },
       include: {
-        _count: { select: { types: true, assets: true } },
+        // Counted the way the list is READ: whole records, not the sub-units
+        // inside them. A card saying 9 over a list of 2 is a card nobody trusts.
+        _count: { select: { types: true, assets: { where: { parentId: null } } } },
       },
     });
 
@@ -109,7 +111,9 @@ export class AssetCatalogService {
       },
       orderBy: { name: 'asc' },
       include: {
-        _count: { select: { types: true, assets: true } },
+        // Counted the way the list is READ: whole records, not the sub-units
+        // inside them. A card saying 9 over a list of 2 is a card nobody trusts.
+        _count: { select: { types: true, assets: { where: { parentId: null } } } },
       },
     });
 
@@ -174,7 +178,9 @@ export class AssetCatalogService {
         }),
       },
       include: {
-        _count: { select: { types: true, assets: true } },
+        // Counted the way the list is READ: whole records, not the sub-units
+        // inside them. A card saying 9 over a list of 2 is a card nobody trusts.
+        _count: { select: { types: true, assets: { where: { parentId: null } } } },
       },
     });
 

@@ -32,6 +32,7 @@ const LocationPicker = dynamic(
 export interface AssetRecord {
   id: string
   name: string
+  serialNumber?: string | null
   locationAddress?: string | null
   locationLat?: number | null
   locationLng?: number | null

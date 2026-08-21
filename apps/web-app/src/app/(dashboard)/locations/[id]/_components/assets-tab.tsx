@@ -4,13 +4,16 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, ChevronRight, Package, Plus, Pencil, Trash2, User } from "lucide-react"
+import { ArrowLeft, Package, Plus, Pencil, Search, Trash2, User } from "lucide-react"
 
 import { assetsApi, type AssetCategory } from "@/lib/api"
-import { normalizeKindShape } from "@hbcfield/shared/client"
+import {
+  normalizeKindShape, kindHolderLabel, detailRowsForKind, type KindShape,
+} from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SectionHeader, EmptyState } from "./section-header"
 import { AssetKindDialog } from "./asset-kind-dialog"
@@ -40,7 +43,7 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
   const del = useMutation({
     mutationFn: (id: string) => assetsApi.deleteCategory(id),
     onSuccess: () => { notify.success(t("assetKinds.removed", "Removed")); invalidate() },
-    onError: (err: Error) => notify.error(err?.message || t("assetKinds.removeFailed", "Could not remove this kind")),
+    onError: (err: Error) => notify.error(err?.message || t("assetKinds.removeFailed", "Could not remove this type")),
   })
 
   const openKind = kinds.find((k: AssetCategory) => k.id === openKindId)
@@ -64,7 +67,7 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
             onSaved={invalidate}
             trigger={
               <Button size="sm">
-                <Plus className="mr-1.5 h-4 w-4" /> {t("assetKinds.add", "New kind")}
+                <Plus className="mr-1.5 h-4 w-4" /> {t("assetKinds.add", "New type")}
               </Button>
             }
           />
@@ -76,50 +79,84 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
         </div>
       ) : kinds.length === 0 ? (
-        <EmptyState icon={Package} title={t("assetKinds.empty", "No kinds yet")} />
+        <EmptyState icon={Package} title={t("assetKinds.empty", "No types yet")} />
       ) : (
-        <div className="space-y-2">
-          {kinds.map((kind: AssetCategory) => (
-            <div
-              key={kind.id}
-              className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40"
-            >
-              <button
-                onClick={() => setOpenKindId(kind.id)}
-                className="flex min-w-0 flex-1 items-center gap-3 text-left"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
-                  <Package className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{kind.name}</p>
+        // Cards, not rows. A type is something you set up and come back to, and
+        // a card has room to say what it holds — which is the question you
+        // actually have when looking at this screen.
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {kinds.map((kind: AssetCategory) => {
+            const shape = normalizeKindShape(kind.config)
+            const bits: string[] = []
+            if (shape.holder.enabled) {
+              bits.push(kindHolderLabel(shape, t("assetRecords.holder", "Held by")))
+            }
+            if (shape.hasAddress) bits.push(t("assetKinds.summaryAddress", "address"))
+            if (shape.fields.length) {
+              bits.push(t("assetKinds.summaryFields", "{{count}} details", { count: shape.fields.length }))
+            }
+            if (shape.lists.length) {
+              bits.push(t("assetKinds.summaryTables", "{{count}} tables", { count: shape.lists.length }))
+            }
+            if (shape.money.enabled) bits.push(t("assetKinds.summaryMoney", "money"))
+
+            return (
+              <div key={kind.id} className="group relative rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40">
+                <button onClick={() => setOpenKindId(kind.id)} className="block w-full text-left">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                      <Package className="h-4.5 w-4.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-foreground group-hover:text-primary">{kind.name}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {t("assetKinds.count", "{{count}} inside", { count: kind._count?.assets ?? 0 })}
+                      </p>
+                    </div>
+                  </div>
+
                   {kind.description && (
-                    <p className="truncate text-xs text-muted-foreground">{kind.description}</p>
+                    <p className="mt-2.5 line-clamp-2 text-xs text-muted-foreground">{kind.description}</p>
                   )}
-                </div>
-              </button>
-              <Badge variant="outline" className="text-muted-foreground">
-                {t("assetKinds.count", "{{count}} inside", { count: kind._count?.assets ?? 0 })}
-              </Badge>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <AssetKindDialog
-                spaceId={spaceId}
-                existing={kind}
-                onSaved={invalidate}
-                trigger={
-                  <button className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100">
-                    <Pencil className="h-4 w-4" />
+
+                  {/* What one of them holds — the reason to open this card. */}
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {bits.length === 0 ? (
+                      <span className="text-[11px] text-muted-foreground/60">
+                        {t("assetKinds.summaryNothing", "nothing set up yet")}
+                      </span>
+                    ) : bits.map((b) => (
+                      <span key={b} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+
+                {/* Kept out of the button: a link wrapping a button is invalid,
+                    and nesting them makes the hit areas fight. */}
+                <div className="absolute right-3 top-3 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <AssetKindDialog
+                    spaceId={spaceId}
+                    existing={kind}
+                    onSaved={invalidate}
+                    trigger={
+                      <button className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    }
+                  />
+                  <button
+                    onClick={() => del.mutate(kind.id)}
+                    className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                    aria-label={t("common.remove", "Remove")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                }
-              />
-              <button
-                onClick={() => del.mutate(kind.id)}
-                className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -144,6 +181,7 @@ function KindContents({
   const router = useRouter()
   const qc = useQueryClient()
   const shape = normalizeKindShape(kind.config)
+  const [search, setSearch] = useState("")
 
   const recordsQ = useQuery({
     queryKey: ["asset-records", kind.id],
@@ -155,6 +193,17 @@ function KindContents({
   // normalise once rather than guessing at each use.
   const raw = (recordsQ.data as unknown as { data?: unknown })?.data ?? recordsQ.data
   const records: AssetRecord[] = Array.isArray(raw) ? (raw as AssetRecord[]) : []
+
+  // Filtered here rather than on the server: this list is one space's records of
+  // one type, already bounded by the page above it.
+  const q = search.trim().toLowerCase()
+  const shown = q
+    ? records.filter((r) =>
+        r.name?.toLowerCase().includes(q) ||
+        r.locationAddress?.toLowerCase().includes(q) ||
+        r.serialNumber?.toLowerCase().includes(q),
+      )
+    : records
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["asset-records", kind.id] })
@@ -188,58 +237,93 @@ function KindContents({
         }
       />
 
+      {records.length > 3 && (
+        <div className="relative max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("assetRecords.search", "Search…")}
+            className="h-8 pl-8 text-sm"
+          />
+        </div>
+      )}
+
       {recordsQ.isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
         </div>
-      ) : records.length === 0 ? (
-        <EmptyState icon={Package} title={t("assetRecords.empty", "Nothing added yet")} />
+      ) : shown.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title={search
+            ? t("assetLists.noMatch", "Nothing matches that")
+            : t("assetRecords.empty", "Nothing added yet")}
+        />
       ) : (
         <div className="space-y-2">
-          {records.map((r) => (
-            <div key={r.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
-              <button
-                onClick={() => router.push(`/assets/${r.id}`)}
-                className="flex min-w-0 flex-1 items-center gap-3 text-left"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
-                  <Package className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{r.name}</p>
-                  {r.locationAddress && r.locationAddress !== r.name && (
-                    <p className="truncate text-xs text-muted-foreground">{r.locationAddress}</p>
-                  )}
-                </div>
-              </button>
-              {shape.holder.enabled && <HolderBadge record={r} />}
-              <AssetRecordDialog
-                spaceId={spaceId}
-                kind={kind}
-                existing={r}
-                onSaved={refresh}
-                trigger={
-                  <button className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100">
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                }
-              />
-              <button onClick={() => del.mutate(r.id)} className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+          {shown.map((r) => {
+            // The first two details this TYPE asks for, so a row says something
+            // about the thing rather than only its name.
+            const facts = detailRowsForKind(shape, r.details).filter((d) => d.value).slice(0, 2)
+            return (
+              <div key={r.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
+                <button
+                  onClick={() => router.push(`/assets/${r.id}`)}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                    <Package className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground group-hover:text-primary">
+                      {r.name}
+                    </span>
+                    <span className="block truncate text-[11px] text-muted-foreground">
+                      {[r.locationAddress, ...facts.map((f) => `${f.label} ${f.value}`)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
+                </button>
+                {shape.holder.enabled && <HolderBadge record={r} shape={shape} />}
+                <AssetRecordDialog
+                  spaceId={spaceId}
+                  kind={kind}
+                  existing={r}
+                  onSaved={refresh}
+                  trigger={
+                    <button className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  }
+                />
+                <button onClick={() => del.mutate(r.id)} className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
 
-/** Who has this one — or that nobody does. */
-function HolderBadge({ record }: { record: AssetRecord }) {
+/** Who has this one — under whatever the type calls them. */
+function HolderBadge({ record, shape }: { record: AssetRecord; shape: KindShape }) {
   const { t } = useTranslation()
+  const label = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
   if (record.holderUserId || record.customerId) {
-    return <Badge variant="secondary" className="gap-1"><User className="h-3 w-3" /> {t("assetRecords.taken", "Taken")}</Badge>
+    return (
+      <Badge variant="secondary" className="shrink-0 gap-1">
+        <User className="h-3 w-3" /> {label}
+      </Badge>
+    )
   }
-  return <Badge variant="outline" className="text-muted-foreground">{t("assetRecords.free", "Free")}</Badge>
+  return (
+    <Badge variant="outline" className="shrink-0 text-muted-foreground">
+      {t("assetRecords.free", "Free")}
+    </Badge>
+  )
 }
