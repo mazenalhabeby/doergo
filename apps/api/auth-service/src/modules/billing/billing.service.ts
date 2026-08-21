@@ -3,7 +3,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import type Stripe from 'stripe';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StripeService } from './stripe.service';
+import { OrgBillService } from './org-bill.service';
 import {
+  isAddOn,
+  ADD_ON_KEYS,
   countSeats,
   subscriptionTotalCents,
   modulesForTier,
@@ -124,7 +127,64 @@ export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripe: StripeService,
+    private readonly bill: OrgBillService,
   ) {}
+
+  // ── the module model ─────────────────────────────────────────────────────────
+
+  /**
+   * The whole bill, itemised: seats, every space's modules and ladders, and the
+   * organization's add-ons.
+   *
+   * The SAME object the Stripe sync is built from, which is the point — the old
+   * model let the screen compute a price from a tier table while Stripe was told
+   * something assembled separately, and only an invoice would show they had
+   * disagreed.
+   */
+  async getBill(organizationId: string) {
+    return ok(await this.bill.compute(organizationId));
+  }
+
+  /**
+   * Set which capabilities the organization has bought.
+   *
+   * The list is REPLACED, not merged: "these are the add-ons I want" is a single
+   * decision an admin makes on one screen, and a merge would make removing one
+   * impossible through the same call that adds one.
+   *
+   * Every key is validated against the catalogue. An unknown key is refused
+   * rather than stored and ignored — stored, it would sit on the organization
+   * looking like an entitlement, and the day somebody adds a real add-on with
+   * that name it would silently become one.
+   *
+   * `organizationId` comes from the caller's token at the gateway, never from
+   * the body, so an admin cannot buy add-ons for another tenant.
+   */
+  async setAddOns(organizationId: string, keys: string[]) {
+    if (!Array.isArray(keys)) return fail(HttpStatus.BAD_REQUEST, 'addOns must be an array');
+
+    const unknown = keys.filter((k) => typeof k !== 'string' || !isAddOn(k));
+    if (unknown.length) {
+      return fail(HttpStatus.BAD_REQUEST, `Not an add-on: ${unknown.join(', ')}. Known: ${ADD_ON_KEYS.join(', ')}`);
+    }
+
+    // Deduplicated and ordered, so the stored value is comparable between
+    // requests and an invoice line cannot appear twice.
+    const addOns = [...new Set(keys)].sort();
+
+    const org = await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { addOns },
+      select: { id: true, addOns: true },
+    });
+
+    // The bill changed, so Stripe has to be told. Debounced with the seat sync:
+    // toggling four add-ons on one screen is one proration, not four.
+    this.scheduleReconcile(organizationId);
+
+    this.logger.log(`Org ${organizationId} add-ons set to [${addOns.join(', ')}]`);
+    return ok(org.addOns, 'Add-ons updated');
+  }
 
   // ── debounced seat reconciliation ────────────────────────────────────────────
   // Coalesce a burst of member add/remove/access changes into ONE Stripe sync

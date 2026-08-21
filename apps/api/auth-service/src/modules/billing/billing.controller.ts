@@ -12,6 +12,16 @@ export class BillingController {
     return this.billing.getSubscription(d.organizationId);
   }
 
+  @MessagePattern({ cmd: 'billing_get_bill' })
+  getBill(@Payload() d: { organizationId: string }) {
+    return this.billing.getBill(d.organizationId);
+  }
+
+  @MessagePattern({ cmd: 'billing_set_addons' })
+  setAddOns(@Payload() d: { organizationId: string; addOns: string[] }) {
+    return this.billing.setAddOns(d.organizationId, d.addOns);
+  }
+
   @MessagePattern({ cmd: 'billing_start_trial' })
   startTrial(@Payload() d: { organizationId: string }) {
     return this.billing.startTrial(d.organizationId);

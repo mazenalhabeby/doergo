@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Req,
   Inject,
@@ -16,7 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
-import { CheckoutDto, ChangePlanDto } from './dto';
+import { CheckoutDto, ChangePlanDto , SetAddOnsDto } from './dto';
 
 @ApiTags('billing')
 @Controller('billing')
@@ -45,6 +46,29 @@ export class BillingController {
   async getSubscription(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
       await firstValueFrom(this.authClient.send({ cmd: 'billing_get_subscription' }, { organizationId: user.organizationId })),
+    );
+  }
+
+  @Get('bill')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'The itemised bill: seats, every space, and org add-ons' })
+  async getBill(@CurrentUser() user: CurrentUserData) {
+    return this.unwrap(
+      await firstValueFrom(this.authClient.send({ cmd: 'billing_get_bill' }, { organizationId: user.organizationId })),
+    );
+  }
+
+  @Put('add-ons')
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set which capabilities the organization has bought (ADMIN)' })
+  async setAddOns(@CurrentUser() user: CurrentUserData, @Body() dto: SetAddOnsDto) {
+    // organizationId comes from the TOKEN, never the body — an admin can only
+    // ever change what their own organization has bought.
+    return this.unwrap(
+      await firstValueFrom(
+        this.authClient.send({ cmd: 'billing_set_addons' }, { organizationId: user.organizationId, addOns: dto.addOns }),
+      ),
     );
   }
 
