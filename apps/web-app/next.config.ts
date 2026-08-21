@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // A separate build directory can be requested with NEXT_DIST_DIR. `next dev`
+  // and `next build` otherwise share `.next` and clobber each other, which
+  // fails a build with "Cannot find module for page" that has nothing to do
+  // with the code.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   reactStrictMode: true,
   transpilePackages: ['@hbcfield/shared'],
   eslint: {

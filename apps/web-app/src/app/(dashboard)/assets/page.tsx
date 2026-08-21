@@ -18,7 +18,7 @@ import {
 import Link from "next/link"
 
 import { useAuth } from "@/contexts/auth-context"
-import { assetsApi } from "@/lib/api"
+import { assetsApi, type Asset, type AssetStatus } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -59,7 +59,7 @@ export default function AssetsPage() {
     queryKey: ["assets", search, statusFilter, categoryFilter],
     queryFn: () => assetsApi.getAssets({
       search: search || undefined,
-      status: statusFilter !== "__all__" ? statusFilter as any : undefined,
+      status: statusFilter !== "__all__" ? (statusFilter as AssetStatus) : undefined,
       categoryId: categoryFilter !== "__all__" ? categoryFilter : undefined,
     }),
   })
@@ -78,10 +78,10 @@ export default function AssetsPage() {
     onError: (e: Error) => notify.error(e.message),
   })
 
-  const assetList = (assets as any)?.data || assets || []
+  const assetList: Asset[] = assets?.data ?? []
 
   const filtered = search
-    ? assetList.filter((a: any) =>
+    ? assetList.filter((a) =>
         a.name?.toLowerCase().includes(search.toLowerCase()) ||
         a.serialNumber?.toLowerCase().includes(search.toLowerCase())
       )
@@ -133,7 +133,7 @@ export default function AssetsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">{t("assets.allCategories")}</SelectItem>
-                {categories.map((cat: any) => (
+                {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -164,7 +164,7 @@ export default function AssetsPage() {
               {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">{t("assets.noAssetsHint")}</p>}
             </div>
           ) : (
-            filtered.map((asset: any) => {
+            filtered.map((asset) => {
               const status = STATUS_STYLES[asset.status] || STATUS_STYLES.ACTIVE!
               return (
                 <div key={asset.id} className="grid grid-cols-[1fr_120px_120px_100px_80px_40px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center">
@@ -180,8 +180,9 @@ export default function AssetsPage() {
                   {/* Category */}
                   <span className="text-xs text-muted-foreground truncate">{asset.category?.name || "—"}</span>
 
-                  {/* Location */}
-                  <span className="text-xs text-muted-foreground truncate">{asset.location || "—"}</span>
+                  {/* Location — the field is `locationAddress`; `location` has
+                      never existed on an asset, so this column was always a dash. */}
+                  <span className="text-xs text-muted-foreground truncate">{asset.locationAddress || "—"}</span>
 
                   {/* Status */}
                   <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>

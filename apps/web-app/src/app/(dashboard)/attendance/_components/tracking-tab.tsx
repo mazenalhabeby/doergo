@@ -1,4 +1,5 @@
 import React from "react"
+import type { PaginationMeta } from "@/lib/api"
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns"
 import { cn, formatDurationMinutes } from "@/lib/utils"
 import { type TimeEntry, type CompanyLocation } from "@/lib/api"
@@ -37,7 +38,7 @@ interface TrackingTabProps {
   isError: boolean
   error: unknown
   refetch: () => void
-  meta?: any
+  meta?: PaginationMeta
   selectedLocationId: string
   setSelectedLocationId: (v: string) => void
   selectedStatus: string

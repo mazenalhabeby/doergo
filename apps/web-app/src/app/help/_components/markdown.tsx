@@ -25,10 +25,13 @@ export function Markdown({ children }: { children: string }) {
           <blockquote className="my-4 rounded-r-lg border-l-4 border-blue-300 bg-blue-50/60 px-4 py-2.5 text-[14px] text-slate-600 [&_p]:my-0" {...p} />
         ),
         code: (p) => <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-800" {...p} />,
-        a: ({ href, ...rest }) => {
+        // `node` is react-markdown's own AST handle — it is not a DOM prop and
+        // must not be spread onto an element.
+        a: ({ href, node: _node, ...rest }) => {
           const internal = href?.startsWith('/');
-          return internal ? (
-            <Link href={href!} className="font-medium text-blue-600 underline-offset-2 hover:underline" {...(rest as any)} />
+          // `internal` already proved href is a string starting with "/".
+          return internal && href ? (
+            <Link href={href} className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
           ) : (
             <a href={href} target="_blank" rel="noreferrer" className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
           );

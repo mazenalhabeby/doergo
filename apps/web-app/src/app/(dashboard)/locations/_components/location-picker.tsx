@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
-import { formatNominatimAddress, formatPhotonFeature } from "@/lib/geocode"
+import { formatNominatimAddress, formatPhotonFeature, type PhotonProperties, type NominatimAddress } from "@/lib/geocode"
 
 import "leaflet/dist/leaflet.css"
 
@@ -41,6 +41,19 @@ interface LocationPickerProps {
   address: string
   onLocationChange: (lat: number, lng: number) => void
   onAddressChange: (address: string) => void
+}
+
+/** The two upstream geocoders, as much of them as this file reads. */
+interface PhotonFeature {
+  properties?: PhotonProperties
+  geometry: { coordinates: [number, number] }
+}
+
+interface NominatimResult {
+  address?: NominatimAddress
+  display_name?: string
+  lat: string
+  lon: string
 }
 
 function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
@@ -143,7 +156,7 @@ export default function LocationPicker({
         fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=3`)
           .then((r) => r.json())
           .then((data) =>
-            (data.features || []).map((f: any) => ({
+            (data.features || []).map((f: PhotonFeature) => ({
               display_name: formatPhotonFeature(f.properties),
               lat: f.geometry.coordinates[1].toString(),
               lon: f.geometry.coordinates[0].toString(),
@@ -155,7 +168,7 @@ export default function LocationPicker({
         )
           .then((r) => r.json())
           .then((data) =>
-            data.map((r: any) => ({
+            data.map((r: NominatimResult) => ({
               display_name: formatNominatimAddress(r.address, r.display_name),
               lat: r.lat,
               lon: r.lon,

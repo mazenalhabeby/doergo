@@ -7,6 +7,7 @@
  * refresh here (agents keep it open) — the customer side is fully live.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Socket } from 'socket.io-client'
 import { SocketEvents, type SupportTicket, type SupportMessage } from '@hbcfield/shared/client';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
@@ -30,7 +31,7 @@ export default function OperatorSupportPage() {
   const [reply, setReply] = useState('');
   const [note, setNote] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const socketRef = useRef<any>(null);
+  const socketRef = useRef<Socket | null>(null);
   // Keep the current ticket id in a ref so the socket effect can read it without
   // re-subscribing (and tearing down the socket) every time it changes.
   const activeIdRef = useRef<string | null>(null);
@@ -55,7 +56,7 @@ export default function OperatorSupportPage() {
   const loadTicket = useCallback(
     async (id: string) => {
       try {
-        const res = await agentFetch<{ data: any }>(key, `/support/agent/tickets/${id}`);
+        const res = await agentFetch<{ data: SupportTicket & { messages: SupportMessage[] } }>(key, `/support/agent/tickets/${id}`);
         setActive(res.data);
         setError(null);
         await agentFetch(key, `/support/agent/tickets/${id}/read`, { method: 'POST', body: '{}' });
@@ -77,15 +78,18 @@ export default function OperatorSupportPage() {
   // ticket via a ref so it never re-subscribes (and drops the socket) mid-session.
   useEffect(() => {
     if (!key) return;
-    let socket: any;
+    let socket: Socket | undefined;
     let cancelled = false;
     (async () => {
       const { io } = await import('socket.io-client');
       if (cancelled) return;
-      socket = io(SOCKET_URL, { auth: { platformKey: key }, transports: ['websocket', 'polling'] });
-      socketRef.current = socket;
-      socket.on('connect', () => socket.emit('authenticate_agent'));
-      const refresh = (d: any) => {
+      // Bound to a const so the connect handler cannot see the outer `socket`
+      // as possibly-undefined — it is assigned exactly once, right here.
+      const s = io(SOCKET_URL, { auth: { platformKey: key }, transports: ['websocket', 'polling'] });
+      socket = s;
+      socketRef.current = s;
+      s.on('connect', () => s.emit('authenticate_agent'));
+      const refresh = (d: { ticket?: { id?: string }; ticketId?: string } | undefined) => {
         loadInbox();
         const openId = activeIdRef.current;
         if (openId && (!d?.ticket || d.ticket.id === openId || d?.ticketId === openId)) loadTicket(openId);

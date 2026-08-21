@@ -122,7 +122,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<"PERSON" | "COMPANY">(personOnly ? "PERSON" : ((existing?.type as any) === "COMPANY" ? "COMPANY" : "PERSON"))
+  const [type, setType] = useState<"PERSON" | "COMPANY">(personOnly ? "PERSON" : (existing?.type === "COMPANY" ? "COMPANY" : "PERSON"))
   const [form, setForm] = useState({
     name: existing?.name ?? "", email: existing?.email ?? "",
     phone: existing?.phone ?? "", notes: existing?.notes ?? "",

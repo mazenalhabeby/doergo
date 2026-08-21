@@ -407,7 +407,7 @@ function OvertimeCard({
             </div>
             {request.technicianReason && (
               <p className="mt-2 text-sm text-muted-foreground bg-muted rounded-md px-3 py-1.5">
-                "{request.technicianReason}"
+                &ldquo;{request.technicianReason}&rdquo;
               </p>
             )}
           </div>
