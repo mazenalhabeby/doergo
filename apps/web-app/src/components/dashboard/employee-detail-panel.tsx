@@ -62,12 +62,14 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
     enabled: !!employeeId && open,
   })
 
-  const employee = (detail as any)?.data || detail
-  const tasks = (tasksData as any)?.data || tasksData || []
+  const employee = detail
+  const tasks = tasksData ?? []
   const stats = employee?.stats
-  const activeTasks = Array.isArray(tasks) ? tasks.filter((t: any) => ["IN_PROGRESS", "EN_ROUTE", "ARRIVED", "BLOCKED", "ASSIGNED"].includes(t.status)) : []
-  const completedCount = stats?.tasks?.completed ?? (Array.isArray(tasks) ? tasks.filter((t: any) => t.status === "COMPLETED").length : 0)
-  const hoursWeek = stats?.attendance?.hoursThisWeek
+  const activeTasks = tasks.filter((t) => ["IN_PROGRESS", "EN_ROUTE", "ARRIVED", "BLOCKED", "ASSIGNED"].includes(t.status))
+  const completedCount = stats?.tasks?.completed ?? tasks.filter((t) => t.status === "COMPLETED").length
+  // `totalHoursThisWeek` is the field the API sends; `hoursThisWeek` never
+  // existed, so this card has been showing a dash where the hours go.
+  const hoursWeek = stats?.attendance?.totalHoursThisWeek
   const onTimeRate = stats?.performance?.onTimeRate
   const rating = stats?.performance?.customerRating
 
@@ -93,7 +95,6 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                   <UserAvatar
                     firstName={employee.firstName}
                     lastName={employee.lastName}
-                    avatarUrl={employee.avatarUrl}
                     seed={employee.id}
                     size="xl"
                   />
@@ -192,7 +193,7 @@ export function EmployeeDetailPanel({ employeeId, open, onClose }: EmployeeDetai
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {activeTasks.slice(0, 3).map((task: any) => {
+                  {activeTasks.slice(0, 3).map((task) => {
                     const cfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.ASSIGNED!
                     return (
                       <button

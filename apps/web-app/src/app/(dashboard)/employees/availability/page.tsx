@@ -416,7 +416,7 @@ function CalendarTab({
       const dateStr = format(day, "yyyy-MM-dd")
       const dayEmployees = availabilityByDate.get(dateStr) || []
       const relevant = dayEmployees.filter(t => t.schedule || t.onTimeOff)
-      const filtered = selectedSpace === "all" ? relevant : relevant.filter(t => (t as any).space?.id === selectedSpace)
+      const filtered = selectedSpace === "all" ? relevant : relevant.filter(t => t.space?.id === selectedSpace)
       map.set(dateStr, {
         available: filtered.filter(t => t.isAvailable).length,
         timeOff: filtered.filter(t => t.onTimeOff).length,
@@ -572,8 +572,8 @@ function CalendarTab({
               const unassigned: typeof selectedDay.employees = []
 
               for (const tech of selectedDay.employees) {
-                const spaceId = (tech as any).space?.id
-                const spaceName = (tech as any).space?.name
+                const spaceId = tech.space?.id
+                const spaceName = tech.space?.name
                 if (spaceId && spaceName) {
                   if (!bySpace.has(spaceId)) bySpace.set(spaceId, { name: spaceName, techs: [] })
                   bySpace.get(spaceId)!.techs.push(tech)
@@ -672,7 +672,7 @@ export default function ScheduleAndTimeOffPage() {
     },
     staleTime: 60000,
   })
-  const locations = (locationsData as any)?.data || locationsData || []
+  const locations = locationsData?.data ?? []
 
   // Calculate date range for calendar
   const dateRange = useMemo(() => {
@@ -735,7 +735,7 @@ export default function ScheduleAndTimeOffPage() {
     if (!todayData) return { total: 0, available: 0, onTimeOff: 0 }
     const filtered = selectedSpace === "all"
       ? todayData.filter(t => t.schedule || t.onTimeOff)
-      : todayData.filter(t => (t as any).space?.id === selectedSpace && (t.schedule || t.onTimeOff))
+      : todayData.filter(t => t.space?.id === selectedSpace && (t.schedule || t.onTimeOff))
     return {
       total: filtered.length,
       available: filtered.filter(t => t.isAvailable).length,
@@ -809,7 +809,7 @@ export default function ScheduleAndTimeOffPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('common.allSpaces')}</SelectItem>
-                      {(locations as any[]).map((loc: any) => (
+                      {locations.map((loc) => (
                         <SelectItem key={loc.id} value={loc.id}>
                           {loc.name}
                         </SelectItem>

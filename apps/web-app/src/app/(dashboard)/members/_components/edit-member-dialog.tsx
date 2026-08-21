@@ -16,6 +16,7 @@ import {
   type UpdateMemberInput,
   type UpdateEmployeeInput,
   type ScheduleEntryInput,
+  type LocationAssignment,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -246,6 +247,9 @@ export function EditMemberDialog({
   })
   const locations = locationsData?.data || []
 
+  /** A location assignment with the space's name folded in for display. */
+  type NamedAssignment = LocationAssignment & { locationName: string }
+
   const { data: allAssignments } = useQuery({
     queryKey: ["all-location-assignments", locations.length],
     queryFn: async () => {
@@ -256,7 +260,7 @@ export function EditMemberDialog({
         }),
       )
       return results
-        .filter((r): r is PromiseFulfilledResult<any[]> => r.status === "fulfilled")
+        .filter((r): r is PromiseFulfilledResult<NamedAssignment[]> => r.status === "fulfilled")
         .flatMap((r) => r.value)
     },
     enabled: !!member && locations.length > 0,
@@ -479,17 +483,17 @@ export function EditMemberDialog({
               <div className="flex flex-wrap gap-1.5 items-center">
                 {(() => {
                   const memberAssignments = (allAssignments || []).filter(
-                    (a: any) => a.userId === member.id || a.technicianId === member.id,
+                    (a) => a.userId === member.id,
                   )
-                  const assignedLocationIds = new Set(memberAssignments.map((a: any) => a.locationId || a.companyLocationId))
-                  const assignedLocations = locations.filter((l: any) => assignedLocationIds.has(l.id))
-                  const unassignedLocations = locations.filter((l: any) => !assignedLocationIds.has(l.id))
+                  const assignedLocationIds = new Set(memberAssignments.map((a) => a.locationId))
+                  const assignedLocations = locations.filter((l) => assignedLocationIds.has(l.id))
+                  const unassignedLocations = locations.filter((l) => !assignedLocationIds.has(l.id))
 
                   return (
                     <>
                       {assignedLocations.length > 0 ? (
-                        assignedLocations.map((loc: any) => {
-                          const assignment = memberAssignments.find((a: any) => (a.locationId || a.companyLocationId) === loc.id)
+                        assignedLocations.map((loc) => {
+                          const assignment = memberAssignments.find((a) => a.locationId === loc.id)
                           return (
                             <Badge key={loc.id} variant="secondary" className="text-xs font-normal py-0.5 px-2 pr-1 gap-1">
                               <MapPin className="h-3 w-3" />
@@ -523,7 +527,7 @@ export function EditMemberDialog({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" className="w-48">
-                            {unassignedLocations.map((loc: any) => (
+                            {unassignedLocations.map((loc) => (
                               <DropdownMenuItem
                                 key={loc.id}
                                 onClick={async () => {

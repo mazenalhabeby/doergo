@@ -90,7 +90,8 @@ function optimisticUpdateTask(
 /** Restore all "tasks" cache entries from a previous snapshot */
 function restoreTasksCache(
   queryClient: ReturnType<typeof useQueryClient>,
-  snapshot: [any, TasksListResponse | undefined][],
+  // React Query keys are arrays of whatever the caller composed them from.
+  snapshot: [readonly unknown[], TasksListResponse | undefined][],
 ) {
   for (const [key, data] of snapshot) {
     queryClient.setQueryData(key, data)
@@ -362,9 +363,9 @@ export default function TasksPage() {
     if (isAdminOrManager) return allSpaces
     // Filter to spaces the employee has tasks in
     const taskList = tasksData?.data || []
-    const userSpaceIds = new Set(taskList.filter((t: any) => t.spaceId).map((t: any) => t.spaceId))
+    const userSpaceIds = new Set(taskList.filter((t) => t.spaceId).map((t) => t.spaceId))
     if (userSpaceIds.size === 0) return allSpaces
-    return (allSpaces as any[]).filter((s: any) => userSpaceIds.has(s.id))
+    return allSpaces.filter((s) => userSpaceIds.has(s.id))
   }, [isAdminOrManager, allSpaces, tasksData])
 
   // Space-aware modules
@@ -1149,7 +1150,7 @@ export default function TasksPage() {
                   <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-foreground" />
                 )}
               </button>
-              {spaces.map((space: any) => {
+              {spaces.map((space) => {
                 const isActive = selectedSpaceId === space.id
                 const count = spaceTaskCounts.get(space.id) || 0
                 return (
@@ -1569,7 +1570,7 @@ export default function TasksPage() {
         taskId={selectedTaskId}
         spaceId={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.spaceId ?? selectedSpaceId) : selectedSpaceId}
         currentAssigneeId={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignedToId ?? null) : null}
-        currentAssigneeIds={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignees?.map((a: any) => a.userId) ?? []) : []}
+        currentAssigneeIds={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignees?.map((a) => a.userId) ?? []) : []}
         isAssigning={assignMutation.isPending}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
         onSave={async (added, removed) => {
@@ -1579,15 +1580,22 @@ export default function TasksPage() {
           const snapshot = snapshotTasksCache(queryClient)
           optimisticUpdateTask(queryClient, selectedTaskId, (t) => {
             let assignees = [...(t.assignees || [])]
-            assignees = assignees.filter((a: any) => !removed.includes(a.userId))
+            assignees = assignees.filter((a) => !removed.includes(a.userId))
             for (const memberId of added) {
-              if (!assignees.find((a: any) => a.userId === memberId)) {
-                assignees.push({ id: `temp-${memberId}`, userId: memberId, role: assignees.length === 0 ? "LEAD" as const : "MEMBER" as const, user: { id: memberId, firstName: "", lastName: "" }, createdAt: new Date().toISOString() } as any)
+              if (!assignees.find((a) => a.userId === memberId)) {
+                // Optimistic placeholder: the real row arrives on refetch.
+                assignees.push({
+                  id: `temp-${memberId}`,
+                  userId: memberId,
+                  role: assignees.length === 0 ? ("LEAD" as const) : ("MEMBER" as const),
+                  user: { id: memberId, firstName: "", lastName: "" },
+                  createdAt: new Date().toISOString(),
+                })
               }
             }
             return { ...t, assignees }
           })
-          const ops: Promise<any>[] = [
+          const ops: Promise<unknown>[] = [
             ...removed.map(id => tasksApi.removeAssignee(selectedTaskId, id)),
             ...added.map(id => tasksApi.addAssignee(selectedTaskId, id)),
           ]
