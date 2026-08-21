@@ -241,6 +241,32 @@ export function AssetKindDialog({
                     />
                   </div>
                 </div>
+                {/* One or several. Two named choices rather than a switch: "one
+                    at a time" and "several at once" are both real answers, and a
+                    toggle labelled "multiple" makes the off state look like the
+                    absence of a decision. */}
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("assetKinds.holderCount", "How many at a time")}
+                  </Label>
+                  <div className="mt-1.5 flex gap-2">
+                    <Pick
+                      label={t("assetKinds.holderOne", "One")}
+                      active={!shape.holder.multiple}
+                      onClick={() => setHolder({ multiple: false })}
+                    />
+                    <Pick
+                      label={t("assetKinds.holderSeveral", "Several")}
+                      active={shape.holder.multiple}
+                      onClick={() => setHolder({ multiple: true })}
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground/70">
+                    {shape.holder.multiple
+                      ? t("assetKinds.holderSeveralHint", "A shared flat, a shift of operators — records can list more than one.")
+                      : t("assetKinds.holderOneHint", "One van, one driver. Assigning someone new replaces whoever is there.")}
+                  </p>
+                </div>
               </div>
             )}
           </div>

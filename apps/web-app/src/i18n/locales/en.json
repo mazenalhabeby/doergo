@@ -6174,7 +6174,12 @@
     "summaryFields_one": "1 detail",
     "summaryFields_other": "{{count}} details",
     "count_one": "1 inside",
-    "count_other": "{{count}} inside"
+    "count_other": "{{count}} inside",
+    "holderCount": "How many at a time",
+    "holderOne": "One",
+    "holderSeveral": "Several",
+    "holderOneHint": "One van, one driver. Assigning someone new replaces whoever is there.",
+    "holderSeveralHint": "A shared flat, a shift of operators — records can list more than one."
   },
   "assetRecords": {
     "intro": "Everything of this kind in this space.",
@@ -6203,7 +6208,8 @@
     "someone": "A member",
     "aClient": "A client",
     "nobodyHas": "Nobody has this one.",
-    "search": "Search…"
+    "search": "Search…",
+    "formerMember": "Former member"
   },
   "assetMoney": {
     "title": "Money",

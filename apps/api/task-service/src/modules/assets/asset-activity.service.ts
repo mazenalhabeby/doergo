@@ -89,10 +89,17 @@ export class AssetActivityService {
     assetId: string,
     organizationId: string,
     authorId: string,
-    from: { holderUserId: string | null; customerId: string | null },
-    to: { holderUserId: string | null; customerId: string | null },
+    from: Array<{ userId: string | null; customerId: string | null }>,
+    to: Array<{ userId: string | null; customerId: string | null }>,
   ) {
-    if (from.holderUserId === to.holderUserId && from.customerId === to.customerId) return;
+    // Compared as SETS, not as lists: reordering the same three residents is
+    // not a change, and logging it as one would fill a timeline with noise the
+    // first time anybody edited a record without touching who holds it.
+    const key = (h: { userId: string | null; customerId: string | null }) =>
+      h.userId ? `u:${h.userId}` : `c:${h.customerId}`;
+    const a = [...new Set(from.map(key))].sort();
+    const b = [...new Set(to.map(key))].sort();
+    if (a.length === b.length && a.every((v, i) => v === b[i])) return;
     try {
       await this.prisma.assetActivity.create({
         data: {

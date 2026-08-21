@@ -6173,7 +6173,12 @@
     "summaryFields_one": "1 Angabe",
     "summaryFields_other": "{{count}} Angaben",
     "count_one": "1 enthalten",
-    "count_other": "{{count}} enthalten"
+    "count_other": "{{count}} enthalten",
+    "holderCount": "Wie viele gleichzeitig",
+    "holderOne": "Eine Person",
+    "holderSeveral": "Mehrere",
+    "holderOneHint": "Ein Fahrzeug, ein Fahrer. Wer neu zugewiesen wird, ersetzt die bisherige Person.",
+    "holderSeveralHint": "Eine WG, eine Schicht von Bedienern — Einträge können mehrere aufführen."
   },
   "assetRecords": {
     "intro": "Alles dieser Art in diesem Space.",
@@ -6202,7 +6207,8 @@
     "someone": "Ein Mitglied",
     "aClient": "Ein Kunde",
     "nobodyHas": "Niemand hat dieses.",
-    "search": "Suchen…"
+    "search": "Suchen…",
+    "formerMember": "Ehemaliges Mitglied"
   },
   "assetMoney": {
     "title": "Geld",

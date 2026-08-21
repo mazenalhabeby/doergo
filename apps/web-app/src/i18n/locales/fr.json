@@ -6148,7 +6148,12 @@
     "summaryFields_one": "1 détail",
     "summaryFields_other": "{{count}} détails",
     "count_one": "1 à l’intérieur",
-    "count_other": "{{count}} à l’intérieur"
+    "count_other": "{{count}} à l’intérieur",
+    "holderCount": "Combien à la fois",
+    "holderOne": "Une personne",
+    "holderSeveral": "Plusieurs",
+    "holderOneHint": "Un véhicule, un conducteur. Désigner quelqu’un remplace la personne en place.",
+    "holderSeveralHint": "Une colocation, une équipe d’opérateurs — les fiches peuvent en lister plusieurs."
   },
   "assetRecords": {
     "intro": "Tout ce type dans cet espace.",
@@ -6177,7 +6182,8 @@
     "someone": "Un membre",
     "aClient": "Un client",
     "nobodyHas": "Personne ne l’a.",
-    "search": "Rechercher…"
+    "search": "Rechercher…",
+    "formerMember": "Ancien membre"
   },
   "assetMoney": {
     "title": "Argent",

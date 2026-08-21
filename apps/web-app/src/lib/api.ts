@@ -1619,6 +1619,14 @@ export interface CreateAssetInput {
   customerId?: string | null;
   /** Values for the fields this record's kind asks for. */
   details?: { label: string; value: string }[];
+  /** Who holds it — one, or several when the type allows it. */
+  holders?: AssetHolderInput[];
+}
+
+/** One holder on an asset: a member OR a client, never both. */
+export interface AssetHolderInput {
+  userId?: string | null;
+  customerId?: string | null;
 }
 
 export interface UpdateAssetInput {
@@ -1635,6 +1643,8 @@ export interface UpdateAssetInput {
   notes?: string;
   categoryId?: string | null;
   typeId?: string | null;
+  /** Who holds it — one, or several when the type allows it. */
+  holders?: AssetHolderInput[];
 }
 
 /** Billable assets per space — see `assetsApi.getUsage`. */

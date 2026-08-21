@@ -1170,6 +1170,41 @@ model AssetListRow {
   @@map("asset_list_rows")
 }
 
+/// Who holds an asset — a resident, a driver, an operator.
+///
+/// A table rather than a column because a kind may allow SEVERAL, and a column
+/// cannot hold several without becoming an array nobody can index, join or
+/// constrain. One row per holder keeps the single case identical to the many
+/// case: no branch, no second storage shape, and a real index for "what does
+/// this person hold".
+model AssetHolder {
+  id String @id @default(cuid())
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  /// A member of this organization. No foreign key, exactly as the column it
+  /// replaces had none: removing a member must never be blocked by an asset
+  /// still pointing at them.
+  userId String?
+
+  /// A client of this space. This one IS a foreign key — a customer record is
+  /// ours to keep consistent.
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  /// The same person cannot be added twice. Postgres treats NULLs as distinct,
+  /// so these two only constrain the side that is actually set.
+  @@unique([assetId, userId])
+  @@unique([assetId, customerId])
+  @@index([assetId])
+  @@index([userId])
+  @@index([customerId])
+  @@map("asset_holders")
+}
+
 model AssetCategory {
   id          String  @id @default(cuid())
   name        String
@@ -1279,6 +1314,9 @@ model Asset {
   parent   Asset?  @relation("AssetStructure", fields: [parentId], references: [id], onDelete: SetNull)
   children Asset[] @relation("AssetStructure")
 
+  /// Who has it. A kind decides whether that is one person or several; the
+  /// join table carries both cases, so "several" is not a second code path.
+  holders    AssetHolder[]
   activities AssetActivity[]
   money      AssetMoney[]
   listRows   AssetListRow[]
@@ -1371,6 +1409,9 @@ model Customer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  /// Assets this client holds — flats, vehicles, machines.
+  assetHolders AssetHolder[]
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])

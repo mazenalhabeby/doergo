@@ -335,14 +335,21 @@ function KindContents({
   )
 }
 
-/** Who has this one — under whatever the type calls them. */
+/** Who has this one — under whatever the type calls them, and how many. */
 function HolderBadge({ record, shape }: { record: AssetRecord; shape: KindShape }) {
   const { t } = useTranslation()
   const label = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
-  if (record.holderUserId || record.customerId) {
+  // Falls back to the old single columns for a record the list has not
+  // refetched yet, so the badge never blinks to "Free" mid-refresh.
+  const count = record.holders?.length ?? (record.holderUserId || record.customerId ? 1 : 0)
+
+  if (count > 0) {
     return (
       <Badge variant="secondary" className="shrink-0 gap-1">
         <User className="h-3 w-3" /> {label}
+        {/* The number only when there is more than one — "Resident 1" reads as
+            a name, and every single-holder list would grow a pointless digit. */}
+        {count > 1 && <span className="tabular-nums opacity-70">{count}</span>}
       </Badge>
     )
   }

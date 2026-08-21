@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Role, success, paginated, TaskStatus, normalizeDetailRows } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
+import { AssetHoldersService, type HolderInput } from './asset-holders.service';
 import { AssetActivityService } from './asset-activity.service';
 
 /**
@@ -39,6 +40,7 @@ export class AssetsService {
     private readonly prisma: PrismaService,
     private readonly access: AssetAccessService,
     private readonly activity: AssetActivityService,
+    private readonly holderService: AssetHoldersService,
   ) {}
 
   /**
@@ -55,32 +57,69 @@ export class AssetsService {
    * The client is checked against THIS organization: a customer id is guessable,
    * and without this a record could be pinned to another tenant's customer.
    */
-  private async resolveHolder(
-    input: { holderUserId?: string | null; customerId?: string | null },
+  /**
+   * The holders on a record, with each member's name filled in.
+   *
+   * Members carry no foreign key (removing one must never be blocked by an
+   * asset pointing at them), so they are looked up rather than joined — once
+   * for the whole list, not once per holder. A member who has since been
+   * removed resolves to null and simply drops out of the list rather than
+   * leaving a row that renders as a blank name.
+   */
+  private async withHoldersMany<T extends { id: string; organizationId: string; holders?: Array<{ id: string; userId: string | null; customerId: string | null; customer: unknown }> }>(
+    assets: T[],
     organizationId: string,
-  ): Promise<{ holderUserId: string | null; customerId: string | null }> {
-    const holderUserId = input.holderUserId?.trim() || null;
-    const customerId = input.customerId?.trim() || null;
+  ) {
+    const userIds = [
+      ...new Set(assets.flatMap((a) => (a.holders ?? []).map((h) => h.userId).filter((id): id is string => !!id))),
+    ];
+    const members = userIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds }, organizationId },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+      : [];
+    const byId = new Map(members.map((m) => [m.id, m]));
 
-    if (holderUserId) {
-      const member = await this.prisma.user.findFirst({
-        where: { id: holderUserId, organizationId },
-        select: { id: true },
-      });
-      if (!member) throw new BadRequestException('That member is not in this organization');
-      return { holderUserId, customerId: null };
-    }
+    return assets.map((a) => ({
+      ...a,
+      holders: (a.holders ?? [])
+        .map((h) => ({
+          id: h.id,
+          userId: h.userId,
+          customerId: h.customerId,
+          user: h.userId ? byId.get(h.userId) ?? null : null,
+          customer: h.customer ?? null,
+        }))
+        .filter((h) => h.user || h.customer),
+    }));
+  }
 
-    if (customerId) {
-      const client = await this.prisma.customer.findFirst({
-        where: { id: customerId, organizationId },
-        select: { id: true },
-      });
-      if (!client) throw new BadRequestException('That client is not in this organization');
-      return { holderUserId: null, customerId };
-    }
+  private async withHolders<T extends { id: string; organizationId: string }>(
+    asset: T & { holders?: Array<{ id: string; userId: string | null; customerId: string | null; customer: unknown }> },
+  ) {
+    const rows = asset.holders ?? [];
+    const userIds = rows.map((h) => h.userId).filter((id): id is string => !!id);
 
-    return { holderUserId: null, customerId: null };
+    const members = userIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds }, organizationId: asset.organizationId },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+      : [];
+    const byId = new Map(members.map((m) => [m.id, m]));
+
+    const holders = rows
+      .map((h) => ({
+        id: h.id,
+        userId: h.userId,
+        customerId: h.customerId,
+        user: h.userId ? byId.get(h.userId) ?? null : null,
+        customer: h.customer ?? null,
+      }))
+      .filter((h) => h.user || h.customer);
+
+    return { ...asset, holders };
   }
 
   /**
@@ -280,15 +319,20 @@ export class AssetsService {
   }) {
     this.access.assertMay(data as any, 'create assets');
 
-    // Verify category if provided
+    // Verify category if provided. Its config comes back with it: the kind is
+    // what decides how many holders a record may have, and asking for it twice
+    // would be a second round trip for something already in hand.
+    let kindConfig: unknown = null;
     if (data.categoryId) {
       const category = await this.prisma.assetCategory.findUnique({
         where: { id: data.categoryId },
+        select: { organizationId: true, config: true },
       });
 
       if (!category || category.organizationId !== data.organizationId) {
         throw new BadRequestException('Invalid category');
       }
+      kindConfig = category.config;
     }
 
     // Verify type if provided
@@ -308,6 +352,14 @@ export class AssetsService {
       }
     }
 
+    // Resolved BEFORE the write: a holder that is not this organization's must
+    // stop the create, not leave a record behind with nobody on it.
+    const holderRows = await this.holderService.resolve(
+      AssetHoldersService.fromLegacy(data),
+      data.organizationId,
+      kindConfig,
+    );
+
     const asset = await this.prisma.asset.create({
       data: {
         name: data.name,
@@ -324,16 +376,20 @@ export class AssetsService {
         categoryId: data.categoryId,
         typeId: data.typeId,
         organizationId: data.organizationId,
-        ...(await this.resolveHolder(data, data.organizationId)),
         details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
+        // Written with the record: nested creates run inside Prisma's own
+        // transaction, so a record never exists for an instant with the wrong
+        // people on it.
+        holders: holderRows.length ? { create: holderRows } : undefined,
       },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
         type: { select: { id: true, name: true } },
+        holders: { select: AssetHoldersService.select },
       },
     });
 
-    return success(asset);
+    return success(await this.withHolders(asset));
   }
 
   /**
@@ -386,13 +442,16 @@ export class AssetsService {
         include: {
           category: { select: { id: true, name: true, color: true, icon: true } },
           type: { select: { id: true, name: true } },
+          holders: { select: AssetHoldersService.select },
           _count: { select: { tasks: true } },
         },
       }),
       this.prisma.asset.count({ where }),
     ]);
 
-    return paginated(assets, { page, limit, total });
+    // One member lookup for the whole page, not one per row: a list is exactly
+    // where an N+1 hides until the page it is on gets long.
+    return paginated(await this.withHoldersMany(assets, query.organizationId), { page, limit, total });
   }
 
   /**
@@ -454,7 +513,7 @@ export class AssetsService {
         // kind's shape, and a second round trip for it would be visible.
         category: { select: { id: true, name: true, color: true, icon: true, config: true, spaceId: true } },
         type: { select: { id: true, name: true } },
-        customer: { select: { id: true, name: true, email: true, phone: true } },
+        holders: { select: AssetHoldersService.select },
         _count: { select: { tasks: true } },
       },
     });
@@ -467,17 +526,7 @@ export class AssetsService {
       throw new ForbiddenException('Asset does not belong to your organization');
     }
 
-    // holderUserId carries no foreign key (removing a member must not block),
-    // so the member is looked up rather than joined. Scoped to this org, and a
-    // member who has since been removed simply resolves to null.
-    const holderUser = asset.holderUserId
-      ? await this.prisma.user.findFirst({
-          where: { id: asset.holderUserId, organizationId: data.organizationId },
-          select: { id: true, firstName: true, lastName: true, email: true },
-        })
-      : null;
-
-    return success({ ...asset, holderUser });
+    return success(await this.withHolders(asset));
   }
 
   /**
@@ -546,13 +595,45 @@ export class AssetsService {
       }
     }
 
-    // Resolved before the write, so the OLD holder is still readable and the
-    // timeline entry can say what it changed from.
-    const holderChange =
-      data.holderUserId !== undefined || data.customerId !== undefined
-        ? await this.resolveHolder(data, data.organizationId)
-        : null;
-    const before = holderChange ? await this.access.assetInOrg(data.id, data.organizationId) : null;
+    /*
+      Holders, resolved before the write.
+
+      `fromLegacy` returns undefined when the request said nothing about them —
+      which has to stay distinct from an empty list, or every partial update
+      (renaming a flat, say) would silently clear its residents.
+
+      The OLD set is read first so the timeline entry can say what changed from
+      what. The kind that decides how many are allowed is the one the record
+      will end up in, so a move into a single-holder type is checked against
+      that type and not the one it is leaving.
+    */
+    const wanted: HolderInput[] | undefined = AssetHoldersService.fromLegacy(data);
+    let holderRows: Array<{ userId: string | null; customerId: string | null }> | null = null;
+    let before: Array<{ userId: string | null; customerId: string | null }> | null = null;
+
+    if (wanted !== undefined) {
+      const owner = await this.prisma.asset.findFirst({
+        where: { id: data.id, organizationId: data.organizationId },
+        select: {
+          category: { select: { config: true } },
+          holders: { select: { userId: true, customerId: true } },
+        },
+      });
+      if (!owner) throw new NotFoundException('Asset not found in this organization');
+
+      const kindConfig =
+        data.categoryId !== undefined && data.categoryId
+          ? (
+              await this.prisma.assetCategory.findFirst({
+                where: { id: data.categoryId, organizationId: data.organizationId },
+                select: { config: true },
+              })
+            )?.config ?? null
+          : owner.category?.config ?? null;
+
+      holderRows = await this.holderService.resolve(wanted, data.organizationId, kindConfig);
+      before = owner.holders;
+    }
 
     const updated = await this.prisma.asset.update({
       where: { id: data.id },
@@ -570,9 +651,12 @@ export class AssetsService {
         ...(data.notes !== undefined && { notes: data.notes }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.typeId !== undefined && { typeId: data.typeId }),
-        // Holder is resolved together: sending either side re-decides both, so
-        // moving a thing from a member to a client clears the member in one go.
-        ...(holderChange ?? {}),
+        // Holders are replaced as a SET: sending the list re-decides all of it,
+        // so moving a thing from a member to a client clears the member in one
+        // go and no stale row survives a change of mind.
+        ...(holderRows
+          ? { holders: { deleteMany: {}, ...(holderRows.length ? { create: holderRows } : {}) } }
+          : {}),
         ...(data.details !== undefined && {
           details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
         }),
@@ -580,20 +664,15 @@ export class AssetsService {
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
         type: { select: { id: true, name: true } },
+        holders: { select: AssetHoldersService.select },
       },
     });
 
-    if (holderChange && before) {
-      await this.activity.logHolderChange(
-        data.id,
-        data.organizationId,
-        data.userId,
-        { holderUserId: before.holderUserId, customerId: before.customerId },
-        holderChange,
-      );
+    if (holderRows && before) {
+      await this.activity.logHolderChange(data.id, data.organizationId, data.userId, before, holderRows);
     }
 
-    return success(updated);
+    return success(await this.withHolders(updated));
   }
 
   /**

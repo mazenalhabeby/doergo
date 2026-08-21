@@ -23,6 +23,11 @@ export const KIND_SHAPE_LIMITS = {
   maxMoneyCategories: 20,
   /** Tables per kind. More than a handful is a sign it wants its own module. */
   maxLists: 5,
+  /**
+   * Holders on one record. High enough for a shift or a shared flat, low enough
+   * that a request cannot ask the server to validate an unbounded list.
+   */
+  maxHolders: 50,
   /** Columns per table — enough to be useful, few enough to read on a phone. */
   maxColumns: 8,
 } as const;
@@ -36,6 +41,17 @@ export interface KindHolder {
   members: boolean;
   /** Portal customers of this space. */
   clients: boolean;
+  /**
+   * May a record have SEVERAL of them?
+   *
+   * A flat has one resident; a shared flat has four. A van has one driver; a
+   * machine has a whole shift of operators. The kind decides, because only the
+   * customer knows which of those they are running.
+   *
+   * Defaults to OFF: every kind that exists today holds exactly one, and a
+   * default of on would quietly widen them all.
+   */
+  multiple: boolean;
 }
 
 /** One prompted field on every record of this kind — "Floor", "Plate", "Rent". */
@@ -159,6 +175,7 @@ export function normalizeKindShape(raw: unknown): KindShape {
     label: str(holderSrc.label, KIND_SHAPE_LIMITS.maxHolderLabel),
     members: bool(holderSrc.members, holderEnabled),
     clients: bool(holderSrc.clients),
+    multiple: bool(holderSrc.multiple),
   };
 
   // A holder nobody can be assigned to is a control that does nothing, so an
@@ -294,6 +311,18 @@ export function normalizeKindShape(raw: unknown): KindShape {
 /** The label to show for the name box — the kind's own word, else a plain one. */
 export function kindNameLabel(shape: KindShape, fallback: string): string {
   return shape.nameLabel || fallback;
+}
+
+/**
+ * How many holders a record of this kind may have.
+ *
+ * One number rather than a boolean the callers each interpret: the DTO clamps
+ * with it, the service enforces it, and the picker switches on it, so a kind
+ * that says "one" cannot be given two by a request that skips the screen.
+ */
+export function maxHolders(shape: KindShape): number {
+  if (!shape.holder.enabled) return 0;
+  return shape.holder.multiple ? KIND_SHAPE_LIMITS.maxHolders : 1;
 }
 
 /** The label to show for the holder — the kind's own word, else a plain one. */

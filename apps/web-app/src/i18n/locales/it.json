@@ -6148,7 +6148,12 @@
     "summaryFields_one": "1 dettaglio",
     "summaryFields_other": "{{count}} dettagli",
     "count_one": "1 dentro",
-    "count_other": "{{count}} dentro"
+    "count_other": "{{count}} dentro",
+    "holderCount": "Quanti alla volta",
+    "holderOne": "Uno",
+    "holderSeveral": "Diversi",
+    "holderOneHint": "Un furgone, un autista. Assegnarne uno nuovo sostituisce quello attuale.",
+    "holderSeveralHint": "Un appartamento condiviso, un turno di operatori: le schede possono elencarne più di uno."
   },
   "assetRecords": {
     "intro": "Tutto di questo tipo in questo spazio.",
@@ -6177,7 +6182,8 @@
     "someone": "Un membro",
     "aClient": "Un cliente",
     "nobodyHas": "Nessuno ha questo.",
-    "search": "Cerca…"
+    "search": "Cerca…",
+    "formerMember": "Ex membro"
   },
   "assetMoney": {
     "title": "Denaro",

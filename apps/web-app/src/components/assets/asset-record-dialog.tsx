@@ -4,11 +4,12 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Ban, Check, Plus, Search, Smartphone, Trash2, User } from "lucide-react"
+import { Ban, Check, Plus, Search, Smartphone, Trash2, User, X } from "lucide-react"
 
 import { assetsApi, customersApi, organizationsApi, type AssetCategory, type OrgMember } from "@/lib/api"
 import {
-  normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel, type DetailRow,
+  normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel,
+  KIND_SHAPE_LIMITS, type DetailRow,
 } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -38,12 +39,27 @@ export interface AssetRecord {
   locationLng?: number | null
   holderUserId?: string | null
   customerId?: string | null
+  /** Who holds it. One entry, or several when the type allows it. */
+  holders?: Array<{ userId?: string | null; customerId?: string | null }>
   details?: unknown
 }
 
-// Holder is encoded like the apartment resident: "u:<userId>" or "c:<customerId>".
-const encodeHolder = (r?: AssetRecord) =>
-  r?.holderUserId ? `u:${r.holderUserId}` : r?.customerId ? `c:${r.customerId}` : "none"
+/*
+  A holder is one string: "u:<userId>" or "c:<customerId>".
+
+  One encoding for both sides keeps selection a set-membership test instead of
+  two parallel lists that can disagree about who is chosen — and makes the
+  single case a list of length one rather than a separate code path.
+*/
+const encodeHolders = (r?: AssetRecord): string[] => {
+  if (r?.holders?.length) {
+    return r.holders.map((h) => (h.userId ? `u:${h.userId}` : `c:${h.customerId}`)).filter(Boolean) as string[]
+  }
+  // A record saved before types could hold several still answers the old way.
+  if (r?.holderUserId) return [`u:${r.holderUserId}`]
+  if (r?.customerId) return [`c:${r.customerId}`]
+  return []
+}
 const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
@@ -77,7 +93,24 @@ export function AssetRecordDialog({
   const [address, setAddress] = useState(existing?.locationAddress ?? "")
   const [lat, setLat] = useState<number | null>(existing?.locationLat ?? null)
   const [lng, setLng] = useState<number | null>(existing?.locationLng ?? null)
-  const [holder, setHolder] = useState(encodeHolder(existing))
+  const [holders, setHolders] = useState<string[]>(encodeHolders(existing))
+
+  /*
+    Picking somebody.
+
+    On a "one at a time" type a click REPLACES, which is what a single choice
+    means and saves a deselect-then-select every time somebody moves a van to a
+    new driver. On a "several" type it toggles, and the cap is the same one the
+    server enforces — reached here it just stops adding rather than letting
+    somebody build a list that will be refused on save.
+  */
+  const toggleHolder = (value: string) =>
+    setHolders((prev) => {
+      if (!shape.holder.multiple) return prev[0] === value ? [] : [value]
+      if (prev.includes(value)) return prev.filter((v) => v !== value)
+      if (prev.length >= KIND_SHAPE_LIMITS.maxHolders) return prev
+      return [...prev, value]
+    })
   const [tab, setTab] = useState<"members" | "clients">(shape.holder.members ? "members" : "clients")
   const [q, setQ] = useState("")
   const [rows, setRows] = useState<DetailRow[]>(detailRowsForKind(shape, existing?.details))
@@ -118,15 +151,17 @@ export function AssetRecordDialog({
 
   const save = useMutation({
     mutationFn: () => {
-      const holderUserId = holder.startsWith("u:") ? holder.slice(2) : null
-      const customerId = holder.startsWith("c:") ? holder.slice(2) : null
       const base = {
         name: name.trim() || address.trim(),
         locationAddress: shape.hasAddress ? address : undefined,
         locationLat: shape.hasAddress ? lat ?? undefined : undefined,
         locationLng: shape.hasAddress ? lng ?? undefined : undefined,
-        holderUserId: shape.holder.enabled ? holderUserId : null,
-        customerId: shape.holder.enabled ? customerId : null,
+        // Always sent, never omitted: an absent key means "leave them alone",
+        // and an empty list means "nobody". Clearing the last resident has to
+        // reach the server as a decision.
+        holders: shape.holder.enabled
+          ? holders.map((h) => (h.startsWith("u:") ? { userId: h.slice(2) } : { customerId: h.slice(2) }))
+          : [],
         // Empty answers are kept, so a prompted field that nobody filled in
         // still shows as waiting rather than vanishing from the record.
         details: rows
@@ -151,7 +186,7 @@ export function AssetRecordDialog({
       setAddress(existing?.locationAddress ?? "")
       setLat(existing?.locationLat ?? null)
       setLng(existing?.locationLng ?? null)
-      setHolder(encodeHolder(existing))
+      setHolders(encodeHolders(existing))
       setRows(detailRowsForKind(shape, existing?.details))
       setQ("")
     }
@@ -164,6 +199,22 @@ export function AssetRecordDialog({
     : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
   ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
   const loadingList = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
+
+  /*
+    A chosen person's name, from whichever side of the picker they came.
+
+    Looked up across BOTH lists rather than the open tab: a flat can hold a
+    member and a client at once, and a chip that read "Unknown" whenever the
+    other tab was showing would be a bug nobody could explain.
+  */
+  const holderName = (value: string) => {
+    if (value.startsWith("u:")) {
+      const m = members.find((x) => x.id === value.slice(2))
+      return m ? memberName(m) : t("assetRecords.formerMember", "Former member")
+    }
+    const c = clients.find((x) => x.id === value.slice(2))
+    return c?.name ?? t("assetRecords.client", "Client")
+  }
 
   return (
     <Dialog open={open} onOpenChange={reset}>
@@ -202,6 +253,24 @@ export function AssetRecordDialog({
           {shape.holder.enabled && (
             <div className="space-y-1.5">
               <Label>{holderLabel}</Label>
+              {/* Who is on it right now. Only when several are allowed: with one
+                  holder the list below already shows the choice, and a chip
+                  repeating it would just be the same fact twice. */}
+              {shape.holder.multiple && holders.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {holders.map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => toggleHolder(h)}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                    >
+                      {holderName(h)}
+                      <X className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="rounded-xl border border-border">
                 <div className="flex items-center gap-1 border-b border-border p-1">
                   {shape.holder.members && (
@@ -212,9 +281,9 @@ export function AssetRecordDialog({
                     <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }}
                       icon={Smartphone} label={t("apartments.clients", "Clients")} />
                   )}
-                  <button type="button" onClick={() => setHolder("none")}
+                  <button type="button" onClick={() => setHolders([])}
                     className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                      holder === "none" ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                      holders.length === 0 ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
                     <Ban className="h-3.5 w-3.5" /> {t("assetRecords.nobody", "Nobody")}
                   </button>
                 </div>
@@ -233,9 +302,9 @@ export function AssetRecordDialog({
                         : t("apartments.noMembers", "No members")}
                     </p>
                   ) : list.map((r) => {
-                    const sel = holder === r.value
+                    const sel = holders.includes(r.value)
                     return (
-                      <button key={r.value} type="button" onClick={() => setHolder(r.value)}
+                      <button key={r.value} type="button" onClick={() => toggleHolder(r.value)}
                         className={cn("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
                           sel ? "bg-primary/10" : "hover:bg-muted")}>
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">

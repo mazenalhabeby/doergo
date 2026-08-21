@@ -57,7 +57,8 @@ export const KIND_TEMPLATES: KindTemplate[] = [
     shape: {
       nameLabel: 'Machine name',
       hasAddress: false,
-      holder: { enabled: true, label: 'Operator', members: true, clients: false },
+      // A machine is run by a shift, not by one person.
+      holder: { enabled: true, label: 'Operator', members: true, clients: false, multiple: true },
       fields: fields(['Maker', 'Model', 'Installed', 'Serial']),
       allowExtraFields: true,
       money: {
@@ -84,7 +85,8 @@ export const KIND_TEMPLATES: KindTemplate[] = [
     shape: {
       nameLabel: 'Flat',
       hasAddress: true,
-      holder: { enabled: true, label: 'Resident', members: true, clients: true },
+      // Flats get shared, and a lease with two names on it is not unusual.
+      holder: { enabled: true, label: 'Resident', members: true, clients: true, multiple: true },
       fields: fields(['Floor', 'Rooms', 'Size', 'Door code']),
       allowExtraFields: true,
       money: {
@@ -107,7 +109,8 @@ export const KIND_TEMPLATES: KindTemplate[] = [
     shape: {
       nameLabel: 'Plate',
       hasAddress: false,
-      holder: { enabled: true, label: 'Driver', members: true, clients: false },
+      // One van, one driver at a time — the whole point of asking.
+      holder: { enabled: true, label: 'Driver', members: true, clients: false, multiple: false },
       fields: fields(['Make', 'Model', 'Year', 'Next test']),
       allowExtraFields: true,
       money: {
@@ -130,7 +133,8 @@ export const KIND_TEMPLATES: KindTemplate[] = [
     shape: {
       nameLabel: 'Tool',
       hasAddress: false,
-      holder: { enabled: true, label: 'Held by', members: true, clients: false },
+      // A tool is with whoever took it, and only one person can have it.
+      holder: { enabled: true, label: 'Held by', members: true, clients: false, multiple: false },
       fields: fields(['Make', 'Model', 'Serial']),
       allowExtraFields: true,
       money: { enabled: true, categories: [{ label: 'Repairs', direction: 'out' }] },
@@ -144,7 +148,7 @@ export const KIND_TEMPLATES: KindTemplate[] = [
     shape: {
       nameLabel: 'Name',
       hasAddress: true,
-      holder: { enabled: true, label: 'Manager', members: true, clients: false },
+      holder: { enabled: true, label: 'Manager', members: true, clients: false, multiple: false },
       fields: fields(['Type', 'Floors', 'Built']),
       allowExtraFields: true,
       money: {

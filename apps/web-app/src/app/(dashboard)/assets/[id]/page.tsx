@@ -53,7 +53,14 @@ interface AssetDetail {
   locationLat?: number | null
   locationLng?: number | null
   holderUserId?: string | null
-  holderUser?: { id: string; firstName: string; lastName: string; email?: string | null } | null
+  /** Everyone who holds it. One entry, or several when the type allows it. */
+  holders?: Array<{
+    id: string
+    userId?: string | null
+    customerId?: string | null
+    user?: { id: string; firstName: string; lastName: string; email?: string | null } | null
+    customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null
+  }>
   customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null
   details?: unknown
   category?: AssetCategory | null
@@ -115,8 +122,7 @@ export default function AssetRecordPage() {
     ? `/locations/${kind.spaceId}?tab=assets&type=${kind.id}`
     : "/locations"
   const rows = detailRowsForKind(shape, asset.details).filter((r) => r.value)
-  const member = asset.holderUser
-  const client = asset.customer
+  const holders = asset.holders ?? []
   const hasMap = shape.hasAddress && asset.locationLat != null && asset.locationLng != null
 
   // getAssetHistory already unwraps the envelope, so this IS the array. Reaching
@@ -187,8 +193,9 @@ export default function AssetRecordPage() {
               locationAddress: asset.locationAddress,
               locationLat: asset.locationLat,
               locationLng: asset.locationLng,
-              holderUserId: asset.holderUserId,
-              customerId: asset.customer?.id ?? null,
+              // The whole set, not the first of it. Passing one would let a
+              // rename quietly drop every other resident on save.
+              holders: holders.map((h) => ({ userId: h.userId, customerId: h.customerId })),
               details: asset.details,
             }}
             onSaved={() => {
@@ -219,45 +226,55 @@ export default function AssetRecordPage() {
                 <UserCheck className="h-3.5 w-3.5" />{" "}
                 {kindHolderLabel(shape, t("assetRecords.holder", "Held by"))}
               </p>
-              {member ? (
-                <button
-                  onClick={() => router.push(`/members/${member.id}`)}
-                  className="flex w-full items-center gap-2 text-left"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-                    {initials(member.firstName, member.lastName)}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-foreground hover:text-primary">
-                      {`${member.firstName} ${member.lastName}`.trim()}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{t("apartments.memberTag", "Member (staff)")}</span>
-                  </span>
-                </button>
-              ) : client ? (
-                <div className="space-y-1.5">
-                  <button
-                    onClick={() => router.push(`/customers/${client.id}`)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary"
-                  >
-                    {client.name}
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                      <Smartphone className="h-2.5 w-2.5" /> {t("customers.appAccess", "App access")}
-                    </span>
-                  </button>
-                  {client.email && (
-                    <a href={`mailto:${client.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
-                      <Mail className="h-3 w-3" /> {client.email}
-                    </a>
-                  )}
-                  {client.phone && (
-                    <a href={`tel:${client.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
-                      <Phone className="h-3 w-3" /> {client.phone}
-                    </a>
+              {holders.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("assetRecords.nobodyHas", "Nobody has this one.")}</p>
+              ) : (
+                /* One list for one holder and for six. The single case is not a
+                   different design, it is this list with one row in it — which
+                   is why adding "several" needed no second layout. */
+                <div className="space-y-2.5">
+                  {holders.map((h) =>
+                    h.user ? (
+                      <button
+                        key={h.id}
+                        onClick={() => router.push(`/members/${h.user!.id}`)}
+                        className="flex w-full items-center gap-2 text-left"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                          {initials(h.user.firstName, h.user.lastName)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-foreground hover:text-primary">
+                            {`${h.user.firstName} ${h.user.lastName}`.trim()}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{t("apartments.memberTag", "Member (staff)")}</span>
+                        </span>
+                      </button>
+                    ) : h.customer ? (
+                      <div key={h.id} className="space-y-1.5">
+                        <button
+                          onClick={() => router.push(`/customers/${h.customer!.id}`)}
+                          className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary"
+                        >
+                          {h.customer.name}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                            <Smartphone className="h-2.5 w-2.5" /> {t("customers.appAccess", "App access")}
+                          </span>
+                        </button>
+                        {h.customer.email && (
+                          <a href={`mailto:${h.customer.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
+                            <Mail className="h-3 w-3" /> {h.customer.email}
+                          </a>
+                        )}
+                        {h.customer.phone && (
+                          <a href={`tel:${h.customer.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
+                            <Phone className="h-3 w-3" /> {h.customer.phone}
+                          </a>
+                        )}
+                      </div>
+                    ) : null,
                   )}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("assetRecords.nobodyHas", "Nobody has this one.")}</p>
               )}
             </div>
           )}

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
   IsArray,
   IsString,
   IsNotEmpty,
@@ -15,7 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AssetStatus } from '@hbcfield/shared';
+import { AssetStatus, KIND_SHAPE_LIMITS } from '@hbcfield/shared';
 
 /**
  * One filled-in field on a record.
@@ -26,6 +27,28 @@ import { AssetStatus } from '@hbcfield/shared';
  * turned `{ label, value }` into `[]`, validated, returned 200 and stored
  * nothing. Silent data loss with a success toast on top.
  */
+/**
+ * One holder: a member OR a client, never both.
+ *
+ * A real class with real decorators, not `unknown[]`. Under the global
+ * ValidationPipe's `enableImplicitConversion`, an array typed only with
+ * `@IsArray()` has its objects coerced to `[]` — the request validates, returns
+ * 200, and stores nothing. That has already happened once on this very file.
+ */
+export class AssetHolderDto {
+  @ApiPropertyOptional({ description: 'A member of this organization' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  userId?: string;
+
+  @ApiPropertyOptional({ description: 'A client of this space' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  customerId?: string;
+}
+
 export class AssetDetailRowDto {
   @ApiProperty({ example: 'Door code' })
   @IsString()
@@ -129,6 +152,13 @@ export class CreateAssetDto {
   @Type(() => AssetDetailRowDto)
   details?: AssetDetailRowDto[];
 
+  @ApiPropertyOptional({ type: [AssetHolderDto], description: 'Who holds this — one, or several if the type allows it' })
+  @IsArray()
+  @IsOptional()
+  @ArrayMaxSize(KIND_SHAPE_LIMITS.maxHolders)
+  @ValidateNested({ each: true })
+  @Type(() => AssetHolderDto)
+  holders?: AssetHolderDto[];
 }
 
 export class UpdateAssetDto extends PartialType(CreateAssetDto) {}
