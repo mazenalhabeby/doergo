@@ -29,6 +29,8 @@ import {
   type Task,
   type SpaceShareRequestType,
   type SpaceShareRequestStatus,
+  type TimeEntry,
+  type EmployeeListItem,
 } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
@@ -86,7 +88,7 @@ export default function SharedSpaceViewPage() {
   const share = user?.access?.sharedSpaces?.find((s) => s.spaceId === spaceId)
   // Capabilities for THIS space (from the server-resolved grant): CONTRIBUTE/CONTROL
   // can create; CONTROL can assign. Drives the direct-control UI (backend enforces).
-  const perSpace = (user?.access as any)?.perSpace?.[spaceId] || {}
+  const perSpace = user?.access?.perSpace?.[spaceId] ?? {}
   const canCreate = !!perSpace.canCreateTasks
   const canAssign = !!perSpace.canAssignTasks
   const canManageMembers = !!perSpace.canManageUsers // CONTROL → add own workers to the space
@@ -121,7 +123,7 @@ export default function SharedSpaceViewPage() {
     queryFn: () => attendanceApi.getLocationEntries(spaceId, { limit: 50 }),
     enabled: !!share && !!share.showAttendance,
   })
-  const attendanceEntries: any[] = (attendance as any)?.data || []
+  const attendanceEntries: TimeEntry[] = attendance?.data ?? []
 
   // Live worker locations — only when the owner enabled "show tracking".
   const { data: tracked } = useQuery({
@@ -291,8 +293,11 @@ export default function SharedSpaceViewPage() {
                           <SelectValue placeholder={t("spaceSharing.guest.unassigned", "Unassigned")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {workers.map((w: any) => (
-                            <SelectItem key={w.user?.id} value={w.user?.id}>
+                          {/* An assignment with no user attached cannot be
+                              picked — a Select option whose value is undefined
+                              renders but silently refuses to select. */}
+                          {workers.filter((w) => w.user?.id).map((w) => (
+                            <SelectItem key={w.user!.id} value={w.user!.id}>
                               {w.user?.firstName} {w.user?.lastName}
                             </SelectItem>
                           ))}
@@ -314,7 +319,7 @@ export default function SharedSpaceViewPage() {
               <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this space")}</h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              {workers.map((w: any) => (
+              {workers.map((w) => (
                 <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
                   <UserAvatar firstName={w.user?.firstName} lastName={w.user?.lastName} seed={w.user?.id} size="sm" />
                   <div className="min-w-0">
@@ -334,16 +339,23 @@ export default function SharedSpaceViewPage() {
         )}
 
         {/* Live locations (owner enabled "show tracking") */}
-        {share.showTracking && tracked && (tracked as any[]).length > 0 && (
+        {share.showTracking && tracked && tracked.length > 0 && (
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.trackingHeading", "Live locations")}</h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              {(tracked as any[]).map((w: any) => {
-                const mins = Math.round((Date.now() - new Date(w.updatedAt).getTime()) / 60000)
-                const ago = mins <= 1 ? t("spaceSharing.guest.justNow", "just now") : t("spaceSharing.guest.minsAgo", "{{m}} min ago", { m: mins })
+              {tracked.map((w) => {
+                // `updatedAt` is optional: new Date(undefined) is an Invalid
+                // Date, and the row read "NaN min ago" rather than showing nothing.
+                const seenAt = w.updatedAt ? new Date(w.updatedAt).getTime() : null
+                const mins = seenAt ? Math.round((Date.now() - seenAt) / 60000) : null
+                const ago = mins == null
+                  ? ""
+                  : mins <= 1
+                    ? t("spaceSharing.guest.justNow", "just now")
+                    : t("spaceSharing.guest.minsAgo", "{{m}} min ago", { m: mins })
                 return (
                   <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
                     <UserAvatar firstName={w.firstName} lastName={w.lastName} seed={w.id} size="sm" />
@@ -373,7 +385,7 @@ export default function SharedSpaceViewPage() {
               <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.attendanceHeading", "Attendance")}</h2>
             </div>
             <div className="rounded-xl border bg-card overflow-hidden">
-              {attendanceEntries.slice(0, 25).map((e: any) => {
+              {attendanceEntries.slice(0, 25).map((e) => {
                 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—")
                 return (
                   <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0">
@@ -453,10 +465,10 @@ function AddWorkerDialog({
     queryFn: () => employeesApi.list({ limit: 100 }),
     enabled: open,
   })
-  const list: any[] = (employees as any)?.data || (Array.isArray(employees) ? (employees as any) : [])
+  const list: EmployeeListItem[] = employees?.data ?? []
 
   const mutation = useMutation({
-    mutationFn: (userId: string) => locationsApi.assignMember(spaceId, { userId } as any),
+    mutationFn: (userId: string) => locationsApi.assignMember(spaceId, { userId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shared-space-workers", spaceId] })
       notify.success(t("spaceSharing.guest.workerAdded", "Worker added to the space"))
@@ -474,7 +486,7 @@ function AddWorkerDialog({
         <div className="max-h-80 overflow-y-auto -mx-1 px-1 py-1 space-y-1">
           {list.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">{t("spaceSharing.guest.noTeam", "No team members found.")}</p>
-          ) : list.map((e: any) => (
+          ) : list.map((e) => (
             <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-2.5">
               <div className="flex items-center gap-2.5 min-w-0">
                 <UserAvatar firstName={e.firstName} lastName={e.lastName} seed={e.id} size="sm" />
@@ -514,7 +526,7 @@ function CreateTaskDialog({
 
   const mutation = useMutation({
     mutationFn: () =>
-      tasksApi.create({ spaceId, title: title.trim(), description: description.trim() || undefined, priority } as any),
+      tasksApi.create({ spaceId, title: title.trim(), description: description.trim() || undefined, priority }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks", "shared", spaceId] })
       notify.success(t("spaceSharing.guest.taskCreated", "Task created"))

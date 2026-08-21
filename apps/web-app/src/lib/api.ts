@@ -1199,6 +1199,15 @@ export interface WorkLogAttachment {
   id: string; fileKey: string; fileUrl: string; url?: string; fileName: string;
   fileSize: number; mimeType: string; width?: number | null; height?: number | null; createdAt: string;
 }
+/**
+ * An attachment as the CLIENT sends it, before the server stores it.
+ *
+ * `id` and `createdAt` belong to the stored row, so a payload cannot be typed
+ * with them — the shape going up and the shape coming back are not the same
+ * shape, which is exactly what `any[]` on both sides was hiding.
+ */
+export type WorkLogAttachmentInput = Omit<WorkLogAttachment, 'id' | 'createdAt'>;
+
 export interface WorkLogNote {
   id: string; timeEntryId: string; userId: string; body: string; at: string; taskId?: string | null;
   attachments: WorkLogAttachment[]; createdAt: string;
@@ -1238,12 +1247,12 @@ export const shiftIssuesApi = {
     if (res.error) throw new Error(res.error)
     return res.data!.data
   },
-  create: async (input: { title: string; description?: string; severity?: string; timeEntryId?: string; spaceId?: string; attachments?: WorkLogAttachment[] }): Promise<ShiftIssue> => {
+  create: async (input: { title: string; description?: string; severity?: string; timeEntryId?: string; spaceId?: string; attachments?: WorkLogAttachmentInput[] }): Promise<ShiftIssue> => {
     const res = await api.post<{ data: ShiftIssue }>(`/shift-issues`, input)
     if (res.error) throw new Error(res.error)
     return res.data!.data
   },
-  message: async (id: string, input: { body?: string; attachments?: WorkLogAttachment[] }): Promise<ShiftIssueEvent> => {
+  message: async (id: string, input: { body?: string; attachments?: WorkLogAttachmentInput[] }): Promise<ShiftIssueEvent> => {
     const res = await api.post<{ data: ShiftIssueEvent }>(`/shift-issues/${id}/messages`, input)
     if (res.error) throw new Error(res.error)
     return res.data!.data

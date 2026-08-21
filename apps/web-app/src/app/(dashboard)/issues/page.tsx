@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft, ImagePlus, X } from "lucide-react"
 
-import { shiftIssuesApi, employeesApi, uploadToS3, type ShiftIssue, type ShiftIssueEvent } from "@/lib/api"
+import { shiftIssuesApi, employeesApi, uploadToS3, type ShiftIssue, type ShiftIssueEvent, type EmployeeListItem, type WorkLogAttachmentInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
 import { notify } from "@/lib/toast"
@@ -31,7 +31,7 @@ const Chip = ({ status }: { status: string }) => (
 
 export default function IssuesPage() {
   const { user } = useAuth()
-  const canManage = !!((user as any)?.canManageUsers || (user as any)?.canViewAllTasks)
+  const canManage = !!(user?.canManageUsers || user?.canViewAllTasks)
   const qc = useQueryClient()
   const { subscribe, isConnected } = useSocketContext()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -107,7 +107,7 @@ export default function IssuesPage() {
               {detailQ.isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (<><AlertTriangle className="h-8 w-8 text-muted-foreground/40" /><span>Select an issue to view the conversation</span></>)}
             </div>
           ) : (
-            <IssueThread key={issue.id} issue={issue} canManage={canManage} currentUserId={(user as any)?.id}
+            <IssueThread key={issue.id} issue={issue} canManage={canManage} currentUserId={user?.id}
               onBack={() => setSelectedId(null)}
               onChanged={() => { qc.invalidateQueries({ queryKey: ["shift-issue", issue.id] }); qc.invalidateQueries({ queryKey: ["shift-issues"] }) }} />
           )}
@@ -130,12 +130,12 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }) }, [thread.length])
 
-  const membersQ = useQuery({ queryKey: ["issue-assignables"], queryFn: () => employeesApi.list({ limit: 100 } as any), enabled: assignOpen })
-  const members: any[] = (membersQ.data as any)?.data ?? (membersQ.data as any)?.employees ?? []
+  const membersQ = useQuery({ queryKey: ["issue-assignables"], queryFn: () => employeesApi.list({ limit: 100 }), enabled: assignOpen })
+  const members: EmployeeListItem[] = membersQ.data?.data ?? []
 
   const send = useMutation({
     mutationFn: async () => {
-      const attachments: any[] = []
+      const attachments: WorkLogAttachmentInput[] = []
       for (const f of files) {
         const pre = await shiftIssuesApi.presignAttachment(issue.id, f.name, f.type)
         await uploadToS3(pre.uploadUrl, f)
@@ -144,9 +144,10 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
       return shiftIssuesApi.message(issue.id, { body: draft.trim(), attachments })
     },
     onSuccess: () => { setDraft(""); setFiles([]); onChanged() },
-    onError: (e: any) => notify.error(e?.message || "Failed to send"),
+    onError: (e: Error) => notify.error(e.message || "Failed to send"),
   })
-  const act = (fn: () => Promise<any>) => fn().then(onChanged).catch((e: any) => notify.error(e?.message || "Action failed"))
+  const act = (fn: () => Promise<unknown>) =>
+    fn().then(onChanged).catch((e) => notify.error(e instanceof Error ? e.message : "Action failed"))
   const closed = ["RESOLVED", "CLOSED", "CANCELED"].includes(issue.status)
 
   return (
