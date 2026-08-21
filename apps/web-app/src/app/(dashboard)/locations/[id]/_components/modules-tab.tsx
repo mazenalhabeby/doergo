@@ -19,7 +19,7 @@ import {
   formatCents,
   SEAT_MONTHLY_CENTS,
   billsByUsage,
-  usagePriceFor,
+  includedUnits,
   marginalUnitCents,
 } from "@hbcfield/shared/client"
 
@@ -163,6 +163,10 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
           moduleKey="assets"
           orgUnits={assetUsage.orgUnits}
           spaceUnits={assetUsage.spaceUnits}
+          /* The server counts the SAVED state. Switching the module on here adds
+             this space's allowance straight away, because the panel exists to
+             answer "what will this cost me" before Save, not after it. */
+          spacesWithModule={assetUsage.spacesWithModule + (saved.includes("assets") ? 0 : 1)}
         />
       )}
 
@@ -240,12 +244,14 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                       the largest bill. */}
                   {billsByUsage(mod.key) && (
                     <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                      {assetUsage && marginalUnitCents(mod.key, assetUsage.orgUnits) > 0
+                      {assetUsage && marginalUnitCents(mod.key, assetUsage.orgUnits, assetUsage.spacesWithModule) > 0
                         ? t("billing.usage.perUnitShort", "+{{price}} each", {
-                            price: formatCents(marginalUnitCents(mod.key, assetUsage.orgUnits)),
+                            price: formatCents(
+                              marginalUnitCents(mod.key, assetUsage.orgUnits, assetUsage.spacesWithModule),
+                            ),
                           })
                         : t("billing.usage.included", "First {{count}} included", {
-                            count: usagePriceFor(mod.key)?.included ?? 0,
+                            count: includedUnits(mod.key, assetUsage?.spacesWithModule ?? 1),
                           })}
                     </span>
                   )}

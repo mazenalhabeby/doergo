@@ -16,31 +16,48 @@ import { BILLABLE_ASSET_WHERE, success } from '@hbcfield/shared';
  * `BILLABLE_ASSET_WHERE` clause rather than being re-typed, because a count
  * that drifts from the one on the invoice is the worst kind of bug to find.
  */
+/** The catalogue key this service counts for. */
+const ASSETS_MODULE = 'assets';
+
 @Injectable()
 export class AssetUsageService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * The org's billable total, and one space's share of it.
+   * The org's billable total, one space's share of it, and how many spaces are
+   * paying for the module.
    *
-   * Both, in one round trip, because the space modules screen needs to answer
-   * two different questions at once: what the whole ladder costs, and what THIS
-   * space is putting on it. Assets reach a space through their kind, which is
-   * where `spaceId` lives — an asset has no space of its own.
+   * All three in one round trip, because the space modules screen answers three
+   * questions at once: what the whole ladder costs, what THIS space is putting
+   * on it, and how large the included allowance is — one per space that pays
+   * the base price. Assets reach a space through their kind, which is where
+   * `spaceId` lives; an asset has no space of its own.
    */
   async count(organizationId: string, spaceId?: string | null) {
     const billable = { ...BILLABLE_ASSET_WHERE, organizationId };
 
-    const [orgUnits, spaceUnits] = await Promise.all([
+    const [orgUnits, spaceUnits, spaces] = await Promise.all([
       this.prisma.asset.count({ where: billable }),
       spaceId
         ? this.prisma.asset.count({ where: { ...billable, category: { spaceId } } })
         : Promise.resolve(null),
+      // `enabledModules` is a JSON column, so the membership test happens here
+      // rather than in SQL. An organization has a handful of spaces, not a
+      // table's worth, and reading them plainly beats a JSON operator that
+      // behaves differently on a null column than on an empty array.
+      this.prisma.companyLocation.findMany({
+        where: { organizationId },
+        select: { enabledModules: true },
+      }),
     ]);
+
+    const spacesWithModule = spaces.filter(
+      (s) => Array.isArray(s.enabledModules) && (s.enabledModules as unknown[]).includes(ASSETS_MODULE),
+    ).length;
 
     // The same `{ success, data }` envelope as every other assets read. A bare
     // object here would be unwrapped as `undefined` by the web client and land
     // on screen as a confident zero, which is the worst way for a count to fail.
-    return success({ orgUnits, spaceUnits });
+    return success({ orgUnits, spaceUnits, spacesWithModule });
   }
 }

@@ -161,7 +161,10 @@ export function orgMonthlyCost(input: {
    * ORG-WIDE, not per space, and deliberately: the volume break is the whole
    * point of a ladder, and a customer with five hundred assets spread over ten
    * sites who is charged as ten small customers has been given the wrong bill.
-   * A count is only charged when at least one space has that module switched on.
+   * The included ALLOWANCE still follows the base price — one per space that
+   * has the module on — so the same customer split into small sites is not
+   * charged for units a single site would have got free. A count is only
+   * charged when at least one space has that module switched on.
    */
   usage?: Record<string, number>;
 }): OrgCostBreakdown {
@@ -173,14 +176,18 @@ export function orgMonthlyCost(input: {
     cost: spaceMonthlyCost(s.enabledModules),
   }));
 
-  // Only modules somebody actually switched on somewhere can carry a usage
-  // charge — otherwise turning the last space off would still bill the count.
-  const switchedOn = new Set<string>();
-  for (const s of input.spaces) for (const key of s.enabledModules ?? []) switchedOn.add(key);
+  // How many spaces switched each module on. Two jobs: a module nobody has on
+  // carries no usage charge at all (otherwise turning the last space off would
+  // still bill the count), and every space that pays the base price brings its
+  // own included allowance with it.
+  const spacesWith: Record<string, number> = {};
+  for (const s of input.spaces) {
+    for (const key of new Set(s.enabledModules ?? [])) spacesWith[key] = (spacesWith[key] ?? 0) + 1;
+  }
 
   const usage = Object.entries(input.usage ?? {})
-    .filter(([key]) => billsByUsage(key) && switchedOn.has(key))
-    .map(([key, units]) => usageCost(key, units))
+    .filter(([key]) => billsByUsage(key) && (spacesWith[key] ?? 0) > 0)
+    .map(([key, units]) => usageCost(key, units, spacesWith[key]))
     .sort((a, b) => b.monthlyCents - a.monthlyCents || a.moduleKey.localeCompare(b.moduleKey));
 
   const seatMonthlyCents = Math.max(0, input.seatCount) * seatPrice;

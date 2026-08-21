@@ -1655,21 +1655,23 @@ export const assetsApi = {
   // ============================================
 
   /**
-   * How many assets the organization is billed for, and this space's share.
+   * How many assets the organization is billed for, this space's share, and how
+   * many spaces are paying the module's base price (one allowance each).
    *
    * Counts only — the ladder that turns them into money lives in
    * `@hbcfield/shared/client`, so the screen and the invoice cannot disagree.
    */
   getUsage: async (spaceId?: string) => {
-    const response = await api.get<{ success: boolean; data: { orgUnits: number; spaceUnits: number | null } }>(
-      spaceId ? `/assets/usage?spaceId=${encodeURIComponent(spaceId)}` : '/assets/usage',
-    );
+    const response = await api.get<{
+      success: boolean;
+      data: { orgUnits: number; spaceUnits: number | null; spacesWithModule: number };
+    }>(spaceId ? `/assets/usage?spaceId=${encodeURIComponent(spaceId)}` : '/assets/usage');
 
     if (response.error) {
       throw new Error(response.error);
     }
 
-    return response.data?.data ?? { orgUnits: 0, spaceUnits: null };
+    return response.data?.data ?? { orgUnits: 0, spaceUnits: null, spacesWithModule: 0 };
   },
 
   // ============================================

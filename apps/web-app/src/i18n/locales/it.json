@@ -6058,7 +6058,7 @@
     "spaceCostPerModule": "Ogni modulo aggiunge il proprio prezzo",
     "seatLine": "Gli utenti sono fatturati a parte, {{price}} ciascuno",
     "usage": {
-      "heading": "{{module}}, contati su tutta l’organizzazione",
+      "heading": "{{module}}, con prezzo calcolato sul tuo totale in tutti gli spazi",
       "onTop": "oltre alla base di {{base}}",
       "included": "I primi {{count}} sono inclusi",
       "free": "Gratis",
@@ -6070,13 +6070,15 @@
       "effective": "Risulta {{price}} ciascuno",
       "allIncluded": "Finora tutto incluso — non paghi nulla in più",
       "perUnitShort": "+{{price}} ciascuno",
-      "orgWideNote": "Contati su tutta l’organizzazione, non per spazio: così ogni spazio beneficia dello stesso sconto sul volume.",
+      "orgWideNote": "La tariffa dipende dal tuo totale in tutti gli spazi, così tutti beneficiano dello stesso sconto sul volume. Ogni spazio con questo modulo attivo include {{perSpace}} gratis.",
       "thisSpace": "Di cui {{count}} in questo spazio",
       "count": {
         "asset_one": "{{count}} bene",
         "asset_other": "{{count}} beni"
       },
-      "plusCounted": "Più quanto aggiungono i moduli conteggiati qui sotto"
+      "plusCounted": "Più quanto aggiungono i moduli conteggiati qui sotto",
+      "includedPerSpace": "{{perSpace}} per spazio × {{spaces}} spazi",
+      "chargingStarts": "Ancora {{count}} prima che venga addebitato qualcosa, poi {{price}} ciascuno"
     }
   },
   "assetKinds": {

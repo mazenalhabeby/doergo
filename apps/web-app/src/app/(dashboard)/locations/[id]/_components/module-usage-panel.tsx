@@ -9,6 +9,7 @@ import {
   moduleMonthlyCents,
   usageCost,
   usagePriceFor,
+  marginalUnitCents,
   nextUsageBreak,
 } from "@hbcfield/shared/client"
 
@@ -30,17 +31,20 @@ export function ModuleUsagePanel({
   moduleKey,
   orgUnits,
   spaceUnits,
+  spacesWithModule,
 }: {
   moduleKey: string
   orgUnits: number
   spaceUnits: number | null
+  /** Spaces paying the module's base price — one included allowance each. */
+  spacesWithModule: number
 }) {
   const { t } = useTranslation()
   const price = usagePriceFor(moduleKey)
   if (!price) return null
 
-  const cost = usageCost(moduleKey, orgUnits)
-  const nextBreak = nextUsageBreak(moduleKey, orgUnits)
+  const cost = usageCost(moduleKey, orgUnits, spacesWithModule)
+  const nextBreak = nextUsageBreak(moduleKey, orgUnits, spacesWithModule)
   const base = moduleMonthlyCents(moduleKey)
   // The catalogue's English label is the fallback, not the raw key — an
   // untranslated heading should read "Assets", never "assets".
@@ -53,7 +57,7 @@ export function ModuleUsagePanel({
   // Every rung, not only the ones being paid for: the bands below explain the
   // total, and the ones above are the reason to keep going.
   const rows = price.bands.map((band, i) => {
-    const from = (i === 0 ? price.included : price.bands[i - 1]!.upTo!) + 1
+    const from = (i === 0 ? cost.included : price.bands[i - 1]!.upTo!) + 1
     const line = cost.lines.find((l) => l.unitCents === band.unitCents && l.fromUnit === from)
     const current = cost.marginalUnitCents === band.unitCents
     return {
@@ -74,7 +78,7 @@ export function ModuleUsagePanel({
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-            {t("billing.usage.heading", "{{module}}, counted across the organization", { module: moduleLabel })}
+            {t("billing.usage.heading", "{{module}}, priced on your total across every space", { module: moduleLabel })}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground tabular-nums">{units(orgUnits)}</span>
@@ -107,7 +111,15 @@ export function ModuleUsagePanel({
           )}
         >
           <span className="text-muted-foreground">
-            {t("billing.usage.included", "First {{count}} included", { count: price.included })}
+            {t("billing.usage.included", "First {{count}} included", { count: cost.included })}
+            {cost.spacesWithModule > 1 && (
+              <span className="ml-1.5 text-muted-foreground/60">
+                {t("billing.usage.includedPerSpace", "{{perSpace}} per space × {{spaces}} spaces", {
+                  perSpace: price.included,
+                  spaces: cost.spacesWithModule,
+                })}
+              </span>
+            )}
           </span>
           <span className="font-medium text-emerald-700 dark:text-emerald-400">{t("billing.usage.free", "Free")}</span>
         </div>
@@ -144,7 +156,22 @@ export function ModuleUsagePanel({
         ) : (
           <span>{t("billing.usage.effective", "Works out at {{price}} each", { price: formatCents(cost.effectiveUnitCents) })}</span>
         )}
-        {nextBreak ? (
+        {/*
+          Inside the allowance, the next VOLUME break is the wrong fact to lead
+          with: "32 more and every one after that is €0.80" sitting beside "all
+          included" reads as nothing being charged until then, when in truth
+          charging starts at the 21st. So while nothing is being paid, the panel
+          says when that stops being true — and only afterwards does it point at
+          the next discount.
+        */}
+        {cost.marginalUnitCents === 0 ? (
+          <span className="flex items-center gap-1 font-medium text-foreground">
+            {t("billing.usage.chargingStarts", "{{count}} more before anything is charged, then {{price}} each", {
+              count: cost.included - cost.units,
+              price: formatCents(marginalUnitCents(moduleKey, cost.included, spacesWithModule)),
+            })}
+          </span>
+        ) : nextBreak ? (
           <span className="flex items-center gap-1 font-medium text-foreground">
             <TrendingDown className="h-3 w-3" />
             {t("billing.usage.nextBreak", "{{count}} more and every one after that is {{price}}", {
@@ -158,10 +185,11 @@ export function ModuleUsagePanel({
       </div>
 
       <p className="text-[11px] leading-relaxed text-muted-foreground/70">
-        {t(
-          "billing.usage.orgWideNote",
-          "Counted for the whole organization, not per space, so every space shares the same volume discount.",
-        )}
+        {t("billing.usage.orgWideNote", {
+          defaultValue:
+            "The rate is set by your total across every space, so all of them share the same volume discount. Each space with this module on includes {{perSpace}} free.",
+          perSpace: price.included,
+        })}
       </p>
     </div>
   )

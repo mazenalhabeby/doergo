@@ -6084,7 +6084,7 @@
     "spaceCostPerModule": "Each module adds its own price",
     "seatLine": "Users are billed separately at {{price}} each",
     "usage": {
-      "heading": "{{module}}, counted across the organization",
+      "heading": "{{module}}, priced on your total across every space",
       "onTop": "on top of the {{base}} base",
       "included": "First {{count}} included",
       "free": "Free",
@@ -6096,13 +6096,15 @@
       "effective": "Works out at {{price}} each",
       "allIncluded": "All included so far — nothing extra to pay",
       "perUnitShort": "+{{price}} each",
-      "orgWideNote": "Counted for the whole organization, not per space, so every space shares the same volume discount.",
+      "orgWideNote": "The rate is set by your total across every space, so all of them share the same volume discount. Each space with this module on includes {{perSpace}} free.",
       "thisSpace": "{{count}} of them are in this space",
       "count": {
         "asset_one": "{{count}} asset",
         "asset_other": "{{count}} assets"
       },
-      "plusCounted": "Plus what the counted modules below add"
+      "plusCounted": "Plus what the counted modules below add",
+      "includedPerSpace": "{{perSpace}} per space × {{spaces}} spaces",
+      "chargingStarts": "{{count}} more before anything is charged, then {{price}} each"
     }
   },
   "assetKinds": {
