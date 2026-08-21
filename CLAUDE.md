@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-07-13 (SaaS Billing LIVE on Stripe)
+> **Last Updated**: 2026-08-21 (Geo stack cutover LIVE — MapTiler tiles + Google geocoding)
 
 ---
 
@@ -1093,6 +1093,19 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: Phase 7.3 - Technician Assignment (next up)
+
+### Recently Completed (2026-08-21) — Geo Stack Cutover LIVE
+
+**PROD `540f0f7e`** (rollback tag `prod-pre-geo-cutover` → `01542695`, 16 migrations, DB backup `pre-geo-cutover_20260821_112025.sql.gz`).
+
+- **Map tiles are configuration.** `apps/web-app/src/lib/map-tiles.ts` reads `NEXT_PUBLIC_MAP_TILE_URL` / `_ATTRIBUTION`, replacing the OSM URL that was typed into four files with attribution switched off — attribution is an ODbL licence condition, and OSM's Tile Usage Policy does not permit commercial volume against their servers. Production now serves MapTiler, origin-locked to `hbcfield.com`.
+- ⚠️ **An undeclared Docker `ARG` is dropped silently.** Compose passed the tile variables to an image whose Dockerfile never declared them, so `next build` inlined the OSM fallback and the paid key was never used — with no warning anywhere. Any new `NEXT_PUBLIC_*` build arg must be added to **both** `docker-compose.yml` and `apps/web-app/Dockerfile` (`ARG` **and** `ENV`).
+- **Google serves both halves of geocoding.** Places API = search, Geocoding API = reverse; they are separate products and both must be enabled on the key. `/geo/reverse` now tries Google first, Photon second.
+- **`PHOTON_URL` is opt-in** — the hard-coded `http://photon:2322` default is gone. Unset means Google only. Photon still runs as a fallback pending removal (~150 GB).
+- **The gateway states its geocoders at boot**: `docker logs hbcfield-api-gateway | grep GeoModule` → `Geocoding: google=on photon=on`, and errors outright when none is configured. Every misconfiguration in this area otherwise fails the same silent way.
+- **No public geocoder is called from a browser or phone.** Nominatim and Photon's public host were being fetched client-side, sending customer IPs and typed addresses to services with no agreement, at rates their policies forbid. The route optimizer's public OSRM demo host is likewise opt-in now.
+- `ACCESS_IGNORE_LEGACY_FLAGS` and `GOOGLE_PLACES_API_KEY` are in the tracked compose (both previously existed only on the production box or in `docker-compose.override.yml`).
+- ⚠️ **`pg_dump` on this stack is `-U doergo doergo`** — not `postgres`/`hbcfield`, which fails into a valid, empty 20-byte gzip. Assert the table count, never the exit code.
 
 ### Recently Completed (2026-07-13) — SaaS Billing LIVE on Stripe
 - **Stripe billing switched TEST → LIVE in production** (hbcfield.com). No code change to go live — the app was already live-ready; go-live was Stripe-dashboard + prod-env config (done via Chrome + Stripe API).
