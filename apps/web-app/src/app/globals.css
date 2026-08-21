@@ -51,7 +51,10 @@
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card) / 0.9) !important;
   font-size: 0 !important;
-  line-height: 1;
+  /* Leaflet sets line-height:1.4 on this element from its own unlayered sheet.
+     Both are now unlayered and equally specific, so the winner would come down
+     to which CSS chunk the browser happens to load first. Pinned. */
+  line-height: 1 !important;
   transition: max-width 200ms ease, padding 200ms ease, border-radius 200ms ease;
 }
 
