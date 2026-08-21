@@ -377,7 +377,7 @@ async function buildDoc(
   const renderSummary = (atY: number): number => {
     const cards = summarize(result)
     if (!cards.length) return atY
-    let yy = sectionLabel("Summary", atY)
+    const yy = sectionLabel("Summary", atY)
     const gap = 3
     const perRow = Math.min(cards.length, cfg.orientation === "landscape" ? 5 : 4)
     const cardW = (contentW - gap * (perRow - 1)) / perRow

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, memo } from "react"
+import { useEffect, useState, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -587,14 +587,31 @@ export function RecurringPanel({
   const [editingTemplate, setEditingTemplate] = useState<RecurringTaskTemplate | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<RecurringTaskTemplate | null>(null)
 
-  if (user?.role !== "ADMIN") {
-    if (!embedded) router.push("/dashboard")
-    return null
-  }
+  const isAdmin = user?.role === "ADMIN"
+
+  /*
+    The admin guard runs AFTER every hook, and the redirect is an effect.
+
+    It used to `return null` above the hooks. `user` starts undefined while the
+    session loads, so the first render took the early exit and ran three hooks;
+    the moment the session arrived and the role was ADMIN, the same component
+    rendered seven. React counts hooks by position — that is "Rendered more
+    hooks than during the previous render", a hard crash on a screen that
+    otherwise looked fine to whoever wrote it.
+
+    Redirecting during render was the second half of the same bug: navigating
+    while React is rendering is a side effect in the one place side effects are
+    not allowed.
+  */
+  useEffect(() => {
+    if (!isAdmin && !embedded) router.push("/dashboard")
+  }, [isAdmin, embedded, router])
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["recurringTasks"],
     queryFn: () => recurringTasksApi.list(),
+    // Nothing to fetch for somebody who is about to be sent away.
+    enabled: isAdmin,
   })
 
   // Narrow to the selected space tab (null = all spaces).
@@ -630,6 +647,8 @@ export function RecurringPanel({
     },
     onError: (e: Error) => notify.error(e.message),
   })
+
+  if (!isAdmin) return null
 
   return (
     <div className={embedded ? "" : "min-h-full bg-muted/30"}>

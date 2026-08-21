@@ -32,8 +32,25 @@ export function formatNominatimAddress(a?: NominatimAddress | null, fallback?: s
   return out || fallback || ""
 }
 
+/**
+ * The Photon (Komoot) feature properties this reads.
+ *
+ * Typed as the strings it actually uses rather than `any`: every field below is
+ * read into a string join, so `any` bought nothing and hid the one thing worth
+ * knowing — which keys this function depends on.
+ */
+export interface PhotonProperties {
+  street?: string
+  name?: string
+  housenumber?: string
+  city?: string
+  county?: string
+  state?: string
+  postcode?: string
+}
+
 /** Compose the same clean address from a Photon (Komoot) feature's properties. */
-export function formatPhotonFeature(p: Record<string, any> | undefined, fallback?: string): string {
+export function formatPhotonFeature(p: PhotonProperties | undefined, fallback?: string): string {
   if (!p) return fallback ?? ""
   const street = p.street || p.name || ""
   const line1 = [street, p.housenumber].filter(Boolean).join(" ")
