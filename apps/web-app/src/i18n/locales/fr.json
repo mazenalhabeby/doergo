@@ -975,7 +975,10 @@
       "offDuty": "Hors service",
       "onTask": "En mission",
       "offShift": "Hors service",
-      "atSpace": "À {{space}}"
+      "atSpace": "À {{space}}",
+      "roleMember": "Membre",
+      "roleAdmin": "Admin",
+      "needsReview": "À vérifier"
     },
     "pending": {
       "worker": "Employé",
@@ -5410,7 +5413,8 @@
       "tasks": "Tâches",
       "members": "Membres",
       "reports": "Rapports",
-      "attendance": "Présence"
+      "attendance": "Présence",
+      "crm": "CRM / Clients"
     },
     "permissionCount": "{{count}} permissions"
   },

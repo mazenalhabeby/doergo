@@ -23,6 +23,22 @@ export interface PersonNodeProps extends WorkerAvatarProps {
   dimmed?: boolean
   onPersonClick?: (userId: string) => void
   className?: string
+  /**
+   * Tells two people apart when their names do not — set ONLY for members whose
+   * displayed name is shared by someone else on the same dashboard. Everyone
+   * else renders exactly as before, so the common case gains no clutter.
+   */
+  subtitle?: string
+  /**
+   * Keep the subtitle's line in the layout even when this node has no subtitle.
+   *
+   * The cards lay people out on a CSS grid, so a row is as tall as its tallest
+   * node. Without this, one disambiguated person would push their whole row
+   * down and leave every status pill beside them sitting higher — the grid
+   * looks broken for the sake of one extra line. The box sets it on all of its
+   * people as soon as any one of them needs it.
+   */
+  reserveSubtitle?: boolean
 }
 
 const TAG_CLASSES: Record<TagVariant, string> = {
@@ -38,6 +54,8 @@ export const PersonNode = React.memo(function PersonNode({
   onPersonClick,
   userId,
   className,
+  subtitle,
+  reserveSubtitle,
   ...avatarProps
 }: PersonNodeProps) {
   const isClickable = !!onPersonClick && !!userId
@@ -80,9 +98,29 @@ export const PersonNode = React.memo(function PersonNode({
       )}
     >
       <WorkerAvatar {...avatarProps} />
-      <span className="text-xs leading-tight text-foreground/70 truncate w-full text-center font-medium">
+      <span
+        title={subtitle ? `${name} — ${subtitle}` : undefined}
+        className="text-xs leading-tight text-foreground/70 truncate w-full text-center font-medium"
+      >
         {name}
       </span>
+      {/*
+        The node is 84px wide (--ws-node), so this line is always at risk of
+        being cut — a German or Spanish job title, or anything past roughly a
+        dozen characters, will not fit. Truncating is the right failure: the
+        full text is on the title of both this line and the name above it, and
+        the whole node opens the person's profile on click. What must never
+        happen is wrapping, which would silently change the height of one node
+        and rag the grid row it sits in.
+      */}
+      {subtitle || reserveSubtitle ? (
+        <span
+          title={subtitle || undefined}
+          className="block h-[11px] w-full truncate text-center text-[9px] leading-[11px] text-muted-foreground/70"
+        >
+          {subtitle ?? ""}
+        </span>
+      ) : null}
       <div className="min-h-[18px] flex w-full items-center justify-center">
         {tag ? (
           <span

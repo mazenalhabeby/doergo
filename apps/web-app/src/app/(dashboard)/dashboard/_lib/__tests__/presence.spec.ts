@@ -104,3 +104,32 @@ describe('memberToPersonNode', () => {
     expect(memberToPersonNode(solo, 'on').name).toBe('Ada')
   })
 })
+
+describe('escalated sessions', () => {
+  const clocked = { isClockedIn: true, isOnBreak: false, isOnline: true }
+
+  it('reports a session the engine gave up on, instead of a confident location', () => {
+    // The bug this exists for: someone forgets to clock out, and every label
+    // below still describes them as if they were there right now.
+    const r = getEmployeeStatus({ ...clocked, isRemote: true, needsReview: true })
+    expect(r.tag?.text).not.toBe('Remote')
+    expect(r.tag?.variant).toBe('hrs-warn')
+  })
+
+  it('leaves a session still being chased alone', () => {
+    // Only ESCALATED sets needsReview; a REMINDED session is still in flight
+    // and must keep reading as a normal shift.
+    expect(getEmployeeStatus({ ...clocked, isRemote: true, needsReview: false }).tag?.text).toBe('Remote')
+  })
+
+  it('does not override a deliberately set availability', () => {
+    // Availability the user set outranks the clock — escalation must not
+    // quietly promote itself above that rule.
+    expect(getEmployeeStatus({ ...clocked, presence: 'BUSY', needsReview: true }).status).toBe('busy')
+  })
+
+  it('says nothing about someone who is not on the clock', () => {
+    const r = getEmployeeStatus({ isClockedIn: false, isOnBreak: false, isOnline: true, needsReview: true })
+    expect(r.tag?.variant).not.toBe('hrs-warn')
+  })
+})

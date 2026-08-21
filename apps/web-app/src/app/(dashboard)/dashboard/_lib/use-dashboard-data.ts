@@ -248,6 +248,11 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
           locationId: entry.locationId,
           isRemote: !!entry.isRemote,
           withinGeofence: !!entry.clockInWithinGeofence,
+          // ESCALATED = the reminder engine chased this session to its limit,
+          // got nothing back, handed it to a leader and stopped. Everything
+          // else ('REMINDED', an open overtime request) is still in flight and
+          // should keep reading as a normal shift.
+          needsReview: entry.reminderState === "ESCALATED",
         })
       }
     }

@@ -975,7 +975,10 @@
       "onTheClock": "On the Clock",
       "offDuty": "Off Duty",
       "onTask": "On Task",
-      "offShift": "Off-shift"
+      "offShift": "Off-shift",
+      "roleMember": "Member",
+      "roleAdmin": "Admin",
+      "needsReview": "Needs review"
     },
     "pending": {
       "worker": "Worker",

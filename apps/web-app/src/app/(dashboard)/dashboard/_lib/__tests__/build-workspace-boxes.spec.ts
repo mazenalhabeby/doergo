@@ -1,4 +1,4 @@
-import { buildWorkspaceBoxes, type BuildWorkspaceBoxesInput } from '../build-workspace-boxes'
+import { buildWorkspaceBoxes, displayName, disambiguatorFor, type BuildWorkspaceBoxesInput } from '../build-workspace-boxes'
 
 /**
  * The grouping rules the dashboard is actually judged on: a clocked-in member
@@ -53,7 +53,7 @@ describe('buildWorkspaceBoxes', () => {
         members: [m],
         assignmentsPerLocation: new Map([['s1', new Set(['u1'])]]),
         clockedInUserIds: new Set(['u1']),
-        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: true }]]),
+        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: true, needsReview: false }]]),
         activeSpaceByUser: new Map([['u1', 's1']]),
       }),
     )
@@ -72,7 +72,7 @@ describe('buildWorkspaceBoxes', () => {
           ['s2', new Set(['u1'])],
         ]),
         clockedInUserIds: new Set(['u1']),
-        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: true }]]),
+        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: true, needsReview: false }]]),
         activeSpaceByUser: new Map([['u1', 's1']]),
         spaceNameById: new Map([['s1', 's1']]),
       }),
@@ -93,7 +93,7 @@ describe('buildWorkspaceBoxes', () => {
         members: [m],
         assignmentsPerLocation: new Map([['s1', new Set(['u1'])]]),
         clockedInUserIds: new Set(['u1']),
-        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: false }]]),
+        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: false, needsReview: false }]]),
         activeSpaceByUser: new Map([['u1', 's1']]),
         shiftLabelInfo: () => ({ isShiftBased: true, atSpace: false }),
       }),
@@ -110,7 +110,7 @@ describe('buildWorkspaceBoxes', () => {
         members: [m],
         assignmentsPerLocation: new Map([['s1', new Set(['u1'])]]),
         clockedInUserIds: new Set(['u1']),
-        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: true, withinGeofence: false }]]),
+        attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: true, withinGeofence: false, needsReview: false }]]),
         activeSpaceByUser: new Map([['u1', 's1']]),
       }),
     )
@@ -201,5 +201,38 @@ describe('buildWorkspaceBoxes', () => {
 
   it('returns nothing at all for an empty org', () => {
     expect(buildWorkspaceBoxes(input())).toEqual([])
+  })
+})
+
+
+describe('telling two people apart when their names do not', () => {
+  const m = (over: Record<string, unknown> = {}) =>
+    ({ id: 'u', firstName: 'Andreas', lastName: 'Holub', role: 'EMPLOYEE', isActive: true, ...over }) as never
+
+  it('renders the same label for two accounts of the same name', () => {
+    // The premise of the whole feature: these collide, so something else has
+    // to separate them. Both real accounts here share a FULL name, so falling
+    // back to the surname would not have helped.
+    expect(displayName(m())).toBe(displayName(m({ id: 'other' })))
+  })
+
+  it('prefers the position, which is what a colleague would actually say', () => {
+    expect(disambiguatorFor(m({ position: 'Sales' }))).toBe('Sales')
+  })
+
+  it('falls back to specialty, then to role, so there is always something', () => {
+    expect(disambiguatorFor(m({ position: '  ', specialty: 'Electrician' }))).toBe('Electrician')
+    // The real .eu account has neither — it must still be distinguishable.
+    expect(disambiguatorFor(m({ role: 'ADMIN' }))).toBeTruthy()
+    expect(disambiguatorFor(m({ role: 'ADMIN' }))).not.toBe(disambiguatorFor(m({ position: 'Sales' })))
+  })
+
+  it('never falls back to the email', () => {
+    // The most unique field, and the worst one to paint across a shared screen.
+    expect(disambiguatorFor(m({ email: 'a.holub@hbc-group.eu' }))).not.toContain('@')
+  })
+
+  it('survives a member with no surname', () => {
+    expect(displayName({ firstName: 'Ada', lastName: '' } as never)).toBe('Ada')
   })
 })

@@ -19,10 +19,56 @@ import { getEmployeeStatus, isOnline, memberToPersonNode } from "./presence"
  * Pure: everything it needs arrives as arguments, so the same inputs always
  * produce the same cards. Handlers are passed through rather than captured.
  */
+/** "Ada L." — the label the cards actually show. Mirrors memberToPersonNode. */
+export function displayName(m: Pick<OrgMember, "firstName" | "lastName">): string {
+  return m.lastName?.[0] ? `${m.firstName} ${m.lastName[0]}.` : m.firstName
+}
+
+/**
+ * What to print under a name that isn't unique.
+ *
+ * Two accounts can share a first name and a surname initial — and in practice
+ * a whole name, when one person holds two accounts in the same organization.
+ * The dashboard then shows the same label twice, in different states, and it
+ * reads as one person being in two places at once rather than as two records.
+ *
+ * Position first, because it is the thing a colleague would actually say to
+ * tell them apart. Specialty next. Role last: it is always present, so there
+ * is always something, even for a member nobody has filled in a title for.
+ * Deliberately NOT email — it is the most reliably unique field and the worst
+ * one to paint across a shared screen.
+ */
+export function disambiguatorFor(m: OrgMember): string {
+  const own = m.position?.trim() || m.specialty?.trim()
+  if (own) return own
+  return m.role === "EMPLOYEE"
+    ? i18n.t("dashboard.presence.roleMember")
+    : i18n.t("dashboard.presence.roleAdmin")
+}
+
+/**
+ * Give every node in a card the same shape once any one of them carries a
+ * subtitle, so a single disambiguated person cannot rag the grid row they sit
+ * in. Applied once, at the end, rather than at each of the five push sites.
+ */
+function reserveSubtitleRows(box: WorkspaceBoxProps): WorkspaceBoxProps {
+  const groups = ["people", "offDutyPeople", "offShiftPeople", "onRoadPeople", "remotePeople"] as const
+  const needs = groups.some(g => (box[g] as PersonNodeProps[] | undefined)?.some(p => p.subtitle))
+  if (!needs) return box
+  const out: WorkspaceBoxProps = { ...box }
+  for (const g of groups) {
+    const list = box[g] as PersonNodeProps[] | undefined
+    if (list?.length) (out[g] as PersonNodeProps[]) = list.map(p => ({ ...p, reserveSubtitle: true }))
+  }
+  return out
+}
+
 export interface AttendanceFacts {
   locationId: string
   isRemote: boolean
   withinGeofence: boolean
+  /** Open session the reminder engine escalated and stopped chasing. */
+  needsReview: boolean
 }
 
 export interface BuildWorkspaceBoxesInput {
@@ -69,6 +115,41 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
   const user = { id: input.currentUserId }
 
     const boxes: WorkspaceBoxProps[] = []
+
+    /*
+      Names that more than one active member answers to.
+
+      Computed once over the whole directory rather than per card, so a member
+      whose name clashes is labelled identically in every card they appear in.
+      Deciding per card would label the same person inconsistently depending on
+      who else happened to be beside them.
+    */
+    const ambiguousNames = (() => {
+      const seen = new Map<string, number>()
+      for (const m of members) {
+        if (!m.isActive) continue
+        const n = displayName(m)
+        seen.set(n, (seen.get(n) ?? 0) + 1)
+      }
+      return new Set([...seen].filter(([, n]) => n > 1).map(([name]) => name))
+    })()
+
+    /** memberToPersonNode, plus a subtitle for the members who need one. */
+    const personNode = (
+      member: OrgMember,
+      status: Parameters<typeof memberToPersonNode>[1],
+      tag?: PersonNodeProps["tag"],
+      currentTask?: string,
+      clockedIn = false,
+    ): PersonNodeProps =>
+      memberToPersonNode(
+        member,
+        status,
+        tag,
+        currentTask,
+        clockedIn,
+        ambiguousNames.has(displayName(member)) ? disambiguatorFor(member) : undefined,
+      )
 
     // The viewer is, by definition, online right now (they're looking at this
     // page) — never let their own lastActiveAt lag drop them into "Off Duty".
@@ -121,11 +202,12 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
           isOnline: memberOnline(member),
           presence: member.presence,
           isRemote: isRemoteHere,
+          needsReview: attendanceByUser.get(userId)?.needsReview ?? false,
           isShiftBased,
           atSpace,
         })
 
-        const node = memberToPersonNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
+        const node = personNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
 
         // A member is ACTIVE in exactly one space (activeSpaceByUser). Here they
         // are Present/In-Field/Remote only if this IS that space; in every other
@@ -137,9 +219,9 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
           // offline → "Off Duty"). The absence REASON is gated separately (admins
           // & managers only) inside the card.
           if (memberOnline(member)) {
-            offShiftPeople.push(memberToPersonNode(member, status, tag))
+            offShiftPeople.push(personNode(member, status, tag))
           } else {
-            offDutyPeople.push(memberToPersonNode(member, status, tag))
+            offDutyPeople.push(personNode(member, status, tag))
           }
         } else if (activeSpace !== locId) {
           // Clocked in, but their active space is ELSEWHERE → off-shift here, with
@@ -151,7 +233,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
             : whereName
               ? i18n.t("dashboard.presence.atSpace", "At {{space}}", { space: whereName })
               : undefined
-          offShiftPeople.push(memberToPersonNode(member, "off", hint ? { text: hint, variant: "hrs" } : undefined))
+          offShiftPeople.push(personNode(member, "off", hint ? { text: hint, variant: "hrs" } : undefined))
         } else if (onRoad) {
           // Clocked in here, working on the road → "In Field" group.
           onRoadPeople.push(node)
@@ -208,6 +290,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
             isOnBreak: onBreakUserIds.has(task.assignedTo.id),
             isOnline: false, // no last-active data on the task fallback
             isRemote: attendanceByUser.get(task.assignedTo.id)?.isRemote ?? false,
+            needsReview: attendanceByUser.get(task.assignedTo.id)?.needsReview ?? false,
           })
           onTaskPeople.push({
             initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
@@ -232,10 +315,11 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
         isOnline: memberOnline(member),
         presence: member.presence,
         isRemote: attendanceByUser.get(userId)?.isRemote ?? false,
+        needsReview: attendanceByUser.get(userId)?.needsReview ?? false,
         isShiftBased: siTask.isShiftBased,
         atSpace: siTask.atSpace,
       })
-      onTaskPeople.push(memberToPersonNode(member, status, tag, task.title, isClockedIn))
+      onTaskPeople.push(personNode(member, status, tag, task.title, isClockedIn))
     }
 
     if (onTaskPeople.length > 0) {
@@ -273,10 +357,11 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
           isOnline: online,
           presence: worker.presence,
           isRemote: attendanceByUser.get(worker.id)?.isRemote ?? false,
+          needsReview: attendanceByUser.get(worker.id)?.needsReview ?? false,
           isShiftBased: siWorker.isShiftBased,
           atSpace: siWorker.atSpace,
         })
-        onClockPeople.push(memberToPersonNode(worker, status, tag, undefined, true))
+        onClockPeople.push(personNode(worker, status, tag, undefined, true))
       } else if (!activeTaskMap.has(worker.id)) {
         accountedWorkerIds.add(worker.id)
         const { status, tag } = getEmployeeStatus({
@@ -285,7 +370,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
           isOnline: online,
           presence: worker.presence,
         })
-        ;(online ? offShiftPeople : offDutyPeople).push(memberToPersonNode(worker, status, tag))
+        ;(online ? offShiftPeople : offDutyPeople).push(personNode(worker, status, tag))
       }
     }
 
@@ -314,6 +399,6 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
       })
     }
 
-    return boxes
+    return boxes.map(reserveSubtitleRows)
 
 }

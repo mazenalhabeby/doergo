@@ -975,7 +975,10 @@
       "onTheClock": "Eingestempelt",
       "offDuty": "Außer Dienst",
       "onTask": "In Bearbeitung",
-      "offShift": "Nicht im Dienst"
+      "offShift": "Nicht im Dienst",
+      "roleMember": "Mitarbeiter",
+      "roleAdmin": "Admin",
+      "needsReview": "Zu prüfen"
     },
     "pending": {
       "worker": "Mitarbeiter",
@@ -5401,7 +5404,8 @@
       "tasks": "Aufgaben",
       "members": "Mitglieder",
       "reports": "Berichte",
-      "attendance": "Anwesenheit"
+      "attendance": "Anwesenheit",
+      "crm": "CRM / Kunden"
     },
     "permissionCount": "{{count}} Berechtigungen"
   },

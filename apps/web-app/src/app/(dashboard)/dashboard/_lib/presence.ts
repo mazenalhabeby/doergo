@@ -32,6 +32,11 @@ export function getEmployeeStatus(opts: {
   isRemote?: boolean // clocked in via remote / WFH
   isShiftBased?: boolean // their space is shift-based (SHIFT/FIXED) → "On Shift" applies
   atSpace?: boolean // clocked in INSIDE a geofenced space → confirmed at the space
+  /**
+   * The reminder engine escalated this open session and gave up on it — it
+   * nudged to its limit, got no answer, told a leader, and stopped.
+   */
+  needsReview?: boolean
 }): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
   // Genuinely offline: not app-active AND not on the clock. Their stored
   // availability doesn't apply because they aren't currently reachable.
@@ -54,6 +59,19 @@ export function getEmployeeStatus(opts: {
   // (confirmed inside the geofence) vs In Field (no location / outside it); an
   // office / open-hours space (non shift-based) is simply "Working".
   if (opts.isClockedIn) {
+    /*
+      An escalated session is reported as what it is, before anything else.
+
+      Someone who forgot to clock out yesterday is, to the database, still
+      clocked in — and every label below would describe them confidently as
+      Remote, On Shift or Working. Those read as "here, now", which is exactly
+      what an abandoned session is not. The server already knows the difference
+      (it escalated this one to a human and stopped chasing it); it simply never
+      said so on screen, so the two states arrived looking identical.
+    */
+    if (opts.needsReview) {
+      return { status: "on", tag: { text: i18n.t("dashboard.presence.needsReview"), variant: "hrs-warn" } }
+    }
     if (opts.isRemote) return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
     if (!opts.isShiftBased) return { status: "on", tag: { text: i18n.t("dashboard.presence.working", "Working"), variant: "hrs" } }
     if (opts.atSpace) return { status: "on", tag: { text: i18n.t("dashboard.presence.onShift"), variant: "hrs" } }
@@ -75,6 +93,11 @@ export function memberToPersonNode(
   tag?: PersonNodeProps["tag"],
   currentTask?: string,
   clockedIn = false,
+  /**
+   * Only set when this member's displayed name is shared with someone else on
+   * the dashboard — see `disambiguatorFor` in build-workspace-boxes.
+   */
+  subtitle?: string,
 ): PersonNodeProps {
   return {
     initials: getInitials(member.firstName, member.lastName),
@@ -88,5 +111,6 @@ export function memberToPersonNode(
     userId: member.id,
     role: member.role === "EMPLOYEE" ? "Employee" : "Admin",
     currentTask,
+    subtitle,
   }
 }
