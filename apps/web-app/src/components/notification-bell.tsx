@@ -26,20 +26,70 @@ import { cn } from "@/lib/utils"
 // ============================================================================
 // Socket payload helpers
 // ============================================================================
+/*
+  What the socket sends.
+
+  Every field is optional and every reader is tolerant, because these payloads
+  come from four different services and genuinely differ per event — that is the
+  reason they were `any`. Optional-everything says the same thing while still
+  catching a typo'd field name, which `any` never did.
+*/
+interface TaskEventPayload {
+  id?: string
+  taskId?: string
+  title?: string
+  newStatus?: string
+  task?: { id?: string; title?: string } | null
+  comment?: { content?: string } | null
+  attachment?: { fileName?: string } | null
+}
+
+interface ChatEventPayload {
+  message?: {
+    senderId?: string
+    body?: string
+    sender?: { firstName?: string; lastName?: string } | null
+  } | null
+}
+
+interface JoinRequestEventPayload {
+  userName?: string
+  userEmail?: string
+  organizationName?: string
+  reason?: string
+}
+
+interface AttendanceEventPayload {
+  userName?: string
+  flagSummary?: string
+  timeEntry?: {
+    isRemote?: boolean
+    clockInPlace?: string | null
+    clockOutPlace?: string | null
+    location?: { name?: string } | null
+    user?: { firstName?: string; lastName?: string } | null
+  } | null
+}
+
+interface BreakEventPayload {
+  break?: { userName?: string } | null
+}
+
+// ============================================================================
 // Task socket events arrive in two shapes: some (task.created, task.assigned)
 // are emitted as the RAW task object, others (statusChanged, declined, comment,
 // attachment) are wrapped as { task, ... } or carry a flat taskId. Read the id
 // and title tolerantly so the deep-link never becomes "/tasks/undefined".
-const evTaskId = (d: any): string | undefined => d?.task?.id ?? d?.taskId ?? d?.id
-const evTaskTitle = (d: any): string => d?.task?.title ?? d?.title ?? ""
-const taskLink = (d: any): string | undefined => {
+const evTaskId = (d: TaskEventPayload): string | undefined => d?.task?.id ?? d?.taskId ?? d?.id
+const evTaskTitle = (d: TaskEventPayload): string => d?.task?.title ?? d?.title ?? ""
+const taskLink = (d: TaskEventPayload): string | undefined => {
   const id = evTaskId(d)
   return id ? `/tasks/${id}` : undefined
 }
 
 // Attendance events carry { userId, timeEntry }. Pull a readable name (from the
 // included user) and where the shift happened (site name, or "Remote · city").
-const attendanceInfo = (d: any, remotePlace: string | null | undefined, t: TFunction) => {
+const attendanceInfo = (d: AttendanceEventPayload, remotePlace: string | null | undefined, t: TFunction) => {
   const te = d?.timeEntry
   const u = te?.user
   const name = d?.userName || (u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "")
@@ -175,13 +225,13 @@ export function NotificationBell() {
 
     const unsubs = [
       // Task events
-      subscribe("task.created", (d: any) => {
+      subscribe<TaskEventPayload>("task.created", (d) => {
         add("task_created", t("notifications.taskCreated"), evTaskTitle(d), taskLink(d))
       }),
-      subscribe("task.assigned", (d: any) => {
+      subscribe<TaskEventPayload>("task.assigned", (d) => {
         add("task_assigned", t("notifications.taskAssigned"), evTaskTitle(d), taskLink(d))
       }),
-      subscribe("task.statusChanged", (d: any) => {
+      subscribe<TaskEventPayload>("task.statusChanged", (d) => {
         if (d.newStatus === "COMPLETED") {
           add("task_completed", t("notifications.taskCompleted"), evTaskTitle(d), taskLink(d))
         } else if (d.newStatus === "BLOCKED") {
@@ -190,18 +240,18 @@ export function NotificationBell() {
           add("task_status_changed", t("notifications.taskStatusChanged", { status: d.newStatus }), evTaskTitle(d), taskLink(d))
         }
       }),
-      subscribe("task.declined", (d: any) => {
+      subscribe<TaskEventPayload>("task.declined", (d) => {
         add("task_declined", t("notifications.taskDeclined"), evTaskTitle(d), taskLink(d))
       }),
-      subscribe("task.commentAdded", (d: any) => {
+      subscribe<TaskEventPayload>("task.commentAdded", (d) => {
         add("comment_added", t("notifications.commentAdded"), evTaskTitle(d) || d.comment?.content?.slice(0, 50) || "", taskLink(d))
       }),
-      subscribe("task.attachmentAdded", (d: any) => {
+      subscribe<TaskEventPayload>("task.attachmentAdded", (d) => {
         add("attachment_added", t("notifications.attachmentAdded"), d.attachment?.fileName || "", taskLink(d))
       }),
 
       // Chat: an incoming message from a colleague → persistent notification.
-      subscribe("chat.message", (d: any) => {
+      subscribe<ChatEventPayload>("chat.message", (d) => {
         const m = d?.message
         if (!m || !m.senderId || m.senderId === user?.id) return
         const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t("chat.title", "Messages")
@@ -209,32 +259,32 @@ export function NotificationBell() {
       }),
 
       // Join request events
-      subscribe("join_request_submitted", (d: any) => {
+      subscribe<JoinRequestEventPayload>("join_request_submitted", (d) => {
         add("join_request", t("notifications.joinRequest"), d.userName || d.userEmail || "", "/join-requests")
       }),
-      subscribe("join_request_approved", (d: any) => {
+      subscribe<JoinRequestEventPayload>("join_request_approved", (d) => {
         add("join_approved", t("notifications.joinApproved"), d.organizationName || "", "/members")
       }),
-      subscribe("join_request_rejected", (d: any) => {
+      subscribe<JoinRequestEventPayload>("join_request_rejected", (d) => {
         add("join_rejected", t("notifications.joinRejected"), d.reason || "", "/join-requests")
       }),
 
       // Attendance events
-      subscribe("attendance.clockIn", (d: any) => {
+      subscribe<AttendanceEventPayload>("attendance.clockIn", (d) => {
         const { name, place } = attendanceInfo(d, d?.timeEntry?.clockInPlace, t)
         add("clock_in", name || t("notifications.clockIn"), [t("notifications.clockInAction", "Clocked in"), place].filter(Boolean).join(" · "), attendanceHref)
       }),
-      subscribe("attendance.clockOut", (d: any) => {
+      subscribe<AttendanceEventPayload>("attendance.clockOut", (d) => {
         const { name, place } = attendanceInfo(d, d?.timeEntry?.clockOutPlace ?? d?.timeEntry?.clockInPlace, t)
         add("clock_out", name || t("notifications.clockOut"), [t("notifications.clockOutAction", "Clocked out"), place].filter(Boolean).join(" · "), attendanceHref)
       }),
-      subscribe("attendance_auto_clock_out", (d: any) => {
+      subscribe<AttendanceEventPayload>("attendance_auto_clock_out", (d) => {
         add("auto_clock_out", t("notifications.autoClockOut"), d.userName || "", attendanceHref)
       }),
-      subscribe("attendance_geofence_alert", (d: any) => {
+      subscribe<AttendanceEventPayload>("attendance_geofence_alert", (d) => {
         add("geofence_alert", t("notifications.geofenceAlert"), d.userName || "", attendanceHref)
       }),
-      subscribe("attendance_pending_approval", (d: any) => {
+      subscribe<AttendanceEventPayload>("attendance_pending_approval", (d) => {
         add(
           "pending_approval",
           t("notifications.pendingApproval"),
@@ -244,10 +294,10 @@ export function NotificationBell() {
       }),
 
       // Break events — the name is nested under `break` in the payload.
-      subscribe("break.started", (d: any) => {
+      subscribe<BreakEventPayload>("break.started", (d) => {
         add("break_started", d.break?.userName || t("notifications.breakStarted"), t("notifications.breakStarted"), attendanceHref)
       }),
-      subscribe("break.ended", (d: any) => {
+      subscribe<BreakEventPayload>("break.ended", (d) => {
         add("break_ended", d.break?.userName || t("notifications.breakEnded"), t("notifications.breakEnded"), attendanceHref)
       }),
     ]

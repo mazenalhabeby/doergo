@@ -16,7 +16,14 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001"
 
 interface SocketContextValue {
   isConnected: boolean
-  subscribe: (event: string, handler: (data: any) => void) => () => void
+  /**
+   * Listen for a server event.
+   *
+   * Generic, and unknown by default: every event carries a different shape, so
+   * the payload type belongs at the call site that knows which event it asked
+   * for. `any` here made all of them unchecked at once.
+   */
+  subscribe: <T = unknown>(event: string, handler: (data: T) => void) => () => void
   emit: (event: string, payload?: unknown) => void
 }
 
@@ -97,7 +104,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   }, [isConnected, refreshUser, t])
 
   // Stable subscribe function — doesn't change on re-renders
-  const subscribe = useCallback((event: string, handler: (data: any) => void) => {
+  const subscribe = useCallback(<T,>(event: string, handler: (data: T) => void) => {
     const socket = socketRef.current
     if (!socket) return () => {}
 

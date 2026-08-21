@@ -1212,7 +1212,7 @@ export type ShiftIssueSeverity = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
 
 export interface ShiftIssueEvent {
   id: string; type: string; actorId?: string | null; actorName?: string; body?: string | null;
-  metadata?: any; attachments?: WorkLogAttachment[]; at: string
+  metadata?: Record<string, unknown>; attachments?: WorkLogAttachment[]; at: string
 }
 export interface ShiftIssue {
   id: string; organizationId: string; title: string; description?: string | null;
@@ -1238,12 +1238,12 @@ export const shiftIssuesApi = {
     if (res.error) throw new Error(res.error)
     return res.data!.data
   },
-  create: async (input: { title: string; description?: string; severity?: string; timeEntryId?: string; spaceId?: string; attachments?: any[] }): Promise<ShiftIssue> => {
+  create: async (input: { title: string; description?: string; severity?: string; timeEntryId?: string; spaceId?: string; attachments?: WorkLogAttachment[] }): Promise<ShiftIssue> => {
     const res = await api.post<{ data: ShiftIssue }>(`/shift-issues`, input)
     if (res.error) throw new Error(res.error)
     return res.data!.data
   },
-  message: async (id: string, input: { body?: string; attachments?: any[] }): Promise<ShiftIssueEvent> => {
+  message: async (id: string, input: { body?: string; attachments?: WorkLogAttachment[] }): Promise<ShiftIssueEvent> => {
     const res = await api.post<{ data: ShiftIssueEvent }>(`/shift-issues/${id}/messages`, input)
     if (res.error) throw new Error(res.error)
     return res.data!.data
@@ -3112,13 +3112,13 @@ export const employeesApi = {
   // ========================================================================
 
   getScheduleTemplates: async () => {
-    const response = await api.get<{ success: boolean; data: any[] }>('/employees/schedule-templates');
+    const response = await api.get<{ success: boolean; data: ScheduleTemplate[] }>('/employees/schedule-templates');
     if (response.error) throw new Error(response.error);
     return response.data?.data || [];
   },
 
-  createScheduleTemplate: async (data: { name: string; description?: string; entries: any[] }) => {
-    const response = await api.post<{ success: boolean; data: any }>('/employees/schedule-templates', data);
+  createScheduleTemplate: async (data: { name: string; description?: string; entries: ScheduleTemplateEntry[] }) => {
+    const response = await api.post<{ success: boolean; data: ScheduleTemplate }>('/employees/schedule-templates', data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
@@ -3130,7 +3130,8 @@ export const employeesApi = {
   },
 
   applyScheduleTemplate: async (employeeId: string, templateId: string) => {
-    const response = await api.post<{ success: boolean; data: any }>(
+    // Returns the schedule the template produced — the same rows setSchedule does.
+    const response = await api.post<{ success: boolean; data: ScheduleEntry[] }>(
       `/employees/${employeeId}/schedule/apply-template`,
       { templateId },
     );
@@ -3677,31 +3678,31 @@ export const organizationsApi = {
   },
 
   getProfile: async () => {
-    const response = await api.get<{ success: boolean; data: any }>('/organizations/profile');
+    const response = await api.get<{ success: boolean; data: OrganizationProfile }>('/organizations/profile');
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
-  updateProfile: async (updates: Record<string, any>) => {
-    const response = await api.patch<{ success: boolean; data: any }>('/organizations/profile', updates);
+  updateProfile: async (updates: Partial<OrganizationProfile>) => {
+    const response = await api.patch<{ success: boolean; data: OrganizationProfile }>('/organizations/profile', updates);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
-  updateNotificationPrefs: async (prefs: Record<string, any>) => {
-    const response = await api.patch<{ success: boolean; data: any }>('/organizations/notification-prefs', prefs);
+  updateNotificationPrefs: async (prefs: Record<string, boolean>) => {
+    const response = await api.patch<{ success: boolean; data: OrganizationProfile }>('/organizations/notification-prefs', prefs);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
-  updateSecuritySettings: async (settings: Record<string, any>) => {
-    const response = await api.patch<{ success: boolean; data: any }>('/organizations/security-settings', settings);
+  updateSecuritySettings: async (settings: Record<string, boolean | number>) => {
+    const response = await api.patch<{ success: boolean; data: OrganizationProfile }>('/organizations/security-settings', settings);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
   updateEnabledModules: async (enabledModules: string[]) => {
-    const response = await api.patch<{ success: boolean; data: any }>('/organizations/profile', { enabledModules });
+    const response = await api.patch<{ success: boolean; data: OrganizationProfile }>('/organizations/profile', { enabledModules });
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
@@ -4122,13 +4123,13 @@ export const overtimeApi = {
   },
 
   approve: async (id: string, data: { maxDurationMinutes: number; notes?: string }) => {
-    const response = await api.post<{ success: boolean; data: any }>(`/overtime/${id}/approve`, data);
+    const response = await api.post<{ success: boolean; data: OvertimeRequest }>(`/overtime/${id}/approve`, data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
 
   reject: async (id: string, data: { reason: string }) => {
-    const response = await api.post<{ success: boolean; data: any }>(`/overtime/${id}/reject`, data);
+    const response = await api.post<{ success: boolean; data: OvertimeRequest }>(`/overtime/${id}/reject`, data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
@@ -4140,7 +4141,7 @@ export const overtimeApi = {
       page: params?.page,
       limit: params?.limit,
     });
-    const response = await api.get<{ success: boolean; data: { data: OvertimeRequest[]; meta: any } }>(endpoint);
+    const response = await api.get<{ success: boolean; data: { data: OvertimeRequest[]; meta: PaginationMeta } }>(endpoint);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
@@ -4695,51 +4696,196 @@ export const epicsApi = {
   },
 };
 
+/** One day's row inside a schedule template's `entries` JSON. */
+export interface ScheduleTemplateEntry {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  notes?: string;
+}
+
+/** A reusable weekly pattern ("Morning Shift", "Flex 4x10"). */
+export interface ScheduleTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  entries: ScheduleTemplateEntry[];
+  organizationId: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * The organization as its settings screen edits it.
+ *
+ * Every field here is one the settings page reads; typing them turned four
+ * `Record<string, any>` calls into something a rename can break at build time
+ * rather than at the customer.
+ */
+export interface OrganizationProfile {
+  id?: string;
+  name?: string | null;
+  description?: string | null;
+  industry?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  timezone?: string | null;
+  logoUrl?: string | null;
+  /** `address` is the older single-line form kept for records that predate the split. */
+  address?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  vatId?: string | null;
+  billableRateCents?: number | null;
+  usesExternalWorkers?: boolean | null;
+  enabledModules?: string[] | null;
+  notificationPrefs?: Record<string, boolean> | null;
+  securitySettings?: Record<string, boolean | number> | null;
+}
+
+/** The paging envelope every list endpoint returns alongside its rows. */
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit?: number;
+  totalPages: number;
+}
+
+/**
+ * An invoice as the API returns it — mirrors the Prisma model.
+ *
+ * Written out rather than left as `any`: the invoice screens read a dozen
+ * fields off these objects and every one of them was unchecked, so a renamed
+ * column reached production as a blank cell instead of a build error.
+ */
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  /** Set when the line came from a task or its service report. */
+  taskId?: string | null;
+  reportId?: string | null;
+  createdAt: string;
+}
+
+export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELED';
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  /** The customer space being billed; null for an ad-hoc invoice. */
+  spaceId?: string | null;
+  clientName: string;
+  clientEmail?: string | null;
+  clientAddress?: string | null;
+  subtotal: number;
+  taxRate?: number | null;
+  taxAmount: number;
+  discount: number;
+  total: number;
+  currency: string;
+  issueDate: string;
+  dueDate?: string | null;
+  paidAt?: string | null;
+  notes?: string | null;
+  organizationId: string;
+  createdById: string;
+  items: InvoiceItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** What a new invoice needs; everything else is server-decided. */
+export interface CreateInvoiceInput {
+  spaceId?: string | null;
+  clientName: string;
+  clientEmail?: string;
+  clientAddress?: string;
+  taxRate?: number;
+  discount?: number;
+  currency?: string;
+  /** Both accepted by the server; it defaults issueDate to now when omitted. */
+  issueDate?: string;
+  dueDate?: string;
+  notes?: string;
+  items?: Array<Omit<InvoiceItem, 'id' | 'invoiceId' | 'amount' | 'createdAt'> & { amount?: number }>;
+}
+
+export type UpdateInvoiceInput = Partial<CreateInvoiceInput>;
+
+/** One line added to an existing invoice. */
+export interface InvoiceItemInput {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taskId?: string | null;
+  reportId?: string | null;
+}
+
+/** Uninvoiced work the gather endpoint proposes as invoice lines. */
+export interface InvoiceGatherResult {
+  items: InvoiceItemInput[];
+  clientName?: string;
+  clientEmail?: string;
+  clientAddress?: string;
+}
+
 export const invoicesApi = {
   list: async (params?: { status?: string; spaceId?: string; page?: number; limit?: number }) => {
     const endpoint = buildUrlWithQuery('/invoices', params ?? {});
-    const response = await api.get<any>(endpoint);
+    const response = await api.get<{ success: boolean; data: Invoice[]; meta?: PaginationMeta }>(endpoint);
     if (response.error) throw new Error(response.error);
     return response.data;
   },
   /** Build (unsaved) draft line items from a customer space's completed work. */
   gather: async (spaceId: string) => {
-    const response = await api.get<any>(buildUrlWithQuery('/invoices/gather', { spaceId }));
+    const response = await api.get<{ success: boolean; data: InvoiceGatherResult }>(buildUrlWithQuery('/invoices/gather', { spaceId }));
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
   getById: async (id: string) => {
-    const response = await api.get<any>(`/invoices/${id}`);
+    const response = await api.get<{ success: boolean; data: Invoice }>(`/invoices/${id}`);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
-  create: async (data: any) => {
-    const response = await api.post<any>('/invoices', data);
+  create: async (data: CreateInvoiceInput) => {
+    const response = await api.post<{ success: boolean; data: Invoice }>('/invoices', data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
-  update: async (id: string, data: any) => {
-    const response = await api.patch<any>(`/invoices/${id}`, data);
+  update: async (id: string, data: UpdateInvoiceInput) => {
+    const response = await api.patch<{ success: boolean; data: Invoice }>(`/invoices/${id}`, data);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
   updateStatus: async (id: string, status: string) => {
-    const response = await api.patch<any>(`/invoices/${id}/status`, { status });
+    const response = await api.patch<{ success: boolean; data: Invoice }>(`/invoices/${id}/status`, { status });
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
   delete: async (id: string) => {
-    const response = await api.delete<any>(`/invoices/${id}`);
+    const response = await api.delete<{ success: boolean }>(`/invoices/${id}`);
     if (response.error) throw new Error(response.error);
     return response.data;
   },
-  addItem: async (id: string, item: any) => {
-    const response = await api.post<any>(`/invoices/${id}/items`, item);
+  addItem: async (id: string, item: InvoiceItemInput) => {
+    const response = await api.post<{ success: boolean; data: InvoiceItem }>(`/invoices/${id}/items`, item);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
   removeItem: async (id: string, itemId: string) => {
-    const response = await api.delete<any>(`/invoices/${id}/items/${itemId}`);
+    const response = await api.delete<{ success: boolean }>(`/invoices/${id}/items/${itemId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
   },
@@ -5208,7 +5354,7 @@ export const customersApi = {
     return res.data!.data;
   },
   resendInvite: async (id: string) => {
-    const res = await api.post<{ data?: any }>(`/customers/${id}/resend-invite`, {});
+    const res = await api.post<{ data?: { code?: string; emailed?: boolean } }>(`/customers/${id}/resend-invite`, {});
     if (res.error) throw new Error(res.error);
     return res.data;
   },
