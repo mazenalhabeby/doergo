@@ -1,20 +1,17 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import {
-  SERVICE_NAMES,
-  createClientOptions,
-  QUEUE_NAMES,
-} from '@hbcfield/shared';
+import { QUEUE_NAMES } from '@hbcfield/shared';
 import { LocationsController } from './locations.controller';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
 
 @Module({
   imports: [
-    // Microservice client for READ operations
+    // Microservice clients come from the GLOBAL MicroservicesModule — the
+    // controller injects AUTH_SERVICE to tell billing a space change moved the
+    // bill. Registering it again here would create a second connection.
     // BullMQ queue for WRITE operations
     BullModule.registerQueue({ name: QUEUE_NAMES.LOCATIONS }),
     // Bull Board for monitoring

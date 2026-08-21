@@ -282,6 +282,41 @@ export class BillingService {
    * INCOMPLETE ("Inactive"), which blocks writes via isLocked() until they subscribe;
    * data is preserved and access is restored the moment they check out.
    */
+  /**
+   * Sweep every paying organization's usage onto its subscription, nightly.
+   *
+   * Assets, clients and portals move the bill, but deliberately do NOT trigger a
+   * sync each: adding fifty flats would be fifty Stripe prorations, and a
+   * customer importing a spreadsheet would watch their invoice grow a line per
+   * row. Seats, modules and add-ons sync immediately because those are decisions
+   * somebody made on a screen; usage accrues, so it is settled once a day.
+   *
+   * Runs before most billing periods roll over, so what a customer is charged
+   * reflects what they were actually holding.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async reconcileUsageDaily() {
+    const orgs = await this.prisma.organization.findMany({
+      where: { subscription: { stripeSubscriptionId: { not: null } } },
+      select: { id: true },
+    });
+    if (!orgs.length) return;
+
+    let synced = 0;
+    for (const org of orgs) {
+      // Sequential on purpose. This is a background sweep with no deadline, and
+      // firing every organization at Stripe at once is how an account meets its
+      // rate limit at two in the morning.
+      try {
+        await this.reconcileSeats(org.id);
+        synced++;
+      } catch (e) {
+        this.logger.error(`Nightly usage reconcile failed for ${org.id}: ${(e as Error).message}`);
+      }
+    }
+    this.logger.log(`Nightly usage reconcile: ${synced}/${orgs.length} organizations`);
+  }
+
   @Cron(CronExpression.EVERY_HOUR)
   async expireTrials() {
     const now = new Date();

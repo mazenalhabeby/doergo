@@ -8,7 +8,10 @@ import {
   Param,
   Query,
   Request,
+  Inject,
 } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -34,7 +37,25 @@ export class LocationsController {
   constructor(
     private readonly locationsService: LocationsService,
     private readonly locationsQueueService: LocationsQueueService,
+    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
   ) {}
+
+  /**
+   * Tell billing the bill moved.
+   *
+   * A space IS a billable thing now: creating one, switching a module on in it,
+   * or archiving it changes what the organization owes as surely as hiring
+   * somebody does. Member changes already triggered this; space changes did not,
+   * which meant a module switched on would show on the billing screen and never
+   * reach Stripe until the next unrelated hire.
+   *
+   * Fire-and-forget, and debounced on the far side: a burst of toggles on the
+   * Modules tab collapses into one proration, and a billing hiccup must never
+   * stop somebody configuring their space.
+   */
+  private rebill(organizationId: string): void {
+    firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
+  }
 
   @Post()
   @RequirePermission('canManageUsers')
@@ -44,11 +65,13 @@ export class LocationsController {
     if (Array.isArray((dto as any).enabledModules)) {
       (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
     }
-    return this.locationsQueueService.create({
+    const created = await this.locationsQueueService.create({
       ...dto,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
+    this.rebill(req.user.organizationId);
+    return created;
   }
 
   @Get()
@@ -143,34 +166,41 @@ export class LocationsController {
     if (Array.isArray((dto as any).enabledModules)) {
       (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
     }
-    return this.locationsQueueService.update({
+    const updated = await this.locationsQueueService.update({
       id,
       ...dto,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
+    // Modules may have changed — and an archived space stops being billed.
+    this.rebill(req.user.organizationId);
+    return updated;
   }
 
   @Delete(':id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Deactivate a company location' })
   async remove(@Param('id') id: string, @Request() req: any) {
-    return this.locationsQueueService.remove({
+    const result = await this.locationsQueueService.remove({
       id,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
+    this.rebill(req.user.organizationId);
+    return result;
   }
 
   @Delete(':id/permanent')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Permanently delete an empty company location (no tasks/attendance/shifts)' })
   async purge(@Param('id') id: string, @Request() req: any) {
-    return this.locationsQueueService.purge({
+    const result = await this.locationsQueueService.purge({
       id,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
+    this.rebill(req.user.organizationId);
+    return result;
   }
 
   @Get(':id/modules')
