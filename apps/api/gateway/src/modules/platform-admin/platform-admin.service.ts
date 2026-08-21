@@ -27,8 +27,8 @@ export class PlatformAdminService extends BaseGatewayService {
   setup2fa(data: any) { return this.send({ cmd: 'platform_2fa_setup' }, data); }
   enable2fa(data: any) { return this.send({ cmd: 'platform_2fa_enable' }, data); }
   disable2fa(data: any) { return this.send({ cmd: 'platform_2fa_disable' }, data); }
-  // Org tier (reuse billing admin logic on auth-service)
-  setTier(data: { organizationId: string; tier: string }) { return this.send({ cmd: 'billing_admin_set_tier' }, data); }
+  // Operator grant — capabilities, not a tier (reuses the billing service).
+  setAddOns(data: { organizationId: string; addOns: string[] }) { return this.send({ cmd: 'billing_admin_set_addons' }, data); }
 
   // Pricing (C2 — editable price book, no Stripe mutation)
   pricingActive() { return this.send({ cmd: 'platform_pricing_active' }, {}); }

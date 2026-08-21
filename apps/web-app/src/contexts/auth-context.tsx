@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
-import { hasFeatureModule, tierAllows, type PlanTier } from '@hbcfield/shared/client';
+import { hasFeatureModule, orgHasAddOn, isAddOn } from '@hbcfield/shared/client';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -49,7 +49,8 @@ export interface User {
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasModule().
   orgModules?: string[];
   // Billing tier + subscription status (lowercase) — drives hasPlanFeature().
-  planTier?: string | null;
+  planTier?: string | null; // LEGACY — nothing reads it to decide access
+  orgAddOns?: string[] | null;
   subStatus?: string;
   // Avatar
   avatarUrl?: string | null;
@@ -334,8 +335,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // (recurring, overtime, workflows, custom_fields, dependencies, …). Pure tier
   // check — no API call. Used to gate premium nav items and pages.
   const hasPlanFeature = useCallback((feature: string) => {
-    return tierAllows((user?.planTier ?? null) as PlanTier | null, feature);
-  }, [user?.planTier]);
+    // What the organization BOUGHT, not what a tier allowed. Fails closed on a
+    // key that is neither a module nor an add-on, matching PlanGuard — the UI
+    // hiding something the API would 402 is far better than the reverse.
+    if (!isAddOn(feature)) return false;
+    return orgHasAddOn(user?.orgAddOns ?? null, feature);
+  }, [user?.orgAddOns]);
 
   // Check if user has a specific permission
   const hasPermission = useCallback((perm: string) => {

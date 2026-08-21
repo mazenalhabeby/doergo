@@ -298,9 +298,9 @@
       "more": "Weitere Branchen"
     },
     "compare": {
-      "label": "(08) — Vergleich",
-      "heading": "Jede Funktion, nach Plan.",
-      "lead": "Genau das, was jeder Plan freischaltet — die Stufen bauen aufeinander auf, jeder Plan enthält alles darunter.",
+      "label": "Alle Preise",
+      "heading": "Jedes Modul und was es kostet",
+      "lead": "Die vollständige Preisliste. Nichts ist hinter einem Paket versteckt — die einzige Frage ist, was etwas kostet.",
       "groups": {
         "task": "Aufgaben-Bereiche",
         "field": "Außendienst",
@@ -396,8 +396,8 @@
     },
     "pricing": {
       "label": "(07) — Preise",
-      "heading": "Preise, die drei Tools ersetzen.",
-      "lead": "Zahlen Sie für die Büro-Plätze, ergänzen Sie das Feld für weniger. 14 Tage testen, keine Kreditkarte.",
+      "heading": "Zahlen Sie für das, was Sie aktivieren.",
+      "lead": "Keine Pakete, keine Stufen, nichts hinter einem Upgrade versteckt. 9,99 € pro Person, die HBCField nutzt, plus das, was jeder Standort tatsächlich aktiviert. 14 Tage testen, ohne Karte.",
       "outcomes": [
         {
           "title": "Schluss mit dem Status-Anruf-Chaos",
@@ -412,61 +412,29 @@
           "body": "Fotos, Teile und unterschriebene Berichte bedeuten: Sie können immer genau zeigen, was getan wurde."
         }
       ],
-      "popular": "Beliebt",
-      "perUser": "/ Nutzer / Mon.",
       "cta": "Kostenlos starten",
-      "note": "Preise je Büro-Platz · Feld-/Techniker-Plätze je 19 € · Enterprise ab 199 €/Mon. oder individuelles Angebot · Jahresabrechnung = 2 Monate gratis · 14 Tage testen, keine Karte.",
-      "plans": [
+      "note": "Jährliche Zahlung = 2 Monate gratis · Modul abschalten, sobald Sie es nicht mehr brauchen · USt. kommt beim Checkout dazu",
+      "parts": [
         {
-          "name": "Starter",
-          "price": "29 €",
-          "popular": false,
-          "desc": "Aufgaben, Anwesenheit, GPS, Dienstpläne & Mobil.",
-          "features": [
-            "Live-Dispositionsboard",
-            "Serviceberichte & Fotos",
-            "Geozaun-Einstempeln",
-            "GPS mit exakter Route"
-          ]
+          "name": "Pro Person",
+          "price": "9,99 €",
+          "unit": "/ Benutzer / Mon.",
+          "desc": "Büro oder Außendienst — gleicher Preis. Keine Sitzplatz-Kategorien."
         },
         {
-          "name": "Professional",
-          "price": "59 €",
-          "popular": true,
-          "desc": "Alles aus Starter, plus das komplette Feld-Toolkit.",
-          "features": [
-            "Überstunden-Engine",
-            "Wiederkehrend & benutzerdef. Felder",
-            "Aufgabenabhängigkeiten",
-            "Rechnungsstellung"
-          ]
+          "name": "Pro Bereich",
+          "price": "ab 3 €",
+          "unit": "/ Modul / Mon.",
+          "desc": "Ein Standort zahlt genau das, was er aktiviert hat — und nicht mehr, sobald er es abschaltet."
         },
         {
-          "name": "Business",
-          "price": "99 €",
-          "popular": false,
-          "desc": "Für Franchises, Agenturen & Multi-Standort-Betriebe.",
-          "features": [
-            "Sprints & Story Points",
-            "Epics & Phasen",
-            "Prüfprotokoll & Workflows",
-            "Live-Chat & priorisierter Support"
-          ]
-        },
-        {
-          "name": "Enterprise",
-          "price": "Individuell",
-          "popular": false,
-          "custom": true,
-          "cta": "Vertrieb kontaktieren",
-          "desc": "Ab 199 €/Mon. Individuelles Angebot für große Flotten & Multi-Standort-Gruppen.",
-          "features": [
-            "Alles aus Business",
-            "Individuelles Angebot & Vertragskonditionen",
-            "Verhandelbare Sitzplatzpreise"
-          ]
+          "name": "Firmenweite Module",
+          "price": "ab 9 €",
+          "unit": "/ Mon.",
+          "desc": "Rechnungen, Workflows, Änderungsprotokoll. Einmal gebucht, egal wie viele Standorte."
         }
-      ]
+      ],
+      "seePrices": "Alle Preise ansehen"
     },
     "faq": {
       "label": "FAQ",
@@ -505,6 +473,25 @@
           "a": "Ja — statt ein Außendienst-Tool, eine Stempeluhr und einen GPS-Tracker separat zu bezahlen, vereint HBCField Disposition, Anwesenheit und Routentracking in einer Plattform."
         }
       ]
+    },
+    "priceList": {
+      "perSpace": " / Bereich / Mon.",
+      "perMonth": " / Mon.",
+      "modulesLabel": "Pro Bereich",
+      "modulesLead": "Aktivieren Sie ein Modul für einen Standort, und dieser Standort zahlt dafür. Abschalten — und es endet.",
+      "addOnsLabel": "Firmenweit",
+      "addOnsLead": "Einmal für das ganze Unternehmen gebucht, egal wie viele Standorte.",
+      "addOnGroups": {
+        "work": "Arbeitsabläufe",
+        "money": "Finanzen",
+        "insight": "Auswertung",
+        "support": "Support"
+      },
+      "ladder": {
+        "assets": "die ersten 10 gratis, danach ab 1,20 € je",
+        "crm": "die ersten 50 Kunden gratis, danach ab 30 Cent je",
+        "b2c_portal": "erstes Portal enthalten, danach 29 € je"
+      }
     }
   },
   "common": {
@@ -6765,5 +6752,12 @@
         "label": "Support"
       }
     }
+  },
+  "planGate": {
+    "priced": "{{feature}} kostet {{price}} pro Monat",
+    "unavailable": "{{feature}} gehört nicht zu Ihrem Abonnement",
+    "adminHint": "In der Abrechnung hinzufügen — sofort verfügbar.",
+    "memberHint": "Bitten Sie einen Organisations-Admin, es hinzuzufügen.",
+    "cta": "{{feature}} hinzufügen"
   }
 }

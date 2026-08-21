@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BillingService } from './billing.service';
-import type { CheckoutRequest, ChangePlanRequest, PlanTier } from '@hbcfield/shared';
+import type { BillingInterval } from '@hbcfield/shared';
 
 @Controller()
 export class BillingController {
@@ -32,13 +32,13 @@ export class BillingController {
     return this.billing.adminListOrgs();
   }
 
-  @MessagePattern({ cmd: 'billing_admin_set_tier' })
-  adminSetOrgTier(@Payload() d: { organizationId: string; tier: PlanTier }) {
-    return this.billing.adminSetOrgTier(d);
+  @MessagePattern({ cmd: 'billing_admin_set_addons' })
+  adminSetOrgAddOns(@Payload() d: { organizationId: string; addOns: string[] }) {
+    return this.billing.adminSetOrgAddOns(d);
   }
 
   @MessagePattern({ cmd: 'billing_create_checkout' })
-  createCheckout(@Payload() d: { organizationId: string; req: CheckoutRequest; successUrl: string; cancelUrl: string }) {
+  createCheckout(@Payload() d: { organizationId: string; req: { interval: BillingInterval }; successUrl: string; cancelUrl: string }) {
     return this.billing.createCheckout(d.organizationId, d.req, d.successUrl, d.cancelUrl);
   }
 
@@ -48,7 +48,7 @@ export class BillingController {
   }
 
   @MessagePattern({ cmd: 'billing_change_plan' })
-  changePlan(@Payload() d: { organizationId: string; req: ChangePlanRequest; successUrl: string; cancelUrl: string }) {
+  changePlan(@Payload() d: { organizationId: string; req: { interval: BillingInterval }; successUrl: string; cancelUrl: string }) {
     return this.billing.changePlan(d.organizationId, d.req, d.successUrl, d.cancelUrl);
   }
 

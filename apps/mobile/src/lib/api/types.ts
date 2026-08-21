@@ -73,9 +73,16 @@ export interface User {
   // When true the member may clock in remotely (WFH / anywhere), geofence-exempt.
   // Sent in the login/validateToken payload; drives the mobile clock-in choice.
   allowRemote?: boolean;
-  // Billing tier the org is on — gates premium features (custom fields, etc.).
-  // Server-authoritative; sent in the login/validateToken payload.
-  planTier?: 'starter' | 'professional' | 'business' | 'enterprise' | null;
+  /** LEGACY — nothing reads it to decide access any more. */
+  planTier?: string | null;
+  /**
+   * What the organization BOUGHT. Server-authoritative, sent in the
+   * login/validateToken payload, and the same list PlanGuard checks — so a
+   * screen hiding something the API would refuse, and vice versa, cannot drift.
+   */
+  orgAddOns?: string[] | null;
+  /** Org-level feature modules (custom fields, sprints, …). */
+  orgModules?: string[] | null;
   // Technician-specific fields
   position?: string | null;
   // Manual availability override (null = auto from task).

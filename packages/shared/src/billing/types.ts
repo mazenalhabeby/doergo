@@ -6,22 +6,25 @@
  * config keys). The Prisma enums are UPPERCASE; the backend maps between them.
  */
 
-import type { PlanTier, BillingInterval } from './plans';
+import type { BillingInterval } from './plans';
 
 /** Subscription lifecycle status. */
 export type SubStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
 
-/** What the client renders. All money in EUR cents. */
+/**
+ * Subscription STATUS — the Stripe side. What it costs is a separate call
+ * (`GET /billing/bill`), because the two answer different questions and only
+ * one of them changes when somebody switches a module on.
+ *
+ * The office/field/in-house seat split is gone: one flat seat, so there is
+ * nothing to classify. `planTier` is gone with the tiers.
+ */
 export interface SubscriptionView {
-  planTier: PlanTier | null;
   status: SubStatus;
   interval: BillingInterval;
-  officeSeats: number;
-  /** External/freelancer field seats (€15). */
-  fieldSeats: number;
-  /** In-house (employed) field seats (€9 discount). */
-  fieldInhouseSeats: number;
-  /** Recurring total for the current line-up (null for enterprise/custom). */
+  /** Active members — the only seat count there is now. */
+  seats: number;
+  /** What the bill last came to, monthly EUR cents. 0 = never billed. */
   totalCents: number | null;
   trialEndsAt: string | null; // ISO
   currentPeriodEnd: string | null; // ISO
@@ -32,15 +35,19 @@ export interface SubscriptionView {
   trialDaysLeft: number | null;
 }
 
-/** Client → server: start checkout for a self-serve tier. */
+/**
+ * Client → server: start checkout.
+ *
+ * No tier — there is nothing to choose. The purchase is whatever the
+ * organization already has switched on, computed server-side at checkout, so a
+ * client cannot subscribe itself to a cheaper bill than the one it is using.
+ */
 export interface CheckoutRequest {
-  tier: Exclude<PlanTier, 'enterprise'>;
   interval: BillingInterval;
 }
 
-/** Client → server: change the active plan/interval. */
+/** Client → server: switch between monthly and annual. */
 export interface ChangePlanRequest {
-  tier: Exclude<PlanTier, 'enterprise'>;
   interval: BillingInterval;
 }
 

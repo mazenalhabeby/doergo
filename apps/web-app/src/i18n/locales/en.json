@@ -298,9 +298,9 @@
       "more": "More industries"
     },
     "compare": {
-      "label": "(08) — Compare",
-      "heading": "Every feature, by plan.",
-      "lead": "Exactly what each plan unlocks — tiers are cumulative, so every plan includes everything below it.",
+      "label": "Every price",
+      "heading": "Every module, and what it costs",
+      "lead": "The whole price list. Nothing is locked behind a plan, so the only question is what a thing costs.",
       "groups": {
         "task": "Task sections",
         "field": "Field service",
@@ -396,8 +396,8 @@
     },
     "pricing": {
       "label": "(07) — Pricing",
-      "heading": "Priced to replace three tools.",
-      "lead": "Pay for the office seats, add the field for less. 14-day trial, no credit card.",
+      "heading": "Pay for what you switch on.",
+      "lead": "No plans, no tiers, nothing locked behind an upgrade. €9.99 for each person who uses HBCField, plus whatever each of your sites actually turns on. 14-day trial, no card.",
       "outcomes": [
         {
           "title": "End the status-call chaos",
@@ -412,61 +412,29 @@
           "body": "Photos, parts and signed reports mean you can always show exactly what was done."
         }
       ],
-      "popular": "Popular",
-      "perUser": "/ user / mo",
       "cta": "Start free",
-      "note": "Prices per office seat · Field / technician seats €19 each · Enterprise from €199/mo or custom quote · Annual billing = 2 months free · 14-day trial, no card.",
-      "plans": [
+      "note": "Annual billing = 2 months free · Switch a module off the day you stop using it · VAT added at checkout",
+      "parts": [
         {
-          "name": "Starter",
-          "price": "€29",
-          "popular": false,
-          "desc": "Tasks, attendance, GPS, schedules & mobile.",
-          "features": [
-            "Live dispatch board",
-            "Service reports & photos",
-            "Geofenced clock-in",
-            "Exact-route GPS"
-          ]
+          "name": "Every person",
+          "price": "€9.99",
+          "unit": "/ user / mo",
+          "desc": "Office or field, same price. No seat types to argue about."
         },
         {
-          "name": "Professional",
-          "price": "€59",
-          "popular": true,
-          "desc": "Everything in Starter, plus the full field toolkit.",
-          "features": [
-            "Overtime engine",
-            "Recurring & custom fields",
-            "Task dependencies",
-            "Invoicing"
-          ]
+          "name": "Each space",
+          "price": "from €3",
+          "unit": "/ module / mo",
+          "desc": "A site pays for exactly what it switched on — and stops when you switch it off."
         },
         {
-          "name": "Business",
-          "price": "€99",
-          "popular": false,
-          "desc": "For franchises, agencies & multi-site operators.",
-          "features": [
-            "Sprints & story points",
-            "Epics & phases",
-            "Audit log & workflows",
-            "Live chat & priority support"
-          ]
-        },
-        {
-          "name": "Enterprise",
-          "price": "Custom",
-          "popular": false,
-          "custom": true,
-          "cta": "Contact sales",
-          "desc": "From €199/mo. Custom-quoted for large fleets & multi-site groups.",
-          "features": [
-            "Everything in Business",
-            "Custom quote & contract terms",
-            "Negotiated seat pricing"
-          ]
+          "name": "Company add-ons",
+          "price": "from €9",
+          "unit": "/ mo",
+          "desc": "Invoicing, workflows, the audit log. Bought once, however many sites you run."
         }
-      ]
+      ],
+      "seePrices": "See every price"
     },
     "faq": {
       "label": "FAQ",
@@ -505,6 +473,25 @@
           "a": "Yes — instead of paying for a field-service tool, a time clock and a GPS tracker separately, HBCField combines dispatch, attendance and route tracking in one platform."
         }
       ]
+    },
+    "priceList": {
+      "perSpace": " / space / mo",
+      "perMonth": " / mo",
+      "modulesLabel": "Per space",
+      "modulesLead": "Switch a module on for a site and that site pays for it. Switch it off and it stops.",
+      "addOnsLabel": "Company-wide",
+      "addOnsLead": "Bought once for the whole company, however many sites you run.",
+      "addOnGroups": {
+        "work": "How work runs",
+        "money": "Money",
+        "insight": "Insight",
+        "support": "Support"
+      },
+      "ladder": {
+        "assets": "first 10 free, then from €1.20 each",
+        "crm": "first 50 clients free, then from 30c each",
+        "b2c_portal": "first portal included, then €29 each"
+      }
     }
   },
   "common": {
@@ -6765,5 +6752,12 @@
         "label": "Support"
       }
     }
+  },
+  "planGate": {
+    "priced": "{{feature}} is {{price}} a month",
+    "unavailable": "{{feature}} is not part of your subscription",
+    "adminHint": "Add it in Billing and it is available straight away.",
+    "memberHint": "Ask an organization admin to add it.",
+    "cta": "Add {{feature}}"
   }
 }

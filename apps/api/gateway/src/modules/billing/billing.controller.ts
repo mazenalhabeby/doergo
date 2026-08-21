@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
 import { CheckoutDto, ChangePlanDto , SetAddOnsDto } from './dto';
@@ -179,24 +179,31 @@ export class BillingController {
     return firstValueFrom(this.authClient.send({ cmd: 'billing_admin_list_orgs' }, {}));
   }
 
+  /**
+   * Operator grant. Replaces "set an org tier": a negotiated contract now grants
+   * the capabilities it actually covers, which is both more honest than naming a
+   * bundle and the only thing the gate understands.
+   *
+   * Omitting `addOns` grants EVERYTHING — the common operator case is an
+   * enterprise contract, and that is what setting the enterprise tier used to
+   * mean. Sending `[]` removes them all, deliberately distinguishable from
+   * omitting the field.
+   */
   @Public()
-  @Post('admin/org-tier')
+  @Post('admin/org-add-ons')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Operator: set an org tier (secret-gated, not a customer route)' })
-  async adminSetOrgTier(
-    @Body() dto: { organizationId?: string; tier?: string },
+  @ApiOperation({ summary: 'Operator: grant an org its capabilities (secret-gated, not a customer route)' })
+  async adminSetOrgAddOns(
+    @Body() dto: { organizationId?: string; addOns?: string[] },
     @Req() req: any,
   ) {
     this.assertPlatformKey(req);
-    const tier = String(dto?.tier || 'enterprise').toLowerCase();
-    if (!['starter', 'professional', 'business', 'enterprise'].includes(tier)) {
-      throw new HttpException({ message: 'Invalid tier' }, HttpStatus.BAD_REQUEST);
-    }
     if (!dto?.organizationId) {
       throw new HttpException({ message: 'organizationId is required' }, HttpStatus.BAD_REQUEST);
     }
+    const addOns = Array.isArray(dto.addOns) ? dto.addOns : ADD_ON_KEYS;
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'billing_admin_set_tier' }, { organizationId: dto.organizationId, tier }),
+      this.authClient.send({ cmd: 'billing_admin_set_addons' }, { organizationId: dto.organizationId, addOns }),
     );
     if (result && result.success === false) {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);

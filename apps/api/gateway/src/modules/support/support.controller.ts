@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
-import { tierAllows, slaBusinessMinutes, type PlanTier } from '@hbcfield/shared';
+import { orgHasAddOn, slaBusinessMinutes } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { SupportService } from './support.service';
 import { CreateTicketDto, AddMessageDto, SetStatusDto, AssignDto } from './dto';
@@ -32,14 +32,17 @@ export class SupportController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Support entitlements for the current org (SLA, live chat)' })
   getConfig(@Req() req: any) {
-    const tier = (req.user.planTier ?? null) as PlanTier | null;
+    // Support promises follow what the organization BOUGHT, not a rank.
+    const addOns = (req.user.orgAddOns ?? []) as string[];
     return {
       data: {
-        tier,
-        slaBusinessMinutes: slaBusinessMinutes(tier),
-        liveChat: tierAllows(tier, 'live_chat'),
-        priorityRouting: tierAllows(tier, 'priority_routing'),
-        dedicatedSupport: tierAllows(tier, 'dedicated_support'),
+        // `tier` used to be here for the client to render "Business plan".
+        // There is no plan to name any more — the client shows what was bought.
+        addOns,
+        slaBusinessMinutes: slaBusinessMinutes(addOns),
+        liveChat: orgHasAddOn(addOns, 'live_chat'),
+        priorityRouting: orgHasAddOn(addOns, 'priority_routing'),
+        dedicatedSupport: orgHasAddOn(addOns, 'dedicated_support'),
       },
     };
   }
@@ -52,7 +55,7 @@ export class SupportController {
     return this.support.createTicket({
       organizationId: req.user.organizationId,
       createdById: req.user.id,
-      planTier: req.user.planTier,
+      orgAddOns: req.user.orgAddOns ?? [],
       subject: dto.subject,
       body: dto.body,
       category: dto.category,

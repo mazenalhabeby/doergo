@@ -8,9 +8,9 @@ import {
   stripeLinesForBill,
   isAddOn,
   ADD_ON_KEYS,
+  DEFAULT_ORG_MODULES,
   countSeats,
   subscriptionTotalCents,
-  modulesForTier,
   isLocked,
   trialDaysLeft,
   TRIAL_DAYS,
@@ -103,7 +103,15 @@ export class BillingService {
     return { success: true, data: orgs };
   }
 
-  async adminSetOrgTier(data: { organizationId: string; tier: PlanTier }) {
+  /**
+   * Operator grant: give an organization capabilities outright.
+   *
+   * This replaced "set their tier". A negotiated contract now grants the
+   * capabilities it covers rather than naming a bundle, which is both more
+   * honest and the only thing the gate understands. Marks them ACTIVE and ends
+   * the trial, exactly as setting a tier did.
+   */
+  async adminSetOrgAddOns(data: { organizationId: string; addOns: string[] }) {
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
       select: { id: true, name: true },
@@ -111,17 +119,20 @@ export class BillingService {
     if (!org) {
       return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Organization not found' };
     }
+    const unknown = (data.addOns ?? []).filter((k) => !isAddOn(k));
+    if (unknown.length) {
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: `Not an add-on: ${unknown.join(', ')}` };
+    }
     const updated = await this.prisma.organization.update({
       where: { id: data.organizationId },
       data: {
-        planTier: TIER_TO_PRISMA[data.tier],
+        addOns: [...new Set(data.addOns ?? [])].sort(),
         subStatus: 'ACTIVE',
-        enabledModules: modulesForTier(data.tier),
         trialEndsAt: null,
       },
-      select: { id: true, name: true, planTier: true, subStatus: true },
+      select: { id: true, name: true, addOns: true, subStatus: true },
     });
-    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) set to ${updated.planTier} by operator`);
+    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) add-ons set to [${updated.addOns.join(', ')}] by operator`);
     return { success: true, data: updated };
   }
 
@@ -238,11 +249,14 @@ export class BillingService {
     await this.prisma.organization.update({
       where: { id: organizationId },
       data: {
-        planTier: 'PROFESSIONAL',
         subStatus: 'TRIALING',
         billingInterval: 'MONTHLY',
         trialEndsAt,
-        enabledModules: modulesForTier('professional'),
+        // A trial is everything, for fourteen days. There is no tier to put
+        // somebody on, and a trial that hides half the product cannot tell
+        // anyone whether the product is worth buying.
+        addOns: ADD_ON_KEYS,
+        enabledModules: DEFAULT_ORG_MODULES,
       },
     });
     // 2) Seat-accurate subscription row — best-effort. If seat counting or the
@@ -344,6 +358,14 @@ export class BillingService {
   }
 
   // ── read ─────────────────────────────────────────────────────────────────────
+  /**
+   * Subscription STATUS — the Stripe side only.
+   *
+   * What it costs lives in `getBill`, deliberately separate: they answer
+   * different questions and change at different times. Switching a module on
+   * moves the bill and not the status; a failed card moves the status and not
+   * the bill.
+   */
   async getSubscription(organizationId: string) {
     const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
@@ -352,25 +374,17 @@ export class BillingService {
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
 
     const status = statusFromPrisma(org.subStatus);
-    const tier = tierFromPrisma(org.planTier);
-    const interval = intervalFromPrisma(org.billingInterval);
-    const seats: SeatCounts = org.subscription
-      ? {
-          office: org.subscription.officeSeats,
-          field: org.subscription.fieldSeats,
-          fieldInhouse: org.subscription.fieldInhouseSeats,
-          total: org.subscription.officeSeats + org.subscription.fieldSeats + org.subscription.fieldInhouseSeats,
-        }
-      : await this.countOrgSeats(organizationId);
+    const seats =
+      org.subscription?.officeSeats ??
+      (await this.prisma.user.count({ where: { organizationId, isActive: true } }));
 
     const view: SubscriptionView = {
-      planTier: tier,
       status,
-      interval,
-      officeSeats: seats.office,
-      fieldSeats: seats.field,
-      fieldInhouseSeats: seats.fieldInhouse,
-      totalCents: tier ? subscriptionTotalCents(tier, interval, seats.office, seats.field, seats.fieldInhouse) : null,
+      interval: intervalFromPrisma(org.billingInterval),
+      seats,
+      // What was last actually billed, rather than a figure recomputed here —
+      // a second implementation of the bill is a second answer.
+      totalCents: org.subscription?.lastBilledCents ?? null,
       trialEndsAt: org.trialEndsAt ? org.trialEndsAt.toISOString() : null,
       currentPeriodEnd: org.currentPeriodEnd ? org.currentPeriodEnd.toISOString() : null,
       cancelAtPeriodEnd: org.cancelAtPeriodEnd,
@@ -680,7 +694,9 @@ export class BillingService {
         currentPeriodEnd: periodEnd,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
         trialEndsAt: trialEnd,
-        ...(tier ? { enabledModules: modulesForTier(tier) } : {}),
+        // Modules are NOT derived from the subscription any more. A space
+        // switches its own on and is billed for them, so a webhook rewriting
+        // the org's module list would silently undo somebody's configuration.
       },
     });
     await this.prisma.subscription.upsert({

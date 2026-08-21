@@ -298,9 +298,9 @@
       "more": "Autres secteurs"
     },
     "compare": {
-      "label": "(08) — Comparer",
-      "heading": "Chaque fonctionnalité, par formule.",
-      "lead": "Exactement ce que débloque chaque formule — les niveaux sont cumulatifs, donc chaque formule inclut tout ce qui figure en dessous.",
+      "label": "Tous les prix",
+      "heading": "Chaque module, et son prix",
+      "lead": "La liste complète. Rien n’est bloqué derrière un forfait — la seule question est ce que coûte une chose.",
       "groups": {
         "task": "Sections de tâche",
         "field": "Interventions terrain",
@@ -396,8 +396,8 @@
     },
     "pricing": {
       "label": "(07) — Tarifs",
-      "heading": "Un tarif pour remplacer trois outils.",
-      "lead": "Payez les sièges bureau, ajoutez le terrain pour moins cher. Essai de 14 jours, sans carte bancaire.",
+      "heading": "Payez ce que vous activez.",
+      "lead": "Pas de forfaits, pas de paliers, rien derrière une mise à niveau. 9,99 € par personne qui utilise HBCField, plus ce que chaque site active réellement. 14 jours d’essai, sans carte.",
       "outcomes": [
         {
           "title": "Mettez fin au chaos des appels de suivi",
@@ -412,61 +412,29 @@
           "body": "Photos, pièces et rapports signés vous permettent de toujours montrer exactement ce qui a été fait."
         }
       ],
-      "popular": "Populaire",
-      "perUser": "/ utilisateur / mois",
       "cta": "Commencer gratuitement",
-      "note": "Tarifs par siège bureau · Sièges terrain / technicien 19 € chacun · Enterprise à partir de 199 €/mois ou devis sur mesure · Facturation annuelle = 2 mois offerts · Essai de 14 jours, sans carte.",
-      "plans": [
+      "note": "Facturation annuelle = 2 mois offerts · Désactivez un module le jour où vous cessez de l’utiliser · TVA ajoutée au paiement",
+      "parts": [
         {
-          "name": "Starter",
-          "price": "29 €",
-          "popular": false,
-          "desc": "Tâches, présences, GPS, plannings et mobile.",
-          "features": [
-            "Tableau de répartition en direct",
-            "Rapports d'intervention et photos",
-            "Pointage géolocalisé",
-            "GPS de trajet exact"
-          ]
+          "name": "Par personne",
+          "price": "9,99 €",
+          "unit": "/ utilisateur / mois",
+          "desc": "Bureau ou terrain, même prix. Aucun type de licence à débattre."
         },
         {
-          "name": "Professional",
-          "price": "59 €",
-          "popular": true,
-          "desc": "Tout le contenu de Starter, plus la boîte à outils terrain complète.",
-          "features": [
-            "Moteur d'heures supplémentaires",
-            "Récurrence et champs personnalisés",
-            "Dépendances de tâches",
-            "Facturation"
-          ]
+          "name": "Par espace",
+          "price": "à partir de 3 €",
+          "unit": "/ module / mois",
+          "desc": "Un site paie exactement ce qu’il a activé, et cesse de payer dès qu’il le désactive."
         },
         {
-          "name": "Business",
-          "price": "99 €",
-          "popular": false,
-          "desc": "Pour les franchises, agences et exploitants multi-sites.",
-          "features": [
-            "Sprints et story points",
-            "Épopées et phases",
-            "Journal d'audit et flux de travail",
-            "Chat en direct et assistance prioritaire"
-          ]
-        },
-        {
-          "name": "Enterprise",
-          "price": "Sur mesure",
-          "popular": false,
-          "custom": true,
-          "cta": "Contacter les ventes",
-          "desc": "À partir de 199 €/mois. Devis sur mesure pour les grandes flottes et les groupes multi-sites.",
-          "features": [
-            "Tout le contenu de Business",
-            "Devis sur mesure et conditions contractuelles",
-            "Tarification des sièges négociée"
-          ]
+          "name": "Options entreprise",
+          "price": "à partir de 9 €",
+          "unit": "/ mois",
+          "desc": "Facturation, flux, journal d’audit. Souscrites une fois, quel que soit le nombre de sites."
         }
-      ]
+      ],
+      "seePrices": "Voir tous les prix"
     },
     "faq": {
       "label": "FAQ",
@@ -505,6 +473,25 @@
           "a": "Oui — au lieu de payer séparément un outil d’intervention, une pointeuse et un traceur GPS, HBCField réunit répartition, présence et suivi des trajets sur une seule plateforme."
         }
       ]
+    },
+    "priceList": {
+      "perSpace": " / espace / mois",
+      "perMonth": " / mois",
+      "modulesLabel": "Par espace",
+      "modulesLead": "Activez un module pour un site et ce site le paie. Désactivez-le et cela s’arrête.",
+      "addOnsLabel": "Toute l’entreprise",
+      "addOnsLead": "Souscrit une fois pour toute l’entreprise, quel que soit le nombre de sites.",
+      "addOnGroups": {
+        "work": "Organisation du travail",
+        "money": "Finances",
+        "insight": "Analyse",
+        "support": "Support"
+      },
+      "ladder": {
+        "assets": "les 10 premiers offerts, puis à partir de 1,20 € pièce",
+        "crm": "les 50 premiers clients offerts, puis à partir de 30 centimes",
+        "b2c_portal": "premier portail inclus, puis 29 € pièce"
+      }
     }
   },
   "common": {
@@ -6774,5 +6761,12 @@
         "label": "Support"
       }
     }
+  },
+  "planGate": {
+    "priced": "{{feature}} coûte {{price}} par mois",
+    "unavailable": "{{feature}} ne fait pas partie de votre abonnement",
+    "adminHint": "Ajoutez-le dans Facturation, il est disponible immédiatement.",
+    "memberHint": "Demandez à un administrateur de l’organisation de l’ajouter.",
+    "cta": "Ajouter {{feature}}"
   }
 }

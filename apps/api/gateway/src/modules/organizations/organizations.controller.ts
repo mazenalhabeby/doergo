@@ -16,7 +16,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData, minTierForFeature } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, addOnDef } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
@@ -537,7 +537,7 @@ export class OrganizationsController {
           message: 'The "audit_log" feature is not available on your plan.',
           error: 'PlanUpgradeRequired',
           feature: 'audit_log',
-          requiredTier: minTierForFeature('audit_log'),
+          monthlyCents: addOnDef('audit_log')?.monthlyCents ?? 0,
         },
         HttpStatus.PAYMENT_REQUIRED,
       );

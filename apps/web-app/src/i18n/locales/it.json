@@ -298,9 +298,9 @@
       "more": "Altri settori"
     },
     "compare": {
-      "label": "(08) — Confronta",
-      "heading": "Ogni funzionalità, per piano.",
-      "lead": "Esattamente ciò che ogni piano sblocca — i livelli sono cumulativi, quindi ogni piano include tutto ciò che è sotto di esso.",
+      "label": "Tutti i prezzi",
+      "heading": "Ogni modulo e quanto costa",
+      "lead": "Il listino completo. Niente è bloccato dietro un piano: l’unica domanda è quanto costa.",
       "groups": {
         "task": "Sezioni delle attività",
         "field": "Servizi sul campo",
@@ -396,8 +396,8 @@
     },
     "pricing": {
       "label": "(07) — Prezzi",
-      "heading": "Prezzo pensato per sostituire tre strumenti.",
-      "lead": "Paghi per le postazioni d'ufficio, aggiunga il campo a meno. Prova di 14 giorni, senza carta di credito.",
+      "heading": "Paghi ciò che attivi.",
+      "lead": "Nessun piano, nessun livello, niente bloccato dietro un upgrade. 9,99 € per ogni persona che usa HBCField, più ciò che ogni sede attiva davvero. 14 giorni di prova, senza carta.",
       "outcomes": [
         {
           "title": "Ponga fine al caos delle chiamate di stato",
@@ -412,61 +412,29 @@
           "body": "Foto, ricambi e rapporti firmati fanno sì che possa sempre mostrare esattamente cosa è stato fatto."
         }
       ],
-      "popular": "Popolare",
-      "perUser": "/ utente / mese",
       "cta": "Inizia gratis",
-      "note": "Prezzi per postazione d'ufficio · Postazioni per il campo / tecnici €19 ciascuna · Enterprise da €199/mese o preventivo personalizzato · Fatturazione annuale = 2 mesi gratis · Prova di 14 giorni, senza carta.",
-      "plans": [
+      "note": "Fatturazione annuale = 2 mesi gratis · Disattiva un modulo il giorno in cui smetti di usarlo · IVA aggiunta al pagamento",
+      "parts": [
         {
-          "name": "Starter",
-          "price": "€29",
-          "popular": false,
-          "desc": "Attività, presenze, GPS, pianificazioni e mobile.",
-          "features": [
-            "Bacheca di dispatching in tempo reale",
-            "Rapporti di servizio e foto",
-            "Timbratura con geofence",
-            "GPS di percorso esatto"
-          ]
+          "name": "Per persona",
+          "price": "9,99 €",
+          "unit": "/ utente / mese",
+          "desc": "Ufficio o campo, stesso prezzo. Nessun tipo di licenza da discutere."
         },
         {
-          "name": "Professional",
-          "price": "€59",
-          "popular": true,
-          "desc": "Tutto ciò che c'è in Starter, più il toolkit completo per il campo.",
-          "features": [
-            "Motore per gli straordinari",
-            "Ricorrenze e campi personalizzati",
-            "Dipendenze tra attività",
-            "Fatturazione"
-          ]
+          "name": "Per spazio",
+          "price": "da 3 €",
+          "unit": "/ modulo / mese",
+          "desc": "Ogni sede paga esattamente ciò che ha attivato, e smette quando lo disattiva."
         },
         {
-          "name": "Business",
-          "price": "€99",
-          "popular": false,
-          "desc": "Per franchising, agenzie e operatori multi-sede.",
-          "features": [
-            "Sprint e story point",
-            "Epic e fasi",
-            "Registro delle attività e flussi di lavoro",
-            "Chat dal vivo e assistenza prioritaria"
-          ]
-        },
-        {
-          "name": "Enterprise",
-          "price": "Personalizzato",
-          "popular": false,
-          "custom": true,
-          "cta": "Contatta le vendite",
-          "desc": "Da €199/mese. Preventivo personalizzato per grandi flotte e gruppi multi-sede.",
-          "features": [
-            "Tutto ciò che c'è in Business",
-            "Preventivo e condizioni contrattuali personalizzati",
-            "Prezzi per postazione negoziati"
-          ]
+          "name": "Aggiuntivi aziendali",
+          "price": "da 9 €",
+          "unit": "/ mese",
+          "desc": "Fatturazione, flussi, registro attività. Si attivano una volta, per tutta l’azienda."
         }
-      ]
+      ],
+      "seePrices": "Vedi tutti i prezzi"
     },
     "faq": {
       "label": "Domande frequenti",
@@ -505,6 +473,25 @@
           "a": "Sì — invece di pagare separatamente uno strumento per il servizio sul campo, un timbracartellino e un tracker GPS, HBCField unisce assegnazione, presenze e tracciamento dei percorsi in un’unica piattaforma."
         }
       ]
+    },
+    "priceList": {
+      "perSpace": " / spazio / mese",
+      "perMonth": " / mese",
+      "modulesLabel": "Per spazio",
+      "modulesLead": "Attiva un modulo per una sede e quella sede lo paga. Disattivalo e smette.",
+      "addOnsLabel": "Tutta l’azienda",
+      "addOnsLead": "Si attiva una volta per tutta l’azienda, indipendentemente dal numero di sedi.",
+      "addOnGroups": {
+        "work": "Come funziona il lavoro",
+        "money": "Denaro",
+        "insight": "Analisi",
+        "support": "Supporto"
+      },
+      "ladder": {
+        "assets": "i primi 10 gratis, poi da 1,20 € ciascuno",
+        "crm": "i primi 50 clienti gratis, poi da 30 centesimi",
+        "b2c_portal": "primo portale incluso, poi 29 € ciascuno"
+      }
     }
   },
   "common": {
@@ -6774,5 +6761,12 @@
         "label": "Supporto"
       }
     }
+  },
+  "planGate": {
+    "priced": "{{feature}} costa {{price}} al mese",
+    "unavailable": "{{feature}} non fa parte del tuo abbonamento",
+    "adminHint": "Aggiungilo in Fatturazione ed è subito disponibile.",
+    "memberHint": "Chiedi a un amministratore dell’organizzazione di aggiungerlo.",
+    "cta": "Aggiungi {{feature}}"
   }
 }

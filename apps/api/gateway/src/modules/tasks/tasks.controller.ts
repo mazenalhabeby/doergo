@@ -14,7 +14,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role, canCreateTaskFor, minTierForFeature } from '@hbcfield/shared';
+import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -77,7 +77,8 @@ export class TasksController {
             message: `The "${feature}" feature is not available on your plan.`,
             error: 'PlanUpgradeRequired',
             feature,
-            requiredTier: minTierForFeature(feature),
+            // No tier to name — say what it is and what it costs.
+            monthlyCents: addOnDef(feature)?.monthlyCents ?? moduleMonthlyCents(feature),
           },
           HttpStatus.PAYMENT_REQUIRED,
         );

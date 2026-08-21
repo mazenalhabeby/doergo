@@ -522,49 +522,46 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                 ))}
               </div>
 
-              {/* tiers */}
-              <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {asArray<{ name: string; price: string; popular: boolean; desc: string; features: string[]; custom?: boolean; cta?: string }>(t('home.pricing.plans', { returnObjects: true })).map((p, i) => (
+              {/*
+                Three price cards, not four plan columns.
+
+                There is nothing to choose between any more — the bill is people
+                plus what each site switched on plus company add-ons — so the job
+                of this block is to say what each of those three costs, and get
+                out of the way of the full price list below it.
+              */}
+              <div className="mt-16 grid gap-5 sm:grid-cols-3">
+                {asArray<{ name: string; price: string; unit: string; desc: string }>(t('home.pricing.parts', { returnObjects: true })).map((p, i) => (
                   <Reveal key={p.name} delay={i * 0.08} className="h-full">
-                    <div
-                      className={`h-full rounded-[20px] p-px ${p.popular
-                        ? 'bg-gradient-to-b from-[#5B9BD5]/50 via-[#5B9BD5]/12 to-transparent shadow-[0_18px_50px_-28px_rgba(91,155,213,0.30)]'
-                        : 'bg-gradient-to-b from-foreground/[0.14] to-foreground/[0.02]'}`}
-                    >
-                      <div className={`flex h-full flex-col rounded-[19px] p-8 ${p.popular ? 'bg-gradient-to-b from-[#5B9BD5]/[0.12] to-card dark:to-[#0e1116]' : 'bg-card'}`}>
-                        <div className="flex items-center justify-between">
-                          <span className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-foreground/55`}>{p.name}</span>
-                          {p.popular && (
-                            <span className={`${MONO} rounded-full bg-[#5B9BD5] px-2.5 py-1 text-[9px] uppercase tracking-[0.14em] text-[#04121f]`}>{t('home.pricing.popular')}</span>
-                          )}
-                        </div>
+                    <div className="h-full rounded-[20px] bg-gradient-to-b from-foreground/[0.14] to-foreground/[0.02] p-px">
+                      <div className="flex h-full flex-col rounded-[19px] bg-card p-8">
+                        <span className={`${MONO} text-[11px] uppercase tracking-[0.2em] text-foreground/55`}>{p.name}</span>
                         <div className="mt-6 flex items-baseline gap-1.5">
                           <span className={`${DISPLAY} text-[2.9rem] font-normal leading-none text-foreground`}>{p.price}</span>
-                          {!p.custom && <span className={`${MONO} text-[11px] text-foreground/40`}>{t('home.pricing.perUser')}</span>}
+                          <span className={`${MONO} text-[11px] text-foreground/40`}>{p.unit}</span>
                         </div>
                         <p className="mt-4 text-[13px] leading-relaxed text-foreground/50">{p.desc}</p>
-                        <div className="my-6 h-px w-full bg-foreground/[0.08]" />
-                        <ul className="mb-8 flex-1 space-y-3">
-                          {p.features.map((f) => (
-                            <li key={f} className="flex items-start gap-3 text-[13.5px] text-foreground/70">
-                              <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#5B9BD5]/15">
-                                <Check className="h-2.5 w-2.5 text-[#5B9BD5]" strokeWidth={3} />
-                              </span>
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                        <a
-                          href="#contact"
-                          onClick={navTo('#contact')}
-                          className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${p.popular ? 'bg-foreground text-background hover:bg-foreground/90' : 'border border-foreground/20 text-foreground/80 hover:border-foreground/50 hover:text-foreground'}`}
-                        >
-                          {p.cta || t('home.pricing.cta')}
-                        </a>
                       </div>
                     </div>
                   </Reveal>
                 ))}
+              </div>
+
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <a
+                  href="#contact"
+                  onClick={navTo('#contact')}
+                  className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] text-background transition-colors hover:bg-foreground/90`}
+                >
+                  {t('home.pricing.cta')}
+                </a>
+                <a
+                  href="#features"
+                  onClick={navTo('#features')}
+                  className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] text-foreground/80 transition-colors hover:border-foreground/50 hover:text-foreground`}
+                >
+                  {t('home.pricing.seePrices', 'See every price')}
+                </a>
               </div>
               <p className={`${MONO} mt-8 text-[11px] uppercase tracking-[0.14em] text-foreground/30`}>{t('home.pricing.note')}</p>
             </div>
@@ -573,12 +570,12 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
           {/* ══════ FEATURE COMPARISON (code-driven) ══════ */}
           <section id="features" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
-              <Label className="mb-10 block">{t('home.compare.label', 'Compare plans')}</Label>
+              <Label className="mb-10 block">{t('home.compare.label', 'Every price')}</Label>
               <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
-                {t('home.compare.heading', 'Every feature, by plan')}
+                {t('home.compare.heading', 'Every module, and what it costs')}
               </h2>
               <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-foreground/50">
-                {t('home.compare.lead', 'Exactly what each plan unlocks — tiers are cumulative, so every plan includes everything below it.')}
+                {t('home.compare.lead', 'The whole price list. Nothing is locked behind a plan, so the only question is what a thing costs.')}
               </p>
               <Reveal className="mt-14">
                 <FeatureMatrix />

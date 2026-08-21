@@ -3,6 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
+import { ADD_ON_KEYS, isAddOn } from '@hbcfield/shared';
 
 /**
  * PLATFORM Control Center (company super-admin). `@Public()` skips the customer
@@ -53,11 +54,18 @@ export class PlatformAdminController {
   @RequirePlatformPerm('manageOrgs')
   async reactivate(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) })); }
 
-  @Post('orgs/:id/tier')
+  /**
+   * Grant an organization its capabilities. Replaces setting a tier — a
+   * negotiated contract grants what it covers, and the gate only understands
+   * bought things. Omitting `addOns` grants everything, which is what setting
+   * the enterprise tier used to mean.
+   */
+  @Post('orgs/:id/add-ons')
   @RequirePlatformPerm('manageOrgs')
-  async setTier(@Param('id') id: string, @Body() body: { tier?: string }) {
-    const tier = String(body?.tier || '').toLowerCase();
-    if (!['starter', 'professional', 'business', 'enterprise'].includes(tier)) throw new HttpException({ message: 'Invalid tier' }, HttpStatus.BAD_REQUEST);
-    return this.unwrap(await this.svc.setTier({ organizationId: id, tier }));
+  async setAddOns(@Param('id') id: string, @Body() body: { addOns?: string[] }) {
+    const addOns = Array.isArray(body?.addOns) ? body.addOns : ADD_ON_KEYS;
+    const unknown = addOns.filter((k) => !isAddOn(k));
+    if (unknown.length) throw new HttpException({ message: `Not an add-on: ${unknown.join(', ')}` }, HttpStatus.BAD_REQUEST);
+    return this.unwrap(await this.svc.setAddOns({ organizationId: id, addOns }));
   }
 }

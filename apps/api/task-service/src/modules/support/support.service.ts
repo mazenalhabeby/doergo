@@ -6,7 +6,7 @@ import {
   SERVICE_NAMES,
   QUEUE_NAMES,
   SUPPORT_JOB_TYPES,
-  supportTierPriority,
+  supportPriority,
   slaFirstResponseDueAt,
   resolveTeamForOrg,
   type PlanTier,
@@ -69,7 +69,8 @@ export class SupportService {
   async createTicket(data: {
     organizationId: string;
     createdById: string;
-    planTier?: string | null;
+    /** What the org bought — decides queue priority and the SLA promise. */
+    orgAddOns?: string[] | null;
     subject: string;
     category?: string;
     channel?: string;
@@ -77,9 +78,10 @@ export class SupportService {
     attachments?: Attachment[];
   }) {
     const now = new Date();
-    const tier = (data.planTier ?? null) as PlanTier | null;
-    const priority = supportTierPriority(tier);
-    const dueAt = slaFirstResponseDueAt(tier, now);
+    // What they bought decides both the queue position and the promise.
+    const addOns = (data.orgAddOns ?? []) as string[];
+    const priority = supportPriority(addOns);
+    const dueAt = slaFirstResponseDueAt(addOns, now);
 
     // Dynamic routing: resolve the owning team from the org's manual pin / rules.
     const assignedTeamId = await this.resolveTeamForOrg(data.organizationId);
@@ -93,7 +95,10 @@ export class SupportService {
         channel: (data.channel as any) ?? 'WEB',
         status: 'OPEN',
         priority,
-        planTierAtCreation: data.planTier ?? null,
+        // Kept as a record of what they had bought when the ticket was
+        // opened — an SLA breach months later has to be judged against the
+        // promise made then, not what they are paying for now.
+        planTierAtCreation: (data.orgAddOns ?? []).join(',') || null,
         assignedTeamId,
         slaFirstResponseDueAt: dueAt,
         lastCustomerMessageAt: now,

@@ -1,23 +1,27 @@
 /**
- * Support SLA & priority — the single source of truth for per-tier response
- * targets and queue priority. Consumed by the backend (deadline computation +
- * BullMQ job priority) and the clients (displaying "typical reply within …").
+ * Support SLA & priority — response targets and queue priority.
+ *
+ * These used to be keyed by TIER: four plans, four promises, ranked. With tiers
+ * gone the promise follows what the organization actually bought, and support is
+ * now three separate things it can buy:
+ *
+ *   nothing              48 business hours — everybody gets a real answer
+ *   priority_routing     8 business hours, and ahead of everyone without it
+ *   dedicated_support    2 business hours, a named contact, an onboarding call
+ *
+ * `live_chat` is deliberately absent. It is a different channel, not a faster
+ * queue, and folding it in here would promise a ticket deadline to somebody who
+ * bought a chat window.
  *
  * Pure / client-safe — no server deps.
  */
 
-import { PlanTier, TIER_RANK } from '../billing/plans';
-
-/**
- * First-response SLA per tier, in **business minutes** (see businessHoursAdd).
- * These are the promises surfaced on the pricing page — keep them in step.
- */
-export const SUPPORT_SLA_BUSINESS_MINUTES: Record<PlanTier, number> = {
-  starter: 48 * 60, // 48 business hours
-  professional: 24 * 60, // 24 business hours
-  business: 8 * 60, // 8 business hours (same working day)
-  enterprise: 120, // 2 business hours
-};
+/** Everybody, including an organization that has bought no support add-on. */
+export const SUPPORT_SLA_BASE_MINUTES = 48 * 60;
+/** With `priority_routing` — same working day. */
+export const SUPPORT_SLA_PRIORITY_MINUTES = 8 * 60;
+/** With `dedicated_support` — two business hours. */
+export const SUPPORT_SLA_DEDICATED_MINUTES = 120;
 
 /**
  * Business-hours calendar used to turn "24 business hours" into a wall-clock
@@ -115,24 +119,32 @@ function advanceToNextDayStart(cursor: Date, cal: BusinessCalendar): Date {
   return new Date(cursor.getTime() + (minutesToMidnight + cal.startMinute) * 60_000);
 }
 
-/** BullMQ / inbox priority for a tier — LOWER value = higher priority. */
-export function supportTierPriority(tier: PlanTier | null | undefined): number {
-  if (!tier) return 100;
-  // Enterprise(rank3) → 1, Starter(rank0) → 4. Never 0 (BullMQ treats 0 as unset).
-  return 1 + (3 - TIER_RANK[tier]);
+/**
+ * BullMQ / inbox priority — LOWER value = higher priority.
+ *
+ * Never 0: BullMQ reads 0 as "unset" and the ticket would silently take the
+ * default priority instead of the one it was bought.
+ */
+export function supportPriority(addOns: string[] | null | undefined): number {
+  const has = (k: string) => Array.isArray(addOns) && addOns.includes(k);
+  if (has('dedicated_support')) return 1;
+  if (has('priority_routing')) return 2;
+  return 4;
 }
 
-/** First-response SLA in business minutes for a tier (default: slowest tier). */
-export function slaBusinessMinutes(tier: PlanTier | null | undefined): number {
-  if (!tier) return SUPPORT_SLA_BUSINESS_MINUTES.starter;
-  return SUPPORT_SLA_BUSINESS_MINUTES[tier];
+/** First-response SLA in business minutes for what this organization bought. */
+export function slaBusinessMinutes(addOns: string[] | null | undefined): number {
+  const has = (k: string) => Array.isArray(addOns) && addOns.includes(k);
+  if (has('dedicated_support')) return SUPPORT_SLA_DEDICATED_MINUTES;
+  if (has('priority_routing')) return SUPPORT_SLA_PRIORITY_MINUTES;
+  return SUPPORT_SLA_BASE_MINUTES;
 }
 
-/** Compute the first-response due date for a ticket created now on `tier`. */
+/** First-response due date for a ticket created now. */
 export function slaFirstResponseDueAt(
-  tier: PlanTier | null | undefined,
+  addOns: string[] | null | undefined,
   createdAt: Date,
   cal: BusinessCalendar = DEFAULT_BUSINESS_CALENDAR,
 ): Date {
-  return businessHoursAdd(createdAt, slaBusinessMinutes(tier), cal);
+  return businessHoursAdd(createdAt, slaBusinessMinutes(addOns), cal);
 }

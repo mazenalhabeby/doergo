@@ -298,9 +298,9 @@
       "more": "Más sectores"
     },
     "compare": {
-      "label": "(08) — Comparar",
-      "heading": "Cada función, por plan.",
-      "lead": "Exactamente lo que desbloquea cada plan: los niveles son acumulativos, así que cada plan incluye todo lo que hay debajo.",
+      "label": "Todos los precios",
+      "heading": "Cada módulo y lo que cuesta",
+      "lead": "La lista de precios completa. Nada está bloqueado tras un plan: la única pregunta es cuánto cuesta.",
       "groups": {
         "task": "Secciones de tarea",
         "field": "Servicio de campo",
@@ -396,8 +396,8 @@
     },
     "pricing": {
       "label": "(07) — Precios",
-      "heading": "Con un precio que reemplaza tres herramientas.",
-      "lead": "Paga por los asientos de oficina y añade el terreno por menos. Prueba de 14 días, sin tarjeta.",
+      "heading": "Paga por lo que actives.",
+      "lead": "Sin planes, sin niveles, nada bloqueado tras una mejora. 9,99 € por cada persona que use HBCField, más lo que cada sede active de verdad. 14 días de prueba, sin tarjeta.",
       "outcomes": [
         {
           "title": "Acaba con el caos de las llamadas de estado",
@@ -412,61 +412,29 @@
           "body": "Con fotos, piezas e informes firmados siempre puedes mostrar exactamente qué se hizo."
         }
       ],
-      "popular": "Popular",
-      "perUser": "/ usuario / mes",
       "cta": "Empezar gratis",
-      "note": "Precios por asiento de oficina · Asientos de campo / técnico €19 cada uno · Enterprise desde €199/mes o cotización a medida · Facturación anual = 2 meses gratis · Prueba de 14 días, sin tarjeta.",
-      "plans": [
+      "note": "Pago anual = 2 meses gratis · Desactiva un módulo el día que dejes de usarlo · IVA se añade al pagar",
+      "parts": [
         {
-          "name": "Starter",
-          "price": "€29",
-          "popular": false,
-          "desc": "Tareas, asistencia, GPS, horarios y móvil.",
-          "features": [
-            "Tablero de despacho en vivo",
-            "Informes de servicio y fotos",
-            "Registro de entrada geolocalizado",
-            "GPS de ruta exacta"
-          ]
+          "name": "Por persona",
+          "price": "9,99 €",
+          "unit": "/ usuario / mes",
+          "desc": "Oficina o campo, mismo precio. Sin tipos de licencia que discutir."
         },
         {
-          "name": "Professional",
-          "price": "€59",
-          "popular": true,
-          "desc": "Todo lo de Starter, más el kit completo para el terreno.",
-          "features": [
-            "Motor de horas extra",
-            "Recurrentes y campos personalizados",
-            "Dependencias entre tareas",
-            "Facturación"
-          ]
+          "name": "Por espacio",
+          "price": "desde 3 €",
+          "unit": "/ módulo / mes",
+          "desc": "Cada sede paga exactamente lo que ha activado, y deja de pagar al desactivarlo."
         },
         {
-          "name": "Business",
-          "price": "€99",
-          "popular": false,
-          "desc": "Para franquicias, agencias y operadores multisitio.",
-          "features": [
-            "Sprints y puntos de historia",
-            "Épicas y fases",
-            "Registro de auditoría y flujos de trabajo",
-            "Chat en vivo y soporte prioritario"
-          ]
-        },
-        {
-          "name": "Enterprise",
-          "price": "A medida",
-          "popular": false,
-          "custom": true,
-          "cta": "Contactar con ventas",
-          "desc": "Desde €199/mes. Cotización a medida para grandes flotas y grupos multisitio.",
-          "features": [
-            "Todo lo de Business",
-            "Cotización a medida y condiciones de contrato",
-            "Precio de asientos negociado"
-          ]
+          "name": "Complementos",
+          "price": "desde 9 €",
+          "unit": "/ mes",
+          "desc": "Facturación, flujos, registro de auditoría. Se contratan una vez, para toda la empresa."
         }
-      ]
+      ],
+      "seePrices": "Ver todos los precios"
     },
     "faq": {
       "label": "Preguntas frecuentes",
@@ -505,6 +473,25 @@
           "a": "Sí — en lugar de pagar por separado una herramienta de servicio de campo, un reloj de fichar y un rastreador GPS, HBCField combina asignación, asistencia y seguimiento de rutas en una plataforma."
         }
       ]
+    },
+    "priceList": {
+      "perSpace": " / espacio / mes",
+      "perMonth": " / mes",
+      "modulesLabel": "Por espacio",
+      "modulesLead": "Activa un módulo en una sede y esa sede lo paga. Desactívalo y deja de pagarse.",
+      "addOnsLabel": "Toda la empresa",
+      "addOnsLead": "Se contrata una vez para toda la empresa, tengas las sedes que tengas.",
+      "addOnGroups": {
+        "work": "Cómo funciona el trabajo",
+        "money": "Dinero",
+        "insight": "Análisis",
+        "support": "Soporte"
+      },
+      "ladder": {
+        "assets": "los 10 primeros gratis, luego desde 1,20 € cada uno",
+        "crm": "los 50 primeros clientes gratis, luego desde 30 céntimos",
+        "b2c_portal": "primer portal incluido, luego 29 € cada uno"
+      }
     }
   },
   "common": {
@@ -6765,5 +6752,12 @@
         "label": "Soporte"
       }
     }
+  },
+  "planGate": {
+    "priced": "{{feature}} cuesta {{price}} al mes",
+    "unavailable": "{{feature}} no forma parte de tu suscripción",
+    "adminHint": "Añádelo en Facturación y estará disponible al instante.",
+    "memberHint": "Pide a un administrador de la organización que lo añada.",
+    "cta": "Añadir {{feature}}"
   }
 }

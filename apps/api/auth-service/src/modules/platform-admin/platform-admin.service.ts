@@ -14,7 +14,11 @@ import {
 const ORG_SELECT = {
   id: true, name: true, planTier: true, subStatus: true, billingInterval: true,
   trialEndsAt: true, currentPeriodEnd: true, suspendedAt: true, usesExternalWorkers: true,
-  isActive: true, createdAt: true, stripeCustomerId: true,
+  isActive: true, createdAt: true, stripeCustomerId: true, addOns: true,
+  // What this org was last billed. MRR reads THIS rather than recomputing from
+  // a plan: with modules and usage there is no formula an operator console can
+  // re-derive, and a second implementation of the bill is a second answer.
+  subscription: { select: { lastBilledCents: true } },
 } as const;
 const MEMBER_SELECT = {
   id: true, organizationId: true, role: true, enabledModules: true,
@@ -24,19 +28,24 @@ const MEMBER_SELECT = {
 type LeanOrg = {
   id: string; name: string; planTier: string | null; subStatus: string;
   suspendedAt: Date | null; usesExternalWorkers: boolean; createdAt: Date;
+  addOns?: string[];
+  subscription?: { lastBilledCents: number } | null;
 };
 
-/** Monthly recurring cents for one org given its seat counts + tier. */
-function orgMrrCents(tier: PlanTier | null, seats: { office: number; field: number; fieldInhouse: number }): number {
-  const officeCents = tier && PLANS[tier]?.officeMonthlyCents ? PLANS[tier].officeMonthlyCents! : 0;
-  return (
-    seats.office * officeCents +
-    seats.field * FIELD_SEAT_MONTHLY_CENTS +
-    seats.fieldInhouse * IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS
-  );
+/**
+ * Monthly recurring cents for one org — what it was last actually billed.
+ *
+ * This used to multiply seats by a tier price. Under the module model there is
+ * no such formula: the bill is seats plus each space's modules plus its usage
+ * ladders plus org add-ons, and re-deriving that here would be a second
+ * implementation of the bill that could disagree with the invoice. So the
+ * operator console reports the number the billing engine last computed.
+ *
+ * Zero means "never billed" — a trial, or an org that has not checked out.
+ */
+function orgMrrCents(org: { subscription?: { lastBilledCents: number } | null }): number {
+  return org.subscription?.lastBilledCents ?? 0;
 }
-const asTier = (planTier: string | null): PlanTier | null =>
-  planTier ? (planTier.toLowerCase() as PlanTier) : null;
 
 /**
  * PLATFORM-OPERATOR (company super-admin) read/control surface. Never a customer
@@ -85,7 +94,7 @@ export class PlatformAdminService {
       const seats = seatMap.get(o.id)!;
       officeSeats += seats.office; fieldSeats += seats.field; inhouseSeats += seats.fieldInhouse;
       // MRR from ACTIVE, non-suspended orgs only.
-      if (st === 'active' && !o.suspendedAt) mrrCents += orgMrrCents(asTier(o.planTier), seats);
+      if (st === 'active' && !o.suspendedAt) mrrCents += orgMrrCents(o);
     }
     return success({
       totalOrgs: orgs.length,
@@ -122,7 +131,7 @@ export class PlatformAdminService {
           createdAt: o.createdAt, stripeCustomerId: (o as any).stripeCustomerId ?? null,
           memberCount: memberCount.get(o.id) ?? 0,
           seats,
-          mrrCents: (o.subStatus ?? '').toLowerCase() === 'active' && !o.suspendedAt ? orgMrrCents(asTier(o.planTier), seats) : 0,
+          mrrCents: (o.subStatus ?? '').toLowerCase() === 'active' && !o.suspendedAt ? orgMrrCents(o) : 0,
         };
       }),
     );
@@ -145,7 +154,7 @@ export class PlatformAdminService {
     return success({
       ...org,
       seats,
-      mrrCents: (org.subStatus ?? '').toLowerCase() === 'active' && !org.suspendedAt ? orgMrrCents(asTier(org.planTier), seats) : 0,
+      mrrCents: (org.subStatus ?? '').toLowerCase() === 'active' && !org.suspendedAt ? orgMrrCents(org) : 0,
       members,
     });
   }

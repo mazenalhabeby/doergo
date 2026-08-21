@@ -1,47 +1,18 @@
-import { entitlementsForTier, PLANS, type PlanTier } from '@hbcfield/shared/client';
-
-/** Human-readable labels for the raw feature keys (falls back to Title Case). */
-export const MODULE_LABELS: Record<string, string> = {
-  subtasks: 'Subtasks',
-  checklists: 'Checklists',
-  attachments: 'File attachments',
-  tracking: 'Exact-route GPS',
-  time_tracking: 'Geofenced clock-in',
-  service_reports: 'Service reports & assets',
-  custom_fields: 'Custom fields',
-  dependencies: 'Task dependencies',
-  recurring: 'Recurring jobs',
-  overtime: 'Overtime engine',
-  shift_scheduling: 'Shift scheduling',
-  invoicing: 'Invoicing',
-  sprints: 'Sprints',
-  story_points: 'Story points',
-  epics: 'Epics',
-  phases: 'Phases',
-  workflows: 'Workflows',
-  audit_log: 'Audit log',
-  multi_org: 'Multi-org delegation',
-};
-
-export const planFeatureLabel = (m: string): string =>
-  MODULE_LABELS[m] ?? m.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
-
-type SelfServeTier = Exclude<PlanTier, 'enterprise'>;
-const PREV: Record<SelfServeTier, SelfServeTier | null> = {
-  starter: null,
-  professional: 'starter',
-  business: 'professional',
-};
+import { AVAILABLE_MODULES, AVAILABLE_ADD_ONS } from '@hbcfield/shared/client';
 
 /**
- * The features a tier ADDS over the tier below it, so plan cards can read
- * "Everything in <prevName>, plus: …" instead of repeating the shared base
- * (which made Professional and Business look identical).
+ * Human-readable labels for raw feature keys.
+ *
+ * Built from the two catalogues rather than hand-listed. The hand-written map
+ * this replaces had drifted: it still named `multi_org`, a feature that was
+ * removed, and gave `service_reports` a label mentioning assets, which became a
+ * module of its own. A label list maintained by hand is a list that goes stale
+ * the first time somebody adds a feature and forgets it.
  */
-export function tierDelta(tier: SelfServeTier): { prevName: string | null; features: string[] } {
-  const prev = PREV[tier];
-  const features = prev
-    ? entitlementsForTier(tier).filter((m) => !entitlementsForTier(prev).includes(m))
-    : entitlementsForTier(tier);
-  return { prevName: prev ? PLANS[prev].name : null, features };
-}
+const CATALOGUE_LABELS: Record<string, string> = {
+  ...Object.fromEntries(AVAILABLE_MODULES.map((m) => [m.key as string, m.label])),
+  ...Object.fromEntries(AVAILABLE_ADD_ONS.map((a) => [a.key, a.label])),
+};
+
+export const planFeatureLabel = (key: string): string =>
+  CATALOGUE_LABELS[key] ?? key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());

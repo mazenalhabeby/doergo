@@ -1,20 +1,35 @@
 /**
- * Billing plans — the SINGLE SOURCE OF TRUTH for HBCField's subscription tiers,
- * seat prices and per-tier feature gating. Consumed by the web app, the mobile
- * app and the NestJS backend so pricing, gating and the marketing site never
- * drift apart.
+ * LEGACY — the tier model, kept only for the operator price book.
  *
- * Pricing model (matches the marketing site):
- *   • Office seat  — priced BY TIER (Starter €19 / Professional €49 / Business €99)
- *   • Field seat   — external/freelancer technician, FLAT €15 regardless of tier
- *   • In-house field seat — the org's OWN (employed) technician, FLAT €9 —
- *     a discount that rewards bringing techs in-house
- *   • Enterprise   — custom quote (from €199/mo)
- *   • Annual       — 2 months free  (=> monthly × 10 per year)
+ * ⚠️  NOTHING HERE DECIDES ACCESS OR WHAT A CUSTOMER PAYS. That moved to:
+ *
+ *     module-pricing.ts   what a space's modules cost
+ *     usage-pricing.ts    the volume ladders
+ *     add-ons.ts          capabilities bought once per organization
+ *     stripe-catalog.ts   what Stripe holds, derived from those three
+ *
+ * Tiers were replaced because they answered the wrong question. "Which bundle
+ * covers the four things I need?" made a customer upgrade every seat to reach
+ * one feature, and left eleven capabilities gated with no price attached to any
+ * of them. A thing is now bought or it is not.
+ *
+ * What still reads this file, and why it has not been deleted:
+ *
+ *   • platform-pricing.service.ts (C2) — the operator's editable price book,
+ *     versioned and seeded from these constants.
+ *   • stripe-sync.service.ts (C3) — the operator's Stripe price sync.
+ *   • the legacy tier methods on StripeService, reachable only from those two.
+ *
+ * That console is a real, working operator feature built around tiers. Adapting
+ * it to a catalogue of sixty-two module and add-on prices is its own piece of
+ * work, and deleting it to tidy this file would remove something that still
+ * does its job. So this stays until that is redesigned — vestigial, and clearly
+ * marked so nobody reaches for it when adding a feature.
+ *
+ * Do NOT add a new caller. If you need to know whether an organization may use
+ * something, ask `orgHasAddOn` or the space's module list.
  *
  * Money is stored in integer EUR **cents** to avoid float rounding.
- * Stripe Price IDs are NOT stored here — the backend resolves them from env
- * (see `STRIPE_PRICE_ENV_KEYS`) so test/live keys can differ per environment.
  */
 
 export type PlanTier = 'starter' | 'professional' | 'business' | 'enterprise';

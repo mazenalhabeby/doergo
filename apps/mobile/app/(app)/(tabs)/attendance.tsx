@@ -40,7 +40,7 @@ import {
   GeofenceExcursion,
 } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
-import { tierAllows, countryFromTz } from '@hbcfield/shared/client';
+import { orgHasAddOn, countryFromTz } from '@hbcfield/shared/client';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer, PressableScale, BlurSheet } from '../../../src/components';
@@ -543,7 +543,8 @@ export default function AttendanceScreen() {
   // Extra-time (overtime) is a Professional+ capability. Under-tier orgs still
   // get reminders and can "forgot to clock out", but the extra-time request +
   // leader approval flow is hidden (backend enforces the same 402).
-  const hasShiftScheduling = tierAllows(user?.planTier, 'shift_scheduling');
+  // Bought, not ranked — matches PlanGuard, so the screen and the API agree.
+  const hasShiftScheduling = orgHasAddOn(user?.orgAddOns, 'shift_scheduling');
 
   // Leaders (anyone who manages users) get an entry point to the approval screen.
   // Backend is the real gate; this just hides it from plain field workers.
