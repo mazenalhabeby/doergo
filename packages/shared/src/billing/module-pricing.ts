@@ -61,7 +61,6 @@ export const MODULE_MONTHLY_CENTS: Record<string, number> = {
 
   // Client-facing — highest willingness to pay: a customer logging into the app
   // is worth more than any internal screen.
-  apartments: 1200,
   crm: 1900,
   b2c_portal: 2900,
 };

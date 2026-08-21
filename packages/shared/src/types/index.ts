@@ -218,7 +218,6 @@ export const AVAILABLE_MODULES = [
   { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases', group: 'agile' },
   // Clients (customer records + optional app access)
   { key: 'crm', label: 'CRM', description: 'Customer records, info & history; sales works them with tasks (calls, visits)', group: 'clients' },
-  { key: 'apartments', label: 'Apartments / Units', description: 'A directory of apartments/units in this space — assign a member or a client as resident; work is handled by tasks', group: 'clients' },
   { key: 'b2c_portal', label: 'B2C Portal', description: 'Invite a customer to the app to make orders & follow their jobs', group: 'clients' },
   // Collaboration
   { key: 'space_sharing', label: 'Space Sharing', description: 'Share this space with another organisation (view / contribute / control)', group: 'collaboration' },

@@ -80,7 +80,6 @@ const PROFESSIONAL_MODULES = [
   'custom_fields',
   'dependencies',
   'crm', // per-space customer records + sales tasks
-  'apartments', // per-space units directory + resident/worker assignment
   'b2c_portal', // per-space: invite customers to the app (requires crm + apartments)
 ];
 

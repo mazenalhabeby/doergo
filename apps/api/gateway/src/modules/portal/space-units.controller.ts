@@ -22,12 +22,18 @@ export class SpaceUnitsController {
     return firstValueFrom(this.authClient.send({ cmd }, payload));
   }
 
-  /** The space MUST have the apartments module enabled. */
+  /**
+   * Units belong to the CLIENT PORTAL now, not to the retired Apartments
+   * module. The portal is what still uses them — a client's own address inside
+   * a portal — so it gates on its own module. Gating on a module that no longer
+   * exists would have made every portal's units unreachable the moment
+   * Apartments was removed.
+   */
   private async requireModule(spaceId: string, organizationId: string) {
     const res: any = await firstValueFrom(this.taskClient.send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId }));
     const mods: string[] = res?.data?.enabledModules ?? res?.enabledModules ?? [];
-    if (!mods.includes('apartments')) {
-      throw new ForbiddenException('This space does not have the Apartments module enabled');
+    if (!mods.includes('b2c_portal')) {
+      throw new ForbiddenException('This space does not have the Client Portal module enabled');
     }
   }
 

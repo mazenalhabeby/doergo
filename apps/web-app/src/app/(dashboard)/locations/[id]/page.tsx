@@ -37,7 +37,6 @@ import { MembersTab } from "./_components/members-tab"
 import { InvoicesTab } from "./_components/invoices-tab"
 import { CustomersTab } from "./_components/customers-tab"
 import { PortalTab } from "./_components/portal-tab"
-import { ApartmentsTab } from "./_components/apartments-tab"
 import { AssetsTab } from "./_components/assets-tab"
 import { SharingTab } from "./_components/sharing-tab"
 
@@ -82,7 +81,6 @@ export default function SpaceSettingsPage() {
     { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
     { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
     { value: "customers", label: t("customers.title", "Customers"), icon: Contact, show: mods.includes("crm") },
-    { value: "apartments", label: t("apartments.title", "Apartments"), icon: Home, show: mods.includes("apartments") },
     { value: "assets", label: t("assetKinds.title", "Assets"), icon: Package, show: mods.includes("assets") },
     { value: "portal", label: t("portal.title", "Client portal"), icon: Building2, show: mods.includes("b2c_portal") },
     { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" },
@@ -207,7 +205,7 @@ export default function SpaceSettingsPage() {
                 <WorkflowTab space={space} />
               </TabsContent>
               <TabsContent value="members" className="mt-0">
-                <MembersTab spaceId={spaceId} hasApartments={!!space?.enabledModules?.includes("apartments")} />
+                <MembersTab spaceId={spaceId} hasApartments />
               </TabsContent>
               <TabsContent value="sharing" className="mt-0">
                 <SharingTab spaceId={spaceId} spaceName={space.name} />
@@ -224,18 +222,10 @@ export default function SpaceSettingsPage() {
                   <AssetsTab spaceId={spaceId} />
                 </TabsContent>
               )}
-
-              {space?.enabledModules?.includes("apartments") && (
-                <TabsContent value="apartments" className="mt-0">
-                  <PlanGate feature="crm">
-                    <ApartmentsTab spaceId={spaceId} hasB2C={!!space?.enabledModules?.includes("b2c_portal")} />
-                  </PlanGate>
-                </TabsContent>
-              )}
               {space?.enabledModules?.includes("b2c_portal") && (
                 <TabsContent value="portal" className="mt-0">
                   <PlanGate feature="crm">
-                    <PortalTab spaceId={spaceId} hasApartments={!!space?.enabledModules?.includes("apartments")} onOpenModules={() => setActiveTab("modules")} />
+                    <PortalTab spaceId={spaceId} hasApartments onOpenModules={() => setActiveTab("modules")} />
                   </PlanGate>
                 </TabsContent>
               )}

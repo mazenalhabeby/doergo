@@ -52,9 +52,11 @@ export default function PortalDetailPage() {
   // Back button + post-delete return land on THIS space's portal tab (not a
   // navbar route — the standalone Clients Portals page was removed).
   const backToSpace = () => router.push(`/locations/${spaceId}?tab=portal`)
-  // The Apartment (rental) entity needs the space's Apartments module.
+  // The Apartment entity used to need the Apartments module; that module is
+  // retired and its records live in Assets now. A portal's own units are part
+  // of the portal, so this gates on the portal itself.
   const { hasModule } = useSpaceModules(spaceId)
-  const spaceHasApartments = hasModule("apartments")
+  const spaceHasApartments = hasModule("b2c_portal")
 
   const portalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId) })
   const residentsQ = useQuery({ queryKey: ["portalResidents", portalId], queryFn: () => portalAdminApi.residents(portalId) })

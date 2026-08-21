@@ -66,10 +66,11 @@ describe('what a space costs', () => {
     expect(spaceMonthlyCost(null).monthlyCents).toBe(0);
   });
 
-  it('comes to €169 with everything on', () => {
-    // Moves whenever a module is added or repriced — that is the point. It went
-    // 157 -> 169 when Assets (€12) joined the catalogue.
-    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(16900);
+  it('comes to €157 with everything on', () => {
+    // Moves whenever a module is added, removed or repriced — that is the point.
+    // 157 -> 169 when Assets (€12) arrived, and back to 157 when Apartments
+    // (€12) was retired into it.
+    expect(spaceMonthlyCost(AVAILABLE_MODULES.map((m) => m.key as string)).monthlyCents).toBe(15700);
   });
 
   it('prices every module in the catalogue — none may be free', () => {
