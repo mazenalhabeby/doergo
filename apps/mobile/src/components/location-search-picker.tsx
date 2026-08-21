@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { API_URL } from '../lib/api/client';
 
-const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 import {
   View,
   Text,
@@ -118,15 +117,23 @@ export function LocationSearchPicker({
             }
           }
         } catch {
-          /* fall through to Nominatim */
+          /* reported below as "nothing found" */
         }
-        const res = await fetch(
-          `${NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }
-        );
-        const data: NominatimResult[] = await res.json();
-        setResults(data);
-        setShowResults(data.length > 0);
+
+        /*
+          No public fallback.
+
+          This fetched nominatim.openstreetmap.org straight from the phone when
+          /geo came back empty — the customer's IP and the address they were
+          typing, to a service the business has no agreement with. Nominatim
+          allows one request a second from an identifying caller; every handset
+          counted as its own, and there was no way to slow them down.
+
+          The chain behind /geo is Google then our own Photon. Both empty is a
+          real "no results", and a coverage gap is fixed in the Photon index.
+        */
+        setResults([]);
+        setShowResults(false);
       } catch {
         setResults([]);
       } finally {
@@ -140,21 +147,13 @@ export function LocationSearchPicker({
     async (rlat: number, rlng: number) => {
       onLocationChange('', rlat, rlng);
       try {
-        // Prefer the server-side /geo/reverse proxy (no public rate limits);
-        // fall back to public Nominatim.
+        // Through our own proxy only — see the note in the search above.
         let label = '';
         try {
           const gr = await fetch(`${API_URL}/geo/reverse?lat=${rlat}&lon=${rlng}`);
           if (gr.ok) label = (await gr.json())?.result?.label || '';
         } catch {
-          /* fall through to Nominatim */
-        }
-        if (!label) {
-          const res = await fetch(
-            `${NOMINATIM_BASE}/reverse?format=json&lat=${rlat}&lon=${rlng}&addressdetails=1`,
-            { headers: { 'Accept-Language': 'en', 'User-Agent': 'HBCField/1.0 (hbcfield.com)' } }
-          );
-          label = (await res.json())?.display_name || '';
+          /* the pin still records its coordinates; only the label is missing */
         }
         if (label) {
           onLocationChange(label, rlat, rlng);

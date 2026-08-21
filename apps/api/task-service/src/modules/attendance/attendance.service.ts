@@ -427,12 +427,24 @@ export class AttendanceService {
    * e.g. "Vienna, AT", or null on failure. zoom=10 keeps it to city/area
    * granularity (never a precise street) for privacy.
    */
-  // ~1km-rounded coord → resolved place. Place names are stable, so caching keeps
-  // us far under Nominatim's 1 req/s policy and avoids re-querying for repeated
-  // clock-ins at the same site. Only successful lookups are cached (a transient
-  // failure retries next time). (Audit P2.)
+  // ~1km-rounded coord → resolved place. Place names are stable, so caching
+  // spares the geocoder entirely for repeated clock-ins at the same site. Only
+  // successful lookups are cached (a transient failure retries next time).
   private readonly geocodeCache = new Map<string, string>();
 
+  /**
+   * Turn a coordinate into "City, CC" using OUR geocoder.
+   *
+   * This used to call nominatim.openstreetmap.org. It was the careful version
+   * of that — server-side, identifying User-Agent, cached, short timeout — but
+   * it was still a public service on a path that grows with every remote
+   * clock-in, under a policy that permits neither heavy nor commercial use.
+   *
+   * Photon runs in this network already and answers reverse queries. Nothing
+   * leaves the cluster now, and there is no public fallback on purpose: if
+   * Photon cannot answer, the entry simply records no place name, which is
+   * exactly what a Nominatim timeout did anyway.
+   */
   private async reverseGeocode(lat: number, lng: number): Promise<string | null> {
     const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
     const cached = this.geocodeCache.get(key);
@@ -440,18 +452,19 @@ export class AttendanceService {
 
     let place: string | null = null;
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
-      // Hard 1.5s timeout so a slow/blocked Nominatim can't stall the (shared)
+      const base = process.env.PHOTON_URL?.trim() || 'http://photon:2322';
+      // Hard 1.5s timeout so a slow geocoder cannot stall the (shared)
       // attendance queue slot, including the reminder/no-show sweep.
-      const res = await fetch(url, {
-        headers: { 'User-Agent': 'HBCField/1.0 (attendance clock-in)' },
+      const res = await fetch(`${base}/reverse?lat=${lat}&lon=${lng}&limit=1&lang=en`, {
         signal: AbortSignal.timeout(1500),
       });
       if (res.ok) {
         const j: any = await res.json();
-        const a = j?.address ?? {};
-        const city = a.city || a.town || a.village || a.municipality || a.county || a.state;
-        const country = (a.country_code || '').toUpperCase();
+        const a = j?.features?.[0]?.properties ?? {};
+        // City granularity, never a street — this is a privacy boundary, not a
+        // formatting choice.
+        const city = a.city || a.town || a.village || a.district || a.county || a.state;
+        const country = (a.countrycode || '').toUpperCase();
         if (city) place = country ? `${city}, ${country}` : city;
       }
     } catch {

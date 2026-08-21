@@ -130,17 +130,26 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
               }
             }
           } catch {
-            /* fall through to Nominatim */
+            /* the search below reports "nothing found" */
           }
 
-          // Fallback: public Nominatim.
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
-            { headers: { "Accept-Language": "en" } }
-          )
-          const data: NominatimResult[] = await res.json()
-          setResults(data)
-          setShowResults(data.length > 0)
+          /*
+            No public fallback.
+
+            This used to fetch nominatim.openstreetmap.org from the browser when
+            /geo came back empty. That sends the customer's IP and the address
+            they are typing to a service the business has no agreement with, and
+            Nominatim's policy caps callers at one request a second behind an
+            identifying User-Agent — neither of which a browser can honour, and
+            every user's device counted as its own uncoordinated caller.
+
+            The server chain behind /geo is Google then our own Photon. If both
+            come back empty that is a genuine "no results", and the fix is the
+            Photon index rather than a public API we would be throttled off
+            exactly when it mattered.
+          */
+          setResults([])
+          setShowResults(false)
         } catch {
           setResults([])
         } finally {
@@ -158,8 +167,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
       // Keep any address the user already typed; just move the pin.
       onLocationChange(address, clickLat, clickLng)
       try {
-        // Prefer the server-side /geo/reverse proxy (no public rate limits);
-        // fall back to public Nominatim.
+        // Through our own proxy only — see the note in the search above.
         let formatted = ""
         try {
           const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
@@ -168,15 +176,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
           })
           if (gr.ok) formatted = (await gr.json())?.result?.label || ""
         } catch {
-          /* fall through to Nominatim */
-        }
-        if (!formatted) {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
-            { headers: { "Accept-Language": "en" } }
-          )
-          const data = await res.json()
-          formatted = formatNominatimAddress(data.address, data.display_name)
+          /* the click still records its coordinates; only the label is missing */
         }
         // Only auto-fill when the field is empty — never clobber a typed address.
         if (formatted && !address.trim()) {

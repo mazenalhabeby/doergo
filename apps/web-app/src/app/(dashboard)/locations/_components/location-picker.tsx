@@ -149,52 +149,25 @@ export default function LocationPicker({
           }
         }
       } catch {
-        /* fall through to the public geocoders */
+        /* handled below as "nothing found" */
       }
 
-      // Fallback: public Photon + Nominatim (wider coverage / used until self-hosted is ready)
-      const [photonRes, nominatimRes] = await Promise.allSettled([
-        fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=3`)
-          .then((r) => r.json())
-          .then((data) =>
-            (data.features || []).map((f: PhotonFeature) => ({
-              display_name: formatPhotonFeature(f.properties),
-              lat: f.geometry.coordinates[1].toString(),
-              lon: f.geometry.coordinates[0].toString(),
-            }))
-          ),
-        fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}&limit=3`,
-          { headers: { "Accept-Language": "en,de" } }
-        )
-          .then((r) => r.json())
-          .then((data) =>
-            data.map((r: NominatimResult) => ({
-              display_name: formatNominatimAddress(r.address, r.display_name),
-              lat: r.lat,
-              lon: r.lon,
-            }))
-          ),
-      ])
+      /*
+        No public fallback.
 
-      // Combine and deduplicate
-      const photonResults = photonRes.status === "fulfilled" ? photonRes.value : []
-      const nominatimResults = nominatimRes.status === "fulfilled" ? nominatimRes.value : []
-      const combined = [...photonResults, ...nominatimResults]
+        This used to fetch photon.komoot.io and nominatim.openstreetmap.org
+        straight from the browser when /geo came back empty — sending the
+        customer's IP and the address they were typing to two services the
+        business has no agreement with. Nominatim's policy caps callers at one
+        request a second behind an identifying User-Agent; a browser can set
+        neither, and every user's device counted as its own caller.
 
-      // Deduplicate by proximity (within ~100m)
-      const unique: GeoResult[] = []
-      for (const r of combined) {
-        const isDupe = unique.some(
-          (u) =>
-            Math.abs(parseFloat(u.lat) - parseFloat(r.lat)) < 0.001 &&
-            Math.abs(parseFloat(u.lon) - parseFloat(r.lon)) < 0.001
-        )
-        if (!isDupe) unique.push(r)
-      }
-
-      setResults(unique.slice(0, 5))
-      setShowResults(true)
+        The chain behind /geo is Google then our own Photon. Both empty is a
+        real "no results", and the answer to a coverage gap is the Photon index,
+        not a public API that throttles precisely when it is being leaned on.
+      */
+      setResults([])
+      setShowResults(false)
     } catch {
       setResults([])
     } finally {
@@ -262,15 +235,7 @@ export default function LocationPicker({
           })
           if (gr.ok) formatted = (await gr.json())?.result?.label || ""
         } catch {
-          /* fall through to Nominatim */
-        }
-        if (!formatted) {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&lat=${clickLat}&lon=${clickLng}`,
-            { headers: { "Accept-Language": "en,de" } }
-          )
-          const data = await res.json()
-          formatted = formatNominatimAddress(data.address, data.display_name)
+          /* the click still records its coordinates; only the label is missing */
         }
         // Only auto-fill when the field is empty — never clobber an address the
         // user typed/pasted (e.g. a precise house number OSM search can't find).
