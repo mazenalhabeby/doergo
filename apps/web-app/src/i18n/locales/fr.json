@@ -6240,7 +6240,8 @@
       "bySpace": "Par espace",
       "usageLine": "Usage {{module}} {{price}}",
       "noModules": "Rien d’activé — cet espace est gratuit",
-      "addOnsBought": "Options"
+      "addOnsBought": "Options",
+      "estimate": "Au tarif public"
     },
     "addOns": {
       "title": "Options",
@@ -6261,7 +6262,9 @@
     "adminOnly": "Seul un administrateur de l’organisation peut modifier ce que vous payez.",
     "trialDaysLeft": "Il vous reste {{count}} jours d’essai",
     "cancelsOn": "Se termine le {{date}}",
-    "modulesElsewhere": "Les modules appartiennent à un espace — activez-les dans l’onglet Modules de cet espace, à côté du décompte qui les facture."
+    "modulesElsewhere": "Les modules appartiennent à un espace — activez-les dans l’onglet Modules de cet espace, à côté du décompte qui les facture.",
+    "byAgreement": "Facturation par accord",
+    "byAgreementHint": "Rien n’est prélevé automatiquement. Les chiffres ci-dessous correspondent au tarif public — utiles pour un renouvellement, ce n’est pas une facture."
   },
   "assetKinds": {
     "title": "Biens",

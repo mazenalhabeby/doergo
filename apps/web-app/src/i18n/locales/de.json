@@ -6231,7 +6231,8 @@
       "bySpace": "Nach Bereich",
       "usageLine": "{{module}} Nutzung {{price}}",
       "noModules": "Nichts aktiviert — dieser Bereich ist kostenlos",
-      "addOnsBought": "Zusatzmodule"
+      "addOnsBought": "Zusatzmodule",
+      "estimate": "Zum Listenpreis"
     },
     "addOns": {
       "title": "Zusatzmodule",
@@ -6252,7 +6253,9 @@
     "adminOnly": "Nur ein Organisations-Admin kann ändern, wofür Sie zahlen.",
     "trialDaysLeft": "Noch {{count}} Tage in Ihrer Testphase",
     "cancelsOn": "Endet am {{date}}",
-    "modulesElsewhere": "Module gehören zu einem Bereich — aktivieren Sie sie im Reiter „Module“ des Bereichs, direkt neben der Anzahl, nach der sie berechnet werden."
+    "modulesElsewhere": "Module gehören zu einem Bereich — aktivieren Sie sie im Reiter „Module“ des Bereichs, direkt neben der Anzahl, nach der sie berechnet werden.",
+    "byAgreement": "Abrechnung nach Vereinbarung",
+    "byAgreementHint": "Es wird nichts automatisch abgebucht. Die Zahlen unten zeigen, was diese Organisation zum Listenpreis kosten würde — hilfreich für eine Verlängerung, keine Rechnung."
   },
   "assetKinds": {
     "title": "Objekte",

@@ -25,7 +25,7 @@ import {
  * Stripe sync is built from, so the screen cannot disagree with the invoice —
  * which is exactly what the tier model allowed.
  */
-export function BillBreakdown({ bill }: { bill: OrgCostBreakdown }) {
+export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; estimate?: boolean }) {
   const { t } = useTranslation();
 
   const moduleLabel = (key: string) => {
@@ -44,7 +44,11 @@ export function BillBreakdown({ bill }: { bill: OrgCostBreakdown }) {
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm text-muted-foreground">{t('billing.bill.total', 'Your monthly total')}</p>
+            <p className="text-sm text-muted-foreground">
+              {estimate
+                ? t('billing.bill.estimate', 'At list price')
+                : t('billing.bill.total', 'Your monthly total')}
+            </p>
             <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
               {formatCents(bill.monthlyCents)}
               <span className="ml-1 text-base font-normal text-muted-foreground">

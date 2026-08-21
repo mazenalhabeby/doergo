@@ -405,6 +405,12 @@ model Organization {
   /// so there is no ranking to reason about and no bundle table to keep in step
   /// with the price list. See packages/shared/src/billing/add-ons.ts.
   addOns            String[]           @default([])
+  /// Billed by agreement, outside Stripe — an enterprise or negotiated contract.
+  /// Nothing is charged automatically: reconcile never creates or updates a
+  /// Stripe subscription, and checkout refuses. The bill is still COMPUTED and
+  /// shown, because it is what the contract conversation is about — it is just
+  /// labelled as an estimate rather than presented as a charge.
+  billedExternally  Boolean            @default(false)
   subStatus         SubscriptionStatus @default(TRIALING)
   billingInterval   BillingInterval    @default(MONTHLY)
   trialEndsAt       DateTime?

@@ -31,6 +31,12 @@ export interface SubscriptionView {
   cancelAtPeriodEnd: boolean;
   /** True when write access is blocked (see isLocked). */
   locked: boolean;
+  /**
+   * Billed by agreement, outside Stripe. Nothing is charged automatically and
+   * checkout is refused — the computed bill is an estimate for the contract
+   * conversation, not something anybody is paying.
+   */
+  billedExternally: boolean;
   /** Convenience: days left in trial (null if not trialing). */
   trialDaysLeft: number | null;
 }

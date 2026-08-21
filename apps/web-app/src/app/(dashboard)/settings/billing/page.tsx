@@ -143,7 +143,7 @@ export default function BillingPage() {
                 )}
               </div>
 
-              {isAdmin && (
+              {isAdmin && !sub.billedExternally && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -174,13 +174,33 @@ export default function BillingPage() {
           </div>
         )}
 
+        {/*
+          A contract customer is not paying this. Saying so ABOVE the breakdown
+          matters: the numbers below are real and useful — they are what a
+          renewal conversation is about — but presenting them without this would
+          read as a bill nobody sent.
+        */}
+        {sub?.billedExternally && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <p className="text-sm font-medium text-foreground">
+              {t('billing.byAgreement', 'Billed by agreement')}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t(
+                'billing.byAgreementHint',
+                'Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice.',
+              )}
+            </p>
+          </div>
+        )}
+
         {!isAdmin && (
           <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
             {t('billing.adminOnly', 'Only an organization admin can change what you pay for.')}
           </div>
         )}
 
-        {bill && <BillBreakdown bill={bill} />}
+        {bill && <BillBreakdown bill={bill} estimate={sub?.billedExternally} />}
 
         {bill && (
           <AddOnPicker

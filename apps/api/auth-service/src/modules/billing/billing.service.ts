@@ -390,6 +390,7 @@ export class BillingService {
       cancelAtPeriodEnd: org.cancelAtPeriodEnd,
       locked: isLocked(status),
       trialDaysLeft: trialDaysLeft(org.trialEndsAt, new Date()),
+      billedExternally: org.billedExternally,
     };
     return ok(view);
   }
@@ -411,6 +412,9 @@ export class BillingService {
     if (!this.stripe.isConfigured) return fail(HttpStatus.SERVICE_UNAVAILABLE, 'Billing is not configured');
     const org = await this.prisma.organization.findUnique({ where: { id: organizationId } });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
+    if (org.billedExternally) {
+      return fail(HttpStatus.CONFLICT, 'This organization is billed by agreement — talk to us rather than paying by card.');
+    }
 
     const bill = await this.bill.compute(organizationId);
     const lines = stripeLinesForBill(bill, req.interval);
@@ -535,6 +539,18 @@ export class BillingService {
       where: { id: organizationId },
       include: { subscription: true },
     });
+
+    /*
+      Billed by agreement — never charge automatically.
+
+      Checked BEFORE anything else, and before any Stripe call. Without this the
+      hazard is silent: attach a card to a contract customer for any reason and
+      the next member they add would sync a full subscription and start billing
+      them the computed amount. Refusing here means that cannot happen by
+      accident, only by deliberately clearing the flag.
+    */
+    if (org?.billedExternally) return ok(bill);
+
     const sub = org?.subscription;
     if (!sub) return ok(bill);
 

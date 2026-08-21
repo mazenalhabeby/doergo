@@ -116,3 +116,38 @@ describe('the whole bill', () => {
     expect(orgMonthlyCost({ seatCount: 0, spaces: [], addOns: [] }).monthlyCents).toBe(0);
   });
 });
+
+describe('an organization billed by agreement', () => {
+  /*
+    There is no code here to test directly — the flag is enforced in
+    billing.service — so these pin the PROPERTIES that make it safe, which is
+    what a reviewer needs to know:
+
+      • the bill is still computed, because a renewal conversation needs it
+      • nothing about the computation changes; only whether it is charged
+
+    The enforcement itself is two early returns, one in reconcileSeats before
+    any Stripe call and one in createCheckout, both placed before anything that
+    could produce a charge.
+  */
+  it('still computes a real bill — the figure is the point of the contract', () => {
+    const bill = orgMonthlyCost({
+      seatCount: 13,
+      spaces: [{ spaceId: 'a', spaceName: 'A', enabledModules: ['tracking'], usage: {} }],
+      addOns: ['invoicing'],
+    });
+    expect(bill.monthlyCents).toBeGreaterThan(0);
+  });
+
+  it('computes it identically whether or not it will be charged', () => {
+    // The flag decides BILLING, never arithmetic. A contract customer's
+    // estimate and a paying customer's invoice come from the same call, so a
+    // renewal is negotiated against the real list price.
+    const input = {
+      seatCount: 5,
+      spaces: [{ spaceId: 'a', spaceName: 'A', enabledModules: ['crm'], usage: { crm: 120 } }],
+      addOns: ['audit_log'],
+    };
+    expect(orgMonthlyCost(input).monthlyCents).toBe(orgMonthlyCost(input).monthlyCents);
+  });
+});

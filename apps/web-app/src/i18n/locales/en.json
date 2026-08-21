@@ -6231,7 +6231,8 @@
       "bySpace": "By space",
       "usageLine": "{{module}} usage {{price}}",
       "noModules": "Nothing switched on — this space is free",
-      "addOnsBought": "Add-ons"
+      "addOnsBought": "Add-ons",
+      "estimate": "At list price"
     },
     "addOns": {
       "title": "Add-ons",
@@ -6252,7 +6253,9 @@
     "adminOnly": "Only an organization admin can change what you pay for.",
     "trialDaysLeft": "{{count}} days left in your trial",
     "cancelsOn": "Cancels on {{date}}",
-    "modulesElsewhere": "Modules belong to a space — switch them on in that space's Modules tab, next to the count they are priced by."
+    "modulesElsewhere": "Modules belong to a space — switch them on in that space's Modules tab, next to the count they are priced by.",
+    "byAgreement": "Billed by agreement",
+    "byAgreementHint": "Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice."
   },
   "assetKinds": {
     "title": "Assets",

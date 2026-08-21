@@ -6231,7 +6231,8 @@
       "bySpace": "Por espacio",
       "usageLine": "Uso de {{module}} {{price}}",
       "noModules": "Nada activado: este espacio es gratuito",
-      "addOnsBought": "Complementos"
+      "addOnsBought": "Complementos",
+      "estimate": "A precio de tarifa"
     },
     "addOns": {
       "title": "Complementos",
@@ -6252,7 +6253,9 @@
     "adminOnly": "Solo un administrador de la organización puede cambiar lo que se paga.",
     "trialDaysLeft": "Te quedan {{count}} días de prueba",
     "cancelsOn": "Se cancela el {{date}}",
-    "modulesElsewhere": "Los módulos pertenecen a un espacio: actívalos en la pestaña Módulos de ese espacio, junto al recuento por el que se cobran."
+    "modulesElsewhere": "Los módulos pertenecen a un espacio: actívalos en la pestaña Módulos de ese espacio, junto al recuento por el que se cobran.",
+    "byAgreement": "Facturación por acuerdo",
+    "byAgreementHint": "No se cobra nada automáticamente. Las cifras siguientes son lo que costaría a precio de tarifa: útil para una renovación, no es una factura."
   },
   "assetKinds": {
     "title": "Activos",

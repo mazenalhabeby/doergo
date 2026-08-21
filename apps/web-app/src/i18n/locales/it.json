@@ -6240,7 +6240,8 @@
       "bySpace": "Per spazio",
       "usageLine": "Utilizzo {{module}} {{price}}",
       "noModules": "Niente attivato — questo spazio è gratuito",
-      "addOnsBought": "Componenti aggiuntivi"
+      "addOnsBought": "Componenti aggiuntivi",
+      "estimate": "A listino"
     },
     "addOns": {
       "title": "Componenti aggiuntivi",
@@ -6261,7 +6262,9 @@
     "adminOnly": "Solo un amministratore dell’organizzazione può cambiare ciò per cui si paga.",
     "trialDaysLeft": "Ti restano {{count}} giorni di prova",
     "cancelsOn": "Termina il {{date}}",
-    "modulesElsewhere": "I moduli appartengono a uno spazio: attivali nella scheda Moduli di quello spazio, accanto al conteggio con cui vengono addebitati."
+    "modulesElsewhere": "I moduli appartengono a uno spazio: attivali nella scheda Moduli di quello spazio, accanto al conteggio con cui vengono addebitati.",
+    "byAgreement": "Fatturazione su accordo",
+    "byAgreementHint": "Non viene addebitato nulla automaticamente. Le cifre qui sotto sono il costo a listino — utile per un rinnovo, non è una fattura."
   },
   "assetKinds": {
     "title": "Beni",
