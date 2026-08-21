@@ -290,9 +290,13 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
-      # Route optimizer (CRM). Defaults to the public OSRM demo host (low volume);
-      # point at a self-hosted OSRM in .env.production for production traffic.
-      - OSRM_URL=${OSRM_URL:-https://router.project-osrm.org}
+      # Route optimizer (CRM). Deliberately EMPTY by default: the public OSRM
+      # demo host is not licensed for production traffic, and pointing at it
+      # would send every customer address to a third party. Unset, the optimizer
+      # orders stops by nearest-neighbour. Set OSRM_URL in .env.production to a
+      # self-hosted OSRM (or a provider you have a contract with) for real road
+      # distances.
+      - OSRM_URL=${OSRM_URL:-}
     depends_on:
       auth-service:
         condition: service_healthy

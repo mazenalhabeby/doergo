@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { MAP_TILE_URL, MAP_TILE_ATTRIBUTION } from "@/lib/map-tiles"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat } from "@/hooks"
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
@@ -111,10 +112,11 @@ export default function RouteMapView({ points, matchedPath, isLive = false }: Ro
         scrollWheelZoom={false}
         bounds={bounds || undefined}
         boundsOptions={{ padding: [50, 50] }}
-        attributionControl={false}
+        attributionControl
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={MAP_TILE_URL}
+            attribution={MAP_TILE_ATTRIBUTION}
         />
 
         {/* Road-snapped route (main path) */}

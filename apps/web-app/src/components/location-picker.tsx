@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
+import { MAP_TILE_URL, MAP_TILE_ATTRIBUTION } from "@/lib/map-tiles"
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
 import { MapPin, Search, X, Loader2, Navigation } from "lucide-react"
@@ -293,10 +294,11 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
           zoom={lat && lng ? 15 : 4}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom={true}
-          attributionControl={false}
+          attributionControl
         >
           <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url={MAP_TILE_URL}
+            attribution={MAP_TILE_ATTRIBUTION}
           />
           <MapClickHandler onClick={handleMapClick} />
           {lat && lng && (

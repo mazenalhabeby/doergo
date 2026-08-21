@@ -8,10 +8,22 @@ import {
   haversineDistance,
 } from '@hbcfield/shared';
 
-// OSRM Trip service (Traveling-Salesman solver). Configurable so a self-hosted
-// OSRM can be pointed to in prod; defaults to the public demo host so the feature
-// works out of the box (low volume only — self-host for production traffic).
-const OSRM_URL = process.env.OSRM_URL || 'https://router.project-osrm.org';
+/*
+  OSRM Trip service (the Traveling-Salesman solver behind route optimization).
+
+  OPT-IN. It used to default to `router.project-osrm.org` — a public demo host
+  whose own usage policy says it is not for production, run by people this
+  business has no agreement with, and sent every customer address on the route.
+  Free until it is blocked, and blocked takes the feature out for everyone at
+  once.
+
+  Unset now means "no routing engine", and the optimizer uses its
+  nearest-neighbour ordering instead — which it already did whenever OSRM was
+  slow or down, so this is a path that gets exercised rather than a new one.
+  Point OSRM_URL at your own instance, or a provider you have a contract with,
+  to get true road distances back.
+*/
+const OSRM_URL = process.env.OSRM_URL?.trim() || null;
 const TIMEOUT_MS = 8000;
 // Protect the optimizer (and the public OSRM host) from unbounded requests.
 const MAX_STOPS = 25;
@@ -36,13 +48,19 @@ export class RoutesService {
         legs: [],
         totalMeters: 0,
         totalSeconds: 0,
-        engine: 'osrm',
+        // Nothing was routed, so report the engine that WOULD have run. Saying
+        // 'osrm' with no OSRM configured is a small lie the caller can act on.
+        engine: OSRM_URL ? 'osrm' : 'nearest-neighbour',
       };
     }
     const capped = stops.slice(0, MAX_STOPS);
     if (stops.length > MAX_STOPS) {
       this.logger.warn(`optimize: capped ${stops.length} stops to ${MAX_STOPS}`);
     }
+
+    // No engine configured: go straight to the ordering we would have fallen
+    // back to anyway, rather than spending an 8-second timeout proving it.
+    if (!OSRM_URL) return this.optimizeFallback(req, capped);
 
     try {
       return await this.optimizeWithOsrm(req, capped);
