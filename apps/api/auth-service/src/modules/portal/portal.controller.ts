@@ -87,6 +87,11 @@ export class PortalController {
     return this.portalService.listCustomerUnits(data);
   }
 
+  @MessagePattern({ cmd: 'portal_list_assets' })
+  async listAssets(@Payload() data: any) {
+    return this.portalService.listAssets(data);
+  }
+
   @MessagePattern({ cmd: 'portal_admin_list_units' })
   adminListUnits(@Payload() data: { organizationId: string; customerId?: string }) {
     return this.portalService.listUnits(data);

@@ -1075,6 +1075,10 @@ export class AuthService {
           // CustomerScopeGuard + portal endpoints scope to the caller's own data.
           customerId: true,
           unitId: true,
+          // …and the ASSET a client login is confined to, so portal endpoints
+          // can scope to it the way they already scope to a unit. Without this
+          // req.user.assetId is undefined and the binding does nothing.
+          assetId: true,
           organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true } },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read

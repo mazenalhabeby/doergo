@@ -500,6 +500,38 @@ export class PortalService {
     });
   }
 
+  /**
+   * The things this client holds — the generalisation of listUnits.
+   *
+   * Held BY them (asset.customerId), plus the one their login is confined to if
+   * it is not already in that set. A client with a leased machine and a hired
+   * van sees both, the same way a resident sees their flat.
+   */
+  async listAssets(data: { organizationId: string; customerId?: string; assetId?: string | null }) {
+    if (!data.customerId && !data.assetId) return [];
+
+    const rows = await this.prisma.asset.findMany({
+      where: {
+        organizationId: data.organizationId,
+        OR: [
+          ...(data.customerId ? [{ customerId: data.customerId }] : []),
+          ...(data.assetId ? [{ id: data.assetId }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        locationAddress: true,
+        details: true,
+        category: { select: { id: true, name: true, config: true } },
+      },
+      orderBy: { name: 'asc' },
+      take: 200,
+    });
+
+    return rows;
+  }
+
   private async assertCustomerInOrg(organizationId: string, customerId?: string | null) {
     if (!customerId) return;
     const c = await this.prisma.customer.findFirst({

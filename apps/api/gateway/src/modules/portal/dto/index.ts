@@ -24,6 +24,11 @@ export class SubmitRequestDto {
   @IsOptional()
   unitId?: string;
 
+  @ApiPropertyOptional({ description: 'Which of the customer’s assets the request is about (defaults to the linked asset)' })
+  @IsString()
+  @IsOptional()
+  assetId?: string;
+
   @ApiPropertyOptional({ description: 'Whether staff may enter if the customer is out' })
   @IsBoolean()
   @IsOptional()

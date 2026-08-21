@@ -224,6 +224,25 @@ export class TasksService {
       if (!ownUnit) effUnitId = null;
     }
 
+    // The same two guards for an ASSET, which had none: assetId went straight
+    // onto the task, so an id from another organization would have been stored
+    // and joined against. A portal client may only reference something they
+    // hold; internally it must at least belong to the org.
+    let effAssetId: string | null = data.assetId || null;
+    if (effAssetId) {
+      const ownAsset = await this.prisma.asset.findFirst({
+        where: {
+          id: effAssetId,
+          organizationId: effectiveOrgId,
+          ...(data.source === 'CUSTOMER_PORTAL'
+            ? { customerId: data.customerId || undefined }
+            : {}),
+        },
+        select: { id: true },
+      });
+      if (!ownAsset) effAssetId = null;
+    }
+
     // Cross-tenant guard: a client-supplied customerId (internal "+ Task" flow)
     // MUST belong to the caller's org — otherwise a task could reference another
     // org's customer (dangling FK + analytics join leak). Drop it if it doesn't.
@@ -253,7 +272,7 @@ export class TasksService {
           organizationId: effectiveOrgId,
           createdById: data.userId,
           assignedToId: data.assignedToId || null,
-          assetId: data.assetId || null,
+          assetId: effAssetId,
           parentId: data.parentId || null,
           phaseId: data.phaseId || null,
           sprintId: data.sprintId || null,

@@ -67,6 +67,24 @@ export class PortalController {
     );
   }
 
+  /** The things this client holds — assets, the generalisation of units. */
+  @Get('assets')
+  @SkipOnboardingCheck()
+  @ApiOperation({ summary: "List the client's assets" })
+  async assets(@Request() req: any) {
+    return firstValueFrom(
+      this.authClient.send(
+        { cmd: 'portal_list_assets' },
+        {
+          organizationId: req.user.organizationId,
+          customerId: req.user.customerId,
+          // The one their login is confined to, when they hold nothing else.
+          assetId: req.user.assetId ?? null,
+        },
+      ),
+    );
+  }
+
   /** The customer's own requests. */
   @Get('requests')
   @SkipOnboardingCheck()
@@ -112,6 +130,10 @@ export class PortalController {
     // hop, no TOCTOU): an unowned/unknown unitId is dropped there. We only pass
     // the requested unit, falling back to the caller's bound default unit.
     const unitId: string | undefined = dto.unitId || req.user.unitId || undefined;
+    // Same rule for an asset: ownership is validated inside task-service in the
+    // same transaction, so an unowned id is dropped there rather than trusted
+    // here — no second hop, no gap between check and write.
+    const assetId: string | undefined = dto.assetId || req.user.assetId || undefined;
 
     // Access permission / preferred time / contact preference are captured into the
     // description so staff see them without a bespoke schema (kept simple for v1).
@@ -134,6 +156,7 @@ export class PortalController {
       source: TASK_SOURCE.CUSTOMER_PORTAL,
       customerId: req.user.customerId, // from the verified token, never the body
       unitId, // validated to belong to this customer above
+      assetId, // ditto — dropped in task-service if they do not hold it
       organizationId: req.user.organizationId,
       userId: req.user.id,
     });
