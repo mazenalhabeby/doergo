@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight } from 'lucide-react';
 import { orgMonthlyCost, formatCents } from '@hbcfield/shared/client';
 
 const DISPLAY = 'font-[family:var(--font-familjen)]';
@@ -27,7 +25,9 @@ const ACCENT = '#5B9BD5';
  *
  * Everything else lives on /pricing — a public page with every price, every
  * ladder and a calculator that takes several sites and company-wide add-ons.
- * This one gives an honest answer in a glance; that one answers it exactly.
+ * This one gives an honest answer in a glance; that one answers it exactly. The
+ * link across sits in the button row just below, where the section's other
+ * calls to action already are.
  */
 
 type PresetKey = 'basics' | 'field' | 'everything';
@@ -192,14 +192,6 @@ export function PricingEstimator() {
         </p>
       </div>
 
-      {/* ── the exact answer, on its own public page ───────────────────── */}
-      <Link
-        href="/pricing"
-        className={`${MONO} group mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground/45 transition-colors hover:text-foreground`}
-      >
-        {t('home.estimator.seeAll', 'See every price')}
-        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-      </Link>
     </div>
   );
 }

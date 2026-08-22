@@ -597,13 +597,21 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                 >
                   {t('home.pricing.cta')}
                 </a>
-                <a
-                  href="#features"
-                  onClick={navTo('#features')}
-                  className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] text-foreground/80 transition-colors hover:border-foreground/50 hover:text-foreground`}
+                {/*
+                  Leaves the page, and must: this is the one control on the
+                  home page whose label promises EVERY price, and every price
+                  lives on /pricing. It used to smooth-scroll to the capability
+                  cards below — the section that deliberately shows one number
+                  per capability and not the full list — so the promise and the
+                  destination disagreed.
+                */}
+                <Link
+                  href="/pricing"
+                  className={`${MONO} group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] text-foreground/80 transition-colors hover:border-foreground/50 hover:text-foreground`}
                 >
                   {t('home.pricing.seePrices', 'See every price')}
-                </a>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
               </div>
               <p className={`${MONO} mt-8 text-[11px] uppercase tracking-[0.14em] text-foreground/30`}>{t('home.pricing.note')}</p>
             </div>

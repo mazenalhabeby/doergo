@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
-import { ArrowLeft, Sun, Moon, ChevronDown, Users, Blocks, Building2 } from 'lucide-react';
+import { Sun, Moon, ChevronDown, Users, Blocks, Building2 } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
 import {
   AVAILABLE_MODULES,
@@ -57,8 +57,9 @@ export default function PricingClient() {
       {/* ── nav ─────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 border-b border-border bg-background/80 px-6 py-3 backdrop-blur-xl sm:px-10">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-3" aria-label={t('home.nav.home', 'Home')}>
-            <ArrowLeft className="h-4 w-4 text-foreground/40" />
+          {/* The logo IS the way back. A back arrow beside it says the same
+              thing twice and reads like browser chrome bolted onto the page. */}
+          <Link href="/" className="inline-flex items-center" aria-label={t('home.nav.home', 'Home')}>
             <AnimatedLogo size="small" />
           </Link>
           <div className="flex items-center gap-1 sm:gap-3">
