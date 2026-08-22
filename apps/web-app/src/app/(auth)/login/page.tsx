@@ -102,7 +102,7 @@ function AuthPageContent() {
           {/* mobile logo */}
           <div className="mb-9 mt-2 flex justify-center lg:hidden">
             <Link href="/" aria-label={t('common.backToHome', 'Back to home')} className="inline-flex">
-              <AnimatedLogo size="large" />
+              <AnimatedLogo size="large" className="text-slate-900" />
             </Link>
           </div>
 

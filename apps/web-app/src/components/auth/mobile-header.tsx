@@ -7,7 +7,7 @@ export function MobileHeader() {
   const { t } = useTranslation();
   return (
     <div className="flex md:hidden flex-col items-center justify-center gap-2 mb-6">
-      <AnimatedLogo size="small" />
+      <AnimatedLogo size="small" className="text-slate-900" />
       <p className="text-xs text-slate-500">{t('auth.mobile.partnerPortal')}</p>
     </div>
   );

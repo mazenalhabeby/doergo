@@ -91,7 +91,7 @@ function ResetPasswordContent() {
       <div className="w-full max-w-md mx-auto">
         <div className="bg-white rounded-2xl shadow-modal p-8">
           <div className="flex flex-col items-center mb-8">
-            <AnimatedLogo size="default" className="mb-4" />
+            <AnimatedLogo size="default" className="mb-4 text-slate-900" />
             <h1 className="text-2xl font-semibold text-slate-900">{t('auth.resetPassword.invalidLinkTitle')}</h1>
             <p className="text-sm text-slate-500 mt-2 text-center">
               {t('auth.resetPassword.invalidLinkSubtitle')}
@@ -124,7 +124,7 @@ function ResetPasswordContent() {
       <div className="bg-white rounded-2xl shadow-modal p-8">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
-          <AnimatedLogo size="default" className="mb-4" />
+          <AnimatedLogo size="default" className="mb-4 text-slate-900" />
           <h1 className="text-2xl font-semibold text-slate-900">
             {isSuccess ? t('auth.resetPassword.successTitle') : t('auth.resetPassword.title')}
           </h1>

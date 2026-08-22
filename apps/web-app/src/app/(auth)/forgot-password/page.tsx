@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { notify } from '@/lib/toast';
-import { Mail, ArrowLeft, CheckCircle, Send } from 'lucide-react';
+import { Mail, ArrowLeft, Send } from 'lucide-react';
 import { Button, Input, Label } from '@/components/ui';
 import { AnimatedLogo } from '@/components/auth';
 import { cn } from '@/lib/utils';
@@ -40,7 +40,11 @@ export default function ForgotPasswordPage() {
       setIsSubmitted(true);
       notify.success(t('auth.forgotPassword.resetLinkSentTitle'), t('auth.forgotPassword.resetLinkSentDescription'));
     } catch (err) {
-      notify.error(err instanceof Error ? err.message : t('auth.forgotPassword.errorDescription'));
+      // The server distinguishes "we cannot send mail at all" from everything
+      // else, and says so for EVERY address — so showing it here cannot be used
+      // to work out which addresses are registered.
+      setError(err instanceof Error ? err.message : t('auth.forgotPassword.errorDescription'));
+      notify.error(t('auth.forgotPassword.errorTitle'), err instanceof Error ? err.message : undefined);
     } finally {
       setIsLoading(false);
     }
@@ -51,15 +55,15 @@ export default function ForgotPasswordPage() {
       <div className="bg-white rounded-2xl shadow-modal p-8">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
-          <AnimatedLogo size="default" className="mb-4" />
+          <AnimatedLogo size="default" className="mb-4 text-slate-900" />
           <h1 className="text-2xl font-semibold text-slate-900">
             {isSubmitted ? t('auth.forgotPassword.successTitle') : t('auth.forgotPassword.title')}
           </h1>
-          <p className="text-sm text-slate-500 mt-2 text-center">
-            {isSubmitted
-              ? t('auth.forgotPassword.successSubtitle', { email })
-              : t('auth.forgotPassword.subtitle')}
-          </p>
+          {!isSubmitted && (
+            <p className="text-sm text-slate-500 mt-2 text-center">
+              {t('auth.forgotPassword.subtitle')}
+            </p>
+          )}
         </div>
 
         {isSubmitted ? (
@@ -180,44 +184,39 @@ interface SuccessStateProps {
   onResend: () => void;
 }
 
+/**
+ * After the request goes through.
+ *
+ * It used to say the same sentence twice — as the subtitle, and again in a grey
+ * box under a green tick — and both asserted "we've sent it", which we cannot
+ * promise: we do not send at all if the address has no account, and that has to
+ * stay invisible or it becomes a way to test which addresses are registered.
+ * So the wording is conditional, said once, and the tick is gone. A green tick
+ * over "your reset link is on its way" is a delivery receipt, and this screen
+ * has never had one to give.
+ */
 function SuccessState({ email, onResend }: SuccessStateProps) {
   const { t } = useTranslation();
   return (
-    <div className="space-y-6">
-      {/* Success Icon */}
-      <div className="flex justify-center">
-        <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center animate-in zoom-in duration-300">
-          <CheckCircle className="w-8 h-8 text-success" />
-        </div>
+    <div className="space-y-5">
+      <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <Mail className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
+        <p className="text-sm leading-relaxed text-slate-600">
+          {t('auth.forgotPassword.sentTo')}{' '}
+          <span className="font-medium text-slate-900">{email}</span>
+        </p>
       </div>
 
-      {/* Email Preview */}
-      <div className="bg-slate-50 rounded-lg p-4 text-center">
-        <p className="text-sm text-slate-600">
-          {t('auth.forgotPassword.sentTo')}
-        </p>
-        <p className="text-sm font-medium text-slate-900 mt-1">{email}</p>
-      </div>
-
-      {/* Instructions */}
-      <div className="space-y-3 text-sm text-slate-600">
-        <p>
-          {t('auth.forgotPassword.instructions')}
-        </p>
-        <ul className="list-disc list-inside space-y-1 text-slate-500">
-          <li>{t('auth.forgotPassword.checkSpam')}</li>
-          <li>{t('auth.forgotPassword.correctEmail')}</li>
-          <li>{t('auth.forgotPassword.waitAndRetry')}</li>
+      <div className="space-y-2.5 text-sm text-slate-600">
+        <p>{t('auth.forgotPassword.instructions')}</p>
+        <ul className="space-y-1.5 text-slate-500">
+          <li className="flex gap-2"><span className="text-slate-300">·</span>{t('auth.forgotPassword.checkSpam')}</li>
+          <li className="flex gap-2"><span className="text-slate-300">·</span>{t('auth.forgotPassword.correctEmail')}</li>
+          <li className="flex gap-2"><span className="text-slate-300">·</span>{t('auth.forgotPassword.waitAndRetry')}</li>
         </ul>
       </div>
 
-      {/* Resend Button */}
-      <Button
-        variant="outline"
-        onClick={onResend}
-        className="w-full h-11"
-      >
-        <Mail className="w-4 h-4 mr-2" />
+      <Button variant="outline" onClick={onResend} className="w-full h-11">
         {t('auth.forgotPassword.tryDifferentEmail')}
       </Button>
     </div>

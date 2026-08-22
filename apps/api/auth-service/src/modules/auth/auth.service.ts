@@ -98,6 +98,22 @@ export class AuthService {
 
   private mailTransporter: nodemailer.Transporter | null = null;
 
+  /**
+   * Cached answer to "can we send mail at all right now?".
+   *
+   * Checked BEFORE the account lookup and for every address, which is the whole
+   * point: an outage message that only appeared for real accounts would be an
+   * email-enumeration oracle — submit an address, and whether you got "check
+   * your inbox" or "our mail is down" tells you if it is registered. Asked the
+   * same way for everyone, it tells an attacker nothing and tells an honest
+   * person the truth.
+   *
+   * Cached because it costs an SMTP handshake. Sixty seconds while healthy;
+   * fifteen while broken, so recovery is noticed quickly without hammering a
+   * provider that is already refusing us.
+   */
+  private transportHealth: { ok: boolean; at: number } | null = null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -120,6 +136,24 @@ export class AuthService {
       this.logger.log('SMTP transporter configured');
     } else {
       this.logger.warn('SMTP not configured - password reset emails will not be sent');
+    }
+  }
+
+  /** Whether the SMTP transport will accept a connection at all. */
+  private async canSendMail(): Promise<boolean> {
+    if (!this.mailTransporter) return false;
+    const ttl = this.transportHealth?.ok ? 60_000 : 15_000;
+    if (this.transportHealth && Date.now() - this.transportHealth.at < ttl) return this.transportHealth.ok;
+    try {
+      await this.mailTransporter.verify();
+      this.transportHealth = { ok: true, at: Date.now() };
+      return true;
+    } catch (err) {
+      // Worth an error, not a warning: while this is failing, NOTHING the
+      // product sends by email arrives — resets, invitations, notifications.
+      this.logger.error(`SMTP transport unavailable: ${(err as Error).message}`);
+      this.transportHealth = { ok: false, at: Date.now() };
+      return false;
     }
   }
 
@@ -864,6 +898,23 @@ export class AuthService {
     try {
       // Normalize email
       const email = data.email.trim().toLowerCase();
+
+      /*
+        Is our own mail working? Asked first, and for every address, so the
+        answer cannot be used to probe which addresses are registered.
+
+        Without this the page told everybody "we've sent you a link" while the
+        provider was refusing every connection at the greeting — the request
+        looked successful, the reset never arrived, and the only trace was a
+        line in a container log.
+      */
+      if (!(await this.canSendMail())) {
+        return {
+          success: false,
+          statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+          message: 'We cannot send email at the moment, so we could not send a reset link. This is a problem on our side — please try again shortly or contact support.',
+        };
+      }
 
       // Find user - but don't reveal if email exists (security best practice)
       const user = await this.prisma.user.findUnique({
