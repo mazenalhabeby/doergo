@@ -9,8 +9,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-const TIERS = ['starter', 'professional', 'business', 'enterprise'] as const;
-type Tier = (typeof TIERS)[number];
 type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' | 'manageSupport' | 'manageSupportTeams' | 'manageLibrary' | 'managePlatformUsers';
 const ROLES = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'] as const;
 
@@ -18,9 +16,8 @@ const eur = (c?: number | null) => (c == null ? '—' : `€${(c / 100).toLocale
 const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—');
 
 interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string; twoFactorEnabled?: boolean; isSupportSupervisor?: boolean; supportTeamIds?: string[] }; permissions: Cap[] }
-interface Seats { office: number; field: number; fieldInhouse: number; total: number }
-interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: Seats; mrrCents: number; arrCents: number }
-interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: Seats; mrrCents: number }
+interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number }
+interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number }
 interface OrgDetail extends OrgRow { enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
 interface StaffUser { id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean; lastLoginAt: string | null }
 
@@ -149,7 +146,7 @@ export default function ControlCenter() {
                 <Stat label="Active" value={String(overview.byStatus.active ?? 0)} />
                 <Stat label="Trialing" value={String(overview.trialing)} />
                 <Stat label="Suspended" value={String(overview.suspended)} />
-                <Stat label="Seats" value={String(overview.seats.total)} sub={`${overview.seats.office} office · ${overview.seats.field + overview.seats.fieldInhouse} field`} />
+                <Stat label="Seats" value={String(overview.seats)} sub="one price, all members" />
               </div>
             )}
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -159,19 +156,25 @@ export default function ControlCenter() {
             </div>
             <div className="overflow-x-auto rounded-xl border border-slate-800">
               <table className="w-full text-sm">
-                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Tier</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
+                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Add-ons</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
                 <tbody className="divide-y divide-slate-800">
                   {orgs.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-900/50">
                       <td className="px-3 py-2"><button onClick={async () => setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${o.id}`)).data)} className="font-medium hover:text-blue-400">{o.name}</button>{o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SUSPENDED</span>}</td>
                       <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[o.subStatus?.toLowerCase()] ?? 'bg-slate-700'}`}>{o.subStatus?.toLowerCase()}</span></td>
+                      {/*
+                        This was a tier picker. Tiers stopped deciding access when
+                        the module model shipped, so it was a control that changed
+                        a column and nothing else. What an org can actually do is
+                        its add-ons.
+                      */}
                       <td className="px-3 py-2">
-                        {can('manageOrgs') ? (
-                          <select value={(o.planTier ?? '').toLowerCase()} disabled={busy === o.id} onChange={(e) => act(o.id, '/tier', { body: JSON.stringify({ tier: e.target.value }) })} className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-xs"><option value="">—</option>{TIERS.map((t) => <option key={t} value={t}>{t}</option>)}</select>
-                        ) : <span className="text-xs text-slate-400">{o.planTier?.toLowerCase() ?? '—'}</span>}
+                        {o.addOns?.length
+                          ? <span className="text-xs text-slate-300" title={o.addOns.join(', ')}>{o.addOns.length}</span>
+                          : <span className="text-xs text-slate-600">none</span>}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">{o.memberCount}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-slate-400" title={`${o.seats.office} office · ${o.seats.field} field · ${o.seats.fieldInhouse} in-house`}>{o.seats.total}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-slate-400">{o.seats}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{eur(o.mrrCents)}</td>
                       <td className="px-3 py-2 text-slate-400">{date(o.trialEndsAt)}</td>
                       <td className="px-3 py-2 text-right"><div className="flex justify-end gap-1">
@@ -206,13 +209,13 @@ export default function ControlCenter() {
             <div className="mb-4 flex items-start justify-between"><div><h2 className="text-lg font-semibold">{detail.name}</h2><p className="text-xs text-slate-500">{detail.id}</p></div><button onClick={() => setDetail(null)} className="text-slate-400">✕</button></div>
             <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
               <div><div className="text-xs text-slate-500">Status</div>{detail.subStatus?.toLowerCase()}{detail.suspendedAt && ' (suspended)'}</div>
-              <div><div className="text-xs text-slate-500">Tier</div>{detail.planTier?.toLowerCase() ?? '—'}</div>
               <div><div className="text-xs text-slate-500">MRR</div>{eur(detail.mrrCents)}</div>
-              <div><div className="text-xs text-slate-500">Seats</div>{detail.seats.office} office · {detail.seats.field} field · {detail.seats.fieldInhouse} in-house</div>
+              <div><div className="text-xs text-slate-500">Seats</div>{detail.seats} active member{detail.seats === 1 ? '' : 's'}</div>
               <div><div className="text-xs text-slate-500">Trial ends</div>{date(detail.trialEndsAt)}</div>
               <div><div className="text-xs text-slate-500">Period ends</div>{date(detail.currentPeriodEnd)}</div>
             </div>
-            <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Modules ({detail.enabledModules?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.enabledModules ?? []).map((m) => <span key={m} className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px]">{m}</span>)}</div></div>
+            <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Add-ons ({detail.addOns?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.addOns ?? []).length === 0 ? <span className="text-[11px] text-slate-600">none purchased</span> : (detail.addOns ?? []).map((a) => <span key={a} className="rounded bg-blue-500/15 px-1.5 py-0.5 text-[11px] text-blue-300">{a}</span>)}</div></div>
+            <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Org default modules ({detail.enabledModules?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.enabledModules ?? []).map((m) => <span key={m} className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px]">{m}</span>)}</div></div>
             <div><div className="mb-1 text-xs text-slate-500">Members ({detail.members.length})</div><div className="divide-y divide-slate-800 rounded-lg border border-slate-800">{detail.members.map((m) => <div key={m.id} className="flex items-center justify-between px-3 py-2 text-sm"><div><span className={m.isActive ? '' : 'text-slate-500 line-through'}>{m.firstName} {m.lastName}</span> <span className="text-xs text-slate-500">{m.email}</span></div><span className="text-xs text-slate-400">{m.role?.toLowerCase()}</span></div>)}</div></div>
           </div>
         </div>
@@ -310,128 +313,206 @@ function TeamPanel({ staff, reload, onError, meId }: { staff: StaffUser[]; reloa
   );
 }
 
-interface SeatPrice { id: string; seatType: string; tier: string | null; monthlyCents: number; annualCents: number }
-interface ModulePrice { id: string; moduleKey: string; monthlyCents: number; annualCents: number; billingScope: string }
-interface PriceConfig { id: string; version: number; active: boolean; note: string | null; createdAt: string; seatPrices: SeatPrice[]; modulePrices: ModulePrice[] }
-const seatLabel = (s: SeatPrice) => s.seatType === 'office' ? `Office · ${s.tier}` : s.seatType === 'field_inhouse' ? 'Field · in-house' : 'Field · external';
+interface PriceModule { key: string; label: string; description: string; group: string; monthlyCents: number; counted: boolean }
+interface PriceAddOn { key: string; label: string; description: string; group: string; monthlyCents: number }
+interface Band { upTo: number | null; unitCents: number }
+interface Ladder { moduleKey: string; label: string; unit: string; included: number; bands: Band[] }
+interface PriceList { seatMonthlyCents: number; modules: PriceModule[]; addOns: PriceAddOn[]; ladders: Ladder[]; catalogueSize: number }
+interface StripeStatus {
+  configured: boolean; expected: number; matched: number;
+  missing: { lookupKey: string; cents: number; productName: string }[];
+  mismatched: { lookupKey: string; codeCents: number; stripeCents: number; priceId: string }[];
+  orphaned: { lookupKey: string; cents: number; interval: string; priceId: string }[];
+}
 
+const cents = (c: number) => `€${(c / 100).toFixed(2)}`;
+
+/**
+ * What the platform charges — read from the code that bills.
+ *
+ * This was an EDITABLE PRICE BOOK: a versioned copy of the prices in the
+ * database, seeded from the tier constants, with a draft/publish flow and a
+ * button that pushed them to live Stripe. It had been showing office seats at
+ * €29 / €59 / €99 by tier, two kinds of field seat, and "modules are free
+ * within their tier" — since the day tiers were replaced. The screen the
+ * company checks to see what it charges was the last screen still describing
+ * the old model, and it could write that model to the payment processor.
+ *
+ * Prices are code now. One list, in `packages/shared/src/billing/*`, read by
+ * the invoice, the public pricing page and this panel alike — so changing one
+ * is a reviewed deploy, and this is read-only by construction.
+ */
 function PricingPanel({ canEdit, onError }: { canEdit: boolean; onError: (s: string) => void }) {
-  const [active, setActive] = useState<PriceConfig | null>(null);
-  const [versions, setVersions] = useState<PriceConfig[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null); // the draft being edited
-  const [busy, setBusy] = useState<string | null>(null);
-  const [mod, setMod] = useState({ moduleKey: '', euro: '', billingScope: 'per_org' });
-  const [sync, setSync] = useState<any | null>(null);
-  const [confirmTxt, setConfirmTxt] = useState('');
+  const [list, setList] = useState<PriceList | null>(null);
+  const [stripe, setStripe] = useState<StripeStatus | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    try { const r = await api<{ data: { active: PriceConfig | null; versions: PriceConfig[] } }>('/platform/pricing'); setActive(r.data.active); setVersions(r.data.versions || []); }
+    try { setList((await api<{ data: PriceList }>('/platform/pricing')).data); }
     catch (e) { onError(e instanceof Error ? e.message : 'Load failed'); }
   }, [onError]);
   useEffect(() => { load(); }, [load]);
 
-  const draft = versions.find((v) => v.id === editingId && !v.active) || null;
-  const shown = draft || active;
+  const checkStripe = async () => {
+    setBusy(true);
+    try { setStripe((await api<{ data: StripeStatus }>('/platform/pricing/stripe')).data); }
+    catch (e) { onError(e instanceof Error ? e.message : 'Stripe check failed'); }
+    finally { setBusy(false); }
+  };
 
-  const run = async (fn: () => Promise<any>, id: string) => { setBusy(id); try { await fn(); await load(); } catch (e) { onError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(null); } };
-  const createDraft = () => run(async () => { const r = await api<{ data: PriceConfig }>('/platform/pricing/draft', { method: 'POST', body: JSON.stringify({}) }); setEditingId(r.data.id); }, 'draft');
-  const setSeat = (seatId: string, euro: string) => run(() => api(`/platform/pricing/${draft!.id}/seat/${seatId}`, { method: 'PATCH', body: JSON.stringify({ monthlyCents: Math.round(parseFloat(euro || '0') * 100) }) }), seatId);
-  const addModule = () => { if (!mod.moduleKey.trim()) return; run(async () => { await api(`/platform/pricing/${draft!.id}/module`, { method: 'POST', body: JSON.stringify({ moduleKey: mod.moduleKey.trim(), monthlyCents: Math.round(parseFloat(mod.euro || '0') * 100), billingScope: mod.billingScope }) }); setMod({ moduleKey: '', euro: '', billingScope: 'per_org' }); }, 'addmod'); };
-  const delModule = (id: string) => run(() => api(`/platform/pricing/${draft!.id}/module/${id}`, { method: 'DELETE' }), id);
-  const publish = () => run(async () => { await api(`/platform/pricing/${draft!.id}/publish`, { method: 'POST', body: '{}' }); setEditingId(null); }, 'publish');
+  if (!list) return <div className="rounded-xl border border-slate-800 p-8 text-center text-slate-500">Loading pricing…</div>;
 
-  if (!shown) return <div className="rounded-xl border border-slate-800 p-8 text-center text-slate-500">Loading pricing…</div>;
+  const problems = stripe ? stripe.missing.length + stripe.mismatched.length + stripe.orphaned.length : 0;
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm text-slate-400">Active: <span className="text-slate-200">v{active?.version}</span></span>
-        {draft ? (
-          <>
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-400">editing draft v{draft.version}</span>
-            <button disabled={busy === 'publish'} onClick={publish} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm hover:bg-green-500">Publish v{draft.version}</button>
-            <button onClick={() => setEditingId(null)} className="text-xs text-slate-400 hover:text-slate-200">Discard view</button>
-          </>
-        ) : canEdit ? (
-          <button disabled={busy === 'draft'} onClick={createDraft} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Edit prices (new draft)</button>
-        ) : <span className="text-xs text-slate-500">Read-only (needs editPricing)</span>}
-        <span className="ml-auto text-xs text-slate-500">Publishing changes DISPLAY only — Stripe sync is a separate step (C3).</span>
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-300">Read-only</span>
+        <span className="text-slate-400">Prices live in the code that produces invoices — changing one is a deploy, not a form.</span>
       </div>
 
+      {/* seat */}
       <div className="rounded-xl border border-slate-800">
-        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Seats (monthly, € · annual = ×10)</div>
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Per person</div>
+        <div className="flex items-baseline gap-3 px-4 py-3">
+          <span className="text-2xl font-semibold tabular-nums">{cents(list.seatMonthlyCents)}</span>
+          <span className="text-sm text-slate-400">per active member / month — the same for everyone, no seat types</span>
+        </div>
+      </div>
+
+      {/* modules */}
+      <div className="rounded-xl border border-slate-800">
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Modules — per space ({list.modules.length})
+        </div>
         <div className="divide-y divide-slate-800">
-          {shown.seatPrices.map((s) => (
-            <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-              <span className="w-44">{seatLabel(s)}</span>
-              {draft ? (
-                <input type="number" min="0" step="1" defaultValue={(s.monthlyCents / 100).toString()} disabled={busy === s.id}
-                  onBlur={(e) => e.target.value !== (s.monthlyCents / 100).toString() && setSeat(s.id, e.target.value)}
-                  className="w-24 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm" />
-              ) : <span className="w-24 tabular-nums">€{(s.monthlyCents / 100).toFixed(0)}</span>}
-              <span className="text-xs text-slate-500">/mo · €{(s.annualCents / 100).toFixed(0)}/yr</span>
+          {list.modules.map((m) => (
+            <div key={m.key} className="flex items-center gap-3 px-4 py-2 text-sm">
+              <span className="w-40 shrink-0">{m.label}</span>
+              <span className="w-24 shrink-0 tabular-nums">{cents(m.monthlyCents)}</span>
+              {m.counted && <span className="shrink-0 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-blue-300">+ per unit</span>}
+              <span className="truncate text-xs text-slate-500">{m.description}</span>
+              <span className="ml-auto shrink-0 font-mono text-[11px] text-slate-600">{m.key}</span>
             </div>
           ))}
         </div>
       </div>
 
+      {/* usage ladders */}
       <div className="rounded-xl border border-slate-800">
-        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Module add-ons {draft ? '' : `(${shown.modulePrices.length})`}</div>
-        <div className="divide-y divide-slate-800">
-          {shown.modulePrices.length === 0 && <div className="px-4 py-3 text-sm text-slate-500">No paid modules — modules are free within their tier. {draft && 'Add one below to charge for it.'}</div>}
-          {shown.modulePrices.map((m) => (
-            <div key={m.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-              <span className="w-44 font-mono text-xs">{m.moduleKey}</span>
-              <span className="w-24 tabular-nums">€{(m.monthlyCents / 100).toFixed(0)}/mo</span>
-              <span className="text-xs text-slate-500">{m.billingScope}</span>
-              {draft && <button disabled={busy === m.id} onClick={() => delModule(m.id)} className="ml-auto rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Remove</button>}
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Volume ladders — graduated, per space
+        </div>
+        <div className="grid gap-px bg-slate-800 sm:grid-cols-3">
+          {list.ladders.map((l) => (
+            <div key={l.moduleKey} className="bg-slate-950 p-4">
+              <div className="text-sm font-medium">{l.label}</div>
+              <div className="mt-0.5 text-xs text-slate-500">first {l.included} {l.unit}{l.included === 1 ? '' : 's'} included</div>
+              <div className="mt-2 space-y-1 text-xs tabular-nums">
+                {l.bands.map((b, i) => {
+                  const from = (i === 0 ? l.included : (l.bands[i - 1].upTo ?? 0)) + 1;
+                  return (
+                    <div key={i} className="flex justify-between gap-3">
+                      <span className="text-slate-500">{b.upTo == null ? `${from}+` : `${from} – ${b.upTo}`}</span>
+                      <span>{cents(b.unitCents)}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
-        {draft && (
-          <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 bg-slate-900/50 p-3">
-            <input placeholder="module key (e.g. tracking)" value={mod.moduleKey} onChange={(e) => setMod({ ...mod, moduleKey: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
-            <input placeholder="€/mo" type="number" min="0" value={mod.euro} onChange={(e) => setMod({ ...mod, euro: e.target.value })} className="w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
-            <select value={mod.billingScope} onChange={(e) => setMod({ ...mod, billingScope: e.target.value })} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm">
-              {['per_org', 'per_office_seat', 'per_space'].map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <button disabled={busy === 'addmod'} onClick={addModule} className="rounded bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Add module price</button>
-          </div>
-        )}
       </div>
 
-      {versions.length > 1 && (
-        <div className="text-xs text-slate-500">Versions: {versions.map((v) => <span key={v.id} className={`mr-2 ${v.active ? 'text-green-400' : ''}`}>v{v.version}{v.active ? ' (active)' : ''}</span>)}</div>
-      )}
+      {/* add-ons */}
+      <div className="rounded-xl border border-slate-800">
+        <div className="border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Add-ons — once per organization ({list.addOns.length})
+        </div>
+        <div className="divide-y divide-slate-800">
+          {list.addOns.map((a) => (
+            <div key={a.key} className="flex items-center gap-3 px-4 py-2 text-sm">
+              <span className="w-40 shrink-0">{a.label}</span>
+              <span className="w-24 shrink-0 tabular-nums">{cents(a.monthlyCents)}</span>
+              <span className="truncate text-xs text-slate-500">{a.description}</span>
+              <span className="ml-auto shrink-0 font-mono text-[11px] text-slate-600">{a.key}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* C3 — Stripe sync (live billing) */}
-      {canEdit && (
-        <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 p-4">
+      {/* Stripe agreement */}
+      {canEdit ? (
+        <div className="rounded-xl border border-slate-800 p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-semibold text-amber-300">⚠ Sync to Stripe (live billing)</span>
-            <button onClick={() => run(async () => setSync((await api<{ data: any }>('/platform/pricing/sync/preview')).data), 'syncprev')} disabled={busy === 'syncprev'} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">Preview sync</button>
-            <span className="text-xs text-slate-500">Reads Stripe, changes nothing. Existing subscriptions are always grandfathered.</span>
+            <span className="text-sm font-semibold">Does Stripe agree?</span>
+            <button onClick={checkStripe} disabled={busy} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700 disabled:opacity-40">
+              {busy ? 'Checking…' : 'Check Stripe'}
+            </button>
+            <span className="text-xs text-slate-500">Reads the live account. Writes nothing — fixes are `tools/stripe/sync-modules.mjs`.</span>
           </div>
-          {sync && (
+
+          {stripe && (
             <div className="mt-3 space-y-2 text-sm">
-              <div className="text-slate-300">{sync.changeCount} price change(s) · existing subs affected: <span className="text-green-400">0 (grandfathered)</span> · apply: <span className={sync.enabled ? 'text-green-400' : 'text-red-400'}>{sync.enabled ? 'ENABLED' : 'DISABLED'}</span></div>
-              {(sync.changes ?? []).map((c: any, i: number) => (
-                <div key={i} className="flex gap-3 rounded border border-slate-800 px-3 py-1.5 text-xs">
-                  <span className="w-40">{c.seatType}{c.tier ? `/${c.tier}` : ''} · {c.interval}</span>
-                  <span className="tabular-nums text-slate-400">€{((c.currentCents ?? 0) / 100).toFixed(0)} → </span>
-                  <span className="tabular-nums text-amber-300">€{(c.nextCents / 100).toFixed(0)}</span>
-                  {c.newPriceId && <span className="ml-auto font-mono text-green-400">{c.newPriceId}</span>}
-                </div>
-              ))}
-              <p className="text-xs text-slate-500">{sync.note}</p>
-              {sync.enabled && sync.changeCount > 0 && (
-                <div className="mt-2 flex items-center gap-2">
-                  <input placeholder='type APPLY to confirm' value={confirmTxt} onChange={(e) => setConfirmTxt(e.target.value)} className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm" />
-                  <button disabled={busy === 'syncapply' || confirmTxt !== 'APPLY'} onClick={() => run(async () => { setSync((await api<{ data: any }>('/platform/pricing/sync/apply', { method: 'POST', body: JSON.stringify({ confirm: 'APPLY' }) })).data); setConfirmTxt(''); }, 'syncapply')} className="rounded-lg bg-red-600 px-3 py-1.5 text-sm hover:bg-red-500 disabled:opacity-40">Apply to Stripe</button>
-                </div>
+              {!stripe.configured ? (
+                <div className="text-amber-400">Stripe is not configured on this service.</div>
+              ) : (
+                <>
+                  <div className={problems === 0 ? 'text-green-400' : 'text-slate-300'}>
+                    {stripe.matched} of {stripe.expected} prices correct
+                    {problems === 0 ? ' — Stripe matches the code exactly.' : ''}
+                  </div>
+
+                  {stripe.mismatched.length > 0 && (
+                    <div className="rounded border border-red-900/60 bg-red-950/30 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-red-400">
+                        {stripe.mismatched.length} charging an amount the code does not say
+                      </div>
+                      {stripe.mismatched.map((m) => (
+                        <div key={m.lookupKey} className="mt-1 flex gap-3 text-xs tabular-nums">
+                          <span className="w-64 font-mono">{m.lookupKey}</span>
+                          <span className="text-slate-400">code {cents(m.codeCents)}</span>
+                          <span className="text-red-300">stripe {cents(m.stripeCents)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {stripe.missing.length > 0 && (
+                    <div className="rounded border border-amber-900/60 bg-amber-950/20 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-amber-400">
+                        {stripe.missing.length} priced in code but absent from Stripe — checkout would fail on these lines
+                      </div>
+                      {stripe.missing.map((m) => (
+                        <div key={m.lookupKey} className="mt-1 flex gap-3 text-xs tabular-nums">
+                          <span className="w-64 font-mono">{m.lookupKey}</span>
+                          <span className="text-slate-400">{cents(m.cents)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {stripe.orphaned.length > 0 && (
+                    <div className="rounded border border-slate-700 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        {stripe.orphaned.length} active in Stripe but gone from the code — sellable, billing nothing
+                      </div>
+                      {stripe.orphaned.map((o) => (
+                        <div key={o.lookupKey} className="mt-1 flex gap-3 text-xs tabular-nums">
+                          <span className="w-64 font-mono">{o.lookupKey}</span>
+                          <span className="text-slate-400">{cents(o.cents)} / {o.interval}</span>
+                        </div>
+                      ))}
+                      <div className="mt-2 text-[11px] text-slate-500">Retire with `sync-modules.mjs --archive-orphans` (skips anything still subscribed).</div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
         </div>
+      ) : (
+        <div className="text-xs text-slate-500">Checking Stripe needs `editPricing`.</div>
       )}
     </div>
   );

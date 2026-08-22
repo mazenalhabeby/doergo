@@ -1,14 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  success,
-  countSeats,
-  PLANS,
-  FIELD_SEAT_MONTHLY_CENTS,
-  IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS,
-  type PlanTier,
-  type SeatClassifiable,
-} from '@hbcfield/shared';
+import { success } from '@hbcfield/shared';
 
 // Lean shapes — select only what billing/seat classification needs (perf).
 const ORG_SELECT = {
@@ -20,11 +12,6 @@ const ORG_SELECT = {
   // re-derive, and a second implementation of the bill is a second answer.
   subscription: { select: { lastBilledCents: true } },
 } as const;
-const MEMBER_SELECT = {
-  id: true, organizationId: true, role: true, enabledModules: true,
-  employmentType: true, isActive: true,
-} as const;
-
 type LeanOrg = {
   id: string; name: string; planTier: string | null; subStatus: string;
   suspendedAt: Date | null; usesExternalWorkers: boolean; createdAt: Date;
@@ -59,20 +46,30 @@ export class PlatformAdminService {
   private readonly logger = new Logger(PlatformAdminService.name);
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Group active members by org and count seats per org (shared classifier). */
-  private async seatsByOrg(orgs: LeanOrg[]): Promise<Map<string, ReturnType<typeof countSeats>>> {
+  /**
+   * Seats per org — one per active member, exactly as the invoice counts them.
+   *
+   * This used to call the shared `countSeats` classifier and report an
+   * office / field / in-house split. That split is gone: a seat is €9.99
+   * whatever the member's access, and the billing engine counts
+   * `user.count({ isActive: true })`. Keeping the classifier here would have
+   * this screen report three numbers the bill does not distinguish, and the
+   * classifier reads an access profile that no longer changes the price.
+   *
+   * One grouped query, not one per org.
+   */
+  private async seatsByOrg(orgs: LeanOrg[]): Promise<Map<string, number>> {
     const ids = orgs.map((o) => o.id);
-    const members = ids.length
-      ? await this.prisma.user.findMany({ where: { organizationId: { in: ids }, role: { not: 'CUSTOMER' as any } }, select: MEMBER_SELECT })
+    const rows = ids.length
+      ? await this.prisma.user.groupBy({
+          by: ['organizationId'],
+          where: { organizationId: { in: ids }, isActive: true, role: { not: 'CUSTOMER' as any } },
+          _count: { _all: true },
+        })
       : [];
-    const byOrg = new Map<string, SeatClassifiable[]>();
-    for (const m of members) {
-      const list = byOrg.get(m.organizationId!) ?? [];
-      list.push(m as SeatClassifiable);
-      byOrg.set(m.organizationId!, list);
-    }
-    const out = new Map<string, ReturnType<typeof countSeats>>();
-    for (const o of orgs) out.set(o.id, countSeats(byOrg.get(o.id) ?? [], { usesExternalWorkers: o.usesExternalWorkers }));
+    const out = new Map<string, number>();
+    for (const o of orgs) out.set(o.id, 0);
+    for (const r of rows) if (r.organizationId) out.set(r.organizationId, r._count._all);
     return out;
   }
 
@@ -82,7 +79,7 @@ export class PlatformAdminService {
     const seatMap = await this.seatsByOrg(orgs);
 
     const byStatus: Record<string, number> = {};
-    let suspended = 0, trialing = 0, mrrCents = 0, officeSeats = 0, fieldSeats = 0, inhouseSeats = 0;
+    let suspended = 0, trialing = 0, mrrCents = 0, seatTotal = 0;
     const now = Date.now();
     let newLast30 = 0;
     for (const o of orgs) {
@@ -91,8 +88,7 @@ export class PlatformAdminService {
       if (o.suspendedAt) suspended += 1;
       if (st === 'trialing') trialing += 1;
       if (o.createdAt && now - new Date(o.createdAt).getTime() < 30 * 86_400_000) newLast30 += 1;
-      const seats = seatMap.get(o.id)!;
-      officeSeats += seats.office; fieldSeats += seats.field; inhouseSeats += seats.fieldInhouse;
+      seatTotal += seatMap.get(o.id) ?? 0;
       // MRR from ACTIVE, non-suspended orgs only.
       if (st === 'active' && !o.suspendedAt) mrrCents += orgMrrCents(o);
     }
@@ -102,7 +98,7 @@ export class PlatformAdminService {
       trialing,
       suspended,
       newLast30,
-      seats: { office: officeSeats, field: fieldSeats, fieldInhouse: inhouseSeats, total: officeSeats + fieldSeats + inhouseSeats },
+      seats: seatTotal,
       mrrCents,
       arrCents: mrrCents * 12,
       currency: 'eur',
@@ -123,7 +119,7 @@ export class PlatformAdminService {
     const memberCount = new Map(counts.map((c) => [c.organizationId, c._count.id]));
     return success(
       orgs.map((o) => {
-        const seats = seatMap.get(o.id)!;
+        const seats = seatMap.get(o.id) ?? 0;
         return {
           id: o.id, name: o.name, planTier: o.planTier, subStatus: o.subStatus,
           billingInterval: (o as any).billingInterval, trialEndsAt: o.trialEndsAt,
@@ -131,6 +127,10 @@ export class PlatformAdminService {
           createdAt: o.createdAt, stripeCustomerId: (o as any).stripeCustomerId ?? null,
           memberCount: memberCount.get(o.id) ?? 0,
           seats,
+          // What this org has actually BOUGHT. `planTier` is a vestige kept for
+          // the webhook's fallback; nothing reads it to decide access any more,
+          // so the console reports the add-ons that do.
+          addOns: (o as any).addOns ?? [],
           mrrCents: (o.subStatus ?? '').toLowerCase() === 'active' && !o.suspendedAt ? orgMrrCents(o) : 0,
         };
       }),
@@ -144,7 +144,7 @@ export class PlatformAdminService {
       select: { ...ORG_SELECT, enabledModules: true, billingEmail: true, vatId: true },
     })) as any;
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
-    const seats = (await this.seatsByOrg([org as LeanOrg])).get(org.id)!;
+    const seats = (await this.seatsByOrg([org as LeanOrg])).get(org.id) ?? 0;
     const members = await this.prisma.user.findMany({
       where: { organizationId, role: { not: 'CUSTOMER' as any } },
       select: { id: true, firstName: true, lastName: true, email: true, role: true, isActive: true, enabledModules: true, employmentType: true, lastActiveAt: true, createdAt: true },

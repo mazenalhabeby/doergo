@@ -1,111 +1,74 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { stripeCatalog } from '@hbcfield/shared';
 import { StripeService } from './stripe.service';
-import type { PlanTier, SeatType } from '@hbcfield/shared';
 
 const ok = <T>(data: T) => ({ success: true, data });
-const fail = (message: string, statusCode = 400) => ({ success: false, statusCode, message });
-
-type Change = {
-  kind: 'seat';
-  seatType: string;
-  tier: string | null;
-  interval: 'monthly' | 'annual';
-  currentCents: number | null;
-  nextCents: number;
-  currentPriceId: string;
-  product: string;
-  newPriceId?: string;
-};
 
 /**
- * C3 — sync a PUBLISHED price book to Stripe. Designed to be SAFE:
- *  • `preview` is READ-ONLY (retrieves current Stripe prices, diffs vs the book).
- *  • `apply` is HARD-GATED behind `PLATFORM_PRICING_SYNC_ENABLED=true` (set only
- *    AFTER a test-clock rehearsal) and only CREATES new orphan Stripe prices +
- *    records their ids. It does NOT change product defaults and NEVER touches any
- *    existing subscription → existing customers are fully grandfathered (zero
- *    charge impact). Making the new prices take effect for new checkouts is a
- *    further, separate, rehearsed step.
+ * Does Stripe hold what the price list says it should?
+ *
+ * WHAT THIS REPLACED: a sync that created Stripe prices from the editable tier
+ * price book. It could mint yearly office-seat prices for Starter, Professional
+ * and Business — a model that stopped billing anyone — straight onto the live
+ * account, from a button in a web console. Stripe prices are immutable, so
+ * every accidental press left something permanent behind.
+ *
+ * So this reports and never writes. Three states worth knowing about:
+ *
+ *   missing     the code prices something Stripe cannot charge for — checkout
+ *               for that line would fail
+ *   mismatched  Stripe charges an amount the code does not say. The failure
+ *               this whole model exists to prevent: the app quotes one number
+ *               and the customer is billed another
+ *   orphaned    active in Stripe, gone from the code — still sellable, still
+ *               visible on the account, billing nothing
+ *
+ * Fixing any of them is `tools/stripe/sync-modules.mjs`, run against the key on
+ * the server, where the change is reviewed as a command rather than a click.
  */
 @Injectable()
 export class StripeSyncService {
   private readonly logger = new Logger(StripeSyncService.name);
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly stripe: StripeService,
-    private readonly config: ConfigService,
-  ) {}
+  constructor(private readonly stripe: StripeService) {}
 
-  private get enabled(): boolean {
-    return this.config.get<string>('PLATFORM_PRICING_SYNC_ENABLED') === 'true';
-  }
+  async status() {
+    const catalog = stripeCatalog();
+    if (!this.stripe.isConfigured) {
+      return ok({ configured: false, expected: catalog.length, matched: 0, missing: [], mismatched: [], orphaned: [] });
+    }
 
-  private async activeBook() {
-    return this.prisma.pricingConfig.findFirst({ where: { active: true }, include: { seatPrices: true, modulePrices: true }, orderBy: { version: 'desc' } });
-  }
-
-  /** Compute the changes needed to bring Stripe in line with the active book. */
-  private async computeChanges(): Promise<Change[]> {
-    const book = await this.activeBook();
-    if (!book) return [];
-    const changes: Change[] = [];
-    for (const s of book.seatPrices) {
-      for (const interval of ['monthly', 'annual'] as const) {
-        const nextCents = interval === 'monthly' ? s.monthlyCents : s.annualCents;
-        let currentPriceId: string;
-        try { currentPriceId = this.stripe.priceId(s.seatType as SeatType, (s.tier ?? 'starter') as PlanTier, interval); }
-        catch { continue; } // no mapped Stripe price for this line — skip
-        let info: { unitAmount: number | null; product: string } | null = null;
-        try { info = await this.stripe.getPriceInfo(currentPriceId); } catch { info = null; }
-        const currentCents = info?.unitAmount ?? null;
-        if (info && currentCents !== nextCents) {
-          changes.push({ kind: 'seat', seatType: s.seatType, tier: s.tier, interval, currentCents, nextCents, currentPriceId, product: info.product });
-        }
+    // Every price carrying one of our lookup keys, in a couple of pages rather
+    // than one round trip per catalogue entry.
+    const live = new Map<string, { id: string; unit_amount: number | null; interval?: string }>();
+    for await (const p of this.stripe.listActivePrices()) {
+      if (p.lookup_key) {
+        live.set(p.lookup_key, { id: p.id, unit_amount: p.unit_amount, interval: p.recurring?.interval });
       }
     }
-    return changes;
-  }
 
-  /** READ-ONLY preview: what would change + how many subs are affected (0 — grandfathered). */
-  async preview() {
-    if (!this.stripe.isConfigured) return fail('Stripe not configured', 400);
-    const changes = await this.computeChanges();
-    const activeSubs = await this.prisma.organization.count({ where: { subStatus: 'ACTIVE' } });
-    return ok({
-      enabled: this.enabled,
-      changeCount: changes.length,
-      changes,
-      existingSubsAffected: 0, // grandfathered — apply never touches subscriptions
-      activeSubs,
-      note: this.enabled ? 'Apply will CREATE new Stripe prices (orphan) and record ids. No subscription or default is changed.' : 'Apply is DISABLED. Rehearse on a Stripe test clock, then set PLATFORM_PRICING_SYNC_ENABLED=true.',
-    });
-  }
+    const missing: { lookupKey: string; cents: number; productName: string }[] = [];
+    const mismatched: { lookupKey: string; codeCents: number; stripeCents: number; priceId: string }[] = [];
+    let matched = 0;
 
-  /** GATED apply: create new Stripe prices + record ids. No defaults, no subs. */
-  async apply(data: { confirm?: string; byUserId?: string }) {
-    if (!this.stripe.isConfigured) return fail('Stripe not configured', 400);
-    if (!this.enabled) return fail('Pricing sync is disabled. Rehearse on a Stripe test clock first, then set PLATFORM_PRICING_SYNC_ENABLED=true.', 409);
-    if (data.confirm !== 'APPLY') return fail('Confirmation required (confirm: "APPLY")', 400);
-
-    const changes = await this.computeChanges();
-    if (changes.length === 0) return ok({ created: 0, changes: [] });
-
-    const book = await this.activeBook();
-    for (const c of changes) {
-      try {
-        c.newPriceId = await this.stripe.createRecurringPrice({ product: c.product, unitAmount: c.nextCents, interval: c.interval === 'annual' ? 'year' : 'month' });
-        // Record the MONTHLY new price id on the book row (best-effort; both ids logged).
-        if (c.interval === 'monthly' && book) {
-          const row = book.seatPrices.find((s) => s.seatType === c.seatType && s.tier === c.tier);
-          if (row) await this.prisma.seatPrice.update({ where: { id: row.id }, data: { stripePriceId: c.newPriceId } });
-        }
-        this.logger.warn(`[PLATFORM] C3 created Stripe price ${c.newPriceId} for ${c.seatType}/${c.tier ?? '-'}/${c.interval} @ ${c.nextCents} (product ${c.product}) by ${data.byUserId ?? 'operator'}`);
-      } catch (e) {
-        this.logger.error(`[PLATFORM] C3 price create failed for ${c.seatType}/${c.interval}: ${(e as Error).message}`);
-      }
+    for (const e of catalog) {
+      const found = live.get(e.lookupKey);
+      if (!found) missing.push({ lookupKey: e.lookupKey, cents: e.unitAmountCents, productName: e.productName });
+      else if (found.unit_amount !== e.unitAmountCents) {
+        mismatched.push({ lookupKey: e.lookupKey, codeCents: e.unitAmountCents, stripeCents: found.unit_amount ?? 0, priceId: found.id });
+      } else matched++;
     }
-    return ok({ created: changes.filter((c) => c.newPriceId).length, changes, note: 'New orphan prices created + ids recorded. Existing subscriptions untouched (grandfathered). Making them take effect for new checkouts is the next rehearsed step.' });
+
+    // Matched by OUR prefix only: the Stripe account is shared with another
+    // product, and its prices are none of this console's business.
+    const wanted = new Set(catalog.map((e) => e.lookupKey));
+    const orphaned = [...live.entries()]
+      .filter(([k]) => k.startsWith('hbcfield_') && !wanted.has(k))
+      .map(([lookupKey, p]) => ({ lookupKey, cents: p.unit_amount ?? 0, interval: p.interval ?? '?', priceId: p.id }));
+
+    if (mismatched.length) {
+      this.logger.error(`[PLATFORM] ${mismatched.length} Stripe price(s) disagree with the code — customers may be charged an amount the app does not quote`);
+    }
+
+    return ok({ configured: true, expected: catalog.length, matched, missing, mismatched, orphaned });
   }
 }

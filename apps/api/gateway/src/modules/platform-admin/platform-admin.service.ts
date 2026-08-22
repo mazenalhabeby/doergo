@@ -30,15 +30,9 @@ export class PlatformAdminService extends BaseGatewayService {
   // Operator grant — capabilities, not a tier (reuses the billing service).
   setAddOns(data: { organizationId: string; addOns: string[] }) { return this.send({ cmd: 'billing_admin_set_addons' }, data); }
 
-  // Pricing (C2 — editable price book, no Stripe mutation)
-  pricingActive() { return this.send({ cmd: 'platform_pricing_active' }, {}); }
+  // Pricing — READ ONLY. Prices live in `packages/shared/src/billing/*`; the
+  // editable price book this replaced kept a second copy in the database that
+  // had been quoting deleted tier prices since the model changed.
   pricingList() { return this.send({ cmd: 'platform_pricing_list' }, {}); }
-  pricingCreateDraft(data: any) { return this.send({ cmd: 'platform_pricing_create_draft' }, data); }
-  pricingUpdateSeat(data: any) { return this.send({ cmd: 'platform_pricing_update_seat' }, data); }
-  pricingUpsertModule(data: any) { return this.send({ cmd: 'platform_pricing_upsert_module' }, data); }
-  pricingDeleteModule(data: any) { return this.send({ cmd: 'platform_pricing_delete_module' }, data); }
-  pricingPublish(data: any) { return this.send({ cmd: 'platform_pricing_publish' }, data); }
-  // C3 Stripe sync (preview read-only; apply hard-gated)
-  pricingSyncPreview() { return this.send({ cmd: 'platform_pricing_sync_preview' }, {}); }
-  pricingSyncApply(data: any) { return this.send({ cmd: 'platform_pricing_sync_apply' }, data); }
+  pricingStripeStatus() { return this.send({ cmd: 'platform_pricing_stripe_status' }, {}); }
 }

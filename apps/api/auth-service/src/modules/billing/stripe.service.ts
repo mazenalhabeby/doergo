@@ -205,6 +205,17 @@ export class StripeService {
 
   /** Create a NEW recurring price on a product (immutable). Does NOT change any
    * subscription — existing subs keep their old price (grandfathered). */
+  /**
+   * Every active price on the account, paged.
+   *
+   * Auto-pagination rather than a fixed `limit`: the account is shared with
+   * another product, so "our" prices are not guaranteed to be in the first
+   * page of anybody's listing.
+   */
+  listActivePrices() {
+    return this.stripe.prices.list({ limit: 100, active: true });
+  }
+
   async createRecurringPrice(params: { product: string; unitAmount: number; interval: 'month' | 'year'; currency?: string }): Promise<string> {
     const price = await this.stripe.prices.create({
       product: params.product,
