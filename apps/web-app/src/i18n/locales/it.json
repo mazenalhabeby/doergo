@@ -481,11 +481,6 @@
       "totalFor": "{{price}} in totale",
       "orAnnual": "oppure {{price}} all’anno — 2 mesi gratis",
       "anchor": "Gli strumenti separati che questo sostituisce costano 60–90 € a persona.",
-      "show": "Vedi esattamente cosa è incluso",
-      "hide": "Nascondi i dettagli",
-      "modules": "In questo spazio",
-      "addOns": "Per tutta l’azienda",
-      "detailNote": "Un «+» significa che il prezzo cresce anche con la quantità — e per pezzo costa meno man mano che aumenta. Disattiva ciò che vuoi e smette di essere addebitato quel giorno.",
       "preset": {
         "basics": {
           "title": "Solo organizzare il lavoro",
@@ -499,7 +494,8 @@
           "title": "Gestire tutta l’azienda",
           "body": "Aggiungi clienti, beni, fatturazione e lavori ricorrenti."
         }
-      }
+      },
+      "seeAll": "Vedi tutti i prezzi"
     },
     "groups": {
       "perSpace": "/ spazio / mese",
@@ -530,6 +526,11 @@
         "title": "Gestire la parte d’ufficio",
         "body": "Fatture dal lavoro concluso, lavori che si ripetono, turni e un registro di chi ha cambiato cosa.",
         "note": "Si attiva una volta per l’azienda, non per spazio."
+      },
+      "share": {
+        "title": "Lavorare con un'altra azienda",
+        "body": "Dai a un partner, un cliente o un subappaltatore l'accesso a una sede — per guardare, contribuire o gestirla.",
+        "note": "Si paga per sede condivisa, non per azienda con cui condividi."
       }
     }
   },
@@ -6197,6 +6198,10 @@
       "project": "Progetto / Agile",
       "minimal": "Minimo",
       "everything": "Tutto"
+    },
+    "assets": {
+      "label": "Beni",
+      "description": "Tieni traccia di ciò che questa sede gestisce — appartamenti, veicoli, macchine"
     }
   },
   "workflowStatus": {
@@ -6810,5 +6815,145 @@
     "adminHint": "Aggiungilo in Fatturazione ed è subito disponibile.",
     "memberHint": "Chiedi a un amministratore dell’organizzazione di aggiungerlo.",
     "cta": "Aggiungi {{feature}}"
+  },
+  "pricing": {
+    "eyebrow": "Prezzi",
+    "heading": "Tutti i nostri prezzi, in una pagina.",
+    "lead": "Niente piani, niente livelli, niente nascosto dietro un «contatta le vendite». La tua fattura è la somma di tre cose, e puoi calcolarla da solo in meno di un minuto.",
+    "startTrial": "Inizia gratis",
+    "talkToUs": "Parla con noi",
+    "perMonth": "/ mese",
+    "perSite": "/ sede / mese",
+    "plusCount": "+ quantità",
+    "otherModules": "Tutto il resto",
+    "parts": {
+      "seats": {
+        "title": "Le persone",
+        "price": "{{price}} ciascuna",
+        "body": "Per persona al mese. Ufficio, campo o titolare: stesso prezzo, così non c'è nulla da discutere."
+      },
+      "modules": {
+        "title": "Cosa fa ogni sede",
+        "price": "da {{price}}",
+        "body": "Attiva una funzione dove ti serve. Una sede che non usa il GPS non paga mai il GPS."
+      },
+      "addOns": {
+        "title": "Extra per tutta l'azienda",
+        "price": "da {{price}}",
+        "body": "Fatturazione, turni, registro delle modifiche. Si comprano una volta, qualunque sia il numero di sedi."
+      }
+    },
+    "calcHeading": "Calcola quanto ti costa",
+    "calcLead": "Impostalo come funziona davvero la tua attività. Ogni cifra è calcolata dallo stesso codice che produce una fattura vera.",
+    "modulesHeading": "Ogni funzione e quanto costa",
+    "modulesLead": "Prezzo per sede al mese. Disattivala e smette di essere addebitata lo stesso giorno.",
+    "laddersHeading": "Le tre cose che si pagano a quantità",
+    "laddersLead": "Tutto il resto è un interruttore fisso. Queste tre crescono con te — e costano meno per unità man mano, come gli scaglioni fiscali: superare una soglia riprezza solo le unità sopra di essa, quindi aggiungerne una non può mai far saltare la fattura.",
+    "addOnsHeading": "Si comprano una volta per tutta l'azienda",
+    "addOnsLead": "Né per sede né per persona. Un prezzo, valido ovunque.",
+    "rulesHeading": "Come funziona davvero la fatturazione",
+    "rulesLead": "Le parti che di solito si scoprono dopo, scritte prima che tu paghi.",
+    "faqHeading": "Risposte chiare",
+    "ctaHeading": "Provalo prima di pagarlo.",
+    "ctaBody": "14 giorni, tutto attivo, senza carta. Se non ti convince, alla fine della prova non succede nulla.",
+    "units": {
+      "asset_one": "Quanti elementi?",
+      "asset_other": "Quanti elementi?",
+      "client_one": "Quanti clienti?",
+      "client_other": "Quanti clienti?",
+      "portal_one": "Quanti accessi cliente?",
+      "portal_other": "Quanti accessi cliente?"
+    },
+    "ladder": {
+      "band": "{{from}} – {{to}}",
+      "bandOpen": "da {{from}} in su",
+      "example": "Per esempio",
+      "exampleBody": "{{n}} di questi aggiungono {{total}} al mese — circa {{each}} ciascuno.",
+      "included_one": "Il modulo da {{price}} copre il primo.",
+      "included_other": "Il modulo da {{price}} copre i primi {{count}}."
+    },
+    "calc": {
+      "peopleTitle": "Quante persone lo useranno?",
+      "peopleBody": "Contano tutte allo stesso modo: ufficio, campo, titolare. {{price}} ciascuna al mese.",
+      "sitesTitle": "Cosa deve poter fare ogni sede?",
+      "sitesBody": "Una sede è un luogo o un'attività che gestisci — una filiale, un edificio, un contratto, una squadra. Ognuna paga solo ciò che attiva, quindi una sede tranquilla resta economica.",
+      "addOnsTitle": "Qualcosa per tutta l'azienda?",
+      "addOnsBody": "Questi si comprano una volta e valgono ovunque. Qualunque sia il numero di sedi, li paghi una volta sola.",
+      "siteN": "Sede {{n}}",
+      "addSite": "Aggiungi un'altra sede",
+      "removeSite": "Rimuovi questa sede",
+      "monthly": "Mensile",
+      "annual": "Annuale",
+      "aMonth": "al mese",
+      "aYear": "all'anno — {{months}} mesi, non 12",
+      "perPerson": "per persona al mese",
+      "breakdown": "Da dove viene",
+      "seatsLine": "{{count}} persone × {{price}}",
+      "overAllowance": "{{n}} oltre i {{included}} inclusi",
+      "nothingOn": "niente attivato",
+      "companyWide": "Tutta l'azienda",
+      "total": "Ogni mese",
+      "nextBreak": "Ancora {{away}} e ogni successivo costa {{price}}.",
+      "cheapestBand": "Sei già alla tariffa più bassa possibile.",
+      "footnote": "Prezzi IVA esclusa. 14 giorni gratis, senza carta. Cambia quello che vuoi quando vuoi — la fattura segue lo stesso giorno.",
+      "allFree_one": "Il primo è compreso nel modulo.",
+      "allFree_other": "I primi {{count}} sono compresi nel modulo."
+    },
+    "rules": [
+      {
+        "title": "Niente è bloccato",
+        "body": "Non c'è un piano da migliorare. Ogni funzione è disponibile per ogni cliente al prezzo indicato qui, dal primo giorno."
+      },
+      {
+        "title": "Le modifiche valgono lo stesso giorno",
+        "body": "Attivi qualcosa e da lì viene addebitato; lo disattivi e smette. Le modifiche a metà mese si calcolano al giorno, non si arrotondano a un mese intero."
+      },
+      {
+        "title": "Un anno costa dieci mesi",
+        "body": "Pagando annualmente paghi {{months}} mesi invece di 12. Stessi prezzi, due mesi in regalo."
+      },
+      {
+        "title": "14 giorni gratis, senza carta",
+        "body": "La prova ha tutto attivo — anche ciò che costa a parte — così valuti il prodotto intero, non un assaggio."
+      },
+      {
+        "title": "L'IVA si aggiunge al pagamento",
+        "body": "Tutti i prezzi qui sono IVA esclusa. Le aziende UE fuori dall'Austria possono inserire la partita IVA e vengono addebitate allo 0 %."
+      },
+      {
+        "title": "Disdici quando vuoi",
+        "body": "La disdetta ferma il rinnovo successivo. Mantieni l'accesso fino alla fine del periodo già pagato, e i tuoi dati restano esportabili."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Quale piano dovrei scegliere?",
+        "a": "Nessuno — non ci sono. Paghi per le persone che usano HBCField più ciò che attivi. È tutto qui il modello, ed esiste perché quello vecchio costringeva ad aggiornare ogni postazione per arrivare a una sola funzione."
+      },
+      {
+        "q": "Cos'è esattamente una «sede»?",
+        "a": "Un luogo o un'attività che gestisci separatamente: una filiale, un edificio, un contratto, un cliente, una squadra. La maggior parte inizia con una e ne aggiunge altre solo quando il lavoro è davvero separato. Creare una sede è gratis: paghi solo ciò che quella sede attiva."
+      },
+      {
+        "q": "Pago un modulo in ogni sede?",
+        "a": "Solo in quelle che lo usano. Attiva il GPS per la squadra mobile e lascialo spento in officina: ne paghi uno. Gli extra aziendali funzionano al contrario: si comprano una volta per tutta l'azienda."
+      },
+      {
+        "q": "Cosa succede se aggiungo qualcuno a metà mese?",
+        "a": "Paghi la parte di mese in cui c'è stato, non il mese intero. Lo stesso vale per qualunque cosa attivi o disattivi."
+      },
+      {
+        "q": "C'è un minimo o un vincolo?",
+        "a": "Una persona, una sede, un mese. Nessuna dimensione minima del team, nessun costo di attivazione, nessun vincolo annuale — a meno che tu non scelga il pagamento annuale per avere i due mesi in regalo."
+      },
+      {
+        "q": "Cosa succede alla fine della prova?",
+        "a": "Non viene addebitato nulla automaticamente. Se non hai inserito una carta l'account si blocca semplicemente finché non lo fai, e i tuoi dati ti aspettano."
+      },
+      {
+        "q": "Potete fatturarci in altro modo?",
+        "a": "Sì — per le organizzazioni con accordo negoziato fatturiamo fuori dall'app e non viene addebitata alcuna carta. Scrivici e lo prepariamo."
+      }
+    ]
   }
 }

@@ -481,11 +481,6 @@
       "totalFor": "{{price}} gesamt",
       "orAnnual": "oder {{price}} pro Jahr — 2 Monate gratis",
       "anchor": "Die Einzel-Tools, die das ersetzt, kosten 60–90 € pro Person.",
-      "show": "Genau sehen, was enthalten ist",
-      "hide": "Details ausblenden",
-      "modules": "In diesem Bereich",
-      "addOns": "Für das ganze Unternehmen",
-      "detailNote": "Ein „+“ heißt, der Preis wächst auch mit der Menge — und wird pro Stück günstiger, je mehr es sind. Alles lässt sich abschalten und wird ab dem Tag nicht mehr berechnet.",
       "preset": {
         "basics": {
           "title": "Einfach die Arbeit ordnen",
@@ -499,7 +494,8 @@
           "title": "Das ganze Unternehmen führen",
           "body": "Dazu Kunden, Objekte, Rechnungen und wiederkehrende Aufträge."
         }
-      }
+      },
+      "seeAll": "Alle Preise ansehen"
     },
     "groups": {
       "perSpace": "/ Bereich / Monat",
@@ -530,6 +526,11 @@
         "title": "Das Büro erledigen",
         "body": "Rechnungen aus erledigter Arbeit, wiederkehrende Aufträge, Dienstpläne und ein Protokoll aller Änderungen.",
         "note": "Einmal fürs Unternehmen gebucht, nicht pro Bereich."
+      },
+      "share": {
+        "title": "Mit einem anderen Unternehmen arbeiten",
+        "body": "Geben Sie einem Partner, Kunden oder Subunternehmer Zugriff auf einen Standort — zum Ansehen, Mitarbeiten oder Führen.",
+        "note": "Preis pro geteiltem Standort, nicht pro Unternehmen, mit dem Sie teilen."
       }
     }
   },
@@ -6188,6 +6189,10 @@
       "project": "Projekt / Agil",
       "minimal": "Minimal",
       "everything": "Alles"
+    },
+    "assets": {
+      "label": "Objekte",
+      "description": "Erfassen Sie, was dieser Standort betreut — Wohnungen, Fahrzeuge, Maschinen"
     }
   },
   "workflowStatus": {
@@ -6801,5 +6806,145 @@
     "adminHint": "In der Abrechnung hinzufügen — sofort verfügbar.",
     "memberHint": "Bitten Sie einen Organisations-Admin, es hinzuzufügen.",
     "cta": "{{feature}} hinzufügen"
+  },
+  "pricing": {
+    "eyebrow": "Preise",
+    "heading": "Alle unsere Preise, auf einer Seite.",
+    "lead": "Keine Pakete, keine Stufen, nichts hinter „Vertrieb kontaktieren“ versteckt. Ihre Rechnung besteht aus drei Teilen, und Sie können sie in unter einer Minute selbst ausrechnen.",
+    "startTrial": "Kostenlos starten",
+    "talkToUs": "Sprechen Sie uns an",
+    "perMonth": "/ Mon.",
+    "perSite": "/ Standort / Mon.",
+    "plusCount": "+ Anzahl",
+    "otherModules": "Alles Weitere",
+    "parts": {
+      "seats": {
+        "title": "Die Personen",
+        "price": "je {{price}}",
+        "body": "Pro Person und Monat. Büro, Außendienst oder Inhaberin — derselbe Preis, da gibt es nichts zu diskutieren."
+      },
+      "modules": {
+        "title": "Was jeder Standort kann",
+        "price": "ab {{price}}",
+        "body": "Schalten Sie eine Funktion dort frei, wo Sie sie brauchen. Ein Standort ohne GPS zahlt nie für GPS."
+      },
+      "addOns": {
+        "title": "Firmenweite Extras",
+        "price": "ab {{price}}",
+        "body": "Rechnungen, Dienstpläne, Protokoll. Einmal fürs Unternehmen gekauft, egal wie viele Standorte."
+      }
+    },
+    "calcHeading": "Rechnen Sie aus, was es Sie kostet",
+    "calcLead": "Stellen Sie es so ein, wie Ihr Betrieb wirklich läuft. Jede Zahl wird mit demselben Code berechnet, der auch eine echte Rechnung erzeugt.",
+    "modulesHeading": "Jede Funktion und was sie kostet",
+    "modulesLead": "Preis pro Standort und Monat. Schalten Sie etwas ab, wird es noch am selben Tag nicht mehr berechnet.",
+    "laddersHeading": "Die drei Dinge, die nach Menge abgerechnet werden",
+    "laddersLead": "Alles andere ist ein fester Schalter. Diese drei wachsen mit Ihnen — und werden pro Stück günstiger, wie Steuerstufen: Eine Schwelle zu überschreiten verbilligt nur die Einheiten darüber, Ihre Rechnung springt also nie nach oben.",
+    "addOnsHeading": "Einmal fürs ganze Unternehmen",
+    "addOnsLead": "Nicht pro Standort, nicht pro Person. Ein Preis, überall gültig.",
+    "rulesHeading": "Wie die Abrechnung wirklich funktioniert",
+    "rulesLead": "Die Punkte, die man sonst erst später erfährt — hier stehen sie, bevor Sie zahlen.",
+    "faqHeading": "Klare Antworten",
+    "ctaHeading": "Testen Sie es, bevor Sie zahlen.",
+    "ctaBody": "14 Tage, alles freigeschaltet, ohne Karte. Wenn es nicht passt, passiert am Ende der Testphase einfach nichts.",
+    "units": {
+      "asset_one": "Wie viele Objekte?",
+      "asset_other": "Wie viele Objekte?",
+      "client_one": "Wie viele Kundinnen und Kunden?",
+      "client_other": "Wie viele Kundinnen und Kunden?",
+      "portal_one": "Wie viele Kundenzugänge?",
+      "portal_other": "Wie viele Kundenzugänge?"
+    },
+    "ladder": {
+      "band": "{{from}} – {{to}}",
+      "bandOpen": "ab {{from}}",
+      "example": "Zum Beispiel",
+      "exampleBody": "{{n}} davon kosten {{total}} im Monat zusätzlich — rund {{each}} pro Stück.",
+      "included_one": "Das Modul für {{price}} deckt das erste ab.",
+      "included_other": "Das Modul für {{price}} deckt die ersten {{count}} ab."
+    },
+    "calc": {
+      "peopleTitle": "Wie viele Personen werden es nutzen?",
+      "peopleBody": "Alle zählen gleich — Büro, Außendienst, Inhaberin. Je {{price}} pro Monat.",
+      "sitesTitle": "Was soll jeder Standort können?",
+      "sitesBody": "Ein Standort ist ein Ort oder Betriebsteil, den Sie führen — eine Filiale, ein Gebäude, ein Auftrag, eine Kolonne. Jeder zahlt nur für das, was er freischaltet.",
+      "addOnsTitle": "Etwas fürs ganze Unternehmen?",
+      "addOnsBody": "Diese werden einmal gekauft und gelten überall. Egal wie viele Standorte Sie führen, Sie zahlen jedes davon einmal.",
+      "siteN": "Standort {{n}}",
+      "addSite": "Weiteren Standort hinzufügen",
+      "removeSite": "Diesen Standort entfernen",
+      "monthly": "Monatlich",
+      "annual": "Jährlich",
+      "aMonth": "pro Monat",
+      "aYear": "pro Jahr — {{months}} Monate statt 12",
+      "perPerson": "pro Person und Monat",
+      "breakdown": "Woraus sich das ergibt",
+      "seatsLine": "{{count}} Personen × {{price}}",
+      "overAllowance": "{{n}} über den {{included}} inbegriffenen",
+      "nothingOn": "nichts freigeschaltet",
+      "companyWide": "Firmenweit",
+      "total": "Jeden Monat",
+      "nextBreak": "Noch {{away}} und jedes weitere kostet {{price}}.",
+      "cheapestBand": "Sie sind bereits im günstigsten Tarif.",
+      "footnote": "Preise zzgl. MwSt. 14 Tage kostenlos, ohne Karte. Ändern Sie jederzeit etwas — die Rechnung folgt am selben Tag.",
+      "allFree_one": "Das erste ist im Modul enthalten.",
+      "allFree_other": "Die ersten {{count}} sind im Modul enthalten."
+    },
+    "rules": [
+      {
+        "title": "Nichts ist gesperrt",
+        "body": "Es gibt kein Paket zum Aufrüsten. Jede Funktion steht jedem Kunden zum hier genannten Preis offen, ab dem ersten Tag."
+      },
+      {
+        "title": "Änderungen gelten sofort",
+        "body": "Schalten Sie etwas ein, wird es ab dann berechnet; schalten Sie es ab, hört es auf. Änderungen mitten im Monat werden taggenau abgerechnet, nicht auf einen vollen Monat aufgerundet."
+      },
+      {
+        "title": "Ein Jahr kostet zehn Monate",
+        "body": "Bei jährlicher Zahlung zahlen Sie {{months}} statt 12 Monate. Gleiche Preise, zwei Monate geschenkt."
+      },
+      {
+        "title": "14 Tage kostenlos, ohne Karte",
+        "body": "In der Testphase ist alles freigeschaltet — auch das, was extra kostet — damit Sie das ganze Produkt beurteilen können und nicht eine Kostprobe."
+      },
+      {
+        "title": "MwSt. kommt beim Bezahlen dazu",
+        "body": "Alle Preise hier verstehen sich ohne MwSt. Unternehmen in der EU außerhalb Österreichs können eine UID angeben und werden mit 0 % verrechnet."
+      },
+      {
+        "title": "Jederzeit kündbar",
+        "body": "Eine Kündigung stoppt die nächste Verlängerung. Sie behalten den Zugang bis zum Ende der bereits bezahlten Periode, und Ihre Daten bleiben exportierbar."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Welches Paket soll ich wählen?",
+        "a": "Keines — es gibt keine. Sie zahlen für die Personen, die HBCField nutzen, plus das, was Sie freischalten. Das ist das ganze Modell, und es existiert, weil man früher jeden Platz aufrüsten musste, um an eine einzige Funktion zu kommen."
+      },
+      {
+        "q": "Was genau ist ein „Standort“?",
+        "a": "Ein Ort oder Betriebsteil, den Sie getrennt führen: eine Filiale, ein Gebäude, ein Auftrag, eine Kundin, eine Kolonne. Die meisten starten mit einem und legen weitere erst an, wenn die Arbeit wirklich getrennt ist. Einen Standort anzulegen ist kostenlos — Sie zahlen nur, was er freischaltet."
+      },
+      {
+        "q": "Zahle ich ein Modul an jedem Standort?",
+        "a": "Nur an den Standorten, die es nutzen. Schalten Sie GPS für die mobile Truppe ein und in der Werkstatt aus, zahlen Sie es einmal. Bei den firmenweiten Extras ist es umgekehrt: einmal gekauft, für alle Standorte."
+      },
+      {
+        "q": "Was passiert, wenn ich mitten im Monat jemanden hinzufüge?",
+        "a": "Berechnet wird der Teil des Monats, in dem die Person dabei war — nicht der ganze Monat. Dasselbe gilt für alles, was Sie ein- oder ausschalten."
+      },
+      {
+        "q": "Gibt es ein Minimum oder einen Vertrag?",
+        "a": "Eine Person, ein Standort, ein Monat. Keine Mindestgröße, keine Einrichtungsgebühr, keine Jahresbindung — außer Sie wählen die Jahreszahlung für die zwei Freimonate."
+      },
+      {
+        "q": "Was passiert am Ende der Testphase?",
+        "a": "Es wird nichts automatisch abgebucht. Ohne hinterlegte Karte wird das Konto einfach gesperrt, bis Sie eine hinterlegen — Ihre Daten warten auf Sie."
+      },
+      {
+        "q": "Können Sie uns stattdessen eine Rechnung schicken?",
+        "a": "Ja — Organisationen mit individueller Vereinbarung rechnen wir außerhalb der App ab, es wird keine Karte belastet. Schreiben Sie uns, wir richten das ein."
+      }
+    ]
   }
 }

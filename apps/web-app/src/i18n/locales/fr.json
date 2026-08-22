@@ -481,11 +481,6 @@
       "totalFor": "{{price}} au total",
       "orAnnual": "ou {{price}} par an — 2 mois offerts",
       "anchor": "Les outils séparés que cela remplace coûtent 60–90 € par personne.",
-      "show": "Voir exactement ce qui est inclus",
-      "hide": "Masquer le détail",
-      "modules": "Dans cet espace",
-      "addOns": "Pour toute l’entreprise",
-      "detailNote": "Un « + » signifie que le prix grandit aussi avec la quantité — et devient moins cher à l’unité. Désactivez ce que vous voulez : la facturation s’arrête le jour même.",
       "preset": {
         "basics": {
           "title": "Simplement organiser le travail",
@@ -499,7 +494,8 @@
           "title": "Gérer toute l’entreprise",
           "body": "Ajoutez clients, équipements, facturation et interventions récurrentes."
         }
-      }
+      },
+      "seeAll": "Voir tous les prix"
     },
     "groups": {
       "perSpace": "/ espace / mois",
@@ -530,6 +526,11 @@
         "title": "Gérer le côté bureau",
         "body": "Factures issues du travail terminé, interventions récurrentes, plannings, et un journal de qui a changé quoi.",
         "note": "Souscrit une fois pour l’entreprise, pas par espace."
+      },
+      "share": {
+        "title": "Travailler avec une autre entreprise",
+        "body": "Donnez à un partenaire, un client ou un sous-traitant l'accès à un site — pour consulter, contribuer ou le piloter.",
+        "note": "Facturé par site partagé, pas par entreprise avec qui vous partagez."
       }
     }
   },
@@ -6197,6 +6198,10 @@
       "project": "Projet / Agile",
       "minimal": "Minimal",
       "everything": "Tout"
+    },
+    "assets": {
+      "label": "Équipements",
+      "description": "Suivez ce dont ce site s'occupe — logements, véhicules, machines"
     }
   },
   "workflowStatus": {
@@ -6810,5 +6815,145 @@
     "adminHint": "Ajoutez-le dans Facturation, il est disponible immédiatement.",
     "memberHint": "Demandez à un administrateur de l’organisation de l’ajouter.",
     "cta": "Ajouter {{feature}}"
+  },
+  "pricing": {
+    "eyebrow": "Tarifs",
+    "heading": "Tous nos prix, sur une seule page.",
+    "lead": "Pas de forfaits, pas de paliers, rien caché derrière un « contactez le service commercial ». Votre facture, c'est trois choses additionnées, et vous pouvez la calculer vous-même en moins d'une minute.",
+    "startTrial": "Commencer gratuitement",
+    "talkToUs": "Parlez-nous",
+    "perMonth": "/ mois",
+    "perSite": "/ site / mois",
+    "plusCount": "+ quantité",
+    "otherModules": "Tout le reste",
+    "parts": {
+      "seats": {
+        "title": "Les personnes",
+        "price": "{{price}} chacune",
+        "body": "Par personne et par mois. Bureau, terrain ou dirigeant — le même prix, il n'y a donc rien à négocier."
+      },
+      "modules": {
+        "title": "Ce que fait chaque site",
+        "price": "à partir de {{price}}",
+        "body": "Activez une capacité là où vous en avez besoin. Un site qui n'a pas besoin du GPS ne paie jamais le GPS."
+      },
+      "addOns": {
+        "title": "Options pour toute l'entreprise",
+        "price": "à partir de {{price}}",
+        "body": "Facturation, plannings, journal des modifications. Achetés une fois, quel que soit le nombre de sites."
+      }
+    },
+    "calcHeading": "Calculez ce que cela vous coûte",
+    "calcLead": "Configurez-le comme votre entreprise fonctionne vraiment. Chaque chiffre est calculé par le code qui produit une vraie facture.",
+    "modulesHeading": "Chaque capacité et son prix",
+    "modulesLead": "Prix par site et par mois. Désactivez-la et elle cesse d'être facturée le jour même.",
+    "laddersHeading": "Les trois choses facturées à la quantité",
+    "laddersLead": "Tout le reste est un simple interrupteur. Ces trois-là grandissent avec vous — et coûtent moins cher à l'unité au fur et à mesure, comme des tranches d'impôt : franchir un seuil ne réduit le prix que des unités au-dessus, votre facture ne peut donc jamais bondir.",
+    "addOnsHeading": "Achetés une fois pour toute l'entreprise",
+    "addOnsLead": "Ni par site ni par personne. Un prix, valable partout.",
+    "rulesHeading": "Comment la facturation se comporte vraiment",
+    "rulesLead": "Ce que l'on découvre d'habitude plus tard, écrit avant que vous ne payiez.",
+    "faqHeading": "Réponses directes",
+    "ctaHeading": "Essayez-le avant de le payer.",
+    "ctaBody": "14 jours, tout activé, sans carte. Si cela ne convient pas, il ne se passe rien à la fin de l'essai.",
+    "units": {
+      "asset_one": "Combien d'éléments ?",
+      "asset_other": "Combien d'éléments ?",
+      "client_one": "Combien de clients ?",
+      "client_other": "Combien de clients ?",
+      "portal_one": "Combien d'accès clients ?",
+      "portal_other": "Combien d'accès clients ?"
+    },
+    "ladder": {
+      "band": "{{from}} – {{to}}",
+      "bandOpen": "{{from}} et plus",
+      "example": "Par exemple",
+      "exampleBody": "{{n}} d'entre eux ajoutent {{total}} par mois — environ {{each}} chacun.",
+      "included_one": "Le module à {{price}} couvre le premier.",
+      "included_other": "Le module à {{price}} couvre les {{count}} premiers."
+    },
+    "calc": {
+      "peopleTitle": "Combien de personnes vont l'utiliser ?",
+      "peopleBody": "Tout le monde compte pareil — bureau, terrain, dirigeant. {{price}} chacune par mois.",
+      "sitesTitle": "Que doit pouvoir faire chaque site ?",
+      "sitesBody": "Un site, c'est un lieu ou une activité que vous gérez — une agence, un bâtiment, un contrat, une équipe. Chacun ne paie que ce qu'il active, un site tranquille reste donc bon marché.",
+      "addOnsTitle": "Quelque chose pour toute l'entreprise ?",
+      "addOnsBody": "Ceux-ci s'achètent une fois et fonctionnent partout. Quel que soit le nombre de sites, vous ne les payez qu'une fois.",
+      "siteN": "Site {{n}}",
+      "addSite": "Ajouter un autre site",
+      "removeSite": "Retirer ce site",
+      "monthly": "Mensuel",
+      "annual": "Annuel",
+      "aMonth": "par mois",
+      "aYear": "par an — {{months}} mois, pas 12",
+      "perPerson": "par personne et par mois",
+      "breakdown": "D'où cela vient",
+      "seatsLine": "{{count}} personnes × {{price}}",
+      "overAllowance": "{{n}} au-delà des {{included}} inclus",
+      "nothingOn": "rien d'activé",
+      "companyWide": "Toute l'entreprise",
+      "total": "Chaque mois",
+      "nextBreak": "Encore {{away}} et chaque suivant coûte {{price}}.",
+      "cheapestBand": "Vous êtes déjà au tarif le plus bas.",
+      "footnote": "Prix hors TVA. 14 jours gratuits, sans carte. Changez ce que vous voulez quand vous voulez — la facture suit le jour même.",
+      "allFree_one": "Le premier est compris dans le module.",
+      "allFree_other": "Les {{count}} premiers sont compris dans le module."
+    },
+    "rules": [
+      {
+        "title": "Rien n'est verrouillé",
+        "body": "Il n'y a pas de forfait à faire évoluer. Chaque capacité est accessible à tous les clients au prix indiqué ici, dès le premier jour."
+      },
+      {
+        "title": "Les changements prennent effet le jour même",
+        "body": "Activez quelque chose et c'est facturé à partir de là ; désactivez-le et cela s'arrête. Un changement en cours de mois est calculé au jour près, jamais arrondi à un mois entier."
+      },
+      {
+        "title": "Une année coûte dix mois",
+        "body": "En paiement annuel vous payez {{months}} mois au lieu de 12. Mêmes prix, deux mois offerts."
+      },
+      {
+        "title": "14 jours gratuits, sans carte",
+        "body": "L'essai a tout d'activé — y compris ce qui coûte en plus — pour que vous jugiez le produit entier, pas un échantillon."
+      },
+      {
+        "title": "La TVA s'ajoute au paiement",
+        "body": "Tous les prix ici sont hors TVA. Les entreprises de l'UE hors Autriche peuvent saisir un numéro de TVA et sont facturées à 0 %."
+      },
+      {
+        "title": "Résiliez quand vous voulez",
+        "body": "Résilier arrête le renouvellement suivant. Vous gardez l'accès jusqu'à la fin de la période déjà payée, et vos données restent exportables."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Quel forfait dois-je choisir ?",
+        "a": "Aucun — il n'y en a pas. Vous payez pour les personnes qui utilisent HBCField, plus ce que vous activez. C'est tout le modèle, et il existe parce que l'ancien obligeait à faire évoluer chaque poste pour atteindre une seule fonctionnalité."
+      },
+      {
+        "q": "Qu'est-ce qu'un « site », exactement ?",
+        "a": "Un lieu ou une activité que vous gérez séparément : une agence, un bâtiment, un contrat, un client, une équipe. La plupart commencent avec un seul et n'en ajoutent que lorsque le travail est réellement séparé. Créer un site est gratuit — vous ne payez que ce que ce site active."
+      },
+      {
+        "q": "Est-ce que je paie un module sur chaque site ?",
+        "a": "Seulement sur ceux qui l'utilisent. Activez le GPS pour l'équipe mobile et laissez-le désactivé à l'atelier : vous en payez un. Les options d'entreprise fonctionnent à l'inverse : achetées une fois pour toute la société."
+      },
+      {
+        "q": "Que se passe-t-il si j'ajoute quelqu'un en milieu de mois ?",
+        "a": "Vous payez la partie du mois où la personne était là, pas le mois entier. Il en va de même pour tout ce que vous activez ou désactivez."
+      },
+      {
+        "q": "Y a-t-il un minimum ou un engagement ?",
+        "a": "Une personne, un site, un mois. Pas de taille minimale d'équipe, pas de frais de mise en service, pas d'engagement annuel — sauf si vous choisissez le paiement annuel pour obtenir les deux mois offerts."
+      },
+      {
+        "q": "Que se passe-t-il à la fin de l'essai ?",
+        "a": "Rien n'est prélevé automatiquement. Sans carte enregistrée, le compte se verrouille simplement jusqu'à ce que vous en ajoutiez une, et vos données vous attendent."
+      },
+      {
+        "q": "Pouvez-vous nous facturer autrement ?",
+        "a": "Oui — pour les organisations sous accord négocié, nous facturons en dehors de l'application et aucune carte n'est débitée. Écrivez-nous et nous mettons cela en place."
+      }
+    ]
   }
 }

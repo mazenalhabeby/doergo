@@ -481,11 +481,6 @@
       "totalFor": "{{price}} in total",
       "orAnnual": "or {{price}} a year — 2 months free",
       "anchor": "The separate tools this replaces cost €60–90 per person.",
-      "show": "See exactly what's included",
-      "hide": "Hide the detail",
-      "modules": "In this space",
-      "addOns": "For the whole company",
-      "detailNote": "A “+” means the price also grows with how many you have — and gets cheaper per item as it does. Switch anything off and it stops being charged that day.",
       "preset": {
         "basics": {
           "title": "Just organise the work",
@@ -499,7 +494,8 @@
           "title": "Run the whole business",
           "body": "Add customers, assets, invoicing and repeating jobs."
         }
-      }
+      },
+      "seeAll": "See every price"
     },
     "groups": {
       "perSpace": "/ space / month",
@@ -530,6 +526,11 @@
         "title": "Handle the office side",
         "body": "Invoices from finished work, jobs that repeat themselves, rotas, and a record of who changed what.",
         "note": "Bought once for the company, not per space."
+      },
+      "share": {
+        "title": "Work with another company",
+        "body": "Give a partner, a client or a subcontractor access to one site — to look, to contribute, or to run it.",
+        "note": "Priced per shared site, not per company you share with."
       }
     }
   },
@@ -6188,6 +6189,10 @@
       "project": "Project / Agile",
       "minimal": "Minimal",
       "everything": "Everything"
+    },
+    "assets": {
+      "label": "Assets",
+      "description": "Track what this site looks after — apartments, vehicles, machines"
     }
   },
   "workflowStatus": {
@@ -6801,5 +6806,145 @@
     "adminHint": "Add it in Billing and it is available straight away.",
     "memberHint": "Ask an organization admin to add it.",
     "cta": "Add {{feature}}"
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "heading": "Every price we charge, on one page.",
+    "lead": "No plans, no tiers, nothing hidden behind “contact sales”. Your bill is three things added together, and you can work it out yourself in under a minute.",
+    "startTrial": "Start free",
+    "talkToUs": "Talk to us",
+    "perMonth": "/ mo",
+    "perSite": "/ site / mo",
+    "plusCount": "+ count",
+    "otherModules": "Everything else",
+    "parts": {
+      "seats": {
+        "title": "The people",
+        "price": "{{price}} each",
+        "body": "Per person, per month. Office, field or owner — the same price, so there is nothing to argue about."
+      },
+      "modules": {
+        "title": "What each site does",
+        "price": "from {{price}}",
+        "body": "Switch a capability on where you need it. A site that does not need GPS never pays for GPS."
+      },
+      "addOns": {
+        "title": "Company-wide extras",
+        "price": "from {{price}}",
+        "body": "Invoicing, rotas, audit trail. Bought once for the business, however many sites you run."
+      }
+    },
+    "calcHeading": "Work out what it costs you",
+    "calcLead": "Set it up the way your business actually runs. Every figure is calculated by the same code that produces a real invoice.",
+    "modulesHeading": "Every capability, and what it costs",
+    "modulesLead": "Priced per site, per month. Switch one off and it stops being charged the same day.",
+    "laddersHeading": "The three things priced by how many you have",
+    "laddersLead": "Everything else is a flat switch. These three grow with you — and get cheaper per item as they do, like a tax band: passing a threshold only re-prices the ones above it, so adding one can never make your bill jump.",
+    "addOnsHeading": "Bought once for the whole company",
+    "addOnsLead": "Not per site, not per person. One price, works everywhere.",
+    "rulesHeading": "How billing actually behaves",
+    "rulesLead": "The parts people find out about later, written down before you pay.",
+    "faqHeading": "Straight answers",
+    "ctaHeading": "Try it before you pay for it.",
+    "ctaBody": "14 days, everything switched on, no card. If it does not fit, nothing happens when the trial ends.",
+    "units": {
+      "asset_one": "How many things?",
+      "asset_other": "How many things?",
+      "client_one": "How many customers?",
+      "client_other": "How many customers?",
+      "portal_one": "How many customer logins?",
+      "portal_other": "How many customer logins?"
+    },
+    "ladder": {
+      "band": "{{from}} – {{to}}",
+      "bandOpen": "{{from}} and up",
+      "example": "For example",
+      "exampleBody": "{{n}} of them add {{total}} a month — about {{each}} each.",
+      "included_one": "The {{price}} module covers the first one.",
+      "included_other": "The {{price}} module covers the first {{count}}."
+    },
+    "calc": {
+      "peopleTitle": "How many people will use it?",
+      "peopleBody": "Everyone counts the same — office, field, owner. {{price}} each, per month.",
+      "sitesTitle": "What should each site be able to do?",
+      "sitesBody": "A site is one place or operation you run — a branch, a building, a contract, a crew. Each one pays only for what it switches on, so a quiet site stays cheap.",
+      "addOnsTitle": "Anything for the whole company?",
+      "addOnsBody": "These are bought once and work everywhere. However many sites you run, you pay for each of them once.",
+      "siteN": "Site {{n}}",
+      "addSite": "Add another site",
+      "removeSite": "Remove this site",
+      "monthly": "Monthly",
+      "annual": "Yearly",
+      "aMonth": "a month",
+      "aYear": "a year — {{months}} months, not 12",
+      "perPerson": "per person, per month",
+      "breakdown": "Where it comes from",
+      "seatsLine": "{{count}} people × {{price}}",
+      "overAllowance": "{{n}} over the {{included}} included",
+      "nothingOn": "nothing switched on",
+      "companyWide": "Company-wide",
+      "total": "Every month",
+      "nextBreak": "{{away}} more and every one after that is {{price}}.",
+      "cheapestBand": "You're on the cheapest rate there is.",
+      "footnote": "Prices exclude VAT. 14 days free, no card. Change anything any time — the bill follows the same day.",
+      "allFree_one": "The first one is included in the module.",
+      "allFree_other": "The first {{count}} are included in the module."
+    },
+    "rules": [
+      {
+        "title": "Nothing is locked",
+        "body": "There is no plan to upgrade. Every capability is available to every customer at the price listed here, from your first day."
+      },
+      {
+        "title": "Changes take effect the same day",
+        "body": "Switch something on and it is charged from then; switch it off and it stops. Mid-month changes are worked out to the day, not rounded to a whole month."
+      },
+      {
+        "title": "A year costs ten months",
+        "body": "Pay yearly and you pay for {{months}} months instead of 12. Same prices, two months free."
+      },
+      {
+        "title": "14 days free, no card",
+        "body": "The trial has everything switched on — including the parts that cost extra — so you can judge the whole product, not a sample of it."
+      },
+      {
+        "title": "VAT is added at checkout",
+        "body": "Every price here excludes VAT. Businesses in the EU outside Austria can enter a VAT number and be charged 0%."
+      },
+      {
+        "title": "Cancel whenever",
+        "body": "Cancelling stops the next renewal. You keep access until the period you already paid for ends, and your data stays exportable."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Which plan should I choose?",
+        "a": "None — there aren't any. You pay for the people who use HBCField plus whatever you switch on. That is the whole model, and it exists because the old one made people upgrade every seat to reach one feature."
+      },
+      {
+        "q": "What exactly is a “site”?",
+        "a": "One place or operation you run separately: a branch, a building, a contract, a client, a crew. Most businesses start with one and add more only when the work is genuinely separate. Adding a site is free — you pay only for what that site switches on."
+      },
+      {
+        "q": "Do I pay for a module in every site?",
+        "a": "Only in the sites that use it. Switch GPS on for the mobile crew and leave it off at the workshop, and you pay for one. Add-ons work the other way round: they are bought once for the whole company, however many sites you have."
+      },
+      {
+        "q": "What happens if I add someone halfway through the month?",
+        "a": "You are charged for the part of the month they were there, not the whole month. The same applies to anything you switch on or off."
+      },
+      {
+        "q": "Is there a minimum, or a contract?",
+        "a": "One person, one site, one month. No minimum team size, no setup fee, no annual commitment unless you choose yearly billing to get the two months free."
+      },
+      {
+        "q": "What happens when my trial ends?",
+        "a": "Nothing is charged automatically. If you have not entered a card the account simply locks until you do, and your data waits for you."
+      },
+      {
+        "q": "Can you invoice us instead?",
+        "a": "Yes — for organisations on a negotiated agreement we bill outside the app and nothing is charged to a card. Write to us and we will set it up."
+      }
+    ]
   }
 }

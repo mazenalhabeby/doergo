@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { MapPin, ClipboardCheck, Users, Boxes, KanbanSquare, Receipt } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { MODULE_MONTHLY_CENTS, AVAILABLE_ADD_ONS, formatCents } from '@hbcfield/shared/client';
+import { HOME_GROUPS, groupMonthlyCents } from '@/lib/capability-groups';
 
 const MONO = 'font-[family:var(--font-martian)]';
 const DISPLAY = 'font-[family:var(--font-familjen)]';
@@ -27,87 +29,35 @@ const ACCENT = '#5B9BD5';
  *
  * Every figure comes from the same table the product bills from, so this page
  * and an invoice cannot quote different numbers.
+ *
+ * The grouping itself lives in `@/lib/capability-groups`, shared with /pricing —
+ * two copies would drift the first time a module moved between groups, and the
+ * page that drifted would be the one a customer checks before paying.
  */
-
-type Group = {
-  key: string;
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  /** Module keys, in the order they should read. */
-  modules: string[];
-  /** Counted modules say so in words rather than showing a ladder. */
-  note?: string;
-};
 
 export function FeatureMatrix() {
   const { t } = useTranslation();
 
-  const price = (k: string) => MODULE_MONTHLY_CENTS[k] ?? 0;
-  const sum = (keys: string[]) => keys.reduce((n, k) => n + price(k), 0);
-
-  const GROUPS: Group[] = [
-    {
-      key: 'where',
-      icon: <MapPin className="h-4 w-4" />,
-      title: t('home.groups.where.title', 'Know where everyone is'),
-      body: t('home.groups.where.body', 'Live map, the route each van actually drove, and geofenced clock-in you can put on a timesheet.'),
-      modules: ['tracking', 'time_tracking'],
-    },
-    {
-      key: 'prove',
-      icon: <ClipboardCheck className="h-4 w-4" />,
-      title: t('home.groups.prove.title', 'Prove the job was done'),
-      body: t('home.groups.prove.body', 'Photos, parts used and a customer signature, turned into a report you can send or bill from.'),
-      modules: ['service_reports', 'checklists', 'attachments'],
-    },
-    {
-      key: 'clients',
-      icon: <Users className="h-4 w-4" />,
-      title: t('home.groups.clients.title', 'Keep customers in the loop'),
-      body: t('home.groups.clients.body', 'Every customer, their history, and — if you want — a login where they place orders and watch their job.'),
-      modules: ['crm', 'b2c_portal'],
-      note: t('home.groups.clients.note', 'Covers your first 50 customers and one portal; grows from 30c a customer after that.'),
-    },
-    {
-      key: 'things',
-      icon: <Boxes className="h-4 w-4" />,
-      title: t('home.groups.things.title', 'Track what you look after'),
-      body: t('home.groups.things.body', 'Apartments, vehicles, machines — what they are, where they are and everything ever done to them.'),
-      modules: ['assets'],
-      note: t('home.groups.things.note', 'Covers the first 10, then from €1.20 each — cheaper the more you have.'),
-    },
-    {
-      key: 'plan',
-      icon: <KanbanSquare className="h-4 w-4" />,
-      title: t('home.groups.plan.title', 'Run bigger projects'),
-      body: t('home.groups.plan.body', 'Break long jobs into stages, sequence them, and add the fields your trade actually needs.'),
-      modules: ['phases', 'epics', 'sprints', 'story_points', 'subtasks', 'dependencies', 'custom_fields'],
-    },
-    {
-      key: 'office',
-      icon: <Receipt className="h-4 w-4" />,
-      title: t('home.groups.office.title', 'Handle the office side'),
-      body: t('home.groups.office.body', 'Invoices from finished work, jobs that repeat themselves, rotas, and a record of who changed what.'),
-      modules: [],
-      note: t('home.groups.office.note', 'Bought once for the company, not per space.'),
-    },
-  ];
-
-  const OFFICE_ADDONS = ['invoicing', 'recurring', 'shift_scheduling', 'audit_log'];
+  const GROUPS = HOME_GROUPS.map((g) => ({
+    ...g,
+    title: t(`home.groups.${g.key}.title`, g.key),
+    body: t(`home.groups.${g.key}.body`, ''),
+    note: g.hasNote ? t(`home.groups.${g.key}.note`, '') : undefined,
+  }));
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {GROUPS.map((g) => {
+    <div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {GROUPS.map((g) => {
         const isOffice = g.key === 'office';
         const items = isOffice
-          ? AVAILABLE_ADD_ONS.filter((a) => OFFICE_ADDONS.includes(a.key)).map((a) => ({
+          ? AVAILABLE_ADD_ONS.filter((a) => (g.addOns ?? []).includes(a.key)).map((a) => ({
               key: a.key,
               label: t(`addOns.${a.key}.label`, a.label),
               cents: a.monthlyCents,
             }))
-          : g.modules.map((k) => ({ key: k, label: t(`modules.${k}.label`, k), cents: price(k) }));
-        const from = isOffice ? Math.min(...items.map((i) => i.cents)) : sum(g.modules);
+          : g.modules.map((k) => ({ key: k, label: t(`modules.${k}.label`, k), cents: MODULE_MONTHLY_CENTS[k] ?? 0 }));
+        const from = isOffice ? Math.min(...items.map((i) => i.cents)) : groupMonthlyCents(g);
 
         return (
           <div key={g.key} className="flex flex-col rounded-2xl border border-foreground/[0.10] p-6">
@@ -143,7 +93,16 @@ export function FeatureMatrix() {
             </p>
           </div>
         );
-      })}
+        })}
+      </div>
+
+      <Link
+        href="/pricing"
+        className={`${MONO} group mt-8 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground/45 transition-colors hover:text-foreground`}
+      >
+        {t('home.estimator.seeAll', 'See every price')}
+        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+      </Link>
     </div>
   );
 }

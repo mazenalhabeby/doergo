@@ -11,6 +11,9 @@ import { getAllPosts } from "@/lib/blog";
 
 // Static, English-only pages (add blog/resource URLs here as you publish them).
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
+  // Second only to the homepage: "what does it cost" is the question most
+  // searches arrive with, and this is the page that answers it in full.
+  { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
   { path: "/help", priority: 0.6, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },

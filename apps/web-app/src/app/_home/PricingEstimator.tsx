@@ -1,16 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown } from 'lucide-react';
-import {
-  AVAILABLE_MODULES,
-  MODULE_MONTHLY_CENTS,
-  AVAILABLE_ADD_ONS,
-  orgMonthlyCost,
-  formatCents,
-  billsByUsage,
-} from '@hbcfield/shared/client';
+import { ArrowRight } from 'lucide-react';
+import { orgMonthlyCost, formatCents } from '@hbcfield/shared/client';
 
 const DISPLAY = 'font-[family:var(--font-familjen)]';
 const MONO = 'font-[family:var(--font-martian)]';
@@ -31,8 +25,9 @@ const ACCENT = '#5B9BD5';
  * a competitor charges. €22 a head reads as reasonable; €133.94 reads as
  * expensive. They are the same bill.
  *
- * Everything else is folded behind "See exactly what's included". People who
- * want to configure can. Nobody has to.
+ * Everything else lives on /pricing — a public page with every price, every
+ * ladder and a calculator that takes several sites and company-wide add-ons.
+ * This one gives an honest answer in a glance; that one answers it exactly.
  */
 
 type PresetKey = 'basics' | 'field' | 'everything';
@@ -81,7 +76,6 @@ export function PricingEstimator() {
   const [modules, setModules] = useState<string[]>(PRESETS.field.modules);
   const [addOns, setAddOns] = useState<string[]>([]);
   const [units, setUnits] = useState<Record<string, number>>({});
-  const [open, setOpen] = useState(false);
 
   const applyPreset = (key: PresetKey) => {
     setPreset(key);
@@ -106,11 +100,6 @@ export function PricingEstimator() {
       ) as Record<PresetKey, number>,
     [people],
   );
-
-  const toggleModule = (key: string) =>
-    setModules((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-  const toggleAddOn = (key: string) =>
-    setAddOns((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
 
   const CARDS: { key: PresetKey; title: string; body: string }[] = [
     {
@@ -208,92 +197,14 @@ export function PricingEstimator() {
         </p>
       </div>
 
-      {/* ── everything else, folded away ────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className={`${MONO} mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground/45 transition-colors hover:text-foreground`}
+      {/* ── the exact answer, on its own public page ───────────────────── */}
+      <Link
+        href="/pricing"
+        className={`${MONO} group mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground/45 transition-colors hover:text-foreground`}
       >
-        {open ? t('home.estimator.hide', 'Hide the detail') : t('home.estimator.show', "See exactly what's included")}
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="mt-6 space-y-7 rounded-2xl border border-foreground/[0.08] p-6">
-          <Group
-            title={t('home.estimator.modules', 'In this space')}
-            items={AVAILABLE_MODULES.filter((m) => (MODULE_MONTHLY_CENTS[m.key as string] ?? 0) > 0).map((m) => ({
-              key: m.key as string,
-              label: t(`modules.${m.key}.label`, m.label),
-              cents: MODULE_MONTHLY_CENTS[m.key as string] ?? 0,
-              suffix: billsByUsage(m.key as string) ? '+' : undefined,
-            }))}
-            selected={modules}
-            onToggle={toggleModule}
-          />
-          <Group
-            title={t('home.estimator.addOns', 'For the whole company')}
-            items={AVAILABLE_ADD_ONS.map((a) => ({
-              key: a.key,
-              label: t(`addOns.${a.key}.label`, a.label),
-              cents: a.monthlyCents,
-            }))}
-            selected={addOns}
-            onToggle={toggleAddOn}
-          />
-          <p className="text-[12.5px] leading-relaxed text-foreground/40">
-            {t(
-              'home.estimator.detailNote',
-              'A “+” means the price also grows with how many you have — and gets cheaper per item as it does. Switch anything off and it stops being charged that day.',
-            )}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Group({
-  title,
-  items,
-  selected,
-  onToggle,
-}: {
-  title: string;
-  items: { key: string; label: string; cents: number; suffix?: string }[];
-  selected: string[];
-  onToggle: (key: string) => void;
-}) {
-  return (
-    <div>
-      <p className={`${MONO} mb-3 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>{title}</p>
-      <div className="flex flex-wrap gap-2">
-        {items.map((it) => {
-          const on = selected.includes(it.key);
-          return (
-            <button
-              key={it.key}
-              type="button"
-              aria-pressed={on}
-              onClick={() => onToggle(it.key)}
-              className={`${MONO} rounded-full border px-3 py-1.5 text-[11px] transition-colors ${
-                on
-                  ? 'border-transparent text-[#04121f]'
-                  : 'border-foreground/15 text-foreground/55 hover:border-foreground/40 hover:text-foreground'
-              }`}
-              style={on ? { backgroundColor: ACCENT } : undefined}
-            >
-              {it.label}
-              <span className={on ? 'opacity-70' : 'opacity-45'}>
-                {' '}
-                {formatCents(it.cents)}
-                {it.suffix}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        {t('home.estimator.seeAll', 'See every price')}
+        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+      </Link>
     </div>
   );
 }
