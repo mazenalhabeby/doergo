@@ -1,1 +1,7 @@
 .next-verify/
+
+# Scratch build directories. `next build` shares .next with a running dev
+# server, so builds go to NEXT_DIST_DIR=.next-<something> instead — and those
+# have leaked into commits twice now, once as a tracked validator.ts and once
+# as rewritten paths in tsconfig.json and next-env.d.ts.
+.next-*
