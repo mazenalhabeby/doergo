@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-08-21 (Geo stack cutover LIVE — MapTiler tiles + Google geocoding)
+> **Last Updated**: 2026-08-22 (Module pricing LIVE — tiers replaced)
 
 ---
 
@@ -371,17 +371,22 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/users/push-token` | Register push notification token | ALL |
 | DELETE | `/users/push-token/:token` | Remove push notification token | ALL |
 
-### Billing (`/billing`) - Stripe SaaS Subscriptions
-> StripeService lives in **auth-service** only; the gateway forwards. All mutations ADMIN-only (org from token). `planTier`/`subStatus` are server-authoritative.
+### Billing (`/billing`) — module pricing, no plans
+> StripeService lives in **auth-service** only; the gateway forwards. All mutations ADMIN-only, **organizationId always from the token, never the body**. `addOns` / `subStatus` are server-authoritative.
 
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
-| GET | `/billing/subscription` | Current plan, seats, status, trial info | ADMIN |
-| POST | `/billing/checkout` | Create Stripe Checkout session (tier+interval) | ADMIN |
-| POST | `/billing/portal` | Create Customer Portal session (manage/cancel) | ADMIN |
-| POST | `/billing/change-plan` | Change tier/interval on existing subscription | ADMIN |
+| GET | `/billing/bill` | Itemised bill: seats, every space's modules + ladders, org add-ons | ALL |
+| GET | `/billing/subscription` | Stripe-side STATUS only (status, interval, trial, locked) | ALL |
+| PUT | `/billing/add-ons` | Replace the org's purchased capabilities (whole list, not a delta) | ADMIN |
+| POST | `/billing/checkout` | Checkout for what the org already has — body is `{interval}` only | ADMIN |
+| POST | `/billing/portal` | Customer Portal (payment method, invoices, cancel) | ADMIN |
+| POST | `/billing/change-plan` | Switch monthly ↔ annual (the only billing choice left) | ADMIN |
 | POST | `/billing/cancel` | Cancel at period end | ADMIN |
 | POST | `/billing/webhooks/stripe` | Stripe webhook (HMAC + rawBody + idempotency; 6 events) | Public (signature-verified) |
+| POST | `/billing/admin/org-add-ons` | **Operator**: grant an org its capabilities (secret-gated) | Platform key |
+
+> `/billing/bill` and `/billing/subscription` are deliberately separate: switching a module on moves the bill and not the status; a failed card moves the status and not the bill.
 
 **Query Parameters for GET `/technicians`:**
 - `status`: `active` | `inactive` | `all` (default: `active`)
@@ -575,7 +580,7 @@ pnpm build            # Build all packages
 | App | File | Key Variables |
 |-----|------|---------------|
 | gateway | `apps/api/gateway/.env` | `PORT`, `JWT_SECRET`, `REDIS_*`, `CORS_ORIGINS`, `AUTH_CACHE_TTL_SECONDS` (optional, default 60 — TTL for the per-request token/user cache) |
-| auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `REDIS_*`, **Stripe billing** (StripeService lives here only): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_AUTOMATIC_TAX` (true/false), + 8 price IDs `STRIPE_PRICE_{STARTER,PRO,BUSINESS}_OFFICE_{MONTHLY,ANNUAL}` & `STRIPE_PRICE_FIELD_{MONTHLY,ANNUAL}` |
+| auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `REDIS_*`, **Stripe billing** (StripeService lives here only): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_AUTOMATIC_TAX` (true/false). ⚠️ **No module price IDs in env** — the 62 prices resolve by Stripe `lookup_key` (see `billing/stripe-catalog.ts`). The 8 legacy `STRIPE_PRICE_*` tier vars remain only for the operator price book |
 | task-service | `apps/api/task-service/.env` | `DATABASE_URL`, `REDIS_*` |
 | notification-service | `apps/api/notification-service/.env` | `REDIS_*`, `SMTP_*`, `FCM_SERVER_KEY` |
 | tracking-service | `apps/api/tracking-service/.env` | `DATABASE_URL`, `REDIS_*`, `LOCATION_HISTORY_RETENTION_DAYS` (optional, default 90 — GPS history retention window) |
@@ -891,16 +896,37 @@ pnpm build            # Build all packages
   - [ ] Web dashboard for attendance tracking
   - [ ] Export functionality
 
-### Phase 8: SaaS Billing ✅ COMPLETE — LIVE on Stripe (2026-07-13)
-- [x] Per-seat plans (`packages/shared/src/billing/plans.ts`, `seats.ts`): office seat by tier (Starter €29 / Pro €59 / Business €99, ×10 annual), field seat flat €19/mo; seat type derived from access
-- [x] StripeService (auth-service): checkout, portal, webhooks (HMAC+idempotency, 6 events), seat proration (`setSubscriptionQuantities`), tier reverse-resolution (`resolveTierInterval`)
-- [x] Seat sync `reconcileSeats` (debounced): monthly → banked proration; annual increase → charged immediately (`always_invoice`); annual decrease → banked credit
-- [x] Feature gating: `tierAllows()` + global `PlanGuard` (402, reads pass) + `ModuleGuard`
-- [x] 14-day Professional trial on register; hourly `@Cron expireTrials()` locks no-card trials past `trialEndsAt`
-- [x] `tax_id_collection` (UID at checkout → EU B2B reverse charge) + `customer_update` address/name auto
-- [x] Gateway `/billing/*` endpoints (see section 6); DB migration `20260711120000_add_saas_billing`
-- [x] **LIVE**: 4 products / 8 prices, live webhook, Stripe Tax (AT 20%, tax_behavior exclusive, SaaS tax_code), Customer Portal, customer emails (receipt + dunning). Env via `docker-compose.override.yml` → `.env.production`. ⚠️ Account shared with "8bc store" (tax/email toggles account-wide)
-- [ ] One real live test purchase (real card) — pending, user-driven
+### Phase 8: SaaS Billing ✅ COMPLETE — module model LIVE (2026-08-21)
+
+> **Tiers are gone.** Starter/Professional/Business were replaced because they answered the wrong question: "which bundle covers the four things I need?" made a customer upgrade every seat to reach one feature, and left eleven capabilities gated with no price attached to any of them. **A thing is now bought, or it is not.**
+
+**The bill** — three parts, each priced where it is actually used:
+
+```
+bill = seats × €9.99
+     + Σ spaces ( modules + usage ladders )
+     + Σ org add-ons
+```
+
+- [x] **Seat** flat €9.99, everyone the same. No office/field/in-house classification — that whole category of argument and code is gone.
+- [x] **Modules** per SPACE (`billing/module-pricing.ts`). Switching one on **is** the purchase; the space is billed for it. Tracking €25, Time Tracking €25, Space Sharing €29, Service Reports €15, CRM €15 base, Client Portal €49 base, Assets €9 base, task/agile from €3.
+- [x] **Usage ladders** per space, graduated like tax bands (`billing/usage-pricing.ts`) — crossing into a cheaper band re-prices only the units in it, so a bill can never FALL when you add one:
+  - Assets — 10 free, then €1.20 → €0.30
+  - CRM — 50 clients free, then €0.30 → €0.05. *First band is €0.30 on purpose: €15 ÷ 50 = €0.30, so client 51 costs what clients 1–50 implicitly did. No cliff at the allowance.*
+  - Client Portal — first included, then €29 each
+- [x] **Org add-ons** (`billing/add-ons.ts`, 11 keys) — capabilities bought ONCE for the organization: workflows €29, invoicing €19, shift_scheduling €19, reports_builder €19, priority_routing €19, audit_log €15, recurring €12, overtime €9, report_scheduling €9, live_chat €29, dedicated_support €99. ⚠️ **Org-wide things must never be per-space** — one audit log billed four times to a four-site customer.
+- [x] **Gating**: `PlanGuard` → `orgHasAddOn(user.orgAddOns, key)`, **fails closed on an unknown key** (a typo in `@RequirePlan` must 402, not grant the feature to everyone). `ModuleGuard` → the space's module list, no tier. Both still 402 (not 403) and **let reads through**.
+- [x] `orgAddOns` resolved server-side in `validateToken`. ⚠️ **THREE** places build a request context in `auth.service.ts` — all three must set it, or that path 402s every premium mutation.
+- [x] **Stripe by lookup key**, no env vars: 62 prices (`billing/stripe-catalog.ts`), e.g. `hbcfield_module_crm_monthly`. Sixty-two Price IDs in env would be a second price list that drifts. Usage lines are €0.01/unit × ladder-cents — Stripe's own tiered pricing can't express a PER-SPACE ladder and refuses duplicate prices in one subscription. **Annual usage is €0.10/unit** (leaving it at 1c charged a year at one month's rate).
+- [x] `reconcileSeats` recomputes the WHOLE line-up rather than diffing; a line that leaves the bill is **deleted**, not left at its old quantity. `lastBilledCents` decides whether an annual change is an increase — line counts can't, since €29→€9 is fewer euros and the same count.
+- [x] **What triggers a re-bill**: members, space create/update/archive/purge, add-on changes → immediate (debounced). Assets/clients/portals → **nightly 02:00 sweep only** (`reconcileUsageDaily`), because importing 50 flats would otherwise be 50 prorations.
+- [x] **`billedExternally`** — organizations on negotiated contracts are never charged automatically. Checked FIRST in reconcile, before any Stripe call, and refuses checkout. The bill is still computed and shown, labelled "At list price".
+- [x] 14-day trial grants **every** add-on (`ADD_ON_KEYS`) — a trial that hides half the product cannot tell anyone whether the product is worth buying.
+- [x] Migrations `20260821180000_org_addons` (backfills each org's add-ons **from its old tier**, so nobody loses access at the switch) and `20260821200000_billed_externally`.
+- [x] **LIVE**: 31 products / 62 prices on the live account, all `tax_behavior: exclusive`; re-running the sync reports `62 already correct`.
+- [ ] One real live purchase (real card) — pending, user-driven
+
+> ⚠️ **`plans.ts` still exists and is VESTIGIAL.** Nothing in it decides access or price. It survives only for the operator price book (`platform-pricing.service.ts`, C2) and its Stripe sync (C3), which are working tier-based operator features. **Do not add a caller** — ask `orgHasAddOn` or the space's module list.
 
 ---
 
@@ -945,6 +971,10 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `LegacyRoleMap`, `normalizeRole()` | Backward compatibility for CLIENT → ADMIN |
 | `DEFAULT_PERMISSIONS` | Default permission values by role |
 | `STATUS_TRANSITIONS`, `isValidStatusTransition()` | Task status state machine |
+| `orgMonthlyCost()`, `spaceMonthlyCost()` | The whole bill / one space's bill (billing/module-pricing.ts) |
+| `usageCost()`, `marginalUnitCents()`, `nextUsageBreak()` | Volume ladders — what a count costs, what the NEXT one costs |
+| `AVAILABLE_ADD_ONS`, `orgHasAddOn()`, `addOnDef()` | Org-wide capabilities and the gate that reads them |
+| `stripeCatalog()`, `stripeLinesForBill()`, `stripeLookupKey()` | What Stripe must hold, and a bill as subscription lines |
 | `BCRYPT_COST_FACTOR`, `MAX_FAILED_ATTEMPTS`, etc. | Auth constants |
 | `EmailField`, `PasswordField`, `NameField`, etc. | Validation decorators |
 | `buildQueryString()`, `buildUrlWithQuery()` | Query string building utilities |
@@ -1094,6 +1124,20 @@ docker exec -it hbcfield-redis redis-cli
 
 **Current Sprint**: Phase 7.3 - Technician Assignment (next up)
 
+### Recently Completed (2026-08-21) — Module Pricing LIVE (tiers replaced)
+
+**PROD `c393657d`** (rollback tag `prod-pre-module-billing` → `aaffbec5`; migrations `20260821180000_org_addons`, `20260821200000_billed_externally`).
+
+The pricing model changed shape. `bill = seats × €9.99 + Σ spaces(modules + ladders) + Σ org add-ons`. See **Phase 8** above for the full model — the notes here are the ones that bite.
+
+- ⚠️ **`plans.ts` is VESTIGIAL, not deleted.** Nothing in it decides access or price. It survives for the operator price book (C2) and Stripe sync (C3) only. **Do not add a caller.**
+- ⚠️ **`orgAddOns` must be set on every request context.** Three separate places in `auth.service.ts` build one (login, refresh, portal). Missing one 402s every premium mutation on that path — the portal context was nearly left out.
+- ⚠️ **Both gates fail closed on an unknown key.** The old `isFeatureEntitled` returned `true` for anything it didn't recognise, so a typo in `@RequirePlan` granted the feature to every organization, silently.
+- ⚠️ **Two prices used to exist and never applied.** Both were found by grepping only one file: `GOOGLE_PLACES_API_KEY` reached the gateway via `docker-compose.override.yml`, and the MapTiler build args were passed to an image that never declared the `ARG`. **Docker drops an undeclared build arg silently.** Check both compose files and the Dockerfile.
+- **The invariant that matters**: what Stripe is told, priced from the catalogue, equals the breakdown the screen renders — to the cent. Tested. It caught a real bug: annual usage priced at 1c charged a year at one month's rate.
+- **Stripe sync**: `tools/stripe/sync-modules.mjs` only ever CREATES — never edits or archives, because prices are immutable and customers subscribe to them. A price disagreeing with the code is reported as MISMATCH. Run it inside the auth container with `--catalog <dumped json>` (the container bundles shared and has no `dist/`).
+- **Pricing curve is regressive** and was accepted as-is: solo ~3× the old entry price, 30-person 40% cheaper, because module prices are flat regardless of company size (88% of a solo bill, 11% of a large one). Raising the SEAT fixes the top without touching the bottom. Revisit if the top end looks underpriced.
+
 ### Recently Completed (2026-08-21) — Geo Stack Cutover LIVE
 
 **PROD `540f0f7e`** (rollback tag `prod-pre-geo-cutover` → `01542695`, 16 migrations, DB backup `pre-geo-cutover_20260821_112025.sql.gz`).
@@ -1107,7 +1151,9 @@ docker exec -it hbcfield-redis redis-cli
 - `ACCESS_IGNORE_LEGACY_FLAGS` and `GOOGLE_PLACES_API_KEY` are in the tracked compose (both previously existed only on the production box or in `docker-compose.override.yml`).
 - ⚠️ **`pg_dump` on this stack is `-U doergo doergo`** — not `postgres`/`hbcfield`, which fails into a valid, empty 20-byte gzip. Assert the table count, never the exit code.
 
-### Recently Completed (2026-07-13) — SaaS Billing LIVE on Stripe
+### Recently Completed (2026-07-13) — SaaS Billing LIVE on Stripe ⚠️ SUPERSEDED
+
+> ⚠️ **The tier model described below was replaced on 2026-08-21.** Kept for the Stripe account setup, tax configuration and prod wiring, which all still apply. Everything about tiers, office/field seats and `tierAllows` is history.
 - **Stripe billing switched TEST → LIVE in production** (hbcfield.com). No code change to go live — the app was already live-ready; go-live was Stripe-dashboard + prod-env config (done via Chrome + Stripe API).
 - **Plans / pricing** (`packages/shared/src/billing/plans.ts`, `seats.ts`): per-seat model, NOT bundles. **Office seat** = anyone with web access incl. the admin owner, priced by tier (**Starter €29 / Professional €59 / Business €99** per month; ×10 annual). **Field seat** = mobile-only member, flat **€19/mo** (€190/yr). Seat type is derived from ACCESS (`classifySeat`/`countSeats`), so it re-syncs whenever a member's Access Profile flips web↔mobile.
 - **Seat changes & proration** (`billing.service.ts reconcileSeats` → `stripe.service.ts setSubscriptionQuantities`): `invoiceNow = interval === 'annual' && newTotal > oldTotal`.
