@@ -2,19 +2,29 @@
 /**
  * Make Stripe match the price list — reporting first, changing only if asked.
  *
- *   node tools/stripe/sync-modules.mjs            # dry run, changes nothing
- *   node tools/stripe/sync-modules.mjs --apply    # create what is missing
+ *   node tools/stripe/sync-modules.mjs                    # dry run, changes nothing
+ *   node tools/stripe/sync-modules.mjs --apply            # create what is missing
+ *   node tools/stripe/sync-modules.mjs --archive-orphans  # + retire what the code dropped
  *
  * WHAT IT DOES NOT DO, deliberately:
  *
  *   • It never edits or deletes an existing price. Stripe prices are immutable
  *     by design and customers are subscribed to them; "fixing" one means making
  *     a new price and migrating subscriptions, which is a decision, not a sync.
- *   • It never archives anything. A product nobody sells today may still be on
- *     somebody's subscription.
+ *   • It never archives anything unless you ask for it by name, and never a
+ *     price that any subscription still points at — it checks Stripe for one
+ *     first and refuses rather than cutting somebody's billing line out from
+ *     under them. Archiving is reversible; that is why it is allowed at all.
  *
- * So the only write it performs is CREATE, and only for a lookup key that does
- * not exist yet. Everything else it reports and leaves alone. A price whose
+ * The orphan pass exists because removing something from the price list leaves
+ * its Stripe price behind, still active and still sellable. That happened when
+ * annual billing was dropped: 31 yearly prices stayed on the account, priced by
+ * a model the app no longer has. Reporting them is always on; retiring them is
+ * opt-in.
+ *
+ * So the writes it performs are CREATE for a lookup key that does not exist
+ * yet, and — only when asked — ARCHIVE for one the code no longer knows.
+ * Everything else it reports and leaves alone. A price whose
  * amount disagrees with the code is called out as a MISMATCH — loudly, because
  * that is the state where the app quotes one number and the customer is charged
  * another, and it is the failure this whole model exists to prevent.
@@ -31,6 +41,7 @@ import Stripe from 'stripe';
 import { readFileSync } from 'node:fs';
 
 const APPLY = process.argv.includes('--apply');
+const ARCHIVE = process.argv.includes('--archive-orphans');
 const KEY = process.env.STRIPE_SECRET_KEY;
 
 /*
@@ -66,12 +77,12 @@ async function main() {
 
   console.log('');
   console.log(`  HBCField price sync — ${LIVE ? 'LIVE ACCOUNT' : 'test mode'}`);
-  console.log(`  ${APPLY ? 'APPLY — will create missing objects' : 'DRY RUN — nothing will be created'}`);
+  console.log(`  ${APPLY || ARCHIVE ? 'APPLY' : 'DRY RUN'} — ${[APPLY && 'create missing', ARCHIVE && 'archive orphans'].filter(Boolean).join(', ') || 'nothing will be changed'}`);
   console.log(`  ${catalog.length} prices expected across ${new Set(catalog.map((e) => e.productName)).size} products`);
   console.log('');
 
   // One page of every price that carries one of our lookup keys. Fetching by
-  // lookup_key in a loop would be 62 round trips; this is a handful.
+  // lookup_key in a loop would be one round trip per entry; this is a handful.
   const existing = new Map();
   for await (const price of stripe.prices.list({ limit: 100, active: true, expand: ['data.product'] })) {
     if (price.lookup_key) existing.set(price.lookup_key, price);
@@ -92,6 +103,18 @@ async function main() {
     }
   }
 
+  /*
+    Orphans: active prices we created that the code no longer asks for.
+
+    Matched by our own lookup-key prefix, so a price belonging to anything else
+    sharing this Stripe account is never touched — the account is shared, and
+    this script has no business retiring somebody else's product.
+  */
+  const wanted = new Set(catalog.map((e) => e.lookupKey));
+  const orphans = [...existing.values()].filter(
+    (p) => p.lookup_key?.startsWith('hbcfield_') && !wanted.has(p.lookup_key),
+  );
+
   if (mismatched.length) {
     console.log('  ⚠  PRICE MISMATCH — Stripe charges something the code does not say');
     console.log('     Not fixed automatically: Stripe prices are immutable and customers are');
@@ -106,6 +129,18 @@ async function main() {
   console.log(`  ${matched} already correct`);
   console.log('');
 
+  if (orphans.length) {
+    console.log(`  ${orphans.length} ORPHANED — active in Stripe, not in the price list:`);
+    console.log('');
+    for (const p of orphans) {
+      console.log(`     ${pad(p.lookup_key, 40)} ${pad(eur(p.unit_amount ?? 0), 10)} / ${p.recurring?.interval ?? '?'}`);
+    }
+    console.log('');
+    if (!ARCHIVE) console.log('     Re-run with --archive-orphans to retire them (reversible, and');
+    if (!ARCHIVE) console.log('     skipped for any price a subscription still points at).');
+    console.log('');
+  }
+
   if (!missing.length) {
     console.log('  Nothing to create.');
   } else {
@@ -117,16 +152,42 @@ async function main() {
     console.log('');
   }
 
-  if (!APPLY) {
+  if (!APPLY && !ARCHIVE) {
     console.log(missing.length ? '  Re-run with --apply to create them.' : '');
     console.log('');
     process.exit(mismatched.length ? 2 : 0);
   }
 
+  // ── archive orphans ──────────────────────────────────────────────────────
+  if (ARCHIVE && orphans.length) {
+    let archived = 0;
+    for (const price of orphans) {
+      // The guard that makes this safe: if anything is subscribed to it, the
+      // price stays. Archiving a price under a live subscription does not stop
+      // the billing, but it does make the line unexplainable in the dashboard
+      // and unrecreatable if it ever has to be reinstated.
+      const subs = await stripe.subscriptions.list({ price: price.id, status: 'all', limit: 1 });
+      if (subs.data.length) {
+        console.log(`     ! kept     ${pad(price.lookup_key, 40)} — ${subs.data.length}+ subscription(s) use it`);
+        continue;
+      }
+      await stripe.prices.update(price.id, { active: false });
+      archived++;
+      console.log(`     - archived ${price.lookup_key}`);
+    }
+    console.log('');
+    console.log(`  Archived ${archived} of ${orphans.length}.`);
+    console.log('');
+  }
+
+  if (!APPLY) {
+    console.log('');
+    process.exit(mismatched.length ? 2 : 0);
+  }
+
   // ── apply ────────────────────────────────────────────────────────────────
-  // Products are reused across intervals: the monthly and annual price of a
-  // module belong to the same product, so a customer switching interval stays
-  // on one product in the dashboard and in reporting.
+  // One product per billable thing; its price is the monthly one, because that
+  // is the only interval there is.
   const productByName = new Map();
   for await (const p of stripe.products.list({ limit: 100, active: true })) productByName.set(p.name, p.id);
 
@@ -153,7 +214,7 @@ async function main() {
       // must match how the tier prices were set up or the same customer sees
       // two different tax behaviours on one invoice.
       tax_behavior: 'exclusive',
-      metadata: { hbcfield_kind: e.kind, hbcfield_key: e.key, hbcfield_interval: e.interval },
+      metadata: { hbcfield_kind: e.kind, hbcfield_key: e.key },
     });
     created++;
     console.log(`     + price    ${pad(e.lookupKey, 40)} ${eur(e.unitAmountCents)}`);

@@ -413,7 +413,7 @@
         }
       ],
       "cta": "Commencer gratuitement",
-      "note": "Facturation annuelle = 2 mois offerts · Désactivez un module le jour où vous cessez de l’utiliser · TVA ajoutée au paiement",
+      "note": "Facturation mensuelle · Désactivez un module le jour où vous cessez de l'utiliser · TVA ajoutée au paiement",
       "parts": [
         {
           "name": "Par personne",
@@ -466,7 +466,7 @@
         },
         {
           "q": "Combien coûte HBCField ?",
-          "a": "Une tarification par siège en euros avec un essai gratuit de 14 jours, sans carte bancaire. Les sièges terrain (mobile uniquement) commencent à 19 € par mois ; les sièges bureau sont par paliers."
+          "a": "9,99 € par personne et par mois, plus ce que chacun de vos sites active, plus les options achetées une fois pour l'entreprise. Ni forfaits ni paliers — 14 jours gratuits, sans carte bancaire. Tous les prix sont publics sur hbcfield.com/pricing."
         },
         {
           "q": "HBCField remplace-t-il des outils séparés ?",
@@ -479,7 +479,6 @@
       "perPerson": "/ personne / mois",
       "perPersonLong": "par personne et par mois",
       "totalFor": "{{price}} au total",
-      "orAnnual": "ou {{price}} par an — 2 mois offerts",
       "anchor": "Les outils séparés que cela remplace coûtent 60–90 € par personne.",
       "preset": {
         "basics": {
@@ -4282,7 +4281,7 @@
       "memberLabel": "« Membre »",
       "memberText": " — tout utilisateur (coordinateur de bureau, répartiteur ou technicien de terrain) ajouté à une Organisation.",
       "seatLabel": "« Licence »",
-      "seatText": " — une unité d’accès facturable ; une licence bureau (accès web) est tarifée selon le niveau de forfait, une licence terrain (accès mobile uniquement) est tarifée à un tarif forfaitaire.",
+      "seatText": " — une unité d'accès facturable ; chaque Membre actif compte pour une licence au même tarif forfaitaire, quel que soit son accès.",
       "dataLabel": "« Données client »",
       "dataText": " — toutes les données que votre Organisation et ses Membres soumettent au Service, y compris les tâches, rapports, photos, localisations et commentaires."
     },
@@ -4305,27 +4304,23 @@
       "item4": "vous devez nous informer sans délai de tout accès non autorisé ou de toute faille de sécurité affectant votre compte."
     },
     "s5": {
-      "title": "5. Abonnements, Licences et Forfaits",
-      "intro": "Le Service est proposé par abonnement selon plusieurs niveaux de forfait, facturés mensuellement ou annuellement. Les fonctionnalités disponibles pour votre Organisation dépendent du niveau que vous sélectionnez.",
-      "seats": "La facturation se fait par licence, et non par lot. Chaque Membre actif compte comme une licence : une licence bureau (tout Membre disposant d’un accès au portail web, y compris l’Administrateur) est tarifée au tarif du niveau, tandis qu’une licence terrain (un Membre en accès mobile uniquement) est facturée à un tarif forfaitaire. Le type de licence d’un Membre suit son accès — si vous accordez ou révoquez l’accès web, son type de licence change en conséquence, et vos décomptes de licences se resynchronisent.",
-      "plansTitle": "Forfaits et tarifs (hors TVA)",
-      "starterLabel": "Starter",
-      "starterText": "29 € par licence bureau / mois (290 € / an).",
-      "proLabel": "Professional",
-      "proText": "59 € par licence bureau / mois (590 € / an).",
-      "businessLabel": "Business",
-      "businessText": "99 € par licence bureau / mois (990 € / an).",
-      "fieldLabel": "Licence terrain",
-      "fieldText": "19 € par licence mobile uniquement / mois (190 € / an), sur tout niveau.",
-      "plansNote": "Les prix sont hors TVA et peuvent être révisés pour les périodes futures avec préavis. Votre forfait actuel et vos décomptes de licences sont toujours affichés dans Paramètres → Facturation."
+      "title": "5. Abonnements, licences et ce que vous payez",
+      "intro": "Le Service est proposé sur abonnement mensuel. Il n'y a pas de niveaux de forfait : chaque capacité est accessible à tous les clients au prix indiqué sur notre page tarifs, et vous payez la somme des personnes, modules et options en vigueur.",
+      "seats": "La facturation est par personne, non par lot. Chaque Membre actif compte pour une licence au même tarif, quel que soit son accès — il n'y a pas de distinction bureau/terrain. Les modules s'activent par site et sont facturés pour chaque site qui les active ; certains sont en outre facturés à la quantité (par exemple les équipements ou les fiches clients), selon des paliers publiés.",
+      "plansTitle": "Ce qui est facturé (hors TVA)",
+      "plansNote": "Les prix sont hors TVA et peuvent être modifiés pour les périodes à venir moyennant préavis. La liste complète des prix est publique sur hbcfield.com/pricing, et votre facture en cours est toujours détaillée dans Paramètres → Facturation.",
+      "seatLabel": "Par personne",
+      "seatText": "9,99 € par Membre / mois.",
+      "moduleLabel": "Par module",
+      "moduleText": "à partir de 3 € par site / mois, pour chaque site qui l'active.",
+      "addOnLabel": "Par option",
+      "addOnText": "à partir de 9 € / mois, achetée une fois pour toute l'Organisation."
     },
     "s6": {
       "title": "6. Frais, Facturation et Proratisation",
-      "intro": "Les frais sont facturés en euros (EUR) à l’avance pour chaque période de facturation, en fonction du forfait et du nombre de licences en vigueur. Lorsque vous ajoutez ou retirez des licences en cours de période, le montant est proratisé comme suit :",
-      "monthlyLabel": "Forfaits mensuels — ",
-      "monthlyText": "les modifications sont proratisées et appliquées à votre prochaine facture ; l’ajout de licences ne déclenche pas de facturation immédiate distincte, mais le montant proratisé pour le reste de la période en cours est ajouté à la facture suivante.",
-      "annualLabel": "Forfaits annuels (ajout de licences) — ",
-      "annualText": "une augmentation est facturée immédiatement, proratisée pour le reste de la période annuelle, de sorte que les licences ajoutées ne sont pas gratuites jusqu’au renouvellement.",
+      "intro": "Les frais sont facturés en euros (EUR) mensuellement et d'avance, selon les personnes, modules et options en vigueur. En cas de changement en cours de période, le prorata s'applique ainsi :",
+      "monthlyLabel": "Ajout — ",
+      "monthlyText": "les changements sont calculés au prorata et reportés sur votre prochaine facture ; ajouter une personne ou activer un module ne déclenche pas de prélèvement immédiat distinct, mais le montant au prorata pour le reste du mois en cours s'ajoute à la facture suivante.",
       "decreaseLabel": "Retrait de licences — ",
       "decreaseText": "les réductions ne donnent jamais lieu à un remboursement en espèces ; la valeur proratisée est créditée sur le compte et appliquée aux factures futures.",
       "processor": "Les paiements sont traités par Stripe. Vous nous autorisez, ainsi que Stripe, à débiter votre moyen de paiement pour tous les frais dus. Vous êtes responsable du maintien d’un moyen de paiement valide."
@@ -4337,13 +4332,13 @@
     },
     "s8": {
       "title": "8. Essai gratuit",
-      "intro": "Les nouvelles Organisations peuvent bénéficier d’un essai gratuit du niveau Professional (actuellement 14 jours). Aucun moyen de paiement n’est requis pour démarrer l’essai, et vous pouvez utiliser les fonctionnalités éligibles pendant la période d’essai.",
+      "intro": "Les nouvelles Organisations peuvent bénéficier d'un essai gratuit (actuellement 14 jours) avec toutes les capacités activées, y compris celles normalement facturées. Aucun moyen de paiement n'est requis pour démarrer l'essai.",
       "expiry": "Sauf si vous souscrivez à un forfait payant avant la fin de l’essai, l’accès est restreint à la fin de l’essai et le compte est placé en lecture seule jusqu’à ce qu’un abonnement soit souscrit. Nous pouvons modifier ou interrompre les offres d’essai à tout moment."
     },
     "s9": {
       "title": "9. Renouvellement, Résiliation et Remboursements",
       "renewLabel": "Renouvellement automatique — ",
-      "renewText": "les abonnements se renouvellent automatiquement à la fin de chaque période de facturation (mensuelle ou annuelle) aux tarifs alors en vigueur, jusqu’à résiliation.",
+      "renewText": "les abonnements se renouvellent automatiquement à la fin de chaque période de facturation mensuelle aux tarifs alors en vigueur, jusqu'à résiliation.",
       "cancelLabel": "Résiliation — ",
       "cancelText": "vous pouvez résilier à tout moment depuis Paramètres → Facturation ou le portail client Stripe. La résiliation prend effet à la fin de la période payée en cours ; vous conservez l’accès jusque-là.",
       "refundLabel": "Remboursements — ",
@@ -6272,7 +6267,6 @@
     "bill": {
       "total": "Votre total mensuel",
       "perMonth": "/mois",
-      "annualNote": "{{price}} par an — deux mois offerts",
       "seats": "Personnes",
       "seatsDetail": "{{count}} × {{price}}",
       "spaces": "Espaces",
@@ -6658,7 +6652,7 @@
     "badgeSaved": "Enregistré",
     "badgeTemplate": "Modèle",
     "badgeTimesheet": "Feuille de temps",
-    "builderLocked": "Le générateur de rapports personnalisés est disponible à partir de Professional.",
+    "builderLocked": "Le générateur de rapports personnalisés est une option. Un administrateur peut l'activer dans Paramètres → Facturation.",
     "builderNav": "Générateur de rapports",
     "builderNavDesc": "Choisissez un jeu de données, des mesures et un regroupement",
     "cadence": "Fréquence",
@@ -6882,10 +6876,7 @@
       "siteN": "Site {{n}}",
       "addSite": "Ajouter un autre site",
       "removeSite": "Retirer ce site",
-      "monthly": "Mensuel",
-      "annual": "Annuel",
       "aMonth": "par mois",
-      "aYear": "par an — {{months}} mois, pas 12",
       "perPerson": "par personne et par mois",
       "breakdown": "D'où cela vient",
       "seatsLine": "{{count}} personnes × {{price}}",
@@ -6907,10 +6898,6 @@
       {
         "title": "Les changements prennent effet le jour même",
         "body": "Activez quelque chose et c'est facturé à partir de là ; désactivez-le et cela s'arrête. Un changement en cours de mois est calculé au jour près, jamais arrondi à un mois entier."
-      },
-      {
-        "title": "Une année coûte dix mois",
-        "body": "En paiement annuel vous payez {{months}} mois au lieu de 12. Mêmes prix, deux mois offerts."
       },
       {
         "title": "14 jours gratuits, sans carte",
@@ -6944,7 +6931,7 @@
       },
       {
         "q": "Y a-t-il un minimum ou un engagement ?",
-        "a": "Une personne, un site, un mois. Pas de taille minimale d'équipe, pas de frais de mise en service, pas d'engagement annuel — sauf si vous choisissez le paiement annuel pour obtenir les deux mois offerts."
+        "a": "Une personne, un site, un mois. Pas de taille minimale d'équipe, pas de frais de mise en service et aucun engagement annuel — la facturation est mensuelle et vous pouvez arrêter quand vous voulez."
       },
       {
         "q": "Que se passe-t-il à la fin de l'essai ?",

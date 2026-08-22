@@ -5081,9 +5081,9 @@ export const billingApi = {
     return response.data as SubscriptionView;
   },
 
-  /** Start Stripe Checkout for a self-serve plan → returns a redirect URL. */
-  checkout: async (interval: BillingInterval): Promise<{ url: string }> => {
-    const response = await api.post<{ url: string }>('/billing/checkout', { interval });
+  /** Start Stripe Checkout for whatever the org already has → redirect URL. */
+  checkout: async (): Promise<{ url: string }> => {
+    const response = await api.post<{ url: string }>('/billing/checkout', {});
     if (response.error) throw new Error(response.error);
     return response.data as { url: string };
   },
@@ -5095,13 +5095,9 @@ export const billingApi = {
     return response.data as { url: string };
   },
 
-  /** Change the active plan/interval (returns a portal/checkout URL to confirm). */
-  /** Switch between monthly and annual — the only billing choice left. */
-  changePlan: async (interval: BillingInterval): Promise<{ url?: string }> => {
-    const response = await api.post<{ url?: string }>('/billing/change-plan', { interval });
-    if (response.error) throw new Error(response.error);
-    return (response.data as { url?: string }) ?? {};
-  },
+  // No `changePlan`: it only ever switched monthly ↔ annual, and billing is
+  // monthly. Everything else about the bill changes by switching a module on or
+  // off where it lives, which reconciles on its own.
 
   /** Cancel at period end. */
   cancel: async (): Promise<void> => {

@@ -189,22 +189,24 @@ export default function TermsPage() {
                 </span>
                 <h4 className="m-0 text-[15px] font-semibold text-blue-950">{t("terms.s5.plansTitle")}</h4>
               </div>
+              {/*
+                These three ARE the bill. The section used to list Starter €29 /
+                Professional €59 / Business €99 and an office-vs-field seat
+                split — tiers the product stopped selling, in the document that
+                states what a customer is agreeing to pay.
+              */}
               <ul className="space-y-2.5 px-6 py-5 text-[15px] text-blue-900/90">
                 <li className="flex gap-2">
-                  <span className="font-semibold text-blue-700">{t("terms.s5.starterLabel")}</span>
-                  <span>{t("terms.s5.starterText")}</span>
+                  <span className="font-semibold text-blue-700">{t("terms.s5.seatLabel")}</span>
+                  <span>{t("terms.s5.seatText")}</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="font-semibold text-blue-700">{t("terms.s5.proLabel")}</span>
-                  <span>{t("terms.s5.proText")}</span>
+                  <span className="font-semibold text-blue-700">{t("terms.s5.moduleLabel")}</span>
+                  <span>{t("terms.s5.moduleText")}</span>
                 </li>
                 <li className="flex gap-2">
-                  <span className="font-semibold text-blue-700">{t("terms.s5.businessLabel")}</span>
-                  <span>{t("terms.s5.businessText")}</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-blue-700">{t("terms.s5.fieldLabel")}</span>
-                  <span>{t("terms.s5.fieldText")}</span>
+                  <span className="font-semibold text-blue-700">{t("terms.s5.addOnLabel")}</span>
+                  <span>{t("terms.s5.addOnText")}</span>
                 </li>
               </ul>
               <div className="border-t border-blue-200/60 px-6 py-4 text-[13px] text-blue-900/70">
@@ -219,10 +221,6 @@ export default function TermsPage() {
               <li>
                 <strong>{t("terms.s6.monthlyLabel")}</strong>
                 {t("terms.s6.monthlyText")}
-              </li>
-              <li>
-                <strong>{t("terms.s6.annualLabel")}</strong>
-                {t("terms.s6.annualText")}
               </li>
               <li>
                 <strong>{t("terms.s6.decreaseLabel")}</strong>

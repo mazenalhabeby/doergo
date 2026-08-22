@@ -15,19 +15,10 @@ import {
   trialDaysLeft,
   TRIAL_DAYS,
 } from '@hbcfield/shared';
-import type {
-  PlanTier,
-  BillingInterval,
-  SeatCounts,
-  SubStatus,
-  SubscriptionView,
-  CheckoutRequest,
-  ChangePlanRequest,
-} from '@hbcfield/shared';
+import type { PlanTier, SeatCounts, SubStatus, SubscriptionView } from '@hbcfield/shared';
 
 type PrismaTier = 'STARTER' | 'PROFESSIONAL' | 'BUSINESS' | 'ENTERPRISE';
 type PrismaStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'INCOMPLETE';
-type PrismaInterval = 'MONTHLY' | 'ANNUAL';
 
 const TIER_TO_PRISMA: Record<PlanTier, PrismaTier> = {
   starter: 'STARTER',
@@ -35,9 +26,7 @@ const TIER_TO_PRISMA: Record<PlanTier, PrismaTier> = {
   business: 'BUSINESS',
   enterprise: 'ENTERPRISE',
 };
-const INTERVAL_TO_PRISMA: Record<BillingInterval, PrismaInterval> = { monthly: 'MONTHLY', annual: 'ANNUAL' };
 const tierFromPrisma = (p: PrismaTier | null): PlanTier | null => (p ? (p.toLowerCase() as PlanTier) : null);
-const intervalFromPrisma = (p: PrismaInterval): BillingInterval => p.toLowerCase() as BillingInterval;
 const statusFromPrisma = (p: PrismaStatus): SubStatus =>
   ({ TRIALING: 'trialing', ACTIVE: 'active', PAST_DUE: 'past_due', CANCELED: 'canceled', INCOMPLETE: 'incomplete' } as const)[p];
 
@@ -380,7 +369,6 @@ export class BillingService {
 
     const view: SubscriptionView = {
       status,
-      interval: intervalFromPrisma(org.billingInterval),
       seats,
       // What was last actually billed, rather than a figure recomputed here —
       // a second implementation of the bill is a second answer.
@@ -402,13 +390,14 @@ export class BillingService {
    * There is nothing to pick. Under the tier model this call took a tier, because
    * the tier WAS the purchase; here the purchase is the seats, modules and
    * add-ons already switched on, and Checkout exists only to collect a card for
-   * them. So the only choice left is monthly or annual.
+   * them. There is no interval to pick either: billing is monthly. So the call
+   * takes no body at all.
    *
    * The line-up is computed at this moment rather than trusted from the client:
    * a body that could name its own lines would let a customer subscribe to a
    * cheaper bill than the one they are using.
    */
-  async createCheckout(organizationId: string, req: { interval: BillingInterval }, successUrl: string, cancelUrl: string) {
+  async createCheckout(organizationId: string, successUrl: string, cancelUrl: string) {
     if (!this.stripe.isConfigured) return fail(HttpStatus.SERVICE_UNAVAILABLE, 'Billing is not configured');
     const org = await this.prisma.organization.findUnique({ where: { id: organizationId } });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
@@ -417,7 +406,7 @@ export class BillingService {
     }
 
     const bill = await this.bill.compute(organizationId);
-    const lines = stripeLinesForBill(bill, req.interval);
+    const lines = stripeLinesForBill(bill);
     if (!lines.length) {
       return fail(
         HttpStatus.BAD_REQUEST,
@@ -452,7 +441,7 @@ export class BillingService {
 
     await this.prisma.subscription.updateMany({
       where: { organizationId },
-      data: { interval: INTERVAL_TO_PRISMA[req.interval], lastBilledCents: bill.monthlyCents },
+      data: { lastBilledCents: bill.monthlyCents },
     });
 
     return ok({ url: session.url });
@@ -466,46 +455,15 @@ export class BillingService {
     return ok({ url: session.url });
   }
 
-  // ── change plan / cancel ───────────────────────────────────────────────────────
-  /**
-   * Switch between monthly and annual.
-   *
-   * All that is left of "change plan". There are no tiers to move between, and
-   * the rest of the bill changes by switching modules on and off where they
-   * live — this is the one billing choice that is not also a product choice.
-   *
-   * Every line moves together: a subscription holding a mix of monthly and
-   * annual prices renews on two different clocks and is impossible to explain on
-   * an invoice.
-   */
-  async changePlan(organizationId: string, req: { interval: BillingInterval }, successUrl: string, cancelUrl: string) {
-    const org = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      include: { subscription: true },
-    });
-    if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
+  /*
+    THERE IS NO `changePlan`.
 
-    // No subscription yet → this is a first checkout, not a change.
-    if (!org.subscription?.stripeSubscriptionId) {
-      return this.createCheckout(organizationId, req, successUrl, cancelUrl);
-    }
-
-    const bill = await this.bill.compute(organizationId);
-    const lines = stripeLinesForBill(bill, req.interval);
-
-    await this.prisma.subscription.update({
-      where: { organizationId },
-      data: { interval: INTERVAL_TO_PRISMA[req.interval], lastBilledCents: bill.monthlyCents },
-    });
-
-    // Switching TO annual is charged now: the customer is buying a year, and
-    // banking that proration would give the year away and collect at renewal.
-    await this.stripe.setSubscriptionLines(org.subscription.stripeSubscriptionId, lines, {
-      invoiceNow: req.interval === 'annual',
-    });
-
-    return ok({ interval: req.interval }, 'Billing interval updated');
-  }
+    It existed for one purpose — switching between monthly and annual — and
+    annual is gone. Everything else about the bill changes by switching a module
+    on or off where it lives, which reconciles on its own. Leaving an endpoint
+    whose only argument no longer has two values would be an endpoint that
+    cannot do anything.
+  */
 
   async cancel(organizationId: string) {
     const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
@@ -565,24 +523,20 @@ export class BillingService {
 
     if (!sub.stripeSubscriptionId || !this.stripe.isConfigured) return ok(bill);
 
-    const interval = intervalFromPrisma(sub.interval);
-    const lines = stripeLinesForBill(bill, interval);
+    const lines = stripeLinesForBill(bill);
 
     /*
-      Charge immediately only for an annual INCREASE.
+      Every change banks its proration onto the next invoice.
 
-      Annual decreases and every monthly change bank the proration onto the next
-      invoice — a monthly customer's next invoice is days away, and banking a
-      decrease lets the credit reduce the renewal rather than cutting an
-      immediate credit note. An annual increase is the one case where waiting
-      would give away most of a year: without this, a module switched on in
-      February is free until the following January.
+      With annual gone there is no case left for charging immediately: a monthly
+      customer's next invoice is days away, so a mid-cycle increase is collected
+      almost at once anyway, and banking a decrease lets the credit reduce that
+      invoice instead of cutting a credit note nobody asked for. (The annual
+      increase WAS the exception — waiting would have made a module switched on
+      in February free until the following January.)
     */
-    const previous = sub.lastBilledCents ?? 0;
-    const invoiceNow = interval === 'annual' && bill.monthlyCents > previous;
-
     try {
-      await this.stripe.setSubscriptionLines(sub.stripeSubscriptionId, lines, { invoiceNow });
+      await this.stripe.setSubscriptionLines(sub.stripeSubscriptionId, lines, { invoiceNow: false });
       await this.prisma.subscription.update({
         where: { organizationId },
         data: { lastBilledCents: bill.monthlyCents },
@@ -690,7 +644,7 @@ export class BillingService {
     const { start: periodStart, end: periodEnd } = subPeriod(sub);
     const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
 
-    // AUTHORITATIVE tier/interval = what the customer actually pays for, resolved
+    // AUTHORITATIVE tier = what the customer actually pays for, resolved
     // from the subscription's Stripe price IDs. This is the ONLY correct source —
     // reading the denormalized org.planTier would let a Starter buyer keep the
     // trial's Professional entitlements (payment ≠ entitlement). Fall back to the
@@ -699,13 +653,11 @@ export class BillingService {
     const resolved = this.stripe.resolveTierInterval(sub);
     const tier = resolved?.tier ?? tierFromPrisma(org?.planTier ?? null);
     const prismaTier: PrismaTier = tier ? (tier.toUpperCase() as PrismaTier) : (org?.planTier ?? 'PROFESSIONAL');
-    const prismaInterval: PrismaInterval = resolved ? INTERVAL_TO_PRISMA[resolved.interval] : 'MONTHLY';
 
     await this.prisma.organization.update({
       where: { id: orgId },
       data: {
         planTier: prismaTier,
-        billingInterval: prismaInterval,
         subStatus: status,
         currentPeriodEnd: periodEnd,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
@@ -722,7 +674,6 @@ export class BillingService {
         stripeSubscriptionId: sub.id,
         planTier: prismaTier,
         status,
-        interval: prismaInterval,
         currentPeriodStart: periodStart,
         currentPeriodEnd: periodEnd,
         trialEndsAt: trialEnd,
@@ -732,7 +683,6 @@ export class BillingService {
       update: {
         stripeSubscriptionId: sub.id,
         planTier: prismaTier,
-        interval: prismaInterval,
         status,
         currentPeriodStart: periodStart,
         currentPeriodEnd: periodEnd,

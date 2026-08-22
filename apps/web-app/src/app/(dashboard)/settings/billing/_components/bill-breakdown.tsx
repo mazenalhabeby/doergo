@@ -56,11 +56,6 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
               </span>
             </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {t('billing.bill.annualNote', '{{price}} a year — two months free', {
-              price: formatCents(bill.annualCents),
-            })}
-          </p>
         </div>
 
         {/* The three parts, so the total can be checked rather than trusted. */}

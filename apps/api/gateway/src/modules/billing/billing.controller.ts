@@ -17,7 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
-import { CheckoutDto, ChangePlanDto , SetAddOnsDto } from './dto';
+import { SetAddOnsDto } from './dto';
 
 @ApiTags('billing')
 @Controller('billing')
@@ -75,8 +75,8 @@ export class BillingController {
   @Post('checkout')
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Start Stripe Checkout for a self-serve plan (ADMIN)' })
-  async checkout(@CurrentUser() user: CurrentUserData, @Body() dto: CheckoutDto) {
+  @ApiOperation({ summary: 'Start Stripe Checkout for what the org already has (ADMIN)' })
+  async checkout(@CurrentUser() user: CurrentUserData) {
     const base = this.webBase();
     return this.unwrap(
       await firstValueFrom(
@@ -84,7 +84,6 @@ export class BillingController {
           { cmd: 'billing_create_checkout' },
           {
             organizationId: user.organizationId,
-            req: { interval: dto.interval },
             successUrl: `${base}/settings/billing?checkout=success`,
             cancelUrl: `${base}/settings/billing?checkout=cancel`,
           },
@@ -101,27 +100,6 @@ export class BillingController {
     return this.unwrap(
       await firstValueFrom(
         this.authClient.send({ cmd: 'billing_create_portal' }, { organizationId: user.organizationId, returnUrl: `${this.webBase()}/settings/billing` }),
-      ),
-    );
-  }
-
-  @Post('change-plan')
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change the active plan/interval (ADMIN)' })
-  async changePlan(@CurrentUser() user: CurrentUserData, @Body() dto: ChangePlanDto) {
-    const base = this.webBase();
-    return this.unwrap(
-      await firstValueFrom(
-        this.authClient.send(
-          { cmd: 'billing_change_plan' },
-          {
-            organizationId: user.organizationId,
-            req: { interval: dto.interval },
-            successUrl: `${base}/settings/billing`,
-            cancelUrl: `${base}/settings/billing`,
-          },
-        ),
       ),
     );
   }

@@ -6,7 +6,6 @@ import {
   AVAILABLE_MODULES,
   AVAILABLE_ADD_ONS,
   MODULE_MONTHLY_CENTS,
-  ANNUAL_MONTHS_CHARGED,
 } from '@hbcfield/shared';
 
 /** unit price of a lookup key, from the catalogue */
@@ -40,12 +39,12 @@ describe('what Stripe is told', () => {
 
   it('charges exactly what the breakdown says, to the cent', () => {
     const b = bill();
-    expect(charged(stripeLinesForBill(b, 'monthly'))).toBe(b.monthlyCents);
+    expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
   });
 
   it('holds for an organization with nothing but seats', () => {
     const b = bill({ spaces: [], addOns: [] });
-    expect(charged(stripeLinesForBill(b, 'monthly'))).toBe(b.monthlyCents);
+    expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
   });
 
   it('holds when every count sits inside its free allowance', () => {
@@ -54,7 +53,7 @@ describe('what Stripe is told', () => {
       addOns: [],
     });
     expect(b.usageMonthlyCents).toBe(0);
-    expect(charged(stripeLinesForBill(b, 'monthly'))).toBe(b.monthlyCents);
+    expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
   });
 
   it('holds at a size where the ladders are doing real work', () => {
@@ -62,32 +61,38 @@ describe('what Stripe is told', () => {
       spaces: [{ spaceId: 'a', spaceName: 'A', enabledModules: ['crm', 'assets'], usage: { crm: 4000, assets: 900 } }],
     });
     expect(b.usageMonthlyCents).toBeGreaterThan(10000);
-    expect(charged(stripeLinesForBill(b, 'monthly'))).toBe(b.monthlyCents);
+    expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
   });
 
   it('bills a module once per space that switched it on', () => {
-    const lines = stripeLinesForBill(bill(), 'monthly');
-    expect(lines.find(l => l.lookupKey === stripeLookupKey('module', 'tracking', 'monthly'))?.quantity).toBe(2);
-    expect(lines.find(l => l.lookupKey === stripeLookupKey('module', 'crm', 'monthly'))?.quantity).toBe(1);
+    const lines = stripeLinesForBill(bill());
+    expect(lines.find(l => l.lookupKey === stripeLookupKey('module', 'tracking'))?.quantity).toBe(2);
+    expect(lines.find(l => l.lookupKey === stripeLookupKey('module', 'crm'))?.quantity).toBe(1);
   });
 
   it('never sends a zero-quantity line', () => {
     // Stripe keeps a zero-quantity item on the subscription, and it shows on the
     // invoice as a line for something the customer switched off.
     const b = bill({ seatCount: 0, spaces: [], addOns: [] });
-    expect(stripeLinesForBill(b, 'monthly')).toEqual([]);
-    for (const l of stripeLinesForBill(bill(), 'monthly')) expect(l.quantity).toBeGreaterThan(0);
+    expect(stripeLinesForBill(b)).toEqual([]);
+    for (const l of stripeLinesForBill(bill())) expect(l.quantity).toBeGreaterThan(0);
   });
 
-  it('gives two months free on annual, on every kind of line', () => {
+  it('charges exactly what the breakdown shows', () => {
+    // The invariant the whole model rests on: what Stripe is told, priced from
+    // the catalogue, equals the total the screen renders — to the cent.
     const b = bill();
-    // The discount lives in the PRICE, never in the quantity — the annual and
-    // monthly line-ups are identical but for which price they point at.
-    const m = stripeLinesForBill(b, 'monthly');
-    const a = stripeLinesForBill(b, 'annual');
-    expect(a.map(l => l.quantity)).toEqual(m.map(l => l.quantity));
-    expect(charged(a)).toBe(b.monthlyCents * ANNUAL_MONTHS_CHARGED);
-    expect(charged(a)).toBe(b.annualCents);
+    expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
+  });
+
+  it('has one price per line, and it is monthly', () => {
+    // Annual is gone. A catalogue still emitting a yearly price would have the
+    // sync create prices nothing can ever select — and the 31 live monthly
+    // prices are resolved by the frozen `_monthly` suffix, so it has to stay.
+    for (const e of stripeCatalog()) {
+      expect(e.recurring).toBe('month');
+      expect(e.lookupKey.endsWith('_monthly')).toBe(true);
+    }
   });
 });
 
@@ -98,11 +103,10 @@ describe('the Stripe catalogue', () => {
     expect(keys.has('hbcfield_seat_monthly')).toBe(true);
     for (const m of AVAILABLE_MODULES) {
       if ((MODULE_MONTHLY_CENTS[m.key as string] ?? 0) <= 0) continue;
-      expect(keys.has(stripeLookupKey('module', m.key as string, 'monthly'))).toBe(true);
-      expect(keys.has(stripeLookupKey('module', m.key as string, 'annual'))).toBe(true);
+      expect(keys.has(stripeLookupKey('module', m.key as string))).toBe(true);
     }
     for (const a of AVAILABLE_ADD_ONS) {
-      expect(keys.has(stripeLookupKey('addon', a.key, 'monthly'))).toBe(true);
+      expect(keys.has(stripeLookupKey('addon', a.key))).toBe(true);
     }
   });
 

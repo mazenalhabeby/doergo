@@ -39,8 +39,17 @@ import { addOnsMonthlyCost, type AddOnCostLine } from './add-ons';
 /** Per user, per month. The same for everyone. */
 export const SEAT_MONTHLY_CENTS = 999;
 
-/** Annual is ten months — two free, matching the seat convention in plans.ts. */
-export const ANNUAL_MONTHS_CHARGED = 10;
+/*
+  THERE IS NO ANNUAL INTERVAL. Everything here is monthly, and that is the whole
+  billing calendar.
+
+  A yearly option at ten months existed and was removed before anyone bought
+  one: it doubled the price surface (two Stripe prices per line, two proration
+  rules, an interval to switch between) to sell a discount nobody had asked for,
+  and it made every screen ask a question — monthly or yearly? — in front of the
+  one people actually came to answer. Reintroducing it means reintroducing that
+  fork everywhere, so do it deliberately or not at all.
+*/
 
 /** Monthly price of each module, per space, in EUR cents. */
 export const MODULE_MONTHLY_CENTS: Record<string, number> = {
@@ -177,7 +186,6 @@ export interface OrgCostBreakdown {
   /** Capabilities bought once for the whole organization, not per space. */
   addOnsMonthlyCents: number;
   monthlyCents: number;
-  annualCents: number;
   spaces: Array<{ spaceId: string; spaceName: string; cost: SpaceCost }>;
   /** Every space's counted modules, flattened — one entry per space per module. */
   usage: UsageCost[];
@@ -222,7 +230,6 @@ export function orgMonthlyCost(input: {
     usageMonthlyCents,
     addOnsMonthlyCents: addOnCost.monthlyCents,
     monthlyCents,
-    annualCents: monthlyCents * ANNUAL_MONTHS_CHARGED,
     spaces,
     usage: spaces.flatMap((s) => s.cost.usage),
     addOns: addOnCost.lines,

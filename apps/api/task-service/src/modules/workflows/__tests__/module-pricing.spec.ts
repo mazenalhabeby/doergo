@@ -129,8 +129,10 @@ describe('what an organization pays', () => {
     expect(bill.monthlyCents).toBe(24790);
   });
 
-  it('gives two months free on annual', () => {
-    expect(orgMonthlyCost({ seatCount: 10, spaces: twoSites }).annualCents).toBe(24790 * 10);
+  it('quotes one figure and one only — there is no annual', () => {
+    const bill = orgMonthlyCost({ seatCount: 10, spaces: twoSites });
+    expect(bill.monthlyCents).toBe(24790);
+    expect('annualCents' in bill).toBe(false);
   });
 
   it('reports the halves as well as the total', () => {

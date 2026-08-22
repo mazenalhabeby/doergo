@@ -3,16 +3,16 @@
  *
  * The tier model kept its Stripe Price IDs in eight environment variables. That
  * does not survive contact with this model: sixteen modules, eleven add-ons, a
- * seat and three usage lines, each monthly and annual, is sixty-two IDs. Sixty-two
- * environment variables is not configuration, it is a second copy of the price
- * list that drifts from the first.
+ * seat and three usage lines is thirty-one IDs. Thirty-one environment variables
+ * is not configuration, it is a second copy of the price list that drifts from
+ * the first.
  *
  * So nothing is configured. Every price carries a deterministic Stripe
  * `lookup_key` derived from the thing it prices, and both the sync script and
  * the runtime compute the same key from the same table:
  *
  *     hbcfield_module_crm_monthly
- *     hbcfield_addon_invoicing_annual
+ *     hbcfield_addon_invoicing_monthly
  *     hbcfield_seat_monthly
  *     hbcfield_usage_assets_monthly
  *
@@ -36,21 +36,29 @@
  */
 
 import { AVAILABLE_MODULES } from '../types';
-import { MODULE_MONTHLY_CENTS, SEAT_MONTHLY_CENTS, ANNUAL_MONTHS_CHARGED } from './module-pricing';
+import { MODULE_MONTHLY_CENTS, SEAT_MONTHLY_CENTS } from './module-pricing';
 import { AVAILABLE_ADD_ONS } from './add-ons';
 import { MODULE_USAGE_PRICING } from './usage-pricing';
-import type { BillingInterval } from './plans';
 
 /** Every price this system creates is prefixed, so a shared Stripe account stays legible. */
 export const STRIPE_LOOKUP_PREFIX = 'hbcfield';
 
 export type StripeLineKind = 'seat' | 'module' | 'addon' | 'usage';
 
-/** The stable lookup key for one billable line. Same function, script and runtime. */
-export function stripeLookupKey(kind: StripeLineKind, key: string, interval: BillingInterval): string {
+/**
+ * The stable lookup key for one billable line. Same function, script and runtime.
+ *
+ * The `_monthly` suffix is a FROZEN LITERAL, not a variable, and must stay one.
+ * Thirty-one live prices on the Stripe account are already resolved by these
+ * exact strings; shortening the key to drop a word would leave every one of them
+ * unfindable and have the sync mint a second, duplicate price list. It reads as
+ * redundant now that monthly is the only interval — that is the cost of keeping
+ * a customer's subscription resolvable, and it is the cheaper side of the trade.
+ */
+export function stripeLookupKey(kind: StripeLineKind, key: string): string {
   return kind === 'seat'
-    ? `${STRIPE_LOOKUP_PREFIX}_seat_${interval}`
-    : `${STRIPE_LOOKUP_PREFIX}_${kind}_${key}_${interval}`;
+    ? `${STRIPE_LOOKUP_PREFIX}_seat_monthly`
+    : `${STRIPE_LOOKUP_PREFIX}_${kind}_${key}_monthly`;
 }
 
 /** One product/price pair the account is expected to hold. */
@@ -58,17 +66,14 @@ export interface StripeCatalogEntry {
   kind: StripeLineKind;
   /** Module key, add-on key, or '' for the seat. */
   key: string;
-  interval: BillingInterval;
   lookupKey: string;
   /** Shown on the invoice and in the Stripe dashboard. */
   productName: string;
   /** Unit amount in EUR cents. For `usage` this is 1 — the quantity carries the total. */
   unitAmountCents: number;
-  /** Stripe recurring interval. */
-  recurring: 'month' | 'year';
+  /** Stripe recurring interval. Always monthly — there is no other. */
+  recurring: 'month';
 }
-
-const annual = (monthlyCents: number) => monthlyCents * ANNUAL_MONTHS_CHARGED;
 
 /**
  * Everything that should exist in Stripe, computed from the price list.
@@ -79,20 +84,16 @@ const annual = (monthlyCents: number) => monthlyCents * ANNUAL_MONTHS_CHARGED;
  */
 export function stripeCatalog(): StripeCatalogEntry[] {
   const out: StripeCatalogEntry[] = [];
-  const intervals: BillingInterval[] = ['monthly', 'annual'];
 
   const push = (kind: StripeLineKind, key: string, name: string, monthlyCents: number) => {
-    for (const interval of intervals) {
-      out.push({
-        kind,
-        key,
-        interval,
-        lookupKey: stripeLookupKey(kind, key, interval),
-        productName: name,
-        unitAmountCents: interval === 'annual' ? annual(monthlyCents) : monthlyCents,
-        recurring: interval === 'annual' ? 'year' : 'month',
-      });
-    }
+    out.push({
+      kind,
+      key,
+      lookupKey: stripeLookupKey(kind, key),
+      productName: name,
+      unitAmountCents: monthlyCents,
+      recurring: 'month',
+    });
   };
 
   push('seat', '', 'HBCField — User seat', SEAT_MONTHLY_CENTS);
@@ -112,26 +113,15 @@ export function stripeCatalog(): StripeCatalogEntry[] {
   // per-space graduated ladder.
   for (const key of Object.keys(MODULE_USAGE_PRICING)) {
     const label = AVAILABLE_MODULES.find((m) => m.key === key)?.label ?? key;
-    for (const interval of intervals) {
-      out.push({
-        kind: 'usage',
-        key,
-        interval,
-        lookupKey: stripeLookupKey('usage', key, interval),
-        productName: `HBCField — ${label} usage`,
-        /*
-          One cent a unit monthly, TEN cents a unit annually.
-
-          The quantity is always the ladder's MONTHLY cents, on both intervals,
-          so the annual discount lives in the price exactly as it does for every
-          other line. Leaving this at 1 for annual charged a year of usage at one
-          month's rate — a silent under-bill that grew with the customer, since
-          it is the biggest accounts whose ladders carry the most.
-        */
-        unitAmountCents: interval === 'annual' ? ANNUAL_MONTHS_CHARGED : 1,
-        recurring: interval === 'annual' ? 'year' : 'month',
-      });
-    }
+    out.push({
+      kind: 'usage',
+      key,
+      lookupKey: stripeLookupKey('usage', key),
+      productName: `HBCField — ${label} usage`,
+      // One cent a unit; the quantity carries the ladder's cents.
+      unitAmountCents: 1,
+      recurring: 'month',
+    });
   }
 
   return out;
@@ -163,13 +153,12 @@ export function stripeLinesForBill(
     usage: Array<{ moduleKey: string; monthlyCents: number }>;
     addOns: Array<{ key: string }>;
   },
-  interval: BillingInterval,
 ): StripeLine[] {
   const lines: StripeLine[] = [];
 
   if (bill.seatCount > 0) {
     lines.push({
-      lookupKey: stripeLookupKey('seat', '', interval),
+      lookupKey: stripeLookupKey('seat', ''),
       quantity: bill.seatCount,
       describe: `${bill.seatCount} seat(s)`,
     });
@@ -185,7 +174,7 @@ export function stripeLinesForBill(
   }
   for (const [moduleKey, count] of [...spacesPerModule].sort(([a], [b]) => a.localeCompare(b))) {
     lines.push({
-      lookupKey: stripeLookupKey('module', moduleKey, interval),
+      lookupKey: stripeLookupKey('module', moduleKey),
       quantity: count,
       describe: `${moduleKey} × ${count} space(s)`,
     });
@@ -199,7 +188,7 @@ export function stripeLinesForBill(
   }
   for (const [moduleKey, cents] of [...usagePerModule].sort(([a], [b]) => a.localeCompare(b))) {
     lines.push({
-      lookupKey: stripeLookupKey('usage', moduleKey, interval),
+      lookupKey: stripeLookupKey('usage', moduleKey),
       // Annual charges ten months of the same monthly ladder, matching every
       // other line — the discount lives in the price, not in the quantity.
       quantity: cents,
@@ -209,7 +198,7 @@ export function stripeLinesForBill(
 
   for (const a of [...bill.addOns].sort((x, y) => x.key.localeCompare(y.key))) {
     lines.push({
-      lookupKey: stripeLookupKey('addon', a.key, interval),
+      lookupKey: stripeLookupKey('addon', a.key),
       quantity: 1,
       describe: a.key,
     });

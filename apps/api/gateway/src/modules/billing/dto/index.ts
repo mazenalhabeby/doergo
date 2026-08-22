@@ -2,23 +2,18 @@ import { IsIn, IsArray, ArrayUnique, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ADD_ON_KEYS } from '@hbcfield/shared';
 
-const INTERVALS = ['monthly', 'annual'] as const;
+/*
+  There is no CheckoutDto, and no ChangePlanDto.
 
-/**
- * Checkout no longer takes a tier — there are none.
- *
- * The purchase is whatever the organization already has switched on, computed
- * server-side at the moment of checkout. A body that could name its own lines
- * would let a customer subscribe to a cheaper bill than the one they are using.
- * Monthly or annual is the only choice left.
- */
-export class CheckoutDto {
-  @ApiProperty({ enum: INTERVALS })
-  @IsIn(INTERVALS as unknown as string[])
-  interval!: (typeof INTERVALS)[number];
-}
+  Checkout takes no body at all. It never took a tier — there are none — and it
+  no longer takes an interval either, because billing is monthly and nothing
+  else. The purchase is whatever the organization already has switched on,
+  computed server-side at the moment of checkout, so a client cannot subscribe
+  itself to a cheaper bill than the one it is using.
 
-export class ChangePlanDto extends CheckoutDto {}
+  ChangePlanDto existed to carry that interval and had no other field, so the
+  endpoint went with it.
+*/
 
 /**
  * Which capabilities the organization is buying.

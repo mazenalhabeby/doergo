@@ -413,7 +413,7 @@
         }
       ],
       "cta": "Start free",
-      "note": "Annual billing = 2 months free · Switch a module off the day you stop using it · VAT added at checkout",
+      "note": "Billed monthly · Switch a module off the day you stop using it · VAT added at checkout",
       "parts": [
         {
           "name": "Every person",
@@ -466,7 +466,7 @@
         },
         {
           "q": "How much does HBCField cost?",
-          "a": "Per-seat pricing in euros with a 14-day free trial and no credit card required. Field (mobile-only) seats start at €19 per month; office seats are tiered."
+          "a": "€9.99 per person per month, plus whatever each of your sites switches on, plus any add-ons bought once for the company. No plans and no tiers — 14 days free, no credit card. Every price is public at hbcfield.com/pricing."
         },
         {
           "q": "Does HBCField replace separate tools?",
@@ -479,7 +479,6 @@
       "perPerson": "/ person / month",
       "perPersonLong": "per person, per month",
       "totalFor": "{{price}} in total",
-      "orAnnual": "or {{price}} a year — 2 months free",
       "anchor": "The separate tools this replaces cost €60–90 per person.",
       "preset": {
         "basics": {
@@ -4273,7 +4272,7 @@
       "memberLabel": "\"Member\"",
       "memberText": " — any user (office coordinator, dispatcher, or field technician) added to an Organization.",
       "seatLabel": "\"Seat\"",
-      "seatText": " — a billable unit of access; an office seat (web access) is priced by plan tier, a field seat (mobile-only access) is priced at a flat rate.",
+      "seatText": " — a billable unit of access; every active Member counts as one seat at the same flat rate, whatever their access.",
       "dataLabel": "\"Customer Data\"",
       "dataText": " — all data your Organization and its Members submit to the Service, including tasks, reports, photos, locations, and comments."
     },
@@ -4296,27 +4295,23 @@
       "item4": "you must notify us promptly of any unauthorized access or security breach affecting your account."
     },
     "s5": {
-      "title": "5. Subscriptions, Seats & Plans",
-      "intro": "The Service is offered on a subscription basis across several plan tiers, billed either monthly or annually. The features available to your Organization depend on the tier you select.",
-      "seats": "Billing is per seat, not per bundle. Every active Member counts as a seat: an office seat (any Member with web-portal access, including the Admin) is priced at the tier rate, while a field seat (a mobile-only Member) is charged at a flat rate. A Member's seat type follows their access — if you grant or revoke web access, their seat type changes accordingly, and your seat counts re-sync.",
-      "plansTitle": "Plans & pricing (excl. VAT)",
-      "starterLabel": "Starter",
-      "starterText": "€29 per office seat / month (€290 / year).",
-      "proLabel": "Professional",
-      "proText": "€59 per office seat / month (€590 / year).",
-      "businessLabel": "Business",
-      "businessText": "€99 per office seat / month (€990 / year).",
-      "fieldLabel": "Field seat",
-      "fieldText": "€19 per mobile-only seat / month (€190 / year), on any tier.",
-      "plansNote": "Prices are exclusive of VAT and may be updated for future terms with notice. Your current plan and seat counts are always shown in Settings → Billing."
+      "title": "5. Subscriptions, Seats & What You Pay For",
+      "intro": "The Service is offered on a monthly subscription. There are no plan tiers: every capability is available to every customer at the price listed on our pricing page, and what you pay is the sum of the people, modules and add-ons in effect.",
+      "seats": "Billing is per person, not per bundle. Every active Member counts as one seat at the same rate, whatever their access — there is no office/field distinction. Modules are enabled per site and billed for each site that enables them; some are additionally billed by a count (for example assets or customer records), on published volume rates.",
+      "plansTitle": "What is charged (excl. VAT)",
+      "plansNote": "Prices exclude VAT and may be updated for future terms with notice. The full price list is public at hbcfield.com/pricing, and your current bill is always itemised in Settings → Billing.",
+      "seatLabel": "Each person",
+      "seatText": "€9.99 per Member / month.",
+      "moduleLabel": "Each module",
+      "moduleText": "from €3 per site / month, for each site that switches it on.",
+      "addOnLabel": "Each add-on",
+      "addOnText": "from €9 / month, purchased once for the whole Organization."
     },
     "s6": {
       "title": "6. Fees, Billing & Proration",
-      "intro": "Fees are charged in euro (EUR) in advance for each billing period, based on the plan and seat counts in effect. When you add or remove seats mid-period, the amount is prorated as follows:",
-      "monthlyLabel": "Monthly plans — ",
-      "monthlyText": "changes are prorated and applied to your next invoice; adding seats does not trigger an immediate separate charge, but the prorated amount for the remainder of the current period is added to the following invoice.",
-      "annualLabel": "Annual plans (adding seats) — ",
-      "annualText": "an increase is invoiced immediately, prorated for the remainder of the annual term, so added seats are not free until renewal.",
+      "intro": "Fees are charged in euro (EUR) monthly in advance, based on the people, modules and add-ons in effect. When something changes mid-period, the amount is prorated as follows:",
+      "monthlyLabel": "Adding — ",
+      "monthlyText": "changes are prorated and applied to your next invoice; adding a person or switching a module on does not trigger an immediate separate charge, but the prorated amount for the remainder of the current month is added to the following invoice.",
       "decreaseLabel": "Removing seats — ",
       "decreaseText": "reductions never trigger a cash refund; the prorated value is banked as an account credit and applied to future invoices.",
       "processor": "Payments are processed by Stripe. You authorize us and Stripe to charge your payment method for all fees due. You are responsible for keeping a valid payment method on file."
@@ -4328,13 +4323,13 @@
     },
     "s8": {
       "title": "8. Free Trial",
-      "intro": "New Organizations may receive a free trial of the Professional tier (currently 14 days). No payment method is required to start the trial, and you can use eligible features during the trial period.",
+      "intro": "New Organizations may receive a free trial (currently 14 days) with every capability switched on, including those that are otherwise charged for. No payment method is required to start the trial.",
       "expiry": "Unless you subscribe to a paid plan before the trial ends, access is restricted at the end of the trial and the account is placed in a read-only state until a subscription is started. We may change or discontinue trial offers at any time."
     },
     "s9": {
       "title": "9. Renewal, Cancellation & Refunds",
       "renewLabel": "Automatic renewal — ",
-      "renewText": "subscriptions renew automatically at the end of each billing period (monthly or annual) at the then-current fees, until cancelled.",
+      "renewText": "subscriptions renew automatically at the end of each monthly billing period at the then-current fees, until cancelled.",
       "cancelLabel": "Cancellation — ",
       "cancelText": "you may cancel at any time from Settings → Billing or the Stripe Customer Portal. Cancellation takes effect at the end of the current paid period; you keep access until then.",
       "refundLabel": "Refunds — ",
@@ -6263,7 +6258,6 @@
     "bill": {
       "total": "Your monthly total",
       "perMonth": "/month",
-      "annualNote": "{{price}} a year — two months free",
       "seats": "People",
       "seatsDetail": "{{count}} × {{price}}",
       "spaces": "Spaces",
@@ -6649,7 +6643,7 @@
     "badgeSaved": "Saved",
     "badgeTemplate": "Template",
     "badgeTimesheet": "Timesheet",
-    "builderLocked": "Custom report builder is available on Professional and above.",
+    "builderLocked": "The custom report builder is an add-on. An admin can switch it on in Settings → Billing.",
     "builderNav": "Report builder",
     "builderNavDesc": "Pick a dataset, measures and grouping",
     "cadence": "Frequency",
@@ -6873,10 +6867,7 @@
       "siteN": "Site {{n}}",
       "addSite": "Add another site",
       "removeSite": "Remove this site",
-      "monthly": "Monthly",
-      "annual": "Yearly",
       "aMonth": "a month",
-      "aYear": "a year — {{months}} months, not 12",
       "perPerson": "per person, per month",
       "breakdown": "Where it comes from",
       "seatsLine": "{{count}} people × {{price}}",
@@ -6898,10 +6889,6 @@
       {
         "title": "Changes take effect the same day",
         "body": "Switch something on and it is charged from then; switch it off and it stops. Mid-month changes are worked out to the day, not rounded to a whole month."
-      },
-      {
-        "title": "A year costs ten months",
-        "body": "Pay yearly and you pay for {{months}} months instead of 12. Same prices, two months free."
       },
       {
         "title": "14 days free, no card",
@@ -6935,7 +6922,7 @@
       },
       {
         "q": "Is there a minimum, or a contract?",
-        "a": "One person, one site, one month. No minimum team size, no setup fee, no annual commitment unless you choose yearly billing to get the two months free."
+        "a": "One person, one site, one month. No minimum team size, no setup fee and no annual commitment — billing is monthly, and you can stop at any time."
       },
       {
         "q": "What happens when my trial ends?",

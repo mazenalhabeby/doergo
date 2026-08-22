@@ -413,7 +413,7 @@
         }
       ],
       "cta": "Inizia gratis",
-      "note": "Fatturazione annuale = 2 mesi gratis · Disattiva un modulo il giorno in cui smetti di usarlo · IVA aggiunta al pagamento",
+      "note": "Fatturazione mensile · Disattiva un modulo il giorno in cui smetti di usarlo · IVA aggiunta al pagamento",
       "parts": [
         {
           "name": "Per persona",
@@ -466,7 +466,7 @@
         },
         {
           "q": "Quanto costa HBCField?",
-          "a": "Prezzi per postazione in euro con una prova gratuita di 14 giorni e senza carta di credito. Le postazioni sul campo (solo mobile) partono da 19 € al mese; quelle da ufficio sono a livelli."
+          "a": "9,99 € per persona al mese, più ciò che ogni tua sede attiva, più gli extra acquistati una volta per l'azienda. Niente piani né livelli: 14 giorni gratis, senza carta. Tutti i prezzi sono pubblici su hbcfield.com/pricing."
         },
         {
           "q": "HBCField sostituisce strumenti separati?",
@@ -479,7 +479,6 @@
       "perPerson": "/ persona / mese",
       "perPersonLong": "a persona, al mese",
       "totalFor": "{{price}} in totale",
-      "orAnnual": "oppure {{price}} all’anno — 2 mesi gratis",
       "anchor": "Gli strumenti separati che questo sostituisce costano 60–90 € a persona.",
       "preset": {
         "basics": {
@@ -4282,7 +4281,7 @@
       "memberLabel": "\"Membro\"",
       "memberText": " — qualsiasi utente (coordinatore d'ufficio, addetto all'assegnazione o tecnico sul campo) aggiunto a un'Organizzazione.",
       "seatLabel": "\"Postazione\"",
-      "seatText": " — un'unità di accesso fatturabile; una postazione d'ufficio (accesso web) è tariffata in base al livello di piano, una postazione sul campo (accesso solo mobile) è tariffata a una tariffa fissa.",
+      "seatText": " — un'unità di accesso fatturabile; ogni Membro attivo conta come una postazione alla stessa tariffa fissa, qualunque sia il suo accesso.",
       "dataLabel": "\"Dati del cliente\"",
       "dataText": " — tutti i dati che la sua Organizzazione e i suoi Membri inviano al Servizio, comprese attività, report, foto, posizioni e commenti."
     },
@@ -4305,27 +4304,23 @@
       "item4": "deve informarci tempestivamente di qualsiasi accesso non autorizzato o violazione della sicurezza che riguardi il proprio account."
     },
     "s5": {
-      "title": "5. Abbonamenti, postazioni e piani",
-      "intro": "Il Servizio è offerto su base di abbonamento in diversi livelli di piano, con fatturazione mensile o annuale. Le funzionalità disponibili per la sua Organizzazione dipendono dal livello selezionato.",
-      "seats": "La fatturazione è per postazione, non per pacchetto. Ogni Membro attivo conta come una postazione: una postazione d'ufficio (qualsiasi Membro con accesso al portale web, incluso l'Amministratore) è tariffata alla tariffa del livello, mentre una postazione sul campo (un Membro solo mobile) è addebitata a una tariffa fissa. Il tipo di postazione di un Membro segue il suo accesso — se concede o revoca l'accesso web, il suo tipo di postazione cambia di conseguenza e il conteggio delle postazioni viene ricalcolato.",
-      "plansTitle": "Piani e prezzi (IVA esclusa)",
-      "starterLabel": "Starter",
-      "starterText": "29 € per postazione d'ufficio / mese (290 € / anno).",
-      "proLabel": "Professional",
-      "proText": "59 € per postazione d'ufficio / mese (590 € / anno).",
-      "businessLabel": "Business",
-      "businessText": "99 € per postazione d'ufficio / mese (990 € / anno).",
-      "fieldLabel": "Postazione sul campo",
-      "fieldText": "19 € per postazione solo mobile / mese (190 € / anno), su qualsiasi livello.",
-      "plansNote": "I prezzi sono IVA esclusa e potranno essere aggiornati per periodi futuri con preavviso. Il piano corrente e il conteggio delle postazioni sono sempre visibili in Impostazioni → Fatturazione."
+      "title": "5. Abbonamenti, postazioni e cosa paghi",
+      "intro": "Il Servizio è offerto con abbonamento mensile. Non esistono livelli di piano: ogni funzionalità è disponibile per tutti i clienti al prezzo indicato nella nostra pagina prezzi, e paghi la somma di persone, moduli ed extra attivi.",
+      "seats": "La fatturazione è per persona, non per pacchetto. Ogni Membro attivo conta come una postazione alla stessa tariffa, qualunque sia il suo accesso: non c'è distinzione tra ufficio e campo. I moduli si attivano per sede e sono addebitati per ogni sede che li attiva; alcuni sono inoltre addebitati a quantità (per esempio beni o schede cliente), secondo scaglioni pubblicati.",
+      "plansTitle": "Cosa viene addebitato (IVA esclusa)",
+      "plansNote": "I prezzi sono IVA esclusa e possono essere aggiornati per periodi futuri con preavviso. Il listino completo è pubblico su hbcfield.com/pricing, e la tua fattura corrente è sempre dettagliata in Impostazioni → Fatturazione.",
+      "seatLabel": "Per persona",
+      "seatText": "9,99 € per Membro / mese.",
+      "moduleLabel": "Per modulo",
+      "moduleText": "da 3 € per sede / mese, per ogni sede che lo attiva.",
+      "addOnLabel": "Per extra",
+      "addOnText": "da 9 € / mese, acquistato una volta per l'intera Organizzazione."
     },
     "s6": {
       "title": "6. Tariffe, fatturazione e ripartizione",
-      "intro": "Le tariffe sono addebitate in euro (EUR) in via anticipata per ciascun periodo di fatturazione, in base al piano e al numero di postazioni in vigore. Quando aggiunge o rimuove postazioni a metà periodo, l'importo viene ripartito come segue:",
-      "monthlyLabel": "Piani mensili — ",
-      "monthlyText": "le modifiche vengono ripartite e applicate alla fattura successiva; l'aggiunta di postazioni non comporta un addebito immediato separato, ma l'importo ripartito per il resto del periodo corrente viene aggiunto alla fattura successiva.",
-      "annualLabel": "Piani annuali (aggiunta di postazioni) — ",
-      "annualText": "un aumento viene fatturato immediatamente, ripartito per il resto del periodo annuale, così che le postazioni aggiunte non siano gratuite fino al rinnovo.",
+      "intro": "Le tariffe sono addebitate in euro (EUR) ogni mese in anticipo, in base a persone, moduli ed extra attivi. Se qualcosa cambia a metà periodo, il calcolo è proporzionale come segue:",
+      "monthlyLabel": "Aggiunte — ",
+      "monthlyText": "le modifiche sono calcolate in proporzione e applicate alla fattura successiva; aggiungere una persona o attivare un modulo non genera un addebito immediato separato, ma l'importo proporzionale per il resto del mese in corso viene aggiunto alla fattura successiva.",
       "decreaseLabel": "Rimozione di postazioni — ",
       "decreaseText": "le riduzioni non comportano mai un rimborso in denaro; il valore ripartito viene accantonato come credito sul conto e applicato alle fatture future.",
       "processor": "I pagamenti sono elaborati da Stripe. L'utente autorizza noi e Stripe ad addebitare il proprio metodo di pagamento per tutte le tariffe dovute. L'utente è responsabile di mantenere registrato un metodo di pagamento valido."
@@ -4337,13 +4332,13 @@
     },
     "s8": {
       "title": "8. Prova gratuita",
-      "intro": "Le nuove Organizzazioni possono ricevere una prova gratuita del livello Professional (attualmente 14 giorni). Non è richiesto alcun metodo di pagamento per iniziare la prova ed è possibile utilizzare le funzionalità idonee durante il periodo di prova.",
+      "intro": "Le nuove Organizzazioni possono ricevere una prova gratuita (attualmente 14 giorni) con ogni funzionalità attiva, incluse quelle altrimenti a pagamento. Non è richiesto alcun metodo di pagamento per iniziare la prova.",
       "expiry": "Salvo che l'utente sottoscriva un piano a pagamento prima del termine della prova, l'accesso viene limitato al termine della prova e l'account viene posto in stato di sola lettura fino all'attivazione di un abbonamento. Potremo modificare o interrompere le offerte di prova in qualsiasi momento."
     },
     "s9": {
       "title": "9. Rinnovo, disdetta e rimborsi",
       "renewLabel": "Rinnovo automatico — ",
-      "renewText": "gli abbonamenti si rinnovano automaticamente al termine di ciascun periodo di fatturazione (mensile o annuale) alle tariffe in vigore in quel momento, fino alla disdetta.",
+      "renewText": "gli abbonamenti si rinnovano automaticamente alla fine di ogni periodo di fatturazione mensile alle tariffe allora vigenti, fino alla disdetta.",
       "cancelLabel": "Disdetta — ",
       "cancelText": "è possibile disdire in qualsiasi momento da Impostazioni → Fatturazione o dal portale clienti Stripe. La disdetta ha effetto al termine del periodo a pagamento corrente; l'accesso resta valido fino ad allora.",
       "refundLabel": "Rimborsi — ",
@@ -6272,7 +6267,6 @@
     "bill": {
       "total": "Totale mensile",
       "perMonth": "/mese",
-      "annualNote": "{{price}} all’anno — due mesi gratis",
       "seats": "Persone",
       "seatsDetail": "{{count}} × {{price}}",
       "spaces": "Spazi",
@@ -6658,7 +6652,7 @@
     "badgeSaved": "Salvato",
     "badgeTemplate": "Modello",
     "badgeTimesheet": "Foglio ore",
-    "builderLocked": "Il generatore di report personalizzati è disponibile da Professional in su.",
+    "builderLocked": "Il generatore di report personalizzati è un extra. Un amministratore può attivarlo in Impostazioni → Fatturazione.",
     "builderNav": "Generatore di report",
     "builderNavDesc": "Scegli dataset, misure e raggruppamento",
     "cadence": "Frequenza",
@@ -6882,10 +6876,7 @@
       "siteN": "Sede {{n}}",
       "addSite": "Aggiungi un'altra sede",
       "removeSite": "Rimuovi questa sede",
-      "monthly": "Mensile",
-      "annual": "Annuale",
       "aMonth": "al mese",
-      "aYear": "all'anno — {{months}} mesi, non 12",
       "perPerson": "per persona al mese",
       "breakdown": "Da dove viene",
       "seatsLine": "{{count}} persone × {{price}}",
@@ -6907,10 +6898,6 @@
       {
         "title": "Le modifiche valgono lo stesso giorno",
         "body": "Attivi qualcosa e da lì viene addebitato; lo disattivi e smette. Le modifiche a metà mese si calcolano al giorno, non si arrotondano a un mese intero."
-      },
-      {
-        "title": "Un anno costa dieci mesi",
-        "body": "Pagando annualmente paghi {{months}} mesi invece di 12. Stessi prezzi, due mesi in regalo."
       },
       {
         "title": "14 giorni gratis, senza carta",
@@ -6944,7 +6931,7 @@
       },
       {
         "q": "C'è un minimo o un vincolo?",
-        "a": "Una persona, una sede, un mese. Nessuna dimensione minima del team, nessun costo di attivazione, nessun vincolo annuale — a meno che tu non scelga il pagamento annuale per avere i due mesi in regalo."
+        "a": "Una persona, una sede, un mese. Nessuna dimensione minima del team, nessun costo di attivazione e nessun vincolo annuale: si fattura al mese e puoi smettere quando vuoi."
       },
       {
         "q": "Cosa succede alla fine della prova?",

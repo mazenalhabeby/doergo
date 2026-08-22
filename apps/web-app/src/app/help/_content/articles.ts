@@ -548,39 +548,43 @@ Den vollständigen Funktionsvergleich finden Sie auf unserer Preisseite.`,
     keywords: ['trial', 'subscribe', 'portal', 'cancel', 'invoice', 'payment', 'card', 'testphase', 'kündigen', 'rechnung'],
     body: {
       en: `### Your free trial
-Every new organization starts on a **14-day Professional trial with no card required**. You have the full Professional feature set to evaluate. When the trial ends, add a payment method to keep premium features — otherwise the account is limited until you subscribe.
+Every new organization starts on a **14-day trial with no card required**, with everything switched on — including the parts that cost extra — so you can judge the whole product rather than a sample. When the trial ends, add a payment method to carry on; until you do, the account is limited.
+
+### What you pay for
+There are no plans to choose between. Your bill is three things added together: **€9.99 for each person**, whatever each of your **sites switches on**, and any **add-ons** bought once for the company. The full price list is public at [hbcfield.com/pricing](/pricing), where you can also work out your own bill.
 
 ### Subscribing
-From **Billing**, choose a plan and billing interval (monthly or annual) and check out securely. You can enter a **VAT ID (UID)** at checkout — for cross-border EU business customers this applies the reverse-charge, so VAT is handled correctly.
+From **Billing**, check out securely — the subscription is built from what your organization already has, so there is nothing to configure twice. You can enter a **VAT ID (UID)** at checkout: for cross-border EU business customers this applies the reverse-charge, so VAT is handled correctly.
 
 ### Managing your subscription
 The **customer portal** (opened from Billing) lets you:
 - Update your card and billing details.
 - Download invoices and receipts.
-- Change plan or interval.
-- Cancel (your plan stays active until the end of the current period).
+- Cancel (access stays active until the end of the period you have paid for).
 
-### Changing seats mid-cycle
-Adding or removing people adjusts your bill automatically with proration. On monthly plans the difference is applied to your next invoice; annual seat increases are charged immediately for the remainder of the year.
+### Changing things mid-month
+Adding or removing people, or switching a module on or off, adjusts your bill automatically and is prorated to the day. The difference is applied to your next invoice rather than charged separately, so a busy month of changes does not become a stream of small payments.
 
-> Payments are processed securely by Stripe. HBCField never sees or stores your card number.`,
+> Billing is monthly. Payments are processed securely by Stripe — HBCField never sees or stores your card number.`,
       de: `### Ihre Testphase
-Jede neue Organisation startet mit einer **14-tägigen Professional-Testphase ohne Kreditkarte**. Sie haben den vollen Professional-Funktionsumfang zum Testen. Nach Ablauf fügen Sie eine Zahlungsmethode hinzu, um Premium-Funktionen zu behalten — andernfalls ist das Konto bis zum Abonnement eingeschränkt.
+Jede neue Organisation startet mit einer **14-tägigen Testphase ohne Kreditkarte** — mit allem freigeschaltet, auch mit dem, was extra kostet, damit Sie das ganze Produkt beurteilen können und nicht nur eine Kostprobe. Nach Ablauf fügen Sie eine Zahlungsmethode hinzu, um weiterzumachen; bis dahin ist das Konto eingeschränkt.
+
+### Wofür Sie zahlen
+Es gibt keine Pakete zur Auswahl. Ihre Rechnung besteht aus drei Teilen: **9,99 € je Person**, dem, was jeder Ihrer **Standorte einschaltet**, und allen **Zusatzfunktionen**, die einmal fürs Unternehmen gekauft werden. Die vollständige Preisliste ist öffentlich unter [hbcfield.com/pricing](/pricing) — dort können Sie Ihre Rechnung auch selbst ausrechnen.
 
 ### Abonnieren
-Wählen Sie unter **Abrechnung** einen Plan und ein Abrechnungsintervall (monatlich oder jährlich) und schließen Sie sicher ab. Sie können an der Kasse eine **USt-IdNr. (UID)** angeben — für grenzüberschreitende EU-Geschäftskunden greift das Reverse-Charge-Verfahren, sodass die Umsatzsteuer korrekt behandelt wird.
+Schließen Sie unter **Abrechnung** sicher ab — das Abonnement wird aus dem gebildet, was Ihre Organisation bereits hat, es ist also nichts doppelt einzustellen. Sie können an der Kasse eine **USt-IdNr. (UID)** angeben: Für grenzüberschreitende EU-Geschäftskunden greift das Reverse-Charge-Verfahren, sodass die Umsatzsteuer korrekt behandelt wird.
 
 ### Abonnement verwalten
 Im **Kundenportal** (über Abrechnung) können Sie:
 - Karte und Rechnungsdaten aktualisieren.
 - Rechnungen und Belege herunterladen.
-- Plan oder Intervall ändern.
-- Kündigen (Ihr Plan bleibt bis zum Ende der laufenden Periode aktiv).
+- Kündigen (der Zugang bleibt bis zum Ende der bereits bezahlten Periode aktiv).
 
-### Plätze mitten im Zyklus ändern
-Hinzufügen oder Entfernen von Personen passt Ihre Rechnung automatisch anteilig an. Bei Monatsplänen fließt die Differenz in die nächste Rechnung; jährliche Platzerhöhungen werden sofort für den Rest des Jahres berechnet.
+### Änderungen mitten im Monat
+Personen hinzuzufügen oder zu entfernen und Module ein- oder auszuschalten passt Ihre Rechnung automatisch und taggenau an. Die Differenz fließt in die nächste Rechnung, statt separat abgebucht zu werden — ein Monat mit vielen Änderungen wird so nicht zu einer Reihe von Kleinbeträgen.
 
-> Zahlungen werden sicher von Stripe verarbeitet. HBCField sieht oder speichert Ihre Kartennummer nie.`,
+> Abgerechnet wird monatlich. Zahlungen werden sicher von Stripe verarbeitet — HBCField sieht oder speichert Ihre Kartennummer nie.`,
     },
   },
   // ─────────────────────────── SUPPORT ───────────────────────────

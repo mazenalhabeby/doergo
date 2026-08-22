@@ -7,7 +7,6 @@ import {
   AVAILABLE_ADD_ONS,
   MODULE_MONTHLY_CENTS,
   SEAT_MONTHLY_CENTS,
-  ANNUAL_MONTHS_CHARGED,
   orgMonthlyCost,
   formatCents,
   billsByUsage,
@@ -46,7 +45,6 @@ export function Calculator() {
   const { t } = useTranslation();
 
   const [people, setPeople] = useState(6);
-  const [annual, setAnnual] = useState(false);
   const [sites, setSites] = useState<Site[]>([{ id: '1', modules: [...STARTER_MODULES], units: {} }]);
   const [addOns, setAddOns] = useState<string[]>([]);
   const [openBill, setOpenBill] = useState(true);
@@ -67,7 +65,6 @@ export function Calculator() {
   );
 
   const perPerson = Math.round(bill.monthlyCents / Math.max(1, people));
-  const shown = annual ? bill.annualCents : bill.monthlyCents;
 
   const setSite = (id: string, fn: (s: Site) => Site) =>
     setSites((prev) => prev.map((s) => (s.id === id ? fn(s) : s)));
@@ -187,31 +184,11 @@ export function Calculator() {
       {/* ═══ what it costs ═══════════════════════════════════════════════ */}
       <div className="lg:sticky lg:top-24">
         <div className="rounded-2xl border border-foreground/[0.12] bg-background p-6 sm:p-7">
-          {/* monthly / annual */}
-          <div className="flex rounded-full border border-foreground/[0.12] p-1">
-            {([false, true] as const).map((a) => (
-              <button
-                key={String(a)}
-                type="button"
-                aria-pressed={annual === a}
-                onClick={() => setAnnual(a)}
-                className={`${MONO} flex-1 rounded-full py-1.5 text-[10.5px] uppercase tracking-[0.14em] transition-colors ${
-                  annual === a ? 'text-[#04121f]' : 'text-foreground/50 hover:text-foreground'
-                }`}
-                style={annual === a ? { backgroundColor: ACCENT } : undefined}
-              >
-                {a ? t('pricing.calc.annual', 'Yearly') : t('pricing.calc.monthly', 'Monthly')}
-              </button>
-            ))}
-          </div>
-
-          <p className={`${DISPLAY} mt-7 text-[clamp(2.4rem,7vw,3.4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
-            {formatCents(shown)}
+          <p className={`${DISPLAY} text-[clamp(2.4rem,7vw,3.4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
+            {formatCents(bill.monthlyCents)}
           </p>
           <p className={`${MONO} mt-2 text-[11.5px] text-foreground/45`}>
-            {annual
-              ? t('pricing.calc.aYear', 'a year — {{months}} months, not 12', { months: ANNUAL_MONTHS_CHARGED })
-              : t('pricing.calc.aMonth', 'a month')}
+            {t('pricing.calc.aMonth', 'a month')}
           </p>
 
           <div className="mt-5 flex items-baseline gap-2 border-t border-foreground/[0.08] pt-5">

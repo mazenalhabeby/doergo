@@ -413,7 +413,7 @@
         }
       ],
       "cta": "Kostenlos starten",
-      "note": "Jährliche Zahlung = 2 Monate gratis · Modul abschalten, sobald Sie es nicht mehr brauchen · USt. kommt beim Checkout dazu",
+      "note": "Monatliche Abrechnung · Modul abschalten, sobald Sie es nicht mehr brauchen · USt. kommt beim Checkout dazu",
       "parts": [
         {
           "name": "Pro Person",
@@ -466,7 +466,7 @@
         },
         {
           "q": "Was kostet HBCField?",
-          "a": "Preise pro Platz in Euro mit 14 Tagen kostenloser Testphase, ohne Kreditkarte. Feld-Plätze (nur mobil) beginnen bei 19 € pro Monat; Büro-Plätze sind gestaffelt."
+          "a": "9,99 € pro Person und Monat, dazu das, was jeder Ihrer Standorte einschaltet, und alle Zusatzfunktionen, die einmal fürs Unternehmen gekauft werden. Keine Pakete, keine Stufen — 14 Tage kostenlos, ohne Kreditkarte. Alle Preise stehen öffentlich auf hbcfield.com/pricing."
         },
         {
           "q": "Ersetzt HBCField mehrere Einzeltools?",
@@ -479,7 +479,6 @@
       "perPerson": "/ Person / Monat",
       "perPersonLong": "pro Person und Monat",
       "totalFor": "{{price}} gesamt",
-      "orAnnual": "oder {{price}} pro Jahr — 2 Monate gratis",
       "anchor": "Die Einzel-Tools, die das ersetzt, kosten 60–90 € pro Person.",
       "preset": {
         "basics": {
@@ -4273,7 +4272,7 @@
       "memberLabel": "\"Mitglied\"",
       "memberText": " — jeder Nutzer (Büro-Koordinator, Disponent oder Außendiensttechniker), der einer Organisation hinzugefügt wird.",
       "seatLabel": "\"Platz\" (Seat)",
-      "seatText": " — eine abrechenbare Zugriffseinheit; ein Büroplatz (Web-Zugang) wird nach Tarifstufe berechnet, ein Feldplatz (reiner Mobilzugang) zu einem Pauschalpreis.",
+      "seatText": " — eine abrechenbare Zugriffseinheit; jedes aktive Mitglied zählt als ein Platz zum selben Pauschalpreis, unabhängig von seinem Zugriff.",
       "dataLabel": "\"Kundendaten\"",
       "dataText": " — alle Daten, die Ihre Organisation und ihre Mitglieder im Dienst eingeben, einschließlich Aufgaben, Berichte, Fotos, Standorte und Kommentare."
     },
@@ -4296,27 +4295,23 @@
       "item4": "müssen Sie uns unverzüglich über unbefugten Zugriff oder Sicherheitsvorfälle in Bezug auf Ihr Konto informieren."
     },
     "s5": {
-      "title": "5. Abonnements, Plätze & Tarife",
-      "intro": "Der Dienst wird auf Abonnementbasis in mehreren Tarifstufen angeboten, die monatlich oder jährlich abgerechnet werden. Der Funktionsumfang Ihrer Organisation richtet sich nach der gewählten Stufe.",
-      "seats": "Die Abrechnung erfolgt pro Platz, nicht als Paket. Jedes aktive Mitglied zählt als Platz: ein Büroplatz (jedes Mitglied mit Zugang zum Webportal, einschließlich des Admins) wird zum Tarifpreis berechnet, ein Feldplatz (nur mobiler Zugang) zu einem Pauschalpreis. Der Platztyp eines Mitglieds richtet sich nach seinem Zugang — wenn Sie den Web-Zugang gewähren oder entziehen, ändert sich der Platztyp entsprechend und Ihre Platzanzahlen werden neu synchronisiert.",
-      "plansTitle": "Tarife & Preise (zzgl. USt.)",
-      "starterLabel": "Starter",
-      "starterText": "29 € pro Büroplatz / Monat (290 € / Jahr).",
-      "proLabel": "Professional",
-      "proText": "59 € pro Büroplatz / Monat (590 € / Jahr).",
-      "businessLabel": "Business",
-      "businessText": "99 € pro Büroplatz / Monat (990 € / Jahr).",
-      "fieldLabel": "Feldplatz",
-      "fieldText": "19 € pro reinem Mobilplatz / Monat (190 € / Jahr), in jeder Stufe.",
-      "plansNote": "Die Preise verstehen sich zzgl. USt. und können für künftige Laufzeiten mit Vorankündigung angepasst werden. Ihr aktueller Tarif und Ihre Platzanzahlen werden stets unter Einstellungen → Abrechnung angezeigt."
+      "title": "5. Abonnements, Plätze und wofür Sie zahlen",
+      "intro": "Der Dienst wird als monatliches Abonnement angeboten. Es gibt keine Tarifstufen: Jede Funktion steht jedem Kunden zu dem auf unserer Preisseite genannten Preis offen, und Sie zahlen die Summe aus Personen, Modulen und Zusatzfunktionen.",
+      "seats": "Abgerechnet wird pro Person, nicht pro Paket. Jedes aktive Mitglied zählt als ein Platz zum selben Satz, unabhängig von seinem Zugriff — eine Unterscheidung zwischen Büro und Außendienst gibt es nicht. Module werden je Standort aktiviert und für jeden Standort berechnet, der sie einschaltet; einige werden zusätzlich nach Anzahl abgerechnet (etwa Objekte oder Kundendatensätze), zu veröffentlichten Mengensätzen.",
+      "plansTitle": "Was berechnet wird (zzgl. USt.)",
+      "plansNote": "Preise verstehen sich zzgl. USt. und können für künftige Laufzeiten mit Vorankündigung angepasst werden. Die vollständige Preisliste ist öffentlich unter hbcfield.com/pricing, und Ihre aktuelle Rechnung ist stets unter Einstellungen → Abrechnung aufgeschlüsselt.",
+      "seatLabel": "Je Person",
+      "seatText": "9,99 € pro Mitglied / Monat.",
+      "moduleLabel": "Je Modul",
+      "moduleText": "ab 3 € pro Standort / Monat, für jeden Standort, der es einschaltet.",
+      "addOnLabel": "Je Zusatzfunktion",
+      "addOnText": "ab 9 € / Monat, einmal für die gesamte Organisation."
     },
     "s6": {
       "title": "6. Entgelte, Abrechnung & anteilige Berechnung",
-      "intro": "Die Entgelte werden im Voraus in Euro (EUR) für jeden Abrechnungszeitraum auf Grundlage des Tarifs und der geltenden Platzanzahlen berechnet. Wenn Sie unterjährig Plätze hinzufügen oder entfernen, wird der Betrag wie folgt anteilig berechnet:",
-      "monthlyLabel": "Monatstarife — ",
-      "monthlyText": "Änderungen werden anteilig berechnet und auf Ihre nächste Rechnung angewendet; das Hinzufügen von Plätzen löst keine sofortige gesonderte Zahlung aus, doch der anteilige Betrag für den Rest des laufenden Zeitraums wird der Folgerechnung hinzugefügt.",
-      "annualLabel": "Jahrestarife (Plätze hinzufügen) — ",
-      "annualText": "eine Erhöhung wird sofort in Rechnung gestellt, anteilig für den Rest der Jahreslaufzeit, sodass hinzugefügte Plätze nicht bis zur Verlängerung kostenlos sind.",
+      "intro": "Die Entgelte werden monatlich im Voraus in Euro (EUR) berechnet, auf Basis der aktiven Personen, Module und Zusatzfunktionen. Ändert sich etwas mitten in der Periode, wird anteilig wie folgt abgerechnet:",
+      "monthlyLabel": "Hinzufügen — ",
+      "monthlyText": "Änderungen werden anteilig berechnet und Ihrer nächsten Rechnung hinzugefügt; eine Person hinzuzufügen oder ein Modul einzuschalten löst keine sofortige separate Abbuchung aus, der anteilige Betrag für den Rest des laufenden Monats erscheint aber auf der folgenden Rechnung.",
       "decreaseLabel": "Plätze entfernen — ",
       "decreaseText": "Reduzierungen lösen niemals eine Barrückerstattung aus; der anteilige Wert wird als Guthaben verbucht und auf künftige Rechnungen angerechnet.",
       "processor": "Zahlungen werden über Stripe abgewickelt. Sie ermächtigen uns und Stripe, Ihr Zahlungsmittel für alle fälligen Entgelte zu belasten. Sie sind dafür verantwortlich, ein gültiges Zahlungsmittel zu hinterlegen."
@@ -4328,13 +4323,13 @@
     },
     "s8": {
       "title": "8. Kostenlose Testphase",
-      "intro": "Neue Organisationen können eine kostenlose Testphase der Professional-Stufe erhalten (derzeit 14 Tage). Für den Start der Testphase ist kein Zahlungsmittel erforderlich, und Sie können während des Testzeitraums die berechtigten Funktionen nutzen.",
+      "intro": "Neue Organisationen können eine kostenlose Testphase erhalten (derzeit 14 Tage), in der jede Funktion freigeschaltet ist — auch die, die sonst kostenpflichtig sind. Für den Start der Testphase ist kein Zahlungsmittel erforderlich.",
       "expiry": "Sofern Sie nicht vor Ablauf der Testphase ein kostenpflichtiges Abonnement abschließen, wird der Zugang am Ende der Testphase eingeschränkt und das Konto in einen schreibgeschützten Zustand versetzt, bis ein Abonnement gestartet wird. Wir können Testangebote jederzeit ändern oder einstellen."
     },
     "s9": {
       "title": "9. Verlängerung, Kündigung & Erstattungen",
       "renewLabel": "Automatische Verlängerung — ",
-      "renewText": "Abonnements verlängern sich am Ende jedes Abrechnungszeitraums (monatlich oder jährlich) automatisch zu den dann geltenden Entgelten, bis sie gekündigt werden.",
+      "renewText": "Abonnements verlängern sich am Ende jedes monatlichen Abrechnungszeitraums automatisch zu den dann geltenden Entgelten, bis sie gekündigt werden.",
       "cancelLabel": "Kündigung — ",
       "cancelText": "Sie können jederzeit über Einstellungen → Abrechnung oder das Stripe-Kundenportal kündigen. Die Kündigung wird zum Ende des laufenden bezahlten Zeitraums wirksam; bis dahin bleibt der Zugang bestehen.",
       "refundLabel": "Erstattungen — ",
@@ -6263,7 +6258,6 @@
     "bill": {
       "total": "Ihre monatliche Summe",
       "perMonth": "/Monat",
-      "annualNote": "{{price}} pro Jahr — zwei Monate gratis",
       "seats": "Personen",
       "seatsDetail": "{{count}} × {{price}}",
       "spaces": "Bereiche",
@@ -6649,7 +6643,7 @@
     "badgeSaved": "Gespeichert",
     "badgeTemplate": "Vorlage",
     "badgeTimesheet": "Stundenzettel",
-    "builderLocked": "Der Baukasten für eigene Berichte ist ab Professional verfügbar.",
+    "builderLocked": "Der Baukasten für eigene Berichte ist eine Zusatzfunktion. Ein Admin kann sie unter Einstellungen → Abrechnung einschalten.",
     "builderNav": "Berichts-Baukasten",
     "builderNavDesc": "Datenquelle, Kennzahlen und Gruppierung wählen",
     "cadence": "Häufigkeit",
@@ -6873,10 +6867,7 @@
       "siteN": "Standort {{n}}",
       "addSite": "Weiteren Standort hinzufügen",
       "removeSite": "Diesen Standort entfernen",
-      "monthly": "Monatlich",
-      "annual": "Jährlich",
       "aMonth": "pro Monat",
-      "aYear": "pro Jahr — {{months}} Monate statt 12",
       "perPerson": "pro Person und Monat",
       "breakdown": "Woraus sich das ergibt",
       "seatsLine": "{{count}} Personen × {{price}}",
@@ -6898,10 +6889,6 @@
       {
         "title": "Änderungen gelten sofort",
         "body": "Schalten Sie etwas ein, wird es ab dann berechnet; schalten Sie es ab, hört es auf. Änderungen mitten im Monat werden taggenau abgerechnet, nicht auf einen vollen Monat aufgerundet."
-      },
-      {
-        "title": "Ein Jahr kostet zehn Monate",
-        "body": "Bei jährlicher Zahlung zahlen Sie {{months}} statt 12 Monate. Gleiche Preise, zwei Monate geschenkt."
       },
       {
         "title": "14 Tage kostenlos, ohne Karte",
@@ -6935,7 +6922,7 @@
       },
       {
         "q": "Gibt es ein Minimum oder einen Vertrag?",
-        "a": "Eine Person, ein Standort, ein Monat. Keine Mindestgröße, keine Einrichtungsgebühr, keine Jahresbindung — außer Sie wählen die Jahreszahlung für die zwei Freimonate."
+        "a": "Eine Person, ein Standort, ein Monat. Keine Mindestgröße, keine Einrichtungsgebühr und keine Jahresbindung — abgerechnet wird monatlich, und Sie können jederzeit aufhören."
       },
       {
         "q": "Was passiert am Ende der Testphase?",

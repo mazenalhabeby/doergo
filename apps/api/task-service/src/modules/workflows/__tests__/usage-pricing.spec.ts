@@ -218,7 +218,6 @@ describe('the usage ladder on the whole bill', () => {
     expect(bill.spacesMonthlyCents).toBe(900 + 2500); // assets base + tracking
     expect(bill.usageMonthlyCents).toBe(840);
     expect(bill.monthlyCents).toBe(2997 + 900 + 2500 + 840);
-    expect(bill.annualCents).toBe((2997 + 900 + 2500 + 840) * 10);
   });
 
   it('makes a space total the whole truth about that space', () => {

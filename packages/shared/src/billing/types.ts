@@ -6,7 +6,6 @@
  * config keys). The Prisma enums are UPPERCASE; the backend maps between them.
  */
 
-import type { BillingInterval } from './plans';
 
 /** Subscription lifecycle status. */
 export type SubStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
@@ -21,7 +20,6 @@ export type SubStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'incom
  */
 export interface SubscriptionView {
   status: SubStatus;
-  interval: BillingInterval;
   /** Active members — the only seat count there is now. */
   seats: number;
   /** What the bill last came to, monthly EUR cents. 0 = never billed. */
@@ -47,15 +45,11 @@ export interface SubscriptionView {
  * No tier — there is nothing to choose. The purchase is whatever the
  * organization already has switched on, computed server-side at checkout, so a
  * client cannot subscribe itself to a cheaper bill than the one it is using.
+ *
+ * No interval either — billing is monthly, full stop. The request carries
+ * nothing at all, which is the point: there is no billing decision left to make.
  */
-export interface CheckoutRequest {
-  interval: BillingInterval;
-}
-
-/** Client → server: switch between monthly and annual. */
-export interface ChangePlanRequest {
-  interval: BillingInterval;
-}
+export type CheckoutRequest = Record<string, never>;
 
 /** Statuses that still allow full use of the product. */
 export function isBillingActive(status: SubStatus): boolean {

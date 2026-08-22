@@ -107,10 +107,6 @@ describe('the whole bill', () => {
     expect(bill.addOns).toHaveLength(1);
   });
 
-  it('gives two months free on annual, add-ons included', () => {
-    const bill = orgMonthlyCost({ seatCount: 1, spaces: [], addOns: ['invoicing'] });
-    expect(bill.annualCents).toBe(bill.monthlyCents * 10);
-  });
 
   it('bills nothing for an organization with nobody, nothing and no add-ons', () => {
     expect(orgMonthlyCost({ seatCount: 0, spaces: [], addOns: [] }).monthlyCents).toBe(0);

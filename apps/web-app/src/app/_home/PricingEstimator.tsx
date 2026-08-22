@@ -183,11 +183,6 @@ export function PricingEstimator() {
             <p className={`${MONO} text-[13px] text-foreground/60 [font-variant-numeric:tabular-nums]`}>
               {t('home.estimator.totalFor', '{{price}} in total', { price: formatCents(bill.monthlyCents) })}
             </p>
-            <p className={`${MONO} mt-1 text-[12px] text-foreground/35 [font-variant-numeric:tabular-nums]`}>
-              {t('home.estimator.orAnnual', 'or {{price}} a year — 2 months free', {
-                price: formatCents(bill.annualCents),
-              })}
-            </p>
           </div>
         </div>
 

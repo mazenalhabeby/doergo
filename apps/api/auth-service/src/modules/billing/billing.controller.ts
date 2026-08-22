@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BillingService } from './billing.service';
-import type { BillingInterval } from '@hbcfield/shared';
 
 @Controller()
 export class BillingController {
@@ -38,18 +37,13 @@ export class BillingController {
   }
 
   @MessagePattern({ cmd: 'billing_create_checkout' })
-  createCheckout(@Payload() d: { organizationId: string; req: { interval: BillingInterval }; successUrl: string; cancelUrl: string }) {
-    return this.billing.createCheckout(d.organizationId, d.req, d.successUrl, d.cancelUrl);
+  createCheckout(@Payload() d: { organizationId: string; successUrl: string; cancelUrl: string }) {
+    return this.billing.createCheckout(d.organizationId, d.successUrl, d.cancelUrl);
   }
 
   @MessagePattern({ cmd: 'billing_create_portal' })
   createPortal(@Payload() d: { organizationId: string; returnUrl: string }) {
     return this.billing.createPortal(d.organizationId, d.returnUrl);
-  }
-
-  @MessagePattern({ cmd: 'billing_change_plan' })
-  changePlan(@Payload() d: { organizationId: string; req: { interval: BillingInterval }; successUrl: string; cancelUrl: string }) {
-    return this.billing.changePlan(d.organizationId, d.req, d.successUrl, d.cancelUrl);
   }
 
   @MessagePattern({ cmd: 'billing_cancel' })

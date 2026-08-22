@@ -12,7 +12,6 @@ import {
   MODULE_MONTHLY_CENTS,
   MODULE_USAGE_PRICING,
   SEAT_MONTHLY_CENTS,
-  ANNUAL_MONTHS_CHARGED,
   formatCents,
   usageCost,
 } from '@hbcfield/shared/client';
@@ -47,16 +46,11 @@ export default function PricingClient() {
   const orphans = ungroupedModuleKeys(AVAILABLE_MODULES.map((m) => m.key as string));
 
   /*
-    `returnObjects` hands back the raw strings — i18next does not interpolate
-    into a returned object, so a `{{months}}` inside one reaches the screen
-    verbatim. The alternative is typing "10" into five locale files, where it
-    would quietly disagree with the code the day the annual discount changes.
-    So the placeholder stays in the copy and is filled from the constant here.
+    `returnObjects` hands back the raw strings and i18next does not interpolate
+    into a returned object, so any `{{placeholder}}` in these would reach the
+    screen verbatim. There are none, and a test keeps it that way.
   */
-  const rules = asArray<{ title: string; body: string }>(t('pricing.rules', { returnObjects: true })).map((r) => ({
-    ...r,
-    body: r.body.replace(/\{\{months\}\}/g, String(ANNUAL_MONTHS_CHARGED)),
-  }));
+  const rules = asArray<{ title: string; body: string }>(t('pricing.rules', { returnObjects: true }));
 
   return (
     <main className="min-h-screen bg-background text-foreground">
