@@ -228,7 +228,7 @@
         ],
         "sumLabel": "Tres suscripciones separadas",
         "sumCost": "€60–90 / usuario",
-        "sumUs": "una plataforma · desde €29 / usuario"
+        "sumUs": "una plataforma · {{price}} / usuario en un equipo de seis"
       },
       "diffLabel": "Y cosas que los demás cobran aparte, o que ni siquiera tienen",
       "diffs": [

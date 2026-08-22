@@ -228,7 +228,7 @@
         ],
         "sumLabel": "Drei separate Abonnements",
         "sumCost": "60–90 € / Nutzer",
-        "sumUs": "eine Plattform · ab 29 € / Nutzer"
+        "sumUs": "eine Plattform · {{price}} / Nutzer bei sechs Personen"
       },
       "diffLabel": "Und Dinge, für die andere extra kassieren — oder die es gar nicht gibt",
       "diffs": [

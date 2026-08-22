@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
 import { ArrowRight, ArrowDown, ArrowUpRight, ArrowUp, Check, Zap, Sun, Moon, ShoppingBag } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
+import { orgMonthlyCost, formatCents } from '@hbcfield/shared/client';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useAuth } from '@/contexts/auth-context';
 import { HeroCanvas } from './HeroCanvas';
@@ -29,6 +30,33 @@ import { INDUSTRY_SLUGS, industryPath, industriesHubPath } from '@/lib/industrie
    bg #0e1116 · text #d8d8d8 · emphasis #f2f2f0 · hairline white/8
    display: Familjen Grotesk (400) · labels: Martian Mono
    ═══════════════════════════════════════════════════════════ */
+
+/**
+ * What the stack on the left actually costs here, per person.
+ *
+ * Hard-coded once as "from €29 / user" — a tier price — and it outlived the
+ * tiers by a month, quoting a number the product could no longer charge. It is
+ * computed now, from the same function the invoice is built from, against the
+ * same set of capabilities the three subscriptions beside it replace: a team of
+ * six running GPS, clock-in and signed reports. Six because it is a real small
+ * firm rather than a flattering one — the per-person price only improves from
+ * there.
+ */
+const FIELD_STACK_TEAM = 6;
+const FIELD_STACK_PER_PERSON = Math.round(
+  orgMonthlyCost({
+    seatCount: FIELD_STACK_TEAM,
+    spaces: [
+      {
+        spaceId: 'compare',
+        spaceName: 'compare',
+        enabledModules: ['checklists', 'attachments', 'tracking', 'time_tracking', 'service_reports'],
+        usage: {},
+      },
+    ],
+    addOns: [],
+  }).monthlyCents / FIELD_STACK_TEAM,
+);
 
 const DISPLAY = 'font-[family:var(--font-familjen)]';
 const MONO = 'font-[family:var(--font-martian)]';
@@ -440,7 +468,7 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                   <div className="grid grid-cols-1 gap-1.5 border-t border-foreground/[0.1] bg-gradient-to-r from-[#5B9BD5]/[0.08] via-transparent to-transparent px-8 py-6 sm:grid-cols-[1.7fr_1fr_1.1fr] sm:items-center sm:gap-4">
                     <span className={`${DISPLAY} text-[17px] font-medium text-foreground`}>{t('home.why.compare.sumLabel')}</span>
                     <span className={`${MONO} text-[13px] text-foreground/40 line-through`}>{t('home.why.compare.sumCost')}</span>
-                    <span className={`${DISPLAY} text-[16px] font-medium text-[#2f6fb0] dark:text-[#7db4e6]`}>{t('home.why.compare.sumUs')}</span>
+                    <span className={`${DISPLAY} text-[16px] font-medium text-[#2f6fb0] dark:text-[#7db4e6]`}>{t('home.why.compare.sumUs', { price: formatCents(FIELD_STACK_PER_PERSON) })}</span>
                   </div>
                 </div>
               </Reveal>

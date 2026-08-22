@@ -228,7 +228,7 @@
         ],
         "sumLabel": "Trois abonnements distincts",
         "sumCost": "60–90 € / utilisateur",
-        "sumUs": "une seule plateforme · à partir de 29 € / utilisateur"
+        "sumUs": "une seule plateforme · {{price}} / utilisateur pour six personnes"
       },
       "diffLabel": "Et ce que les autres facturent en supplément — ou n'ont tout simplement pas",
       "diffs": [

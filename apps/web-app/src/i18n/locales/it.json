@@ -228,7 +228,7 @@
         ],
         "sumLabel": "Tre abbonamenti separati",
         "sumCost": "€60–90 / utente",
-        "sumUs": "un'unica piattaforma · da €29 / utente"
+        "sumUs": "un'unica piattaforma · {{price}} / utente per un team di sei"
       },
       "diffLabel": "E funzionalità che gli altri fanno pagare a parte — o non hanno affatto",
       "diffs": [

@@ -228,7 +228,7 @@
         ],
         "sumLabel": "Three separate subscriptions",
         "sumCost": "€60–90 / user",
-        "sumUs": "one platform · from €29 / user"
+        "sumUs": "one platform · {{price}} / user for a team of six"
       },
       "diffLabel": "And things the others charge extra for — or don't have at all",
       "diffs": [
