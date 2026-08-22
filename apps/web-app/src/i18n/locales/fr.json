@@ -492,6 +492,27 @@
         "crm": "les 50 premiers clients offerts, puis à partir de 30 centimes",
         "b2c_portal": "premier portail inclus, puis 29 € pièce"
       }
+    },
+    "estimator": {
+      "people": "Personnes qui utilisent HBCField",
+      "peopleHint": "{{price}} chacune — bureau ou terrain, même prix",
+      "spaces": "Sites ou projets",
+      "spacesHint": "Chacun ne paie que ce qu’il active",
+      "modules": "Activez ce dont vous avez besoin",
+      "howMany": "Combien — le prix baisse à mesure que ça grandit",
+      "included": "les {{count}} premiers offerts",
+      "addOns": "Options pour toute l’entreprise",
+      "yourCost": "Votre coût",
+      "perMonth": "/ mois, HT",
+      "rowPeople_one": "{{count}} personne",
+      "rowPeople_other": "{{count}} personnes",
+      "rowSpaces_one": "{{count}} site",
+      "rowSpaces_other": "{{count}} sites",
+      "rowUsage": "Ce qu’ils contiennent",
+      "rowAddOns": "Options",
+      "annual": "{{price}} par an — deux mois offerts",
+      "perHead": "{{price}} par personne",
+      "note": "Les décomptes sont facturés par site ; on suppose ici qu’ils sont sur un seul. 14 jours d’essai, sans carte, et chaque module se désactive le jour où vous cessez de l’utiliser."
     }
   },
   "common": {

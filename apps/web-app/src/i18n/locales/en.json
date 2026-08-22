@@ -492,6 +492,27 @@
         "crm": "first 50 clients free, then from 30c each",
         "b2c_portal": "first portal included, then €29 each"
       }
+    },
+    "estimator": {
+      "people": "People using HBCField",
+      "peopleHint": "{{price}} each — office or field, same price",
+      "spaces": "Sites or projects",
+      "spacesHint": "Each one pays only for what it switches on",
+      "modules": "Switch on what you need",
+      "howMany": "How many — the price drops as it grows",
+      "included": "first {{count}} free",
+      "addOns": "Company-wide add-ons",
+      "yourCost": "Your cost",
+      "perMonth": "/ month, excl. VAT",
+      "rowPeople_one": "{{count}} person",
+      "rowPeople_other": "{{count}} people",
+      "rowSpaces_one": "{{count}} site",
+      "rowSpaces_other": "{{count}} sites",
+      "rowUsage": "What is in them",
+      "rowAddOns": "Add-ons",
+      "annual": "{{price}} a year — two months free",
+      "perHead": "{{price}} per person",
+      "note": "Counts are priced per site, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it."
     }
   },
   "common": {

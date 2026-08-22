@@ -15,6 +15,7 @@ import { LaptopShowcase } from './LaptopShowcase';
 import { PhoneShowcase } from './PhoneShowcase';
 import { StoreBadges } from './StoreBadges';
 import { FeatureMatrix } from './FeatureMatrix';
+import { PricingEstimator } from './PricingEstimator';
 import { usePrefersReducedMotion } from './use-reduced-motion';
 import { useLenis } from './use-lenis';
 import { scrollToHash } from './lenis-bus';
@@ -546,6 +547,19 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                   </Reveal>
                 ))}
               </div>
+
+              {/*
+                The estimator, not a fourth column.
+
+                A column can only show one combination of people, sites and
+                modules — and the bill is all three. Letting somebody put their
+                own numbers in answers "what will this cost ME", which is the
+                only question a pricing page is ever really asked. Every figure
+                comes from the same functions the invoice is built from.
+              */}
+              <Reveal className="mt-14">
+                <PricingEstimator />
+              </Reveal>
 
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <a

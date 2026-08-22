@@ -492,6 +492,27 @@
         "crm": "i primi 50 clienti gratis, poi da 30 centesimi",
         "b2c_portal": "primo portale incluso, poi 29 € ciascuno"
       }
+    },
+    "estimator": {
+      "people": "Persone che usano HBCField",
+      "peopleHint": "{{price}} ciascuna — ufficio o campo, stesso prezzo",
+      "spaces": "Sedi o progetti",
+      "spacesHint": "Ognuna paga solo ciò che attiva",
+      "modules": "Attiva ciò che ti serve",
+      "howMany": "Quanti — il prezzo scende man mano che cresce",
+      "included": "i primi {{count}} gratis",
+      "addOns": "Componenti per tutta l’azienda",
+      "yourCost": "Il tuo costo",
+      "perMonth": "/ mese, IVA esclusa",
+      "rowPeople_one": "{{count}} persona",
+      "rowPeople_other": "{{count}} persone",
+      "rowSpaces_one": "{{count}} sede",
+      "rowSpaces_other": "{{count}} sedi",
+      "rowUsage": "Cosa contengono",
+      "rowAddOns": "Componenti aggiuntivi",
+      "annual": "{{price}} all’anno — due mesi gratis",
+      "perHead": "{{price}} a persona",
+      "note": "I conteggi sono addebitati per sede, quindi qui si assume che siano in una sola. 14 giorni di prova, senza carta, e ogni modulo si può disattivare il giorno in cui smetti di usarlo."
     }
   },
   "common": {
