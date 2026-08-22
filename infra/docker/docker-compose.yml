@@ -139,6 +139,15 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.com}
+      - SMTP_SECURE=${SMTP_SECURE:-}
+      # Second provider, tried when the first refuses the message. Leaving these
+      # unset keeps the single-provider behaviour exactly as it was.
+      - SMTP_FALLBACK_HOST=${SMTP_FALLBACK_HOST:-}
+      - SMTP_FALLBACK_PORT=${SMTP_FALLBACK_PORT:-587}
+      - SMTP_FALLBACK_USER=${SMTP_FALLBACK_USER:-}
+      - SMTP_FALLBACK_PASS=${SMTP_FALLBACK_PASS:-}
+      - SMTP_FALLBACK_SECURE=${SMTP_FALLBACK_SECURE:-}
+      - SMTP_FALLBACK_FROM=${SMTP_FALLBACK_FROM:-}
       - APP_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
       # Direct (non-pooled) connection used ONLY for `prisma migrate deploy` at startup.
       - DIRECT_DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:-hbcfield_secret}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
@@ -232,6 +241,15 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_FROM=${SMTP_FROM:-noreply@hbcfield.com}
+      - SMTP_SECURE=${SMTP_SECURE:-}
+      # Second provider, tried when the first refuses the message. Leaving these
+      # unset keeps the single-provider behaviour exactly as it was.
+      - SMTP_FALLBACK_HOST=${SMTP_FALLBACK_HOST:-}
+      - SMTP_FALLBACK_PORT=${SMTP_FALLBACK_PORT:-587}
+      - SMTP_FALLBACK_USER=${SMTP_FALLBACK_USER:-}
+      - SMTP_FALLBACK_PASS=${SMTP_FALLBACK_PASS:-}
+      - SMTP_FALLBACK_SECURE=${SMTP_FALLBACK_SECURE:-}
+      - SMTP_FALLBACK_FROM=${SMTP_FALLBACK_FROM:-}
       - SOCKET_CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
       - SOCKET_ADMIN_USER=${SOCKET_ADMIN_USER:-}
       - SOCKET_ADMIN_PASSWORD=${SOCKET_ADMIN_PASSWORD:-}

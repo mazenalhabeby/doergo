@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { smtpTransportOptions } from '@hbcfield/shared';
+import { mailRoutes, sendViaFirstWorking, type MailRoute } from '@hbcfield/shared';
 
 // Escape HTML to prevent XSS in email content
 function esc(str: string | undefined | null): string {
@@ -12,35 +12,47 @@ function esc(str: string | undefined | null): string {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter | null;
+  private routes: Array<MailRoute & { tx: nodemailer.Transporter }> = [];
 
   constructor(private configService: ConfigService) {
-    // Same settings the auth service uses, from the same place — the two
-    // transports had drifted into one shape that could only reach a STARTTLS
-    // provider on the port it happened to be given.
-    const smtp = smtpTransportOptions({
+    // The same routes the auth service uses, resolved the same way: primary
+    // first, then the fallback, so one provider refusing us does not stop the
+    // product sending mail.
+    this.routes = mailRoutes({
       SMTP_HOST: this.configService.get('SMTP_HOST'),
       SMTP_PORT: this.configService.get('SMTP_PORT'),
       SMTP_USER: this.configService.get('SMTP_USER'),
       SMTP_PASS: this.configService.get('SMTP_PASS'),
       SMTP_SECURE: this.configService.get('SMTP_SECURE'),
-    });
-    this.transporter = smtp ? nodemailer.createTransport(smtp) : null;
-    if (!smtp) this.logger.warn('SMTP not configured — no email will be sent');
+      SMTP_FROM: this.configService.get('SMTP_FROM'),
+      SMTP_FALLBACK_HOST: this.configService.get('SMTP_FALLBACK_HOST'),
+      SMTP_FALLBACK_PORT: this.configService.get('SMTP_FALLBACK_PORT'),
+      SMTP_FALLBACK_USER: this.configService.get('SMTP_FALLBACK_USER'),
+      SMTP_FALLBACK_PASS: this.configService.get('SMTP_FALLBACK_PASS'),
+      SMTP_FALLBACK_SECURE: this.configService.get('SMTP_FALLBACK_SECURE'),
+      SMTP_FALLBACK_FROM: this.configService.get('SMTP_FALLBACK_FROM'),
+    }).map((r) => ({ ...r, tx: nodemailer.createTransport(r.options) }));
+    if (this.routes.length) {
+      this.logger.log(`SMTP routes: ${this.routes.map((r) => r.label).join(' → ')}`);
+    } else {
+      this.logger.warn('SMTP not configured — no email will be sent');
+    }
   }
 
   async sendEmail(to: string, subject: string, html: string) {
     try {
-      if (!this.transporter) {
-        this.logger.warn(`No SMTP transport — dropping email to ${to} ("${subject}")`);
+      if (!this.routes.length) {
+        this.logger.warn(`No SMTP route — dropping email to ${to} ("${subject}")`);
         return;
       }
-      await this.transporter.sendMail({
-        from: this.configService.get('SMTP_FROM', 'noreply@hbcfield.com'),
-        to,
-        subject,
-        html,
-      });
+      const fallbackFrom = this.configService.get('SMTP_FROM', 'noreply@hbcfield.com');
+      const { label } = await sendViaFirstWorking(
+        this.routes.map((r) => ({
+          label: r.label,
+          send: () => r.tx.sendMail({ from: r.from || fallbackFrom, to, subject, html }),
+        })),
+      );
+      this.logger.log(`Email sent to ${to} via ${label}`);
       return { success: true };
     } catch (error) {
       this.logger.error('Failed to send email:', error);

@@ -28,7 +28,9 @@ import {
   normalizeRole,
   buildResolvedAccess,
   accessAllows,
-  smtpTransportOptions,
+  mailRoutes,
+  sendViaFirstWorking,
+  type MailRoute,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
@@ -97,7 +99,8 @@ function ignoreLegacyFlags(): boolean {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  private mailTransporter: nodemailer.Transporter | null = null;
+  /** Every configured way out, primary first. Empty when SMTP is unset. */
+  private mailRoutes: Array<MailRoute & { tx: nodemailer.Transporter }> = [];
 
   /**
    * Cached answer to "can we send mail at all right now?".
@@ -123,16 +126,25 @@ export class AuthService {
     private readonly billing: BillingService,
     private readonly graceCache: GraceTokenCache,
   ) {
-    const smtp = smtpTransportOptions({
+    this.mailRoutes = mailRoutes({
       SMTP_HOST: this.configService.get('SMTP_HOST'),
       SMTP_PORT: this.configService.get('SMTP_PORT'),
       SMTP_USER: this.configService.get('SMTP_USER'),
       SMTP_PASS: this.configService.get('SMTP_PASS'),
       SMTP_SECURE: this.configService.get('SMTP_SECURE'),
-    });
-    if (smtp) {
-      this.mailTransporter = nodemailer.createTransport(smtp);
-      this.logger.log(`SMTP transporter configured: ${smtp.host}:${smtp.port} secure=${smtp.secure}`);
+      SMTP_FROM: this.configService.get('SMTP_FROM'),
+      SMTP_FALLBACK_HOST: this.configService.get('SMTP_FALLBACK_HOST'),
+      SMTP_FALLBACK_PORT: this.configService.get('SMTP_FALLBACK_PORT'),
+      SMTP_FALLBACK_USER: this.configService.get('SMTP_FALLBACK_USER'),
+      SMTP_FALLBACK_PASS: this.configService.get('SMTP_FALLBACK_PASS'),
+      SMTP_FALLBACK_SECURE: this.configService.get('SMTP_FALLBACK_SECURE'),
+      SMTP_FALLBACK_FROM: this.configService.get('SMTP_FALLBACK_FROM'),
+    }).map((r) => ({
+      ...r,
+      tx: nodemailer.createTransport(r.options),
+    }));
+    if (this.mailRoutes.length) {
+      this.logger.log(`SMTP routes: ${this.mailRoutes.map((r) => `${r.label}:${r.options.port} secure=${r.options.secure}`).join(' → ')}`);
     } else {
       this.logger.warn('SMTP not configured - password reset emails will not be sent');
     }
@@ -140,20 +152,26 @@ export class AuthService {
 
   /** Whether the SMTP transport will accept a connection at all. */
   private async canSendMail(): Promise<boolean> {
-    if (!this.mailTransporter) return false;
+    if (!this.mailRoutes.length) return false;
     const ttl = this.transportHealth?.ok ? 60_000 : 15_000;
     if (this.transportHealth && Date.now() - this.transportHealth.at < ttl) return this.transportHealth.ok;
-    try {
-      await this.mailTransporter.verify();
-      this.transportHealth = { ok: true, at: Date.now() };
-      return true;
-    } catch (err) {
-      // Worth an error, not a warning: while this is failing, NOTHING the
-      // product sends by email arrives — resets, invitations, notifications.
-      this.logger.error(`SMTP transport unavailable: ${(err as Error).message}`);
-      this.transportHealth = { ok: false, at: Date.now() };
-      return false;
+
+    // ANY route working is enough — that is the point of having two.
+    const failures: string[] = [];
+    for (const r of this.mailRoutes) {
+      try {
+        await r.tx.verify();
+        this.transportHealth = { ok: true, at: Date.now() };
+        return true;
+      } catch (err) {
+        failures.push(`${r.label}: ${(err as Error).message}`);
+      }
     }
+    // Error, not warning: while EVERY route is failing, nothing the product
+    // sends by email arrives — resets, invitations, notifications.
+    this.logger.error(`No usable SMTP route — ${failures.join(' | ')}`);
+    this.transportHealth = { ok: false, at: Date.now() };
+    return false;
   }
 
   /**
@@ -165,37 +183,71 @@ export class AuthService {
    * succeeded. Somewhere has to show the truth.
    */
   async mailHealth() {
-    const host = this.configService.get('SMTP_HOST');
-    const port = Number(this.configService.get('SMTP_PORT', 587)) || 587;
-    if (!this.mailTransporter) {
-      return { success: true, data: { configured: false, ok: false, host: null, port: null, error: 'SMTP is not configured' } };
+    if (!this.mailRoutes.length) {
+      return { success: true, data: { configured: false, ok: false, routes: [], host: null, port: null, error: 'SMTP is not configured' } };
     }
-    try {
-      await this.mailTransporter.verify();
-      this.transportHealth = { ok: true, at: Date.now() };
-      return { success: true, data: { configured: true, ok: true, host, port, error: null } };
-    } catch (err) {
-      this.transportHealth = { ok: false, at: Date.now() };
-      return { success: true, data: { configured: true, ok: false, host, port, error: (err as Error).message } };
-    }
+    // Every route is checked even after one succeeds: with a fallback in place
+    // the product keeps working while the primary is broken, and "email works"
+    // would then hide that the primary has been failing for weeks.
+    const routes = await Promise.all(
+      this.mailRoutes.map(async (r) => {
+        try {
+          await r.tx.verify();
+          return { label: r.label, host: r.options.host, port: r.options.port, ok: true, error: null as string | null };
+        } catch (err) {
+          return { label: r.label, host: r.options.host, port: r.options.port, ok: false, error: (err as Error).message };
+        }
+      }),
+    );
+    const ok = routes.some((r) => r.ok);
+    this.transportHealth = { ok, at: Date.now() };
+    const first = routes[0];
+    return {
+      success: true,
+      data: {
+        configured: true,
+        ok,
+        routes,
+        host: first.host,
+        port: first.port,
+        error: ok ? null : routes.map((r) => `${r.label}: ${r.error}`).join(' | '),
+      },
+    };
   }
 
   private async sendPasswordResetEmail(email: string, firstName: string, resetToken: string) {
-    if (!this.mailTransporter) {
+    if (!this.mailRoutes.length) {
       this.logger.warn('Cannot send password reset email - SMTP not configured');
       return;
     }
 
     const appUrl = this.configService.get('APP_URL', 'https://hbcfield.hbc-solution.io');
     const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
-    const fromEmail = this.configService.get('SMTP_FROM', 'noreply@hbcfield.eu');
+    const fallbackFrom = this.configService.get('SMTP_FROM', 'noreply@hbcfield.eu');
 
     try {
-      await this.mailTransporter.sendMail({
-        from: fromEmail,
-        to: email,
-        subject: 'HBCField - Reset Your Password',
-        html: `
+      const html = this.passwordResetHtml(firstName, resetLink);
+      const { label } = await sendViaFirstWorking(
+        this.mailRoutes.map((r) => ({
+          label: r.label,
+          send: () =>
+            r.tx.sendMail({
+              from: r.from || fallbackFrom,
+              to: email,
+              subject: 'HBCField - Reset Your Password',
+              html,
+            }),
+        })),
+      );
+      this.logger.log(`Password reset email sent to ${email} via ${label}`);
+    } catch (err) {
+      this.logger.error(`Failed to send password reset email to ${email}: ${err}`);
+    }
+  }
+
+  /** The reset email body, built once so every route sends the same message. */
+  private passwordResetHtml(firstName: string, resetLink: string): string {
+    return `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2563eb;">Password Reset Request</h2>
             <p>Hello ${firstName},</p>
@@ -212,12 +264,7 @@ export class AuthService {
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
             <p style="color: #94a3b8; font-size: 12px;">This is an automated message from HBCField.</p>
           </div>
-        `,
-      });
-      this.logger.log(`Password reset email sent to ${email}`);
-    } catch (err) {
-      this.logger.error(`Failed to send password reset email to ${email}: ${err}`);
-    }
+        `;
   }
 
   async register(data: {

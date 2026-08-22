@@ -19,7 +19,8 @@ interface Me { user: { id: string; email: string; firstName: string; lastName: s
 interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number }
 interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number }
 interface OrgDetail extends OrgRow { enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
-interface MailStatus { configured: boolean; ok: boolean; host: string | null; port: number | null; error: string | null }
+interface MailRouteStatus { label: string; host: string; port: number; ok: boolean; error: string | null }
+interface MailStatus { configured: boolean; ok: boolean; routes?: MailRouteStatus[]; host: string | null; port: number | null; error: string | null }
 interface StaffUser { id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean; lastLoginAt: string | null }
 
 let TOKEN = '';
@@ -144,11 +145,28 @@ export default function ControlCenter() {
             <button onClick={logout} className="text-xs text-slate-400 hover:text-slate-200">Sign out</button>
           </div>
         </div>
+        {/*
+          Two states worth showing, not one. Everything down is an outage. But a
+          working fallback with a dead primary is the state that otherwise hides
+          for months — mail arrives, so nobody looks.
+        */}
         {mail && !mail.ok && (
           <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-4 py-3 text-sm">
             <div className="font-semibold text-red-300">Outbound email is not working — no password reset, invitation or notification is being delivered.</div>
-            <div className="mt-1 text-xs text-red-200/70">
-              {mail.configured ? `${mail.host}:${mail.port} — ${mail.error ?? 'the mail server refused the connection'}` : 'SMTP is not configured on this deployment.'}
+            <div className="mt-1 space-y-0.5 text-xs text-red-200/70">
+              {mail.configured
+                ? (mail.routes?.length
+                    ? mail.routes.map((r) => <div key={r.label}>{r.label}:{r.port} — {r.error}</div>)
+                    : <div>{mail.host}:{mail.port} — {mail.error}</div>)
+                : <div>SMTP is not configured on this deployment.</div>}
+            </div>
+          </div>
+        )}
+        {mail?.ok && (mail.routes?.some((r) => !r.ok) ?? false) && (
+          <div className="mb-4 rounded-lg border border-amber-900 bg-amber-950/30 px-4 py-3 text-sm">
+            <div className="font-semibold text-amber-300">Email is being delivered by a fallback — one provider is down.</div>
+            <div className="mt-1 space-y-0.5 text-xs text-amber-200/70">
+              {mail.routes!.map((r) => <div key={r.label}>{r.ok ? '✓' : '✗'} {r.label}:{r.port}{r.ok ? '' : ` — ${r.error}`}</div>)}
             </div>
           </div>
         )}
