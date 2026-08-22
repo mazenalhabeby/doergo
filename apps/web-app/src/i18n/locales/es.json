@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Precios",
       "heading": "Paga por lo que actives.",
-      "lead": "Sin planes, sin niveles, nada bloqueado tras una mejora. 9,99 € por cada persona que use HBCField, más lo que cada sede active de verdad. 14 días de prueba, sin tarjeta.",
+      "lead": "Sin planes, sin niveles, nada bloqueado tras una mejora. 9,99 € por cada persona que use HBCField, más lo que cada espacio active de verdad. 14 días de prueba, sin tarjeta.",
       "outcomes": [
         {
           "title": "Acaba con el caos de las llamadas de estado",
@@ -425,13 +425,13 @@
           "name": "Por espacio",
           "price": "desde 3 €",
           "unit": "/ módulo / mes",
-          "desc": "Cada sede paga exactamente lo que ha activado, y deja de pagar al desactivarlo."
+          "desc": "Un espacio es una sede, un proyecto o un cliente. Cada uno paga exactamente lo que ha activado, y deja de pagar al desactivarlo."
         },
         {
           "name": "Complementos",
           "price": "desde 9 €",
           "unit": "/ mes",
-          "desc": "Facturación, flujos, registro de auditoría. Se contratan una vez, para toda la empresa."
+          "desc": "Facturación, flujos, registro de auditoría. Se contratan una vez, tengas los espacios que tengas."
         }
       ],
       "seePrices": "Ver todos los precios"
@@ -478,9 +478,9 @@
       "perSpace": " / espacio / mes",
       "perMonth": " / mes",
       "modulesLabel": "Por espacio",
-      "modulesLead": "Activa un módulo en una sede y esa sede lo paga. Desactívalo y deja de pagarse.",
+      "modulesLead": "Activa un módulo en un espacio y ese espacio lo paga. Desactívalo y deja de pagarse.",
       "addOnsLabel": "Toda la empresa",
-      "addOnsLead": "Se contrata una vez para toda la empresa, tengas las sedes que tengas.",
+      "addOnsLead": "Se contrata una vez para toda la empresa, tengas los espacios que tengas.",
       "addOnGroups": {
         "work": "Cómo funciona el trabajo",
         "money": "Dinero",
@@ -488,31 +488,31 @@
         "support": "Soporte"
       },
       "ladder": {
-        "assets": "los 10 primeros gratis, luego desde 1,20 € cada uno",
-        "crm": "los 50 primeros clientes gratis, luego desde 30 céntimos",
-        "b2c_portal": "primer portal incluido, luego 29 € cada uno"
+        "assets": "cubre los 10 primeros, luego desde 1,20 € cada uno",
+        "crm": "cubre los 50 primeros clientes, luego desde 30 céntimos",
+        "b2c_portal": "cubre un portal, luego 29 € cada uno"
       }
     },
     "estimator": {
       "people": "Personas que usan HBCField",
       "peopleHint": "{{price}} cada una: oficina o campo, mismo precio",
-      "spaces": "Sedes o proyectos",
-      "spacesHint": "Cada una paga solo lo que activa",
+      "spaces": "Espacios",
+      "spacesHint": "Una sede, un proyecto, un cliente: como dividas el trabajo. Cada uno paga solo lo que activa.",
       "modules": "Activa lo que necesites",
       "howMany": "Cuántos: el precio baja según crece",
-      "included": "los primeros {{count}} gratis",
+      "included": "los primeros {{count}} incluidos en el precio base",
       "addOns": "Complementos para toda la empresa",
       "yourCost": "Tu coste",
       "perMonth": "/ mes, sin IVA",
       "rowPeople_one": "{{count}} persona",
       "rowPeople_other": "{{count}} personas",
-      "rowSpaces_one": "{{count}} sede",
-      "rowSpaces_other": "{{count}} sedes",
+      "rowSpaces_one": "{{count}} espacio",
+      "rowSpaces_other": "{{count}} espacios",
       "rowUsage": "Lo que contienen",
       "rowAddOns": "Complementos",
       "annual": "{{price}} al año: dos meses gratis",
       "perHead": "{{price}} por persona",
-      "note": "Los recuentos se cobran por sede, así que esto asume que están en una. 14 días de prueba, sin tarjeta, y cada módulo se puede desactivar el día que dejes de usarlo."
+      "note": "Los recuentos se cobran por espacio, así que esto asume que están en uno. 14 días de prueba, sin tarjeta, y cada módulo se puede desactivar el día que dejes de usarlo."
     }
   },
   "common": {

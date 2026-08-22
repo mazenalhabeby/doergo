@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Tarifs",
       "heading": "Payez ce que vous activez.",
-      "lead": "Pas de forfaits, pas de paliers, rien derrière une mise à niveau. 9,99 € par personne qui utilise HBCField, plus ce que chaque site active réellement. 14 jours d’essai, sans carte.",
+      "lead": "Pas de forfaits, pas de paliers, rien derrière une mise à niveau. 9,99 € par personne qui utilise HBCField, plus ce que chaque espace active réellement. 14 jours d’essai, sans carte.",
       "outcomes": [
         {
           "title": "Mettez fin au chaos des appels de suivi",
@@ -425,13 +425,13 @@
           "name": "Par espace",
           "price": "à partir de 3 €",
           "unit": "/ module / mois",
-          "desc": "Un site paie exactement ce qu’il a activé, et cesse de payer dès qu’il le désactive."
+          "desc": "Un espace est un site, un projet ou un client. Chacun paie exactement ce qu’il a activé, et cesse de payer dès qu’il le désactive."
         },
         {
           "name": "Options entreprise",
           "price": "à partir de 9 €",
           "unit": "/ mois",
-          "desc": "Facturation, flux, journal d’audit. Souscrites une fois, quel que soit le nombre de sites."
+          "desc": "Facturation, flux, journal d’audit. Souscrits une fois, quel que soit le nombre d’espaces."
         }
       ],
       "seePrices": "Voir tous les prix"
@@ -478,9 +478,9 @@
       "perSpace": " / espace / mois",
       "perMonth": " / mois",
       "modulesLabel": "Par espace",
-      "modulesLead": "Activez un module pour un site et ce site le paie. Désactivez-le et cela s’arrête.",
+      "modulesLead": "Activez un module pour un espace et cet espace le paie. Désactivez-le et cela s’arrête.",
       "addOnsLabel": "Toute l’entreprise",
-      "addOnsLead": "Souscrit une fois pour toute l’entreprise, quel que soit le nombre de sites.",
+      "addOnsLead": "Souscrit une fois pour toute l’entreprise, quel que soit le nombre d’espaces.",
       "addOnGroups": {
         "work": "Organisation du travail",
         "money": "Finances",
@@ -488,31 +488,31 @@
         "support": "Support"
       },
       "ladder": {
-        "assets": "les 10 premiers offerts, puis à partir de 1,20 € pièce",
-        "crm": "les 50 premiers clients offerts, puis à partir de 30 centimes",
-        "b2c_portal": "premier portail inclus, puis 29 € pièce"
+        "assets": "couvre les 10 premiers, puis à partir de 1,20 € pièce",
+        "crm": "couvre les 50 premiers clients, puis à partir de 30 centimes",
+        "b2c_portal": "couvre un portail, puis 29 € pièce"
       }
     },
     "estimator": {
       "people": "Personnes qui utilisent HBCField",
       "peopleHint": "{{price}} chacune — bureau ou terrain, même prix",
-      "spaces": "Sites ou projets",
-      "spacesHint": "Chacun ne paie que ce qu’il active",
+      "spaces": "Espaces",
+      "spacesHint": "Un site, un projet, un client — comme vous découpez le travail. Chacun ne paie que ce qu’il active.",
       "modules": "Activez ce dont vous avez besoin",
       "howMany": "Combien — le prix baisse à mesure que ça grandit",
-      "included": "les {{count}} premiers offerts",
+      "included": "les {{count}} premiers compris dans le prix de base",
       "addOns": "Options pour toute l’entreprise",
       "yourCost": "Votre coût",
       "perMonth": "/ mois, HT",
       "rowPeople_one": "{{count}} personne",
       "rowPeople_other": "{{count}} personnes",
-      "rowSpaces_one": "{{count}} site",
-      "rowSpaces_other": "{{count}} sites",
+      "rowSpaces_one": "{{count}} espace",
+      "rowSpaces_other": "{{count}} espaces",
       "rowUsage": "Ce qu’ils contiennent",
       "rowAddOns": "Options",
       "annual": "{{price}} par an — deux mois offerts",
       "perHead": "{{price}} par personne",
-      "note": "Les décomptes sont facturés par site ; on suppose ici qu’ils sont sur un seul. 14 jours d’essai, sans carte, et chaque module se désactive le jour où vous cessez de l’utiliser."
+      "note": "Les décomptes sont facturés par espace ; on suppose ici qu’ils sont dans un seul. 14 jours d’essai, sans carte, et chaque module se désactive le jour où vous cessez de l’utiliser."
     }
   },
   "common": {

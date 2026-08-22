@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Pricing",
       "heading": "Pay for what you switch on.",
-      "lead": "No plans, no tiers, nothing locked behind an upgrade. €9.99 for each person who uses HBCField, plus whatever each of your sites actually turns on. 14-day trial, no card.",
+      "lead": "No plans, no tiers, nothing locked behind an upgrade. €9.99 for each person who uses HBCField, plus whatever each of your spaces actually turns on. 14-day trial, no card.",
       "outcomes": [
         {
           "title": "End the status-call chaos",
@@ -425,13 +425,13 @@
           "name": "Each space",
           "price": "from €3",
           "unit": "/ module / mo",
-          "desc": "A site pays for exactly what it switched on — and stops when you switch it off."
+          "desc": "A space is a site, a project or a client. Each pays for exactly what it switched on — and stops when you switch it off."
         },
         {
           "name": "Company add-ons",
           "price": "from €9",
           "unit": "/ mo",
-          "desc": "Invoicing, workflows, the audit log. Bought once, however many sites you run."
+          "desc": "Invoicing, workflows, the audit log. Bought once, however many spaces you run."
         }
       ],
       "seePrices": "See every price"
@@ -478,9 +478,9 @@
       "perSpace": " / space / mo",
       "perMonth": " / mo",
       "modulesLabel": "Per space",
-      "modulesLead": "Switch a module on for a site and that site pays for it. Switch it off and it stops.",
+      "modulesLead": "Switch a module on for a space and that space pays for it. Switch it off and it stops.",
       "addOnsLabel": "Company-wide",
-      "addOnsLead": "Bought once for the whole company, however many sites you run.",
+      "addOnsLead": "Bought once for the whole company, however many spaces you run.",
       "addOnGroups": {
         "work": "How work runs",
         "money": "Money",
@@ -488,31 +488,31 @@
         "support": "Support"
       },
       "ladder": {
-        "assets": "first 10 free, then from €1.20 each",
-        "crm": "first 50 clients free, then from 30c each",
-        "b2c_portal": "first portal included, then €29 each"
+        "assets": "covers the first 10, then from €1.20 each",
+        "crm": "covers the first 50 clients, then from 30c each",
+        "b2c_portal": "covers one portal, then €29 each"
       }
     },
     "estimator": {
       "people": "People using HBCField",
       "peopleHint": "{{price}} each — office or field, same price",
-      "spaces": "Sites or projects",
-      "spacesHint": "Each one pays only for what it switches on",
+      "spaces": "Spaces",
+      "spacesHint": "A site, a project, a client — however you divide up the work. Each pays only for what it switches on.",
       "modules": "Switch on what you need",
       "howMany": "How many — the price drops as it grows",
-      "included": "first {{count}} free",
+      "included": "first {{count}} included in the base price",
       "addOns": "Company-wide add-ons",
       "yourCost": "Your cost",
       "perMonth": "/ month, excl. VAT",
       "rowPeople_one": "{{count}} person",
       "rowPeople_other": "{{count}} people",
-      "rowSpaces_one": "{{count}} site",
-      "rowSpaces_other": "{{count}} sites",
+      "rowSpaces_one": "{{count}} space",
+      "rowSpaces_other": "{{count}} spaces",
       "rowUsage": "What is in them",
       "rowAddOns": "Add-ons",
       "annual": "{{price}} a year — two months free",
       "perHead": "{{price}} per person",
-      "note": "Counts are priced per site, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it."
+      "note": "Counts are priced per space, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it."
     }
   },
   "common": {

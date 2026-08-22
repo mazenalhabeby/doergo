@@ -95,12 +95,15 @@ export function PricingEstimator() {
         />
 
         <Field
-          label={t('home.estimator.spaces', 'Sites or projects')}
+          label={t('home.estimator.spaces', 'Spaces')}
           value={spaces}
           min={1}
           max={25}
           onChange={setSpaces}
-          hint={t('home.estimator.spacesHint', 'Each one pays only for what it switches on')}
+          hint={t(
+            'home.estimator.spacesHint',
+            'A site, a project, a client — however you divide up the work. Each pays only for what it switches on.',
+          )}
         />
 
         <p className={`${MONO} mb-3 mt-8 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
@@ -151,7 +154,7 @@ export function PricingEstimator() {
                   max={key === 'b2c_portal' ? 20 : 3000}
                   step={key === 'b2c_portal' ? 1 : 10}
                   onChange={(v) => setUnits((u) => ({ ...u, [key]: v }))}
-                  hint={t('home.estimator.included', 'first {{count}} free', { count: ladder.included })}
+                  hint={t('home.estimator.included', 'first {{count}} included in the base price', { count: ladder.included })}
                 />
               );
             })}
@@ -202,7 +205,7 @@ export function PricingEstimator() {
         <div className="mt-6 space-y-2 border-t border-foreground/[0.08] pt-5 text-[13px]">
           <Row label={t('home.estimator.rowPeople', '{{count}} people', { count: people })} value={bill.seatMonthlyCents} />
           <Row
-            label={t('home.estimator.rowSpaces_other', '{{count}} sites', { count: spaces })}
+            label={t('home.estimator.rowSpaces_other', '{{count}} spaces', { count: spaces })}
             value={bill.spacesMonthlyCents}
           />
           {bill.usageMonthlyCents > 0 && (
@@ -229,7 +232,7 @@ export function PricingEstimator() {
         <p className="mt-5 text-[12px] leading-relaxed text-foreground/40">
           {t(
             'home.estimator.note',
-            'Counts are priced per site, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it.',
+            'Counts are priced per space, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it.',
           )}
         </p>
       </aside>

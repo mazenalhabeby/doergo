@@ -51,11 +51,19 @@ const MARKETING_DESC: Record<string, string> = {
   space_sharing: 'Work inside one space together with another company.',
 };
 
-/** Modules whose price grows with a count — shown with their allowance. */
+/**
+ * Modules whose price grows with a count.
+ *
+ * "COVERS", never "free". The base price is what buys the allowance — Client
+ * Portal is €49 and that €49 is one portal, so calling it "first one free"
+ * reads as €49 plus a free portal, which is not what anybody is charged. The
+ * same word then works for all three rather than being right for assets and
+ * wrong here.
+ */
 const LADDER_NOTE: Record<string, string> = {
-  assets: 'first 10 free, then from €1.20 each',
-  crm: 'first 50 clients free, then from 30c each',
-  b2c_portal: 'first portal included, then €29 each',
+  assets: 'covers the first 10, then from €1.20 each',
+  crm: 'covers the first 50 clients, then from 30c each',
+  b2c_portal: 'covers one portal, then €29 each',
 };
 
 function PriceCell({ moduleKey }: { moduleKey: string }) {
@@ -101,7 +109,7 @@ export function FeatureMatrix() {
         <p className="mb-7 max-w-[46ch] text-[14px] leading-relaxed text-foreground/50">
           {t(
             'home.priceList.modulesLead',
-            'Switch a module on for a site and that site pays for it. Switch it off and it stops.',
+            'Switch a module on for a space and that space pays for it. Switch it off and it stops.',
           )}
         </p>
 
@@ -139,7 +147,7 @@ export function FeatureMatrix() {
         <p className="mb-7 max-w-[46ch] text-[14px] leading-relaxed text-foreground/50">
           {t(
             'home.priceList.addOnsLead',
-            'Bought once for the whole company, however many sites you run.',
+            'Bought once for the whole company, however many spaces you run.',
           )}
         </p>
 

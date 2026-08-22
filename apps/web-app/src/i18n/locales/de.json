@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Preise",
       "heading": "Zahlen Sie für das, was Sie aktivieren.",
-      "lead": "Keine Pakete, keine Stufen, nichts hinter einem Upgrade versteckt. 9,99 € pro Person, die HBCField nutzt, plus das, was jeder Standort tatsächlich aktiviert. 14 Tage testen, ohne Karte.",
+      "lead": "Keine Pakete, keine Stufen, nichts hinter einem Upgrade versteckt. 9,99 € pro Person, die HBCField nutzt, plus das, was jeder Bereich tatsächlich aktiviert. 14 Tage testen, ohne Karte.",
       "outcomes": [
         {
           "title": "Schluss mit dem Status-Anruf-Chaos",
@@ -425,13 +425,13 @@
           "name": "Pro Bereich",
           "price": "ab 3 €",
           "unit": "/ Modul / Mon.",
-          "desc": "Ein Standort zahlt genau das, was er aktiviert hat — und nicht mehr, sobald er es abschaltet."
+          "desc": "Ein Bereich ist ein Standort, ein Projekt oder ein Kunde. Jeder zahlt genau das, was er aktiviert hat — und nicht mehr, sobald Sie es abschalten."
         },
         {
           "name": "Firmenweite Module",
           "price": "ab 9 €",
           "unit": "/ Mon.",
-          "desc": "Rechnungen, Workflows, Änderungsprotokoll. Einmal gebucht, egal wie viele Standorte."
+          "desc": "Rechnungen, Workflows, Änderungsprotokoll. Einmal gebucht, egal wie viele Bereiche."
         }
       ],
       "seePrices": "Alle Preise ansehen"
@@ -478,9 +478,9 @@
       "perSpace": " / Bereich / Mon.",
       "perMonth": " / Mon.",
       "modulesLabel": "Pro Bereich",
-      "modulesLead": "Aktivieren Sie ein Modul für einen Standort, und dieser Standort zahlt dafür. Abschalten — und es endet.",
+      "modulesLead": "Aktivieren Sie ein Modul für einen Bereich, und dieser Bereich zahlt dafür. Abschalten — und es endet.",
       "addOnsLabel": "Firmenweit",
-      "addOnsLead": "Einmal für das ganze Unternehmen gebucht, egal wie viele Standorte.",
+      "addOnsLead": "Einmal für das ganze Unternehmen gebucht, egal wie viele Bereiche.",
       "addOnGroups": {
         "work": "Arbeitsabläufe",
         "money": "Finanzen",
@@ -488,31 +488,31 @@
         "support": "Support"
       },
       "ladder": {
-        "assets": "die ersten 10 gratis, danach ab 1,20 € je",
-        "crm": "die ersten 50 Kunden gratis, danach ab 30 Cent je",
-        "b2c_portal": "erstes Portal enthalten, danach 29 € je"
+        "assets": "deckt die ersten 10 ab, danach ab 1,20 € je",
+        "crm": "deckt die ersten 50 Kunden ab, danach ab 30 Cent je",
+        "b2c_portal": "deckt ein Portal ab, danach 29 € je"
       }
     },
     "estimator": {
       "people": "Personen, die HBCField nutzen",
       "peopleHint": "je {{price}} — Büro oder Außendienst, gleicher Preis",
-      "spaces": "Standorte oder Projekte",
-      "spacesHint": "Jeder zahlt nur, was er aktiviert hat",
+      "spaces": "Bereiche",
+      "spacesHint": "Ein Standort, ein Projekt, ein Kunde — wie Sie die Arbeit aufteilen. Jeder zahlt nur, was er aktiviert.",
       "modules": "Aktivieren Sie, was Sie brauchen",
       "howMany": "Wie viele — der Preis sinkt mit der Menge",
-      "included": "die ersten {{count}} gratis",
+      "included": "die ersten {{count}} im Grundpreis enthalten",
       "addOns": "Firmenweite Zusatzmodule",
       "yourCost": "Ihre Kosten",
       "perMonth": "/ Monat, exkl. USt.",
       "rowPeople_one": "{{count}} Person",
       "rowPeople_other": "{{count}} Personen",
-      "rowSpaces_one": "{{count}} Standort",
-      "rowSpaces_other": "{{count}} Standorte",
+      "rowSpaces_one": "{{count}} Bereich",
+      "rowSpaces_other": "{{count}} Bereiche",
       "rowUsage": "Was darin liegt",
       "rowAddOns": "Zusatzmodule",
       "annual": "{{price}} pro Jahr — zwei Monate gratis",
       "perHead": "{{price}} pro Person",
-      "note": "Mengen werden pro Standort berechnet; hier wird angenommen, dass sie an einem liegen. 14 Tage testen, ohne Karte — und jedes Modul lässt sich abschalten, sobald Sie es nicht mehr brauchen."
+      "note": "Mengen werden pro Bereich berechnet; hier wird angenommen, dass sie in einem liegen. 14 Tage testen, ohne Karte — und jedes Modul lässt sich abschalten, sobald Sie es nicht mehr brauchen."
     }
   },
   "common": {

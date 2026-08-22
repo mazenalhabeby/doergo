@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Prezzi",
       "heading": "Paghi ciò che attivi.",
-      "lead": "Nessun piano, nessun livello, niente bloccato dietro un upgrade. 9,99 € per ogni persona che usa HBCField, più ciò che ogni sede attiva davvero. 14 giorni di prova, senza carta.",
+      "lead": "Nessun piano, nessun livello, niente bloccato dietro un upgrade. 9,99 € per ogni persona che usa HBCField, più ciò che ogni spazio attiva davvero. 14 giorni di prova, senza carta.",
       "outcomes": [
         {
           "title": "Ponga fine al caos delle chiamate di stato",
@@ -425,13 +425,13 @@
           "name": "Per spazio",
           "price": "da 3 €",
           "unit": "/ modulo / mese",
-          "desc": "Ogni sede paga esattamente ciò che ha attivato, e smette quando lo disattiva."
+          "desc": "Uno spazio è una sede, un progetto o un cliente. Ognuno paga esattamente ciò che ha attivato, e smette quando lo disattiva."
         },
         {
           "name": "Aggiuntivi aziendali",
           "price": "da 9 €",
           "unit": "/ mese",
-          "desc": "Fatturazione, flussi, registro attività. Si attivano una volta, per tutta l’azienda."
+          "desc": "Fatturazione, flussi, registro attività. Si attivano una volta, indipendentemente dal numero di spazi."
         }
       ],
       "seePrices": "Vedi tutti i prezzi"
@@ -478,9 +478,9 @@
       "perSpace": " / spazio / mese",
       "perMonth": " / mese",
       "modulesLabel": "Per spazio",
-      "modulesLead": "Attiva un modulo per una sede e quella sede lo paga. Disattivalo e smette.",
+      "modulesLead": "Attiva un modulo per uno spazio e quello spazio lo paga. Disattivalo e smette.",
       "addOnsLabel": "Tutta l’azienda",
-      "addOnsLead": "Si attiva una volta per tutta l’azienda, indipendentemente dal numero di sedi.",
+      "addOnsLead": "Si attiva una volta per tutta l’azienda, indipendentemente dal numero di spazi.",
       "addOnGroups": {
         "work": "Come funziona il lavoro",
         "money": "Denaro",
@@ -488,31 +488,31 @@
         "support": "Supporto"
       },
       "ladder": {
-        "assets": "i primi 10 gratis, poi da 1,20 € ciascuno",
-        "crm": "i primi 50 clienti gratis, poi da 30 centesimi",
-        "b2c_portal": "primo portale incluso, poi 29 € ciascuno"
+        "assets": "copre i primi 10, poi da 1,20 € ciascuno",
+        "crm": "copre i primi 50 clienti, poi da 30 centesimi",
+        "b2c_portal": "copre un portale, poi 29 € ciascuno"
       }
     },
     "estimator": {
       "people": "Persone che usano HBCField",
       "peopleHint": "{{price}} ciascuna — ufficio o campo, stesso prezzo",
-      "spaces": "Sedi o progetti",
-      "spacesHint": "Ognuna paga solo ciò che attiva",
+      "spaces": "Spazi",
+      "spacesHint": "Una sede, un progetto, un cliente — come dividi il lavoro. Ognuno paga solo ciò che attiva.",
       "modules": "Attiva ciò che ti serve",
       "howMany": "Quanti — il prezzo scende man mano che cresce",
-      "included": "i primi {{count}} gratis",
+      "included": "i primi {{count}} inclusi nel prezzo base",
       "addOns": "Componenti per tutta l’azienda",
       "yourCost": "Il tuo costo",
       "perMonth": "/ mese, IVA esclusa",
       "rowPeople_one": "{{count}} persona",
       "rowPeople_other": "{{count}} persone",
-      "rowSpaces_one": "{{count}} sede",
-      "rowSpaces_other": "{{count}} sedi",
+      "rowSpaces_one": "{{count}} spazio",
+      "rowSpaces_other": "{{count}} spazi",
       "rowUsage": "Cosa contengono",
       "rowAddOns": "Componenti aggiuntivi",
       "annual": "{{price}} all’anno — due mesi gratis",
       "perHead": "{{price}} a persona",
-      "note": "I conteggi sono addebitati per sede, quindi qui si assume che siano in una sola. 14 giorni di prova, senza carta, e ogni modulo si può disattivare il giorno in cui smetti di usarlo."
+      "note": "I conteggi sono addebitati per spazio, quindi qui si assume che siano in uno solo. 14 giorni di prova, senza carta, e ogni modulo si può disattivare il giorno in cui smetti di usarlo."
     }
   },
   "common": {
