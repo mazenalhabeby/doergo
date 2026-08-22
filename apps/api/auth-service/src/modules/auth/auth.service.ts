@@ -28,6 +28,7 @@ import {
   normalizeRole,
   buildResolvedAccess,
   accessAllows,
+  smtpTransportOptions,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
 
@@ -122,18 +123,16 @@ export class AuthService {
     private readonly billing: BillingService,
     private readonly graceCache: GraceTokenCache,
   ) {
-    const smtpHost = this.configService.get('SMTP_HOST');
-    if (smtpHost) {
-      this.mailTransporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: this.configService.get('SMTP_PORT', 587),
-        secure: false,
-        auth: {
-          user: this.configService.get('SMTP_USER'),
-          pass: this.configService.get('SMTP_PASS'),
-        },
-      });
-      this.logger.log('SMTP transporter configured');
+    const smtp = smtpTransportOptions({
+      SMTP_HOST: this.configService.get('SMTP_HOST'),
+      SMTP_PORT: this.configService.get('SMTP_PORT'),
+      SMTP_USER: this.configService.get('SMTP_USER'),
+      SMTP_PASS: this.configService.get('SMTP_PASS'),
+      SMTP_SECURE: this.configService.get('SMTP_SECURE'),
+    });
+    if (smtp) {
+      this.mailTransporter = nodemailer.createTransport(smtp);
+      this.logger.log(`SMTP transporter configured: ${smtp.host}:${smtp.port} secure=${smtp.secure}`);
     } else {
       this.logger.warn('SMTP not configured - password reset emails will not be sent');
     }
@@ -154,6 +153,30 @@ export class AuthService {
       this.logger.error(`SMTP transport unavailable: ${(err as Error).message}`);
       this.transportHealth = { ok: false, at: Date.now() };
       return false;
+    }
+  }
+
+  /**
+   * Can this platform send email at all, and if not, why?
+   *
+   * For the operator console. The outage this exists for ran unnoticed because
+   * its only symptom was a line in a container log — every screen that sends
+   * mail reported success, because from their point of view the request had
+   * succeeded. Somewhere has to show the truth.
+   */
+  async mailHealth() {
+    const host = this.configService.get('SMTP_HOST');
+    const port = Number(this.configService.get('SMTP_PORT', 587)) || 587;
+    if (!this.mailTransporter) {
+      return { success: true, data: { configured: false, ok: false, host: null, port: null, error: 'SMTP is not configured' } };
+    }
+    try {
+      await this.mailTransporter.verify();
+      this.transportHealth = { ok: true, at: Date.now() };
+      return { success: true, data: { configured: true, ok: true, host, port, error: null } };
+    } catch (err) {
+      this.transportHealth = { ok: false, at: Date.now() };
+      return { success: true, data: { configured: true, ok: false, host, port, error: (err as Error).message } };
     }
   }
 

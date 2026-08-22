@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { smtpTransportOptions } from '@hbcfield/shared';
 
 // Escape HTML to prevent XSS in email content
 function esc(str: string | undefined | null): string {
@@ -11,22 +12,29 @@ function esc(str: string | undefined | null): string {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('SMTP_HOST'),
-      port: this.configService.get('SMTP_PORT', 587),
-      secure: false,
-      auth: {
-        user: this.configService.get('SMTP_USER'),
-        pass: this.configService.get('SMTP_PASS'),
-      },
+    // Same settings the auth service uses, from the same place — the two
+    // transports had drifted into one shape that could only reach a STARTTLS
+    // provider on the port it happened to be given.
+    const smtp = smtpTransportOptions({
+      SMTP_HOST: this.configService.get('SMTP_HOST'),
+      SMTP_PORT: this.configService.get('SMTP_PORT'),
+      SMTP_USER: this.configService.get('SMTP_USER'),
+      SMTP_PASS: this.configService.get('SMTP_PASS'),
+      SMTP_SECURE: this.configService.get('SMTP_SECURE'),
     });
+    this.transporter = smtp ? nodemailer.createTransport(smtp) : null;
+    if (!smtp) this.logger.warn('SMTP not configured — no email will be sent');
   }
 
   async sendEmail(to: string, subject: string, html: string) {
     try {
+      if (!this.transporter) {
+        this.logger.warn(`No SMTP transport — dropping email to ${to} ("${subject}")`);
+        return;
+      }
       await this.transporter.sendMail({
         from: this.configService.get('SMTP_FROM', 'noreply@hbcfield.com'),
         to,

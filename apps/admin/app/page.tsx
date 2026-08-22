@@ -19,6 +19,7 @@ interface Me { user: { id: string; email: string; firstName: string; lastName: s
 interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number }
 interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number }
 interface OrgDetail extends OrgRow { enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
+interface MailStatus { configured: boolean; ok: boolean; host: string | null; port: number | null; error: string | null }
 interface StaffUser { id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean; lastLoginAt: string | null }
 
 let TOKEN = '';
@@ -42,6 +43,7 @@ export default function ControlCenter() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support' | 'teams' | 'library'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [mail, setMail] = useState<MailStatus | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
   const [staff, setStaff] = useState<StaffUser[]>([]);
@@ -69,6 +71,13 @@ export default function ControlCenter() {
     api<{ data: Me }>('/platform/auth/me').then((r) => setMe(r.data)).catch(() => { TOKEN = ''; sessionStorage.removeItem('platformToken'); }).finally(() => setBooting(false));
   }, []);
   useEffect(() => { if (me && tab === 'orgs') loadOrgs(); if (me && tab === 'team') loadStaff(); }, [me, tab, loadOrgs, loadStaff]);
+
+  // Outbound mail health, on every tab. Deliberately not behind a click: the
+  // outage this was built for lasted because nothing ever asked the question.
+  useEffect(() => {
+    if (!me) return;
+    api<{ data: MailStatus }>('/platform/mail').then((r) => setMail(r.data)).catch(() => {});
+  }, [me]);
 
   const login = async () => {
     setError(null); setBusy('login');
@@ -135,6 +144,14 @@ export default function ControlCenter() {
             <button onClick={logout} className="text-xs text-slate-400 hover:text-slate-200">Sign out</button>
           </div>
         </div>
+        {mail && !mail.ok && (
+          <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-4 py-3 text-sm">
+            <div className="font-semibold text-red-300">Outbound email is not working — no password reset, invitation or notification is being delivered.</div>
+            <div className="mt-1 text-xs text-red-200/70">
+              {mail.configured ? `${mail.host}:${mail.port} — ${mail.error ?? 'the mail server refused the connection'}` : 'SMTP is not configured on this deployment.'}
+            </div>
+          </div>
+        )}
         {error && <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">{error} <button onClick={() => setError(null)} className="ml-2 opacity-60">✕</button></div>}
 
         {tab === 'orgs' ? (

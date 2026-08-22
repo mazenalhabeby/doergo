@@ -35,4 +35,7 @@ export class PlatformAdminService extends BaseGatewayService {
   // had been quoting deleted tier prices since the model changed.
   pricingList() { return this.send({ cmd: 'platform_pricing_list' }, {}); }
   pricingStripeStatus() { return this.send({ cmd: 'platform_pricing_stripe_status' }, {}); }
+
+  // Is outbound email working? Nothing else in the product surfaces this.
+  mailStatus() { return this.send({ cmd: 'platform_mail_status' }, {}); }
 }

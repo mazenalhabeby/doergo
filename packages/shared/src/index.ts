@@ -60,3 +60,6 @@ export * from './access/workflow-scope';
 export * from './access/asset-kind-shape';
 export * from './access/asset-kind-templates';
 export * from './access/workflow-status-label';
+
+// SMTP connection settings — one decision, both sending services.
+export * from './mail/transport';

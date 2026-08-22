@@ -30,6 +30,19 @@ export class PlatformAdminController {
   @RequirePlatformPerm('view')
   async overview() { return this.unwrap(await this.svc.overview()); }
 
+  /**
+   * Is outbound email working?
+   *
+   * `view`, not an admin permission: anyone who can open this console should be
+   * able to see that the platform cannot send mail. Nothing else in the product
+   * surfaces it — the outage that prompted this ran with its only symptom being
+   * a line in a container log, because every screen that sends email reported
+   * success the moment the request returned.
+   */
+  @Get('mail')
+  @RequirePlatformPerm('view')
+  async mail() { return this.unwrap(await this.svc.mailStatus()); }
+
   @Get('orgs')
   @RequirePlatformPerm('view')
   async listOrgs(@Query('search') search?: string, @Query('status') status?: string) {

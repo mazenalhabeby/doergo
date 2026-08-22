@@ -80,4 +80,10 @@ export class AuthController {
   async deleteAccount(@Payload() data: any) {
     return this.authService.deleteAccount(data);
   }
+
+  // Operator-only: is outbound email working? See AuthService.mailHealth.
+  @MessagePattern({ cmd: 'platform_mail_status' })
+  mailStatus() {
+    return this.authService.mailHealth();
+  }
 }
