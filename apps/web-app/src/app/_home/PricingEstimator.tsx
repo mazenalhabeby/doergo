@@ -2,12 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronDown } from 'lucide-react';
 import {
   AVAILABLE_MODULES,
   MODULE_MONTHLY_CENTS,
-  MODULE_USAGE_PRICING,
   AVAILABLE_ADD_ONS,
-  SEAT_MONTHLY_CENTS,
   orgMonthlyCost,
   formatCents,
   billsByUsage,
@@ -18,281 +17,283 @@ const MONO = 'font-[family:var(--font-martian)]';
 const ACCENT = '#5B9BD5';
 
 /**
- * Work out what HBCField costs you, on the page, before talking to anyone.
+ * What HBCField costs you — answered before you touch anything.
  *
- * Three plan columns cannot describe this product — the bill is people plus
- * what each site switches on plus company add-ons, and a column can only show
- * one combination of those. The pattern that fits a modular, usage-priced
- * product is the one PostHog and Twilio settled on: let the visitor put their
- * own numbers in and watch the total move. It answers "what will this cost ME",
- * which is the only question a pricing page is ever really asked.
+ * The first version asked eleven questions: two sliders, six module chips,
+ * three more sliders, six add-on chips. That is a FORM, and a form is work.
+ * Somebody who has never heard of a "module" arrives wanting one number and is
+ * handed a configuration exercise, then a total with nothing to judge it
+ * against.
  *
- * PERFORMANCE. Every figure comes from pure functions in @hbcfield/shared that
- * are already in the bundle for the app itself, so this costs no network, no
- * API, and no new dependency. The whole thing is `useMemo` over four pieces of
- * local state — typing in it is a re-render of one card, not a request.
+ * So it opens with an answer. One question anybody can answer without thinking
+ * — how many people — three shapes to recognise yourself in, and the price
+ * PER PERSON, because that number is both small and directly comparable to what
+ * a competitor charges. €22 a head reads as reasonable; €133.94 reads as
+ * expensive. They are the same bill.
  *
- * The numbers are the SAME functions the invoice is built from. A pricing page
- * with its own arithmetic is a pricing page that eventually lies.
+ * Everything else is folded behind "See exactly what's included". People who
+ * want to configure can. Nobody has to.
  */
 
-/** Modules a visitor recognises without being sold to. Order is deliberate. */
-const FEATURED = ['tracking', 'time_tracking', 'service_reports', 'assets', 'crm', 'b2c_portal'] as const;
+type PresetKey = 'basics' | 'field' | 'everything';
 
-/** Sensible starting point: a small field team that tracks its vans and reports. */
-const DEFAULT_ON = new Set<string>(['tracking', 'time_tracking', 'service_reports']);
+/**
+ * Three shapes, not three tiers.
+ *
+ * Nothing is locked to a preset — it fills the toggles in and can be changed
+ * immediately after. They exist so somebody can recognise themselves in one
+ * line instead of reading sixteen module names.
+ */
+const PRESETS: Record<PresetKey, { modules: string[]; addOns: string[]; units: Record<string, number> }> = {
+  basics: {
+    modules: ['subtasks', 'checklists', 'attachments'],
+    addOns: [],
+    units: {},
+  },
+  field: {
+    modules: ['checklists', 'attachments', 'tracking', 'time_tracking', 'service_reports'],
+    addOns: [],
+    units: {},
+  },
+  everything: {
+    modules: [
+      'subtasks', 'checklists', 'attachments', 'custom_fields',
+      'tracking', 'time_tracking', 'service_reports', 'assets', 'crm',
+    ],
+    addOns: ['invoicing', 'recurring'],
+    units: { assets: 40, crm: 120 },
+  },
+};
+
+/** One bill, from the same functions the invoice is built from. */
+const priceFor = (mods: string[], adds: string[], u: Record<string, number>, n: number) =>
+  orgMonthlyCost({
+    seatCount: n,
+    spaces: [{ spaceId: 'a', spaceName: 'a', enabledModules: mods, usage: u }],
+    addOns: adds,
+  });
 
 export function PricingEstimator() {
   const { t } = useTranslation();
 
   const [people, setPeople] = useState(6);
-  const [spaces, setSpaces] = useState(1);
-  const [modules, setModules] = useState<Set<string>>(DEFAULT_ON);
-  const [addOns, setAddOns] = useState<Set<string>>(new Set());
-  const [units, setUnits] = useState<Record<string, number>>({ assets: 40, crm: 120, b2c_portal: 1 });
+  const [preset, setPreset] = useState<PresetKey>('field');
+  const [modules, setModules] = useState<string[]>(PRESETS.field.modules);
+  const [addOns, setAddOns] = useState<string[]>([]);
+  const [units, setUnits] = useState<Record<string, number>>({});
+  const [open, setOpen] = useState(false);
 
-  const bill = useMemo(() => {
-    const enabled = [...modules];
-    // The counts belong to ONE space — spreading them evenly across sites would
-    // quietly reach cheaper ladder bands and quote a number the product won't
-    // charge. Better to under-promise here than to explain a bigger invoice.
-    const usageFor = (i: number): Record<string, number> =>
-      i === 0 ? Object.fromEntries(enabled.filter(billsByUsage).map((k) => [k, units[k] ?? 0])) : {};
-
-    return orgMonthlyCost({
-      seatCount: people,
-      spaces: Array.from({ length: spaces }, (_, i) => ({
-        spaceId: String(i),
-        spaceName: `Space ${i + 1}`,
-        enabledModules: enabled,
-        usage: usageFor(i),
-      })),
-      addOns: [...addOns],
-    });
-  }, [people, spaces, modules, addOns, units]);
-
-  const toggle = (set: Set<string>, key: string, apply: (s: Set<string>) => void) => {
-    const next = new Set(set);
-    next.has(key) ? next.delete(key) : next.add(key);
-    apply(next);
+  const applyPreset = (key: PresetKey) => {
+    setPreset(key);
+    setModules(PRESETS[key].modules);
+    setAddOns(PRESETS[key].addOns);
+    setUnits(PRESETS[key].units);
   };
 
-  const countedOn = [...modules].filter(billsByUsage);
+  const bill = useMemo(() => priceFor(modules, addOns, units, people), [modules, addOns, units, people]);
+  const perPerson = Math.round(bill.monthlyCents / Math.max(1, people));
 
-  return (
-    <div className="grid gap-px overflow-hidden rounded-2xl border border-foreground/[0.10] bg-foreground/[0.08] lg:grid-cols-[1fr_minmax(19rem,22rem)]">
-      {/* ── inputs ──────────────────────────────────────────────────────── */}
-      <div className="bg-background p-6 sm:p-8">
-        <Field
-          label={t('home.estimator.people', 'People using HBCField')}
-          value={people}
-          min={1}
-          max={120}
-          onChange={setPeople}
-          hint={t('home.estimator.peopleHint', '{{price}} each — office or field, same price', {
-            price: formatCents(SEAT_MONTHLY_CENTS),
-          })}
-        />
-
-        <Field
-          label={t('home.estimator.spaces', 'Spaces')}
-          value={spaces}
-          min={1}
-          max={25}
-          onChange={setSpaces}
-          hint={t(
-            'home.estimator.spacesHint',
-            'A site, a project, a client — however you divide up the work. Each pays only for what it switches on.',
-          )}
-        />
-
-        <p className={`${MONO} mb-3 mt-8 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
-          {t('home.estimator.modules', 'Switch on what you need')}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {FEATURED.map((key) => {
-            const on = modules.has(key);
-            const m = AVAILABLE_MODULES.find((x) => x.key === key)!;
-            return (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggle(modules, key, setModules)}
-                className={`${MONO} rounded-full border px-3.5 py-2 text-[11px] transition-colors ${
-                  on
-                    ? 'border-transparent text-[#04121f]'
-                    : 'border-foreground/15 text-foreground/60 hover:border-foreground/40 hover:text-foreground'
-                }`}
-                style={on ? { backgroundColor: ACCENT } : undefined}
-              >
-                {t(`modules.${key}.label`, m.label)}
-                <span className={on ? 'opacity-70' : 'opacity-50'}> {formatCents(MODULE_MONTHLY_CENTS[key] ?? 0)}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Only the counted modules that are actually ON get a number to set —
-            asking for a client count from somebody who has not switched CRM on
-            is asking a question that changes nothing. */}
-        {countedOn.length > 0 && (
-          <div className="mt-7 space-y-4 rounded-xl border border-foreground/[0.08] p-4">
-            <p className={`${MONO} text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
-              {t('home.estimator.howMany', 'How many — the price drops as it grows')}
-            </p>
-            {countedOn.map((key) => {
-              const ladder = MODULE_USAGE_PRICING[key];
-              const m = AVAILABLE_MODULES.find((x) => x.key === key)!;
-              return (
-                <Field
-                  key={key}
-                  compact
-                  label={t(`modules.${key}.label`, m.label)}
-                  value={units[key] ?? 0}
-                  min={0}
-                  max={key === 'b2c_portal' ? 20 : 3000}
-                  step={key === 'b2c_portal' ? 1 : 10}
-                  onChange={(v) => setUnits((u) => ({ ...u, [key]: v }))}
-                  hint={t('home.estimator.included', 'first {{count}} included in the base price', { count: ladder.included })}
-                />
-              );
-            })}
-          </div>
-        )}
-
-        <p className={`${MONO} mb-3 mt-8 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
-          {t('home.estimator.addOns', 'Company-wide add-ons')}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {AVAILABLE_ADD_ONS.slice(0, 6).map((a) => {
-            const on = addOns.has(a.key);
-            return (
-              <button
-                key={a.key}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggle(addOns, a.key, setAddOns)}
-                className={`${MONO} rounded-full border px-3.5 py-2 text-[11px] transition-colors ${
-                  on
-                    ? 'border-transparent text-[#04121f]'
-                    : 'border-foreground/15 text-foreground/60 hover:border-foreground/40 hover:text-foreground'
-                }`}
-                style={on ? { backgroundColor: ACCENT } : undefined}
-              >
-                {t(`addOns.${a.key}.label`, a.label)}
-                <span className={on ? 'opacity-70' : 'opacity-50'}> {formatCents(a.monthlyCents)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── the number ──────────────────────────────────────────────────── */}
-      <aside className="bg-background p-6 sm:p-8 lg:sticky lg:top-8 lg:self-start">
-        <p className={`${MONO} text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
-          {t('home.estimator.yourCost', 'Your cost')}
-        </p>
-
-        {/* tabular-nums so the figure does not jitter as it changes */}
-        <p className={`${DISPLAY} mt-3 text-[clamp(2.4rem,7vw,3.4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
-          {formatCents(bill.monthlyCents)}
-        </p>
-        <p className={`${MONO} mt-2 text-[11px] text-foreground/40`}>
-          {t('home.estimator.perMonth', '/ month, excl. VAT')}
-        </p>
-
-        <div className="mt-6 space-y-2 border-t border-foreground/[0.08] pt-5 text-[13px]">
-          <Row label={t('home.estimator.rowPeople', '{{count}} people', { count: people })} value={bill.seatMonthlyCents} />
-          <Row
-            label={t('home.estimator.rowSpaces_other', '{{count}} spaces', { count: spaces })}
-            value={bill.spacesMonthlyCents}
-          />
-          {bill.usageMonthlyCents > 0 && (
-            <Row label={t('home.estimator.rowUsage', 'What is in them')} value={bill.usageMonthlyCents} accent />
-          )}
-          {bill.addOnsMonthlyCents > 0 && (
-            <Row label={t('home.estimator.rowAddOns', 'Add-ons')} value={bill.addOnsMonthlyCents} />
-          )}
-        </div>
-
-        <div className="mt-5 rounded-lg bg-foreground/[0.04] p-3">
-          <p className={`${MONO} text-[11px] leading-relaxed text-foreground/50`}>
-            {t('home.estimator.annual', '{{price}} a year — two months free', {
-              price: formatCents(bill.annualCents),
-            })}
-          </p>
-          <p className={`${MONO} mt-1 text-[11px] leading-relaxed text-foreground/40`}>
-            {t('home.estimator.perHead', '{{price}} per person', {
-              price: formatCents(Math.round(bill.monthlyCents / Math.max(1, people))),
-            })}
-          </p>
-        </div>
-
-        <p className="mt-5 text-[12px] leading-relaxed text-foreground/40">
-          {t(
-            'home.estimator.note',
-            'Counts are priced per space, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it.',
-          )}
-        </p>
-      </aside>
-    </div>
+  // Each card carries its OWN price at the current team size, so choosing
+  // between them is a comparison rather than three clicks to find out.
+  const presetPrices = useMemo(
+    () =>
+      Object.fromEntries(
+        (Object.keys(PRESETS) as PresetKey[]).map((k) => {
+          const p = PRESETS[k];
+          const b = priceFor(p.modules, p.addOns, p.units, people);
+          return [k, Math.round(b.monthlyCents / Math.max(1, people))];
+        }),
+      ) as Record<PresetKey, number>,
+    [people],
   );
-}
 
-/** A number you set — a slider for reach, a readout that stays legible. */
-function Field({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  onChange,
-  hint,
-  compact,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  onChange: (v: number) => void;
-  hint?: string;
-  compact?: boolean;
-}) {
+  const toggleModule = (key: string) =>
+    setModules((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const toggleAddOn = (key: string) =>
+    setAddOns((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+
+  const CARDS: { key: PresetKey; title: string; body: string }[] = [
+    {
+      key: 'basics',
+      title: t('home.estimator.preset.basics.title', 'Just organise the work'),
+      body: t('home.estimator.preset.basics.body', 'Jobs, checklists and photos. Replaces the whiteboard and the group chat.'),
+    },
+    {
+      key: 'field',
+      title: t('home.estimator.preset.field.title', 'Run a field team'),
+      body: t('home.estimator.preset.field.body', 'All of that, plus GPS, clock-in and signed service reports.'),
+    },
+    {
+      key: 'everything',
+      title: t('home.estimator.preset.everything.title', 'Run the whole business'),
+      body: t('home.estimator.preset.everything.body', 'Add customers, assets, invoicing and repeating jobs.'),
+    },
+  ];
+
   return (
-    <div className={compact ? '' : 'mb-7'}>
-      <div className="flex items-baseline justify-between gap-4">
-        <label className={`text-[13.5px] ${compact ? 'text-foreground/70' : 'font-medium text-foreground'}`}>
-          {label}
+    <div>
+      {/* ── one question ────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <label htmlFor="team-size" className="text-[15px] font-medium text-foreground">
+          {t('home.estimator.teamSize', 'How many people work with you?')}
         </label>
-        <span className={`${MONO} text-[13px] text-foreground [font-variant-numeric:tabular-nums]`}>{value}</span>
+        <span className={`${DISPLAY} text-[2rem] leading-none text-foreground [font-variant-numeric:tabular-nums]`}>
+          {people}
+        </span>
       </div>
       <input
+        id="team-size"
         type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-label={label}
-        className="mt-2 h-1 w-full cursor-pointer appearance-none rounded-full bg-foreground/10 accent-[#5B9BD5]"
+        min={1}
+        max={60}
+        value={people}
+        onChange={(e) => setPeople(Number(e.target.value))}
+        className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-foreground/10 accent-[#5B9BD5]"
       />
-      {hint && <p className={`${MONO} mt-1.5 text-[10.5px] text-foreground/35`}>{hint}</p>}
+
+      {/* ── three shapes, each with its own price ───────────────────────── */}
+      <div className="mt-9 grid gap-3 sm:grid-cols-3">
+        {CARDS.map((c) => {
+          const on = preset === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => applyPreset(c.key)}
+              className={`rounded-2xl border p-5 text-left transition-colors ${
+                on ? 'border-[#5B9BD5] bg-[#5B9BD5]/[0.07]' : 'border-foreground/[0.12] hover:border-foreground/30'
+              }`}
+            >
+              <p className="text-[15px] font-medium text-foreground">{c.title}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-foreground/45">{c.body}</p>
+              <p
+                className={`${MONO} mt-4 text-[13px] [font-variant-numeric:tabular-nums]`}
+                style={on ? { color: ACCENT } : undefined}
+              >
+                {formatCents(presetPrices[c.key])}
+                <span className="text-foreground/40"> {t('home.estimator.perPerson', '/ person / month')}</span>
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── the answer ──────────────────────────────────────────────────── */}
+      <div className="mt-9 rounded-2xl border border-foreground/[0.12] p-7 sm:p-9">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className={`${DISPLAY} text-[clamp(2.6rem,8vw,4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
+              {formatCents(perPerson)}
+            </p>
+            <p className={`${MONO} mt-2 text-[12px] text-foreground/45`}>
+              {t('home.estimator.perPersonLong', 'per person, per month')}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className={`${MONO} text-[13px] text-foreground/60 [font-variant-numeric:tabular-nums]`}>
+              {t('home.estimator.totalFor', '{{price}} in total', { price: formatCents(bill.monthlyCents) })}
+            </p>
+            <p className={`${MONO} mt-1 text-[12px] text-foreground/35 [font-variant-numeric:tabular-nums]`}>
+              {t('home.estimator.orAnnual', 'or {{price}} a year — 2 months free', {
+                price: formatCents(bill.annualCents),
+              })}
+            </p>
+          </div>
+        </div>
+
+        {/* The number that makes the number reasonable. */}
+        <p className="mt-6 border-t border-foreground/[0.08] pt-5 text-[13.5px] leading-relaxed text-foreground/50">
+          {t('home.estimator.anchor', 'The separate tools this replaces cost €60–90 per person.')}
+        </p>
+      </div>
+
+      {/* ── everything else, folded away ────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`${MONO} mt-5 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground/45 transition-colors hover:text-foreground`}
+      >
+        {open ? t('home.estimator.hide', 'Hide the detail') : t('home.estimator.show', "See exactly what's included")}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="mt-6 space-y-7 rounded-2xl border border-foreground/[0.08] p-6">
+          <Group
+            title={t('home.estimator.modules', 'In this space')}
+            items={AVAILABLE_MODULES.filter((m) => (MODULE_MONTHLY_CENTS[m.key as string] ?? 0) > 0).map((m) => ({
+              key: m.key as string,
+              label: t(`modules.${m.key}.label`, m.label),
+              cents: MODULE_MONTHLY_CENTS[m.key as string] ?? 0,
+              suffix: billsByUsage(m.key as string) ? '+' : undefined,
+            }))}
+            selected={modules}
+            onToggle={toggleModule}
+          />
+          <Group
+            title={t('home.estimator.addOns', 'For the whole company')}
+            items={AVAILABLE_ADD_ONS.map((a) => ({
+              key: a.key,
+              label: t(`addOns.${a.key}.label`, a.label),
+              cents: a.monthlyCents,
+            }))}
+            selected={addOns}
+            onToggle={toggleAddOn}
+          />
+          <p className="text-[12.5px] leading-relaxed text-foreground/40">
+            {t(
+              'home.estimator.detailNote',
+              'A “+” means the price also grows with how many you have — and gets cheaper per item as it does. Switch anything off and it stops being charged that day.',
+            )}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-function Row({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+function Group({
+  title,
+  items,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  items: { key: string; label: string; cents: number; suffix?: string }[];
+  selected: string[];
+  onToggle: (key: string) => void;
+}) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
-      <span className="text-foreground/50">{label}</span>
-      <span
-        className={`${MONO} text-[12.5px] [font-variant-numeric:tabular-nums] ${accent ? '' : 'text-foreground/80'}`}
-        style={accent ? { color: ACCENT } : undefined}
-      >
-        {formatCents(value)}
-      </span>
+    <div>
+      <p className={`${MONO} mb-3 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {items.map((it) => {
+          const on = selected.includes(it.key);
+          return (
+            <button
+              key={it.key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onToggle(it.key)}
+              className={`${MONO} rounded-full border px-3 py-1.5 text-[11px] transition-colors ${
+                on
+                  ? 'border-transparent text-[#04121f]'
+                  : 'border-foreground/15 text-foreground/55 hover:border-foreground/40 hover:text-foreground'
+              }`}
+              style={on ? { backgroundColor: ACCENT } : undefined}
+            >
+              {it.label}
+              <span className={on ? 'opacity-70' : 'opacity-45'}>
+                {' '}
+                {formatCents(it.cents)}
+                {it.suffix}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

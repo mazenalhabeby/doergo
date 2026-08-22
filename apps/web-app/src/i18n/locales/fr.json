@@ -298,9 +298,9 @@
       "more": "Autres secteurs"
     },
     "compare": {
-      "label": "Tous les prix",
-      "heading": "Chaque module, et son prix",
-      "lead": "La liste complète. Rien n’est bloqué derrière un forfait — la seule question est ce que coûte une chose.",
+      "label": "Ce que vous pouvez ajouter",
+      "heading": "N’activez que ce dont vous avez besoin",
+      "lead": "Rien n’est bloqué derrière un forfait. Activez quand vous en avez besoin, désactivez quand ce n’est plus le cas — la facture suit le jour même.",
       "groups": {
         "task": "Sections de tâche",
         "field": "Interventions terrain",
@@ -474,45 +474,63 @@
         }
       ]
     },
-    "priceList": {
-      "perSpace": " / espace / mois",
-      "perMonth": " / mois",
-      "modulesLabel": "Par espace",
-      "modulesLead": "Activez un module pour un espace et cet espace le paie. Désactivez-le et cela s’arrête.",
-      "addOnsLabel": "Toute l’entreprise",
-      "addOnsLead": "Souscrit une fois pour toute l’entreprise, quel que soit le nombre d’espaces.",
-      "addOnGroups": {
-        "work": "Organisation du travail",
-        "money": "Finances",
-        "insight": "Analyse",
-        "support": "Support"
-      },
-      "ladder": {
-        "assets": "couvre les 10 premiers, puis à partir de 1,20 € pièce",
-        "crm": "couvre les 50 premiers clients, puis à partir de 30 centimes",
-        "b2c_portal": "couvre un portail, puis 29 € pièce"
+    "estimator": {
+      "teamSize": "Combien de personnes travaillent avec vous ?",
+      "perPerson": "/ personne / mois",
+      "perPersonLong": "par personne et par mois",
+      "totalFor": "{{price}} au total",
+      "orAnnual": "ou {{price}} par an — 2 mois offerts",
+      "anchor": "Les outils séparés que cela remplace coûtent 60–90 € par personne.",
+      "show": "Voir exactement ce qui est inclus",
+      "hide": "Masquer le détail",
+      "modules": "Dans cet espace",
+      "addOns": "Pour toute l’entreprise",
+      "detailNote": "Un « + » signifie que le prix grandit aussi avec la quantité — et devient moins cher à l’unité. Désactivez ce que vous voulez : la facturation s’arrête le jour même.",
+      "preset": {
+        "basics": {
+          "title": "Simplement organiser le travail",
+          "body": "Interventions, check-lists et photos. Remplace le tableau blanc et le groupe de discussion."
+        },
+        "field": {
+          "title": "Gérer une équipe terrain",
+          "body": "Tout cela, plus le GPS, le pointage et des rapports signés."
+        },
+        "everything": {
+          "title": "Gérer toute l’entreprise",
+          "body": "Ajoutez clients, équipements, facturation et interventions récurrentes."
+        }
       }
     },
-    "estimator": {
-      "people": "Personnes qui utilisent HBCField",
-      "peopleHint": "{{price}} chacune — bureau ou terrain, même prix",
-      "spaces": "Espaces",
-      "spacesHint": "Un site, un projet, un client — comme vous découpez le travail. Chacun ne paie que ce qu’il active.",
-      "modules": "Activez ce dont vous avez besoin",
-      "howMany": "Combien — le prix baisse à mesure que ça grandit",
-      "included": "les {{count}} premiers compris dans le prix de base",
-      "addOns": "Options pour toute l’entreprise",
-      "yourCost": "Votre coût",
-      "perMonth": "/ mois, HT",
-      "rowPeople_one": "{{count}} personne",
-      "rowPeople_other": "{{count}} personnes",
-      "rowSpaces_one": "{{count}} espace",
-      "rowSpaces_other": "{{count}} espaces",
-      "rowUsage": "Ce qu’ils contiennent",
-      "rowAddOns": "Options",
-      "annual": "{{price}} par an — deux mois offerts",
-      "perHead": "{{price}} par personne",
-      "note": "Les décomptes sont facturés par espace ; on suppose ici qu’ils sont dans un seul. 14 jours d’essai, sans carte, et chaque module se désactive le jour où vous cessez de l’utiliser."
+    "groups": {
+      "perSpace": "/ espace / mois",
+      "from": "à partir de {{price}}",
+      "where": {
+        "title": "Savoir où est chacun",
+        "body": "Carte en direct, le trajet réellement parcouru par chaque camionnette, et un pointage géolocalisé exploitable en paie."
+      },
+      "prove": {
+        "title": "Prouver que le travail est fait",
+        "body": "Photos, pièces utilisées et signature du client, transformées en rapport à envoyer ou à facturer."
+      },
+      "clients": {
+        "title": "Tenir les clients informés",
+        "body": "Chaque client, son historique et — si vous le souhaitez — un accès pour commander et suivre son intervention.",
+        "note": "Couvre vos 50 premiers clients et un portail ; ensuite à partir de 30 centimes par client."
+      },
+      "things": {
+        "title": "Suivre ce dont vous avez la charge",
+        "body": "Appartements, véhicules, machines — ce que c’est, où c’est, et tout ce qui y a été fait.",
+        "note": "Couvre les 10 premiers, puis à partir de 1,20 € pièce — moins cher à mesure que ça grandit."
+      },
+      "plan": {
+        "title": "Piloter de plus gros projets",
+        "body": "Découpez les chantiers longs en étapes, ordonnez-les et ajoutez les champs propres à votre métier."
+      },
+      "office": {
+        "title": "Gérer le côté bureau",
+        "body": "Factures issues du travail terminé, interventions récurrentes, plannings, et un journal de qui a changé quoi.",
+        "note": "Souscrit une fois pour l’entreprise, pas par espace."
+      }
     }
   },
   "common": {

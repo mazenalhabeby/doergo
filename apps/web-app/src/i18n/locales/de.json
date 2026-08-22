@@ -298,9 +298,9 @@
       "more": "Weitere Branchen"
     },
     "compare": {
-      "label": "Alle Preise",
-      "heading": "Jedes Modul und was es kostet",
-      "lead": "Die vollständige Preisliste. Nichts ist hinter einem Paket versteckt — die einzige Frage ist, was etwas kostet.",
+      "label": "Was Sie ergänzen können",
+      "heading": "Aktivieren Sie nur, was Sie brauchen",
+      "lead": "Nichts ist hinter einem Paket versteckt. Schalten Sie etwas ein, wenn Sie es brauchen, und wieder aus, wenn nicht — die Rechnung folgt am selben Tag.",
       "groups": {
         "task": "Aufgaben-Bereiche",
         "field": "Außendienst",
@@ -474,45 +474,63 @@
         }
       ]
     },
-    "priceList": {
-      "perSpace": " / Bereich / Mon.",
-      "perMonth": " / Mon.",
-      "modulesLabel": "Pro Bereich",
-      "modulesLead": "Aktivieren Sie ein Modul für einen Bereich, und dieser Bereich zahlt dafür. Abschalten — und es endet.",
-      "addOnsLabel": "Firmenweit",
-      "addOnsLead": "Einmal für das ganze Unternehmen gebucht, egal wie viele Bereiche.",
-      "addOnGroups": {
-        "work": "Arbeitsabläufe",
-        "money": "Finanzen",
-        "insight": "Auswertung",
-        "support": "Support"
-      },
-      "ladder": {
-        "assets": "deckt die ersten 10 ab, danach ab 1,20 € je",
-        "crm": "deckt die ersten 50 Kunden ab, danach ab 30 Cent je",
-        "b2c_portal": "deckt ein Portal ab, danach 29 € je"
+    "estimator": {
+      "teamSize": "Wie viele Personen arbeiten mit Ihnen?",
+      "perPerson": "/ Person / Monat",
+      "perPersonLong": "pro Person und Monat",
+      "totalFor": "{{price}} gesamt",
+      "orAnnual": "oder {{price}} pro Jahr — 2 Monate gratis",
+      "anchor": "Die Einzel-Tools, die das ersetzt, kosten 60–90 € pro Person.",
+      "show": "Genau sehen, was enthalten ist",
+      "hide": "Details ausblenden",
+      "modules": "In diesem Bereich",
+      "addOns": "Für das ganze Unternehmen",
+      "detailNote": "Ein „+“ heißt, der Preis wächst auch mit der Menge — und wird pro Stück günstiger, je mehr es sind. Alles lässt sich abschalten und wird ab dem Tag nicht mehr berechnet.",
+      "preset": {
+        "basics": {
+          "title": "Einfach die Arbeit ordnen",
+          "body": "Aufträge, Checklisten und Fotos. Ersetzt Whiteboard und Gruppenchat."
+        },
+        "field": {
+          "title": "Ein Außendienst-Team führen",
+          "body": "Alles davon, plus GPS, Einstempeln und unterschriebene Serviceberichte."
+        },
+        "everything": {
+          "title": "Das ganze Unternehmen führen",
+          "body": "Dazu Kunden, Objekte, Rechnungen und wiederkehrende Aufträge."
+        }
       }
     },
-    "estimator": {
-      "people": "Personen, die HBCField nutzen",
-      "peopleHint": "je {{price}} — Büro oder Außendienst, gleicher Preis",
-      "spaces": "Bereiche",
-      "spacesHint": "Ein Standort, ein Projekt, ein Kunde — wie Sie die Arbeit aufteilen. Jeder zahlt nur, was er aktiviert.",
-      "modules": "Aktivieren Sie, was Sie brauchen",
-      "howMany": "Wie viele — der Preis sinkt mit der Menge",
-      "included": "die ersten {{count}} im Grundpreis enthalten",
-      "addOns": "Firmenweite Zusatzmodule",
-      "yourCost": "Ihre Kosten",
-      "perMonth": "/ Monat, exkl. USt.",
-      "rowPeople_one": "{{count}} Person",
-      "rowPeople_other": "{{count}} Personen",
-      "rowSpaces_one": "{{count}} Bereich",
-      "rowSpaces_other": "{{count}} Bereiche",
-      "rowUsage": "Was darin liegt",
-      "rowAddOns": "Zusatzmodule",
-      "annual": "{{price}} pro Jahr — zwei Monate gratis",
-      "perHead": "{{price}} pro Person",
-      "note": "Mengen werden pro Bereich berechnet; hier wird angenommen, dass sie in einem liegen. 14 Tage testen, ohne Karte — und jedes Modul lässt sich abschalten, sobald Sie es nicht mehr brauchen."
+    "groups": {
+      "perSpace": "/ Bereich / Monat",
+      "from": "ab {{price}}",
+      "where": {
+        "title": "Wissen, wo alle sind",
+        "body": "Live-Karte, die tatsächlich gefahrene Route jedes Fahrzeugs und Einstempeln per Geofence, das auf einen Stundenzettel passt."
+      },
+      "prove": {
+        "title": "Belegen, dass die Arbeit erledigt ist",
+        "body": "Fotos, verbrauchte Teile und eine Kundenunterschrift — als Bericht, den Sie senden oder abrechnen können."
+      },
+      "clients": {
+        "title": "Kunden auf dem Laufenden halten",
+        "body": "Jeder Kunde, seine Historie und — wenn Sie möchten — ein Login, über das er Aufträge stellt und mitverfolgt.",
+        "note": "Deckt die ersten 50 Kunden und ein Portal ab; danach ab 30 Cent je Kunde."
+      },
+      "things": {
+        "title": "Erfassen, was Sie betreuen",
+        "body": "Wohnungen, Fahrzeuge, Maschinen — was sie sind, wo sie stehen und alles, was je daran gemacht wurde.",
+        "note": "Deckt die ersten 10 ab, danach ab 1,20 € je — günstiger, je mehr es sind."
+      },
+      "plan": {
+        "title": "Größere Projekte steuern",
+        "body": "Lange Aufträge in Phasen zerlegen, in die richtige Reihenfolge bringen und um eigene Felder ergänzen."
+      },
+      "office": {
+        "title": "Das Büro erledigen",
+        "body": "Rechnungen aus erledigter Arbeit, wiederkehrende Aufträge, Dienstpläne und ein Protokoll aller Änderungen.",
+        "note": "Einmal fürs Unternehmen gebucht, nicht pro Bereich."
+      }
     }
   },
   "common": {

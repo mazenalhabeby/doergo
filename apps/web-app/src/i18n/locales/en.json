@@ -298,9 +298,9 @@
       "more": "More industries"
     },
     "compare": {
-      "label": "Every price",
-      "heading": "Every module, and what it costs",
-      "lead": "The whole price list. Nothing is locked behind a plan, so the only question is what a thing costs.",
+      "label": "What you can add",
+      "heading": "Switch on only what you need",
+      "lead": "Nothing is locked behind a plan. Turn something on when you need it, off when you do not — the bill follows the same day.",
       "groups": {
         "task": "Task sections",
         "field": "Field service",
@@ -474,45 +474,63 @@
         }
       ]
     },
-    "priceList": {
-      "perSpace": " / space / mo",
-      "perMonth": " / mo",
-      "modulesLabel": "Per space",
-      "modulesLead": "Switch a module on for a space and that space pays for it. Switch it off and it stops.",
-      "addOnsLabel": "Company-wide",
-      "addOnsLead": "Bought once for the whole company, however many spaces you run.",
-      "addOnGroups": {
-        "work": "How work runs",
-        "money": "Money",
-        "insight": "Insight",
-        "support": "Support"
-      },
-      "ladder": {
-        "assets": "covers the first 10, then from €1.20 each",
-        "crm": "covers the first 50 clients, then from 30c each",
-        "b2c_portal": "covers one portal, then €29 each"
+    "estimator": {
+      "teamSize": "How many people work with you?",
+      "perPerson": "/ person / month",
+      "perPersonLong": "per person, per month",
+      "totalFor": "{{price}} in total",
+      "orAnnual": "or {{price}} a year — 2 months free",
+      "anchor": "The separate tools this replaces cost €60–90 per person.",
+      "show": "See exactly what's included",
+      "hide": "Hide the detail",
+      "modules": "In this space",
+      "addOns": "For the whole company",
+      "detailNote": "A “+” means the price also grows with how many you have — and gets cheaper per item as it does. Switch anything off and it stops being charged that day.",
+      "preset": {
+        "basics": {
+          "title": "Just organise the work",
+          "body": "Jobs, checklists and photos. Replaces the whiteboard and the group chat."
+        },
+        "field": {
+          "title": "Run a field team",
+          "body": "All of that, plus GPS, clock-in and signed service reports."
+        },
+        "everything": {
+          "title": "Run the whole business",
+          "body": "Add customers, assets, invoicing and repeating jobs."
+        }
       }
     },
-    "estimator": {
-      "people": "People using HBCField",
-      "peopleHint": "{{price}} each — office or field, same price",
-      "spaces": "Spaces",
-      "spacesHint": "A site, a project, a client — however you divide up the work. Each pays only for what it switches on.",
-      "modules": "Switch on what you need",
-      "howMany": "How many — the price drops as it grows",
-      "included": "first {{count}} included in the base price",
-      "addOns": "Company-wide add-ons",
-      "yourCost": "Your cost",
-      "perMonth": "/ month, excl. VAT",
-      "rowPeople_one": "{{count}} person",
-      "rowPeople_other": "{{count}} people",
-      "rowSpaces_one": "{{count}} space",
-      "rowSpaces_other": "{{count}} spaces",
-      "rowUsage": "What is in them",
-      "rowAddOns": "Add-ons",
-      "annual": "{{price}} a year — two months free",
-      "perHead": "{{price}} per person",
-      "note": "Counts are priced per space, so this assumes they sit in one. 14-day trial, no card, and every module can be switched off the day you stop using it."
+    "groups": {
+      "perSpace": "/ space / month",
+      "from": "from {{price}}",
+      "where": {
+        "title": "Know where everyone is",
+        "body": "Live map, the route each van actually drove, and geofenced clock-in you can put on a timesheet."
+      },
+      "prove": {
+        "title": "Prove the job was done",
+        "body": "Photos, parts used and a customer signature, turned into a report you can send or bill from."
+      },
+      "clients": {
+        "title": "Keep customers in the loop",
+        "body": "Every customer, their history, and — if you want — a login where they place orders and watch their job.",
+        "note": "Covers your first 50 customers and one portal; grows from 30c a customer after that."
+      },
+      "things": {
+        "title": "Track what you look after",
+        "body": "Apartments, vehicles, machines — what they are, where they are and everything ever done to them.",
+        "note": "Covers the first 10, then from €1.20 each — cheaper the more you have."
+      },
+      "plan": {
+        "title": "Run bigger projects",
+        "body": "Break long jobs into stages, sequence them, and add the fields your trade actually needs."
+      },
+      "office": {
+        "title": "Handle the office side",
+        "body": "Invoices from finished work, jobs that repeat themselves, rotas, and a record of who changed what.",
+        "note": "Bought once for the company, not per space."
+      }
     }
   },
   "common": {

@@ -584,12 +584,12 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
           {/* ══════ FEATURE COMPARISON (code-driven) ══════ */}
           <section id="features" className="border-t border-foreground/[0.08] px-6 py-20 sm:px-10 sm:py-40">
             <div className="mx-auto max-w-[1600px]">
-              <Label className="mb-10 block">{t('home.compare.label', 'Every price')}</Label>
+              <Label className="mb-10 block">{t('home.compare.label', 'What you can add')}</Label>
               <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
-                {t('home.compare.heading', 'Every module, and what it costs')}
+                {t('home.compare.heading', 'Switch on only what you need')}
               </h2>
               <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-foreground/50">
-                {t('home.compare.lead', 'The whole price list. Nothing is locked behind a plan, so the only question is what a thing costs.')}
+                {t('home.compare.lead', 'Nothing is locked behind a plan. Turn something on when you need it, off when you do not — the bill follows the same day.')}
               </p>
               <Reveal className="mt-14">
                 <FeatureMatrix />

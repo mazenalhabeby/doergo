@@ -1,192 +1,149 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import {
-  AVAILABLE_MODULES,
-  MODULE_GROUPS,
-  MODULE_MONTHLY_CENTS,
-  AVAILABLE_ADD_ONS,
-  MODULE_USAGE_PRICING,
-  formatCents,
-  type AddOnDef,
-} from '@hbcfield/shared/client';
+import { MapPin, ClipboardCheck, Users, Boxes, KanbanSquare, Receipt } from 'lucide-react';
+import { MODULE_MONTHLY_CENTS, AVAILABLE_ADD_ONS, formatCents } from '@hbcfield/shared/client';
 
 const MONO = 'font-[family:var(--font-martian)]';
+const DISPLAY = 'font-[family:var(--font-familjen)]';
 const ACCENT = '#5B9BD5';
 
 /**
- * Every module, and what it costs.
+ * What you can switch on, grouped by the problem it solves.
  *
- * This was a tick-and-cross matrix: four tier columns, and every ✗ meaning
- * "upgrade to unlock". It cannot survive the tiers going away, and the honest
- * replacement is not a smaller matrix — it is the price list itself. Nothing is
- * locked, so the only question left is what a thing costs, and that is a number
- * we already have.
+ * Twice wrong before this. First a tick-and-cross matrix, where every ✗ meant
+ * "upgrade to unlock" — which cannot survive the tiers going away. Then the raw
+ * price list: twenty-seven rows of feature names and numbers, which is accurate,
+ * unreadable, and adds up in the reader's head to a total nobody would ever pay.
  *
- * Prices come from the same tables the product bills from. The marketing page
- * and a customer's invoice cannot quote different numbers, which is a property
- * the old page could not claim: its columns were maintained by hand.
+ * A price list is a reference. Somebody deciding whether to buy is not reading a
+ * reference — they are looking for the thing that fixes their problem and then
+ * asking what it costs. So the modules are grouped by the JOB they do, named in
+ * words a tradesperson uses rather than ours, and each group carries the one
+ * number that matters: what it costs to switch that whole capability on.
+ *
+ * The individual prices are still there, under the group, for anybody who wants
+ * to check the arithmetic. They are just no longer the first thing anyone reads.
+ *
+ * Every figure comes from the same table the product bills from, so this page
+ * and an invoice cannot quote different numbers.
  */
 
-// Plain-language, benefit-first descriptions written for the marketing page. The
-// catalogue's own blurbs are terse in-app labels; these are one clear sentence
-// each for a first-time visitor. English here is the i18n FALLBACK — every row
-// is looked up at render, so the table translates.
-const MARKETING_DESC: Record<string, string> = {
-  subtasks: 'Split a big job into smaller steps you can assign and track on their own.',
-  checklists: 'A tick-off list on any task, so the same process is followed every time.',
-  attachments: 'Photos, PDFs and documents attached straight to the job.',
-  dependencies: 'Stop one task starting until another finishes.',
-  custom_fields: 'Capture the details your business needs, with your own fields.',
-  tracking: 'See where the field team is on a live map, and replay the route driven to each job.',
-  service_reports: 'Turn a finished job into a report with photos, parts and a signature.',
-  time_tracking: 'Geofenced clock-in, and how long jobs really take against the estimate.',
-  assets: 'Track what a site owns — apartments, vehicles, machines — and their history.',
-  sprints: 'Plan work in short cycles and see how much gets finished each round.',
-  story_points: 'Score tasks by effort to balance workloads and predict a week.',
-  epics: 'Group related tasks under one initiative and track it end to end.',
-  phases: 'Break a project into stages and watch progress move through them.',
-  crm: 'Customer records, history and the sales work against them.',
-  b2c_portal: 'Let your customers log in, place orders and follow their jobs.',
-  space_sharing: 'Work inside one space together with another company.',
+type Group = {
+  key: string;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  /** Module keys, in the order they should read. */
+  modules: string[];
+  /** Counted modules say so in words rather than showing a ladder. */
+  note?: string;
 };
-
-/**
- * Modules whose price grows with a count.
- *
- * "COVERS", never "free". The base price is what buys the allowance — Client
- * Portal is €49 and that €49 is one portal, so calling it "first one free"
- * reads as €49 plus a free portal, which is not what anybody is charged. The
- * same word then works for all three rather than being right for assets and
- * wrong here.
- */
-const LADDER_NOTE: Record<string, string> = {
-  assets: 'covers the first 10, then from €1.20 each',
-  crm: 'covers the first 50 clients, then from 30c each',
-  b2c_portal: 'covers one portal, then €29 each',
-};
-
-function PriceCell({ moduleKey }: { moduleKey: string }) {
-  const { t } = useTranslation();
-  const cents = MODULE_MONTHLY_CENTS[moduleKey] ?? 0;
-  const ladder = MODULE_USAGE_PRICING[moduleKey];
-  return (
-    <div className="text-right">
-      <span className={`${MONO} text-[15px] font-medium text-foreground`}>{formatCents(cents)}</span>
-      <span className="text-[12px] text-foreground/35">{t('home.priceList.perSpace', ' / space / mo')}</span>
-      {ladder && (
-        <p className="mt-0.5 text-[11px] leading-snug text-foreground/40">
-          {t(`home.priceList.ladder.${moduleKey}`, LADDER_NOTE[moduleKey] ?? '')}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export function FeatureMatrix() {
   const { t } = useTranslation();
 
-  const groups = MODULE_GROUPS.map((g) => ({
-    key: g.key,
-    label: t(`home.compare.groups.${g.key}`, g.label),
-    rows: AVAILABLE_MODULES.filter((m) => m.group === g.key && (MODULE_MONTHLY_CENTS[m.key as string] ?? 0) > 0),
-  })).filter((g) => g.rows.length > 0);
+  const price = (k: string) => MODULE_MONTHLY_CENTS[k] ?? 0;
+  const sum = (keys: string[]) => keys.reduce((n, k) => n + price(k), 0);
 
-  const addOnGroups: { key: AddOnDef['group']; label: string }[] = [
-    { key: 'work', label: t('home.priceList.addOnGroups.work', 'How work runs') },
-    { key: 'money', label: t('home.priceList.addOnGroups.money', 'Money') },
-    { key: 'insight', label: t('home.priceList.addOnGroups.insight', 'Insight') },
-    { key: 'support', label: t('home.priceList.addOnGroups.support', 'Support') },
+  const GROUPS: Group[] = [
+    {
+      key: 'where',
+      icon: <MapPin className="h-4 w-4" />,
+      title: t('home.groups.where.title', 'Know where everyone is'),
+      body: t('home.groups.where.body', 'Live map, the route each van actually drove, and geofenced clock-in you can put on a timesheet.'),
+      modules: ['tracking', 'time_tracking'],
+    },
+    {
+      key: 'prove',
+      icon: <ClipboardCheck className="h-4 w-4" />,
+      title: t('home.groups.prove.title', 'Prove the job was done'),
+      body: t('home.groups.prove.body', 'Photos, parts used and a customer signature, turned into a report you can send or bill from.'),
+      modules: ['service_reports', 'checklists', 'attachments'],
+    },
+    {
+      key: 'clients',
+      icon: <Users className="h-4 w-4" />,
+      title: t('home.groups.clients.title', 'Keep customers in the loop'),
+      body: t('home.groups.clients.body', 'Every customer, their history, and — if you want — a login where they place orders and watch their job.'),
+      modules: ['crm', 'b2c_portal'],
+      note: t('home.groups.clients.note', 'Covers your first 50 customers and one portal; grows from 30c a customer after that.'),
+    },
+    {
+      key: 'things',
+      icon: <Boxes className="h-4 w-4" />,
+      title: t('home.groups.things.title', 'Track what you look after'),
+      body: t('home.groups.things.body', 'Apartments, vehicles, machines — what they are, where they are and everything ever done to them.'),
+      modules: ['assets'],
+      note: t('home.groups.things.note', 'Covers the first 10, then from €1.20 each — cheaper the more you have.'),
+    },
+    {
+      key: 'plan',
+      icon: <KanbanSquare className="h-4 w-4" />,
+      title: t('home.groups.plan.title', 'Run bigger projects'),
+      body: t('home.groups.plan.body', 'Break long jobs into stages, sequence them, and add the fields your trade actually needs.'),
+      modules: ['phases', 'epics', 'sprints', 'story_points', 'subtasks', 'dependencies', 'custom_fields'],
+    },
+    {
+      key: 'office',
+      icon: <Receipt className="h-4 w-4" />,
+      title: t('home.groups.office.title', 'Handle the office side'),
+      body: t('home.groups.office.body', 'Invoices from finished work, jobs that repeat themselves, rotas, and a record of who changed what.'),
+      modules: [],
+      note: t('home.groups.office.note', 'Bought once for the company, not per space.'),
+    },
   ];
 
+  const OFFICE_ADDONS = ['invoicing', 'recurring', 'shift_scheduling', 'audit_log'];
+
   return (
-    <div className="space-y-14">
-      {/* ── per-space modules ───────────────────────────────────────────── */}
-      <div>
-        <p className={`${MONO} mb-1 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
-          {t('home.priceList.modulesLabel', 'Per space')}
-        </p>
-        <p className="mb-7 max-w-[46ch] text-[14px] leading-relaxed text-foreground/50">
-          {t(
-            'home.priceList.modulesLead',
-            'Switch a module on for a space and that space pays for it. Switch it off and it stops.',
-          )}
-        </p>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {GROUPS.map((g) => {
+        const isOffice = g.key === 'office';
+        const items = isOffice
+          ? AVAILABLE_ADD_ONS.filter((a) => OFFICE_ADDONS.includes(a.key)).map((a) => ({
+              key: a.key,
+              label: t(`addOns.${a.key}.label`, a.label),
+              cents: a.monthlyCents,
+            }))
+          : g.modules.map((k) => ({ key: k, label: t(`modules.${k}.label`, k), cents: price(k) }));
+        const from = isOffice ? Math.min(...items.map((i) => i.cents)) : sum(g.modules);
 
-        <div className="space-y-9">
-          {groups.map((g) => (
-            <div key={g.key}>
-              <p className={`${MONO} mb-3 text-[10px] uppercase tracking-[0.18em]`} style={{ color: ACCENT }}>
-                {g.label}
-              </p>
-              <ul className="divide-y divide-foreground/[0.07] border-y border-foreground/[0.07]">
-                {g.rows.map((m) => (
-                  <li key={m.key} className="flex items-start justify-between gap-6 py-3.5">
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-medium text-foreground">
-                        {t(`modules.${m.key}.label`, m.label)}
-                      </p>
-                      <p className="mt-0.5 max-w-[52ch] text-[13px] leading-relaxed text-foreground/45">
-                        {t(`home.compare.features.${m.key}.desc`, MARKETING_DESC[m.key as string] ?? m.description)}
-                      </p>
-                    </div>
-                    <PriceCell moduleKey={m.key as string} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
+        return (
+          <div key={g.key} className="flex flex-col rounded-2xl border border-foreground/[0.10] p-6">
+            <span
+              className="flex size-9 items-center justify-center rounded-xl"
+              style={{ backgroundColor: `${ACCENT}1f`, color: ACCENT }}
+            >
+              {g.icon}
+            </span>
+            <h3 className={`${DISPLAY} mt-4 text-[19px] leading-snug tracking-[-0.01em] text-foreground`}>{g.title}</h3>
+            <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-foreground/50">{g.body}</p>
 
-      {/* ── org-wide add-ons ────────────────────────────────────────────── */}
-      <div>
-        <p className={`${MONO} mb-1 text-[10px] uppercase tracking-[0.18em] text-foreground/35`}>
-          {t('home.priceList.addOnsLabel', 'Company-wide')}
-        </p>
-        <p className="mb-7 max-w-[46ch] text-[14px] leading-relaxed text-foreground/50">
-          {t(
-            'home.priceList.addOnsLead',
-            'Bought once for the whole company, however many spaces you run.',
-          )}
-        </p>
+            {/* The one number for the whole capability, not seven of them. */}
+            <p className={`${MONO} mt-5 text-[13px] text-foreground [font-variant-numeric:tabular-nums]`}>
+              <span style={{ color: ACCENT }}>
+                {isOffice
+                  ? t('home.groups.from', 'from {{price}}', { price: formatCents(from) })
+                  : formatCents(from)}
+              </span>
+              <span className="text-foreground/40"> {t('home.groups.perSpace', '/ space / month')}</span>
+            </p>
 
-        <div className="space-y-9">
-          {addOnGroups.map((g) => {
-            const rows = AVAILABLE_ADD_ONS.filter((a) => a.group === g.key);
-            if (!rows.length) return null;
-            return (
-              <div key={g.key}>
-                <p className={`${MONO} mb-3 text-[10px] uppercase tracking-[0.18em]`} style={{ color: ACCENT }}>
-                  {g.label}
-                </p>
-                <ul className="divide-y divide-foreground/[0.07] border-y border-foreground/[0.07]">
-                  {rows.map((a) => (
-                    <li key={a.key} className="flex items-start justify-between gap-6 py-3.5">
-                      <div className="min-w-0">
-                        <p className="text-[15px] font-medium text-foreground">
-                          {t(`addOns.${a.key}.label`, a.label)}
-                        </p>
-                        <p className="mt-0.5 max-w-[52ch] text-[13px] leading-relaxed text-foreground/45">
-                          {t(`addOns.${a.key}.description`, a.description)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`${MONO} text-[15px] font-medium text-foreground`}>
-                          {formatCents(a.monthlyCents)}
-                        </span>
-                        <span className="text-[12px] text-foreground/35">
-                          {t('home.priceList.perMonth', ' / mo')}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+            {g.note && <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/35">{g.note}</p>}
+
+            {/* The arithmetic, for anybody who wants to check it. */}
+            <p className="mt-3 border-t border-foreground/[0.07] pt-3 text-[11.5px] leading-relaxed text-foreground/30">
+              {items.map((i, n) => (
+                <span key={i.key}>
+                  {n > 0 && ' · '}
+                  {i.label} {formatCents(i.cents)}
+                </span>
+              ))}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }

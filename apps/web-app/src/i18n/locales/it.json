@@ -298,9 +298,9 @@
       "more": "Altri settori"
     },
     "compare": {
-      "label": "Tutti i prezzi",
-      "heading": "Ogni modulo e quanto costa",
-      "lead": "Il listino completo. Niente è bloccato dietro un piano: l’unica domanda è quanto costa.",
+      "label": "Cosa puoi aggiungere",
+      "heading": "Attiva solo ciò che ti serve",
+      "lead": "Niente è bloccato dietro un piano. Attivi quando serve e disattivi quando non serve più: la fattura segue lo stesso giorno.",
       "groups": {
         "task": "Sezioni delle attività",
         "field": "Servizi sul campo",
@@ -474,45 +474,63 @@
         }
       ]
     },
-    "priceList": {
-      "perSpace": " / spazio / mese",
-      "perMonth": " / mese",
-      "modulesLabel": "Per spazio",
-      "modulesLead": "Attiva un modulo per uno spazio e quello spazio lo paga. Disattivalo e smette.",
-      "addOnsLabel": "Tutta l’azienda",
-      "addOnsLead": "Si attiva una volta per tutta l’azienda, indipendentemente dal numero di spazi.",
-      "addOnGroups": {
-        "work": "Come funziona il lavoro",
-        "money": "Denaro",
-        "insight": "Analisi",
-        "support": "Supporto"
-      },
-      "ladder": {
-        "assets": "copre i primi 10, poi da 1,20 € ciascuno",
-        "crm": "copre i primi 50 clienti, poi da 30 centesimi",
-        "b2c_portal": "copre un portale, poi 29 € ciascuno"
+    "estimator": {
+      "teamSize": "Quante persone lavorano con te?",
+      "perPerson": "/ persona / mese",
+      "perPersonLong": "a persona, al mese",
+      "totalFor": "{{price}} in totale",
+      "orAnnual": "oppure {{price}} all’anno — 2 mesi gratis",
+      "anchor": "Gli strumenti separati che questo sostituisce costano 60–90 € a persona.",
+      "show": "Vedi esattamente cosa è incluso",
+      "hide": "Nascondi i dettagli",
+      "modules": "In questo spazio",
+      "addOns": "Per tutta l’azienda",
+      "detailNote": "Un «+» significa che il prezzo cresce anche con la quantità — e per pezzo costa meno man mano che aumenta. Disattiva ciò che vuoi e smette di essere addebitato quel giorno.",
+      "preset": {
+        "basics": {
+          "title": "Solo organizzare il lavoro",
+          "body": "Lavori, checklist e foto. Sostituisce la lavagna e la chat di gruppo."
+        },
+        "field": {
+          "title": "Gestire una squadra sul campo",
+          "body": "Tutto questo, più GPS, timbratura e rapporti firmati."
+        },
+        "everything": {
+          "title": "Gestire tutta l’azienda",
+          "body": "Aggiungi clienti, beni, fatturazione e lavori ricorrenti."
+        }
       }
     },
-    "estimator": {
-      "people": "Persone che usano HBCField",
-      "peopleHint": "{{price}} ciascuna — ufficio o campo, stesso prezzo",
-      "spaces": "Spazi",
-      "spacesHint": "Una sede, un progetto, un cliente — come dividi il lavoro. Ognuno paga solo ciò che attiva.",
-      "modules": "Attiva ciò che ti serve",
-      "howMany": "Quanti — il prezzo scende man mano che cresce",
-      "included": "i primi {{count}} inclusi nel prezzo base",
-      "addOns": "Componenti per tutta l’azienda",
-      "yourCost": "Il tuo costo",
-      "perMonth": "/ mese, IVA esclusa",
-      "rowPeople_one": "{{count}} persona",
-      "rowPeople_other": "{{count}} persone",
-      "rowSpaces_one": "{{count}} spazio",
-      "rowSpaces_other": "{{count}} spazi",
-      "rowUsage": "Cosa contengono",
-      "rowAddOns": "Componenti aggiuntivi",
-      "annual": "{{price}} all’anno — due mesi gratis",
-      "perHead": "{{price}} a persona",
-      "note": "I conteggi sono addebitati per spazio, quindi qui si assume che siano in uno solo. 14 giorni di prova, senza carta, e ogni modulo si può disattivare il giorno in cui smetti di usarlo."
+    "groups": {
+      "perSpace": "/ spazio / mese",
+      "from": "da {{price}}",
+      "where": {
+        "title": "Sapere dove sono tutti",
+        "body": "Mappa in tempo reale, il percorso davvero fatto da ogni furgone e timbratura con geofence utilizzabile in busta paga."
+      },
+      "prove": {
+        "title": "Dimostrare che il lavoro è stato fatto",
+        "body": "Foto, materiali usati e firma del cliente, trasformati in un rapporto da inviare o fatturare."
+      },
+      "clients": {
+        "title": "Tenere aggiornati i clienti",
+        "body": "Ogni cliente, il suo storico e — se vuoi — un accesso da cui ordina e segue il proprio lavoro.",
+        "note": "Copre i primi 50 clienti e un portale; poi da 30 centesimi a cliente."
+      },
+      "things": {
+        "title": "Tenere traccia di ciò che curi",
+        "body": "Appartamenti, veicoli, macchine: cosa sono, dove sono e tutto ciò che ci è stato fatto.",
+        "note": "Copre i primi 10, poi da 1,20 € ciascuno — più ne hai, meno costa."
+      },
+      "plan": {
+        "title": "Gestire progetti più grandi",
+        "body": "Dividi i lavori lunghi in fasi, mettile in ordine e aggiungi i campi che il tuo mestiere richiede."
+      },
+      "office": {
+        "title": "Gestire la parte d’ufficio",
+        "body": "Fatture dal lavoro concluso, lavori che si ripetono, turni e un registro di chi ha cambiato cosa.",
+        "note": "Si attiva una volta per l’azienda, non per spazio."
+      }
     }
   },
   "common": {
