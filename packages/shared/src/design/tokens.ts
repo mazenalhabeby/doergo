@@ -12,12 +12,12 @@
 export const colors = {
   // Brand Colors
   brand: {
-    primary: '#059669',      // Main green - buttons, links, active states
-    primaryHover: '#047857', // Darker green for hover
-    primaryLight: '#ecfdf5', // Light green for backgrounds
+    primary: '#2563EB',      // Primary blue - buttons, links, active states
+    primaryHover: '#1D4ED8', // Darker blue for hover
+    primaryLight: '#DBEAFE', // Light blue for backgrounds
     accent: '#F97316',       // Orange - urgent indicators
     accentLight: '#FED7AA',  // Light orange for backgrounds
-    gradient: 'linear-gradient(135deg, #059669, #3b82f6)',
+    gradient: 'linear-gradient(135deg, #2563EB, #60A5FA)',
   },
 
   // Neutral Colors
@@ -34,7 +34,7 @@ export const colors = {
     secondary: '#64748B',    // Muted/secondary text
     tertiary: '#94A3B8',     // Placeholder text
     inverse: '#FFFFFF',      // White text on dark backgrounds
-    link: '#059669',         // Link color
+    link: '#2563EB',         // Link color
   },
 
   // Status Colors
@@ -78,7 +78,7 @@ export const colors = {
   // Sidebar
   sidebar: {
     background: '#FFFFFF',
-    activeBackground: '#059669',
+    activeBackground: '#2563EB',
     activeText: '#FFFFFF',
     hoverBackground: '#F1F5F9',
     text: '#64748B',

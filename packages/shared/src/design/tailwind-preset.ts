@@ -22,18 +22,28 @@ const hbcfieldPreset: Partial<Config> = {
       // Colors
       colors: {
         // Brand
+        /*
+          The documented primary, and the one the public site uses.
+
+          This scale was emerald (#059669) while CLAUDE.md §19 specified
+          #2563EB and the marketing pages rendered blue — so every `brand-*`
+          class in the authenticated app came out green, most visibly the
+          "Reset password" button. Three sources of truth, one of them the
+          actual pixels. These values are exactly the ones the design system
+          documents: 600 primary, 700 hover, 100 light.
+        */
         brand: {
-          DEFAULT: '#059669',
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
+          DEFAULT: '#2563eb',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
         },
         accent: {
           DEFAULT: '#F97316',
