@@ -29,6 +29,7 @@ import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
+import { StorageService } from '../../common/storage/storage.service';
 
 class RegisterPushTokenDto {
   @IsString()
@@ -88,6 +89,7 @@ export class UsersController {
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
     private readonly tasksQueueService: TasksQueueService,
     private readonly authCache: AuthTokenCache,
+    private readonly storage: StorageService,
   ) {}
 
   @Get('me')
@@ -215,16 +217,28 @@ export class UsersController {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
     }
 
-    // Save file to local uploads directory
-    const uploadDir = join(process.cwd(), 'uploads', 'avatars', user.id);
-    await mkdir(uploadDir, { recursive: true });
+    /*
+      Object storage, so every gateway replica can serve it back. Writing to the
+      container filesystem worked only because there has never been more than one
+      replica — the second one 404s on anything the first received.
 
+      Falls back to local disk when S3 is unconfigured, so a deployment without
+      keys behaves as it always did.
+    */
     const fileName = `${Date.now()}.${ext}`;
-    const filePath = join(uploadDir, fileName);
-    await writeFile(filePath, file.buffer);
-
-    // Build URL path (served as static files)
-    const avatarUrl = `/uploads/avatars/${user.id}/${fileName}`;
+    let avatarUrl: string;
+    if (this.storage.isConfigured) {
+      avatarUrl = await this.storage.uploadPublicImage(
+        `avatars/${user.id}/${fileName}`,
+        file.buffer,
+        file.mimetype,
+      );
+    } else {
+      const uploadDir = join(process.cwd(), 'uploads', 'avatars', user.id);
+      await mkdir(uploadDir, { recursive: true });
+      await writeFile(join(uploadDir, fileName), file.buffer);
+      avatarUrl = `/uploads/avatars/${user.id}/${fileName}`;
+    }
 
     // Update user in database
     await firstValueFrom(
@@ -248,15 +262,18 @@ export class UsersController {
       ),
     );
 
-    // 2. Delete old file from local storage if exists (fire-and-forget)
-    const oldUrl = result?.data?.oldAvatarUrl;
-    if (oldUrl) {
+    // 2. Clean up the stored file, wherever it lives. Old avatars are still
+    //    relative `/uploads/...` paths on disk; new ones are absolute S3 URLs.
+    //    Both are handled, and neither failing affects the response.
+    const oldUrl: string | undefined = result?.data?.oldAvatarUrl;
+    if (oldUrl?.startsWith('/uploads/')) {
       try {
-        const filePath = join(process.cwd(), oldUrl);
-        await unlink(filePath);
+        await unlink(join(process.cwd(), oldUrl));
       } catch (err: any) {
         console.warn(`[AvatarRemove] Failed to delete local avatar for user ${user.id}: ${err?.message}`);
       }
+    } else if (oldUrl) {
+      await this.storage.deleteByUrl(oldUrl);
     }
 
     return result;

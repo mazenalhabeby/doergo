@@ -176,6 +176,9 @@ importers:
 
   apps/api/gateway:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1014.0
+        version: 3.1014.0
       '@bull-board/api':
         specifier: ^6.16.2
         version: 6.20.3(@bull-board/ui@6.20.3)

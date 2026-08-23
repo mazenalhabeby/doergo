@@ -3740,3 +3740,21 @@ model BlogImage {
 
   @@map("blog_images")
 }
+
+/// Lease deciding which replica runs a scheduled job.
+///
+/// NestJS starts a @Cron in every instance; without this a second replica runs
+/// every schedule twice. Claimed and released with raw SQL from all four
+/// services, so it deliberately carries no relations — see
+/// packages/shared/src/scheduling/cron-lock.ts for why it is a lease row rather
+/// than pg_advisory_lock (PgBouncer transaction pooling).
+model CronLock {
+  name        String    @id
+  lockedUntil DateTime
+  lockedBy    String
+  lastRunAt   DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([lockedUntil])
+  @@map("cron_locks")
+}

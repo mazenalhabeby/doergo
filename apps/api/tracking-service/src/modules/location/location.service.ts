@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter, isTaskAssignee } from '@hbcfield/shared';
+import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter, isTaskAssignee, runWithCronLock, } from '@hbcfield/shared';
 import { RouteMatchingService } from './route-matching.service';
 import { catchError, of } from 'rxjs';
 
@@ -27,7 +27,19 @@ export class LocationService {
    * cost, so we delete in capped batches nightly to avoid a single huge DELETE
    * holding a long lock.
    */
+  /**
+   * Cron entry point. The work is in pruneOldLocationHistory(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneOldLocationHistoryCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'tracking:pruneLocationHistory', ttlSeconds: 1800, logger: this.logger },
+      () => this.pruneOldLocationHistory(),
+    );
+  }
+
   async pruneOldLocationHistory(): Promise<number> {
     const days = Number(process.env.LOCATION_HISTORY_RETENTION_DAYS) || 90;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, runWithCronLock, } from '@hbcfield/shared';
 
 /**
  * Retention: prune old NotificationDelivery rows nightly (H4). The in-app inbox
@@ -15,7 +15,19 @@ export class RetentionService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Cron entry point. The work is in pruneOldNotificationDeliveries(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneOldNotificationDeliveriesCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'notification:pruneDeliveries', ttlSeconds: 1800, logger: this.logger },
+      () => this.pruneOldNotificationDeliveries(),
+    );
+  }
+
   async pruneOldNotificationDeliveries(): Promise<number> {
     const days = Number(process.env.NOTIFICATION_RETENTION_DAYS) || 90;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);

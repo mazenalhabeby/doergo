@@ -21,6 +21,7 @@ import { RequirePermission } from '@hbcfield/shared';
 import { join } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { StorageService } from '../../common/storage/storage.service';
 
 /**
  * Office-facing multi-portal management (staff, canManageUsers). Org always from
@@ -35,6 +36,7 @@ export class PortalAdminController {
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
     private readonly authCache: AuthTokenCache,
+    private readonly storage: StorageService,
   ) {}
 
   private auth(cmd: string, payload: any) {
@@ -108,12 +110,22 @@ export class PortalAdminController {
     if (!ext) {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
     }
-    // Ownership: the setter below is org-scoped, but write into a portal-scoped dir.
-    const dir = join(process.cwd(), 'uploads', 'portals', id);
-    await mkdir(dir, { recursive: true });
+    // Ownership: the setter below is org-scoped; the key is portal-scoped.
+    // Object storage so any gateway replica can serve it — see StorageService.
     const fileName = `${Date.now()}.${ext}`;
-    await writeFile(join(dir, fileName), file.buffer);
-    const coverImageUrl = `/uploads/portals/${id}/${fileName}`;
+    let coverImageUrl: string;
+    if (this.storage.isConfigured) {
+      coverImageUrl = await this.storage.uploadPublicImage(
+        `portals/${id}/${fileName}`,
+        file.buffer,
+        file.mimetype,
+      );
+    } else {
+      const dir = join(process.cwd(), 'uploads', 'portals', id);
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, fileName), file.buffer);
+      coverImageUrl = `/uploads/portals/${id}/${fileName}`;
+    }
     await this.auth('portal_update', { id, organizationId: req.user.organizationId, coverImageUrl });
     return { success: true, data: { coverImageUrl } };
   }

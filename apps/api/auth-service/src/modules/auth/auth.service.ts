@@ -32,6 +32,7 @@ import {
   sendViaFirstWorking,
   type MailRoute,
   type ProfileBadgesConfig,
+  runWithCronLock,
 } from '@hbcfield/shared';
 
 // Hash a token using SHA-256 for secure storage
@@ -1133,7 +1134,19 @@ export class AuthService {
    * Clean up expired and used refresh tokens from the database.
    * Runs every 5 minutes to clean up used tokens after grace period.
    */
-  @Cron('0 */15 * * * *')  // Every 15 minutes
+  /**
+   * Cron entry point. The work is in cleanupExpiredTokens(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+   */
+  @Cron('0 */15 * * * *')
+  async cleanupExpiredTokensCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'auth:cleanupExpiredTokens', ttlSeconds: 600, logger: this.logger },
+      () => this.cleanupExpiredTokens(),
+    );
+  }
+
   async cleanupExpiredTokens() {
     const now = new Date();
     const gracePeriodCutoff = new Date(now.getTime() - REFRESH_TOKEN_GRACE_PERIOD_SECONDS * 1000);

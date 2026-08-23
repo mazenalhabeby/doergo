@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { runWithCronLock } from '@hbcfield/shared';
 
 /**
  * Retention: prune old TaskEvent rows nightly (H4).
@@ -17,7 +18,19 @@ export class RetentionService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Cron entry point. The work is in pruneOldTaskEvents(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneOldTaskEventsCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'task:pruneTaskEvents', ttlSeconds: 1800, logger: this.logger },
+      () => this.pruneOldTaskEvents(),
+    );
+  }
+
   async pruneOldTaskEvents(): Promise<number> {
     const days = Number(process.env.TASK_EVENT_RETENTION_DAYS);
     // Disabled unless an operator opts in with a positive retention window —
@@ -56,7 +69,19 @@ export class RetentionService {
    * ACTIVITY_LOG_RETENTION_DAYS is set to a positive number, so audit history is
    * never silently deleted.
    */
+  /**
+   * Cron entry point. The work is in pruneOldActivityLogs(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneOldActivityLogsCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'task:pruneActivityLogs', ttlSeconds: 1800, logger: this.logger },
+      () => this.pruneOldActivityLogs(),
+    );
+  }
+
   async pruneOldActivityLogs(): Promise<number> {
     const days = Number(process.env.ACTIVITY_LOG_RETENTION_DAYS);
     if (!Number.isFinite(days) || days <= 0) {

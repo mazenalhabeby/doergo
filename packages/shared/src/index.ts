@@ -63,3 +63,6 @@ export * from './access/workflow-status-label';
 
 // SMTP connection settings — one decision, both sending services.
 export * from './mail/transport';
+
+// One replica per scheduled job — see the note in the file.
+export * from './scheduling/cron-lock';

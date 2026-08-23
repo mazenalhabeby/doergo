@@ -14,6 +14,7 @@ import {
   isLocked,
   trialDaysLeft,
   TRIAL_DAYS,
+  runWithCronLock,
 } from '@hbcfield/shared';
 import type { PlanTier, SeatCounts, SubStatus, SubscriptionView } from '@hbcfield/shared';
 
@@ -297,7 +298,20 @@ export class BillingService {
    * Runs before most billing periods roll over, so what a customer is charged
    * reflects what they were actually holding.
    */
+  /**
+   * Cron entry point. The work is in reconcileUsageDaily(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+  // Sweeps every org and talks to Stripe — running it twice would write subscription lines twice.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async reconcileUsageDailyCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'billing:reconcileUsageDaily', ttlSeconds: 1800, logger: this.logger },
+      () => this.reconcileUsageDaily(),
+    );
+  }
+
   async reconcileUsageDaily() {
     const orgs = await this.prisma.organization.findMany({
       where: { subscription: { stripeSubscriptionId: { not: null } } },
@@ -320,7 +334,19 @@ export class BillingService {
     this.logger.log(`Nightly usage reconcile: ${synced}/${orgs.length} organizations`);
   }
 
+  /**
+   * Cron entry point. The work is in expireTrials(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+   */
   @Cron(CronExpression.EVERY_HOUR)
+  async expireTrialsCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'billing:expireTrials', ttlSeconds: 600, logger: this.logger },
+      () => this.expireTrials(),
+    );
+  }
+
   async expireTrials() {
     const now = new Date();
     const expired = await this.prisma.organization.findMany({

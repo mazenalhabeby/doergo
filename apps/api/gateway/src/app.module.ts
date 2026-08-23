@@ -56,9 +56,11 @@ import { PlanGuard } from './common/guards/plan.guard';
 import { ModuleGuard } from './common/guards/module.guard';
 import { SpaceModulesModule } from './common/space-modules.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { StorageModule } from './common/storage/storage.module';
 
 @Module({
   imports: [
+    StorageModule,
     AuthCacheModule,
     // Global: ModuleGuard is an APP_GUARD, so it is constructed in every
     // module's injector and its dependency has to be reachable from all of them.

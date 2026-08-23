@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import { SERVICE_NAMES, runWithCronLock, } from '@hbcfield/shared';
 
 /**
  * Sweeps due customer reminders and notifies every manager assigned to the
@@ -19,7 +19,20 @@ export class CustomerReminderScheduler {
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
+  /**
+   * Cron entry point. The work is in sweep(), which stays directly
+   * callable — this only decides whether THIS replica is the one to run it.
+  // Every minute, so the TTL must be shorter than the interval or the job locks itself out of its own next tick.
+   */
   @Cron('* * * * *')
+  async sweepCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'auth:customerReminderSweep', ttlSeconds: 50, logger: this.logger },
+      () => this.sweep(),
+    );
+  }
+
   async sweep() {
     const now = new Date();
     const due = await this.prisma.customerActivity.findMany({
