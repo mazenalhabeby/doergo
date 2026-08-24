@@ -118,10 +118,14 @@ const MEMBER_KEYS: string[][] = [
 // Query keys that each event should invalidate
 const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // Task events → invalidate task lists, counts, and related
-  [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"]],
+  // `portalAllRequests` is the office's inbox for customer-portal requests. A
+  // request submitted from the portal creates a Task and announces task.created —
+  // but only the task lists were invalidated, so the portal inbox stayed stale and
+  // an external customer's request sat unseen until someone reloaded (audit P-D1).
+  [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"]],
+  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"]],
   [Events.TASK_ASSIGNED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"]],
+  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"], ["portalAllRequests"]],
   [Events.TASK_COMMENT_ADDED]: [["tasks"]],
   [Events.TASK_ATTACHMENT_ADDED]: [["tasks"]],
   [Events.TASK_DECLINED]: [["tasks"], ["taskStatusCounts"]],

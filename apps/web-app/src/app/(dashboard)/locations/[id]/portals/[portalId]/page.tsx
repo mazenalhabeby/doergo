@@ -1,5 +1,7 @@
 "use client"
 
+import dynamic from "next/dynamic"
+
 import { useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -20,8 +22,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { ApartmentDialog } from "../../_components/apartment-dialog"
-import { CustomerForm } from "../../_components/customers-tab"
+
+// Lazy (audit P-C1). Both are dialogs that render on a click; the CustomerForm
+// import also drags in the whole customers-tab module.
+const ApartmentDialog = dynamic(() => import("../../_components/apartment-dialog").then((m) => m.ApartmentDialog), { ssr: false })
+const CustomerForm = dynamic(() => import("../../_components/customers-tab").then((m) => m.CustomerForm), { ssr: false })
+
 
 const TEMPLATES = [
   { key: "rental", label: "Rental / Property", badge: "Rental", accent: "emerald" },
