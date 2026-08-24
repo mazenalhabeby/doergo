@@ -54,6 +54,12 @@ const Events = {
   MEMBER_ACCESS_UPDATED: "member.access_updated",
   // A new join request arrived (emitted to the org + the routed approvers)
   JOIN_REQUEST_SUBMITTED: "join_request_submitted",
+  // Shift-reminder / no-show engine. These are push-first on mobile; on the web
+  // they are the only signal the attendance board gets.
+  NOSHOW_REMINDER: "attendance_noshow_reminder",
+  NOSHOW_ESCALATION: "attendance_noshow_escalation",
+  SHIFT_REMINDER: "attendance_shift_reminder",
+  SHIFT_ESCALATION: "attendance_shift_escalation",
   // Spaces
   SPACE_CHANGED: "space.changed",
   SPACE_ROSTER_CHANGED: "space.rosterChanged",
@@ -158,6 +164,15 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // nothing refreshed the list — so an admin sitting on /join-requests was told
   // about a request that never appeared on the page in front of them (audit A-D1).
   [Events.JOIN_REQUEST_SUBMITTED]: [["join-requests"]],
+
+  // The no-show and shift-reminder engine writes to the entries the attendance
+  // board renders — a flagged no-show, an escalation, a reminder that moves
+  // `reminderState`. All four were emitted and nothing on the web listened, so the
+  // board only caught up on the next manual reload (audit AT-D1).
+  [Events.NOSHOW_REMINDER]: [["attendance-no-shows"]],
+  [Events.NOSHOW_ESCALATION]: [["attendance-no-shows"]],
+  [Events.SHIFT_REMINDER]: ALL_ATTENDANCE_KEYS,
+  [Events.SHIFT_ESCALATION]: ALL_ATTENDANCE_KEYS,
 
   // Space events → refresh the space lists and rosters. Until these existed, a
   // space created/renamed/archived by someone else — or a roster edited by

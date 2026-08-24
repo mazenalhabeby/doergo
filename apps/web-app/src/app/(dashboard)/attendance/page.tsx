@@ -1,5 +1,7 @@
 "use client"
 
+import dynamic from "next/dynamic"
+
 import { useState, useMemo, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { Clock, XCircle, ClipboardCheck, Coffee, UserX } from "lucide-react"
@@ -8,14 +10,18 @@ import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEntryStatus, type Break, type BreakType } from "@/lib/api"
-import { ApprovalsTab } from "./_components/approvals-tab"
-import { BreaksTab } from "./_components/breaks-tab"
-import { TrackingTab } from "./_components/tracking-tab"
-import { NoShowsTab } from "./_components/no-shows-tab"
-import { AddAttendanceDialog } from "../members/[id]/_components/add-attendance-dialog"
-import { AddDayOffDialog } from "./_components/add-dayoff-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
+
+// Lazy (audit AT-C1). Four tabs of which one shows, plus a dialog that renders on
+// a click — ~2,600 lines in the first paint. ssr:false: none renders on the server.
+const ApprovalsTab = dynamic(() => import("./_components/approvals-tab").then((m) => m.ApprovalsTab), { ssr: false })
+const BreaksTab = dynamic(() => import("./_components/breaks-tab").then((m) => m.BreaksTab), { ssr: false })
+const TrackingTab = dynamic(() => import("./_components/tracking-tab").then((m) => m.TrackingTab), { ssr: false })
+const NoShowsTab = dynamic(() => import("./_components/no-shows-tab").then((m) => m.NoShowsTab), { ssr: false })
+const AddDayOffDialog = dynamic(() => import("./_components/add-dayoff-dialog").then((m) => m.AddDayOffDialog), { ssr: false })
+const AddAttendanceDialog = dynamic(() => import("../members/[id]/_components/add-attendance-dialog").then((m) => m.AddAttendanceDialog), { ssr: false })
+
 
 export default function AttendancePage() {
   const { user } = useAuth()

@@ -799,6 +799,7 @@ export class AttendanceService {
 
     const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
+    await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
     const now = new Date();
     // Grant the extra minutes from the later of the expected end or now, so a
@@ -845,6 +846,7 @@ export class AttendanceService {
 
     const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
+    await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
     // Give the worker a fresh reminder cycle to clock out now — reset the count
     // so a previously-exhausted worker gets a clean nudge, not instant escalation.
@@ -883,6 +885,12 @@ export class AttendanceService {
         organizationId: data.organizationId,
         status: TimeEntryStatus.CLOCKED_IN,
         reminderState: 'OVERTIME_PENDING',
+        // Never offer a leader their OWN request (audit AT-B1). Without this the
+        // approve button appeared on your own row and one click granted yourself
+        // paid time. An org ADMIN is exempt in the guard below — they have nobody
+        // above them, and a solo owner has to be able to extend their own shift —
+        // but they should not be nudged into it by a list either.
+        userId: { not: data.userId },
         ...spaceFilter,
       },
       include: {
@@ -892,6 +900,34 @@ export class AttendanceService {
       orderBy: { expectedClockOutAt: 'asc' },
     });
     return success(entries, `${entries.length} pending extra-time request(s)`);
+  }
+
+  /**
+   * Overtime is paid time, and the whole request/approve flow exists so a SECOND
+   * party sanctions it. `userCanApproveOvertime` answers "may you approve here?"
+   * and said nothing about whose shift it is, so a shift leader holding
+   * `canApproveOvertime` could approve their own extra time — and the pending list
+   * offered it to them (audit AT-B1).
+   *
+   * A true org ADMIN is exempt: they are the owner, there is nobody above them to
+   * approve it, and in a one-person organization blocking this would leave the
+   * shift impossible to extend at all. Everyone with DELEGATED authority — a space
+   * role grant, or `canManageUsers` — needs someone else.
+   */
+  private async assertNotSelfOvertimeDecision(
+    approverId: string,
+    subjectId: string,
+    organizationId: string,
+  ): Promise<void> {
+    if (approverId !== subjectId) return;
+    const owner = await this.prisma.user.findFirst({
+      where: { id: approverId, organizationId, isActive: true, role: 'ADMIN' },
+      select: { id: true },
+    });
+    if (owner) return;
+    throw new ForbiddenException(
+      'You cannot approve your own overtime. Ask a manager or an administrator.',
+    );
   }
 
   /** True if the user may approve overtime for a space (space sub-role grant, or org admin). */
