@@ -88,7 +88,33 @@ export class SpacePortalController {
   @RequirePermission('canManageUsers')
   async updateUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, ...body });
+    // Whitelist explicitly — never spread the untyped body (audit I-B1).
+    //
+    // This read `{ id, organizationId: req.user.organizationId, ...body }`: the
+    // spread came LAST, so a client-supplied `organizationId` overwrote the one
+    // from the token. `portal.service.updateUnit` scopes its lookup with
+    // `findFirst({ id, organizationId })`, so a manager in org A could pass org B's
+    // id and edit org B's unit — a cross-tenant write, stopped only by having to
+    // know two cuids. `body` is `any`, so ValidationPipe's whitelist never applied.
+    // Same fix as `space-sharing.controller.updateShare`, which found this first.
+    return this.auth('portal_update_unit', {
+      id: unitId,
+      organizationId: req.user.organizationId,
+      actorId: req.user.id,
+      name: body.name,
+      label: body.label,
+      address: body.address,
+      lat: body.lat,
+      lng: body.lng,
+      isPrimary: body.isPrimary,
+      spaceId: body.spaceId,
+      portalId: body.portalId,
+      customerId: body.customerId,
+      contactName: body.contactName,
+      contactPhone: body.contactPhone,
+      residentUserId: body.residentUserId,
+      details: body.details,
+    });
   }
 
   @Delete('units/:unitId')

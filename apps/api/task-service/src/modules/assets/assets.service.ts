@@ -503,12 +503,18 @@ export class AssetsService {
       throw new ForbiddenException('Asset does not belong to your organization');
     }
 
-    // Clear asset reference from tasks (don't delete tasks)
+    // An asset's VALUE is its history — the maintenance record attached to that
+    // machine, vehicle or flat. Deleting one with work against it destroyed that
+    // permanently and silently detached the tasks (audit AS-B1), while the product
+    // already has the right answer for "this is out of service": status RETIRED,
+    // which is exactly what BILLABLE_ASSET_WHERE excludes, so retiring it also
+    // stops the billing. Mirrors the space purge rule: hard delete for empty
+    // records only, everything else is deactivated.
     if (asset._count.tasks > 0) {
-      await this.prisma.task.updateMany({
-        where: { assetId: data.id },
-        data: { assetId: null },
-      });
+      throw new BadRequestException(
+        `This asset has ${asset._count.tasks} job(s) in its history and cannot be deleted. ` +
+          'Set its status to Retired instead — the record and its history stay, and it stops being billed.',
+      );
     }
 
     await this.prisma.asset.delete({ where: { id: data.id } });

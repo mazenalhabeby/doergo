@@ -126,7 +126,9 @@ export class AssetsController {
   }
 
   @Delete(':id')
-  @RequirePermission('canViewAllTasks')
+  // Destructive and irreversible. canViewAllTasks is the READ/manager flag —
+  // every other permanent delete in the product is canManageUsers (audit AS-B1).
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Delete an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async delete(@Param('id') id: string, @Request() req: any) {
@@ -190,7 +192,8 @@ export class AssetsController {
   }
 
   @Post(':id/money')
-  @RequirePermission('canViewAllTasks')
+  // Financial record against an asset — not a read (AS-B1).
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Log money against this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async addMoney(
@@ -212,7 +215,7 @@ export class AssetsController {
   }
 
   @Delete(':id/money/:entryId')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Remove one money entry' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiParam({ name: 'entryId', description: 'Entry ID' })
