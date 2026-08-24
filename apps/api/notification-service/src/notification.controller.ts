@@ -117,6 +117,19 @@ export class NotificationController {
     });
   }
 
+  // A client record or its activity timeline changed. Broadcast to the ORG room so
+  // every open CRM screen refreshes in place (audit C-D2). Ids only: reps who
+  // cannot reach that client refetch and get back what they are allowed to see —
+  // the scoping lives in the endpoint, not in who receives the hint.
+  @EventPattern('customer_changed')
+  async handleCustomerChanged(
+    @Payload() data: { organizationId: string; customerId?: string },
+  ) {
+    this.websocketGateway.emitToOrganization(data.organizationId, 'customer.changed', {
+      customerId: data.customerId,
+    });
+  }
+
   // =========================================================================
   // INVITATION EVENTS
   // =========================================================================

@@ -2618,7 +2618,8 @@
     "breakStarted": "Break started",
     "breakEnded": "Break ended",
     "clockInAction": "Clocked in",
-    "clockOutAction": "Clocked out"
+    "clockOutAction": "Clocked out",
+    "crmReminder": "Client follow-up due"
   },
   "landing": {
     "nav": {

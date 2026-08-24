@@ -12,6 +12,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { OrgEventsService } from '../../common/events/org-events.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -55,10 +56,25 @@ export class CustomersController {
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
     private readonly authCache: AuthTokenCache,
+    private readonly orgEvents: OrgEventsService,
   ) {}
 
   private auth(cmd: string, payload: any) {
     return firstValueFrom(this.authClient.send({ cmd }, payload));
+  }
+
+  /**
+   * Run a CRM mutation and tell the org to re-read (audit C-D2). Nothing in the
+   * CRM announced anything: a rep adding an activity was invisible to a
+   * co-manager viewing the same client, and a new client never appeared on another
+   * admin's list. Broadcast on success only — a refused mutation changed nothing.
+   */
+  private async authMutation(cmd: string, payload: any, organizationId: string, customerId?: string) {
+    const res = await this.auth(cmd, payload);
+    if (!res || res.success !== false) {
+      this.orgEvents.customerChanged(organizationId, customerId ?? res?.data?.id ?? res?.id);
+    }
+    return res;
   }
 
   /** Caller context for CRM cap resolution + per-record ownership (server-authoritative). */
@@ -120,7 +136,7 @@ export class CustomersController {
       await this.requireSpaceModule(dto.spaceId, orgId, 'crm');
       dto = { ...dto, ownerId: dto.ownerId ?? req.user.id };
     }
-    return this.auth('create_customer', { organizationId: orgId, dto, caller: this.caller(req) });
+    return this.authMutation('create_customer', { organizationId: orgId, dto, caller: this.caller(req) }, orgId);
   }
 
   @Patch(':id')
@@ -129,7 +145,7 @@ export class CustomersController {
     // Moving a customer into a space requires that space to have the CRM module
     // (parity with create; the service also validates the space belongs to org).
     if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');
-    return this.auth('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) });
+    return this.authMutation('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) }, req.user.organizationId, id);
   }
 
   // ── Addresses (a customer's units; one is primary → shown on the map) ──
@@ -184,29 +200,29 @@ export class CustomersController {
   @Post(':id/activities')
   @ApiOperation({ summary: 'Log an activity / note / reminder on a customer' })
   addActivity(@Param('id') id: string, @Body() body: { type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
-    return this.auth('add_customer_activity', {
+    return this.authMutation('add_customer_activity', {
       customerId: id, organizationId: req.user.organizationId, authorId: req.user.id,
       type: body.type, body: body.body, dueAt: body.dueAt,
       reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
       reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
       caller: this.caller(req),
-    });
+    }, req.user.organizationId, id);
   }
 
   @Patch(':id/activities/:activityId')
   updateActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Body() body: { body?: string; dueAt?: string | null; done?: boolean; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
-    return this.auth('update_customer_activity', {
+    return this.authMutation('update_customer_activity', {
       id: activityId, customerId: id, organizationId: req.user.organizationId,
       body: body.body, dueAt: body.dueAt, done: body.done,
       reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
       reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
       caller: this.caller(req),
-    });
+    }, req.user.organizationId, id);
   }
 
   @Delete(':id/activities/:activityId')
   deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: any) {
-    return this.auth('delete_customer_activity', { id: activityId, customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) });
+    return this.authMutation('delete_customer_activity', { id: activityId, customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) }, req.user.organizationId, id);
   }
 
   @Delete(':id')
@@ -217,6 +233,7 @@ export class CustomersController {
     // token-cache TTL) — consistent with every other access-change path.
     const ids: string[] = result?.deactivatedUserIds ?? [];
     await Promise.all(ids.map((uid) => this.authCache.invalidateUser(uid).catch(() => undefined)));
+    this.orgEvents.customerChanged(req.user.organizationId, id);
     return result;
   }
 

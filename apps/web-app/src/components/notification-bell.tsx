@@ -104,6 +104,7 @@ type NotificationType =
   | "break_started" | "break_ended"
   | "invitation_created"
   | "chat_message"
+  | "crm_reminder"
 
 interface Notification {
   id: string
@@ -127,6 +128,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   task_status_changed:{ icon: ClipboardList, color: "text-muted-foreground", bg: "bg-muted" },
   comment_added:      { icon: MessageSquare, color: "text-amber-600", bg: "bg-amber-50" },
   chat_message:       { icon: MessageSquare, color: "text-blue-600", bg: "bg-blue-50" },
+  crm_reminder:       { icon: Bell, color: "text-indigo-600", bg: "bg-indigo-50" },
   attachment_added:   { icon: Paperclip, color: "text-cyan-600", bg: "bg-cyan-50" },
   join_request:       { icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50" },
   join_approved:      { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
@@ -151,6 +153,7 @@ function eventTypeToNotifType(eventType: string): NotificationType {
     "attendance_geofence_alert": "geofence_alert",
     "join_request_submitted": "join_request",
     "chat.message": "chat_message",
+    "customer_reminder_due": "crm_reminder",
   }
   return map[eventType] || "task_status_changed"
 }
@@ -248,6 +251,20 @@ export function NotificationBell() {
         if (!m || !m.senderId || m.senderId === user?.id) return
         const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t("chat.title", "Messages")
         add("chat_message", name, (m.body || "").slice(0, 80), `chat:${m.senderId}`)
+      }),
+
+      // A CRM follow-up fell due. Emitted to each assigned manager with a complete
+      // payload (client name, note, kind) — it needs no query, which is why it can
+      // be surfaced directly instead of invalidating something. It was emitted and
+      // nothing on any client listened (audit C-D1); mobile got the push, the web
+      // got nothing at all.
+      subscribe<{ customerId: string; customerName?: string; body?: string }>("customer.reminder", (d) => {
+        add(
+          "crm_reminder",
+          t("notifications.crmReminder"),
+          [d.customerName, d.body].filter(Boolean).join(" — "),
+          d.customerId ? `/customers/${d.customerId}` : "/clients",
+        )
       }),
 
       // Join request events

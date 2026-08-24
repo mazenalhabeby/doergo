@@ -16,7 +16,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { MemberEventsService } from '../../common/events/member-events.service';
+import { OrgEventsService } from '../../common/events/org-events.service';
 import { Role, CurrentUser, CurrentUserData, addOnDef } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -31,7 +31,7 @@ export class OrganizationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-    private readonly memberEvents: MemberEventsService,
+    private readonly orgEvents: OrgEventsService,
     private readonly authCache: AuthTokenCache,
   ) {}
 
@@ -283,7 +283,7 @@ export class OrganizationsController {
 
     // …and tell every OTHER open admin screen in the org that the roster changed,
     // so a second admin's /members tab updates in place (audit M-D2).
-    this.memberEvents.changed(user.organizationId, memberId, 'member.updated');
+    this.orgEvents.memberChanged(user.organizationId, memberId, 'member.updated');
 
     // Access/role change may flip this member between office and field seat.
     this.syncSeats(user.organizationId);
@@ -380,7 +380,7 @@ export class OrganizationsController {
     });
 
     // Refresh every open admin screen in the org (audit M-D2).
-    this.memberEvents.changed(user.organizationId, memberId, 'member.removed');
+    this.orgEvents.memberChanged(user.organizationId, memberId, 'member.removed');
 
     this.syncSeats(user.organizationId);
 

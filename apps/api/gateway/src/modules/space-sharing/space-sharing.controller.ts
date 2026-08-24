@@ -7,7 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { SpaceEventsService } from '../../common/events/space-events.service';
+import { OrgEventsService } from '../../common/events/org-events.service';
 
 /**
  * Cross-org space sharing. OWNER routes (`/locations/:spaceId/shares…`) require
@@ -22,7 +22,7 @@ export class SpaceSharingController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly auth: ClientProxy,
     @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
-    private readonly spaceEvents: SpaceEventsService,
+    private readonly orgEvents: OrgEventsService,
   ) {}
 
   private async send(cmd: string, payload: any) {
@@ -55,7 +55,7 @@ export class SpaceSharingController {
   ) {
     const res = await this.send(cmd, payload);
     const row = res?.data ?? {};
-    this.spaceEvents.shareChanged(
+    this.orgEvents.shareChanged(
       known.ownerOrgId ?? row.ownerOrgId ?? res?.ownerOrgId,
       known.guestOrgId ?? row.guestOrgId ?? res?.guestOrgId,
       known.spaceId ?? row.spaceId ?? res?.spaceId,

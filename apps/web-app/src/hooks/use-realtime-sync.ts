@@ -54,6 +54,8 @@ const Events = {
   MEMBER_ACCESS_UPDATED: "member.access_updated",
   // A new join request arrived (emitted to the org + the routed approvers)
   JOIN_REQUEST_SUBMITTED: "join_request_submitted",
+  // CRM — a client record or its activity timeline moved
+  CUSTOMER_CHANGED: "customer.changed",
   // Shift-reminder / no-show engine. These are push-first on mobile; on the web
   // they are the only signal the attendance board gets.
   NOSHOW_REMINDER: "attendance_noshow_reminder",
@@ -165,6 +167,22 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // about a request that never appeared on the page in front of them (audit A-D1).
   [Events.JOIN_REQUEST_SUBMITTED]: [["join-requests"]],
 
+  // The CRM announced nothing at all (audit C-D2): a rep logging an activity was
+  // invisible to a co-manager on the same client, and a new client never appeared
+  // on another admin's list. Ids only — a rep who cannot reach the client refetches
+  // and gets back what they are allowed to see.
+  // NOTE: these are the keys the screens ACTUALLY use — `["customers"]` looks like
+  // the obvious one and matches no query at all; the list is `["my-clients"]`.
+  // A key that matches nothing is silent, which is the whole failure mode here.
+  [Events.CUSTOMER_CHANGED]: [
+    ["my-clients"],            // /clients list
+    ["space-customers"],       // a space's Customers tab
+    ["customersAll"],          // the reports picker
+    ["customer"],              // /customers/[id]
+    ["customer-activities"],
+    ["customer-addresses"],
+  ],
+
   // The no-show and shift-reminder engine writes to the entries the attendance
   // board renders — a flagged no-show, an escalation, a reminder that moves
   // `reminderState`. All four were emitted and nothing on the web listened, so the
@@ -182,8 +200,11 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.SPACE_CHANGED]: [["locations"], ["locationRosters"]],
   [Events.SPACE_ROSTER_CHANGED]: [["locationRosters"], ["space-assignments"], ["all-location-assignments"]],
 
-  // Location events → invalidate tracking data
-  [Events.WORKER_LOCATION]: [["workerLocations"]],
+  // Location events → the task's route map. `["workerLocations"]` matched NO query
+  // in the app — a phantom key, so a GPS update refreshed nothing and a dispatcher
+  // watching a route saw it frozen. The real key is ["task-route", taskId]; this
+  // was found by the guard test in hooks/__tests__/realtime-keys.spec.ts.
+  [Events.WORKER_LOCATION]: [["task-route"]],
 
 }
 

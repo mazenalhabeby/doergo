@@ -15,7 +15,7 @@ import { firstValueFrom } from 'rxjs';
 import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { MemberEventsService } from '../../common/events/member-events.service';
+import { OrgEventsService } from '../../common/events/org-events.service';
 import {
   ListJoinRequestsDto,
   ApproveJoinRequestDto,
@@ -29,7 +29,7 @@ export class JoinRequestsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-    private readonly memberEvents: MemberEventsService,
+    private readonly orgEvents: OrgEventsService,
     private readonly authCache: AuthTokenCache,
   ) {}
 
@@ -96,7 +96,7 @@ export class JoinRequestsController {
 
     // An approved request adds a real member to the org — refresh /members and the
     // pending-requests list on every open admin screen (audit M-D2, M-D3).
-    this.memberEvents.changed(user.organizationId, result?.data?.userId, 'join_request.approved');
+    this.orgEvents.memberChanged(user.organizationId, result?.data?.userId, 'join_request.approved');
 
     return result;
   }
@@ -142,7 +142,7 @@ export class JoinRequestsController {
     // Two admins can be looking at the pending list at once — without this the
     // other one keeps seeing a request that is already decided, and acts on it
     // (audit A-D2). No member was added, but the LIST changed.
-    this.memberEvents.changed(user.organizationId, undefined, 'join_request.rejected');
+    this.orgEvents.memberChanged(user.organizationId, undefined, 'join_request.rejected');
 
     return result;
   }

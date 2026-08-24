@@ -2618,7 +2618,8 @@
     "breakStarted": "Pausa iniziata",
     "breakEnded": "Pausa terminata",
     "clockInAction": "Entrata registrata",
-    "clockOutAction": "Uscita registrata"
+    "clockOutAction": "Uscita registrata",
+    "crmReminder": "Follow-up cliente in scadenza"
   },
   "landing": {
     "nav": {

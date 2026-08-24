@@ -2618,7 +2618,8 @@
     "breakStarted": "Descanso iniciado",
     "breakEnded": "Descanso finalizado",
     "clockInAction": "Entrada registrada",
-    "clockOutAction": "Salida registrada"
+    "clockOutAction": "Salida registrada",
+    "crmReminder": "Seguimiento de cliente pendiente"
   },
   "landing": {
     "nav": {
