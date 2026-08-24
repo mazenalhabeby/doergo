@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
 import { getStatusConfig } from "@/lib/constants"
 import type { Task, Phase } from "@/lib/api"
+import { dateLocale } from "@/lib/format-date"
 
 const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 
@@ -43,17 +44,17 @@ function isWeekend(d: Date): boolean {
 
 function formatHeaderDate(d: Date, scale: TimeScale): string {
   if (scale === "day") {
-    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    return d.toLocaleDateString(dateLocale(), { weekday: "short", month: "short", day: "numeric" })
   }
   if (scale === "week") {
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    return d.toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })
   }
   // month
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+  return d.toLocaleDateString(dateLocale(), { month: "short", year: "numeric" })
 }
 
 function getMonthLabel(d: Date): string {
-  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  return d.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" })
 }
 
 // Status to bar color mapping
@@ -118,12 +119,12 @@ const TaskTooltip = React.memo(function TaskTooltip({
       </div>
       {task.startDate && (
         <p className="text-[11px] text-muted-foreground">
-          {t("tasks.timeline.startLabel", { date: new Date(task.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
+          {t("tasks.timeline.startLabel", { date: new Date(task.startDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })}
         </p>
       )}
       {task.dueDate && (
         <p className="text-[11px] text-muted-foreground">
-          {t("tasks.timeline.dueLabel", { date: new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
+          {t("tasks.timeline.dueLabel", { date: new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })}
         </p>
       )}
       {task.estimatedHours != null && (

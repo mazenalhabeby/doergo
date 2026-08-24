@@ -39,6 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { dateLocale } from "@/lib/format-date"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400", label: "Draft" },
@@ -50,7 +51,9 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
 }
 
 function formatCurrency(amount: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount)
+  // Locale-aware: "1.234,56 €" in de/es/fr/it, "€1,234.56" in en. Was pinned to
+  // en-US, which printed US currency convention on a European product.
+  return new Intl.NumberFormat(dateLocale(), { style: "currency", currency }).format(amount)
 }
 
 export default function InvoicesPage() {
@@ -209,8 +212,8 @@ function InvoicesPageInner() {
                     {inv.clientEmail && <p className="text-[11px] text-muted-foreground truncate">{inv.clientEmail}</p>}
                   </div>
                   <span className="text-sm font-semibold text-foreground text-right tabular-nums">{formatCurrency(inv.total, inv.currency)}</span>
-                  <span className="text-xs text-muted-foreground">{new Date(inv.issueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                  <span className="text-xs text-muted-foreground">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</span>
+                  <span className="text-xs text-muted-foreground">{new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })}</span>
+                  <span className="text-xs text-muted-foreground">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) : "—"}</span>
                   <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>{t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}</span>
                   {isAdmin && (
                     <DropdownMenu>

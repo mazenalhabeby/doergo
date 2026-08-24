@@ -30,6 +30,7 @@ function allTimezones(): string[] {
 /** Current UTC offset for a zone, e.g. "UTC+2" / "UTC+5:30" (reflects DST today). */
 function tzOffset(tz: string): string {
   try {
+    // en-US is load-bearing here: this PARSES the "GMT+2" offset back out as data.
     const part = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
       .formatToParts(new Date())
       .find((p) => p.type === "timeZoneName")?.value

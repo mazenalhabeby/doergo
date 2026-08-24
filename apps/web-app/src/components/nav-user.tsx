@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
+import { roleBadge } from "@/lib/role-badge"
 import {
   Avatar,
   AvatarFallback,
@@ -34,13 +35,6 @@ import {
 } from "@/components/ui/sidebar"
 
 // Role badge styles
-const roleBadgeStyles: Record<string, { bg: string; text: string; border: string }> = {
-  ADMIN: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  CLIENT: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" }, // Deprecated alias for ADMIN
-  DISPATCHER: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-  TECHNICIAN: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-}
-
 export function NavUser() {
   const { user, logout } = useAuth()
   const { isMobile } = useSidebar()
@@ -50,7 +44,7 @@ export function NavUser() {
 
   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`
   const fullName = `${user.firstName} ${user.lastName}`
-  const roleStyle = roleBadgeStyles[user.role] || roleBadgeStyles.ADMIN
+  const role = roleBadge(user.role)
 
   return (
     <SidebarMenu>
@@ -104,12 +98,10 @@ export function NavUser() {
             <div className="px-2 py-1.5">
               <div className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-semibold",
-                roleStyle.bg,
-                roleStyle.text,
-                roleStyle.border
+                role.className
               )}>
                 <Shield className="size-3.5" />
-                {user.role}
+                {t(role.labelKey)}
               </div>
             </div>
 

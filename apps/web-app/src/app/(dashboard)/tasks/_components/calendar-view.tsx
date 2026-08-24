@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { getStatusConfig } from "@/lib/constants"
 import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { dateLocale } from "@/lib/format-date"
 
 const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -320,7 +321,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
 
   const multiDayAreaHeight = maxMultiDayRows * 28 + 8
 
-  const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  const monthLabel = viewDate.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" })
   const isCurrentMonth = isSameMonth(today, viewDate)
 
   return (

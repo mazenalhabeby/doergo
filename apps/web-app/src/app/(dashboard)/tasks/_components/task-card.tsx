@@ -12,6 +12,7 @@ import { useSpaceModules } from "@/hooks/use-space-modules"
 import { getPriorityConfig } from "@/lib/constants"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { TaskContextMenu, type TaskContextMenuActions } from "./task-context-menu"
+import { dateLocale } from "@/lib/format-date"
 
 const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 
@@ -152,7 +153,7 @@ export const TaskCard = React.memo(function TaskCard({
           <div className="flex items-center gap-1">
             <Calendar className={cn("size-3", isOverdue ? "text-red-500" : "text-muted-foreground/60")} />
             <span className={cn("text-[11px]", isOverdue ? "text-red-500 font-medium" : "text-muted-foreground/60")}>
-              {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              {new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })}
             </span>
           </div>
         )}

@@ -4,6 +4,7 @@ import { useEffect, useCallback, useRef } from "react"
 import type { TaskEventPayload } from "@/types/socket-events"
 import { useQueryClient } from "@tanstack/react-query"
 import { useSocketContext } from "@/contexts/socket-context"
+import { useAuth } from "@/contexts/auth-context"
 
 /**
  * Central real-time sync hook.
@@ -48,6 +49,9 @@ const Events = {
   EXCURSION_REJECTED: "geofence_excursion_rejected",
   EXCURSION_RETURNED: "geofence_excursion_returned",
   EXCURSION_EXPIRED: "geofence_excursion_expired",
+  // Members / access
+  MEMBER_CHANGED: "member.changed",
+  MEMBER_ACCESS_UPDATED: "member.access_updated",
   // Spaces
   SPACE_CHANGED: "space.changed",
   SPACE_ROSTER_CHANGED: "space.rosterChanged",
@@ -85,6 +89,21 @@ const DASHBOARD_ATTENDANCE_KEYS: string[][] = [
 
 // Everything that must refresh when attendance changes (clock or admin edit).
 const ALL_ATTENDANCE_KEYS: string[][] = [...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
+
+// Everywhere a member, an invitation or a join request is rendered. One list, so
+// the four server call sites that emit `member.changed` cannot drift from what the
+// screens actually read (DRY).
+const MEMBER_KEYS: string[][] = [
+  ["orgMembers"],              // /members list — ["orgMembers", search, role, page]
+  ["orgMember"],               // /members/[id] detail
+  ["orgContacts"],             // chat / contact directory
+  ["pendingInvitations"],      // pending invites shown on /members
+  ["invitations"],             // /invitations page
+  ["join-requests"],           // /join-requests page
+  ["all-location-assignments"],// member → spaces map on /members
+  ["locationRosters"],         // space rosters
+  ["orgMembers", "dashboard"], // dashboard roster tiles
+]
 
 // Query keys that each event should invalidate
 const EVENT_INVALIDATIONS: Record<string, string[][]> = {
@@ -125,6 +144,14 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.EXCURSION_RETURNED]: [["geofence-excursions"]],
   [Events.EXCURSION_EXPIRED]: [["geofence-excursions"]],
 
+  // Member events → refresh everywhere a member appears. Until these existed there
+  // were NO member events in this map at all: another admin's edit, removal, invite
+  // or revoke stayed invisible until the viewer reloaded, and — because React Query
+  // runs with refetchOnWindowFocus:false — even switching tabs did not fix it.
+  // (Audit M-D2 / M-D3.) The payload carries ids only; each client re-reads through
+  // its own scoped endpoint, so nothing here widens what a viewer can see.
+  [Events.MEMBER_CHANGED]: MEMBER_KEYS,
+
   // Space events → refresh the space lists and rosters. Until these existed, a
   // space created/renamed/archived by someone else — or a roster edited by
   // another admin — stayed invisible until the viewer reloaded the page. The
@@ -141,6 +168,7 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
 export function useRealtimeSync() {
   const queryClient = useQueryClient()
   const { isConnected, subscribe } = useSocketContext()
+  const { refreshUser } = useAuth()
   const subscribedRef = useRef(false)
 
   // Debounced invalidation — batch rapid events
@@ -217,6 +245,26 @@ export function useRealtimeSync() {
       if (flushTimerRef.current) clearTimeout(flushTimerRef.current)
     }
   }, [isConnected, subscribe, handleTaskEvent, scheduleInvalidation])
+
+  // MY OWN access changed. Handled apart from EVENT_INVALIDATIONS because this is
+  // not "some data moved" — it is "what I am allowed to see moved", so re-reading
+  // one list is not enough.
+  //
+  // The server has emitted this to the member's own room since the access-profile
+  // feature shipped, and NOTHING listened on web or mobile: the change only landed
+  // on the next focus/interval reconcile, up to 5 minutes later. (Audit M-D1.)
+  //
+  // refreshUser() re-reads /auth/me — the gateway has already purged this member's
+  // auth cache, so it returns the new profile — and the blanket invalidate drops
+  // every cached list, because spaceScope/webScreens decide what those lists were
+  // allowed to contain. Rare event, so the cost of invalidating everything is right.
+  useEffect(() => {
+    if (!isConnected) return
+    return subscribe("member.access_updated", () => {
+      void refreshUser()
+      queryClient.invalidateQueries()
+    })
+  }, [isConnected, subscribe, refreshUser, queryClient])
 
   return { isConnected }
 }

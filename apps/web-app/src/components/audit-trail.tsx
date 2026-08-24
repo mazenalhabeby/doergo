@@ -9,7 +9,8 @@ import { History, ChevronRight } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { organizationsApi } from "@/lib/api"
 import { auditActionLabel } from "@/lib/audit-labels"
-import { cn, formatTimeAgo } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import { formatTimeAgo } from "@/lib/format-date"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // ---------------------------------------------------------------------------

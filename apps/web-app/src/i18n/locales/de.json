@@ -650,7 +650,8 @@
       "justNow": "gerade eben",
       "minutes": "vor {{count}} Min.",
       "hours": "vor {{count}} Std.",
-      "days": "vor {{count}} T."
+      "days": "vor {{count}} T.",
+      "yesterday": "Gestern"
     },
     "discard": "Verwerfen",
     "saved": "Gespeichert",
@@ -2094,7 +2095,8 @@
       "dispatcher": "Dispatcher",
       "technician": "Techniker",
       "manager": "Manager",
-      "employee": "Mitarbeiter"
+      "employee": "Mitarbeiter",
+      "customer": "Kunde"
     },
     "platforms": {
       "web": "Web",
@@ -2244,6 +2246,11 @@
       "access": "Zugriff",
       "yesterday": "Gestern",
       "daysAgo": "vor {{count}} Tagen"
+    },
+    "error": {
+      "title": "Mitglieder konnten nicht geladen werden",
+      "description": "Beim Laden der Mitglieder Ihrer Organisation ist etwas schiefgelaufen. Ihre Daten sind sicher — es handelt sich um ein Ladeproblem, nicht um ein fehlendes Team.",
+      "retry": "Erneut versuchen"
     }
   },
   "invitations": {

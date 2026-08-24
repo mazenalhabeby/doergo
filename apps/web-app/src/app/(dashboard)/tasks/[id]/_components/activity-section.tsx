@@ -18,7 +18,8 @@ import {
 } from "lucide-react"
 
 import { tasksApi, type TaskEvent } from "@/lib/api"
-import { cn, formatTimeAgo } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import { formatTimeAgo } from "@/lib/format-date"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface ActivitySectionProps {

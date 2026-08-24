@@ -9,7 +9,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
-import { cn, getRequestId, formatTimeAgo } from "@/lib/utils"
+import { cn, getRequestId } from "@/lib/utils"
+import { formatTimeAgo } from "@/lib/format-date"
 import { getPriorityConfig } from "@/lib/constants"
 import { useAuth } from "@/contexts/auth-context"
 import { StatusBadge } from "./status-badge"

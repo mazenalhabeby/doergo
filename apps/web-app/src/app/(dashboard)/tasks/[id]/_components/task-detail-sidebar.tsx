@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { InlineEditField } from "./inline-edit-field"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
+import { dateLocale } from "@/lib/format-date"
 
 interface TaskDetailSidebarProps {
   task: Task
@@ -256,7 +257,7 @@ export function TaskDetailSidebar({
           {/* Created Date */}
           <SidebarRow icon={Calendar} label={t("tasks.sidebar.created")}>
             <span className="text-sm text-muted-foreground">
-              {new Date(task.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              {new Date(task.createdAt).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", year: "numeric" })}
             </span>
           </SidebarRow>
         </div>

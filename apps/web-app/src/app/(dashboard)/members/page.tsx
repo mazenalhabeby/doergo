@@ -2,9 +2,12 @@
 
 import { useState, useCallback, useMemo, memo, useEffect } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
+  AlertTriangle,
+  RefreshCw,
   Search,
   MoreHorizontal,
   Pencil,
@@ -29,11 +32,27 @@ import { useTranslation } from "react-i18next"
 
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
-import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
-import { ManageRolesDialog } from "@/components/roles/manage-roles-dialog"
-import { EditMemberDialog } from "./_components/edit-member-dialog"
-import { AccessBuilder } from "@/components/access-builder"
+// Lazy (audit M-C1). These four dialogs are ~1,455 lines that only render after a
+// click, and they were being shipped in the first paint of a page whose job is a
+// table. ssr:false because none of them renders on the server anyway.
+const CreateInvitationDialog = dynamic(
+  () => import("@/components/invitations/create-invitation-dialog").then((m) => m.CreateInvitationDialog),
+  { ssr: false },
+)
+const ManageRolesDialog = dynamic(
+  () => import("@/components/roles/manage-roles-dialog").then((m) => m.ManageRolesDialog),
+  { ssr: false },
+)
+const EditMemberDialog = dynamic(
+  () => import("./_components/edit-member-dialog").then((m) => m.EditMemberDialog),
+  { ssr: false },
+)
+const AccessBuilder = dynamic(
+  () => import("@/components/access-builder").then((m) => m.AccessBuilder),
+  { ssr: false },
+)
 import { cn } from "@/lib/utils"
+import { roleBadge, ROLE_COLOR_FALLBACK } from "@/lib/role-badge"
 import {
   organizationsApi,
   invitationsApi,
@@ -78,27 +97,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { dateLocale } from "@/lib/format-date"
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const ROLE_CONFIG: Record<string, { className: string; gradient: string }> = {
-  ADMIN: {
-    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
-    gradient: "from-blue-500 to-blue-600",
-  },
-  EMPLOYEE: {
-    className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
-    gradient: "from-emerald-500 to-emerald-600",
-  },
-}
-
-// Role label translation keys (labels live in i18n, colors in ROLE_CONFIG).
-const ROLE_LABEL_KEY: Record<string, string> = {
-  ADMIN: "members.roles.admin",
-  EMPLOYEE: "members.roles.employee",
-}
 // ---------------------------------------------------------------------------
 // Bulk Action Bar for members
 // ---------------------------------------------------------------------------
@@ -256,14 +260,14 @@ function RoleBadge({ member }: { member: OrgMember }) {
           className="text-xs font-medium border gap-1.5"
           style={{ borderColor: named.color || undefined, color: named.color || undefined }}
         >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: named.color || "#6b7280" }} />
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: named.color || ROLE_COLOR_FALLBACK }} />
           {named.name}
         </Badge>
       )
     }
   }
-  const conf = ROLE_CONFIG[member.role] || ROLE_CONFIG.EMPLOYEE!
-  return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{t(ROLE_LABEL_KEY[member.role] || "members.roles.employee")}</Badge>
+  const conf = roleBadge(member.role)
+  return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{t(conf.labelKey)}</Badge>
 }
 
 function ScheduleBadge({ member }: { member: OrgMember }) {
@@ -476,7 +480,7 @@ export default function MembersPage() {
 
   // ── Queries ──────────────────────────────────────────────────────────
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["orgMembers", debouncedSearch, roleFilter, page],
     queryFn: () =>
       organizationsApi.getMembers({
@@ -541,26 +545,64 @@ export default function MembersPage() {
 
   // ── Mutations ────────────────────────────────────────────────────────
 
+  // Optimistic removal (audit M-D4). Removing a member is a definite, reversible-on-
+  // error action, so the row leaves immediately instead of sitting unchanged for a
+  // full round-trip. onError restores the exact snapshot; onSettled re-reads so the
+  // server, not the optimistic guess, has the last word.
+  const dropRowOptimistically = useCallback(
+    async (listKey: string, id: string) => {
+      await queryClient.cancelQueries({ queryKey: [listKey] })
+      const snapshot = queryClient.getQueriesData({ queryKey: [listKey] })
+      queryClient.setQueriesData({ queryKey: [listKey] }, (old: any) => {
+        if (!old?.data) return old
+        const data = old.data.filter((row: { id: string }) => row.id !== id)
+        // Keep the header count honest while the request is in flight.
+        const meta = old.meta ? { ...old.meta, total: Math.max(0, (old.meta.total ?? 0) - 1) } : old.meta
+        return { ...old, data, meta }
+      })
+      return snapshot
+    },
+    [queryClient],
+  )
+
+  const restoreSnapshot = useCallback(
+    (snapshot?: [readonly unknown[], unknown][]) => {
+      snapshot?.forEach(([key, value]) => queryClient.setQueryData(key, value))
+    },
+    [queryClient],
+  )
+
   const removeMutation = useMutation({
     mutationFn: (memberId: string) => organizationsApi.removeMember(memberId),
+    onMutate: (memberId: string) => {
+      setRemoveTarget(null) // close the dialog now — the action is committed
+      return dropRowOptimistically("orgMembers", memberId)
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
-      setRemoveTarget(null)
       notify.success(t("members.toast.memberRemoved"))
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _memberId, snapshot) => {
+      restoreSnapshot(snapshot as any)
       notify.error(error.message || t("members.toast.removeFailed"))
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: ["orgContacts"] })
     },
   })
 
   const revokeInviteMutation = useMutation({
     mutationFn: (id: string) => invitationsApi.revoke(id),
+    onMutate: (id: string) => dropRowOptimistically("pendingInvitations", id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] })
       notify.success(t("invitations.revokeDialog.revokedSuccessfully"))
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _id, snapshot) => {
+      restoreSnapshot(snapshot as any)
       notify.error(error.message || t("members.toast.revokeFailed"))
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] })
     },
   })
 
@@ -742,6 +784,23 @@ export default function MembersPage() {
                 </div>
               ))}
             </div>
+          ) : isError ? (
+            /* Error state (audit M-F1). Without this branch a failed request fell
+               through to the empty state, so an admin of a 50-person org was told
+               "No members yet — invite your first member". */
+            <div className="text-center py-20 px-6">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-5">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("members.error.title")}</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
+                {t("members.error.description")}
+              </p>
+              <Button variant="outline" onClick={() => refetch()} disabled={isFetching} className="rounded-lg">
+                <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
+                {t("members.error.retry")}
+              </Button>
+            </div>
           ) : members.length > 0 ? (
             <>
               {/* Table header */}
@@ -857,7 +916,7 @@ export default function MembersPage() {
             {showPending && (
               <div className="divide-y divide-border/60 border-t border-border/60">
                 {pendingInvitations.map((inv) => {
-                  const roleConf = ROLE_CONFIG[inv.targetRole] || ROLE_CONFIG.EMPLOYEE!
+                  const roleConf = roleBadge(inv.targetRole)
                   const expiresDate = new Date(inv.expiresAt)
                   const isExpired = expiresDate < new Date()
                   return (
@@ -879,7 +938,7 @@ export default function MembersPage() {
                         )}
                       </div>
                       <Badge variant="outline" className={cn("text-xs font-medium border", roleConf.className)}>
-                        {t(ROLE_LABEL_KEY[inv.targetRole] || "members.roles.employee")}
+                        {t(roleConf.labelKey)}
                       </Badge>
                       <span className={cn(
                         "text-xs whitespace-nowrap",
@@ -887,7 +946,7 @@ export default function MembersPage() {
                       )}>
                         {isExpired
                           ? t("members.pendingInvitations.expired")
-                          : t("members.pendingInvitations.expires", { date: expiresDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) })
+                          : t("members.pendingInvitations.expires", { date: expiresDate.toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })
                         }
                       </span>
                       <Button

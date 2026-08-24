@@ -62,6 +62,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { dateLocale } from "@/lib/format-date"
 
 // ============================================================================
 // Constants
@@ -93,7 +94,7 @@ function getPriorityColor(priority: string): string {
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "-"
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString(dateLocale(), {
     month: "short",
     day: "numeric",
     year: "numeric",

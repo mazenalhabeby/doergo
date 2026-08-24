@@ -650,7 +650,8 @@
       "justNow": "ahora mismo",
       "minutes": "hace {{count}} min",
       "hours": "hace {{count}} h",
-      "days": "hace {{count}} d"
+      "days": "hace {{count}} d",
+      "yesterday": "Ayer"
     },
     "discard": "Descartar",
     "saved": "Guardado",
@@ -2088,7 +2089,8 @@
       "dispatcher": "Coordinador",
       "technician": "Empleado",
       "manager": "Gerente",
-      "employee": "Empleado"
+      "employee": "Empleado",
+      "customer": "Cliente"
     },
     "platforms": {
       "web": "Web",
@@ -2244,6 +2246,11 @@
       "done": "Hechas",
       "score": "Puntuación",
       "thisWeek": "Esta semana"
+    },
+    "error": {
+      "title": "No se pudieron cargar los miembros",
+      "description": "Algo falló al cargar los miembros de su organización. Sus datos están a salvo: es un problema de carga, no un equipo vacío.",
+      "retry": "Reintentar"
     }
   },
   "invitations": {

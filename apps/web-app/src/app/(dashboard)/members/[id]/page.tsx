@@ -3,9 +3,7 @@
 import { use, useMemo, useState, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import type { TFunction } from "i18next"
 import {
   ArrowLeft,
   Mail,
@@ -21,27 +19,47 @@ import {
   BarChart3,
 } from "lucide-react"
 
-import { useAuth } from "@/contexts/auth-context"
+import { useMemberData } from "./_lib/use-member-data"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
+import { roleBadge, ROLE_COLOR_FALLBACK } from "@/lib/role-badge"
 import { useTimeFormat } from "@/hooks"
-import { AccessBuilder } from "@/components/access-builder"
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { EditMemberDialog } from "../_components/edit-member-dialog"
-import { AuditTrail } from "@/components/audit-trail"
+
+
 import dynamic from "next/dynamic"
 // Worker tabs — consolidated from the retired /employees page (single member page).
-import {
-  TasksTab,
-  AttendanceTab,
-  LocationsTab,
-  ScheduleTab,
-  TimeOffTab,
-} from "./_components"
+// Imported from the leaf modules, NOT the barrel: `_components/index.ts` also
+// re-exports PerformanceTab, so importing through it risks pulling recharts back
+// into this chunk and undoing the split above.
+import { TasksTab } from "./_components/tasks-tab"
+import { AttendanceTab } from "./_components/attendance-tab"
+import { LocationsTab } from "./_components/locations-tab"
+import { ScheduleTab } from "./_components/schedule-tab"
 // Performance tab pulls in recharts — load it as its own chunk only when the tab
 // is opened, so every other visitor doesn't pay for the chart lib (P11).
 const PerformanceTab = dynamic(
   () => import("./_components/performance-tab").then((m) => m.PerformanceTab),
+  { ssr: false },
+)
+// Same reasoning for the rest of the weight (audit MD-C1). The page opens on
+// Overview, which renders none of these — the Access builder, the edit dialog, the
+// audit trail and the Time Off tab were ~1,600 lines paid for on every visit.
+const AccessBuilder = dynamic(
+  () => import("@/components/access-builder").then((m) => m.AccessBuilder),
+  { ssr: false },
+)
+const EditMemberDialog = dynamic(
+  () => import("../_components/edit-member-dialog").then((m) => m.EditMemberDialog),
+  { ssr: false },
+)
+const AuditTrail = dynamic(
+  () => import("@/components/audit-trail").then((m) => m.AuditTrail),
+  { ssr: false },
+)
+const TimeOffTab = dynamic(
+  () => import("./_components/time-off-tab").then((m) => m.TimeOffTab),
   { ssr: false },
 )
 import {
@@ -54,6 +72,7 @@ import { getStatusConfig } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { formatRelativeDay, formatDayMonth } from "@/lib/format-date"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -62,37 +81,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 // Tasks tab page size (P3) — bounds the per-member task fetch + render.
 const TASKS_PAGE_SIZE = 20
 
-const ROLE_CONFIG: Record<string, { labelKey: string; className: string; gradient: string }> = {
-  ADMIN: {
-    labelKey: "members.roles.admin",
-    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
-    gradient: "from-blue-500 to-blue-600",
-  },
-  DISPATCHER: {
-    labelKey: "members.roles.manager",
-    className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/50",
-    gradient: "from-purple-500 to-purple-600",
-  },
-  TECHNICIAN: {
-    labelKey: "members.roles.employee",
-    className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
-    gradient: "from-emerald-500 to-emerald-600",
-  },
-}
-
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
-
-function formatRelativeDate(dateStr: string, t: TFunction): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return t("common.today")
-  if (diffDays === 1) return t("members.detail.yesterday")
-  if (diffDays < 7) return t("members.detail.daysAgo", { count: diffDays })
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-}
 
 // ---------------------------------------------------------------------------
 // Page
@@ -107,109 +96,16 @@ export default function MemberProfilePage({
   const { t } = useTranslation()
   const { formatSchedule } = useTimeFormat()
   const router = useRouter()
-  const { user } = useAuth()
-  const isAdmin = user?.role === "ADMIN"
-  // Manager+ may see the operational tabs (tasks/attendance/schedule/perf) and
-  // manage schedules/attendance — same gate the retired /employees page used.
-  const canViewOps = isAdmin || !!user?.canViewAllTasks
-  const canManage = isAdmin || !!user?.canViewAllTasks
+  const {
+    isAdmin, canViewOps, canManage, canManageMembers, currentUserId,
+    activeTab, setActiveTab, tasksPage, setTasksPage, attendanceRange,
+    member, tasks, schedule, memberAssignments, spaceNames,
+    fullTasks, attendance, performance, memberProfile,
+    memberLoading, memberError, tasksLoading, scheduleLoading,
+    refetchMember, handleMemberSaved,
+  } = useMemberData(memberId)
   const [editOpen, setEditOpen] = useState(false)
-  // Controlled so the guided tour can open the Access tab: Radix tabs don't switch
-  // on a synthetic .click(), but a plain onClick on the trigger (below) does fire.
-  const [activeTab, setActiveTab] = useState("overview")
 
-  const queryClient = useQueryClient()
-
-  // Tasks tab pagination (P3) and attendance window (P4) — bound the per-member
-  // history so a long-tenured member doesn't stream thousands of rows per open.
-  const [tasksPage, setTasksPage] = useState(1)
-  const attendanceRange = useMemo(() => {
-    const end = new Date()
-    const start = new Date()
-    start.setDate(start.getDate() - 90)
-    return { startDate: start.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) }
-  }, [])
-
-  // Fetch this one member by id (single row, same shape as a list row) — no more
-  // pulling the whole org and find()-ing it, which broke past 200 members (P1).
-  const { data: memberData, isLoading: memberLoading, isError: memberError, refetch: refetchMember } = useQuery({
-    queryKey: ["orgMember", memberId],
-    queryFn: () => organizationsApi.getMember(memberId),
-    enabled: !!memberId,
-  })
-
-  // After an edit / access change, refresh the member AND its dependent tabs
-  // (schedule, assignments, tasks, attendance, performance) — editing can change
-  // any of them, so refetching only the member left siblings stale (D5).
-  const handleMemberSaved = useCallback(() => {
-    refetchMember()
-    for (const key of [
-      "employeeSchedule",
-      "memberLocationAssignments",
-      "memberTasks",
-      "memberTasksFull",
-      "memberAttendance",
-      "memberPerformance",
-    ]) {
-      queryClient.invalidateQueries({ queryKey: [key, memberId] })
-    }
-  }, [queryClient, refetchMember, memberId])
-
-  // Fetch tasks assigned to this member
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ["memberTasks", memberId],
-    queryFn: () => employeesApi.getTasks(memberId, { limit: 5 }),
-    enabled: !!memberId,
-  })
-
-  // Fetch schedule
-  const { data: scheduleData, isLoading: scheduleLoading } = useQuery({
-    queryKey: ["employeeSchedule", memberId],
-    queryFn: () => employeesApi.getSchedule(memberId),
-    enabled: !!memberId,
-  })
-
-  // This member's space assignments in ONE call (was an N+1 fan-out over every
-  // location just to build the header badges). Feeds both the header spaceNames
-  // and the Locations tab (P2).
-  const { data: memberAssignments = [] } = useQuery({
-    queryKey: ["memberLocationAssignments", memberId],
-    queryFn: () => employeesApi.getAssignments(memberId),
-    enabled: !!memberId,
-    staleTime: 30_000,
-  })
-
-  const spaceNames = useMemo(
-    () => memberAssignments.map((a) => a.location?.name).filter(Boolean),
-    [memberAssignments],
-  )
-
-  // ── Operational tabs (manager+ only) — each fetches ONLY when its tab is open ──
-  const { data: fullTasks } = useQuery({
-    queryKey: ["memberTasksFull", memberId, tasksPage],
-    queryFn: () => employeesApi.getTasks(memberId, { page: tasksPage, limit: TASKS_PAGE_SIZE }),
-    enabled: !!memberId && canViewOps && activeTab === "tasks",
-    staleTime: 30_000,
-  })
-  const { data: attendance } = useQuery({
-    queryKey: ["memberAttendance", memberId, attendanceRange.startDate, attendanceRange.endDate],
-    queryFn: () => employeesApi.getAttendance(memberId, attendanceRange.startDate, attendanceRange.endDate),
-    enabled: !!memberId && canViewOps && activeTab === "attendance",
-    staleTime: 30_000,
-  })
-  const { data: performance } = useQuery({
-    queryKey: ["memberPerformance", memberId],
-    queryFn: () => employeesApi.getPerformance(memberId),
-    enabled: !!memberId && canViewOps && activeTab === "performance",
-    staleTime: 30_000,
-  })
-  // Header stats (Score · Done · Active · This Week) — one call carries the lot.
-  const { data: memberProfile } = useQuery({
-    queryKey: ["employeeProfile", memberId],
-    queryFn: () => employeesApi.getById(memberId),
-    enabled: !!memberId && canViewOps,
-    staleTime: 60_000,
-  })
   const hs = memberProfile?.stats
   const headerStats = hs
     ? (() => {
@@ -230,8 +126,6 @@ export default function MemberProfilePage({
       })()
     : null
 
-  const schedule = scheduleData?.schedule || []
-  const member = memberData
 
   if (memberLoading) {
     return (
@@ -303,7 +197,7 @@ export default function MemberProfilePage({
     )
   }
 
-  const roleConfig = ROLE_CONFIG[member.role] || ROLE_CONFIG.TECHNICIAN!
+  const roleConfig = roleBadge(member.role)
   const scheduleLabel = member.scheduleType === "FIXED"
     ? t("members.detail.fixedSchedule")
     : member.scheduleType === "FLEXIBLE"
@@ -366,7 +260,7 @@ export default function MemberProfilePage({
                         className="text-xs font-medium border gap-1"
                         style={{ borderColor: named.color || undefined, color: named.color || undefined }}
                       >
-                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: named.color || "#6b7280" }} />
+                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: named.color || ROLE_COLOR_FALLBACK }} />
                         {named.name}
                       </Badge>
                     ) : (
@@ -413,7 +307,7 @@ export default function MemberProfilePage({
             </div>
 
             {/* Edit button — opens the same dialog inline (no redirect) */}
-            {isAdmin && member.id !== user?.id && (
+            {canManageMembers && member.id !== currentUserId && (
               <Button
                 variant="outline"
                 size="sm"
@@ -451,7 +345,11 @@ export default function MemberProfilePage({
           // themselves — so an admin can manage attendance capabilities like remote
           // clock-in (allowRemote) that apply to admins too. Role changes for self /
           // the last admin remain blocked in the builder + backend.
-          const showAccessTab = isAdmin
+          // Matches the server: PATCH /organizations/members/:id is
+          // @RequirePermission('canManageUsers'), not ADMIN-only. Gating the tab on
+          // isAdmin hid the screen from managers who could still make the same edit
+          // through the API (audit MD-B1).
+          const showAccessTab = canManageMembers
           // Schedule box is dynamic: only shows for a FIXED member that actually
           // has hours set. Flexible / none / empty → the box disappears entirely.
           const showSchedule = member.scheduleType === "FIXED" && (scheduleLoading || schedule.length > 0)
@@ -485,7 +383,7 @@ export default function MemberProfilePage({
                           </p>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
-                          {formatRelativeDate(task.updatedAt, t)}
+                          {formatRelativeDay(task.updatedAt)}
                         </span>
                       </div>
                     )
@@ -532,7 +430,7 @@ export default function MemberProfilePage({
                           <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
                           {task.dueDate && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {t("members.detail.due", { date: new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
+                              {t("members.detail.due", { date: formatDayMonth(task.dueDate, false) })}
                             </p>
                           )}
                         </div>

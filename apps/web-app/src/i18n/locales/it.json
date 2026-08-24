@@ -650,7 +650,8 @@
       "justNow": "proprio ora",
       "minutes": "{{count}} min fa",
       "hours": "{{count}} h fa",
-      "days": "{{count}} g fa"
+      "days": "{{count}} g fa",
+      "yesterday": "Ieri"
     },
     "discard": "Scarta",
     "saved": "Salvato",
@@ -2088,7 +2089,8 @@
       "dispatcher": "Dispatcher",
       "technician": "Dipendente",
       "manager": "Responsabile",
-      "employee": "Dipendente"
+      "employee": "Dipendente",
+      "customer": "Cliente"
     },
     "platforms": {
       "web": "Web",
@@ -2244,6 +2246,11 @@
       "done": "Completate",
       "score": "Punteggio",
       "thisWeek": "Questa settimana"
+    },
+    "error": {
+      "title": "Impossibile caricare i membri",
+      "description": "Si è verificato un errore durante il caricamento dei membri della sua organizzazione. I suoi dati sono al sicuro: è un problema di caricamento, non un team vuoto.",
+      "retry": "Riprova"
     }
   },
   "invitations": {

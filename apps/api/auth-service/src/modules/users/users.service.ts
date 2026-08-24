@@ -768,6 +768,10 @@ export class UsersService {
         lastActiveAt: true,
       },
       orderBy: [{ role: 'asc' }, { firstName: 'asc' }],
+      // Capped (audit M-C2): this is a contact directory, not an export. Bounded in
+      // practice by admins+managers per org, but an uncapped list endpoint is one
+      // bad org away from a slow query.
+      take: 500,
     });
 
     // SELECTED → only the explicitly allowed contacts; ALL → everyone in the directory.
@@ -958,6 +962,13 @@ export class UsersService {
       throw new NotFoundException('Member not found');
     }
 
+    // Privilege ceiling (audit M-B2). updateMemberProfile already refuses to let a
+    // non-admin holding canManageUsers touch an ADMIN; removal is the same act with a
+    // stronger effect and was not enforcing it, so a manager could delete every admin
+    // but one. Same guard, reused — an empty dto means "no grant", leaving only the
+    // targetIsAdmin branch to fire.
+    await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, {});
+
     // Can't remove the last ADMIN
     if (member.role === Role.ADMIN) {
       const adminCount = await this.prisma.user.count({
@@ -1079,6 +1090,12 @@ export class UsersService {
     // or assigned role via this admin endpoint (their own profile edits go through
     // updateOwnProfile). memberRoleId is included — it points at a permission-bearing
     // role, so a self { memberRoleId: adminRoleId } would be an escalation.
+    // enabledModules is included for the SAME reason (audit M-B1): the Access
+    // Profile's `spaceScope` is a server-enforced READ control — 'all' returns every
+    // space in the org (task-service locations.service) — and `webScreens`/`platforms`
+    // decide what the member can reach. Leaving it out let a non-admin holding
+    // canManageUsers PATCH their own id with { enabledModules: { spaceScope: 'all' } }
+    // and widen their own visibility.
     const touchesPrivilege =
       dto.role !== undefined ||
       dto.canManageUsers !== undefined ||
@@ -1087,15 +1104,22 @@ export class UsersService {
       dto.canAssignTasks !== undefined ||
       (dto as any).taskCreationScope !== undefined ||
       (dto as any).canViewReports !== undefined ||
-      (dto as any).memberRoleId !== undefined;
+      (dto as any).memberRoleId !== undefined ||
+      (dto as any).enabledModules !== undefined;
     if (touchesPrivilege && memberId === requesterId) {
       throw new BadRequestException(
-        'You cannot change your own role or permissions',
+        'You cannot change your own role, permissions, or access profile',
       );
     }
 
     // Block privilege escalation when role/permissions are being changed.
-    if (dto.role !== undefined || dto.canManageUsers !== undefined) {
+    // enabledModules is guarded too (M-B1): re-scoping an ADMIN's access profile is
+    // a downgrade of a superior, which a non-admin must not be able to perform.
+    if (
+      dto.role !== undefined ||
+      dto.canManageUsers !== undefined ||
+      (dto as any).enabledModules !== undefined
+    ) {
       await this.assertCanGrantRoleAndPerms(requesterId, organizationId, member, dto);
     }
 

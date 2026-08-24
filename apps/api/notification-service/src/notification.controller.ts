@@ -99,6 +99,24 @@ export class NotificationController {
     });
   }
 
+  // The org's member list changed — someone was added, removed, re-roled,
+  // re-scoped, invited, or an invitation was revoked. Broadcast to the ORG room so
+  // every open admin screen refreshes in place (audit M-D2). The payload carries
+  // IDS ONLY: each client re-reads through its own scoped endpoint, so a broadcast
+  // can never widen what a viewer is allowed to see.
+  @EventPattern('member_changed')
+  async handleMemberChanged(
+    @Payload() data: { organizationId: string; memberId?: string; reason?: string },
+  ) {
+    this.logger.log(
+      `Member list changed in org ${data.organizationId} (${data.reason || 'update'})`,
+    );
+    this.websocketGateway.emitToOrganization(data.organizationId, 'member.changed', {
+      memberId: data.memberId,
+      reason: data.reason,
+    });
+  }
+
   // =========================================================================
   // INVITATION EVENTS
   // =========================================================================

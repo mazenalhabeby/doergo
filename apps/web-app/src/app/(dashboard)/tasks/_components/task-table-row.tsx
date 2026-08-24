@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { TaskContextMenu, type TaskContextMenuActions } from "./task-context-menu"
+import { dateLocale } from "@/lib/format-date"
 
 interface TaskTableRowProps {
   task: Task
@@ -115,7 +116,7 @@ function TaskTableRowInner({
   const isOverdue = isTaskOverdue(task)
 
   const formattedDueDate = task.dueDate
-    ? new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    ? new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })
     : null
 
   const handleRowClick = (e: React.MouseEvent) => {

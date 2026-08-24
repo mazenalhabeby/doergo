@@ -25,6 +25,7 @@ import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Public, RequirePermission } from '../../common/decorators';
+import { MemberEventsService } from '../../common/events/member-events.service';
 import {
   CreateInvitationDto,
   AcceptInvitationDto,
@@ -37,6 +38,7 @@ export class InvitationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly memberEvents: MemberEventsService,
   ) {}
 
   @Post()
@@ -77,6 +79,10 @@ export class InvitationsController {
         expiresAt: result.data.expiresAt,
       });
     }
+
+    // A pending invitation is shown on /members alongside real members, so a new
+    // one must reach every open admin screen (audit M-D2).
+    this.memberEvents.changed(user.organizationId, undefined, 'invitation.created');
 
     return result;
   }
@@ -159,6 +165,8 @@ export class InvitationsController {
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+
+    this.memberEvents.changed(user.organizationId, undefined, 'invitation.revoked');
 
     return result;
   }

@@ -5,7 +5,7 @@ import { Send, Loader2, MessageCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { formatTimeAgo } from "@/lib/utils"
+import { formatTimeAgo } from "@/lib/format-date"
 import { UserAvatar } from "@/components/user-avatar"
 
 export interface CommentData {

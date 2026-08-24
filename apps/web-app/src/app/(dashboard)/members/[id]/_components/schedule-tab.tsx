@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useTimeFormat } from "@/hooks"
+import { invalidateSchedule } from "@/lib/query-keys"
 
 const DAY_NAME_KEYS = [
   "technicians.scheduleTab.days.sunday",
@@ -100,9 +101,7 @@ export function ScheduleTab({ employeeId, canManage }: ScheduleTabProps) {
     mutationFn: (schedule: ScheduleEntryInput[]) =>
       employeesApi.setSchedule(employeeId, schedule),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["employeeSchedule", employeeId],
-      })
+      invalidateSchedule(queryClient, employeeId)
       setIsEditing(false)
       notify.success(t('technicians.scheduleTab.savedSuccessfully'))
     },

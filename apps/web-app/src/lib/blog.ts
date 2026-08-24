@@ -154,5 +154,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
 
 export function formatPostDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
+  // Marketing/blog content is authored in English only and this runs in a server
+  // context with no initialised client i18n instance, so the date stays en-US.
   return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 }

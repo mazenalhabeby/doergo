@@ -35,7 +35,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getStatusConfig } from "@/lib/constants"
-import { getRequestId, formatShortDate } from "@/lib/utils"
+import { getRequestId } from "@/lib/utils"
+import { formatMediumDate as formatShortDate } from "@/lib/format-date"
 import { InlineEditField } from "./inline-edit-field"
 import type { WorkflowStatus } from "@/lib/api"
 

@@ -65,6 +65,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { invalidateTimeOff } from "@/lib/query-keys"
 
 const STATUS_PILLS: Record<
   TimeOffStatus,
@@ -126,9 +127,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       reason?: string
     }) => employeesApi.requestTimeOff(employeeId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["employeeTimeOff", employeeId],
-      })
+      invalidateTimeOff(queryClient, employeeId)
       setCreateOpen(false)
       setDateRange(undefined)
       setReason("")
@@ -143,9 +142,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
     mutationFn: (timeOffId: string) =>
       employeesApi.approveTimeOff(timeOffId, true),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["employeeTimeOff", employeeId],
-      })
+      invalidateTimeOff(queryClient, employeeId)
       setApproveTarget(null)
       notify.success(t('technicians.timeOffTab.approvedSuccessfully'))
     },
@@ -163,9 +160,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       reason?: string
     }) => employeesApi.approveTimeOff(timeOffId, false, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["employeeTimeOff", employeeId],
-      })
+      invalidateTimeOff(queryClient, employeeId)
       setRejectTarget(null)
       setRejectionReason("")
       notify.success(t('technicians.timeOffTab.rejectedSuccessfully'))
@@ -179,9 +174,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
     mutationFn: (timeOffId: string) =>
       employeesApi.cancelTimeOff(timeOffId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["employeeTimeOff", employeeId],
-      })
+      invalidateTimeOff(queryClient, employeeId)
       notify.success(t('technicians.timeOffTab.canceledSuccessfully'))
     },
     onError: (error: Error) => {

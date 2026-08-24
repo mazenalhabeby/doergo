@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { invalidateTimeOff } from "@/lib/query-keys"
 
 type DayOff = {
   id: string
@@ -56,7 +57,7 @@ export function EditDayOffDialog({ dayOff }: { dayOff: DayOff }) {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["attendance"] })
-    queryClient.invalidateQueries({ queryKey: ["orgTimeOff"] })
+    invalidateTimeOff(queryClient)
   }
 
   const save = useMutation({

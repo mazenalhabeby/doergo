@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Task, Epic } from "@/lib/api"
+import { dateLocale } from "@/lib/format-date"
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -34,11 +35,11 @@ function diffDays(a: Date, b: Date): number {
 }
 
 function formatMonthYear(d: Date): string {
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+  return d.toLocaleDateString(dateLocale(), { month: "short", year: "numeric" })
 }
 
 function formatShortDate(d: Date): string {
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return d.toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })
 }
 
 // ─── Types ─────────────────────────────────────────────────────────────────

@@ -79,6 +79,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
+import { invalidateTimeOff } from "@/lib/query-keys"
 
 type ViewMode = "month" | "week"
 
@@ -121,7 +122,7 @@ function TimeOffRequestsTab({ canManage }: { canManage: boolean }) {
       employeesApi.approveTimeOff(id, approved, reason),
     onSuccess: (_, variables) => {
       notify.success(variables.approved ? t('technicians.availabilityPage.approvedSuccessfully') : t('technicians.availabilityPage.rejectedSuccessfully'))
-      queryClient.invalidateQueries({ queryKey: ["orgTimeOff"] })
+      invalidateTimeOff(queryClient)
       queryClient.invalidateQueries({ queryKey: ["employees-availability"] })
       setActionDialog({ open: false, type: "approve", request: null })
       setRejectionReason("")

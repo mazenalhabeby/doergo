@@ -60,6 +60,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
+import { dateLocale } from "@/lib/format-date"
 
 const STATUS_OPTIONS_KEYS = [
   { value: "all", labelKey: "common.allStatuses" },
@@ -94,7 +95,7 @@ function getRoleBadge(role: string, t: (key: string) => string) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString(dateLocale(), {
     month: "short",
     day: "numeric",
     year: "numeric",

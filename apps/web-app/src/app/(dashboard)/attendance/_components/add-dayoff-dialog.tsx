@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { invalidateTimeOff } from "@/lib/query-keys"
 
 const REASON_PRESETS = ["vacation", "sick", "personal", "holiday", "unpaid"] as const
 
@@ -55,8 +56,7 @@ export function AddDayOffDialog() {
         reason: reason.trim() || undefined,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgTimeOff"] })
-      queryClient.invalidateQueries({ queryKey: ["availability"] })
+      invalidateTimeOff(queryClient)
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       notify.success(t("attendance.addDayOff.success"))
       resetAndClose()

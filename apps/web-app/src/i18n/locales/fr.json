@@ -650,7 +650,8 @@
       "justNow": "à l'instant",
       "minutes": "il y a {{count}} min",
       "hours": "il y a {{count}} h",
-      "days": "il y a {{count}} j"
+      "days": "il y a {{count}} j",
+      "yesterday": "Hier"
     },
     "discard": "Annuler les modifications",
     "saved": "Enregistré",
@@ -2088,7 +2089,8 @@
       "dispatcher": "Répartiteur",
       "technician": "Employé",
       "manager": "Responsable",
-      "employee": "Employé"
+      "employee": "Employé",
+      "customer": "Client"
     },
     "platforms": {
       "web": "Web",
@@ -2244,6 +2246,11 @@
       "done": "Terminées",
       "score": "Score",
       "thisWeek": "Cette semaine"
+    },
+    "error": {
+      "title": "Impossible de charger les membres",
+      "description": "Une erreur est survenue lors du chargement des membres de votre organisation. Vos données sont intactes — il s’agit d’un problème de chargement, pas d’une équipe vide.",
+      "retry": "Réessayer"
     }
   },
   "invitations": {

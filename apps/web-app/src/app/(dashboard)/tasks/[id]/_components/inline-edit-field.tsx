@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { dateLocale } from "@/lib/format-date"
 
 interface InlineEditFieldProps {
   /** `undefined` means the same as null here — the field is simply not set. */
@@ -132,7 +133,7 @@ export function InlineEditField({
     if (disabled) {
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay ? renderDisplay(value) : (value ? new Date(String(value)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
+          {renderDisplay ? renderDisplay(value) : (value ? new Date(String(value)).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
         </span>
       )
     }
@@ -140,7 +141,7 @@ export function InlineEditField({
       <Popover>
         <PopoverTrigger asChild>
           <button className={cn("text-sm text-foreground hover:bg-muted/50 px-1.5 py-0.5 -mx-1.5 rounded transition-colors group flex items-center gap-1.5", className)}>
-            {value ? new Date(String(value)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
+            {value ? new Date(String(value)).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
             <Pencil className="size-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors" />
           </button>
         </PopoverTrigger>

@@ -650,7 +650,8 @@
       "justNow": "just now",
       "minutes": "{{count}}m ago",
       "hours": "{{count}}h ago",
-      "days": "{{count}}d ago"
+      "days": "{{count}}d ago",
+      "yesterday": "Yesterday"
     },
     "discard": "Discard",
     "saved": "Saved",
@@ -2094,7 +2095,8 @@
       "dispatcher": "Dispatcher",
       "technician": "Employee",
       "manager": "Manager",
-      "employee": "Employee"
+      "employee": "Employee",
+      "customer": "Customer"
     },
     "platforms": {
       "web": "Web",
@@ -2244,6 +2246,11 @@
       "access": "Access",
       "yesterday": "Yesterday",
       "daysAgo": "{{count}} days ago"
+    },
+    "error": {
+      "title": "Could not load members",
+      "description": "Something went wrong while loading your organization’s members. Your data is safe — this is a loading problem, not a missing team.",
+      "retry": "Try again"
     }
   },
   "invitations": {

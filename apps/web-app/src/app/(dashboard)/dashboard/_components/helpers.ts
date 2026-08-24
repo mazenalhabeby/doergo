@@ -63,13 +63,9 @@ export function getTodayString(): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
-/** Time elapsed since a date, human readable. */
-export function timeAgo(dateStr: string | number | Date): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return i18n.t("common.timeAgo.justNow")
-  if (mins < 60) return i18n.t("common.timeAgo.minutes", { count: mins })
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return i18n.t("common.timeAgo.hours", { count: hrs })
-  return i18n.t("common.timeAgo.days", { count: Math.floor(hrs / 24) })
-}
+/**
+ * Time elapsed since a date, human readable.
+ * Delegates to the single shared implementation (audit MD-E1) — this used to be
+ * one of four separate copies, each with its own granularity and i18n namespace.
+ */
+export { formatTimeAgo as timeAgo } from "@/lib/format-date"

@@ -9,68 +9,14 @@ export function cn(...inputs: ClassValue[]) {
 // DATE FORMATTING
 // =============================================================================
 
-/**
- * Format a date as relative time ago (e.g., "Just now", "5m ago", "2h ago", "Yesterday")
- * Used for activity feeds, comments, and timeline displays
- */
-export function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffMins < 1) return "Just now"
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays === 1) return "Yesterday"
-  if (diffDays < 7) return `${diffDays}d ago`
-
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  })
-}
-
-/**
- * Format a date as short date (e.g., "Jan 15, 2024")
- */
-export function formatShortDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
-
-/**
- * Format a date as time only (e.g., "2:30 PM")
- */
-export function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })
-}
-
-/**
- * Format a date as date and time (e.g., "Jan 15, 2024, 2:30 PM")
- * Consistent format for displaying timestamps throughout the app
- */
-export function formatDateTime(dateString: string | Date): string {
-  const date = typeof dateString === "string" ? new Date(dateString) : dateString
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })
-}
+// Date and time formatting lives in `lib/format-date.ts` — import it from there.
+//
+// It is NOT re-exported here on purpose: format-date imports the i18n instance,
+// and `cn` (this file) is imported by almost every component including
+// server-rendered ones. Re-exporting made every one of them pull react-i18next,
+// and `next build` failed collecting page data with
+// "(0, e.createContext) is not a function". tsc and jest both passed — only the
+// production build caught it.
 
 // =============================================================================
 // CLOCK FORMAT (per-user 12h / 24h preference — see useTimeFormat hook)
@@ -171,6 +117,8 @@ const _offsetDtfCache = new Map<string, Intl.DateTimeFormat>()
 function getOffsetDtf(tz: string): Intl.DateTimeFormat {
   let fmt = _offsetDtfCache.get(tz)
   if (!fmt) {
+    // en-US is load-bearing: the parts below are parsed back out as numbers, so
+    // the locale must stay one whose formatting we control. Not a missed i18n fix.
     fmt = new Intl.DateTimeFormat("en-US", {
       timeZone: tz,
       hourCycle: "h23",

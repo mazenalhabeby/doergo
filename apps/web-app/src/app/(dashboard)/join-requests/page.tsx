@@ -56,6 +56,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { dateLocale } from "@/lib/format-date"
 
 const STATUS_OPTIONS_KEYS = [
   { value: "all", labelKey: "common.allStatuses" },
@@ -90,7 +91,7 @@ function getStatusBadge(status: JoinRequestStatus, t: (key: string) => string) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString(dateLocale(), {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -140,6 +141,11 @@ export default function JoinRequestsPage() {
     onSuccess: () => {
       notify.success(t("joinRequests.approveDialog.approvedSuccessfully"))
       queryClient.invalidateQueries({ queryKey: ["join-requests"] })
+      // Approving ADDS a member — the roster and the contact directory are now
+      // stale too. Without this the new person was missing from /members for up to
+      // the global 60s staleTime (audit M-D3).
+      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: ["orgContacts"] })
       closeApproveDialog()
     },
     onError: (error: Error) => {
