@@ -14,6 +14,7 @@ import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CreateCustomFieldDto,
   UpdateCustomFieldDto,
@@ -23,7 +24,10 @@ import { CustomFieldsService } from './custom-fields.service';
 
 @ApiTags('custom-fields')
 @ApiBearerAuth()
-@RequirePlan('custom_fields') // Professional+ (write routes; reads pass through)
+// Custom Fields is a per-space MODULE, not an org add-on (audit T-B1). Under
+// @RequirePlan, PlanGuard failed closed on a non-add-on key and 402'd every
+// write for every organization — including full trials — since 2026-08-21.
+@RequireModule('custom_fields') // write routes; reads pass through
 @Controller('custom-fields')
 export class CustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}
@@ -76,7 +80,7 @@ export class CustomFieldsController {
 
 @ApiTags('tasks')
 @ApiBearerAuth()
-@RequirePlan('custom_fields') // setting task field values requires Professional+
+@RequireModule('custom_fields') // setting task field values
 @Controller('tasks')
 export class TaskCustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}

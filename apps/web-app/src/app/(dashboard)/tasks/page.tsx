@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -40,17 +41,27 @@ import { cn } from "@/lib/utils"
 
 import { TaskTableRow } from "./_components/task-table-row"
 import { KanbanBoard } from "./_components/kanban-board"
-import { GroupedList, type GroupByOption } from "./_components/grouped-list"
-import { TimelineView } from "./_components/timeline-view"
-import { CalendarView } from "./_components/calendar-view"
-import { EpicRoadmap } from "./_components/epic-roadmap"
-import { CreateTaskDialog } from "./_components/create-task-dialog"
+import type { GroupByOption } from "./_components/grouped-list"
 import { RecurringPanel } from "./recurring/recurring-view"
 import { BulkActionBar } from "./_components/bulk-action-bar"
 import { BacklogToolbar, sortBacklogTasks, type BacklogSortField, type BacklogSortDir } from "./_components/backlog-toolbar"
 import { SprintCapacityBar } from "./_components/sprint-capacity"
-import { SprintFormDialog, CompleteSprintDialog, DeleteSprintDialog, EpicFormDialog } from "./_components/sprint-management"
 import type { TaskContextMenuActions } from "./_components/task-context-menu"
+
+// Lazy (audit T-C1). Only ONE view renders at a time and the dialogs render on a
+// click, but all of them were in the first paint of the heaviest page in the
+// product — the create dialog alone is 1,402 lines, the timeline 702. The default
+// board (KanbanBoard / TaskTableRow) stays static so the primary path has no
+// loading flash. ssr:false: none of these renders on the server.
+const TimelineView = dynamic(() => import("./_components/timeline-view").then((m) => m.TimelineView), { ssr: false })
+const CalendarView = dynamic(() => import("./_components/calendar-view").then((m) => m.CalendarView), { ssr: false })
+const EpicRoadmap = dynamic(() => import("./_components/epic-roadmap").then((m) => m.EpicRoadmap), { ssr: false })
+const GroupedList = dynamic(() => import("./_components/grouped-list").then((m) => m.GroupedList), { ssr: false })
+const CreateTaskDialog = dynamic(() => import("./_components/create-task-dialog").then((m) => m.CreateTaskDialog), { ssr: false })
+const SprintFormDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.SprintFormDialog), { ssr: false })
+const CompleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.CompleteSprintDialog), { ssr: false })
+const DeleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.DeleteSprintDialog), { ssr: false })
+const EpicFormDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.EpicFormDialog), { ssr: false })
 import { hasAccessModule, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 
 // Priority sort order

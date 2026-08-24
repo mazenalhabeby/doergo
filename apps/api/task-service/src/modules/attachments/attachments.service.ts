@@ -179,6 +179,12 @@ export class AttachmentsService {
       },
     });
 
+    // Adding an attachment announces itself; removing one did not, so a second
+    // viewer's gallery kept showing a file that no longer exists — and clicking it
+    // 404s against S3 (audit T-D1). `task_updated` is what the web client already
+    // listens for; the payload is ids only.
+    this.notificationClient.emit('task_updated', { task: { id: attachment.taskId } });
+
     return success(null, 'Attachment deleted');
   }
 

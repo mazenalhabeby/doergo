@@ -17,6 +17,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { isFeatureEntitled } from '../../common/entitlements';
 import {
@@ -506,7 +507,11 @@ export class TasksController {
 
   @Post(':id/dependencies')
   @RequirePermission('canCreateTasks')
-  @RequirePlan('dependencies') // Professional+
+  // Dependencies is a per-space MODULE, not an org add-on. It was @RequirePlan
+  // under the retired tier model; PlanGuard fails closed on a key that is not an
+  // add-on, so every organization got a 402 here from the 2026-08-21 pricing
+  // migration onward (audit T-B1).
+  @RequireModule('dependencies')
   @ApiOperation({ summary: 'Add a dependency to a task (this task becomes the successor)' })
   async addDependency(
     @Param('id') id: string,
@@ -523,7 +528,11 @@ export class TasksController {
 
   @Delete(':id/dependencies/:depId')
   @RequirePermission('canCreateTasks')
-  @RequirePlan('dependencies') // Professional+
+  // Dependencies is a per-space MODULE, not an org add-on. It was @RequirePlan
+  // under the retired tier model; PlanGuard fails closed on a key that is not an
+  // add-on, so every organization got a 402 here from the 2026-08-21 pricing
+  // migration onward (audit T-B1).
+  @RequireModule('dependencies')
   @ApiOperation({ summary: 'Remove a dependency from a task' })
   async removeDependency(
     @Param('id') _id: string,

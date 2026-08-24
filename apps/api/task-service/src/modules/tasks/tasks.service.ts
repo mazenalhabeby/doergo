@@ -2740,6 +2740,14 @@ export class TasksService {
       },
     });
 
+    // A dependency changes BOTH tasks' detail views. Checklist and subtask
+    // mutations already announce themselves; dependencies did not, so a second
+    // viewer's task detail kept the old chain (audit T-D1). Nobody had hit it
+    // because the route was 402ing for every organization (T-B1) — fixing that
+    // is what makes this reachable.
+    this.notificationClient.emit('task_updated', { task: { id: data.predecessorId } });
+    this.notificationClient.emit('task_updated', { task: { id: data.successorId } });
+
     return success(dependency);
   }
 
@@ -2769,6 +2777,10 @@ export class TasksService {
     await this.prisma.taskDependency.delete({
       where: { id: data.dependencyId },
     });
+
+    // Both ends of the removed link need refreshing (T-D1).
+    this.notificationClient.emit('task_updated', { task: { id: dependency.predecessorId } });
+    this.notificationClient.emit('task_updated', { task: { id: dependency.successorId } });
 
     return success(null, 'Dependency removed successfully');
   }
