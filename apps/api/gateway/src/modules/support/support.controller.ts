@@ -9,6 +9,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
@@ -23,6 +24,7 @@ export class SupportController {
   constructor(
     private readonly support: SupportService,
     private readonly config: ConfigService,
+    private readonly platformAdminGuard: PlatformAdminGuard,
   ) {}
 
   // ════════════════════ CUSTOMER (JWT) ════════════════════
@@ -173,12 +175,15 @@ export class SupportController {
   }
 
   // ── operator gate (mirrors billing.controller) ──
+  /**
+   * The operator secret check, delegated to `PlatformAdminGuard` (audit B-B1).
+   * This was the THIRD implementation of one comparison — and, like the billing
+   * copy, it used `!==`: non-constant-time, on the secret that opens every support
+   * thread including internal notes. The guard hashes both sides to a fixed 32
+   * bytes and uses `timingSafeEqual`. Both still fail closed when the key is unset.
+   */
   private assertPlatformKey(req: any): void {
-    const expected = this.config.get<string>('PLATFORM_ADMIN_KEY');
-    const provided = (req.headers['x-platform-admin-key'] as string) || '';
-    if (!expected || provided !== expected) {
-      throw new HttpException({ message: 'Forbidden' }, HttpStatus.FORBIDDEN);
-    }
+    this.platformAdminGuard.assertKey(req);
   }
 
   private agentHandle(req: any): string {

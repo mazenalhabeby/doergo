@@ -9,6 +9,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -25,6 +26,7 @@ export class BillingController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly config: ConfigService,
+    private readonly platformAdminGuard: PlatformAdminGuard,
   ) {}
 
   /** Web app base URL (server-controlled → no open-redirect from client input). */
@@ -140,12 +142,21 @@ export class BillingController {
    * closed if PLATFORM_ADMIN_KEY isn't configured.
    */
   /** Fail-closed platform-secret gate for operator endpoints. */
+  /**
+   * The operator secret check, delegated to `PlatformAdminGuard` (audit B-B1).
+   *
+   * This was an inline copy comparing with `!==` — a byte-by-byte comparison whose
+   * running time depends on how much of the secret matched, and whose failure also
+   * leaked the length. The guard already existed and already did it properly:
+   * SHA-256 both sides to a fixed 32 bytes, then `timingSafeEqual`. Two
+   * implementations of one secret check, and the weaker one guarded the two most
+   * powerful routes in the product — "list every organization" and "grant an
+   * organization every paid capability".
+   *
+   * Both still fail closed when `PLATFORM_ADMIN_KEY` is unset.
+   */
   private assertPlatformKey(req: any): void {
-    const expected = this.config.get<string>('PLATFORM_ADMIN_KEY');
-    const provided = (req.headers['x-platform-admin-key'] as string) || '';
-    if (!expected || provided !== expected) {
-      throw new HttpException({ message: 'Forbidden' }, HttpStatus.FORBIDDEN);
-    }
+    this.platformAdminGuard.assertKey(req);
   }
 
   @Public()

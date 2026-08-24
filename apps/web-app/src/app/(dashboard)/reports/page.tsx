@@ -3,8 +3,16 @@
 import { useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import dynamic from "next/dynamic"
+import { CHART_COLORS } from "./_components/chart-colors"
+
+// recharts is heavy and only renders when a report actually produces a chart
+// (audit R-C1). ssr:false — it measures the DOM.
+const ReportBarChart = dynamic(
+  () => import("./_components/report-bar-chart").then((m) => m.ReportBarChart),
+  { ssr: false },
+)
 import { BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell } from "recharts"
 
 import {
   analyticsApi, organizationsApi, customersApi, type ReportDefinition, type ReportResult,
@@ -54,7 +62,6 @@ function toCSV(result: ReportResult): string {
 }
 
 // Tasteful, colorful chart palette (Stripe-ish).
-const CHART_COLORS = ["#6366f1", "#3b82f6", "#0ea5e9", "#14b8a6", "#22c55e", "#f59e0b", "#f43f5e", "#a855f7"]
 
 // Selectable columns for the detailed timesheet. Every column is freely
 // toggleable; the picker only enforces that at least one stays selected.
@@ -587,17 +594,11 @@ export default function ReportsPage() {
                           <h3 className="text-sm font-semibold text-foreground">{t("reports.topBy", "Top {{measure}}", { measure: chartMeasure.label })}</h3>
                           <span className="text-xs text-muted-foreground">{t("reports.topN", "Top {{n}}", { n: chartData.length })}</span>
                         </div>
-                        <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 34)}>
-                          <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                            <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
-                            <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => fmt(v, chartMeasure.format)} />
-                            <YAxis type="category" dataKey="label" width={132} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                            <RTooltip cursor={{ fill: "hsl(var(--muted))" }} contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--popover))", color: "hsl(var(--popover-foreground))", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.14)" }} labelStyle={{ color: "hsl(var(--popover-foreground))" }} itemStyle={{ color: "hsl(var(--popover-foreground))" }} formatter={((v: unknown) => [fmt(Number(v), chartMeasure.format), chartMeasure.label]) as never} />
-                            <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}>
-                              {chartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <ReportBarChart
+                          data={chartData}
+                          measureLabel={chartMeasure.label}
+                          format={(v) => fmt(v, chartMeasure.format)}
+                        />
                       </div>
                     )}
 
