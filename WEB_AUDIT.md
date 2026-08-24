@@ -122,7 +122,13 @@ or does the row sit unchanged for a full round-trip?
 ## Pass F — Surface
 
 - **i18n**: zero hardcoded user-visible strings; keys present in **all five** locales
-  (en, de, es, fr, it). A missing key silently falls back to English — check the JSON, not the screen.
+  (en, de, es, fr, it). A missing key renders **the key string itself** — there is no
+  `parseMissingKeyHandler` — so check the JSON, not the screen.
+  > ⚠️ When diffing key sets, strip the i18next plural suffixes (`_zero _one _two _few
+  > _many _other`) before comparing. `t("x.memberCount", { count })` resolves to
+  > `memberCount_one` / `memberCount_other` at runtime, so a naive leaf-key diff reports
+  > every pluralised key as missing. This produced five false positives in Area 03 before
+  > it was caught.
 - **Design system**: tokens only (no literal hex), shared `components/ui/*`, correct status/priority
   badge colours, consistent spacing scale.
 - **States**: loading (skeleton, not a spinner on a full page), empty (explains what to do),

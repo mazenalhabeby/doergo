@@ -56,6 +56,7 @@ import { PlanGuard } from './common/guards/plan.guard';
 import { ModuleGuard } from './common/guards/module.guard';
 import { SpaceModulesModule } from './common/space-modules.service';
 import { MemberEventsModule } from './common/events/member-events.service';
+import { SpaceEventsModule } from './common/events/space-events.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { StorageModule } from './common/storage/storage.module';
 
@@ -67,6 +68,7 @@ import { StorageModule } from './common/storage/storage.module';
     // module's injector and its dependency has to be reachable from all of them.
     SpaceModulesModule,
     MemberEventsModule,
+    SpaceEventsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

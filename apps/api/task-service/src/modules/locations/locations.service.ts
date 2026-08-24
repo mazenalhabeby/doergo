@@ -412,6 +412,20 @@ export class LocationsService {
             recurringTemplates: true,
             customers: true,
             customerUnits: true,
+            // Audit S-B1 — these were NOT probed, and every one of them loses data:
+            //  · assetCategories cascades on space delete, so the space's whole asset
+            //    taxonomy goes with it and its assets are left uncategorised
+            //    (that is what the "orphan assets" card exists to mop up);
+            //  · ownedWorkflows ALSO cascades — and a workflow owned by this space can
+            //    be offered to OTHER spaces, whose SpaceWorkflow rows cascade away and
+            //    whose tasks have workflowId set to NULL. A space with no tasks of its
+            //    own could therefore break another space's board;
+            //  · sprints / epics / phases detach (SetNull) and silently lose their space.
+            assetCategories: true,
+            ownedWorkflows: true,
+            sprints: true,
+            epics: true,
+            phases: true,
           },
         },
       },
@@ -436,6 +450,25 @@ export class LocationsService {
     if (c.overtimeRequests > 0) blockers.push('overtime requests');
     if (c.recurringTemplates > 0) blockers.push(`${c.recurringTemplates} recurring task template(s)`);
     if (c.customers > 0 || c.customerUnits > 0) blockers.push('customer records');
+    if (c.assetCategories > 0) blockers.push(`${c.assetCategories} asset kind(s)`);
+    if (c.ownedWorkflows > 0) blockers.push(`${c.ownedWorkflows} task type(s) defined here`);
+    if (c.sprints > 0) blockers.push(`${c.sprints} sprint(s)`);
+    if (c.epics > 0) blockers.push(`${c.epics} epic(s)`);
+    if (c.phases > 0) blockers.push(`${c.phases} phase(s)`);
+
+    // An ACTIVE cross-org share is another organization's access. Deleting the space
+    // revokes it with no notice to them, and — because SpaceShare.spaceId carries no
+    // foreign key — leaves the grant row behind pointing at a space that no longer
+    // exists (audit S-B2). Make the owner unshare deliberately first.
+    const activeShares = await this.prisma.spaceShare.count({
+      where: { spaceId: data.id, status: 'ACTIVE' },
+    });
+    if (activeShares > 0) {
+      blockers.push(
+        `${activeShares} organization(s) this space is shared with — unshare first`,
+      );
+    }
+
     if (blockers.length > 0) {
       throw new BadRequestException(
         `This space still has history (${blockers.join(', ')}) and can only be deactivated. ` +
@@ -446,6 +479,10 @@ export class LocationsService {
     await this.prisma.$transaction(async (tx) => {
       // Config rows that reference the space without cascade.
       await tx.intakeCategory.deleteMany({ where: { spaceId: data.id } }).catch(() => undefined);
+      // SpaceShare.spaceId is a plain String with NO foreign key, so nothing cascades
+      // these away. Any ACTIVE share already blocked the purge above; what is left is
+      // PENDING/REVOKED history that would otherwise dangle forever (S-B2).
+      await tx.spaceShare.deleteMany({ where: { spaceId: data.id } }).catch(() => undefined);
       // Access mappings and shift config cascade via the schema.
       await tx.companyLocation.delete({ where: { id: data.id } });
     });
@@ -453,6 +490,9 @@ export class LocationsService {
     this.logger.warn(
       `Company location PURGED: ${existing.name} (${existing.id}) by ${data.userId}`,
     );
+    // Create, update and deactivate all announce; purge — the one that cannot be undone
+    // — did not, so other admins kept seeing a space that no longer existed (S-D1).
+    this.announce('space_changed', data.organizationId, data.id);
     return success({ id: existing.id }, 'Space permanently deleted');
   }
 

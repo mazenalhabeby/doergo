@@ -14,6 +14,9 @@ import { formatNominatimAddress, formatPhotonFeature, type PhotonProperties, typ
 
 import "leaflet/dist/leaflet.css"
 
+/** --brand-600. Leaflet draws on canvas, so it needs a resolved colour. */
+const BRAND_ACCENT = "#2563eb"
+
 // Fix Leaflet default marker icon
 const markerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -362,8 +365,12 @@ export default function LocationPicker({
                 center={[lat, lng]}
                 radius={radius}
                 pathOptions={{
-                  color: "#059669",
-                  fillColor: "#059669",
+                  // Brand accent, not a literal — the brand moved emerald → blue and
+                  // this circle was left behind (audit S-F1). Leaflet paints on a
+                  // canvas and cannot read a CSS variable, so the token is resolved
+                  // to a value here rather than passed as `var(--brand-600)`.
+                  color: BRAND_ACCENT,
+                  fillColor: BRAND_ACCENT,
                   fillOpacity: 0.15,
                   weight: 2,
                 }}

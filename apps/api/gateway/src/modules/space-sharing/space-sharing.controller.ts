@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { SpaceEventsService } from '../../common/events/space-events.service';
 
 /**
  * Cross-org space sharing. OWNER routes (`/locations/:spaceId/shares…`) require
@@ -21,6 +22,7 @@ export class SpaceSharingController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly auth: ClientProxy,
     @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly spaceEvents: SpaceEventsService,
   ) {}
 
   private async send(cmd: string, payload: any) {
@@ -28,6 +30,36 @@ export class SpaceSharingController {
     if (res && res.success === false) {
       throw new HttpException({ message: res.message }, res.statusCode || HttpStatus.BAD_REQUEST);
     }
+    return res;
+  }
+
+  /**
+   * Broadcast a share mutation to BOTH organizations (audit S-D2).
+   *
+   * `known` is what the CALLER can prove from its own token and route params — for an
+   * owner route that is the owner org, for a guest route the guest org. The
+   * counterpart is filled from the SERVER's result, never from the request body: a
+   * guest org id taken from the client would let a caller push a refresh into an
+   * organization it has nothing to do with.
+   *
+   * The ids are read from both the envelope and `data` because these handlers do not
+   * agree on a shape — `revokeShare` returns `{ success, guestOrgId }` with no `data`
+   * at all, while `respondToShare` returns the whole row under `data`. Sniffing only
+   * one of them would have made the broadcast fire for some mutations and silently
+   * do nothing for others, which is the exact failure Pass D exists to catch.
+   */
+  private async sendShareMutation(
+    cmd: string,
+    payload: any,
+    known: { ownerOrgId?: string | null; guestOrgId?: string | null; spaceId?: string | null },
+  ) {
+    const res = await this.send(cmd, payload);
+    const row = res?.data ?? {};
+    this.spaceEvents.shareChanged(
+      known.ownerOrgId ?? row.ownerOrgId ?? res?.ownerOrgId,
+      known.guestOrgId ?? row.guestOrgId ?? res?.guestOrgId,
+      known.spaceId ?? row.spaceId ?? res?.spaceId,
+    );
     return res;
   }
 
@@ -47,12 +79,12 @@ export class SpaceSharingController {
   @ApiOperation({ summary: 'Share this space with another org (invite)' })
   async createShare(@Param('spaceId') spaceId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
     await this.requireModule(spaceId, u.organizationId);
-    return this.send('space_share_create', {
+    return this.sendShareMutation('space_share_create', {
       ownerOrgId: u.organizationId, createdById: u.id, spaceId,
       guestOrgCode: body.guestOrgCode, level: body.level,
       showWorkers: body.showWorkers, showAttendance: body.showAttendance,
       showTracking: body.showTracking, showReports: body.showReports, allowRequests: body.allowRequests,
-    });
+    }, { ownerOrgId: u.organizationId, spaceId });
   }
 
   @Get('locations/:spaceId/shares')
@@ -65,11 +97,11 @@ export class SpaceSharingController {
   @Patch('locations/:spaceId/shares/:shareId')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a share (level / visibility scope)' })
-  updateShare(@Param('shareId') shareId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
+  updateShare(@Param('spaceId') spaceId: string, @Param('shareId') shareId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
     // Whitelist mutable fields explicitly — never spread the untyped body, which
     // would let a malicious `ownerOrgId`/`shareId` override the tenant scope
     // (body is `any`, so ValidationPipe's whitelist doesn't apply). Mirrors createShare.
-    return this.send('space_share_update', {
+    return this.sendShareMutation('space_share_update', {
       ownerOrgId: u.organizationId,
       shareId,
       level: body.level,
@@ -78,14 +110,14 @@ export class SpaceSharingController {
       showTracking: body.showTracking,
       showReports: body.showReports,
       allowRequests: body.allowRequests,
-    });
+    }, { ownerOrgId: u.organizationId, spaceId });
   }
 
   @Delete('locations/:spaceId/shares/:shareId')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Revoke a share' })
-  revokeShare(@Param('shareId') shareId: string, @CurrentUser() u: CurrentUserData) {
-    return this.send('space_share_revoke', { ownerOrgId: u.organizationId, shareId });
+  revokeShare(@Param('spaceId') spaceId: string, @Param('shareId') shareId: string, @CurrentUser() u: CurrentUserData) {
+    return this.sendShareMutation('space_share_revoke', { ownerOrgId: u.organizationId, shareId }, { ownerOrgId: u.organizationId, spaceId });
   }
 
   @Get('locations/:spaceId/share-requests')
@@ -99,7 +131,7 @@ export class SpaceSharingController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Approve/reject a guest request' })
   resolveRequest(@Param('requestId') requestId: string, @Body() body: { approve: boolean }, @CurrentUser() u: CurrentUserData) {
-    return this.send('space_share_request_resolve', { ownerOrgId: u.organizationId, requestId, approve: !!body.approve, userId: u.id });
+    return this.sendShareMutation('space_share_request_resolve', { ownerOrgId: u.organizationId, requestId, approve: !!body.approve, userId: u.id }, { ownerOrgId: u.organizationId });
   }
 
   // ── GUEST ──────────────────────────────────────────────────────────────────
@@ -114,7 +146,7 @@ export class SpaceSharingController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Accept or decline a share invite' })
   respond(@Param('shareId') shareId: string, @Body() body: { accept: boolean }, @CurrentUser() u: CurrentUserData) {
-    return this.send('space_share_respond', { guestOrgId: u.organizationId, shareId, accept: !!body.accept, userId: u.id });
+    return this.sendShareMutation('space_share_respond', { guestOrgId: u.organizationId, shareId, accept: !!body.accept, userId: u.id }, { guestOrgId: u.organizationId });
   }
 
   @Post('shared-spaces/:shareId/requests')

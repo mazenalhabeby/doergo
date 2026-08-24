@@ -29,16 +29,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlanGate } from "@/components/plan-gate"
 import { cn } from "@/lib/utils"
 
-import { GeneralTab } from "./_components/general-tab"
-import { AttendanceTab } from "./_components/attendance-tab"
-import { ModulesTab } from "./_components/modules-tab"
-import { WorkflowTab } from "./_components/workflow-tab"
-import { MembersTab } from "./_components/members-tab"
-import { InvoicesTab } from "./_components/invoices-tab"
-import { CustomersTab } from "./_components/customers-tab"
-import { PortalTab } from "./_components/portal-tab"
-import { AssetsTab } from "./_components/assets-tab"
-import { SharingTab } from "./_components/sharing-tab"
+import dynamic from "next/dynamic"
+
+// Every tab is lazy (audit S-C1). This page has ten of them and they reach ~6,400
+// lines with their dialogs — the asset-kind editor alone is 670, the rota 733 — and
+// the page opens on exactly ONE. Nothing here renders on the server, so ssr:false.
+const GeneralTab = dynamic(() => import("./_components/general-tab").then((m) => m.GeneralTab), { ssr: false })
+const AttendanceTab = dynamic(() => import("./_components/attendance-tab").then((m) => m.AttendanceTab), { ssr: false })
+const ModulesTab = dynamic(() => import("./_components/modules-tab").then((m) => m.ModulesTab), { ssr: false })
+const WorkflowTab = dynamic(() => import("./_components/workflow-tab").then((m) => m.WorkflowTab), { ssr: false })
+const MembersTab = dynamic(() => import("./_components/members-tab").then((m) => m.MembersTab), { ssr: false })
+const InvoicesTab = dynamic(() => import("./_components/invoices-tab").then((m) => m.InvoicesTab), { ssr: false })
+const CustomersTab = dynamic(() => import("./_components/customers-tab").then((m) => m.CustomersTab), { ssr: false })
+const PortalTab = dynamic(() => import("./_components/portal-tab").then((m) => m.PortalTab), { ssr: false })
+const AssetsTab = dynamic(() => import("./_components/assets-tab").then((m) => m.AssetsTab), { ssr: false })
+const SharingTab = dynamic(() => import("./_components/sharing-tab").then((m) => m.SharingTab), { ssr: false })
+
 
 export default function SpaceSettingsPage() {
   const { t } = useTranslation()
