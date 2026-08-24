@@ -208,13 +208,15 @@ export class CreateInvitationDto {
 
 export class AcceptInvitationDto {
   @ApiProperty({
-    example: 'XK7M2P',
-    description: 'Invitation code (6 characters)',
+    example: 'XK7M2PQR49',
+    description: 'Invitation code (10 characters; 6-character codes issued before 2026-08 still validate)',
   })
   @IsString()
   @IsNotEmpty()
+  // Min stays 6 so codes issued before the length increase keep working (A-B1);
+  // max has headroom above the current 10.
   @MinLength(6)
-  @MaxLength(8)
+  @MaxLength(16)
   @Matches(/^[A-Za-z0-9]+$/, { message: 'Code must be alphanumeric' })
   @Transform(({ value }) =>
     typeof value === 'string' ? value.toUpperCase().trim() : value,

@@ -738,7 +738,14 @@ pnpm build            # Build all packages
 - [x] `InvitationStatus` enum (PENDING, ACCEPTED, EXPIRED, REVOKED)
 - [x] Database migration: `add_invitation_system`
 - [x] Invitation service in auth-service (create, validate, accept, revoke, list)
-- [x] SHA-256 hashed invitation codes (plaintext never stored)
+- [x] SHA-256 `codeHash` for lookup — ⚠️ **the plaintext code IS stored** in `Invitation.code`
+  (deliberately, so an admin can re-copy a code from the list), so the hash is a lookup index,
+  **not** a protection. A database dump exposes every live invitation code. Corrected 2026-08-24;
+  this line previously read "plaintext never stored", which was false.
+- [x] Invitation codes are **bearer credentials**: `Invitation` has no email column, so whoever
+  presents the code joins the org — no approval step. Length raised 6 → 10 chars (32-symbol
+  alphabet, 2^30 → 2^50) after the audit found a 500-IP pool could expect a hit in ~18 hours.
+  Codes issued before the change still validate.
 - [x] Gateway invitations module (controller, service, DTOs)
 - [x] `POST /invitations` - Create invitation code (ADMIN, DISPATCHER)
 - [x] `GET /invitations` - List organization invitations with filters

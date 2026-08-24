@@ -139,6 +139,11 @@ export class JoinRequestsController {
       });
     }
 
+    // Two admins can be looking at the pending list at once — without this the
+    // other one keeps seeing a request that is already decided, and acts on it
+    // (audit A-D2). No member was added, but the LIST changed.
+    this.memberEvents.changed(user.organizationId, undefined, 'join_request.rejected');
+
     return result;
   }
 }

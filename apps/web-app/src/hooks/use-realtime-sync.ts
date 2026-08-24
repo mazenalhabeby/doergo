@@ -52,6 +52,8 @@ const Events = {
   // Members / access
   MEMBER_CHANGED: "member.changed",
   MEMBER_ACCESS_UPDATED: "member.access_updated",
+  // A new join request arrived (emitted to the org + the routed approvers)
+  JOIN_REQUEST_SUBMITTED: "join_request_submitted",
   // Spaces
   SPACE_CHANGED: "space.changed",
   SPACE_ROSTER_CHANGED: "space.rosterChanged",
@@ -151,6 +153,11 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // (Audit M-D2 / M-D3.) The payload carries ids only; each client re-reads through
   // its own scoped endpoint, so nothing here widens what a viewer can see.
   [Events.MEMBER_CHANGED]: MEMBER_KEYS,
+
+  // A submitted request already reached the notification bell as a toast, but
+  // nothing refreshed the list — so an admin sitting on /join-requests was told
+  // about a request that never appeared on the page in front of them (audit A-D1).
+  [Events.JOIN_REQUEST_SUBMITTED]: [["join-requests"]],
 
   // Space events → refresh the space lists and rosters. Until these existed, a
   // space created/renamed/archived by someone else — or a roster edited by
