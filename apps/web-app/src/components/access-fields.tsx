@@ -230,7 +230,13 @@ export function AccessFields({
           />
           <PermissionRow
             title={t("accessBuilder.canViewReports.title", "Allow reports")}
-            desc={t("accessBuilder.canViewReports.desc", "Let this member build and run reports.")}
+            desc={t(
+              "accessBuilder.canViewReports.desc",
+              // The report engine scopes by ORGANIZATION and nothing else, so this
+              // grant is org-wide read of attendance, tasks, clients and assets —
+              // considerably more than "run reports" suggested (audit R, area 10).
+              "Build and run reports across the whole organization — including everyone’s attendance, tasks, clients and assets.",
+            )}
             checked={value.canViewReports}
             onChange={(v) => onChange({ canViewReports: v })}
           />

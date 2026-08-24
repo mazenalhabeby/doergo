@@ -3645,7 +3645,7 @@
     "managementLabel": "Rubrica gestione",
     "canViewReports": {
       "title": "Consenti report",
-      "desc": "Consenta a questo membro di creare ed eseguire report."
+      "desc": "Creare ed eseguire report sull’intera organizzazione, comprese presenze, attività, clienti e asset di tutti."
     },
     "applyToAll": "Applica a tutti",
     "bulkSubtitle": "Applica questi valori di accesso ai {{count}} membri selezionati.",

@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
@@ -80,7 +81,17 @@ import { StorageModule } from './common/storage/storage.module';
     // silently ignored and fall back to the 200/min 'long' tier. Its base limit
     // here matches 'long' so undecorated routes are unaffected; decorated routes
     // tighten it to their own value.
-    ThrottlerModule.forRoot([
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      // Counters live in REDIS, shared across replicas. The default in-memory
+      // store multiplies every limit below by the replica count — silently,
+      // because nothing fails; each replica simply counts only its own traffic.
+      // Falls back to per-process counting if Redis is unreachable, which is the
+      // behaviour that existed before, rather than taking the API down.
+      useFactory: (config: ConfigService) => ({
+        storage: new RedisThrottlerStorage(config),
+        throttlers: [
       {
         name: 'short',
         ttl: 1000, // 1 second
@@ -101,7 +112,9 @@ import { StorageModule } from './common/storage/storage.module';
         ttl: 60000, // 1 minute
         limit: 200, // fallback for undecorated routes; @Throttle() overrides this
       },
-    ]),
+        ],
+      }),
+    }),
     // BullMQ for reliable job processing
     BullModule.forRootAsync(createBullMQConfig()),
     // Bull Board for job monitoring (available at /admin/queues)

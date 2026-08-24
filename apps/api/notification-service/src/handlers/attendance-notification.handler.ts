@@ -307,13 +307,11 @@ export class AttendanceNotificationHandler {
       locationName: data.locationName,
       timestamp: new Date().toISOString(),
     };
-    if (leaderIds.length) {
-      for (const id of leaderIds) {
-        this.websocketGateway.emitToUser(id, 'attendance_overtime_request', payload);
-      }
-    } else {
-      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_overtime_request', payload);
-    }
+    // NOT emitted over the socket, for the same reason as the decision above
+    // (audit AT-D1): approving extra time is a mobile-only surface reached by the
+    // push, and no web page subscribes to this event. `payload` is still built and
+    // stored below, so the notification is recorded and the inbox shows it.
+    void payload;
 
     await this.store.record({
       recipientIds: leaderIds,
@@ -348,13 +346,12 @@ export class AttendanceNotificationHandler {
       this.logger.error(`Failed to send overtime-decision push: ${error}`);
     }
 
-    this.websocketGateway.emitToUser(data.userId, 'attendance_overtime_decision', {
-      entryId: data.entryId,
-      decision: data.decision,
-      minutes: data.minutes,
-      newExpectedClockOutAt: data.newExpectedClockOutAt,
-      timestamp: new Date().toISOString(),
-    });
+    // NOT emitted over the socket. The extra-time approval surface is mobile-only
+    // and mobile is reached by the push above; no web page reads this event and no
+    // query key exists for it, so a socket emit here would be dead code that reads
+    // like a delivery guarantee (audit AT-D1). If a web surface is ever built, emit
+    // here AND add the invalidation — one without the other is the silent failure
+    // this audit kept finding.
   }
 
   @EventPattern('attendance_geofence_alert')

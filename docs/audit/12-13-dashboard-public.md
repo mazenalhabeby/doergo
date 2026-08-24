@@ -51,13 +51,31 @@ of the product:
   implementation.
 - **i18n across both areas**: 368 distinct keys, **0 missing** in de/es/fr/it.
 
-## Open question (carried from Area 02, unchanged)
+## Resolved after the sweep — shared rate limits
 
-The Throttler has **no shared storage** — every limit above is per replica, in process
+The Throttler had **no shared storage**: every limit above was per replica, in process
 memory. With one gateway that is exactly right. The moment it scales horizontally — which the
-cron-lock work made possible — every one of these numbers multiplies by the replica count,
-login and forgot-password included. This is the single largest piece of unfinished business
-the audit found, and it is infrastructure rather than code.
+cron-lock work made possible — every number multiplied by the replica count, login and
+forgot-password included. Silently, because nothing fails; each replica simply counts only
+the requests that landed on it.
+
+`RedisThrottlerStorage` now backs the counters:
+
+- **One Lua script per decision.** `INCR` then `EXPIRE` as two round-trips can lose the
+  expiry if the process dies between them, leaving a counter that never resets and locks a
+  client out permanently. The script also repairs a missing TTL rather than trusting it.
+- **Degrade, never break.** If Redis is unreachable it falls back to the framework's
+  in-memory store — the behaviour that existed before — and logs once. Failing closed would
+  take the API down because a cache is unavailable; failing open would remove rate limiting
+  during exactly the kind of incident where it matters.
+- **No new dependency.** Written on the `ioredis` client the auth cache already uses, so the
+  lockfile does not move before a manual deploy.
+
+**Verified against the running stack, not reasoned about:** six rapid logins returned
+`400 400 400 400 400 429`, and Redis then held `throttle:default:…` counters plus a
+`throttle:blk:…` block marker. The Lua script was separately probed against live Redis for
+counter increment, window expiry actually resetting the counter, block-on-exceed, and blocked
+hits not continuing to increment.
 
 ## Verdict
 

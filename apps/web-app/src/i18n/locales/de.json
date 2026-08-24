@@ -3636,7 +3636,7 @@
     "managementLabel": "Management-Verzeichnis",
     "canViewReports": {
       "title": "Berichte erlauben",
-      "desc": "Diesem Mitglied erlauben, Berichte zu erstellen und auszuführen."
+      "desc": "Berichte für die gesamte Organisation erstellen und ausführen — einschließlich Anwesenheit, Aufgaben, Kunden und Objekten aller Mitarbeiter."
     },
     "applyToAll": "Auf alle anwenden",
     "bulkSubtitle": "Wendet diese Zugriffswerte auf {{count}} ausgewählte Mitglieder an.",

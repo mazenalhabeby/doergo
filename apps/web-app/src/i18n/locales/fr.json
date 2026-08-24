@@ -3645,7 +3645,7 @@
     "managementLabel": "Annuaire de gestion",
     "canViewReports": {
       "title": "Autoriser les rapports",
-      "desc": "Permettre à ce membre de créer et d’exécuter des rapports."
+      "desc": "Créer et exécuter des rapports sur toute l’organisation — y compris les présences, les tâches, les clients et les actifs de chacun."
     },
     "applyToAll": "Appliquer à tous",
     "bulkSubtitle": "Applique ces valeurs d’accès aux {{count}} membres sélectionnés.",

@@ -3636,7 +3636,7 @@
     "managementLabel": "Directorio de gestión",
     "canViewReports": {
       "title": "Permitir informes",
-      "desc": "Permite que este miembro cree y ejecute informes."
+      "desc": "Crear y ejecutar informes de toda la organización, incluidos la asistencia, las tareas, los clientes y los activos de todo el personal."
     },
     "applyToAll": "Aplicar a todos",
     "bulkSubtitle": "Aplica estos valores de acceso a {{count}} miembros seleccionados.",

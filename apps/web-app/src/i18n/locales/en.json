@@ -3636,7 +3636,7 @@
     "managementLabel": "Management directory",
     "canViewReports": {
       "title": "Allow reports",
-      "desc": "Let this member build and run reports."
+      "desc": "Build and run reports across the whole organization — including everyone’s attendance, tasks, clients and assets."
     },
     "applyToAll": "Apply to all",
     "bulkSubtitle": "Applies these access values to {{count}} selected members.",
