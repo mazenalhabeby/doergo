@@ -776,7 +776,6 @@ model User {
   watchedBy NotificationWatch[] @relation("WatchSubject") // managers watching THIS user
   watching  NotificationWatch[] @relation("WatchWatcher") // users THIS manager watches
 
-  @@index([organizationId])
   @@index([role])
   @@index([email])
   @@index([memberRoleId])
@@ -935,15 +934,11 @@ model Task {
   checklistItems  ChecklistItem[]
   customFields    CustomFieldValue[]
 
-  @@index([organizationId])
   @@index([status])
   @@index([createdById])
-  @@index([assignedToId])
   @@index([assetId])
   @@index([createdAt])
-  @@index([organizationId, status])
   @@index([organizationId, status, createdAt])
-  @@index([assignedToId, status]) // technician task stats groupBy, suggested technicians _count
   @@index([assignedToId, status, updatedAt]) // suggested-tech 30d/percentile capacity query (assignedToId + status + updatedAt range)
   @@index([dueDate]) // due date filtering/sorting
   @@index([parentId]) // subtask queries
@@ -952,9 +947,7 @@ model Task {
   @@index([epicId]) // epic filtering
   @@index([workflowId]) // workflow filtering
   @@index([spaceId]) // space filtering
-  @@index([customerId]) // customer-scoped reporting
   @@index([unitId]) // customer portal: requests for a unit
-  @@index([organizationId, source]) // portal vs internal split
   @@index([organizationId, source, createdAt]) // portal-wide request list (filter org+source, sort by newest)
   @@index([organizationId, source, triaged]) // portal "pending triage" inbox count/list
   @@index([customerId, createdAt]) // portal request list (filter customer + sort by newest)
@@ -987,7 +980,6 @@ model ChecklistItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([taskId])
   @@index([taskId, position])
   @@map("checklist_items")
 }
@@ -1039,7 +1031,6 @@ model TaskEvent {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
-  @@index([taskId])
   @@index([eventType])
   @@index([createdAt])
   @@index([taskId, createdAt]) // timeline queries
@@ -1734,7 +1725,6 @@ model ServiceReport {
   @@index([taskId])
   @@index([assetId])
   @@index([completedAt])
-  @@index([organizationId])
   @@index([completedById])
   @@index([customerId])
   @@index([organizationId, completedAt])
@@ -1862,7 +1852,6 @@ model CompanyLocation {
   // CRM: customer records belonging to this space's Customers list
   customers Customer[] @relation("SpaceCustomers")
 
-  @@index([organizationId])
   @@index([isActive])
   @@index([organizationId, kind, name]) // filter by kind + name-sorted lists (pickers, customer directory)
   @@index([sourceCustomerId]) // backfill idempotency + customer-space ↔ Customer lookup
@@ -1989,10 +1978,7 @@ model TimeEntry {
   workLog TimeEntryNote[]
 
   @@index([userId, clockInAt])
-  @@index([locationId])
   @@index([locationId, clockInAt]) // per-location attendance by day
-  @@index([organizationId])
-  @@index([status])
   @@index([approvalStatus])
   @@index([userId, status]) // check active clock-in
   @@index([organizationId, clockInAt]) // org attendance reports
@@ -2464,7 +2450,6 @@ model TimeOff {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([technicianId])
   @@index([status])
   @@index([startDate, endDate])
   @@index([approvedById])
@@ -2533,7 +2518,6 @@ model Invitation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([organizationId])
   @@index([status])
   @@index([createdById])
   @@index([expiresAt])
@@ -2573,7 +2557,6 @@ model JoinRequest {
 
   @@index([userId, organizationId, status])
   @@index([organizationId, status])
-  @@index([userId])
   @@index([reviewedById])
   @@map("join_requests")
 }
@@ -2885,7 +2868,6 @@ model Sprint {
   tasks          Task[]
   report         SprintReport?
 
-  @@index([organizationId])
   @@index([organizationId, status])
   @@map("sprints")
 }
