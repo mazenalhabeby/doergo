@@ -75,7 +75,7 @@ export class SpaceSharingController {
 
   // ── OWNER ──────────────────────────────────────────────────────────────────
   @Post('locations/:spaceId/shares')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Share this space with another org (invite)' })
   async createShare(@Param('spaceId') spaceId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
     await this.requireModule(spaceId, u.organizationId);
@@ -88,14 +88,14 @@ export class SpaceSharingController {
   }
 
   @Get('locations/:spaceId/shares')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: "List this space's cross-org shares" })
   listForSpace(@Param('spaceId') spaceId: string, @CurrentUser() u: CurrentUserData) {
     return this.send('space_share_list_for_space', { ownerOrgId: u.organizationId, spaceId });
   }
 
   @Patch('locations/:spaceId/shares/:shareId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a share (level / visibility scope)' })
   updateShare(@Param('spaceId') spaceId: string, @Param('shareId') shareId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
     // Whitelist mutable fields explicitly — never spread the untyped body, which
@@ -114,21 +114,21 @@ export class SpaceSharingController {
   }
 
   @Delete('locations/:spaceId/shares/:shareId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Revoke a share' })
   revokeShare(@Param('spaceId') spaceId: string, @Param('shareId') shareId: string, @CurrentUser() u: CurrentUserData) {
     return this.sendShareMutation('space_share_revoke', { ownerOrgId: u.organizationId, shareId }, { ownerOrgId: u.organizationId, spaceId });
   }
 
   @Get('locations/:spaceId/share-requests')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: "Guest requests against this space (owner view)" })
   listRequestsOwner(@Param('spaceId') spaceId: string, @Query('status') status: string, @CurrentUser() u: CurrentUserData) {
     return this.send('space_share_request_list', { ownerOrgId: u.organizationId, spaceId, status });
   }
 
   @Patch('share-requests/:requestId/resolve')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Approve/reject a guest request' })
   resolveRequest(@Param('requestId') requestId: string, @Body() body: { approve: boolean }, @CurrentUser() u: CurrentUserData) {
     return this.sendShareMutation('space_share_request_resolve', { ownerOrgId: u.organizationId, requestId, approve: !!body.approve, userId: u.id }, { ownerOrgId: u.organizationId });
@@ -143,7 +143,7 @@ export class SpaceSharingController {
   }
 
   @Post('shared-spaces/:shareId/respond')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Accept or decline a share invite' })
   respond(@Param('shareId') shareId: string, @Body() body: { accept: boolean }, @CurrentUser() u: CurrentUserData) {
     return this.sendShareMutation('space_share_respond', { guestOrgId: u.organizationId, shareId, accept: !!body.accept, userId: u.id }, { guestOrgId: u.organizationId });

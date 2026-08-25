@@ -58,7 +58,7 @@ export class LocationsController {
   }
 
   @Post()
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Create a new company location' })
   async create(@Body() dto: CreateLocationDto, @Request() req: any) {
     // A space can never enable a module the org's plan tier doesn't include.
@@ -156,7 +156,7 @@ export class LocationsController {
   }
 
   @Patch(':id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a company location' })
   async update(
     @Param('id') id: string,
@@ -178,7 +178,7 @@ export class LocationsController {
   }
 
   @Delete(':id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Deactivate a company location' })
   async remove(@Param('id') id: string, @Request() req: any) {
     const result = await this.locationsQueueService.remove({
@@ -191,7 +191,7 @@ export class LocationsController {
   }
 
   @Delete(':id/permanent')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Permanently delete an empty company location (no tasks/attendance/shifts)' })
   async purge(@Param('id') id: string, @Request() req: any) {
     const result = await this.locationsQueueService.purge({
@@ -235,7 +235,7 @@ export class LocationsController {
   // add their OWN people to a space shared with them (service enforces the real
   // space + tags the row with the guest org). Guard widens; service authorizes.
   @Post(':id/members')
-  @RequirePermissionInSpace('canManageUsers')
+  @RequirePermissionInSpace('canManageWorkspaces')
   @ApiOperation({ summary: 'Assign a member to a location' })
   async assignMember(
     @Param('id') locationId: string,
@@ -252,7 +252,7 @@ export class LocationsController {
   }
 
   @Patch(':id/members/:assignmentId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a member assignment' })
   async updateAssignment(
     @Param('id') _locationId: string,
@@ -268,7 +268,7 @@ export class LocationsController {
   }
 
   @Delete(':id/members/:assignmentId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Remove a member assignment' })
   async removeAssignment(
     @Param('id') _locationId: string,

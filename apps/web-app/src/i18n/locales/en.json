@@ -3658,7 +3658,8 @@
       "attendance": "Attendance",
       "crm": "Clients",
       "billing": "Billing",
-      "assets": "Assets"
+      "assets": "Assets",
+      "workspaces": "Workspaces"
     }
   },
   "customFields": {

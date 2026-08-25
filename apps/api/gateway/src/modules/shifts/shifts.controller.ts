@@ -19,28 +19,28 @@ export class ShiftsController {
 
   // ── Shifts ──
   @Get('shifts')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'List shift definitions (optionally scoped to a space)' })
   listShifts(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
     return this.service.listShifts({ organizationId: req.user.organizationId, spaceId });
   }
 
   @Post('shifts')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'Create a shift definition' })
   createShift(@Body() body: any, @Request() req: any) {
     return this.service.createShift({ ...body, organizationId: req.user.organizationId });
   }
 
   @Patch('shifts/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'Update a shift definition' })
   updateShift(@Param('id') shiftId: string, @Body() body: any, @Request() req: any) {
     return this.service.updateShift({ ...body, shiftId, organizationId: req.user.organizationId });
   }
 
   @Delete('shifts/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'Delete a shift definition' })
   deleteShift(@Param('id') shiftId: string, @Request() req: any) {
     return this.service.deleteShift({ shiftId, organizationId: req.user.organizationId });
@@ -48,7 +48,7 @@ export class ShiftsController {
 
   // ── Rota (assignments) ──
   @Get('spaces/:spaceId/rota')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'List the rota for a space' })
   listAssignments(
     @Param('spaceId') spaceId: string,
@@ -63,7 +63,7 @@ export class ShiftsController {
   }
 
   @Post('spaces/:spaceId/rota')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'Assign a member to a shift in a space' })
   createAssignment(@Param('spaceId') spaceId: string, @Body() body: any, @Request() req: any) {
     return this.service.createAssignment({
@@ -75,14 +75,14 @@ export class ShiftsController {
   }
 
   @Patch('rota/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'Update a rota assignment' })
   updateAssignment(@Param('id') assignmentId: string, @Body() body: any, @Request() req: any) {
     return this.service.updateAssignment({ ...body, assignmentId, organizationId: req.user.organizationId });
   }
 
   @Delete('rota/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   @ApiOperation({ summary: 'Remove a rota assignment' })
   deleteAssignment(@Param('id') assignmentId: string, @Request() req: any) {
     return this.service.deleteAssignment({ assignmentId, organizationId: req.user.organizationId });

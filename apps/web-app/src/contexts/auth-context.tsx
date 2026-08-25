@@ -38,6 +38,13 @@ export interface User {
   canAssignTasks: boolean;
   canManageUsers: boolean;
   canViewReports?: boolean;
+  // Capabilities split out of canManageUsers / canViewAllTasks. Optional: a token
+  // minted before the split carries the old shape, and the server-side bridge
+  // grants these to anyone who held the flag they came from.
+  canManageWorkspaces?: boolean;
+  canManageRota?: boolean;
+  canManageInvoices?: boolean;
+  canManageAssets?: boolean;
   allowRemote?: boolean;
   presence?: "AVAILABLE" | "BUSY" | "AWAY" | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.

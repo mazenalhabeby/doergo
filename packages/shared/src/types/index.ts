@@ -145,6 +145,14 @@ export interface User extends BaseEntity {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  // Capabilities split out of the four flags above. Optional because they are
+  // projections resolved server-side, and a token minted before the split
+  // carries the old shape — the bridge in orgPermissionFields fills them in.
+  canManageWorkspaces?: boolean;
+  canManageRota?: boolean;
+  canManageInvoices?: boolean;
+  canManageAssets?: boolean;
+  canViewReports?: boolean;
   // Technician-specific fields
 }
 

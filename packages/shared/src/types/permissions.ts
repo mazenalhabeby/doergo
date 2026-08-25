@@ -41,6 +41,10 @@ export const PERMISSION_KEYS = [
   // without the second.
   'canManageInvoices',
   'canManageAssets',
+  // Creating and configuring workspaces — the space itself, its roles, and who
+  // outside the organization may see it. Split out of canManageUsers, where
+  // "invite a colleague" and "delete a site" were the same grant.
+  'canManageWorkspaces',
 ] as const;
 
 export type AccessPermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -52,7 +56,7 @@ export type PermissionSet = Partial<Record<AccessPermissionKey, boolean>>;
 export type PermissionGrantScope = 'org' | 'space';
 
 /** Domain grouping for UI. */
-export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets';
+export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets' | 'workspaces';
 
 /** Human-facing metadata for every permission — drives the role-builder UI. */
 export const ACCESS_PERMISSION_SCHEMA: {
@@ -79,7 +83,8 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'crmEditInfo', label: 'Edit client info', description: 'Edit client details, addresses and units', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership, create and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'canManageInvoices', label: 'Customer invoices', description: 'Open customer invoicing and see what has been billed', domain: 'billing', scopes: ['org'] },
-  { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] }
+  { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] },
+  { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] }
 ];
 
 /** Resolved CRM abilities for a caller — what the customers service enforces. */

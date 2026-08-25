@@ -140,7 +140,7 @@ export function TopNavbar() {
   const showTeam = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   // Employees collaborate INSIDE their space (members appear in the space view),
   // so there is no separate employee "Team" nav item on web.
-  const showSpaces = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
+  const showSpaces = user.canManageWorkspaces || user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
   const showAttendance = user.canViewAllTasks
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access

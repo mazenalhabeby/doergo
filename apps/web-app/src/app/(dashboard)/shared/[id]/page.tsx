@@ -91,7 +91,7 @@ export default function SharedSpaceViewPage() {
   const perSpace = user?.access?.perSpace?.[spaceId] ?? {}
   const canCreate = !!perSpace.canCreateTasks
   const canAssign = !!perSpace.canAssignTasks
-  const canManageMembers = !!perSpace.canManageUsers // CONTROL → add own workers to the space
+  const canManageMembers = !!perSpace.canManageWorkspaces || !!perSpace.canManageUsers // CONTROL → add own workers to the space
 
   const [requestOpen, setRequestOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)

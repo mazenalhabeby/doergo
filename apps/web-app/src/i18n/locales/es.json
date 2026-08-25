@@ -3658,7 +3658,8 @@
       "attendance": "Asistencia",
       "crm": "Clientes",
       "billing": "Facturación",
-      "assets": "Activos"
+      "assets": "Activos",
+      "workspaces": "Espacios de trabajo"
     }
   },
   "customFields": {

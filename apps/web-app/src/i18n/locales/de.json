@@ -3658,7 +3658,8 @@
       "attendance": "Anwesenheit",
       "crm": "Kunden",
       "billing": "Abrechnung",
-      "assets": "Objekte"
+      "assets": "Objekte",
+      "workspaces": "Arbeitsbereiche"
     }
   },
   "customFields": {

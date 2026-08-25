@@ -61,9 +61,14 @@ export default function SpaceSettingsPage() {
     resolved access would not fail to compile — it would quietly evaluate to
     false and lock every manager out of their own space, or worse, not.
   */
+  // canManageWorkspaces is the capability this page actually needs; canManageUsers
+  // is kept because it used to grant it, and every existing manager holds it.
+  const access = (user as { access?: Parameters<typeof accessAllows>[0] } | null)?.access
   const canManage =
+    !!user?.canManageWorkspaces ||
     !!user?.canManageUsers ||
-    accessAllows((user as { access?: Parameters<typeof accessAllows>[0] } | null)?.access, "canManageUsers", spaceId)
+    accessAllows(access, "canManageWorkspaces", spaceId) ||
+    accessAllows(access, "canManageUsers", spaceId)
 
   /*
     The open tab lives in the URL, not only in state.

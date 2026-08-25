@@ -14,7 +14,7 @@ import { locationsApi } from '@/lib/api';
 export function FirstSpaceGate() {
   const router = useRouter();
   const { user } = useAuth();
-  const canManage = !!user?.canManageUsers;
+  const canManage = !!user?.canManageWorkspaces || !!user?.canManageUsers;
 
   const { data, isFetching } = useQuery({
     queryKey: ['locations'],

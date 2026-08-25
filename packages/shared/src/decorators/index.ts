@@ -156,7 +156,8 @@ export const PERMISSIONS_KEY = 'required_permissions';
 // grant made on a role satisfies these exactly like a legacy column did.
 export type PermissionField =
   | 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers'
-  | 'canViewReports' | 'canManageInvoices' | 'canManageAssets';
+  | 'canViewReports' | 'canManageInvoices' | 'canManageAssets'
+  | 'canManageWorkspaces' | 'canManageRota';
 
 /**
  * Decorator to specify required permissions for a route.

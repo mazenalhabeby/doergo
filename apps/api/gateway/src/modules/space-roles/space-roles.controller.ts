@@ -38,14 +38,14 @@ export class SpaceRolesController {
   constructor(private readonly service: SpaceRolesService) {}
 
   @Get('space-roles')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'List the org\'s dynamic space sub-roles' })
   listRoles(@Request() req: any) {
     return this.service.listRoles({ organizationId: req.user.organizationId });
   }
 
   @Post('space-roles')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Create a space sub-role' })
   createRole(
     @Body()
@@ -56,7 +56,7 @@ export class SpaceRolesController {
   }
 
   @Patch('space-roles/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a space sub-role' })
   updateRole(
     @Param('id') roleId: string,
@@ -74,7 +74,7 @@ export class SpaceRolesController {
   }
 
   @Delete('space-roles/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Delete a custom space sub-role' })
   deleteRole(@Param('id') roleId: string, @Request() req: any) {
     return this.service.deleteRole({ roleId, organizationId: req.user.organizationId });

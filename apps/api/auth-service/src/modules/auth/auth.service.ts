@@ -104,6 +104,13 @@ function orgPermissionFields(access: ReturnType<typeof buildResolvedAccess>) {
       accessAllows(access, 'canManageInvoices') || accessAllows(access, 'canViewAllTasks'),
     canManageAssets:
       accessAllows(access, 'canManageAssets') || accessAllows(access, 'canManageUsers'),
+    canManageWorkspaces:
+      accessAllows(access, 'canManageWorkspaces') || accessAllows(access, 'canManageUsers'),
+    // canManageRota already existed in the catalogue and was required by nothing.
+    // The rota endpoints were on canManageUsers, so the key describing exactly
+    // that job sat unused while the job was granted by an unrelated one.
+    canManageRota:
+      accessAllows(access, 'canManageRota') || accessAllows(access, 'canManageUsers'),
   };
 }
 

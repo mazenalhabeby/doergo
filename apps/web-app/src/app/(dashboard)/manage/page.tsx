@@ -28,7 +28,7 @@ export default function ManagePage() {
     { href: "/invitations", label: t('manage.items.invitations.label'), desc: t('manage.items.invitations.desc'), icon: Mail, show: !!user?.canManageUsers },
     { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
     { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: !!user?.canViewAllTasks },
-    { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
+    { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: !!user?.canManageWorkspaces || !!user?.canManageUsers || !!user?.canViewAllTasks },
     // No "Task types" entry: they belong to the space that runs them, so this
     // linked to the same place as Spaces above it — two rows, one destination.
   ]
