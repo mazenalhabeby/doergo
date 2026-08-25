@@ -72,8 +72,12 @@ function isDropdownActive(pathname: string, hrefs: string[]): boolean {
 // ---------------------------------------------------------------------------
 // Shared styles
 // ---------------------------------------------------------------------------
+// `whitespace-nowrap` and `shrink-0`: the bar is a fixed h-14 flex row, so a label
+// that wraps or is squeezed breaks the header. Labels differ a lot by language —
+// "Team Members" is 12 characters in English and 19 in Spanish ("Miembros del
+// equipo") — so this cannot be eyeballed in one locale.
 const navItemBase =
-  "relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
+  "relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
 const navItemInactive = "text-muted-foreground hover:text-foreground hover:bg-muted/50"
 const navItemActiveStyle = "text-foreground font-semibold"
 const bottomIndicator =
@@ -189,10 +193,17 @@ export function TopNavbar() {
         showMyTimeOff={showMyTimeOff}
         showMyAttendance={showMyAttendance}
         showManage={showManage}
+        showCrm={showCrm}
       />
 
       {/* Desktop Navigation */}
-      <nav className="hidden lg:flex items-center gap-1">
+      {/* xl, not lg. At 1024px the full bar does not fit once the labels are real
+          words in a real language: the Spanish set alone needs ~880px before the
+          logo, search, clock, language, bell, help, support and avatar on the
+          right. 1024–1280px now uses the hamburger, which carries every item.
+          (The `MoreDropdown` overflow path below never ran — `overflowItems` is
+          initialised empty and never populated, so `hasOverflow` is always false.) */}
+      <nav className="hidden xl:flex items-center gap-1">
         {/* Dashboard */}
         <Link
           href="/dashboard"
@@ -526,6 +537,7 @@ function MobileMenu({
   showMyTimeOff,
   showMyAttendance,
   showManage,
+  showCrm,
 }: {
   pathname: string
   showTeam: boolean
@@ -537,6 +549,7 @@ function MobileMenu({
   showMyTimeOff: boolean
   showMyAttendance: boolean
   showManage: boolean
+  showCrm?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation()
@@ -546,7 +559,7 @@ function MobileMenu({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger className="lg:hidden mr-2 flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors outline-none">
+      <DropdownMenuTrigger className="xl:hidden mr-2 flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors outline-none">
         <Menu className="h-5 w-5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">
@@ -570,6 +583,20 @@ function MobileMenu({
             {t("nav.sidebar.tasks")}
           </Link>
         </DropdownMenuItem>
+
+        {/* CRM — present on the desktop bar but previously missing here, so it was
+            unreachable from the nav below the breakpoint. */}
+        {showCrm && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link
+              href="/clients"
+              onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/clients") ? mobileItemActiveStyle : mobileItemInactive)}
+            >
+              {t("nav.crm", "CRM")}
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         {showTeam && (
           <>
