@@ -192,6 +192,25 @@ export const PERMISSIONS_IN_SPACE_KEY = 'required_permissions_in_space';
 export const RequirePermissionInSpace = (...permissions: PermissionField[]) =>
   SetMetadata(PERMISSIONS_IN_SPACE_KEY, permissions);
 
+export const ACCESS_MODULE_KEY = 'required_access_module';
+
+/**
+ * Require a feature surface from the member's Access Profile — the "Feature
+ * tabs" an admin picks per member (tasks / clock / time_off).
+ *
+ * These decided what the web and mobile navigation rendered and nothing else,
+ * so the surface was hidden while the endpoints behind it stayed open: a member
+ * with Clock switched off could still POST /attendance/clock-in and book time.
+ * The tab is a setting an admin makes deliberately, so it has to hold at the
+ * API, not just in the menu.
+ *
+ * Deliberately permissive by default — hasAccessModule grants everything to an
+ * ADMIN and to any user with no profile stored, so this only ever refuses a
+ * member whose profile explicitly excludes the surface.
+ */
+export const RequireAccessModule = (module: 'tasks' | 'clock' | 'time_off') =>
+  SetMetadata(ACCESS_MODULE_KEY, module);
+
 // =============================================================================
 // SKIP ONBOARDING CHECK
 // =============================================================================

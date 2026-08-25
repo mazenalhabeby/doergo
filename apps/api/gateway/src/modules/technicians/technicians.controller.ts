@@ -21,7 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData , RequireAccessModule } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -624,6 +624,8 @@ export class EmployeesController {
   }
 
   @Post(':id/time-off')
+  // Creating a request needs the tab; cancelling one (DELETE below) deliberately does not.
+  @RequireAccessModule('time_off')
   @ApiOperation({ summary: 'Request time off for employee' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 201, description: 'Time-off request created' })

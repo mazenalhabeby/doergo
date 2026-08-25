@@ -16,7 +16,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
+import { Role , RequireAccessModule } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -34,6 +34,8 @@ export class AttendanceController {
   ) {}
 
   @Post('clock-in')
+  // Entry point only — clock-out and break-end stay open so removing the tab mid-shift cannot strand an open entry.
+  @RequireAccessModule('clock')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock in at a company location' })
   async clockIn(@Body() dto: ClockInDto, @Request() req: any) {

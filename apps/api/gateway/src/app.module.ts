@@ -51,6 +51,7 @@ import { AuthCacheModule } from './common/cache/auth-cache.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { AccessModuleGuard } from './common/guards/access-module.guard';
 import { CustomerConfinementGuard } from './common/guards/customer-confinement.guard';
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PlanGuard } from './common/guards/plan.guard';
@@ -163,7 +164,7 @@ import { StorageModule } from './common/storage/storage.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard → PermissionsGuard
+    // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard → PermissionsGuard → AccessModuleGuard
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -189,6 +190,13 @@ import { StorageModule } from './common/storage/storage.module';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    // Feature tabs from the member's Access Profile. Sits next to PermissionsGuard
+    // because it answers the same kind of question — may THIS member use this
+    // surface — just from the profile rather than the role.
+    {
+      provide: APP_GUARD,
+      useClass: AccessModuleGuard,
     },
     {
       provide: APP_GUARD,
