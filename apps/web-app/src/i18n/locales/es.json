@@ -3661,6 +3661,14 @@
       "assets": "Activos",
       "workspaces": "Espacios de trabajo",
       "tracking": "Seguimiento"
+    },
+    "noPermissions": "Este rol aún no concede permisos. Elija un rol arriba o añádale permisos en Roles.",
+    "directGrant": "Concedido solo a este miembro",
+    "removeDirectGrant": "Quitar",
+    "directGrantHint": "Los permisos resaltados se concedieron directamente a este miembro, no por el rol. Aquí se pueden quitar pero no añadir: asígnelos a un rol para que sea visible quién los tiene.",
+    "taskScope": {
+      "title": "Dónde puede crear tareas",
+      "desc": "Limita la creación de tareas solo para este miembro."
     }
   },
   "customFields": {

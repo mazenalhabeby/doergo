@@ -3670,6 +3670,14 @@
       "assets": "Actifs",
       "workspaces": "Espaces de travail",
       "tracking": "Suivi"
+    },
+    "noPermissions": "Ce rôle n’accorde encore aucune permission. Choisissez un rôle ci-dessus ou ajoutez-lui des permissions dans Rôles.",
+    "directGrant": "Accordé à ce membre uniquement",
+    "removeDirectGrant": "Retirer",
+    "directGrantHint": "Les permissions surlignées ont été accordées directement à ce membre, et non par le rôle. Elles peuvent être retirées ici mais pas ajoutées — placez-les plutôt sur un rôle, afin que l’on voie qui les détient.",
+    "taskScope": {
+      "title": "Où il peut créer des tâches",
+      "desc": "Restreint la création de tâches pour ce membre uniquement."
     }
   },
   "customFields": {

@@ -3670,6 +3670,14 @@
       "assets": "Asset",
       "workspaces": "Spazi di lavoro",
       "tracking": "Tracciamento"
+    },
+    "noPermissions": "Questo ruolo non concede ancora permessi. Scegli un ruolo qui sopra o aggiungi i permessi in Ruoli.",
+    "directGrant": "Concesso solo a questo membro",
+    "removeDirectGrant": "Rimuovi",
+    "directGrantHint": "I permessi evidenziati sono stati concessi direttamente a questo membro, non dal ruolo. Qui possono essere rimossi ma non aggiunti: assegnali a un ruolo, così è visibile chi li possiede.",
+    "taskScope": {
+      "title": "Dove può creare attività",
+      "desc": "Limita la creazione di attività solo per questo membro."
     }
   },
   "customFields": {

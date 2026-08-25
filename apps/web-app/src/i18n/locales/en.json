@@ -3661,6 +3661,14 @@
       "assets": "Assets",
       "workspaces": "Workspaces",
       "tracking": "Tracking"
+    },
+    "noPermissions": "This role grants no permissions yet. Choose a role above, or add permissions to it in Roles.",
+    "directGrant": "Granted to this member only",
+    "removeDirectGrant": "Remove",
+    "directGrantHint": "Highlighted permissions were granted to this member directly, not by the role. They can be removed here but not added — put them on a role instead, so it is visible who holds them.",
+    "taskScope": {
+      "title": "Where they can create tasks",
+      "desc": "Narrows task creation for this member only."
     }
   },
   "customFields": {

@@ -62,9 +62,24 @@ const ORG_PERM_LABEL: Record<string, string> = Object.fromEntries(
  * per-member override could only ever widen, never restrict, and "why can this
  * person still approve overtime?" would have two places to look instead of one.
  */
-const DIRECT_KEYS = new Set([
+/**
+ * The five permissions that still have their own column on the User row, and so
+ * can be granted to ONE member on top of whatever their role gives them.
+ *
+ * They are no longer editable here. Resolved access merges the role and these
+ * columns with a union (mergePermissions only ever sets true), so a per-member
+ * switch could add a capability but never take one away: unticking "Allow
+ * reports" on someone whose role grants it changed nothing, while looking
+ * exactly like a restriction. A control that cannot do the thing it appears to
+ * do is worse than no control.
+ *
+ * Existing grants are still SHOWN — and only here — because they are otherwise
+ * invisible drift: nothing on the roles page reveals that one member was handed
+ * an extra capability years ago. They can be cleared, not created.
+ */
+const LEGACY_DIRECT_KEYS = [
   "canCreateTasks", "canAssignTasks", "canViewAllTasks", "canManageUsers", "canViewReports",
-])
+] as const
 
 /**
  * AccessFields — the controlled, presentational editor for every access value
@@ -137,24 +152,31 @@ export function AccessFields({
     : []
 
   /**
-   * What the assigned role grants beyond the five toggles above, grouped by domain.
-   * An admin holds the whole catalogue, so show it rather than an empty box —
-   * "Admin" saying nothing about overtime or clients is exactly the silence this
-   * block exists to remove.
+   * Every permission this member effectively holds, grouped by domain and
+   * attributed to where it comes from — the role, or a direct grant on the
+   * member. Admin holds the whole catalogue, so show it rather than an empty
+   * box: "Admin" saying nothing about overtime or clients is exactly the
+   * silence this block exists to remove.
    */
-  const roleGranted = useMemo(() => {
-    const granted = value.systemRole === "ADMIN"
-      ? ACCESS_PERMISSION_SCHEMA
-      : ACCESS_PERMISSION_SCHEMA.filter((p) => selectedRole?.permissions?.[p.key] === true)
-    const byDomain = new Map<string, typeof ACCESS_PERMISSION_SCHEMA>()
-    for (const p of granted) {
-      if (DIRECT_KEYS.has(p.key)) continue // already a toggle above; showing it twice reads as two settings
+  const permView = useMemo(() => {
+    const isAdmin = value.systemRole === "ADMIN"
+    const direct = new Set(
+      LEGACY_DIRECT_KEYS.filter((k) => value[k] === true),
+    )
+    const rows = ACCESS_PERMISSION_SCHEMA.flatMap((p) => {
+      const fromRole = isAdmin || selectedRole?.permissions?.[p.key] === true
+      if (fromRole) return [{ ...p, direct: false }]
+      if (direct.has(p.key as (typeof LEGACY_DIRECT_KEYS)[number])) return [{ ...p, direct: true }]
+      return []
+    })
+    const byDomain = new Map<string, typeof rows>()
+    for (const p of rows) {
       const list = byDomain.get(p.domain) ?? []
       list.push(p)
       byDomain.set(p.domain, list)
     }
-    return [...byDomain.entries()]
-  }, [value.systemRole, selectedRole])
+    return { groups: [...byDomain.entries()], directCount: rows.filter((r) => r.direct).length }
+  }, [value, selectedRole])
 
   const toggleModule = (m: MobileModule) =>
     onChange({
@@ -218,67 +240,19 @@ export function AccessFields({
         </div>
       </Field>
 
-      {/* Permissions — the enforced authorization toggles */}
+      {/*
+        Permissions — read-only. Every capability comes from the assigned role;
+        this section reports what that means rather than offering a second place
+        to set it. See LEGACY_DIRECT_KEYS for why per-member switches went away.
+      */}
       <Field dataTour="access-permissions" label={t("accessBuilder.permissions")}>
-        <div className="space-y-2">
-          <PermissionRow
-            title={t("accessBuilder.perms.create.title")}
-            desc={t("accessBuilder.perms.create.desc")}
-            checked={value.canCreateTasks}
-            onChange={(v) => onChange({ canCreateTasks: v })}
-          >
-            {value.canCreateTasks && (
-              <Select value={value.taskCreationScope} onValueChange={(v) => onChange({ taskCreationScope: v })}>
-                <SelectTrigger className="h-8 w-[190px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TASK_SCOPES.map((s) => (
-                    <SelectItem key={s.key} value={s.key} className="text-xs">
-                      {t(s.labelKey)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </PermissionRow>
-          <PermissionRow
-            title={t("accessBuilder.perms.assign.title")}
-            desc={t("accessBuilder.perms.assign.desc")}
-            checked={value.canAssignTasks}
-            onChange={(v) => onChange({ canAssignTasks: v })}
-          />
-          <PermissionRow
-            title={t("accessBuilder.perms.viewAll.title")}
-            desc={t("accessBuilder.perms.viewAll.desc")}
-            checked={value.canViewAllTasks}
-            onChange={(v) => onChange({ canViewAllTasks: v })}
-          />
-          <PermissionRow
-            title={t("accessBuilder.perms.manage.title")}
-            desc={t("accessBuilder.perms.manage.desc")}
-            checked={value.canManageUsers}
-            onChange={(v) => onChange({ canManageUsers: v })}
-          />
-          <PermissionRow
-            title={t("accessBuilder.canViewReports.title", "Allow reports")}
-            desc={t(
-              "accessBuilder.canViewReports.desc",
-              // The report engine scopes by ORGANIZATION and nothing else, so this
-              // grant is org-wide read of attendance, tasks, clients and assets —
-              // considerably more than "run reports" suggested (audit R, area 10).
-              "Build and run reports across the whole organization — including everyone’s attendance, tasks, clients and assets.",
-            )}
-            checked={value.canViewReports}
-            onChange={(v) => onChange({ canViewReports: v })}
-          />
-
-          {/* Everything the ROLE grants, in the same place as the toggles above.
-              Previously this was a comma-joined line of bare labels under the role
-              selector — eleven of the sixteen permissions in the product, rendered
-              as an afterthought far from the section called "Permissions". */}
-          {roleGranted.length > 0 && (
-            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3">
+        <div className="space-y-3">
+          {permView.groups.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+              {t("accessBuilder.noPermissions", "This role grants no permissions yet. Choose a role above, or add permissions to it in Roles.")}
+            </p>
+          ) : (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
               <p className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 {t("accessBuilder.fromRole", "From the role {{role}}", {
                   role: value.systemRole === "ADMIN"
@@ -287,7 +261,7 @@ export function AccessFields({
                 })}
               </p>
               <div className="space-y-3">
-                {roleGranted.map(([domain, perms]) => (
+                {permView.groups.map(([domain, perms]) => (
                   <div key={domain}>
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                       {t(`accessBuilder.domains.${domain}`, domain)}
@@ -295,10 +269,24 @@ export function AccessFields({
                     <ul className="space-y-1">
                       {perms.map((p) => (
                         <li key={p.key} className="flex items-start gap-2 text-xs">
-                          <Check className="mt-0.5 size-3 shrink-0 text-primary" />
-                          <span>
+                          <Check className={cn("mt-0.5 size-3 shrink-0", p.direct ? "text-amber-600" : "text-primary")} />
+                          <span className="min-w-0">
                             <span className="font-medium text-foreground">{p.label}</span>
                             <span className="text-muted-foreground"> — {p.description}</span>
+                            {p.direct && (
+                              <>
+                                <span className="ml-1.5 whitespace-nowrap rounded border border-amber-600/40 bg-amber-600/10 px-1 py-px text-[10px] font-medium text-amber-700 dark:text-amber-500">
+                                  {t("accessBuilder.directGrant", "Granted to this member only")}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => onChange({ [p.key]: false } as Partial<AccessDraft>)}
+                                  className="ml-1.5 text-[10px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                                >
+                                  {t("accessBuilder.removeDirectGrant", "Remove")}
+                                </button>
+                              </>
+                            )}
                           </span>
                         </li>
                       ))}
@@ -307,8 +295,29 @@ export function AccessFields({
                 ))}
               </div>
               <p className="mt-3 text-[11px] text-muted-foreground">
-                {t("accessBuilder.fromRoleHint", "Change these on the role itself — they apply to everyone who holds it.")}
+                {permView.directCount > 0
+                  ? t("accessBuilder.directGrantHint", "Highlighted permissions were granted to this member directly, not by the role. They can be removed here but not added — put them on a role instead, so it is visible who holds them.")
+                  : t("accessBuilder.fromRoleHint", "Change these on the role itself — they apply to everyone who holds it.")}
               </p>
+            </div>
+          )}
+
+          {/* Task creation SCOPE is a per-member setting, not a permission: it
+              narrows where this person may create, once the role lets them. */}
+          {(value.systemRole === "ADMIN" || selectedRole?.permissions?.canCreateTasks === true || value.canCreateTasks) && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{t("accessBuilder.taskScope.title", "Where they can create tasks")}</p>
+                <p className="text-xs text-muted-foreground">{t("accessBuilder.taskScope.desc", "Narrows task creation for this member only.")}</p>
+              </div>
+              <Select value={value.taskCreationScope} onValueChange={(v) => onChange({ taskCreationScope: v })}>
+                <SelectTrigger className="h-8 w-[190px] shrink-0 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TASK_SCOPES.map((sc) => (
+                    <SelectItem key={sc.key} value={sc.key} className="text-xs">{t(sc.labelKey)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
@@ -460,32 +469,6 @@ export function AccessFields({
   )
 }
 
-export function PermissionRow({
-  title,
-  desc,
-  checked,
-  onChange,
-  children,
-}: {
-  title: string
-  desc: string
-  checked: boolean
-  onChange: (v: boolean) => void
-  children?: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground">{desc}</p>
-      </div>
-      <div className="flex items-center gap-3 shrink-0">
-        {children}
-        <Switch checked={checked} onCheckedChange={onChange} />
-      </div>
-    </div>
-  )
-}
 
 export function Field({ label, children, dataTour }: { label: string; children: React.ReactNode; dataTour?: string }) {
   return (

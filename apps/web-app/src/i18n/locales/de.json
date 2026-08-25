@@ -3661,6 +3661,14 @@
       "assets": "Objekte",
       "workspaces": "Arbeitsbereiche",
       "tracking": "Standortverfolgung"
+    },
+    "noPermissions": "Diese Rolle gewährt noch keine Berechtigungen. Wählen Sie oben eine Rolle oder ergänzen Sie die Berechtigungen unter Rollen.",
+    "directGrant": "Nur diesem Mitglied gewährt",
+    "removeDirectGrant": "Entfernen",
+    "directGrantHint": "Hervorgehobene Berechtigungen wurden diesem Mitglied direkt gewährt, nicht über die Rolle. Sie können hier entfernt, aber nicht hinzugefügt werden — vergeben Sie sie stattdessen über eine Rolle, damit nachvollziehbar bleibt, wer sie besitzt.",
+    "taskScope": {
+      "title": "Wo Aufgaben erstellt werden dürfen",
+      "desc": "Schränkt die Aufgabenerstellung nur für dieses Mitglied ein."
     }
   },
   "customFields": {
