@@ -245,7 +245,12 @@ export function TopNavbar() {
           initialised empty and never populated, so `hasOverflow` is always false.) */}
       <nav
         ref={navRef}
-        className="hidden md:flex min-w-0 flex-1 items-center gap-1"
+        // justify-center, not mx-auto: the nav still spans the row (flex-1), so the
+        // measurement in useOverflowNav keeps reading the full available width —
+        // it is the ITEMS that are centred inside it, not the container that shrinks
+        // to fit them. Centring by shrinking would make the hook measure only the
+        // items it had already decided to show.
+        className="hidden md:flex min-w-0 flex-1 items-center justify-center gap-1"
       >
         {/* Dashboard */}
         <Link
