@@ -488,13 +488,17 @@ export function AccessFields({
                         />
                         <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="sm" />
                         <span className="min-w-0 flex-1 truncate text-sm">{c.firstName} {c.lastName}</span>
+                        {/* Label by what actually confers it. Calling someone
+                            "Manager" when no role says so is how a permission
+                            left on a user row reads as a job title. */}
                         <span className="shrink-0 text-[11px] text-muted-foreground">
                           {c.role === "ADMIN"
                             ? t("members.roles.admin")
+                            : c.memberRole?.name
+                            ? c.memberRole.name
                             : c.canManageUsers
-                            ? t("accessBuilder.contactManager", "Manager")
-                            : /* on the list from before the rule narrowed */
-                              t("accessBuilder.contactLegacyPick", "No longer a manager")}
+                            ? t("accessBuilder.contactDirectPermission", "Direct permission — no role")
+                            : t("accessBuilder.contactLegacyPick", "No longer a manager")}
                         </span>
                       </label>
                     )

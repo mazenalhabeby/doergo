@@ -35,6 +35,10 @@ const CONTACT_CANDIDATE_SELECT = {
   position: true,
   isActive: true,
   canManageUsers: true,
+  // The role is what the UI labels the row with. A permission written directly
+  // on the user row is why someone can appear here while their role is not a
+  // managing one — showing the role keeps the label honest about that.
+  memberRole: { select: { name: true, permissions: true } },
 } as const;
 
 const ORG_MEMBER_SELECT = {
@@ -827,7 +831,19 @@ export class UsersService {
     */
     if (dto.contactCandidates) {
       where.isActive = true;
-      const or: any[] = [{ role: 'ADMIN' }, { canManageUsers: true }];
+      /*
+        Three ways to be a manager, and the query has to know all of them:
+        the ADMIN system role, the permission written on the user row (legacy,
+        still merged by buildResolvedAccess unless ACCESS_IGNORE_LEGACY_FLAGS
+        is set), and — the one a column test alone misses — an assigned role
+        whose permission set grants it. Filtering on the column only would hide
+        every manager who holds the permission the way the product now intends.
+      */
+      const or: any[] = [
+        { role: 'ADMIN' },
+        { canManageUsers: true },
+        { memberRole: { is: { permissions: { path: ['canManageUsers'], equals: true } } } },
+      ];
       const keep = (dto.includeIds ?? []).filter(Boolean);
       if (keep.length) or.push({ id: { in: keep } });
       // Combined with a search's own OR via AND so neither clause swallows the other.

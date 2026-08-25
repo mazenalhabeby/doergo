@@ -3681,7 +3681,8 @@
     },
     "spaceVisibilityOverridden": "Questo membro può vedere tutte le attività, quindi vede ogni spazio di lavoro indipendentemente dalla scelta qui sotto. Rimuovi quel permesso dal suo ruolo perché abbia effetto.",
     "contactManager": "Responsabile",
-    "contactLegacyPick": "Non è più responsabile"
+    "contactLegacyPick": "Non è più responsabile",
+    "contactDirectPermission": "Permesso diretto — nessun ruolo"
   },
   "customFields": {
     "fieldTypes": {

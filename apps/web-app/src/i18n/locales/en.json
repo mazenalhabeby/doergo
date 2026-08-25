@@ -3672,7 +3672,8 @@
     },
     "spaceVisibilityOverridden": "This member can view all tasks, so they see every workspace regardless of the choice below. Remove that permission from their role to make this take effect.",
     "contactManager": "Manager",
-    "contactLegacyPick": "No longer a manager"
+    "contactLegacyPick": "No longer a manager",
+    "contactDirectPermission": "Direct permission — no role"
   },
   "customFields": {
     "fieldTypes": {

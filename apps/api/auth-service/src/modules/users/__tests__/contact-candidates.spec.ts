@@ -15,7 +15,11 @@ describe('contact-candidate query', () => {
     }
     if (opts.contactCandidates) {
       where.isActive = true;
-      const or: any[] = [{ role: 'ADMIN' }, { canManageUsers: true }];
+      const or: any[] = [
+        { role: 'ADMIN' },
+        { canManageUsers: true },
+        { memberRole: { is: { permissions: { path: ['canManageUsers'], equals: true } } } },
+      ];
       const keep = (opts.includeIds ?? []).filter(Boolean);
       if (keep.length) or.push({ id: { in: keep } });
       if (where.OR) {
@@ -28,10 +32,18 @@ describe('contact-candidate query', () => {
     return where;
   };
 
-  it('asks the database for admins and managers only', () => {
+  it('matches all three ways of being a manager', () => {
     const w = buildWhere({ contactCandidates: true });
-    expect(w.OR).toEqual([{ role: 'ADMIN' }, { canManageUsers: true }]);
     expect(w.isActive).toBe(true);
+    expect(w.OR).toContainEqual({ role: 'ADMIN' });
+    expect(w.OR).toContainEqual({ canManageUsers: true });
+    // The one a column test alone misses: the permission comes from the
+    // assigned ROLE, which is how the product now intends it to be held.
+    // Verified against real data — a member with column=false and the Manager
+    // role was invisible to the column-only filter.
+    expect(w.OR).toContainEqual({
+      memberRole: { is: { permissions: { path: ['canManageUsers'], equals: true } } },
+    });
   });
 
   it('keeps already-granted contacts who no longer qualify', () => {
@@ -46,7 +58,7 @@ describe('contact-candidate query', () => {
     const w = buildWhere({ contactCandidates: true, search: 'ann' });
     expect(w.OR).toBeUndefined();
     expect(w.AND).toHaveLength(2);
-    expect(w.AND[1].OR).toEqual([{ role: 'ADMIN' }, { canManageUsers: true }]);
+    expect(w.AND[1].OR).toContainEqual({ canManageUsers: true });
   });
 
   it('leaves the ordinary members list untouched', () => {

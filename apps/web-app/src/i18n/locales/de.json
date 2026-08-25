@@ -3672,7 +3672,8 @@
     },
     "spaceVisibilityOverridden": "Dieses Mitglied kann alle Aufgaben sehen und sieht daher unabhängig von der Auswahl unten jeden Arbeitsbereich. Entfernen Sie diese Berechtigung aus seiner Rolle, damit die Einstellung wirkt.",
     "contactManager": "Manager",
-    "contactLegacyPick": "Kein Manager mehr"
+    "contactLegacyPick": "Kein Manager mehr",
+    "contactDirectPermission": "Direkte Berechtigung — keine Rolle"
   },
   "customFields": {
     "fieldTypes": {

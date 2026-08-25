@@ -3681,7 +3681,8 @@
     },
     "spaceVisibilityOverridden": "Ce membre peut voir toutes les tâches : il voit donc tous les espaces de travail quel que soit le choix ci-dessous. Retirez cette permission de son rôle pour que ce réglage s’applique.",
     "contactManager": "Responsable",
-    "contactLegacyPick": "N’est plus responsable"
+    "contactLegacyPick": "N’est plus responsable",
+    "contactDirectPermission": "Permission directe — aucun rôle"
   },
   "customFields": {
     "fieldTypes": {
