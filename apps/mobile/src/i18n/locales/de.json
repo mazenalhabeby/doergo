@@ -353,7 +353,8 @@
       "upcoming": "Keine anstehenden Aufgaben",
       "history": "Keine vergangenen Aufgaben"
     },
-    "failedToLoad": "Aufgaben konnten nicht geladen werden"
+    "failedToLoad": "Aufgaben konnten nicht geladen werden",
+    "selectTask": "Wählen Sie eine Aufgabe, um Details zu sehen"
   },
   "taskDetail": {
     "title": "Aufgabendetails",
@@ -516,7 +517,8 @@
     "titleRequired": "Bitte geben Sie einen Aufgabentitel ein.",
     "successMessage": "Aufgabe erfolgreich erstellt!",
     "failedToCreate": "Aufgabe konnte nicht erstellt werden",
-    "spaceLabel": "Bereich"
+    "spaceLabel": "Bereich",
+    "spaceCount": "{{count}} verfügbar"
   },
   "attendance": {
     "clockedIn": "Eingestempelt",
@@ -626,7 +628,9 @@
       "step3": "„Immer zulassen“ wählen",
       "openSettings": "Einstellungen öffnen",
       "notNow": "Nicht jetzt"
-    }
+    },
+    "unknownLocation": "diesem Bereich",
+    "clockedInRemotely": "Remote eingestempelt"
   },
   "overtime": {
     "title": "Überstunden",
@@ -1604,5 +1608,46 @@
     "noPendingDesc": "Alles erledigt – aktuell gibt es nichts zu genehmigen.",
     "loadFailed": "Anfragen konnten nicht geladen werden. Zum Aktualisieren ziehen.",
     "unknownWorker": "Unbekannte Person"
+  },
+  "billing": {
+    "locked": {
+      "body": "Ihre Organisation",
+      "title": "Abonnement inaktiv"
+    }
+  },
+  "customers": {
+    "appAccess": "App-Zugriff",
+    "empty": "Keine Kunden",
+    "title": "Kunden"
+  },
+  "issues": {
+    "myIssues": "Meine Meldungen",
+    "report": "Problem melden"
+  },
+  "route": {
+    "distance": "Entfernung",
+    "driveTime": "Fahrzeit",
+    "myLocation": "Mein Standort",
+    "navigate": "Los",
+    "needStart": "Aktivieren Sie den Standort, um Ihren Startpunkt festzulegen",
+    "needStops": "Wählen Sie mindestens einen Halt",
+    "noStops": "Keine Aufgaben mit Standort. Fügen Sie einer Aufgabe einen Standort hinzu, um sie in die Route aufzunehmen.",
+    "openFull": "Ganze Route öffnen",
+    "optimize": "Route optimieren",
+    "planRoute": "Meine Route planen",
+    "selected": "ausgewählt",
+    "start": "Start",
+    "stops": "Halte",
+    "title": "Meine Route planen",
+    "todaysStops": "Heute",
+    "useMyLocation": "Meinen Standort verwenden"
+  },
+  "worklog": {
+    "button": "Aktivität",
+    "hint": "Halten Sie während der Schicht fest, was Sie erledigt haben — daraus wird Ihre Ausstempel-Zusammenfassung.",
+    "tabHint": "Festhalten, was Sie heute gemacht haben",
+    "title": "Was ich heute gemacht habe",
+    "titlePast": "Aktivität dieser Schicht",
+    "viewActivity": "Aktivität ansehen"
   }
 }

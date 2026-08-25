@@ -263,7 +263,8 @@
         "onTheClock": "Fichado",
         "offShift": "Fuera de turno",
         "offDuty": "Fuera de servicio",
-        "working": "Trabajando"
+        "working": "Trabajando",
+        "atSpace": "En {{space}}"
       },
       "activityLabel": "Actividad",
       "pending": {
@@ -352,7 +353,8 @@
       "upcoming": "No hay tareas próximas",
       "history": "No hay tareas pasadas"
     },
-    "failedToLoad": "No se pudieron cargar las tareas"
+    "failedToLoad": "No se pudieron cargar las tareas",
+    "selectTask": "Seleccione una tarea para ver sus detalles"
   },
   "taskDetail": {
     "title": "Detalles de la tarea",
@@ -515,7 +517,8 @@
     "titleRequired": "Ingresa un título para la tarea.",
     "successMessage": "¡Tarea creada correctamente!",
     "failedToCreate": "No se pudo crear la tarea",
-    "spaceLabel": "Espacio"
+    "spaceLabel": "Espacio",
+    "spaceCount": "{{count}} disponibles"
   },
   "attendance": {
     "clockedIn": "Entrada registrada",
@@ -625,7 +628,9 @@
       "step3": "Elige “Permitir siempre”",
       "openSettings": "Abrir Ajustes",
       "notNow": "Ahora no"
-    }
+    },
+    "unknownLocation": "este espacio",
+    "clockedInRemotely": "Fichaje remoto"
   },
   "overtime": {
     "title": "Horas extra",
@@ -1603,5 +1608,46 @@
     "noPendingDesc": "Todo al día: no hay nada que aprobar ahora mismo.",
     "loadFailed": "No se pudieron cargar las solicitudes. Desliza para actualizar.",
     "unknownWorker": "Persona desconocida"
+  },
+  "billing": {
+    "locked": {
+      "body": "Su organización",
+      "title": "Suscripción inactiva"
+    }
+  },
+  "customers": {
+    "appAccess": "Acceso a la app",
+    "empty": "Sin clientes",
+    "title": "Clientes"
+  },
+  "issues": {
+    "myIssues": "Mis incidencias",
+    "report": "Reportar una incidencia"
+  },
+  "route": {
+    "distance": "Distancia",
+    "driveTime": "Tiempo de viaje",
+    "myLocation": "Mi ubicación",
+    "navigate": "Ir",
+    "needStart": "Active la ubicación para definir su punto de partida",
+    "needStops": "Seleccione al menos una parada",
+    "noStops": "No hay tareas con ubicación. Añada una ubicación a una tarea para incluirla en la ruta.",
+    "openFull": "Abrir ruta completa",
+    "optimize": "Optimizar ruta",
+    "planRoute": "Planificar mi ruta",
+    "selected": "seleccionadas",
+    "start": "Inicio",
+    "stops": "Paradas",
+    "title": "Planificar mi ruta",
+    "todaysStops": "Hoy",
+    "useMyLocation": "Usar mi ubicación"
+  },
+  "worklog": {
+    "button": "Actividad",
+    "hint": "Anote lo que va terminando durante el turno: será su resumen al fichar la salida.",
+    "tabHint": "Registre lo que hizo hoy",
+    "title": "Lo que hice hoy",
+    "titlePast": "Actividad de esta sesión",
+    "viewActivity": "Ver actividad"
   }
 }

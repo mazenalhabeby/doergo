@@ -1,3 +1,8 @@
+> **Superseded 2026-08-25.** Both areas have since been audited —
+> `docs/audit/14-mobile.md` and `docs/audit/15-infrastructure.md`. This file is kept
+> for the reasoning about *why* they were originally out of scope; the open items in it
+> that remain are consolidated at the end of the two reports.
+
 # Follow-up: Mobile app & Infrastructure
 
 Two areas the 13-area web audit (`WEB_AUDIT.md`, `docs/audit/`) deliberately did **not**

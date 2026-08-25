@@ -353,7 +353,8 @@
       "upcoming": "No upcoming tasks",
       "history": "No past tasks"
     },
-    "failedToLoad": "Failed to load tasks"
+    "failedToLoad": "Failed to load tasks",
+    "selectTask": "Select a task to view its details"
   },
   "taskDetail": {
     "title": "Task Details",
@@ -516,7 +517,8 @@
     "titleRequired": "Please enter a task title.",
     "successMessage": "Task created successfully!",
     "failedToCreate": "Failed to create task",
-    "spaceLabel": "Space"
+    "spaceLabel": "Space",
+    "spaceCount": "{{count}} available"
   },
   "attendance": {
     "clockedIn": "Clocked In",
@@ -626,7 +628,9 @@
       "step3": "Choose “Allow all the time”",
       "openSettings": "Open Settings",
       "notNow": "Not now"
-    }
+    },
+    "unknownLocation": "this space",
+    "clockedInRemotely": "Clocked in remotely"
   },
   "overtime": {
     "title": "Overtime",
@@ -1626,5 +1630,28 @@
     "stops": "Stops",
     "openFull": "Open full route",
     "navigate": "Go"
+  },
+  "billing": {
+    "locked": {
+      "body": "Your organization",
+      "title": "Subscription inactive"
+    }
+  },
+  "customers": {
+    "appAccess": "App access",
+    "empty": "No customers",
+    "title": "Customers"
+  },
+  "issues": {
+    "myIssues": "My issues",
+    "report": "Report an issue"
+  },
+  "worklog": {
+    "button": "Activity",
+    "hint": "Note what you finish through the shift — it becomes your clock-out summary.",
+    "tabHint": "Log what you did today",
+    "title": "What I did today",
+    "titlePast": "Activity for this session",
+    "viewActivity": "View activity"
   }
 }

@@ -263,7 +263,8 @@
         "onTheClock": "Pointé",
         "offShift": "Hors service",
         "offDuty": "Hors service",
-        "working": "Au travail"
+        "working": "Au travail",
+        "atSpace": "À {{space}}"
       },
       "activityLabel": "Activité",
       "pending": {
@@ -352,7 +353,8 @@
       "upcoming": "Aucune tâche à venir",
       "history": "Aucune tâche passée"
     },
-    "failedToLoad": "Échec du chargement des tâches"
+    "failedToLoad": "Échec du chargement des tâches",
+    "selectTask": "Sélectionnez une tâche pour voir ses détails"
   },
   "taskDetail": {
     "title": "Détails de la tâche",
@@ -515,7 +517,8 @@
     "titleRequired": "Veuillez saisir un titre de tâche.",
     "successMessage": "Tâche créée avec succès !",
     "failedToCreate": "Échec de la création de la tâche",
-    "spaceLabel": "Espace"
+    "spaceLabel": "Espace",
+    "spaceCount": "{{count}} disponibles"
   },
   "attendance": {
     "clockedIn": "Pointage d'arrivée effectué",
@@ -625,7 +628,9 @@
       "step3": "Choisissez « Toujours autoriser »",
       "openSettings": "Ouvrir les réglages",
       "notNow": "Pas maintenant"
-    }
+    },
+    "unknownLocation": "cet espace",
+    "clockedInRemotely": "Pointé à distance"
   },
   "overtime": {
     "title": "Heures supplémentaires",
@@ -1603,5 +1608,46 @@
     "noPendingDesc": "Tout est à jour : rien à valider pour le moment.",
     "loadFailed": "Impossible de charger les demandes. Tirez pour actualiser.",
     "unknownWorker": "Personne inconnue"
+  },
+  "billing": {
+    "locked": {
+      "body": "Votre organisation",
+      "title": "Abonnement inactif"
+    }
+  },
+  "customers": {
+    "appAccess": "Accès à l’app",
+    "empty": "Aucun client",
+    "title": "Clients"
+  },
+  "issues": {
+    "myIssues": "Mes signalements",
+    "report": "Signaler un problème"
+  },
+  "route": {
+    "distance": "Distance",
+    "driveTime": "Temps de trajet",
+    "myLocation": "Ma position",
+    "navigate": "Aller",
+    "needStart": "Activez la localisation pour définir votre point de départ",
+    "needStops": "Sélectionnez au moins un arrêt",
+    "noStops": "Aucune tâche avec un lieu. Ajoutez un lieu à une tâche pour l’inclure dans l’itinéraire.",
+    "openFull": "Ouvrir l’itinéraire complet",
+    "optimize": "Optimiser l’itinéraire",
+    "planRoute": "Planifier mon itinéraire",
+    "selected": "sélectionnés",
+    "start": "Départ",
+    "stops": "Arrêts",
+    "title": "Planifier mon itinéraire",
+    "todaysStops": "Aujourd’hui",
+    "useMyLocation": "Utiliser ma position"
+  },
+  "worklog": {
+    "button": "Activité",
+    "hint": "Notez ce que vous terminez pendant le service — cela devient votre résumé de fin de poste.",
+    "tabHint": "Notez ce que vous avez fait aujourd’hui",
+    "title": "Ce que j’ai fait aujourd’hui",
+    "titlePast": "Activité de ce service",
+    "viewActivity": "Voir l’activité"
   }
 }

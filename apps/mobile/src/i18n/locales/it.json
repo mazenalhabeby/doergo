@@ -263,7 +263,8 @@
         "onTheClock": "Timbrato",
         "offShift": "Fuori turno",
         "offDuty": "Fuori servizio",
-        "working": "Al lavoro"
+        "working": "Al lavoro",
+        "atSpace": "Presso {{space}}"
       },
       "activityLabel": "Attività",
       "pending": {
@@ -352,7 +353,8 @@
       "upcoming": "Nessuna attività in arrivo",
       "history": "Nessuna attività passata"
     },
-    "failedToLoad": "Impossibile caricare le attività"
+    "failedToLoad": "Impossibile caricare le attività",
+    "selectTask": "Selezioni un’attività per vederne i dettagli"
   },
   "taskDetail": {
     "title": "Dettagli attività",
@@ -515,7 +517,8 @@
     "titleRequired": "Inserisci un titolo per l'attività.",
     "successMessage": "Attività creata con successo!",
     "failedToCreate": "Impossibile creare l'attività",
-    "spaceLabel": "Spazio"
+    "spaceLabel": "Spazio",
+    "spaceCount": "{{count}} disponibili"
   },
   "attendance": {
     "clockedIn": "Entrata timbrata",
@@ -625,7 +628,9 @@
       "step3": "Scegli “Consenti sempre”",
       "openSettings": "Apri Impostazioni",
       "notNow": "Non ora"
-    }
+    },
+    "unknownLocation": "questo spazio",
+    "clockedInRemotely": "Timbratura da remoto"
   },
   "overtime": {
     "title": "Straordinario",
@@ -1603,5 +1608,46 @@
     "noPendingDesc": "Tutto in ordine: al momento non c'è nulla da approvare.",
     "loadFailed": "Impossibile caricare le richieste. Trascina per aggiornare.",
     "unknownWorker": "Persona sconosciuta"
+  },
+  "billing": {
+    "locked": {
+      "body": "La sua organizzazione",
+      "title": "Abbonamento non attivo"
+    }
+  },
+  "customers": {
+    "appAccess": "Accesso all’app",
+    "empty": "Nessun cliente",
+    "title": "Clienti"
+  },
+  "issues": {
+    "myIssues": "Le mie segnalazioni",
+    "report": "Segnala un problema"
+  },
+  "route": {
+    "distance": "Distanza",
+    "driveTime": "Tempo di percorrenza",
+    "myLocation": "La mia posizione",
+    "navigate": "Vai",
+    "needStart": "Attivi la posizione per impostare il punto di partenza",
+    "needStops": "Selezioni almeno una tappa",
+    "noStops": "Nessuna attività con una posizione. Aggiunga una posizione a un’attività per includerla nel percorso.",
+    "openFull": "Apri percorso completo",
+    "optimize": "Ottimizza percorso",
+    "planRoute": "Pianifica il mio percorso",
+    "selected": "selezionate",
+    "start": "Partenza",
+    "stops": "Tappe",
+    "title": "Pianifica il mio percorso",
+    "todaysStops": "Oggi",
+    "useMyLocation": "Usa la mia posizione"
+  },
+  "worklog": {
+    "button": "Attività",
+    "hint": "Annoti ciò che completa durante il turno: diventerà il riepilogo di fine turno.",
+    "tabHint": "Registri cosa ha fatto oggi",
+    "title": "Cosa ho fatto oggi",
+    "titlePast": "Attività di questo turno",
+    "viewActivity": "Vedi attività"
   }
 }
