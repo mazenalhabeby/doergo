@@ -25,6 +25,18 @@ const BCRYPT_COST_FACTOR = 12;
 // Single source of truth for the fields the Members list + a single member share,
 // so a member detail page can fetch ONE row in the same shape as a list row
 // (instead of pulling the whole org and finding it client-side).
+/** Just enough to draw one row of the contact picker. */
+const CONTACT_CANDIDATE_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+  role: true,
+  position: true,
+  isActive: true,
+  canManageUsers: true,
+} as const;
+
 const ORG_MEMBER_SELECT = {
   id: true,
   email: true,
@@ -786,7 +798,7 @@ export class UsersService {
   /**
    * List all members of an organization with filtering and pagination
    */
-  async listOrgMembers(dto: ListOrgMembersDto) {
+  async listOrgMembers(dto: ListOrgMembersDto & { contactCandidates?: boolean; includeIds?: string[] }) {
     const { organizationId, search, role } = dto;
     // Clamp pagination server-side so a client can't request an unbounded page (M6).
     const page = Math.max(1, Number(dto.page) || 1);
@@ -801,6 +813,32 @@ export class UsersService {
       where.role = role;
     }
 
+    /*
+      Contact picker: admins and managers only.
+
+      The picker used to ask for 200 members and filter them in the browser, so
+      an organization's whole staff list — Access Profiles, contact allow-lists,
+      role joins — was read, serialised and thrown away to render a handful of
+      rows. Same defect the spaces list had: the filter belongs in the query.
+
+      `includeIds` keeps anyone already on the member's allow-list in the
+      result even if they no longer qualify. Leaving them out would not remove
+      the grant, only hide it.
+    */
+    if (dto.contactCandidates) {
+      where.isActive = true;
+      const or: any[] = [{ role: 'ADMIN' }, { canManageUsers: true }];
+      const keep = (dto.includeIds ?? []).filter(Boolean);
+      if (keep.length) or.push({ id: { in: keep } });
+      // Combined with a search's own OR via AND so neither clause swallows the other.
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: or }];
+        delete where.OR;
+      } else {
+        where.OR = or;
+      }
+    }
+
     if (search) {
       where.OR = [
         { firstName: { contains: search, mode: 'insensitive' } },
@@ -813,7 +851,9 @@ export class UsersService {
 
     const members = await this.prisma.user.findMany({
       where,
-      select: ORG_MEMBER_SELECT,
+      // The picker renders a name, an avatar and a label — it has no use for
+      // Access Profiles or allow-lists, and those are the expensive columns.
+      select: dto.contactCandidates ? CONTACT_CANDIDATE_SELECT : ORG_MEMBER_SELECT,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,

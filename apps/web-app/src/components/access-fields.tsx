@@ -111,16 +111,6 @@ export function AccessFields({
 }) {
   const { t } = useTranslation()
 
-  // Contacts this member could be allowed to reach: leadership only — admins and
-  // managers. "Manager" = holds an elevated permission (view-all / assign tasks /
-  // manage users). NOT merely "has a named role": in the unified role system every
-  // member has a role, so `!!memberRole` would match plain employees (Technician,
-  // Maintenance Worker) too — we want only actual admins/managers here.
-  const { data: membersData } = useQuery({
-    queryKey: ["orgMembers", "accessContacts"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
-    staleTime: 60000,
-  })
   /*
     Who may be picked as a specific contact: admins and managers only.
 
@@ -130,20 +120,31 @@ export function AccessFields({
     canAssignTasks holders, which is most of a dispatch team, so "Specific
     contacts" listed nearly everyone and read like a directory.
 
-    Anyone ALREADY on the allow-list stays listed even if they no longer
-    qualify, captured once on mount so a row cannot vanish under the cursor
-    while it is being unticked. Dropping them from the list would not remove
-    the grant — it is still saved and still enforced — it would only hide it.
+    Anyone ALREADY on the allow-list is kept in the result even if they no
+    longer qualify, captured once on mount so a row cannot vanish under the
+    cursor while it is being unticked. Dropping them would not remove the grant
+    — it is still saved and still enforced by canReach — only hide it.
   */
   const initiallyAllowed = useRef<Set<string>>(new Set(value.contactAllowedIds))
+  // Stable across renders (the ref never changes), so this does not re-key the query.
+  const keepIds = useMemo(() => [...initiallyAllowed.current].sort(), [])
+
+  const { data: membersData } = useQuery({
+    // Admins and managers are chosen by the DATABASE. This used to ask for 200
+    // full member rows — Access Profiles, contact allow-lists, role joins — and
+    // filter them in the browser to render a handful.
+    queryKey: ["orgMembers", "accessContacts", keepIds.join(",")],
+    queryFn: () =>
+      organizationsApi.getMembers({
+        limit: 200,
+        contactCandidates: true,
+        includeIds: keepIds.length ? keepIds : undefined,
+      }),
+    staleTime: 60000,
+  })
+
   const candidateContacts = useMemo(
-    () =>
-      (membersData?.data || []).filter(
-        (m) =>
-          m.id !== excludeContactId &&
-          m.isActive &&
-          (m.role === "ADMIN" || m.canManageUsers || initiallyAllowed.current.has(m.id)),
-      ),
+    () => (membersData?.data || []).filter((m) => m.id !== excludeContactId && m.isActive),
     [membersData, excludeContactId],
   )
 

@@ -118,6 +118,12 @@ export class OrganizationsController {
         role: query.role,
         page: query.page ? Number(query.page) : undefined,
         limit: query.limit ? Number(query.limit) : undefined,
+        // Contact picker: let the database pick the admins and managers rather
+        // than shipping the whole staff list for the browser to filter.
+        contactCandidates: query.contactCandidates === true || (query.contactCandidates as any) === 'true',
+        includeIds: query.includeIds
+          ? String(query.includeIds).split(',').map((v) => v.trim()).filter(Boolean).slice(0, 200)
+          : undefined,
       }),
     );
 

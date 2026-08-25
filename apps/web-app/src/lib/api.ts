@@ -3572,12 +3572,20 @@ export const organizationsApi = {
     if (response.error) throw new Error(response.error);
   },
 
-  getMembers: async (params?: { search?: string; role?: string; page?: number; limit?: number }) => {
+  getMembers: async (params?: {
+    search?: string; role?: string; page?: number; limit?: number;
+    /** Only admins and managers, filtered in the query — for the contact picker. */
+    contactCandidates?: boolean;
+    /** Ids to keep even if they no longer qualify (already-granted contacts). */
+    includeIds?: string[];
+  }) => {
     const endpoint = buildUrlWithQuery('/organizations/members', {
       search: params?.search,
       role: params?.role !== 'all' ? params?.role : undefined,
       page: params?.page,
       limit: params?.limit,
+      contactCandidates: params?.contactCandidates ? 'true' : undefined,
+      includeIds: params?.includeIds?.length ? params.includeIds.join(',') : undefined,
     });
     const response = await api.get<{
       success: boolean;

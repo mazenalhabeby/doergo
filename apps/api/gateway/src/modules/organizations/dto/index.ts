@@ -35,6 +35,15 @@ export class ListMembersQueryDto {
   @IsEnum(['ADMIN', 'EMPLOYEE'])
   role?: string;
 
+  @ApiPropertyOptional({ description: 'Only admins and managers (the contact picker\'s candidates)' })
+  @IsOptional()
+  contactCandidates?: boolean;
+
+  @ApiPropertyOptional({ description: 'Comma-separated ids to keep in the result even if they no longer qualify' })
+  @IsOptional()
+  @IsString()
+  includeIds?: string;
+
   @ApiPropertyOptional({ description: 'Page number' })
   @IsOptional()
   @Type(() => Number)
