@@ -3669,7 +3669,8 @@
     "taskScope": {
       "title": "Wo Aufgaben erstellt werden dürfen",
       "desc": "Schränkt die Aufgabenerstellung nur für dieses Mitglied ein."
-    }
+    },
+    "spaceVisibilityOverridden": "Dieses Mitglied kann alle Aufgaben sehen und sieht daher unabhängig von der Auswahl unten jeden Arbeitsbereich. Entfernen Sie diese Berechtigung aus seiner Rolle, damit die Einstellung wirkt."
   },
   "customFields": {
     "fieldTypes": {

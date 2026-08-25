@@ -3678,7 +3678,8 @@
     "taskScope": {
       "title": "Où il peut créer des tâches",
       "desc": "Restreint la création de tâches pour ce membre uniquement."
-    }
+    },
+    "spaceVisibilityOverridden": "Ce membre peut voir toutes les tâches : il voit donc tous les espaces de travail quel que soit le choix ci-dessous. Retirez cette permission de son rôle pour que ce réglage s’applique."
   },
   "customFields": {
     "fieldTypes": {

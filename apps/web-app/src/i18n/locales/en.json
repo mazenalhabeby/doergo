@@ -3669,7 +3669,8 @@
     "taskScope": {
       "title": "Where they can create tasks",
       "desc": "Narrows task creation for this member only."
-    }
+    },
+    "spaceVisibilityOverridden": "This member can view all tasks, so they see every workspace regardless of the choice below. Remove that permission from their role to make this take effect."
   },
   "customFields": {
     "fieldTypes": {

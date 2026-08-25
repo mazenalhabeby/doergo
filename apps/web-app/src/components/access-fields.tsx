@@ -178,6 +178,13 @@ export function AccessFields({
     return { groups: [...byDomain.entries()], directCount: rows.filter((r) => r.direct).length }
   }, [value, selectedRole])
 
+  /** Does this member hold canViewAllTasks — the permission the space list is
+   *  scoped against — from either their role or a direct grant? */
+  const seesAllSpacesAnyway =
+    value.systemRole === "ADMIN" ||
+    selectedRole?.permissions?.canViewAllTasks === true ||
+    value.canViewAllTasks === true
+
   const toggleModule = (m: MobileModule) =>
     onChange({
       modules: value.modules.includes(m)
@@ -371,6 +378,18 @@ export function AccessFields({
       {/* Space scope */}
       <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
         <div className="space-y-2">
+          {/* "View all tasks" is what the space list is scoped against, so a
+              member who holds it sees every workspace whatever is picked here.
+              Saying so beats leaving an admin to set a restriction that never
+              takes effect. */}
+          {seesAllSpacesAnyway && (
+            <p className="rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-500">
+              {t(
+                "accessBuilder.spaceVisibilityOverridden",
+                "This member can view all tasks, so they see every workspace regardless of the choice below. Remove that permission from their role to make this take effect.",
+              )}
+            </p>
+          )}
           {SCOPES.map((s) => (
             <button
               key={s.key}

@@ -3669,7 +3669,8 @@
     "taskScope": {
       "title": "Dónde puede crear tareas",
       "desc": "Limita la creación de tareas solo para este miembro."
-    }
+    },
+    "spaceVisibilityOverridden": "Este miembro puede ver todas las tareas, por lo que ve todos los espacios de trabajo independientemente de la opción de abajo. Quite ese permiso de su rol para que surta efecto."
   },
   "customFields": {
     "fieldTypes": {

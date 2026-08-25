@@ -19,6 +19,9 @@ export class LocationsService extends BaseGatewayService {
     limit?: number;
     includeInactive?: boolean;
     kind?: string;
+    /** Caller + Access-Profile scope, so the query filters instead of the response. */
+    viewerId?: string;
+    spaceScope?: 'own' | 'tasks' | 'all';
   }) {
     return this.send({ cmd: 'find_all_locations' }, data);
   }

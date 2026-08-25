@@ -132,10 +132,37 @@ export class LocationsService {
     includeInactive?: boolean;
     search?: string;
     kind?: string;
+    /** Caller, for the Access Profile space scope below. */
+    viewerId?: string;
+    /**
+     * Workspace visibility from the caller's Access Profile.
+     *
+     * Applied HERE, in the query, rather than by filtering the response.
+     * The gateway used to page the org's whole directory out of the database
+     * and then drop the rows the member could not see, which made `total` and
+     * every page boundary describe a list nobody was shown: a member assigned
+     * to one space on page 5 got four empty pages first, and the dashboard
+     * worked around it by fetching every page. Scoping the WHERE clause makes
+     * the count and the pages describe what the member actually gets, and stops
+     * the unreadable rows leaving the database at all.
+     */
+    spaceScope?: 'own' | 'tasks' | 'all';
   }) {
     const page = data.page ?? 1;
     const limit = data.limit ?? 20;
     const skip = (page - 1) * limit;
+
+    // 'tasks' means no workspace view at all — answer without touching the DB.
+    if (data.spaceScope === 'tasks') {
+      return paginated([], { page, limit, total: 0 });
+    }
+    // 'own' with no caller to scope against shows NOTHING, not everything. The
+    // gateway always sends viewerId, so this is the defensive branch — but the
+    // alternative default for a visibility control is to leak the whole
+    // directory, which is the wrong way for it to fail.
+    if (data.spaceScope === 'own' && !data.viewerId) {
+      return paginated([], { page, limit, total: 0 });
+    }
 
     const where: any = {
       organizationId: data.organizationId,
@@ -162,6 +189,18 @@ export class LocationsService {
     // By default, only show active locations
     if (!data.includeInactive) {
       where.isActive = true;
+    }
+
+    // 'own' → only spaces this member is currently assigned to. Same effective
+    // window as the roster include below, so a space cannot appear in the list
+    // via an assignment that has already lapsed.
+    if (data.spaceScope === 'own' && data.viewerId) {
+      where.spaceAssignments = {
+        some: {
+          userId: data.viewerId,
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+        },
+      };
     }
 
     // Optional name/address search (used by global search).
@@ -691,7 +730,15 @@ export class LocationsService {
       locationIds = locs.map((l) => l.id);
     } else {
       const mine = await this.prisma.spaceAssignment.findMany({
-        where: { userId: data.userId, organizationId: data.organizationId },
+        // Same effective window the spaces list uses. Without it a lapsed
+        // assignment still made you a colleague of that space — so someone
+        // rotated off a site kept seeing its crew after the space itself had
+        // disappeared from their list.
+        where: {
+          userId: data.userId,
+          organizationId: data.organizationId,
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+        },
         select: { spaceId: true },
       });
       locationIds = mine.map((a) => a.spaceId);

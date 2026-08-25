@@ -94,20 +94,24 @@ export class LocationsController {
       includeInactive: includeInactive === true || includeInactive === 'true' as any,
       // Default (undefined) excludes CUSTOMER; the Spaces directory passes 'all'.
       kind: kind || undefined,
+      /*
+        Workspace visibility from the Access Profile, applied in the QUERY.
+
+        This used to filter `result.data` after the fact, which left `total` and
+        the page boundaries describing the org's full directory rather than the
+        member's view: pages came back short, a member assigned to one space
+        late in the list got empty pages before it, and the whole directory was
+        read out of the database on every space picker just to be discarded.
+
+        canViewAllTasks still means the full view. It is what the task pickers
+        and dashboards this list feeds are built on, and quietly narrowing it
+        would take spaces away from every manager invited with the default
+        'own' profile. The Access tab now says so, instead of offering a
+        control that silently does nothing for them.
+      */
+      viewerId: req.user.id,
+      spaceScope: req.user.canViewAllTasks ? 'all' : getSpaceScope(req.user),
     });
-    // Scope by the employee's Access Profile (admins/managers keep full view):
-    //   'all'   → every space   ·   'own' → only their assigned spaces
-    //   'tasks' → NO spaces (task-only view)
-    if (!req.user.canViewAllTasks && Array.isArray(result?.data)) {
-      const scope = getSpaceScope(req.user);
-      if (scope === 'tasks') {
-        result.data = [];
-      } else if (scope !== 'all') {
-        result.data = result.data.filter((loc: any) =>
-          (loc.assignments || []).some((a: any) => a.userId === req.user.id),
-        );
-      }
-    }
     return result;
   }
 

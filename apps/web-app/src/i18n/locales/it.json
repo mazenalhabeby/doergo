@@ -3678,7 +3678,8 @@
     "taskScope": {
       "title": "Dove può creare attività",
       "desc": "Limita la creazione di attività solo per questo membro."
-    }
+    },
+    "spaceVisibilityOverridden": "Questo membro può vedere tutte le attività, quindi vede ogni spazio di lavoro indipendentemente dalla scelta qui sotto. Rimuovi quel permesso dal suo ruolo perché abbia effetto."
   },
   "customFields": {
     "fieldTypes": {
