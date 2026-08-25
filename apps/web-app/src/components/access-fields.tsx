@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Smartphone, Monitor, Layers, MessageCircle, Check } from "lucide-react"
@@ -121,13 +121,28 @@ export function AccessFields({
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
     staleTime: 60000,
   })
+  /*
+    Who may be picked as a specific contact: admins and managers only.
+
+    "Manager" is exactly what the chat rule means by it — ADMIN or
+    canManageUsers — so the list offers the same people canReach already treats
+    as always-reachable. It previously also admitted canViewAllTasks and
+    canAssignTasks holders, which is most of a dispatch team, so "Specific
+    contacts" listed nearly everyone and read like a directory.
+
+    Anyone ALREADY on the allow-list stays listed even if they no longer
+    qualify, captured once on mount so a row cannot vanish under the cursor
+    while it is being unticked. Dropping them from the list would not remove
+    the grant — it is still saved and still enforced — it would only hide it.
+  */
+  const initiallyAllowed = useRef<Set<string>>(new Set(value.contactAllowedIds))
   const candidateContacts = useMemo(
     () =>
       (membersData?.data || []).filter(
         (m) =>
           m.id !== excludeContactId &&
           m.isActive &&
-          (m.role === "ADMIN" || m.canViewAllTasks || m.canAssignTasks || m.canManageUsers),
+          (m.role === "ADMIN" || m.canManageUsers || initiallyAllowed.current.has(m.id)),
       ),
     [membersData, excludeContactId],
   )
@@ -473,7 +488,12 @@ export function AccessFields({
                         <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="sm" />
                         <span className="min-w-0 flex-1 truncate text-sm">{c.firstName} {c.lastName}</span>
                         <span className="shrink-0 text-[11px] text-muted-foreground">
-                          {c.role === "ADMIN" ? t("members.roles.admin") : (c.position || t("accessBuilder.contactLabel", "Contact"))}
+                          {c.role === "ADMIN"
+                            ? t("members.roles.admin")
+                            : c.canManageUsers
+                            ? t("accessBuilder.contactManager", "Manager")
+                            : /* on the list from before the rule narrowed */
+                              t("accessBuilder.contactLegacyPick", "No longer a manager")}
                         </span>
                       </label>
                     )

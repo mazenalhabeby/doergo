@@ -3624,14 +3624,14 @@
     },
     "canContact": {
       "title": "Leitung kontaktieren",
-      "desc": "Mit wem dieses Mitglied ein Gespräch beginnen darf — zusätzlich zu den Leitungen seiner Arbeitsbereiche, die ohnehin erreichbar bleiben."
+      "desc": "Welche Admins und Manager dieses Mitglied erreichen darf — zusätzlich zu den Leitungen seiner Arbeitsbereiche, die ohnehin erreichbar bleiben."
     },
     "contactScope": {
       "none": "Nur Kontakte aus Arbeitsbereichen",
       "all": "Alle Kontakte",
       "selected": "Bestimmte Kontakte…"
     },
-    "noContacts": "Keine Kontakte verfügbar",
+    "noContacts": "Keine Admins oder Manager verfügbar",
     "contactLabel": "Kontakt",
     "managementLabel": "Management-Verzeichnis",
     "canViewReports": {
@@ -3670,7 +3670,9 @@
       "title": "Wo Aufgaben erstellt werden dürfen",
       "desc": "Schränkt die Aufgabenerstellung nur für dieses Mitglied ein."
     },
-    "spaceVisibilityOverridden": "Dieses Mitglied kann alle Aufgaben sehen und sieht daher unabhängig von der Auswahl unten jeden Arbeitsbereich. Entfernen Sie diese Berechtigung aus seiner Rolle, damit die Einstellung wirkt."
+    "spaceVisibilityOverridden": "Dieses Mitglied kann alle Aufgaben sehen und sieht daher unabhängig von der Auswahl unten jeden Arbeitsbereich. Entfernen Sie diese Berechtigung aus seiner Rolle, damit die Einstellung wirkt.",
+    "contactManager": "Manager",
+    "contactLegacyPick": "Kein Manager mehr"
   },
   "customFields": {
     "fieldTypes": {

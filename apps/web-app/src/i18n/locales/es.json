@@ -3624,14 +3624,14 @@
     },
     "canContact": {
       "title": "Gestión de contactos",
-      "desc": "Con quién puede iniciar una conversación este miembro, además de los responsables de los espacios en los que trabaja, que siguen siendo localizables."
+      "desc": "A qué administradores y responsables puede contactar este miembro, además de los responsables de los espacios en los que trabaja, que siguen siendo localizables."
     },
     "contactScope": {
       "none": "Solo contactos del espacio",
       "all": "Todos los contactos",
       "selected": "Contactos específicos…"
     },
-    "noContacts": "No hay contactos disponibles",
+    "noContacts": "No hay administradores ni responsables disponibles",
     "contactLabel": "Contacto",
     "managementLabel": "Directorio de gestión",
     "canViewReports": {
@@ -3670,7 +3670,9 @@
       "title": "Dónde puede crear tareas",
       "desc": "Limita la creación de tareas solo para este miembro."
     },
-    "spaceVisibilityOverridden": "Este miembro puede ver todas las tareas, por lo que ve todos los espacios de trabajo independientemente de la opción de abajo. Quite ese permiso de su rol para que surta efecto."
+    "spaceVisibilityOverridden": "Este miembro puede ver todas las tareas, por lo que ve todos los espacios de trabajo independientemente de la opción de abajo. Quite ese permiso de su rol para que surta efecto.",
+    "contactManager": "Responsable",
+    "contactLegacyPick": "Ya no es responsable"
   },
   "customFields": {
     "fieldTypes": {

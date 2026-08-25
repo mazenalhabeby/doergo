@@ -3624,14 +3624,14 @@
     },
     "canContact": {
       "title": "Contact management",
-      "desc": "Who this member may start a conversation with, on top of the leads of spaces they work — those stay reachable either way."
+      "desc": "Which admins and managers this member may reach, on top of the leads of spaces they work — those stay reachable either way."
     },
     "contactScope": {
       "none": "Space contacts only",
       "all": "All contacts",
       "selected": "Specific contacts…"
     },
-    "noContacts": "No contacts available",
+    "noContacts": "No admins or managers available",
     "contactLabel": "Contact",
     "managementLabel": "Management directory",
     "canViewReports": {
@@ -3670,7 +3670,9 @@
       "title": "Where they can create tasks",
       "desc": "Narrows task creation for this member only."
     },
-    "spaceVisibilityOverridden": "This member can view all tasks, so they see every workspace regardless of the choice below. Remove that permission from their role to make this take effect."
+    "spaceVisibilityOverridden": "This member can view all tasks, so they see every workspace regardless of the choice below. Remove that permission from their role to make this take effect.",
+    "contactManager": "Manager",
+    "contactLegacyPick": "No longer a manager"
   },
   "customFields": {
     "fieldTypes": {
