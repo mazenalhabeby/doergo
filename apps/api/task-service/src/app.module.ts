@@ -12,6 +12,7 @@ import {
 import { PrismaModule } from './common/prisma/prisma.module';
 import { WorkflowCacheModule } from './common/cache/workflow-cache.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { NotificationRoutingModule } from './common/notification-routing.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -37,6 +38,8 @@ import { RetentionService } from './common/retention/retention.service';
 
 @Module({
   imports: [
+    // Global: one routing service (and one cache) for the whole process.
+    NotificationRoutingModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

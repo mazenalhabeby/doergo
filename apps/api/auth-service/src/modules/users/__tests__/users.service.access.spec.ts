@@ -21,6 +21,9 @@ describe('UsersService access ceiling (C1)', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        // Stub the task-service client: UsersService publishes a routing-cache
+        // invalidation after a watcher change and nothing here listens for it.
+        { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
         UsersService,
         { provide: PrismaService, useValue: prisma },
       ],

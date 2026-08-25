@@ -6,8 +6,10 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, type PermissionSet } from '@hbcfield/shared';
+import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, type PermissionSet } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
 import {
   CreateEmployeeDto,
@@ -78,7 +80,10 @@ const ORG_MEMBER_SELECT = {
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
+  ) {}
 
   async findOne(id: string, organizationId?: string) {
     // Tenant isolation (S1): when the caller's org is supplied, scope the lookup
@@ -1950,7 +1955,15 @@ export class UsersService {
             id: { in: unique },
             organizationId,
             isActive: true,
-            OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { memberRoleId: { not: null } }],
+            // Same definition the picker offers: the ADMIN system role, or an
+            // assigned role granting canManageUsers. This previously accepted
+            // `memberRoleId: { not: null }` — every member has a role in the
+            // unified system, so the check passed for anyone and the server
+            // enforced nothing the UI was promising.
+            OR: [
+              { role: Role.ADMIN },
+              { memberRole: { is: { permissions: { path: ['canManageUsers'], equals: true } } } },
+            ],
           },
           select: { id: true },
         })
@@ -1968,6 +1981,12 @@ export class UsersService {
           ]
         : []),
     ]);
+
+    // Tell task-service to drop its cached recipients for this member. Without
+    // it the change took up to the cache TTL to show, so an admin would save,
+    // watch the next event go to the old list, and reasonably think it had not
+    // worked. Fire-and-forget: if it is lost, the TTL still expires.
+    this.taskClient.emit('notification_routing_changed', { organizationId, subjectUserId });
 
     return this.getWatchers(subjectUserId, organizationId);
   }

@@ -46,7 +46,10 @@ describe('UsersService members audit (M-B1, M-B2)', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        // Stub the task-service client: UsersService publishes a routing-cache
+        // invalidation after a watcher change and nothing here listens for it.
+        { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },UsersService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(UsersService);
   });

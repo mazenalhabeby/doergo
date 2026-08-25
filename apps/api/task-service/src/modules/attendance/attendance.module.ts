@@ -10,7 +10,6 @@ import { AttendanceReportService } from './attendance-report.service';
 import { ApprovalService } from './approval.service';
 import { AttendanceProcessor } from './attendance.processor';
 import { AttendanceScheduler } from './attendance.scheduler';
-import { NotificationRoutingService } from '../../common/notification-routing.service';
 
 @Module({
   imports: [
@@ -27,7 +26,6 @@ import { NotificationRoutingService } from '../../common/notification-routing.se
     ApprovalService,
     AttendanceProcessor,
     AttendanceScheduler,
-    NotificationRoutingService,
   ],
   exports: [AttendanceService, AttendanceScheduler],
 })

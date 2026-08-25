@@ -30,9 +30,36 @@ export class NotificationRoutingService {
   // Short-TTL cache of the resolved recipient set (P13). Every clock-out/task
   // event fired ~6 uncached queries (watches + resolveMemberRouting + user
   // lookup); a burst of events about the same subject now reuses one resolution.
-  // 60s tolerance per the audit — a routing change applies within a minute.
+  // The TTL is now only a backstop: routing changes invalidate explicitly (see
+  // invalidate() below), so 60s is the worst case for a change this service
+  // never heard about, not the normal one.
   private readonly cache = new Map<string, { v: { ids: string[]; emails: string[] }; exp: number }>();
   private static readonly TTL_MS = 60_000;
+
+  /**
+   * Drop cached routing for one subject, or for a whole organization.
+   *
+   * The cache exists because a burst of events about one person used to re-run
+   * the same six queries each time. Its cost was that a routing change took up
+   * to a minute to apply — an admin would change who is notified about someone,
+   * watch the next event go to the old list, and reasonably conclude it had not
+   * saved.
+   *
+   * Invalidation arrives as a Redis event rather than a local call, because
+   * every replica holds its own copy of this map and the write lands in only
+   * one of them. Publishing reaches all of them, including the publisher.
+   */
+  invalidate(organizationId: string, subjectUserId?: string): number {
+    const prefix = subjectUserId ? `${organizationId}:${subjectUserId}:` : `${organizationId}:`;
+    let dropped = 0;
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.cache.delete(key);
+        dropped++;
+      }
+    }
+    return dropped;
+  }
 
   async resolveWatchers(
     subjectUserId: string,
