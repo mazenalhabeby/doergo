@@ -156,6 +156,7 @@ function refreshAccessToken(): Promise<boolean> {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Client-Platform': 'web',
         },
         credentials: 'include',
         body: JSON.stringify({}),
@@ -215,6 +216,9 @@ async function apiRequest<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    // Names this client so the Access Profile's Web / Mobile choice can be
+    // enforced server-side — it was previously stored and checked nowhere.
+    'X-Client-Platform': 'web',
     ...(options.headers as Record<string, string>),
   };
 

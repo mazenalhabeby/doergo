@@ -158,6 +158,7 @@ export function refreshAccessToken(): Promise<string | null> {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
+          'X-Client-Platform': 'mobile',
         },
         body: JSON.stringify({ refreshToken: storedRefreshToken }),
       });
@@ -267,6 +268,7 @@ export async function fetchApi<T>(
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        'X-Client-Platform': 'mobile',
         ...options.headers,
       },
     });
@@ -349,6 +351,7 @@ async function _fetchWithAuthInner<T>(
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        'X-Client-Platform': 'mobile',
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },

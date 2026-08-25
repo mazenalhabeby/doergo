@@ -78,6 +78,10 @@ export class AuthController {
         ...loginDto,
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip || req.headers['x-forwarded-for'],
+        // Which app is asking, so a member restricted to one surface is turned
+        // away here with a reason rather than signing in to a session that then
+        // fails on every request. Absent for clients that predate the header.
+        clientPlatform: req.headers['x-client-platform'],
       }),
     );
 

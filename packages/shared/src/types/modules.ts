@@ -154,6 +154,32 @@ export function hasAccessModule(
 }
 
 /**
+ * May this member use this client — the Web / Mobile / Both choice in the
+ * Access Profile?
+ *
+ * This setting was stored, shown in the Access tab, and enforced by nothing: a
+ * member set to "Mobile only" could sign in to the web app and use it. It is a
+ * policy control rather than a privilege boundary — the member holds the same
+ * permissions either way — but an admin who picks one surface means it.
+ *
+ * Permissive in the same three cases as hasAccessModule, for the same reason:
+ * an admin, a user with no profile stored, and the legacy array storage form
+ * all pass, so switching enforcement on cannot strand an existing member.
+ */
+export function canUsePlatform(
+  user: { enabledModules?: unknown; role?: string | null },
+  client: AccessPlatform,
+): boolean {
+  const role = (user.role || '').toUpperCase();
+  if (role === 'ADMIN' || role === 'CLIENT') return true;
+  if (client === 'both') return true;
+  const profile = asProfile(user.enabledModules);
+  const platforms = profile?.platforms;
+  if (!platforms) return true; // nothing configured → no restriction
+  return platforms === 'both' || platforms === client;
+}
+
+/**
  * The single source of truth for "can this member be assigned a task?" — they
  * must have the `tasks` module, otherwise the task is invisible on their mobile.
  * Used by every assignee picker so the rule lives in one place.

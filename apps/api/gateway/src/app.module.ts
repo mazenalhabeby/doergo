@@ -52,6 +52,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { AccessModuleGuard } from './common/guards/access-module.guard';
+import { ClientPlatformGuard } from './common/guards/client-platform.guard';
 import { CustomerConfinementGuard } from './common/guards/customer-confinement.guard';
 import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PlanGuard } from './common/guards/plan.guard';
@@ -197,6 +198,11 @@ import { StorageModule } from './common/storage/storage.module';
     {
       provide: APP_GUARD,
       useClass: AccessModuleGuard,
+    },
+    // Web / Mobile / Both from the same Access Profile.
+    {
+      provide: APP_GUARD,
+      useClass: ClientPlatformGuard,
     },
     {
       provide: APP_GUARD,

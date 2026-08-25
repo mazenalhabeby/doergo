@@ -29,6 +29,7 @@ import {
   isTaskAssignee,
   isWithinTaskBoundary,
   mayChangeStatus,
+  canReceiveTasks,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -81,6 +82,10 @@ export class TasksService {
   async create(data: any) {
     const hasAssignment = !!data.assignedToId;
     const assigneeIds: string[] = data.assigneeIds || [];
+
+    // One lookup for the primary assignee and the list together — a task must
+    // not be created already assigned to someone who cannot see it.
+    await this.assertAssigneesCanReceiveTasks([data.assignedToId, ...assigneeIds]);
 
     // SPACE-scoped users MUST provide a spaceId
     if (data.taskCreationScope === 'SPACE' && !data.spaceId) {
@@ -662,9 +667,14 @@ export class TasksService {
       }
       const worker = await this.prisma.user.findFirst({
         where: { id: data.assignedToId, organizationId: data.organizationId, isActive: true },
-        select: { id: true, firstName: true, lastName: true },
+        select: { id: true, firstName: true, lastName: true, role: true, enabledModules: true },
       });
       if (!worker) throw new NotFoundException('Worker not found or not in your organization');
+      if (!canReceiveTasks(worker)) {
+        throw new BadRequestException(
+          `${worker.firstName} ${worker.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
+        );
+      }
       assignedToId = worker.id;
       workerName = `${worker.firstName} ${worker.lastName}`;
     }
@@ -1148,6 +1158,35 @@ export class TasksService {
   /**
    * Assign a task to a technician (CLIENT or DISPATCHER)
    */
+  /**
+   * Refuse to hand work to someone who cannot see it.
+   *
+   * A member's Access Profile can exclude the Tasks surface — they are a
+   * clock-only worker. The assignee pickers already hide those people
+   * (canReceiveTasks), but nothing checked on the way in, so a task assigned
+   * through the API, an integration, or a stale client landed on someone whose
+   * app has no Tasks tab: assigned, invisible, and silently never worked.
+   *
+   * Same permissive rule as everywhere else — canReceiveTasks is true for
+   * admins and for anyone with no profile stored, so this only refuses a member
+   * whose profile explicitly leaves Tasks out.
+   */
+  private async assertAssigneesCanReceiveTasks(ids: (string | null | undefined)[]) {
+    const unique = [...new Set(ids.filter((id): id is string => !!id))];
+    if (unique.length === 0) return;
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, role: true, enabledModules: true, firstName: true, lastName: true },
+    });
+    const blocked = users.filter((u) => !canReceiveTasks(u));
+    if (blocked.length > 0) {
+      const names = blocked.map((u) => `${u.firstName} ${u.lastName}`.trim()).join(', ');
+      throw new BadRequestException(
+        `${names} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
+      );
+    }
+  }
+
   async assign(data: { id: string; workerId: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -1196,6 +1235,13 @@ export class TasksService {
 
     if (!worker) {
       throw new NotFoundException('Worker not found or not in your organization');
+    }
+
+    // No extra query: the worker row above is loaded whole.
+    if (!canReceiveTasks(worker)) {
+      throw new BadRequestException(
+        `${worker.firstName} ${worker.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
+      );
     }
 
     const previousAssignee = task.assignedToId;
@@ -1822,9 +1868,15 @@ export class TasksService {
     // Verify the target user exists in the organization
     const user = await this.prisma.user.findFirst({
       where: { id: data.userId, organizationId: data.organizationId, isActive: true },
-      select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+      // role + enabledModules so canReceiveTasks can be answered without a second read.
+      select: { id: true, firstName: true, lastName: true, avatarUrl: true, role: true, enabledModules: true },
     });
     if (!user) throw new NotFoundException('User not found or not in your organization');
+    if (!canReceiveTasks(user)) {
+      throw new BadRequestException(
+        `${user.firstName} ${user.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
+      );
+    }
 
     const role = (data.role as any) || 'MEMBER';
 

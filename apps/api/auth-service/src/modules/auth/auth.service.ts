@@ -33,6 +33,7 @@ import {
   type MailRoute,
   type ProfileBadgesConfig,
   runWithCronLock,
+  canUsePlatform,
 } from '@hbcfield/shared';
 
 // Hash a token using SHA-256 for secure storage
@@ -466,7 +467,7 @@ export class AuthService {
     }
   }
 
-  async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; userAgent?: string; ipAddress?: string }) {
+  async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; clientPlatform?: string; userAgent?: string; ipAddress?: string }) {
     try {
       // Normalize email to lowercase for lookup
       const email = data.email.trim().toLowerCase();
@@ -555,6 +556,31 @@ export class AuthService {
           success: false,
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
           message: `Account locked for ${LOCKOUT_DURATION_MINUTES} minutes due to too many failed attempts.`,
+        };
+      }
+
+      /*
+        Access Profile: Web / Mobile / Both.
+
+        Checked HERE, after the password has been verified — refusing earlier
+        would answer "does this account exist?" for anyone probing, which the
+        rest of this method is careful not to do.
+
+        Clients name themselves with X-Client-Platform. One that says nothing is
+        allowed through: mobile builds already in the field do not send it yet.
+      */
+      const clientPlatform = String((data as any).clientPlatform ?? '').toLowerCase().trim();
+      if (
+        (clientPlatform === 'web' || clientPlatform === 'mobile') &&
+        !canUsePlatform(user as any, clientPlatform)
+      ) {
+        return {
+          success: false,
+          statusCode: HttpStatus.FORBIDDEN,
+          message:
+            clientPlatform === 'web'
+              ? 'This account is set up for the mobile app. Ask an admin to allow web access.'
+              : 'This account is set up for the web app. Ask an admin to allow mobile access.',
         };
       }
 
