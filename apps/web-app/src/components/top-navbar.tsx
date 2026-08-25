@@ -297,7 +297,7 @@ export function TopNavbar() {
         {/* Employee module-driven items. Personal Time Off shows standalone only
             when the user has no Time & Attendance dropdown to host it (i.e. a
             non-management member); managers get it inside that dropdown. */}
-        {showMyTimeOff && !(showSchedule || showAttendance) && (
+        {showMyTimeOff && (
           <Link href="/my/time-off" data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.timeOff")}
           </Link>
@@ -506,15 +506,20 @@ function TimeAttendanceDropdown({
             </Link>
           </DropdownMenuItem>
         )}
-        {/* Personal time-off (distinct page). Management time-off is a tab on
-            Schedule above, so it isn't duplicated here. */}
-        {showMyTimeOff && (
+        {/* Overtime requests and approvals. This page had 478 lines of UI and NO
+            link anywhere in the web app — reachable only by typing the URL. It
+            belongs here: the fourth manager-facing working-time tool. */}
+        {showAttendance && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/my/time-off" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              {t("nav.timeOff")}
+            <Link href="/overtime" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              {t("nav.sidebar.overtime", "Overtime")}
             </Link>
           </DropdownMenuItem>
         )}
+        {/* Personal time-off is deliberately NOT here. This menu is management
+            tools — everyone else's attendance, rota, shift issues and overtime.
+            "My Time Off" is a personal page and is now a top-level item for
+            managers too, not buried inside a management menu. */}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -696,15 +701,14 @@ function MobileMenu({
               </DropdownMenuItem>
             )}
             {/* Personal time-off (distinct page); management time-off is a tab on Schedule. */}
-            {showMyTimeOff && (
+            {showAttendance && (
               <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
                 <Link
-                  href="/my/time-off"
+                  href="/overtime"
                   onClick={() => setOpen(false)}
-                  className={cn(mobileItemBase, "pl-5", isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}
+                  className={cn(mobileItemBase, "pl-5", isActive(pathname, "/overtime") ? mobileItemActiveStyle : mobileItemInactive)}
                 >
-                  <Calendar className="h-4 w-4" />
-                  {t("nav.timeOff")}
+                  {t("nav.sidebar.overtime", "Overtime")}
                 </Link>
               </DropdownMenuItem>
             )}
@@ -713,7 +717,7 @@ function MobileMenu({
 
         {/* Employee module-driven items. Personal Time Off shows standalone only
             when there's no Time & Attendance group above to host it. */}
-        {showMyTimeOff && !(showSchedule || showAttendance) && (
+        {showMyTimeOff && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
             <Link href="/my/time-off" onClick={() => setOpen(false)}
               className={cn(mobileItemBase, isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}>
