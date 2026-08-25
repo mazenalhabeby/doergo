@@ -195,15 +195,17 @@ export function TopNavbar() {
         <AnimatedLogo size="small" textColor={resolvedTheme === 'dark' ? '#fafafa' : '#18181b'} />
       </Link>
 
-      <div className="flex min-w-0 flex-1 justify-center px-2">
-        <CommandPaletteButton />
-      </div>
 
+      {/* Everything sits right in row 1. It can: the only thing on the left is the
+          logo, so there is no navigation to crowd — that lives in row 2. Order runs
+          from "looking something up" through "doing something" to "who am I". */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
-        {/* Only what is time-critical lives here now. Language is a preference set
-            once; help and support are never urgent — all three moved into the
-            avatar menu, which is where settings already live. That returned about
-            150px to the row and cut it from seven controls to three. */}
+        <CommandPaletteButton />
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+        <LanguageSwitcher />
+        <span data-tour="nav-help" className="inline-flex"><HelpButton /></span>
+        <span data-tour="nav-support" className="inline-flex"><SupportButton /></span>
+        <span className="mx-1 h-5 w-px bg-border" aria-hidden />
         <ClockWidget />
         <span data-tour="nav-notifications" className="inline-flex"><NotificationBell /></span>
         <span data-tour="nav-profile" className="inline-flex"><UserDropdown
@@ -431,7 +433,7 @@ function CommandPaletteButton() {
     <button
       onClick={() => setOpen(true)}
       data-tour="nav-command"
-      className="flex w-full max-w-[460px] items-center gap-2 h-9 px-3 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+      className="flex w-[190px] lg:w-[240px] items-center gap-2 h-9 px-3 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
     >
       <Search className="size-4 shrink-0" />
       <span className="hidden sm:inline text-[13px]">{t("common.search")}</span>
@@ -949,15 +951,6 @@ function UserDropdown({
           {/* Replay the role-appropriate guided tour */}
           <TourLauncherMenuItem />
 
-          {/* Moved out of the top bar (see row 1). Language is a preference set
-              once; help and support are never time-critical. All three were
-              competing with navigation for space in the busiest row of the
-              product, and none of them needed to be there. */}
-          <div className="flex items-center gap-1 px-2 py-1.5">
-            <LanguageSwitcher />
-            <HelpButton />
-            <SupportButton />
-          </div>
 
           {/* Subscription & billing (this org's plan/payment) — admins only */}
           {canManageUsers && (
