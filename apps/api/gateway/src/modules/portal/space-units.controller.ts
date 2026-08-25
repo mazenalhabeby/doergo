@@ -46,7 +46,7 @@ export class SpaceUnitsController {
   }
 
   @Post()
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Add an apartment / unit to this space' })
   async create(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string; contactPhone?: string; residentUserId?: string | null; customerId?: string | null; details?: any[] }, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
@@ -61,7 +61,7 @@ export class SpaceUnitsController {
   }
 
   @Patch(':unitId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Update an apartment (name/address, resident, details)' })
   async update(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
@@ -71,7 +71,7 @@ export class SpaceUnitsController {
   }
 
   @Delete(':unitId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Remove an apartment / unit' })
   async remove(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
@@ -81,7 +81,7 @@ export class SpaceUnitsController {
   /** Reverse-direction assignment: give a MEMBER an apartment from the member
    *  side (Members tab). `unitId: null` vacates them. One home per member. */
   @Post('assign-member')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "Set a member's apartment in this space (unitId null = vacate)" })
   async assignMember(@Param('spaceId') spaceId: string, @Body() body: { userId: string; unitId?: string | null }, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
@@ -114,7 +114,7 @@ export class UnitDetailController {
   }
 
   @Post(':id/activities')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Add a note to an apartment' })
   addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: any) {
     return firstValueFrom(this.authClient.send({ cmd: 'portal_add_unit_activity' }, { id, organizationId: req.user.organizationId, body: body.body, authorId: req.user.id }));

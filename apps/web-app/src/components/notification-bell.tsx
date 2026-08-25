@@ -181,7 +181,7 @@ export function NotificationBell() {
   const router = useRouter()
   // The management /attendance page is ADMIN / can-view-all-tasks only; everyone else has
   // /my/attendance. Route attendance notifications to the page the viewer can open.
-  const attendanceHref = user?.role === "ADMIN" || !!user?.canViewAllTasks ? "/attendance" : "/my/attendance"
+  const attendanceHref = user?.role === "ADMIN" || !!user?.canViewSpaceAttendance || !!user?.canViewAllTasks ? "/attendance" : "/my/attendance"
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const idCounter = useRef(0)

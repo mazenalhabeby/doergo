@@ -144,7 +144,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Approve or reject a time-off request' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @ApiResponse({ status: 200, description: 'Time-off request processed' })
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   async approveTimeOff(
     @Param('timeOffId') timeOffId: string,
     @Body() body: { approved: boolean; rejectionReason?: string },
@@ -166,7 +166,7 @@ export class EmployeesController {
 
   @Post('time-off/manual')
   @ApiOperation({ summary: 'Admin: add an already-approved day off for an employee' })
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   async addTimeOff(
     @Body() body: { technicianId: string; startDate: string; endDate: string; reason?: string },
     @CurrentUser() user: CurrentUserData,
@@ -189,7 +189,7 @@ export class EmployeesController {
   @Patch('time-off/:timeOffId')
   @ApiOperation({ summary: 'Admin: edit an existing day off (dates / reason)' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   async updateTimeOff(
     @Param('timeOffId') timeOffId: string,
     @Body() body: { startDate?: string; endDate?: string; reason?: string | null },
@@ -212,7 +212,7 @@ export class EmployeesController {
   @Delete('time-off/:timeOffId/manage')
   @ApiOperation({ summary: 'Admin: delete a day off' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   async adminDeleteTimeOff(
     @Param('timeOffId') timeOffId: string,
     @CurrentUser() user: CurrentUserData,
@@ -227,7 +227,7 @@ export class EmployeesController {
 
   @Post('time-off/bulk-approve')
   @ApiOperation({ summary: 'Bulk approve or reject time-off requests' })
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   async bulkApproveTimeOff(
     @Body() body: { timeOffIds: string[]; approved: boolean; rejectionReason?: string },
     @CurrentUser() user: CurrentUserData,
@@ -492,7 +492,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee attendance history' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Attendance history retrieved' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   async getEmployeeAttendance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
@@ -571,7 +571,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Set employee weekly schedule' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Schedule updated' })
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageRota')
   async setEmployeeSchedule(
     @Param('id') id: string,
     @Body() body: { schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }> },

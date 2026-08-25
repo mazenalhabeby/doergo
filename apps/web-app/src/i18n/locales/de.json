@@ -3659,7 +3659,8 @@
       "crm": "Kunden",
       "billing": "Abrechnung",
       "assets": "Objekte",
-      "workspaces": "Arbeitsbereiche"
+      "workspaces": "Arbeitsbereiche",
+      "tracking": "Standortverfolgung"
     }
   },
   "customFields": {

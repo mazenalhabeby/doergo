@@ -57,7 +57,7 @@ export class WorkflowsController {
   }
 
   @Post('library/:templateId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Copy a library template into this organization' })
   async useTemplate(
     @Param('templateId') templateId: string,
@@ -94,7 +94,7 @@ export class WorkflowsController {
   }
 
   @Post('definition-of-done')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Create or update a Definition of Done' })
   async upsertDefinitionOfDone(
     @Body() dto: UpsertDefinitionOfDoneDto,
@@ -107,7 +107,7 @@ export class WorkflowsController {
   }
 
   @Delete('definition-of-done/:dodId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Delete a Definition of Done' })
   async removeDefinitionOfDone(
     @Param('dodId') id: string,
@@ -132,7 +132,7 @@ export class WorkflowsController {
   }
 
   @Post()
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Create a new workflow' })
   async create(@Body() dto: CreateWorkflowDto, @Request() req: any) {
     const { spaceId, ...rest } = dto as CreateWorkflowDto & { spaceId?: string };
@@ -153,14 +153,14 @@ export class WorkflowsController {
    * flow's step names are a business's process and sometimes a person's name.
    */
   @Post(':id/share-with-organization')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: "Widen a space's own task type so any space can offer it" })
   async shareWithOrganization(@Param('id') id: string, @Request() req: any) {
     return this.workflowsService.shareWithOrganization({ workflowId: id, organizationId: req.user.organizationId });
   }
 
   @Post(':id/submit-to-library')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Offer this task type to the shared library (goes to review)' })
   async submitToLibrary(@Param('id') id: string, @Body() dto: SubmitToLibraryDto, @Request() req: any) {
     return this.workflowsService.submitToLibrary({
@@ -171,7 +171,7 @@ export class WorkflowsController {
   }
 
   @Patch(':id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Update a workflow' })
   async update(
     @Param('id') id: string,
@@ -186,7 +186,7 @@ export class WorkflowsController {
   }
 
   @Delete(':id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Delete a workflow (not if default)' })
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.workflowsService.remove({
@@ -196,7 +196,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/set-default')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Set workflow as organization default' })
   async setDefault(@Param('id') id: string, @Request() req: any) {
     return this.workflowsService.setDefault({
@@ -206,7 +206,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/statuses')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Add a status to a workflow' })
   async addStatus(
     @Param('id') workflowId: string,
@@ -221,7 +221,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/statuses/reorder')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Reorder all statuses in a workflow' })
   async reorderStatuses(
     @Param('id') workflowId: string,
@@ -236,7 +236,7 @@ export class WorkflowsController {
   }
 
   @Patch(':id/statuses/:statusId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Update a status in a workflow' })
   async updateStatus(
     @Param('id') workflowId: string,
@@ -253,7 +253,7 @@ export class WorkflowsController {
   }
 
   @Delete(':id/statuses/:statusId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManageTaskTypes')
   @ApiOperation({ summary: 'Delete a status from a workflow' })
   async removeStatus(
     @Param('id') workflowId: string,
@@ -281,7 +281,7 @@ export class WorkflowsController {
   }
 
   @Post('spaces/:spaceId/:workflowId')
-  @RequirePermissionInSpace('canManageUsers')
+  @RequirePermissionInSpace('canManageTaskTypes')
   @ApiOperation({ summary: 'Offer a task type in this space' })
   attachSpaceWorkflow(
     @Param('spaceId') spaceId: string,
@@ -298,7 +298,7 @@ export class WorkflowsController {
   }
 
   @Delete('spaces/:spaceId/:workflowId')
-  @RequirePermissionInSpace('canManageUsers')
+  @RequirePermissionInSpace('canManageTaskTypes')
   @ApiOperation({ summary: 'Stop offering a task type in this space' })
   detachSpaceWorkflow(
     @Param('spaceId') spaceId: string,
@@ -309,14 +309,14 @@ export class WorkflowsController {
   }
 
   @Post('spaces/:spaceId/:workflowId/fork')
-  @RequirePermissionInSpace('canManageUsers')
+  @RequirePermissionInSpace('canManageTaskTypes')
   @ApiOperation({ summary: "Take this space's own copy of a shared task type, so it can diverge" })
   forkForSpace(@Param('spaceId') spaceId: string, @Param('workflowId') workflowId: string, @Request() req: any) {
     return this.workflowsService.forkForSpace({ spaceId, workflowId, organizationId: req.user.organizationId });
   }
 
   @Patch('spaces/:spaceId/:workflowId/default')
-  @RequirePermissionInSpace('canManageUsers')
+  @RequirePermissionInSpace('canManageTaskTypes')
   @ApiOperation({ summary: 'Make this the task type new tasks inherit here' })
   setSpaceDefaultWorkflow(
     @Param('spaceId') spaceId: string,

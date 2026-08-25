@@ -65,6 +65,8 @@ export default function TaskDetailPage({
   const isAdmin = user?.role === "ADMIN"
   // Org-level, not task-scoped: reaching every task in the org is a flat grant.
   const canViewAllTasks = isAdmin || user?.canViewAllTasks === true
+  // The route map shows where a person physically went — its own capability now.
+  const canViewTracking = isAdmin || user?.canViewTracking === true || user?.canViewAllTasks === true
 
   const [showAssignModal, setShowAssignModal] = useState(false)
   // Reported by ActivitySection, which is the only thing that loads the
@@ -444,7 +446,7 @@ export default function TaskDetailPage({
                 appear, because this gate removed the section before the
                 component could render it. Kept mounted while loading so it
                 doesn't flash in and out. */}
-            {hasModule("tracking") && canViewAllTasks &&
+            {hasModule("tracking") && canViewTracking &&
               (loadingRoute || (routeData?.points?.length ?? 0) > 0 || task.status === "EN_ROUTE") && (
               <div data-tour="task-route-tracking">
               <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>

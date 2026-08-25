@@ -20,7 +20,7 @@ export class TrackingController {
   // Guest-gated — authorized against the server-authoritative share (showTracking)
   // and the roster is resolved owner-side; nothing comes from the client body.
   @Get('spaces/:spaceId/workers')
-  @RequirePermissionInSpace('canViewAllTasks')
+  @RequirePermissionInSpace('canViewTracking')
   @ApiOperation({ summary: "Live worker locations for a cross-org shared space" })
   async getSpaceWorkers(@Param('spaceId') spaceId: string, @Request() req: any) {
     const grant = (req.user.access?.sharedSpaces ?? []).find(
@@ -72,7 +72,7 @@ export class TrackingController {
   }
 
   @Get('workers')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewTracking')
   @ApiOperation({ summary: 'Get all active employee locations' })
   async getActiveWorkers(@Request() req: any) {
     return firstValueFrom(
@@ -84,7 +84,7 @@ export class TrackingController {
   }
 
   @Get('workers/:id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewTracking')
   @ApiOperation({ summary: 'Get employee location by ID' })
   async getWorkerLocation(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
@@ -97,7 +97,7 @@ export class TrackingController {
   }
 
   @Get('workers/:id/history')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewTracking')
   @ApiOperation({ summary: 'Get employee location history' })
   async getWorkerHistory(
     @Param('id') id: string,
@@ -118,7 +118,7 @@ export class TrackingController {
   }
 
   @Get('workers/:id/current-route')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewTracking')
   @ApiOperation({ summary: 'Get employee current EN_ROUTE journey' })
   async getWorkerCurrentRoute(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
@@ -130,7 +130,7 @@ export class TrackingController {
   }
 
   @Get('tasks/:taskId/route')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewTracking')
   @ApiOperation({ summary: 'Get full route for a task' })
   async getTaskRoute(@Param('taskId') taskId: string, @Request() req: any) {
     return firstValueFrom(

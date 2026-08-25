@@ -45,6 +45,12 @@ export interface User {
   canManageRota?: boolean;
   canManageInvoices?: boolean;
   canManageAssets?: boolean;
+  canManagePortals?: boolean;
+  canManageTaskTypes?: boolean;
+  canViewTracking?: boolean;
+  canReconcileAttendance?: boolean;
+  canViewSpaceAttendance?: boolean;
+  canApproveOvertime?: boolean;
   allowRemote?: boolean;
   presence?: "AVAILABLE" | "BUSY" | "AWAY" | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.

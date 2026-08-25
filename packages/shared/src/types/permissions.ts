@@ -45,6 +45,14 @@ export const PERMISSION_KEYS = [
   // outside the organization may see it. Split out of canManageUsers, where
   // "invite a colleague" and "delete a site" were the same grant.
   'canManageWorkspaces',
+  // Client portals — the B2B2C surface. 41 endpoints rode on canManageUsers,
+  // so "invite a colleague" also meant "publish a portal to your customers".
+  'canManagePortals',
+  // Task-type / workflow definitions: which statuses exist and how work flows.
+  'canManageTaskTypes',
+  // Where staff physically are. Split from canViewAllTasks because reading a
+  // task list and tracking a person's location are not the same permission.
+  'canViewTracking',
 ] as const;
 
 export type AccessPermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -56,7 +64,7 @@ export type PermissionSet = Partial<Record<AccessPermissionKey, boolean>>;
 export type PermissionGrantScope = 'org' | 'space';
 
 /** Domain grouping for UI. */
-export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets' | 'workspaces';
+export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets' | 'workspaces' | 'tracking';
 
 /** Human-facing metadata for every permission — drives the role-builder UI. */
 export const ACCESS_PERMISSION_SCHEMA: {
@@ -84,7 +92,10 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership, create and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'canManageInvoices', label: 'Customer invoices', description: 'Open customer invoicing and see what has been billed', domain: 'billing', scopes: ['org'] },
   { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] },
-  { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] }
+  { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] },
+  { key: 'canManagePortals', label: 'Manage client portals', description: 'Create and configure the portals customers log in to', domain: 'crm', scopes: ['org'] },
+  { key: 'canManageTaskTypes', label: 'Manage task types', description: 'Define task types, statuses and how work flows through them', domain: 'tasks', scopes: ['org'] },
+  { key: 'canViewTracking', label: 'View location tracking', description: 'See where field staff are and the routes they travelled', domain: 'tracking', scopes: ['org', 'space'] }
 ];
 
 /** Resolved CRM abilities for a caller — what the customers service enforces. */

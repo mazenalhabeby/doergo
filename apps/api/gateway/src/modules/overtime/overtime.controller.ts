@@ -55,7 +55,7 @@ export class OvertimeController {
   }
 
   @Post(':id/approve')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canApproveOvertime')
   @ApiOperation({ summary: 'Approve overtime request remotely (Path A)' })
   async approve(
     @Param('id') id: string,
@@ -87,7 +87,7 @@ export class OvertimeController {
   }
 
   @Post(':id/reject')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canApproveOvertime')
   @ApiOperation({ summary: 'Reject overtime request' })
   async reject(
     @Param('id') id: string,
@@ -103,7 +103,7 @@ export class OvertimeController {
   }
 
   @Get('pending-approvals')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canApproveOvertime')
   @ApiOperation({ summary: 'List pending overtime approval requests' })
   async getPendingApprovals(@Request() req: any) {
     return this.overtimeService.getPendingApprovals({
@@ -112,7 +112,7 @@ export class OvertimeController {
   }
 
   @Get('history')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canApproveOvertime')
   @ApiOperation({ summary: 'Get overtime history' })
   @ApiQuery({ name: 'technicianId', required: false })
   @ApiQuery({ name: 'status', required: false })

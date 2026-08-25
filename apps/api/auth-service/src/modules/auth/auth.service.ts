@@ -111,6 +111,23 @@ function orgPermissionFields(access: ReturnType<typeof buildResolvedAccess>) {
     // that job sat unused while the job was granted by an unrelated one.
     canManageRota:
       accessAllows(access, 'canManageRota') || accessAllows(access, 'canManageUsers'),
+    canManagePortals:
+      accessAllows(access, 'canManagePortals') || accessAllows(access, 'canManageUsers'),
+    canManageTaskTypes:
+      accessAllows(access, 'canManageTaskTypes') || accessAllows(access, 'canManageUsers'),
+    // Like canManageRota, these three were already in the catalogue and required
+    // by nothing, while the job each names was granted by canManageUsers or
+    // canViewAllTasks. Wiring them is the fix, not a new concept.
+    canReconcileAttendance:
+      accessAllows(access, 'canReconcileAttendance') || accessAllows(access, 'canManageUsers'),
+    canViewSpaceAttendance:
+      accessAllows(access, 'canViewSpaceAttendance') || accessAllows(access, 'canViewAllTasks'),
+    canApproveOvertime:
+      accessAllows(access, 'canApproveOvertime') ||
+      accessAllows(access, 'canManageUsers') ||
+      accessAllows(access, 'canViewAllTasks'),
+    canViewTracking:
+      accessAllows(access, 'canViewTracking') || accessAllows(access, 'canViewAllTasks'),
   };
 }
 

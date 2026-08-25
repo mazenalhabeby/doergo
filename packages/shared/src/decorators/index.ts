@@ -157,7 +157,10 @@ export const PERMISSIONS_KEY = 'required_permissions';
 export type PermissionField =
   | 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers'
   | 'canViewReports' | 'canManageInvoices' | 'canManageAssets'
-  | 'canManageWorkspaces' | 'canManageRota';
+  | 'canManageWorkspaces' | 'canManageRota'
+  | 'canManagePortals' | 'canManageTaskTypes' | 'canViewTracking'
+  | 'canReconcileAttendance' | 'canViewSpaceAttendance' | 'canApproveOvertime'
+  | 'crmEditInfo' | 'crmManageClients';
 
 /**
  * Decorator to specify required permissions for a route.

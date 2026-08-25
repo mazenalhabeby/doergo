@@ -46,28 +46,28 @@ export class PortalAdminController {
   // ── Portals ──
 
   @Get('portals')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'List the org’s portals' })
   listPortals(@Request() req: any) {
     return this.auth('portal_list', { organizationId: req.user.organizationId });
   }
 
   @Post('portals')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Create a portal (from a template)' })
   createPortal(@Body() body: { templateKey?: string; name?: string }, @Request() req: any) {
     return this.auth('portal_create', { ...body, organizationId: req.user.organizationId });
   }
 
   @Get('portals/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Get a portal (config + categories)' })
   getPortal(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_get', { id, organizationId: req.user.organizationId });
   }
 
   @Get('portals/:id/requests')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'List every request in a portal (all clients)' })
   portalRequests(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
@@ -80,7 +80,7 @@ export class PortalAdminController {
 
   /** Upload a portal cover/hero image (shown as the client-home background). */
   @Post('portals/:id/cover')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Upload the portal cover/hero image' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 8 * 1024 * 1024, files: 1 } }))
@@ -132,7 +132,7 @@ export class PortalAdminController {
 
   /** Remove the portal cover image. */
   @Delete('portals/:id/cover')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Remove the portal cover image' })
   removeCover(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_update', { id, organizationId: req.user.organizationId, coverImageUrl: null });
@@ -140,7 +140,7 @@ export class PortalAdminController {
 
   /** Route a pending request → a live task: pick space + flow + priority + worker. */
   @Post('requests/:id/triage')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Triage a portal request into a live task' })
   triageRequest(
     @Param('id') id: string,
@@ -164,14 +164,14 @@ export class PortalAdminController {
   }
 
   @Patch('portals/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Update a portal (name / switch type)' })
   updatePortal(@Param('id') id: string, @Body() body: { name?: string; templateKey?: string; reseed?: boolean }, @Request() req: any) {
     return this.auth('portal_update', { ...body, id, organizationId: req.user.organizationId });
   }
 
   @Delete('portals/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Delete a portal' })
   deletePortal(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_delete', { id, organizationId: req.user.organizationId });
@@ -180,25 +180,25 @@ export class PortalAdminController {
   // ── Intake categories (per portal) ──
 
   @Post('categories')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   createCategory(@Body() body: any, @Request() req: any) {
     return this.auth('portal_create_category', { ...body, organizationId: req.user.organizationId });
   }
 
   @Patch('categories/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   updateCategory(@Param('id') id: string, @Body() body: any, @Request() req: any) {
     return this.auth('portal_update_category', { ...body, id, organizationId: req.user.organizationId });
   }
 
   @Delete('categories/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   deleteCategory(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_delete_category', { id, organizationId: req.user.organizationId });
   }
 
   @Post('categories/reorder')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   reorderCategories(@Body() body: { portalId: string; orderedIds: string[] }, @Request() req: any) {
     return this.auth('portal_reorder_categories', { ...body, organizationId: req.user.organizationId });
   }
@@ -206,28 +206,28 @@ export class PortalAdminController {
   // ── Residents (B2C, per portal) ──
 
   @Get('residents')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'List a portal’s residents' })
   residents(@Query('portalId') portalId: string | undefined, @Query('search') search: string | undefined, @Request() req: any) {
     return this.auth('list_customers', { organizationId: req.user.organizationId, portalResident: true, portalId, search, limit: 100 });
   }
 
   @Get('portals/:id/available-units')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "Vacant apartments in the portal's space, for the invite picker" })
   availableUnits(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_list_available_units', { organizationId: req.user.organizationId, portalId: id });
   }
 
   @Get('portals/:id/available-customers')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "Existing CRM customers (non-residents) in the portal's space, for the invite picker" })
   availableCustomers(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_list_assignable_customers', { organizationId: req.user.organizationId, portalId: id });
   }
 
   @Post('residents')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Invite a resident into a portal (assign an existing apartment or create one + invite code)' })
   async inviteResident(
     @Body() body: { portalId: string; customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string },
@@ -280,7 +280,7 @@ export class PortalAdminController {
   }
 
   @Post('residents/:customerId/resend-invite')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "Re-send a pending client's invite by email" })
   async resendResidentInvite(@Param('customerId') customerId: string, @Request() req: any) {
     return this.auth('resend_invitation', {
@@ -290,7 +290,7 @@ export class PortalAdminController {
   }
 
   @Delete('residents/:customerId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Remove a client from the portal (revokes app access, detaches, vacates units)' })
   async removeResident(@Param('customerId') customerId: string, @Request() req: any) {
     const result: any = await this.auth('portal_remove_client', {
@@ -306,25 +306,25 @@ export class PortalAdminController {
   // ── Unit CRUD (per resident) ──
 
   @Post('units')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   createUnit(@Body() body: any, @Request() req: any) {
     return this.auth('portal_create_unit', { ...body, organizationId: req.user.organizationId });
   }
 
   @Patch('units/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   updateUnit(@Param('id') id: string, @Body() body: any, @Request() req: any) {
     return this.auth('portal_update_unit', { ...body, id, organizationId: req.user.organizationId });
   }
 
   @Delete('units/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   deleteUnit(@Param('id') id: string, @Request() req: any) {
     return this.auth('portal_delete_unit', { id, organizationId: req.user.organizationId });
   }
 
   @Get('units')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   listUnits(@Query('customerId') customerId: string | undefined, @Request() req: any) {
     return this.auth('portal_admin_list_units', { organizationId: req.user.organizationId, customerId });
   }
@@ -332,7 +332,7 @@ export class PortalAdminController {
   // ── A resident's requests (office view) ──
 
   @Get('requests')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "List a resident's portal requests" })
   requests(@Query('customerId') customerId: string, @Request() req: any) {
     return firstValueFrom(

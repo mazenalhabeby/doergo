@@ -32,7 +32,7 @@ export class SpacePortalController {
   }
 
   @Get('portals')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "List the space's client portals (a space can run several)" })
   async listPortals(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -40,7 +40,7 @@ export class SpacePortalController {
   }
 
   @Post('portals')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Create a new client portal for this space' })
   async createPortal(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string; name?: string }, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -48,7 +48,7 @@ export class SpacePortalController {
   }
 
   @Get()
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "The space's portal config (entity type)" })
   async get(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -56,7 +56,7 @@ export class SpacePortalController {
   }
 
   @Patch()
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: "Set the space portal's entity type" })
   async update(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string }, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -65,14 +65,14 @@ export class SpacePortalController {
 
   // ── Unit / apartment catalog ──
   @Get('units')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   async listUnits(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
     return this.auth('portal_list_space_units', { organizationId: req.user.organizationId, spaceId });
   }
 
   @Post('units')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   async addUnit(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number }, @Request() req: any) {
     const orgId = req.user.organizationId;
     await this.requirePortalModule(spaceId, orgId);
@@ -85,7 +85,7 @@ export class SpacePortalController {
   }
 
   @Patch('units/:unitId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   async updateUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
     // Whitelist explicitly — never spread the untyped body (audit I-B1).
@@ -118,14 +118,14 @@ export class SpacePortalController {
   }
 
   @Delete('units/:unitId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   async deleteUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
     return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
   }
 
   @Post('units/:unitId/assign')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canManagePortals')
   @ApiOperation({ summary: 'Assign this unit to a customer (→ their primary address)' })
   async assign(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: { customerId: string }, @Request() req: any) {
     const orgId = req.user.organizationId;

@@ -242,7 +242,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('all-entries')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get all time entries for the organization' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Single day (defaults to today) — ignored when startDate/endDate given' })
   @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Range start (yyyy-MM-dd)' })
@@ -279,7 +279,7 @@ export class AttendanceController {
   }
 
   @Get('active-entries')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Who is clocked in right now (org-wide, date-independent)' })
   async getActiveEntries(@Request() req: any) {
     return this.attendanceService.getActiveEntries({
@@ -288,7 +288,7 @@ export class AttendanceController {
   }
 
   @Get('no-shows')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Recent no-shows (scheduled shift, no clock-in) for review' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiQuery({ name: 'spaceId', required: false, type: String })
@@ -301,7 +301,7 @@ export class AttendanceController {
   }
 
   @Patch('no-shows/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Excuse or reopen a no-show' })
   async resolveNoShow(
     @Param('id') id: string,
@@ -322,7 +322,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('reports/summary')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get attendance summary for a date range' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -342,7 +342,7 @@ export class AttendanceController {
   }
 
   @Get('reports/weekly')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get weekly attendance report' })
   @ApiQuery({ name: 'weekStartDate', required: false, type: String, description: 'Week start date (defaults to current week)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
@@ -359,7 +359,7 @@ export class AttendanceController {
   }
 
   @Get('reports/monthly')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get monthly attendance report' })
   @ApiQuery({ name: 'year', required: false, type: Number, description: 'Year (defaults to current)' })
   @ApiQuery({ name: 'month', required: false, type: Number, description: 'Month 1-12 (defaults to current)' })
@@ -379,7 +379,7 @@ export class AttendanceController {
   }
 
   @Get('reports/export')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Export attendance data to CSV' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -445,7 +445,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/active')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get all active breaks in the organization' })
   async getActiveBreaks(@Request() req: any) {
     return this.attendanceService.getActiveBreaks({
@@ -454,7 +454,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/history')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get break history with filters' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'userId', required: false, type: String })
@@ -480,7 +480,7 @@ export class AttendanceController {
   }
 
   @Post('breaks/:id/end')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'End a break manually (manager action)' })
   async endBreakManually(
     @Param('id') breakId: string,
@@ -496,7 +496,7 @@ export class AttendanceController {
   }
 
   @Get('breaks/summary')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get break summary statistics' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -520,7 +520,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('approvals/pending')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get time entries pending approval' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -537,7 +537,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/:id/approve')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Approve a time entry' })
   async approveEntry(
     @Param('id') entryId: string,
@@ -553,7 +553,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/:id/reject')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Reject a time entry' })
   async rejectEntry(
     @Param('id') entryId: string,
@@ -586,7 +586,7 @@ export class AttendanceController {
   }
 
   @Get('excursions')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'List active out-of-ring requests (approver surface)' })
   @ApiQuery({ name: 'status', required: false, enum: ['active', 'pending', 'approved'] })
   async listExcursions(
@@ -600,7 +600,7 @@ export class AttendanceController {
   }
 
   @Patch('excursions/:id/approve')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Approve an out-of-ring request (optionally adjust the granted time)' })
   async approveExcursion(
     @Param('id') excursionId: string,
@@ -617,7 +617,7 @@ export class AttendanceController {
   }
 
   @Patch('excursions/:id/reject')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Reject an out-of-ring request (clocks the worker out)' })
   async rejectExcursion(@Param('id') excursionId: string, @Request() req?: any) {
     return this.attendanceService.rejectExcursion({
@@ -701,7 +701,7 @@ export class AttendanceController {
   }
 
   @Put('entries/:id/edit')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Edit a time entry (manager correction)' })
   async editEntry(
     @Param('id') entryId: string,
@@ -727,7 +727,7 @@ export class AttendanceController {
   }
 
   @Get('entries/:id/history')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get the full edit history for a time entry' })
   async getEntryHistory(@Param('id') entryId: string, @Request() req?: any) {
     return this.attendanceService.getEntryHistory({
@@ -737,7 +737,7 @@ export class AttendanceController {
   }
 
   @Delete('entries/:id')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Delete a time entry (admin)' })
   async deleteEntry(@Param('id') entryId: string, @Request() req?: any) {
     return this.attendanceService.deleteEntry({
@@ -748,7 +748,7 @@ export class AttendanceController {
   }
 
   @Post('entries/manual')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({
     summary:
       'Admin: add/back-date attendance for an employee (single day, or a weekday-filtered date-range backfill)',
@@ -786,7 +786,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/bulk-approve')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'Bulk approve multiple time entries' })
   async bulkApprove(
     @Body() body: { entryIds: string[]; notes?: string },

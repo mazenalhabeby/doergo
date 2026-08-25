@@ -142,7 +142,7 @@ export function TopNavbar() {
   // so there is no separate employee "Team" nav item on web.
   const showSpaces = user.canManageWorkspaces || user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   const showSchedule = user.canViewAllTasks
-  const showAttendance = user.canViewAllTasks
+  const showAttendance = user.canViewSpaceAttendance || user.canViewAllTasks
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
   // CRM navbar tab: for members with CRM access who are NOT org-level managers.
   // Org admins/managers reach the CRM via the Spaces nav → a space's Customers tab,

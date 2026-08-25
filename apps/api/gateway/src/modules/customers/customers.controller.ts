@@ -159,7 +159,7 @@ export class CustomersController {
   }
 
   @Post(':id/addresses')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('crmEditInfo')
   addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string; contactPhone?: string }, @Request() req: any) {
     return this.auth('portal_create_unit', {
       organizationId: req.user.organizationId, customerId: id,
@@ -170,7 +170,7 @@ export class CustomersController {
   }
 
   @Patch(':id/addresses/:unitId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('crmEditInfo')
   updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     // scopeCustomerId binds the unit to THIS customer (no cross-customer edits);
     // strip any client-sent scope override before forwarding.
@@ -179,13 +179,13 @@ export class CustomersController {
   }
 
   @Post(':id/addresses/:unitId/primary')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('crmEditInfo')
   setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
     return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
   }
 
   @Delete(':id/addresses/:unitId')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('crmEditInfo')
   deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
     return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
   }
@@ -238,7 +238,7 @@ export class CustomersController {
   }
 
   @Post(':id/invite')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('crmManageClients')
   @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
   async invite(@Param('id') id: string, @Body() body: { email?: string; portalId?: string }, @Request() req: any) {
     const orgId = req.user.organizationId;
@@ -285,7 +285,7 @@ export class CustomersController {
   }
 
   @Post(':id/resend-invite')
-  @RequirePermission('canManageUsers')
+  @RequirePermission('crmManageClients')
   @ApiOperation({ summary: "Re-send a customer's app invite" })
   async resendInvite(@Param('id') id: string, @Request() req: any) {
     return this.auth('resend_invitation', { organizationId: req.user.organizationId, customerId: id });

@@ -81,7 +81,7 @@ export default function AttendancePage() {
   // reportType and reportLocationId moved to ReportsTab component
 
   // Check role - only ADMIN and DISPATCHER can access
-  const canAccess = user?.role === "ADMIN" || !!user?.canViewAllTasks
+  const canAccess = user?.role === "ADMIN" || !!user?.canViewSpaceAttendance || !!user?.canViewAllTasks
   const isAdmin = user?.role === "ADMIN"
 
   // Fetch locations

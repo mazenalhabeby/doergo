@@ -3668,7 +3668,8 @@
       "crm": "Clients",
       "billing": "Facturation",
       "assets": "Actifs",
-      "workspaces": "Espaces de travail"
+      "workspaces": "Espaces de travail",
+      "tracking": "Suivi"
     }
   },
   "customFields": {
