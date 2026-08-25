@@ -659,7 +659,7 @@ export class AuthService {
       const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
         userAgent: data.userAgent,
         ipAddress: data.ipAddress,
-      }, user.canViewAllTasks, refreshTtl);
+      }, user.canViewAllTasks, refreshTtl, clientPlatform);
 
       // Audit: successful login (fire-and-forget, never blocks response)
       if (user.organizationId) {
@@ -756,9 +756,14 @@ export class AuthService {
       // Carry the session's refresh lifetime across rotation. Older tokens issued
       // before this change have no `rtl` claim → undefined → env default (90d).
       let refreshTtl: string | undefined;
+      // The surface this session was opened from, carried across rotation the
+      // same way. Rotation must not be a route to launder a session onto a
+      // platform the member is not allowed to use.
+      let sessionPlat: string | undefined;
       try {
-        const decoded = this.jwtService.decode(refreshToken) as { rtl?: string } | null;
+        const decoded = this.jwtService.decode(refreshToken) as { rtl?: string; plat?: string } | null;
         if (decoded?.rtl) refreshTtl = decoded.rtl;
+        if (decoded?.plat) sessionPlat = decoded.plat;
       } catch {
         /* malformed token is handled by the hash lookup below */
       }
@@ -918,6 +923,9 @@ export class AuthService {
         undefined,
         storedToken.user.canViewAllTasks,
         refreshTtl,
+        // Carried forward, not re-declared: rotation must not be a way to
+        // launder a session onto a surface the member may not use.
+        sessionPlat,
       );
 
       // Find the new refresh token hash (it was just created by generateTokens)
@@ -1392,6 +1400,10 @@ export class AuthService {
         user: {
           ...userData,
           access,
+          // The surface this session was opened from, straight off the SIGNED
+          // token. The platform guard reads this instead of a request header,
+          // so a client cannot skip the check by leaving the header out.
+          plat: payload.plat,
           // Permission fields from `access`, never the raw columns — see
           // orgPermissionFields. Must come after the spread to win over it.
           ...orgPermissionFields(access),
@@ -1429,7 +1441,7 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }, canViewAllTasks = false, refreshTtl?: string) {
+  private async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }, canViewAllTasks = false, refreshTtl?: string, plat?: string) {
     // organizationId is embedded so downstream services (e.g. the Socket.IO
     // gateway) can scope rooms from the verified token instead of trusting a
     // client-supplied org id.
@@ -1438,6 +1450,11 @@ export class AuthService {
     // Lets the Socket.IO gateway scope task events to admins + "view all tasks"
     // holders (a room they join) instead of broadcasting to the whole org.
     if (canViewAllTasks) basePayload.canViewAllTasks = true;
+    // `plat` = the surface this session was opened from, fixed at login and
+    // carried across rotations like `rtl`. Enforcement reads THIS rather than a
+    // request header: the claim is signed, so a client cannot drop it to skip
+    // the check the way it could simply omit X-Client-Platform.
+    if (plat === 'web' || plat === 'mobile') basePayload.plat = plat;
 
     // Token expiration from environment variables. `refreshTtl` (per-session, from
     // login: web honors rememberMe → 24h/30d; mobile → env default 90d) overrides
