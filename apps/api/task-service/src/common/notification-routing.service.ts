@@ -60,7 +60,10 @@ export class NotificationRoutingService {
     category: NotificationCategory,
     explicitOnly: boolean,
   ): Promise<{ ids: string[]; emails: string[] }> {
-    // 1. Explicit per-employee watchers override the default routing entirely.
+    // 1. Explicit per-member watchers, chosen on the member's Access page.
+    //    These are ADDED to the space routing below, not a replacement for it —
+    //    an earlier version of this comment said "override the default routing
+    //    entirely", which the code has not done since step 2 started merging.
     const watches = await this.prisma.notificationWatch.findMany({
       where: { subjectUserId, organizationId },
       select: {
