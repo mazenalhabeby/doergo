@@ -287,11 +287,28 @@ export function TopNavbar() {
             CUSTOMER (see Spaces). Client portals are managed per-space (Spaces →
             a space → Client portal tab), so there's no top-level nav item. */}
 
-        {/* Ledger — Reports + Invoices grouped. Reports = analytics/builder;
-            Invoices = customer billing (enforces Professional+ tier on its page).
-            Subscription / system billing stays in the avatar menu. */}
-        {(showReports || showInvoices) && (
-          <LedgerDropdown pathname={pathname} showReports={showReports} showInvoices={showInvoices} />
+        {/* Reports and Invoices are separate destinations, not one "Ledger". They
+            share no workflow: one reads the past, the other bills for it. A
+            two-item dropdown also cost a click to reach either. Note the split
+            with the avatar menu: this is CUSTOMER billing; the organization's own
+            subscription billing lives under the avatar. */}
+        {showReports && (
+          <Link
+            href="/reports"
+            data-tour="nav-reports"
+            className={cn(navItemBase, isActive(pathname, "/reports") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}
+          >
+            {t("nav.reports", "Reports")}
+          </Link>
+        )}
+        {showInvoices && (
+          <Link
+            href="/invoices"
+            data-tour="nav-invoices"
+            className={cn(navItemBase, isActive(pathname, "/invoices") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}
+          >
+            {t("nav.sidebar.invoices")}
+          </Link>
         )}
 
         {/* Employee module-driven items. Personal Time Off shows standalone only
@@ -361,55 +378,6 @@ function CommandPaletteButton() {
         {isMac ? "\u2318" : "Ctrl+"}K
       </kbd>
     </button>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Team Dropdown
-// ---------------------------------------------------------------------------
-function LedgerDropdown({
-  pathname,
-  showReports,
-  showInvoices,
-}: {
-  pathname: string
-  showReports: boolean
-  showInvoices: boolean
-}) {
-  const { t } = useTranslation()
-  const items = ["/reports", "/invoices"]
-  const active = isDropdownActive(pathname, items)
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        data-tour="nav-reports"
-        className={cn(
-          navItemBase,
-          "cursor-pointer select-none outline-none",
-          active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
-        )}
-      >
-        {t("nav.ledger", "Ledger")}
-        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={10} className="min-w-[180px] rounded-lg p-1">
-        {showReports && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/reports" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              {t("nav.reports", "Reports")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {showInvoices && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-            <Link href="/invoices" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-              {t("nav.sidebar.invoices")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 
