@@ -832,16 +832,19 @@ export class UsersService {
     if (dto.contactCandidates) {
       where.isActive = true;
       /*
-        Three ways to be a manager, and the query has to know all of them:
-        the ADMIN system role, the permission written on the user row (legacy,
-        still merged by buildResolvedAccess unless ACCESS_IGNORE_LEGACY_FLAGS
-        is set), and — the one a column test alone misses — an assigned role
-        whose permission set grants it. Filtering on the column only would hide
-        every manager who holds the permission the way the product now intends.
+        Candidates are defined by ROLE: the ADMIN system role, or an assigned
+        role whose permission set grants canManageUsers.
+
+        Deliberately NOT the canManageUsers column on the user row. That column
+        is legacy — buildResolvedAccess still merges it, so it does still grant
+        the capability, but it is drift rather than a position anyone was given.
+        Including it listed people the organization does not consider managers
+        (a technician carrying a stale flag) as if they were, which is the whole
+        confusion this picker should not add to. Clean that drift up on the
+        member's Access tab, where it is shown as a direct grant.
       */
       const or: any[] = [
         { role: 'ADMIN' },
-        { canManageUsers: true },
         { memberRole: { is: { permissions: { path: ['canManageUsers'], equals: true } } } },
       ];
       const keep = (dto.includeIds ?? []).filter(Boolean);
