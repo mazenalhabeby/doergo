@@ -133,20 +133,19 @@ export function AccessFields({
     // Admins and managers are chosen by the DATABASE. This used to ask for 200
     // full member rows — Access Profiles, contact allow-lists, role joins — and
     // filter them in the browser to render a handful.
-    queryKey: ["orgMembers", "accessContacts", keepIds.join(",")],
+    queryKey: ["orgMembers", "managers", excludeContactId ?? "", keepIds.join(",")],
     queryFn: () =>
       organizationsApi.getMembers({
         limit: 200,
-        contactCandidates: true,
+        managersOnly: true,
         includeIds: keepIds.length ? keepIds : undefined,
+        excludeId: excludeContactId || undefined,
       }),
     staleTime: 60000,
   })
 
-  const candidateContacts = useMemo(
-    () => (membersData?.data || []).filter((m) => m.id !== excludeContactId && m.isActive),
-    [membersData, excludeContactId],
-  )
+  // Both the leadership filter and the self-exclusion happen in the query.
+  const candidateContacts = useMemo(() => membersData?.data || [], [membersData])
 
   // Org-wide roles (Admin / Manager / custom) for the role selector.
   const { data: orgRoles } = useQuery({

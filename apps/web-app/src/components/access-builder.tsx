@@ -82,21 +82,23 @@ export function AccessBuilder({
     setWatcherIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
-  // Eligible watchers = admins + Show-in-Management members. In single mode
-  // exclude the member itself; in bulk keep all (the backend drops self per-subject).
+  /*
+    Eligible watchers = admins and managers, resolved by the shared server-side
+    filter — the third place that had grown its own version of this rule, each
+    slightly different from the others. In single mode the subject is excluded;
+    in bulk everyone is kept (the backend drops self per subject).
+  */
   const { data: membersData } = useQuery({
-    queryKey: ["orgMembers", "positions"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    queryKey: ["orgMembers", "managers", isBulk ? "" : member.id],
+    queryFn: () =>
+      organizationsApi.getMembers({
+        limit: 200,
+        managersOnly: true,
+        excludeId: isBulk ? undefined : member.id,
+      }),
     staleTime: 60000,
   })
-  // Eligible watchers = admins + managers only (elevated permission), NOT every
-  // member — `!!memberRole` matched plain employees since everyone has a role.
-  const watcherCandidates = useMemo(
-    () => (membersData?.data || []).filter(
-      (m) => (isBulk || m.id !== member.id) && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || m.canAssignTasks || m.canManageUsers),
-    ),
-    [membersData, member.id, isBulk],
-  )
+  const watcherCandidates = useMemo(() => membersData?.data || [], [membersData])
 
   const dirty = canon(draft) !== canon(initial) || watchersTouched
 

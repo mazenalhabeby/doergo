@@ -25,8 +25,8 @@ const BCRYPT_COST_FACTOR = 12;
 // Single source of truth for the fields the Members list + a single member share,
 // so a member detail page can fetch ONE row in the same shape as a list row
 // (instead of pulling the whole org and finding it client-side).
-/** Just enough to draw one row of the contact picker. */
-const CONTACT_CANDIDATE_SELECT = {
+/** Just enough to draw one row of a manager picker. */
+const MANAGER_CANDIDATE_SELECT = {
   id: true,
   firstName: true,
   lastName: true,
@@ -802,7 +802,7 @@ export class UsersService {
   /**
    * List all members of an organization with filtering and pagination
    */
-  async listOrgMembers(dto: ListOrgMembersDto & { contactCandidates?: boolean; includeIds?: string[] }) {
+  async listOrgMembers(dto: ListOrgMembersDto & { managersOnly?: boolean; includeIds?: string[]; excludeId?: string }) {
     const { organizationId, search, role } = dto;
     // Clamp pagination server-side so a client can't request an unbounded page (M6).
     const page = Math.max(1, Number(dto.page) || 1);
@@ -818,7 +818,13 @@ export class UsersService {
     }
 
     /*
-      Contact picker: admins and managers only.
+      Admins and managers only — the leadership set.
+
+      Shared by every picker that offers "an admin or a manager": the contact
+      allow-list and the notification watchers both need exactly this, and each
+      had grown its own client-side approximation of it. The watchers list
+      matched `!!memberRole`, which in the unified role system is every member
+      who has any role at all — technicians included.
 
       The picker used to ask for 200 members and filter them in the browser, so
       an organization's whole staff list — Access Profiles, contact allow-lists,
@@ -829,7 +835,11 @@ export class UsersService {
       result even if they no longer qualify. Leaving them out would not remove
       the grant, only hide it.
     */
-    if (dto.contactCandidates) {
+    if (dto.excludeId) {
+      where.id = { not: dto.excludeId };
+    }
+
+    if (dto.managersOnly) {
       where.isActive = true;
       /*
         Candidates are defined by ROLE: the ADMIN system role, or an assigned
@@ -872,7 +882,7 @@ export class UsersService {
       where,
       // The picker renders a name, an avatar and a label — it has no use for
       // Access Profiles or allow-lists, and those are the expensive columns.
-      select: dto.contactCandidates ? CONTACT_CANDIDATE_SELECT : ORG_MEMBER_SELECT,
+      select: dto.managersOnly ? MANAGER_CANDIDATE_SELECT : ORG_MEMBER_SELECT,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,

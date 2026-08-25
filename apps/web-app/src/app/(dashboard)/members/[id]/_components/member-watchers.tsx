@@ -20,20 +20,23 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
   const { t } = useTranslation()
   const qc = useQueryClient()
 
-  // Eligible watchers = ONLY admins + members flagged "Show in Management"
-  // (leadership directory), excluding the member itself.
+  /*
+    Eligible watchers = admins and managers, the same leadership set the contact
+    picker offers — resolved by the SAME server-side filter so the two cannot
+    drift apart.
+
+    This used to fetch 200 full member rows and match
+    `role === 'ADMIN' || canViewAllTasks || !!memberRole` in the browser. In the
+    unified role system every member has a role, so `!!memberRole` matched every
+    technician in the organization: the list of people who could be notified
+    about a member was, in practice, everyone.
+  */
   const { data: membersResp } = useQuery({
-    queryKey: ["orgMembers", "managers"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    queryKey: ["orgMembers", "managers", memberId],
+    queryFn: () => organizationsApi.getMembers({ limit: 200, managersOnly: true, excludeId: memberId }),
     staleTime: 60_000,
   })
-  const managers = useMemo(
-    () =>
-      ((membersResp?.data || []) as OrgMember[]).filter(
-        (m) => m.id !== memberId && m.isActive && (m.role === "ADMIN" || m.canViewAllTasks || !!m.memberRole),
-      ),
-    [membersResp, memberId],
-  )
+  const managers = useMemo(() => (membersResp?.data || []) as OrgMember[], [membersResp])
 
   const { data: watchers = [] } = useQuery({
     queryKey: ["memberWatchers", memberId],
