@@ -21,6 +21,15 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 
 @ApiTags('invoices')
 @RequirePlan('invoicing') // Professional+ (write routes; reads pass through)
+/*
+  Reads are gated on `canManageInvoices`, its own capability rather than a share of
+  canViewAllTasks. Bridged in auth-service so today's set is unchanged (see
+  orgPermissionFields) — the point is that an organization can now hand customer
+  invoicing to a bookkeeper without also handing them every space, asset and report.
+
+  Writes stay ADMIN-only, deliberately: widening them here would have gone from
+  "admins only" to "every manager" the moment the bridge was added.
+*/
 @Controller('invoices')
 @ApiBearerAuth()
 export class InvoicesController {
@@ -54,7 +63,7 @@ export class InvoicesController {
   }
 
   @Get()
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: 'List invoices' })
   async findAll(
     @Query() query: { status?: string; spaceId?: string; page?: string; limit?: string },
@@ -73,7 +82,7 @@ export class InvoicesController {
 
   // NOTE: must be declared BEFORE the ':id' route so "gather" isn't captured as an id.
   @Get('gather')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: "Build draft invoice lines from a customer space's completed work" })
   async gather(
     @Query('spaceId') spaceId: string,
@@ -98,7 +107,7 @@ export class InvoicesController {
   }
 
   @Get(':id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: 'Get invoice detail' })
   async findOne(
     @Param('id') id: string,

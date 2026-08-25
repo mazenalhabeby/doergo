@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Smartphone, Monitor, Layers, MessageCircle } from "lucide-react"
+import { Smartphone, Monitor, Layers, MessageCircle, Check } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import { ACCESS_PERMISSION_SCHEMA } from "@hbcfield/shared/client"
 import type { AccessDraft, MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
@@ -49,6 +49,22 @@ const TASK_SCOPES = [
 const ORG_PERM_LABEL: Record<string, string> = Object.fromEntries(
   ACCESS_PERMISSION_SCHEMA.map((p) => [p.key, p.label]),
 )
+
+/**
+ * The five permissions this editor can toggle directly — they are columns on the
+ * member. Everything else in the catalogue is granted by the assigned ROLE and is
+ * shown here read-only, attributed, so this screen answers "what can this person
+ * do?" completely instead of answering a third of it and staying silent about the
+ * rest.
+ *
+ * They are deliberately NOT made editable per member. The union of a member flag
+ * and a role grant cannot say no — the codebase already carries that scar — so a
+ * per-member override could only ever widen, never restrict, and "why can this
+ * person still approve overtime?" would have two places to look instead of one.
+ */
+const DIRECT_KEYS = new Set([
+  "canCreateTasks", "canAssignTasks", "canViewAllTasks", "canManageUsers", "canViewReports",
+])
 
 /**
  * AccessFields — the controlled, presentational editor for every access value
@@ -120,6 +136,26 @@ export function AccessFields({
     ? Object.entries(selectedRole.permissions).filter(([, v]) => v === true).map(([k]) => ORG_PERM_LABEL[k] || k)
     : []
 
+  /**
+   * What the assigned role grants beyond the five toggles above, grouped by domain.
+   * An admin holds the whole catalogue, so show it rather than an empty box —
+   * "Admin" saying nothing about overtime or clients is exactly the silence this
+   * block exists to remove.
+   */
+  const roleGranted = useMemo(() => {
+    const granted = value.systemRole === "ADMIN"
+      ? ACCESS_PERMISSION_SCHEMA
+      : ACCESS_PERMISSION_SCHEMA.filter((p) => selectedRole?.permissions?.[p.key] === true)
+    const byDomain = new Map<string, typeof ACCESS_PERMISSION_SCHEMA>()
+    for (const p of granted) {
+      if (DIRECT_KEYS.has(p.key)) continue // already a toggle above; showing it twice reads as two settings
+      const list = byDomain.get(p.domain) ?? []
+      list.push(p)
+      byDomain.set(p.domain, list)
+    }
+    return [...byDomain.entries()]
+  }, [value.systemRole, selectedRole])
+
   const toggleModule = (m: MobileModule) =>
     onChange({
       modules: value.modules.includes(m)
@@ -158,10 +194,6 @@ export function AccessFields({
         </Select>
         {lockRole ? (
           <p className="mt-1.5 text-xs text-muted-foreground">{t("members.memberEditor.cantChangeOwnRole", "You can't change your own role.")}</p>
-        ) : rolePerms.length > 0 ? (
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {t("accessBuilder.roleGrants", "Grants")}: {rolePerms.join(", ")}
-          </p>
         ) : null}
       </Field>
       )}
@@ -240,6 +272,45 @@ export function AccessFields({
             checked={value.canViewReports}
             onChange={(v) => onChange({ canViewReports: v })}
           />
+
+          {/* Everything the ROLE grants, in the same place as the toggles above.
+              Previously this was a comma-joined line of bare labels under the role
+              selector — eleven of the sixteen permissions in the product, rendered
+              as an afterthought far from the section called "Permissions". */}
+          {roleGranted.length > 0 && (
+            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3">
+              <p className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("accessBuilder.fromRole", "From the role {{role}}", {
+                  role: value.systemRole === "ADMIN"
+                    ? t("accessBuilder.adminRole", "Admin")
+                    : selectedRole?.name ?? "",
+                })}
+              </p>
+              <div className="space-y-3">
+                {roleGranted.map(([domain, perms]) => (
+                  <div key={domain}>
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      {t(`accessBuilder.domains.${domain}`, domain)}
+                    </p>
+                    <ul className="space-y-1">
+                      {perms.map((p) => (
+                        <li key={p.key} className="flex items-start gap-2 text-xs">
+                          <Check className="mt-0.5 size-3 shrink-0 text-primary" />
+                          <span>
+                            <span className="font-medium text-foreground">{p.label}</span>
+                            <span className="text-muted-foreground"> — {p.description}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                {t("accessBuilder.fromRoleHint", "Change these on the role itself — they apply to everyone who holds it.")}
+              </p>
+            </div>
+          )}
         </div>
       </Field>
 

@@ -3647,7 +3647,19 @@
     "roleGrants": "Gewährt",
     "roleMember": "Mitglied",
     "fullAccess": "Vollzugriff",
-    "unsaved": "Sie haben ungespeicherte Änderungen"
+    "unsaved": "Sie haben ungespeicherte Änderungen",
+    "fromRole": "Aus der Rolle {{role}}",
+    "adminRole": "Administrator",
+    "fromRoleHint": "Diese ändern Sie an der Rolle selbst — sie gelten für alle, die sie haben.",
+    "domains": {
+      "tasks": "Aufgaben",
+      "members": "Mitglieder",
+      "reports": "Berichte",
+      "attendance": "Anwesenheit",
+      "crm": "Kunden",
+      "billing": "Abrechnung",
+      "assets": "Objekte"
+    }
   },
   "customFields": {
     "fieldTypes": {

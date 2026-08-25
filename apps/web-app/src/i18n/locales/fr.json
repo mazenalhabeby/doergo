@@ -3656,7 +3656,19 @@
     "roleGrants": "Accorde",
     "roleMember": "Membre",
     "fullAccess": "Accès complet",
-    "unsaved": "Vous avez des modifications non enregistrées"
+    "unsaved": "Vous avez des modifications non enregistrées",
+    "fromRole": "Du rôle {{role}}",
+    "adminRole": "Administrateur",
+    "fromRoleHint": "Modifiez-les sur le rôle lui-même — ils s’appliquent à tous ceux qui l’ont.",
+    "domains": {
+      "tasks": "Tâches",
+      "members": "Membres",
+      "reports": "Rapports",
+      "attendance": "Présence",
+      "crm": "Clients",
+      "billing": "Facturation",
+      "assets": "Actifs"
+    }
   },
   "customFields": {
     "fieldTypes": {

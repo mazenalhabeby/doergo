@@ -89,6 +89,21 @@ function orgPermissionFields(access: ReturnType<typeof buildResolvedAccess>) {
     canAssignTasks: accessAllows(access, 'canAssignTasks'),
     canManageUsers: accessAllows(access, 'canManageUsers'),
     canViewReports: accessAllows(access, 'canViewReports'),
+
+    /*
+      Split out of the two flags that were carrying the product: canManageUsers
+      gated 129 endpoints and canViewAllTasks 81, so "can manage members" also
+      meant "can invoice customers and delete assets".
+
+      Each is BRIDGED to the gate it replaces, so this is strictly additive —
+      nobody who can do these things today loses them, and an organization can now
+      grant either precisely, to a bookkeeper who has no business editing members.
+      Drop the `||` half once roles carry the grant.
+    */
+    canManageInvoices:
+      accessAllows(access, 'canManageInvoices') || accessAllows(access, 'canViewAllTasks'),
+    canManageAssets:
+      accessAllows(access, 'canManageAssets') || accessAllows(access, 'canManageUsers'),
   };
 }
 

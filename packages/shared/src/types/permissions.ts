@@ -35,6 +35,12 @@ export const PERMISSION_KEYS = [
   'crmWork', // change pipeline stage + add timeline notes on visible clients
   'crmEditInfo', // edit client details / addresses / units
   'crmManageClients', // reassign owner/managers, create, delete/archive
+  // Billing & assets. Split out of canManageUsers / canViewAllTasks, which between
+  // them gated 210 endpoints — "can manage members" also meant "can invoice
+  // customers and delete assets", so a bookkeeper could not be given the first
+  // without the second.
+  'canManageInvoices',
+  'canManageAssets',
 ] as const;
 
 export type AccessPermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -46,7 +52,7 @@ export type PermissionSet = Partial<Record<AccessPermissionKey, boolean>>;
 export type PermissionGrantScope = 'org' | 'space';
 
 /** Domain grouping for UI. */
-export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm';
+export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets';
 
 /** Human-facing metadata for every permission — drives the role-builder UI. */
 export const ACCESS_PERMISSION_SCHEMA: {
@@ -72,6 +78,8 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'crmWork', label: 'Work clients', description: 'Change pipeline stage and add timeline notes on visible clients', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'crmEditInfo', label: 'Edit client info', description: 'Edit client details, addresses and units', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership, create and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'canManageInvoices', label: 'Customer invoices', description: 'Open customer invoicing and see what has been billed', domain: 'billing', scopes: ['org'] },
+  { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] }
 ];
 
 /** Resolved CRM abilities for a caller — what the customers service enforces. */

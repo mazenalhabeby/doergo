@@ -3647,7 +3647,19 @@
     "roleGrants": "Grants",
     "roleMember": "Member",
     "fullAccess": "Full access",
-    "unsaved": "You have unsaved changes"
+    "unsaved": "You have unsaved changes",
+    "fromRole": "From the role {{role}}",
+    "adminRole": "Admin",
+    "fromRoleHint": "Change these on the role itself — they apply to everyone who holds it.",
+    "domains": {
+      "tasks": "Tasks",
+      "members": "Members",
+      "reports": "Reports",
+      "attendance": "Attendance",
+      "crm": "Clients",
+      "billing": "Billing",
+      "assets": "Assets"
+    }
   },
   "customFields": {
     "fieldTypes": {

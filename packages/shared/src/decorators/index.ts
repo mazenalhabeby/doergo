@@ -151,7 +151,12 @@ export const PERMISSIONS_KEY = 'required_permissions';
 /**
  * Permission fields available on the user object
  */
-export type PermissionField = 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers';
+// Every key the guard can require. These are read off `req.user`, which
+// auth-service populates from the RESOLVED access (see orgPermissionFields), so a
+// grant made on a role satisfies these exactly like a legacy column did.
+export type PermissionField =
+  | 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers'
+  | 'canViewReports' | 'canManageInvoices' | 'canManageAssets';
 
 /**
  * Decorator to specify required permissions for a route.

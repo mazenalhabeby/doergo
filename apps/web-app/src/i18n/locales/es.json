@@ -3647,7 +3647,19 @@
     "roleGrants": "Concede",
     "roleMember": "Miembro",
     "fullAccess": "Acceso completo",
-    "unsaved": "Tienes cambios sin guardar"
+    "unsaved": "Tienes cambios sin guardar",
+    "fromRole": "Del rol {{role}}",
+    "adminRole": "Administrador",
+    "fromRoleHint": "Estos se cambian en el propio rol: se aplican a todos los que lo tienen.",
+    "domains": {
+      "tasks": "Tareas",
+      "members": "Miembros",
+      "reports": "Informes",
+      "attendance": "Asistencia",
+      "crm": "Clientes",
+      "billing": "Facturación",
+      "assets": "Activos"
+    }
   },
   "customFields": {
     "fieldTypes": {
