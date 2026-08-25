@@ -667,7 +667,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="inherit">
-                    {t("tasks.create.taskTypeInherit", "Space default")}
+                    {t("tasks.create.taskTypeInherit", "Workspace default")}
                     {spaceWorkflowId
                       ? ` (${workflows.find((w) => w.id === spaceWorkflowId)?.name ?? ""})`
                       : ""}

@@ -290,7 +290,7 @@ export default function PortalDetailPage() {
           </span>
           <p className="min-w-0 text-sm text-muted-foreground">
             {t("portal.routesToThisSpace", "Requests route to")}{" "}
-            <span className="font-medium text-foreground">{ownerSpaceName || t("portal.thisSpace", "this space")}</span>
+            <span className="font-medium text-foreground">{ownerSpaceName || t("portal.thisSpace", "this workspace")}</span>
             {" "}{t("portal.andItsFlow", "and inherit its workflow.")}
           </p>
         </div>
@@ -447,7 +447,7 @@ export default function PortalDetailPage() {
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(x.accent)}`}>{x.badge}</span>
                     <span className="min-w-0">
                       <span className="block text-sm text-foreground truncate">{x.label}</span>
-                      {locked && <span className="block text-[11px] text-muted-foreground">{t("portal.apartmentModuleRequired", "Enable the Apartments module for this space to use this type.")}</span>}
+                      {locked && <span className="block text-[11px] text-muted-foreground">{t("portal.apartmentModuleRequired", "Enable the Apartments module for this workspace to use this type.")}</span>}
                     </span>
                   </span>
                   {isCurrent
@@ -527,7 +527,7 @@ export default function PortalDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("portal.triageTitle", "Route request")}</DialogTitle>
-            <DialogDescription>{t("portal.triageHint", "Send this request into a space and choose how it should flow, then assign a worker.")}</DialogDescription>
+            <DialogDescription>{t("portal.triageHint", "Send this request into a workspace and choose how it should flow, then assign a worker.")}</DialogDescription>
           </DialogHeader>
           {triageReq && (
             <div className="space-y-3">
@@ -537,15 +537,15 @@ export default function PortalDetailPage() {
                 {triageReq.unitAddress && <p className="text-xs text-muted-foreground mt-1">📍 {triageReq.unitAddress}</p>}
                 {triageReq.description && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-4">{triageReq.description}</p>}
               </div>
-              <div><Label>{t("portal.triageSpace", "Space")} <span className="text-red-500">*</span></Label>
+              <div><Label>{t("portal.triageSpace", "Workspace")} <span className="text-red-500">*</span></Label>
                 <select value={triageForm.spaceId} onChange={(e) => setTriageSpace(e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
-                  <option value="">{t("portal.triagePickSpace", "Pick a space…")}</option>
+                  <option value="">{t("portal.triagePickSpace", "Pick a workspace…")}</option>
                   {spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>{t("portal.triageFlow", "Flow")}</Label>
                   <select value={triageForm.workflowId} onChange={(e) => setTriageForm({ ...triageForm, workflowId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
-                    <option value="">{t("portal.triageFlowDefault", "Space default")}</option>
+                    <option value="">{t("portal.triageFlowDefault", "Workspace default")}</option>
                     {flows.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select></div>
                 <div><Label>{t("portal.triagePriority", "Priority")}</Label>
@@ -555,11 +555,11 @@ export default function PortalDetailPage() {
               </div>
               <div><Label>{t("portal.triageWorker", "Assign worker")}</Label>
                 <select value={triageForm.assignedToId} disabled={!triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm disabled:opacity-50">
-                  <option value="">{!triageForm.spaceId ? t("portal.triagePickSpaceFirst", "Pick a space first") : t("portal.triageUnassigned", "Leave unassigned")}</option>
+                  <option value="">{!triageForm.spaceId ? t("portal.triagePickSpaceFirst", "Pick a workspace first") : t("portal.triageUnassigned", "Leave unassigned")}</option>
                   {spaceWorkers.map((m) => <option key={m.userId} value={m.userId}>{m.user?.firstName} {m.user?.lastName}</option>)}
                 </select>
                 {triageForm.spaceId && !spaceMembersQ.isLoading && spaceWorkers.length === 0 ? (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t("portal.triageNoMembers", "No workers assigned to this space yet. Add members to the space, or leave unassigned.")}</p>
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t("portal.triageNoMembers", "No workers assigned to this workspace yet. Add members to the workspace, or leave unassigned.")}</p>
                 ) : null}
               </div>
             </div>

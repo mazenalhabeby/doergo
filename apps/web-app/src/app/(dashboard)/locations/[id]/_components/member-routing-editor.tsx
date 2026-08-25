@@ -117,7 +117,7 @@ function PeoplePicker({
       <div className="max-h-56 overflow-y-auto">
         {people.length === 0 ? (
           <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-            {t("scheduling.routing.noPeople", "No other members with a role in this space.")}
+            {t("scheduling.routing.noPeople", "No other members with a role in this workspace.")}
           </p>
         ) : (
           people.map((m) => (

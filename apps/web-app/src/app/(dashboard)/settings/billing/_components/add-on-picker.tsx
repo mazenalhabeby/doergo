@@ -77,7 +77,7 @@ export function AddOnPicker({
         <div>
           <p className="text-sm font-semibold text-foreground">{t('billing.addOns.title', 'Add-ons')}</p>
           <p className="text-xs text-muted-foreground">
-            {t('billing.addOns.subtitle', 'Bought once for the whole organization, not per space')}
+            {t('billing.addOns.subtitle', 'Bought once for the whole organization, not per workspace')}
           </p>
         </div>
 

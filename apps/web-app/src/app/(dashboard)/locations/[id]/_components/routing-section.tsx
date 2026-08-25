@@ -79,7 +79,7 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
         <Skeleton className="h-40 w-full" />
       ) : (roles || []).length === 0 ? (
         <p className="rounded-xl border border-border px-4 py-6 text-center text-sm text-muted-foreground">
-          {t("scheduling.routing.noRoles", "No space roles defined yet.")}
+          {t("scheduling.routing.noRoles", "No workspace roles defined yet.")}
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

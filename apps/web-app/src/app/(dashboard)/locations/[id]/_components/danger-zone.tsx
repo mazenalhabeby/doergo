@@ -73,9 +73,9 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
           /* Archived → offer Restore */
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="pr-4">
-              <p className="text-sm font-medium text-foreground">{t("locations.danger.restoreTitle", "Restore this space")}</p>
+              <p className="text-sm font-medium text-foreground">{t("locations.danger.restoreTitle", "Restore this workspace")}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {t("locations.danger.restoreHint", "This space is archived. Restoring makes it active and visible in pickers again.")}
+                {t("locations.danger.restoreHint", "This workspace is archived. Restoring makes it active and visible in pickers again.")}
               </p>
             </div>
             <Button
@@ -97,9 +97,9 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
         {/* Permanent delete — empty spaces only (server-guarded). */}
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="pr-4">
-            <p className="text-sm font-medium text-foreground">{t("locations.purgeSpace", "Delete space permanently")}</p>
+            <p className="text-sm font-medium text-foreground">{t("locations.purgeSpace", "Delete workspace permanently")}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {t("locations.danger.purgeHint", "Removes the space forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.")}
+              {t("locations.danger.purgeHint", "Removes the workspace forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.")}
             </p>
           </div>
           <Button variant="destructive" className="shrink-0" disabled={locked} onClick={() => openDialog("purge")}>

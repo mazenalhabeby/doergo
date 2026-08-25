@@ -79,7 +79,7 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
         title={t("assetKinds.title", "Assets")}
         description={t(
           "assetKinds.intro",
-          "What this space owns — apartments, vehicles, machines. Set up a kind here, then add the ones you have inside it.",
+          "What this workspace owns — apartments, vehicles, machines. Set up a kind here, then add the ones you have inside it.",
         )}
         action={
           <AssetKindDialog
@@ -251,7 +251,7 @@ function KindContents({
         icon={Package}
         accent="sky"
         title={kind.name}
-        description={kind.description || t("assetRecords.intro", "Everything of this kind in this space.")}
+        description={kind.description || t("assetRecords.intro", "Everything of this kind in this workspace.")}
         action={
           <AssetRecordDialog
             spaceId={spaceId}

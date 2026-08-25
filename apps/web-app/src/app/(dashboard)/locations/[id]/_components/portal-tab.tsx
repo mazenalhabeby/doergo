@@ -55,7 +55,7 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/20 px-6 py-16 text-center">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground"><LayoutGrid className="h-6 w-6" /></span>
           <p className="mt-4 text-sm font-semibold text-foreground">{t("portal.emptyTitle", "No portals yet")}</p>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">{t("portal.emptyHintSpace", "Create a portal for this space — pick a type, then invite your clients.")}</p>
+          <p className="mt-1 max-w-sm text-xs text-muted-foreground">{t("portal.emptyHintSpace", "Create a portal for this workspace — pick a type, then invite your clients.")}</p>
           <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-1.5"><Plus className="h-4 w-4" /> {t("portal.createPortal", "Create portal")}</Button>
         </div>
       ) : (
@@ -150,7 +150,7 @@ function CreatePortalDialog({ spaceId, hasApartments, onOpenModules, open, onOpe
               <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
                 <Lock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                 <p className="min-w-0 flex-1 text-xs text-amber-700 dark:text-amber-300">
-                  {t("portal.apartmentLockHint", "To create a Rental / Property (Apartment) portal, turn on the Apartments module for this space first.")}
+                  {t("portal.apartmentLockHint", "To create a Rental / Property (Apartment) portal, turn on the Apartments module for this workspace first.")}
                 </p>
                 {onOpenModules && (
                   <button type="button" onClick={() => { onOpenChange(false); onOpenModules() }}

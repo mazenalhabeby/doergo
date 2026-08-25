@@ -157,9 +157,9 @@
       "addressPlaceholder": "Musterstraße 123",
       "submitButton": "Organisation erstellen",
       "failedToCreate": "Organisation konnte nicht erstellt werden",
-      "firstSpaceLabel": "Ihr erster Bereich",
+      "firstSpaceLabel": "Ihr erster Arbeitsbereich",
       "firstSpacePlaceholder": "z. B. Hauptbüro",
-      "firstSpaceHint": "Sie können ihn später umbenennen oder weitere Bereiche hinzufügen.",
+      "firstSpaceHint": "Sie können ihn später umbenennen oder weitere Arbeitsbereiche hinzufügen.",
       "typeLabel": "Typ",
       "typeWorkspace": "Arbeitsbereich",
       "typeWorkspaceDesc": "Ein Team oder Projekt",
@@ -232,7 +232,7 @@
       "recentTasks": "Letzte Aufgaben",
       "noTasksYet": "Noch keine Aufgaben vorhanden. Erstellen Sie eine, um zu beginnen!",
       "setUpWorkspace": "Richten Sie Ihren Arbeitsbereich ein",
-      "setUpWorkspaceSub": "Erstellen Sie Bereiche und weisen Sie Ihr Team zu, um alle in Echtzeit zu verfolgen.",
+      "setUpWorkspaceSub": "Erstellen Sie Arbeitsbereiche und weisen Sie Ihr Team zu, um alle in Echtzeit zu verfolgen.",
       "activity": {
         "actions": {
           "IN_PROGRESS": "bearbeitet",
@@ -517,7 +517,7 @@
     "titleRequired": "Bitte geben Sie einen Aufgabentitel ein.",
     "successMessage": "Aufgabe erfolgreich erstellt!",
     "failedToCreate": "Aufgabe konnte nicht erstellt werden",
-    "spaceLabel": "Bereich",
+    "spaceLabel": "Arbeitsbereich",
     "spaceCount": "{{count}} verfügbar"
   },
   "attendance": {
@@ -577,7 +577,7 @@
       "bannerOutTitle": "Sie haben {{space}} verlassen",
       "bannerOutBody": "Teilen Sie uns Grund und Dauer mit oder stempeln Sie aus.",
       "tellUsWhy": "Grund angeben",
-      "homeOutTitle": "Sie sind außerhalb des Bereichs",
+      "homeOutTitle": "Sie sind außerhalb des Arbeitsbereichs",
       "homeOutBody": "Tippen, um Grund und Dauer mitzuteilen.",
       "homePendingBody": "Wartet auf Genehmigung Ihrer Zeit durch eine Führungskraft.",
       "bannerPendingTitle": "Warten auf Genehmigung",
@@ -588,7 +588,7 @@
       "submittedTitle": "Anfrage gesendet",
       "submittedBody": "Ihr Grund wurde zur Genehmigung gesendet.",
       "submitError": "Anfrage konnte nicht gesendet werden.",
-      "sheetTitle": "Außerhalb des Bereichs",
+      "sheetTitle": "Außerhalb des Arbeitsbereichs",
       "sheetSubtitle": "Sie sind außerhalb von {{space}}. Teilen Sie Ihrem Team Grund und Dauer mit.",
       "howLong": "Wie lange sind Sie abwesend?",
       "custom": "Benutzerdefiniert",
@@ -629,7 +629,7 @@
       "openSettings": "Einstellungen öffnen",
       "notNow": "Nicht jetzt"
     },
-    "unknownLocation": "diesem Bereich",
+    "unknownLocation": "diesem Arbeitsbereich",
     "clockedInRemotely": "Remote eingestempelt"
   },
   "overtime": {
@@ -903,8 +903,8 @@
         "employee": "Mitarbeiter",
         "jobTitleLabel": "Berufsbezeichnung (optional)",
         "jobTitlePlaceholder": "z.B. Elektriker",
-        "spaceLabel": "Bereich (optional)",
-        "noSpace": "Kein Bereich",
+        "spaceLabel": "Arbeitsbereich (optional)",
+        "noSpace": "Kein Arbeitsbereich",
         "generateButton": "Code generieren",
         "tapToCopy": "Zum Kopieren tippen · Läuft in 3 Tagen ab",
         "shareMessage": "Mit Einladungscode beitreten: {{code}}"
@@ -1126,8 +1126,8 @@
   ],
   "team": {
     "title": "Team",
-    "subtitle": "Teamkollegen in Ihren Bereichen.",
-    "empty": "Noch keine Teamkollegen in Ihren Bereichen.",
+    "subtitle": "Teamkollegen in Ihren Arbeitsbereichen.",
+    "empty": "Noch keine Teamkollegen in Ihren Arbeitsbereichen.",
     "managers": "Manager",
     "members": "Team",
     "messagingSoon": "Nachrichten folgen in Kürze",
@@ -1187,7 +1187,7 @@
     },
     "external": "Extern",
     "closed": "Geschlossen",
-    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
+    "conversationClosed": "Dieser Arbeitsbereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
     "externalMember": "In einer anderen Organisation"
   },
   "locationConsent": {
@@ -1358,7 +1358,7 @@
       "placeholder": "z. B. wir installieren und warten Klimaanlagen und übernehmen Notfalleinsätze",
       "orPick": "oder wählen Sie einen Startpunkt",
       "understoodEyebrow": "Das habe ich verstanden",
-      "youreIn": "Sie sind im Bereich {{industry}}",
+      "youreIn": "Sie sind im Arbeitsbereich {{industry}}",
       "understoodSub": "Basierend auf Ihrer Eingabe richte ich Sie so ein.",
       "areasLabel": "Arbeitsbereiche, die ich anlege",
       "toolsLabel": "Funktionen, die ich aktiviere",
@@ -1490,7 +1490,7 @@
     "accessYes": "Ja, Zutritt gestattet",
     "accessNo": "Nein, ich bin da",
     "location": "Wo ist es?",
-    "locationPlaceholder": "Raum / Etage / Bereich",
+    "locationPlaceholder": "Raum / Etage / Arbeitsbereich",
     "preferredTime": "Bevorzugte Zeit",
     "time": {
       "MORNING": "Vormittag",

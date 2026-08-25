@@ -137,7 +137,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3">
         <div>
           <p className="text-xs text-muted-foreground">
-            {t("billing.spaceCostLabel", "This space costs")}
+            {t("billing.spaceCostLabel", "This workspace costs")}
           </p>
           <p className="text-2xl font-semibold tabular-nums text-foreground">
             {formatCents(liveCost.monthlyCents + liveUsageCents)}

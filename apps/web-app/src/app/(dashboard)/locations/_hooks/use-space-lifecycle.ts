@@ -34,31 +34,31 @@ export function useSpaceLifecycle(handlers?: {
     mutationFn: (id: string) => locationsApi.delete(id),
     onSuccess: () => {
       invalidate()
-      notify.success(t("locations.toast.archived", "Space archived"))
+      notify.success(t("locations.toast.archived", "Workspace archived"))
       handlers?.onArchived?.()
     },
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.archiveFailed", "Could not archive the space")),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.archiveFailed", "Could not archive the workspace")),
   })
 
   const restore = useMutation({
     mutationFn: (id: string) => locationsApi.update(id, { isActive: true }),
     onSuccess: () => {
       invalidate()
-      notify.success(t("locations.toast.restored", "Space restored"))
+      notify.success(t("locations.toast.restored", "Workspace restored"))
       handlers?.onRestored?.()
     },
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.restoreFailed", "Could not restore the space")),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.restoreFailed", "Could not restore the workspace")),
   })
 
   const purge = useMutation({
     mutationFn: (id: string) => locationsApi.purge(id),
     onSuccess: () => {
       invalidate()
-      notify.success(t("locations.toast.purged", "Space permanently deleted"))
+      notify.success(t("locations.toast.purged", "Workspace permanently deleted"))
       handlers?.onPurged?.()
     },
     // The server names exactly what blocks deletion (tasks, attendance, …).
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.purgeFailed", "Could not delete space")),
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.purgeFailed", "Could not delete workspace")),
   })
 
   return { archive, restore, purge }

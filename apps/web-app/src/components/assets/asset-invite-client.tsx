@@ -128,7 +128,7 @@ export function AssetInviteClient({
                     <p className="py-6 text-center text-xs text-muted-foreground">{t("common.loading", "Loading…")}</p>
                   ) : clients.length === 0 ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">
-                      {t("assetRecords.noClients", "No clients in this space yet")}
+                      {t("assetRecords.noClients", "No clients in this workspace yet")}
                     </p>
                   ) : clients.map((c) => (
                     <button

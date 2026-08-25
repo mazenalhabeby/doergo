@@ -77,11 +77,11 @@
         {
           "kicker": "Leitstand",
           "title": "Ihr gesamter Betrieb, in Echtzeit.",
-          "body": "Ein Live-Aktivitätsfeed, ausstehende Freigaben und jeder Bereich auf einen Blick — die Büroansicht des Feldes."
+          "body": "Ein Live-Aktivitätsfeed, ausstehende Freigaben und jeder Arbeitsbereich auf einen Blick — die Büroansicht des Feldes."
         },
         {
           "kicker": "Planung",
-          "title": "Planen Sie über jeden Bereich hinweg.",
+          "title": "Planen Sie über jeden Arbeitsbereich hinweg.",
           "body": "Eine Zeitleiste über alle Ihre Standorte, wiederkehrende Einsätze und Verfügbarkeiten — Kapazität, die Sie wirklich sehen können."
         }
       ]
@@ -167,7 +167,7 @@
         {
           "kicker": "Team",
           "title": "Das ganze Team, nur einen Fingertipp entfernt.",
-          "body": "Schreiben oder rufen Sie jedes Teammitglied über alle Bereiche hinweg an, direkt aus dem Feld."
+          "body": "Schreiben oder rufen Sie jedes Teammitglied über alle Arbeitsbereiche hinweg an, direkt aus dem Feld."
         }
       ]
     },
@@ -302,7 +302,7 @@
       "heading": "Aktivieren Sie nur, was Sie brauchen",
       "lead": "Nichts ist hinter einem Paket versteckt. Schalten Sie etwas ein, wenn Sie es brauchen, und wieder aus, wenn nicht — die Rechnung folgt am selben Tag.",
       "groups": {
-        "task": "Aufgaben-Bereiche",
+        "task": "Aufgaben-Arbeitsbereiche",
         "field": "Außendienst",
         "agile": "Projekt / Agile",
         "premium": "Premium",
@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Preise",
       "heading": "Zahlen Sie für das, was Sie aktivieren.",
-      "lead": "Keine Pakete, keine Stufen, nichts hinter einem Upgrade versteckt. 9,99 € pro Person, die HBCField nutzt, plus das, was jeder Bereich tatsächlich aktiviert. 14 Tage testen, ohne Karte.",
+      "lead": "Keine Pakete, keine Stufen, nichts hinter einem Upgrade versteckt. 9,99 € pro Person, die HBCField nutzt, plus das, was jeder Arbeitsbereich tatsächlich aktiviert. 14 Tage testen, ohne Karte.",
       "outcomes": [
         {
           "title": "Schluss mit dem Status-Anruf-Chaos",
@@ -422,16 +422,16 @@
           "desc": "Büro oder Außendienst — gleicher Preis. Keine Sitzplatz-Kategorien."
         },
         {
-          "name": "Pro Bereich",
+          "name": "Pro Arbeitsbereich",
           "price": "ab 3 €",
           "unit": "/ Modul / Mon.",
-          "desc": "Ein Bereich ist ein Standort, ein Projekt oder ein Kunde. Jeder zahlt genau das, was er aktiviert hat — und nicht mehr, sobald Sie es abschalten."
+          "desc": "Ein Arbeitsbereich ist ein Standort, ein Projekt oder ein Kunde. Jeder zahlt genau das, was er aktiviert hat — und nicht mehr, sobald Sie es abschalten."
         },
         {
           "name": "Firmenweite Module",
           "price": "ab 9 €",
           "unit": "/ Mon.",
-          "desc": "Rechnungen, Workflows, Änderungsprotokoll. Einmal gebucht, egal wie viele Bereiche."
+          "desc": "Rechnungen, Workflows, Änderungsprotokoll. Einmal gebucht, egal wie viele Arbeitsbereiche."
         }
       ],
       "seePrices": "Alle Preise ansehen"
@@ -497,7 +497,7 @@
       "seeAll": "Alle Preise ansehen"
     },
     "groups": {
-      "perSpace": "/ Bereich / Monat",
+      "perSpace": "/ Arbeitsbereich / Monat",
       "from": "ab {{price}}",
       "where": {
         "title": "Wissen, wo alle sind",
@@ -524,7 +524,7 @@
       "office": {
         "title": "Das Büro erledigen",
         "body": "Rechnungen aus erledigter Arbeit, wiederkehrende Aufträge, Dienstpläne und ein Protokoll aller Änderungen.",
-        "note": "Einmal fürs Unternehmen gebucht, nicht pro Bereich."
+        "note": "Einmal fürs Unternehmen gebucht, nicht pro Arbeitsbereich."
       },
       "share": {
         "title": "Mit einem anderen Unternehmen arbeiten",
@@ -637,7 +637,7 @@
     "toggleSidebar": "Seitenleiste umschalten",
     "accessDenied": "Zugriff verweigert",
     "noPermissionView": "Sie haben keine Berechtigung, diese Seite anzuzeigen.",
-    "allSpaces": "Alle Bereiche",
+    "allSpaces": "Alle Arbeitsbereiche",
     "pickColor": "Farbe auswählen",
     "more": "Mehr",
     "goHome": "Zur Startseite",
@@ -844,7 +844,7 @@
       "endYourSession": "Sitzung beenden",
       "billing": "Abonnement & Abrechnung"
     },
-    "spaces": "Bereiche",
+    "spaces": "Arbeitsbereiche",
     "customers": "Kunden",
     "reports": "Berichte",
     "timeOff": "Abwesenheit",
@@ -932,21 +932,21 @@
     },
     "client": {
       "myTasks": "Meine Aufgaben",
-      "mySpaces": "Meine Bereiche",
+      "mySpaces": "Meine Arbeitsbereiche",
       "viewAll": "Alle anzeigen →",
       "setupTitleLine1": "Richten Sie Ihren",
       "setupTitleLine2": "Arbeitsbereich ein",
-      "setupDescription": "Erstellen Sie Bereiche, fügen Sie Ihr Team hinzu und verfolgen Sie alle in Echtzeit — alles in einer Ansicht.",
-      "addSpace": "Bereich hinzufügen",
+      "setupDescription": "Erstellen Sie Arbeitsbereiche, fügen Sie Ihr Team hinzu und verfolgen Sie alle in Echtzeit — alles in einer Ansicht.",
+      "addSpace": "Arbeitsbereich hinzufügen",
       "inviteTeam": "Team einladen",
-      "newSpace": "Neuer Bereich",
-      "exampleLabel": "Beispiel — so sieht ein Bereich aus",
+      "newSpace": "Neuer Arbeitsbereich",
+      "exampleLabel": "Beispiel — so sieht ein Arbeitsbereich aus",
       "exampleSpaceName": "Hauptbüro",
       "exampleOnShift": "Im Dienst",
       "exampleInField": "Im Einsatz",
       "exampleJob": "Klimaanlage reparieren — Zentrum",
-      "noSpacesTitle": "Noch keine Bereiche zugewiesen",
-      "noSpacesDescription": "Sie wurden noch keinem Bereich hinzugefügt. Sehen Sie im Aufgaben-Tab nach Ihren zugewiesenen Aufgaben oder bitten Sie Ihren Manager, Sie hinzuzufügen.",
+      "noSpacesTitle": "Noch keine Arbeitsbereiche zugewiesen",
+      "noSpacesDescription": "Sie wurden noch keinem Arbeitsbereich hinzugefügt. Sehen Sie im Aufgaben-Tab nach Ihren zugewiesenen Aufgaben oder bitten Sie Ihren Manager, Sie hinzuzufügen.",
       "assignSaved": "Team aktualisiert",
       "assignPartial": "{{ok}} gespeichert, {{failed}} fehlgeschlagen"
     },
@@ -1089,12 +1089,12 @@
       "errorMessage": "Aufgabe konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
       "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus",
       "dialogDescription": "Eine neue Aufgabe für Ihre Organisation erstellen",
-      "selectSpace": "Bereich auswählen",
+      "selectSpace": "Arbeitsbereich auswählen",
       "taskType": "Aufgabentyp",
-      "taskTypeInherit": "Bereichsstandard",
+      "taskTypeInherit": "Arbeitsbereichsstandard",
       "type": "Typ",
       "auto": "Automatisch",
-      "autoFromSpace": "Automatisch (vom Bereich)",
+      "autoFromSpace": "Automatisch (vom Arbeitsbereich)",
       "assignment": "Zuweisung",
       "assignedToYou": "Ihnen zugewiesen",
       "assignedToYouFull": "Diese Aufgabe wird Ihnen zugewiesen",
@@ -1209,7 +1209,7 @@
     },
     "page": {
       "heading": "Aufgaben",
-      "subtitle": "Verwalten Sie Aufgaben über Bereiche hinweg – erstellen, zuweisen und Fortschritt verfolgen.",
+      "subtitle": "Verwalten Sie Aufgaben über Arbeitsbereiche hinweg – erstellen, zuweisen und Fortschritt verfolgen.",
       "searchPlaceholder": "Suchen...",
       "recurring": "Wiederkehrend",
       "newTask": "Neue Aufgabe",
@@ -1228,7 +1228,7 @@
       "epic": "Epic",
       "assignee": "Zuständige(r)",
       "priority": "Priorität",
-      "space": "Bereich"
+      "space": "Arbeitsbereich"
     },
     "fallbackColumns": {
       "open": "Offen",
@@ -1264,8 +1264,8 @@
       "epicRemoved": "Epic entfernt",
       "pointsSet": "Auf {{points}} Punkte gesetzt",
       "pointsCleared": "Punkte gelöscht",
-      "movedToSpace": "In Bereich verschoben",
-      "spaceRemoved": "Bereich entfernt",
+      "movedToSpace": "In Arbeitsbereich verschoben",
+      "spaceRemoved": "Arbeitsbereich entfernt",
       "taskDeleted": "Aufgabe gelöscht",
       "updatesFailed": "{{failed}} von {{total}} Aktualisierungen fehlgeschlagen",
       "deletesFailed": "{{failed}} von {{total}} Löschvorgängen fehlgeschlagen",
@@ -1389,7 +1389,7 @@
       "planning": "Planung",
       "backlog": "Backlog",
       "noEpic": "Kein Epic",
-      "noSpace": "Kein Bereich",
+      "noSpace": "Kein Arbeitsbereich",
       "noTasksToGroup": "Keine Aufgaben zum Gruppieren",
       "noTasksToGroupHint": "Es gibt keine Aufgaben, die den aktuellen Filtern entsprechen, um sie in Gruppen zu organisieren.",
       "newSprint": "Neuer Sprint",
@@ -1525,12 +1525,12 @@
       "dayOfWeek": "Wochentag",
       "dayOfMonth": "Tag des Monats",
       "endDateOptional": "Enddatum (optional)",
-      "generatesHint": "Erzeugt nach diesem Zeitplan eine Aufgabe im gewählten Bereich & Typ. Fälligkeitsdatum & Anhänge gelten nicht.",
+      "generatesHint": "Erzeugt nach diesem Zeitplan eine Aufgabe im gewählten Arbeitsbereich & Typ. Fälligkeitsdatum & Anhänge gelten nicht.",
       "created": "Wiederkehrende Aufgabe erstellt",
       "createdDescription": "Sie wird nach Zeitplan erzeugt.",
       "createFailed": "Wiederkehrende Aufgabe konnte nicht erstellt werden",
       "createButton": "Wiederkehrende Aufgabe erstellen",
-      "noSpace": "Kein Bereich",
+      "noSpace": "Kein Arbeitsbereich",
       "defaultType": "Standardtyp",
       "nextRun": "Nächste: {{date}}",
       "checklistItemsCount": "{{count}} Checklistenpunkte",
@@ -1550,7 +1550,7 @@
       "pageTitle": "Wiederkehrende Aufgaben",
       "pageSubtitle": "Aufgabenerstellung nach Zeitplan automatisieren",
       "newTemplate": "Neue Vorlage",
-      "emptyInSpace": "Keine wiederkehrenden Vorlagen in diesem Bereich",
+      "emptyInSpace": "Keine wiederkehrenden Vorlagen in diesem Arbeitsbereich",
       "emptyTitle": "Noch keine wiederkehrenden Vorlagen",
       "emptyHint": "Erstellen Sie Vorlagen, um Aufgaben automatisch täglich, wöchentlich, monatlich oder nach einem benutzerdefinierten Zeitplan zu erzeugen.",
       "createFirst": "Erstellen Sie Ihre erste Vorlage",
@@ -1642,18 +1642,18 @@
       "assignTo": "Zuweisen an",
       "backlog": "Backlog",
       "delete": "Löschen",
-      "moveToSpace": "In Bereich verschieben",
+      "moveToSpace": "In Arbeitsbereich verschieben",
       "moveToSprint": "In Sprint verschieben",
       "newTask": "Neue Aufgabe",
       "noEpic": "Kein Epic",
       "noPhase": "Keine Phase",
-      "noSpace": "Kein Bereich",
+      "noSpace": "Kein Arbeitsbereich",
       "none": "Keine",
       "open": "Öffnen",
       "priority": "Priorität",
       "setEpic": "Epic festlegen",
       "setPhase": "Phase festlegen",
-      "space": "Bereich",
+      "space": "Arbeitsbereich",
       "sprint": "Sprint",
       "status": "Status",
       "storyPoints": "Story Points",
@@ -2045,8 +2045,8 @@
     "searchPlaceholder": "Nach Name oder E-Mail suchen...",
     "watchers": {
       "title": "Benachrichtigungen über {{name}}",
-      "hint": "Wählen Sie, wer über dieses Mitglied benachrichtigt wird (Freigaben, Geofence, …). Ohne Auswahl werden nur die auf den Bereichen des Mitglieds konfigurierten Empfänger benachrichtigt – es gibt keinen automatischen Rückfall auf Organisations-Admins.",
-      "usingDefault": "Niemand ausgewählt – nur Bereichs-Routing",
+      "hint": "Wählen Sie, wer über dieses Mitglied benachrichtigt wird (Freigaben, Geofence, …). Ohne Auswahl werden nur die auf den Arbeitsbereichen des Mitglieds konfigurierten Empfänger benachrichtigt – es gibt keinen automatischen Rückfall auf Organisations-Admins.",
+      "usingDefault": "Niemand ausgewählt – nur Arbeitsbereichs-Routing",
       "noManagers": "Noch keine Admins oder Manager zum Zuweisen.",
       "saved": "Benachrichtigungsempfänger aktualisiert"
     },
@@ -2088,7 +2088,7 @@
       "joined": "Beigetreten",
       "title": "Titel",
       "schedule": "Arbeitszeit",
-      "spaces": "Bereiche"
+      "spaces": "Arbeitsbereiche"
     },
     "roles": {
       "admin": "Administrator",
@@ -2137,10 +2137,10 @@
       "remove": "Entfernen"
     },
     "team": "Team",
-    "teamSubtitle": "Verwalten Sie Ihre Teammitglieder – weisen Sie Rollen, Berechtigungen und Bereiche zu.",
+    "teamSubtitle": "Verwalten Sie Ihre Teammitglieder – weisen Sie Rollen, Berechtigungen und Arbeitsbereiche zu.",
     "inviteShort": "Einladen",
     "you": "Sie",
-    "noSpaces": "Keine Bereiche",
+    "noSpaces": "Keine Arbeitsbereiche",
     "schedule": {
       "fixed": "Fest",
       "flexible": "Flexibel"
@@ -2148,7 +2148,7 @@
     "bulk": {
       "selected": "{{count}} ausgewählt",
       "role": "Rolle",
-      "space": "Bereich",
+      "space": "Arbeitsbereich",
       "removeConfirm": "{{count}} Mitglied(er) aus der Organisation entfernen?",
       "access": "Zugriff",
       "accessTitle": "Massen-Zugriff",
@@ -2156,7 +2156,7 @@
     },
     "empty": {
       "title": "Bauen Sie Ihr Team auf",
-      "description": "Fügen Sie Teammitglieder hinzu und weisen Sie ihnen Bereiche zu. Jedes Mitglied kann unterschiedliche Rollen und Berechtigungen haben."
+      "description": "Fügen Sie Teammitglieder hinzu und weisen Sie ihnen Arbeitsbereiche zu. Jedes Mitglied kann unterschiedliche Rollen und Berechtigungen haben."
     },
     "pendingInvitations": {
       "title": "Ausstehende Einladungen",
@@ -2175,8 +2175,8 @@
       "revokeFailed": "Einladung konnte nicht widerrufen werden",
       "roleUpdated": "Rolle aktualisiert",
       "updateRolesFailed": "Rollen konnten nicht aktualisiert werden",
-      "assignedToSpace": "{{count}} Mitglied(er) dem Bereich zugewiesen",
-      "assignFailed": "Zuweisung zum Bereich fehlgeschlagen",
+      "assignedToSpace": "{{count}} Mitglied(er) dem Arbeitsbereich zugewiesen",
+      "assignFailed": "Zuweisung zum Arbeitsbereich fehlgeschlagen",
       "removedCount": "{{count}} Mitglied(er) entfernt",
       "removeMembersFailed": "Mitglieder konnten nicht entfernt werden",
       "bulkPartial": "{{ok}} aktualisiert, {{failed}} fehlgeschlagen"
@@ -2328,9 +2328,9 @@
       "positionLabel": "Position",
       "positionPlaceholder": "z. B. Klempner, Außendiensttechniker",
       "optional": "(optional)",
-      "spaceLabel": "Bereich",
-      "spacePlaceholder": "Beim Beitritt einem Bereich zuweisen",
-      "noSpace": "Kein Bereich",
+      "spaceLabel": "Arbeitsbereich",
+      "spacePlaceholder": "Beim Beitritt einem Arbeitsbereich zuweisen",
+      "noSpace": "Kein Arbeitsbereich",
       "sending": "Wird gesendet...",
       "sendInvitation": "Einladung senden",
       "generateCode": "Code generieren",
@@ -2745,7 +2745,7 @@
     "unknownLocation": "Unbekannter Standort",
     "unknownWorker": "Mitarbeiter",
     "outOfRing": {
-      "title": "Außerhalb des Bereichs",
+      "title": "Außerhalb des Arbeitsbereichs",
       "desc": "Mitarbeiter, die ihren Arbeitsbereich verlassen haben und eine Entscheidung benötigen oder genehmigte Zeit haben.",
       "requested": "Angefragt",
       "min": "Min",
@@ -3266,8 +3266,8 @@
       "INVITATION_ACCEPTED": "Einladung angenommen",
       "JOIN_REQUEST_APPROVED": "Beitritt genehmigt",
       "JOIN_REQUEST_REJECTED": "Beitritt abgelehnt",
-      "SPACE_CREATED": "Bereich erstellt",
-      "SPACE_DELETED": "Bereich gelöscht",
+      "SPACE_CREATED": "Arbeitsbereich erstellt",
+      "SPACE_DELETED": "Arbeitsbereich gelöscht",
       "RECURRING_CREATED": "Serie erstellt",
       "RECURRING_DELETED": "Serie gelöscht",
       "RECURRING_GENERATED": "Serie generiert",
@@ -3293,10 +3293,10 @@
       "longitude": "Längengrad",
       "hint": "Suchen Sie oben, klicken Sie auf die Karte oder geben Sie Adresse und Koordinaten manuell ein."
     },
-    "title": "Bereiche",
-    "subtitle": "Verwalten Sie Ihre Arbeitsbereiche — jeder Bereich hat seinen eigenen Workflow, eigene Module und ein eigenes Team.",
-    "newSpace": "Neuer Bereich",
-    "createSpace": "Bereich erstellen",
+    "title": "Arbeitsbereiche",
+    "subtitle": "Verwalten Sie Ihre Arbeitsbereiche — jeder Arbeitsbereich hat seinen eigenen Workflow, eigene Module und ein eigenes Team.",
+    "newSpace": "Neuer Arbeitsbereich",
+    "createSpace": "Arbeitsbereich erstellen",
     "createDescription": "Richten Sie einen neuen Arbeitsbereich mit eigenem Workflow und eigenen Modulen ein.",
     "configure": "Konfigurieren",
     "viewTasks": "Aufgaben anzeigen",
@@ -3306,7 +3306,7 @@
     "statusCountSuffix_one": " ({{count}} Status)",
     "statusCountSuffix_other": " ({{count}} Status)",
     "configureTitle": "Konfigurieren — {{name}}",
-    "configureDescription": "Verwalten Sie die Einstellungen, Module, den Workflow und die Teammitglieder dieses Bereichs.",
+    "configureDescription": "Verwalten Sie die Einstellungen, Module, den Workflow und die Teammitglieder dieses Arbeitsbereichs.",
     "name": "Name",
     "address": "Adresse",
     "geofenceRadius": "Geofence-Radius",
@@ -3314,15 +3314,15 @@
     "activeLabel": "Space-Status",
     "activeHint": "Archivierte Spaces werden aus Auswahllisten ausgeblendet; der Verlauf bleibt erhalten. Archivieren oder wiederherstellen unten in der Danger zone.",
     "nameRequired": "Name ist erforderlich",
-    "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu. Wählen Sie eine Voreinstellung und passen Sie sie an.",
+    "modulesIntro": "Module fügen den Aufgaben dieses Arbeitsbereichs optionale Funktionen hinzu. Wählen Sie eine Voreinstellung und passen Sie sie an.",
     "presets": "Voreinstellungen",
     "currentWorkflow": "Aktueller Workflow",
     "statusesWithCount": "Status ({{count}})",
     "editWorkflow": "Workflow bearbeiten",
     "resyncTasks": "Vorhandene Aufgaben neu abgleichen",
-    "resyncTasksHint": "Verschieben Sie die vorhandenen Aufgaben dieses Bereichs auf die Spalten dieses Workflows.",
+    "resyncTasksHint": "Verschieben Sie die vorhandenen Aufgaben dieses Arbeitsbereichs auf die Spalten dieses Workflows.",
     "resyncTasksConfirmTitle": "Aufgaben mit diesem Workflow abgleichen?",
-    "resyncTasksConfirmDescription": "Jede Aufgabe in diesem Bereich wird auf diesen Workflow verschoben. Status, die nicht passen, werden auf den ersten Status des Workflows zurückgesetzt. Dies kann nicht rückgängig gemacht werden.",
+    "resyncTasksConfirmDescription": "Jede Aufgabe in diesem Arbeitsbereich wird auf diesen Workflow verschoben. Status, die nicht passen, werden auf den ersten Status des Workflows zurückgesetzt. Dies kann nicht rückgängig gemacht werden.",
     "createNew": "Neu erstellen",
     "membersWithCount": "Mitglieder ({{count}})",
     "noMembers": "Noch keine Mitglieder zugewiesen",
@@ -3342,8 +3342,8 @@
       "members": "Mitglieder"
     },
     "empty": {
-      "title": "Erstellen Sie Ihren ersten Bereich",
-      "description": "Bereiche sind dort, wo gearbeitet wird — Büros, Lager, Einsatzorte. Jeder Bereich kann seinen eigenen Workflow, eigene Module und ein eigenes Team haben."
+      "title": "Erstellen Sie Ihren ersten Arbeitsbereich",
+      "description": "Arbeitsbereiche sind dort, wo gearbeitet wird — Büros, Lager, Einsatzorte. Jeder Arbeitsbereich kann seinen eigenen Workflow, eigene Module und ein eigenes Team haben."
     },
     "form": {
       "namePlaceholder": "z. B. Hauptbüro, Außendienst-Team",
@@ -3357,7 +3357,7 @@
       "geofenceHint": "Mitarbeiter können innerhalb dieser Entfernung vom Pin einstempeln.",
       "advancedModules": "Erweitert — Module",
       "enabledCount": "{{count}} aktiviert",
-      "modulesIntro": "Module fügen den Aufgaben dieses Bereichs optionale Funktionen hinzu (Checklisten, GPS-Tracking, Sprints…). Beginnen Sie mit einer Voreinstellung und passen Sie sie unten an.",
+      "modulesIntro": "Module fügen den Aufgaben dieses Arbeitsbereichs optionale Funktionen hinzu (Checklisten, GPS-Tracking, Sprints…). Beginnen Sie mit einer Voreinstellung und passen Sie sie unten an.",
       "ownership": "Zugehörigkeit",
       "kindProject": "Mein Projekt",
       "kindCompany": "Mein Unternehmen",
@@ -3371,7 +3371,7 @@
       "billableRateHint": "Berechnet automatisch die Arbeitspositionen auf den Rechnungen dieses Kunden. Leer lassen, um den Organisationsstandard zu verwenden."
     },
     "toast": {
-      "updated": "Bereich aktualisiert",
+      "updated": "Arbeitsbereich aktualisiert",
       "updateFailed": "Aktualisierung fehlgeschlagen",
       "modulesUpdated": "Module aktualisiert",
       "modulesUpdateFailed": "Module konnten nicht aktualisiert werden",
@@ -3383,15 +3383,15 @@
       "memberAddFailed": "Mitglied konnte nicht hinzugefügt werden",
       "memberRemoved": "Mitglied entfernt",
       "memberRemoveFailed": "Mitglied konnte nicht entfernt werden",
-      "created": "Bereich erstellt",
-      "createFailed": "Bereich konnte nicht erstellt werden",
-      "resyncAllDone": "{{updated}} Aufgabe(n) in {{spaces}} Bereich(en) neu abgeglichen",
-      "purged": "Bereich endgültig gelöscht",
-      "purgeFailed": "Bereich konnte nicht gelöscht werden",
-      "archived": "Bereich archiviert",
-      "archiveFailed": "Bereich konnte nicht archiviert werden",
-      "restored": "Bereich wiederhergestellt",
-      "restoreFailed": "Bereich konnte nicht wiederhergestellt werden"
+      "created": "Arbeitsbereich erstellt",
+      "createFailed": "Arbeitsbereich konnte nicht erstellt werden",
+      "resyncAllDone": "{{updated}} Aufgabe(n) in {{spaces}} Arbeitsbereich(en) neu abgeglichen",
+      "purged": "Arbeitsbereich endgültig gelöscht",
+      "purgeFailed": "Arbeitsbereich konnte nicht gelöscht werden",
+      "archived": "Arbeitsbereich archiviert",
+      "archiveFailed": "Arbeitsbereich konnte nicht archiviert werden",
+      "restored": "Arbeitsbereich wiederhergestellt",
+      "restoreFailed": "Arbeitsbereich konnte nicht wiederhergestellt werden"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Workflow auswählen...",
@@ -3399,21 +3399,21 @@
     "statusCount_one": "{{count}} Status",
     "statusCount_other": "{{count}} Status",
     "createNewWorkflow": "Neuen Workflow erstellen",
-    "resyncAllTasks": "Alle Bereiche neu abgleichen",
-    "resyncAllTasksHint": "Aufgaben aller Bereiche an deren Workflow anpassen",
-    "resyncAllTasksConfirmTitle": "Alle Bereiche neu abgleichen?",
-    "resyncAllTasksConfirmDescription": "Dadurch werden alle Aufgaben in jedem Bereich an den Workflow des jeweiligen Bereichs angepasst. Status, die im Workflow eines Bereichs nicht existieren, werden auf dessen erste Phase zurückgesetzt – abgeschlossene und stornierte Aufgaben bleiben erhalten.",
-    "spaceSettings": "Bereichseinstellungen",
+    "resyncAllTasks": "Alle Arbeitsbereiche neu abgleichen",
+    "resyncAllTasksHint": "Aufgaben aller Arbeitsbereiche an deren Workflow anpassen",
+    "resyncAllTasksConfirmTitle": "Alle Arbeitsbereiche neu abgleichen?",
+    "resyncAllTasksConfirmDescription": "Dadurch werden alle Aufgaben in jedem Arbeitsbereich an den Workflow des jeweiligen Arbeitsbereichs angepasst. Status, die im Workflow eines Arbeitsbereichs nicht existieren, werden auf dessen erste Phase zurückgesetzt – abgeschlossene und stornierte Aufgaben bleiben erhalten.",
+    "spaceSettings": "Arbeitsbereichseinstellungen",
     "selectTimezone": "Zeitzone auswählen",
     "searchTimezone": "Zeitzone suchen…",
     "timezoneAutoHint": "Automatisch von der Karte übernommen. Zum Überschreiben suchen.",
-    "detailsSection": "Bereichsdetails",
+    "detailsSection": "Arbeitsbereichsdetails",
     "locationSection": "Standort & Zeitzone",
     "locationHint": "Suchen Sie eine Adresse oder setzen Sie eine Markierung — die Zeitzone wird aus dem Standort übernommen.",
     "modulesEnabledCount": "{{count}} aktiviert",
     "detailsHint": "Benennen Sie diesen Space. Sein Status wird unten in der Danger zone verwaltet.",
-    "workflowHint": "Wählen Sie die Aufgaben-Board-Spalten, die Mitglieder in diesem Bereich sehen, oder erstellen Sie neue.",
-    "typeSection": "Bereichstyp",
+    "workflowHint": "Wählen Sie die Aufgaben-Board-Spalten, die Mitglieder in diesem Arbeitsbereich sehen, oder erstellen Sie neue.",
+    "typeSection": "Arbeitsbereichstyp",
     "typeHint": "Ist dies ein physischer Standort mit Adresse oder ein logischer Arbeitsbereich?",
     "timezoneOnlyHint": "Die Zeitzone zur Anzeige der Zeiten dieses Arbeitsbereichs.",
     "timezoneManualHint": "Wird zur Anzeige von Anwesenheits- und Aufgabenzeiten dieses Arbeitsbereichs verwendet.",
@@ -3422,37 +3422,37 @@
       "hint": "Unwiderrufliche und destruktive Aktionen.",
       "deleteTitle": "Diesen Space archivieren",
       "deleteHint": "Deaktiviert den Space und blendet ihn aus Auswahllisten aus. Der Verlauf bleibt erhalten, seine Aufgaben wandern in Ihren Standard-Space. Sie können ihn später reaktivieren.",
-      "lockedDefault": "Dies ist dein Standardbereich – er enthält nicht zugewiesene Aufgaben und kann nicht gelöscht werden.",
-      "lockedRemote": "Dies ist der Remote-Bereich – er wird für Remote-Zeiterfassung benötigt und kann nicht gelöscht werden.",
+      "lockedDefault": "Dies ist dein Standard-Arbeitsbereich – er enthält nicht zugewiesene Aufgaben und kann nicht gelöscht werden.",
+      "lockedRemote": "Dies ist der Remote-Arbeitsbereich – er wird für Remote-Zeiterfassung benötigt und kann nicht gelöscht werden.",
       "deleteButton": "Space archivieren",
       "dialogTitle": "„{{name}}“ archivieren?",
       "dialogDesc": "Der Space wird deaktiviert und aus Auswahllisten entfernt. Der gesamte Verlauf bleibt erhalten und Sie können ihn jederzeit reaktivieren.",
-      "tasksMoved": "{{count}} Aufgabe(n) in diesem Bereich werden in deinen Standardbereich verschoben.",
-      "tasksNone": "Dieser Bereich hat keine Aufgaben.",
+      "tasksMoved": "{{count}} Aufgabe(n) in diesem Arbeitsbereich werden in deinen Standard-Arbeitsbereich verschoben.",
+      "tasksNone": "Dieser Arbeitsbereich hat keine Aufgaben.",
       "confirmLabel": "Gib „{{name}}“ ein, um zu bestätigen",
       "confirmButton": "Space archivieren",
       "deleting": "Wird ausgeführt…",
       "deleted": "Space archiviert",
       "deleteFailed": "Space konnte nicht archiviert werden",
-      "purgeHint": "Entfernt den Bereich für immer. Nur möglich, solange er keine Aufgaben, Anwesenheiten oder Schichthistorie hat. Kann nicht rückgängig gemacht werden.",
-      "purgeDialogDesc": "Damit wird der Bereich endgültig entfernt. Das gelingt nur, solange er keine Aufgaben, Anwesenheiten oder Schichthistorie hat — andernfalls archivieren Sie ihn.",
-      "restoreTitle": "Diesen Bereich wiederherstellen",
-      "restoreHint": "Dieser Bereich ist archiviert. Beim Wiederherstellen wird er wieder aktiv und in Auswahllisten sichtbar."
+      "purgeHint": "Entfernt den Arbeitsbereich für immer. Nur möglich, solange er keine Aufgaben, Anwesenheiten oder Schichthistorie hat. Kann nicht rückgängig gemacht werden.",
+      "purgeDialogDesc": "Damit wird der Arbeitsbereich endgültig entfernt. Das gelingt nur, solange er keine Aufgaben, Anwesenheiten oder Schichthistorie hat — andernfalls archivieren Sie ihn.",
+      "restoreTitle": "Diesen Arbeitsbereich wiederherstellen",
+      "restoreHint": "Dieser Arbeitsbereich ist archiviert. Beim Wiederherstellen wird er wieder aktiv und in Auswahllisten sichtbar."
     },
     "ownershipSection": "Zugehörigkeit",
     "ownershipHint": "Ist dies ein Projekt, Ihr eigenes Unternehmen oder ein Kundenunternehmen, für das Sie arbeiten?",
-    "purgeSpace": "Bereich endgültig löschen",
+    "purgeSpace": "Arbeitsbereich endgültig löschen",
     "purge": "Endgültig löschen",
     "archiveAction": "Archivieren",
     "restoreAction": "Wiederherstellen",
     "archived": "Archiviert",
     "workflows": {
-      "title": "Aufgabentypen in diesem Bereich",
+      "title": "Aufgabentypen in diesem Arbeitsbereich",
       "hint": "Neue Aufgaben verwenden hier den Standard, sofern nichts anderes gewählt wird.",
       "none": "Noch keine Aufgabentypen — Aufgaben nutzen hier den Standardablauf.",
       "default": "Standard",
       "makeDefault": "Als Standard",
-      "remove": "Aus diesem Bereich entfernen",
+      "remove": "Aus diesem Arbeitsbereich entfernen",
       "addPlaceholder": "Aufgabentyp hinzufügen…",
       "added": "Aufgabentyp hinzugefügt",
       "removed": "Aufgabentyp entfernt",
@@ -3460,19 +3460,19 @@
       "addFailed": "Aufgabentyp konnte nicht hinzugefügt werden",
       "removeFailed": "Aufgabentyp konnte nicht entfernt werden",
       "defaultFailed": "Standard konnte nicht geändert werden",
-      "libraryHint": "Oder mit einer fertigen Aufgabenart beginnen. Sie erhalten eine eigene Kopie in diesem Bereich — frei bearbeitbar, ohne Auswirkung auf andere.",
+      "libraryHint": "Oder mit einer fertigen Aufgabenart beginnen. Sie erhalten eine eigene Kopie in diesem Arbeitsbereich — frei bearbeitbar, ohne Auswirkung auf andere.",
       "libraryPlaceholder": "Aus der Bibliothek wählen …",
       "useTemplate": "Vorlage verwenden",
       "onlyHere": "Nur hier",
       "sharedBadge": "Geteilt",
-      "localHint": "Nur dieser Bereich nutzt ihn. Änderungen bleiben hier.",
+      "localHint": "Nur dieser Arbeitsbereich nutzt ihn. Änderungen bleiben hier.",
       "sharedHint": "Mit der Organisation geteilt. Eine Änderung wirkt überall, wo er angeboten wird.",
       "fork": "Hierher kopieren",
-      "forkHint": "Eigene Kopie für diesen Bereich, änderbar ohne Auswirkung auf andere",
-      "forked": "„{{name}}“ ist jetzt die eigene Kopie dieses Bereichs — frei bearbeitbar.",
+      "forkHint": "Eigene Kopie für diesen Arbeitsbereich, änderbar ohne Auswirkung auf andere",
+      "forked": "„{{name}}“ ist jetzt die eigene Kopie dieses Arbeitsbereichs — frei bearbeitbar.",
       "forkFailed": "Diese Aufgabenart konnte nicht kopiert werden",
       "share": "Teilen",
-      "shareHint": "Jeder Bereich der Organisation darf diese eine Definition anbieten",
+      "shareHint": "Jeder Arbeitsbereich der Organisation darf diese eine Definition anbieten",
       "shared": "Mit der Organisation geteilt",
       "shareFailed": "Diese Aufgabenart konnte nicht geteilt werden"
     },
@@ -3489,7 +3489,7 @@
     "select": "Auswählen",
     "goToDashboard": "Zum Dashboard",
     "goToTasks": "Zu den Aufgaben",
-    "goToSpaces": "Zu den Bereichen",
+    "goToSpaces": "Zu den Arbeitsbereichen",
     "goToSchedule": "Zum Zeitplan",
     "goToAttendance": "Zur Anwesenheit",
     "goToMembers": "Zu den Mitgliedern",
@@ -3501,7 +3501,7 @@
       "navigation": "Navigation",
       "tasks": "Aufgaben",
       "sprints": "Sprints",
-      "spaces": "Bereiche",
+      "spaces": "Arbeitsbereiche",
       "quickActions": "Schnellaktionen",
       "people": "Personen",
       "tasksResults": "Aufgaben"
@@ -3513,7 +3513,7 @@
     "addedToSprint": "Zum Sprint hinzugefügt",
     "epicUpdated": "Epic aktualisiert",
     "taskAssigned": "Aufgabe zugewiesen",
-    "movedToSpace": "In Bereich verschoben",
+    "movedToSpace": "In Arbeitsbereich verschoben",
     "taskCreated": "Aufgabe erstellt",
     "bulkUpdatedOne": "{{count}} Aufgabe aktualisiert",
     "bulkUpdatedMany": "{{count}} Aufgaben aktualisiert",
@@ -3544,7 +3544,7 @@
     "selectDescription": "Wählen Sie ein Mitglied aus, dem diese Aufgabe zugewiesen werden soll.",
     "searchPlaceholder": "Mitglieder suchen...",
     "noMembersFound": "Keine Mitglieder gefunden",
-    "spaceMembers": "Bereichsmitglieder",
+    "spaceMembers": "Arbeitsbereichsmitglieder",
     "otherMembers": "Andere Mitglieder",
     "membersSelected": "{{count}} Mitglieder ausgewählt"
   },
@@ -3562,7 +3562,7 @@
     "platformAccess": "Plattformzugriff",
     "permissions": "Berechtigungen",
     "featureTabsLabel": "Funktions-Tabs",
-    "spaceVisibility": "Bereichssichtbarkeit",
+    "spaceVisibility": "Arbeitsbereichssichtbarkeit",
     "attendance": "Anwesenheit",
     "allowRemoteNeedsClock": "Aktivieren Sie oben das Zeiterfassungs-Modul, um Remote-Einstempeln zu nutzen.",
     "collaboration": "Zusammenarbeit",
@@ -3578,21 +3578,21 @@
     },
     "scopes": {
       "own": {
-        "label": "Nur meine Bereiche",
-        "desc": "Sieht nur die Bereiche, denen sie zugewiesen sind."
+        "label": "Nur meine Arbeitsbereiche",
+        "desc": "Sieht nur die Arbeitsbereiche, denen sie zugewiesen sind."
       },
       "tasks": {
         "label": "Nur Aufgaben",
-        "desc": "Keine Bereichsansicht — nur die eigene Aufgabenliste."
+        "desc": "Keine Arbeitsbereichsansicht — nur die eigene Aufgabenliste."
       },
       "all": {
-        "label": "Alle Bereiche",
-        "desc": "Schreibgeschützte Übersicht über jeden Bereich."
+        "label": "Alle Arbeitsbereiche",
+        "desc": "Schreibgeschützte Übersicht über jeden Arbeitsbereich."
       }
     },
     "taskScopes": {
       "self": "Eigene Aufgaben",
-      "space": "Aufgaben in ihren Bereichen",
+      "space": "Aufgaben in ihren Arbeitsbereichen",
       "org": "Jede Aufgabe in der Organisation"
     },
     "perms": {
@@ -3704,7 +3704,7 @@
     "noActiveMembers": "Keine aktiven Mitglieder",
     "inFieldCount": "{{count}} im Einsatz",
     "offSiteCount": "{{count}} extern",
-    "manageSpace": "Bereich verwalten",
+    "manageSpace": "Arbeitsbereich verwalten",
     "addMember": "Mitglied hinzufügen",
     "viewTasks": "Aufgaben anzeigen",
     "allQuietToday": "Heute ist alles ruhig",
@@ -3793,7 +3793,7 @@
     },
     "page": {
       "title": "Aufgabentypen",
-      "subtitle": "Definieren Sie für jeden Aufgabentyp den Statusablauf, die Fähigkeiten und Felder. Bereiche wählen einen Typ; Aufgaben können ihn überschreiben.",
+      "subtitle": "Definieren Sie für jeden Aufgabentyp den Statusablauf, die Fähigkeiten und Felder. Arbeitsbereiche wählen einen Typ; Aufgaben können ihn überschreiben.",
       "newTaskType": "Neuer Aufgabentyp",
       "createTaskType": "Aufgabentyp erstellen",
       "createDescription": "Beginnen Sie mit einer vorgefertigten Vorlage oder erstellen Sie Ihre eigene von Grund auf.",
@@ -3861,7 +3861,7 @@
       "localTo": "{{count}} Schritte · nur {{space}} nutzt ihn",
       "submitToLibrary": "Der Bibliothek anbieten",
       "submitHint": "Diesen Ablauf anderen Organisationen anbieten. Er wird zuerst geprüft.",
-      "spaceSubtitle": "Die Abläufe, die Aufgaben in diesem Bereich durchlaufen. Eine geteilte Aufgabenart zu ändern wirkt überall, wo sie angeboten wird."
+      "spaceSubtitle": "Die Abläufe, die Aufgaben in diesem Arbeitsbereich durchlaufen. Eine geteilte Aufgabenart zu ändern wirkt überall, wo sie angeboten wird."
     },
     "capabilities": {
       "gps": "GPS",
@@ -3878,7 +3878,7 @@
       "reportHint": "Ausgeführte Arbeiten und verwendete Teile. Benötigt Serviceberichte.",
       "form": "Formular",
       "formHint": "Besuchsnotizen oder Ergebnisformular. Benötigt benutzerdefinierte Felder.",
-      "moduleOff": "Das Modul „{{module}}“ ist in diesem Bereich aus, das ist hier noch nicht möglich."
+      "moduleOff": "Das Modul „{{module}}“ ist in diesem Arbeitsbereich aus, das ist hier noch nicht möglich."
     }
   },
   "assets": {
@@ -4077,8 +4077,8 @@
   },
   "team": {
     "title": "Team",
-    "subtitle": "Teamkollegen in Ihren Bereichen.",
-    "empty": "Noch keine Teamkollegen in Ihren Bereichen.",
+    "subtitle": "Teamkollegen in Ihren Arbeitsbereichen.",
+    "empty": "Noch keine Teamkollegen in Ihren Arbeitsbereichen.",
     "callsComingSoon": "Anrufe bald verfügbar"
   },
   "privacy": {
@@ -4460,7 +4460,7 @@
         "desc": "Teamverfügbarkeit und Zeitpläne"
       },
       "spaces": {
-        "label": "Bereiche",
+        "label": "Arbeitsbereiche",
         "desc": "Arbeitsbereiche und Teamlisten verwalten"
       }
     }
@@ -4552,7 +4552,7 @@
       "placeholder": "z. B. wir installieren und warten Klimaanlagen und übernehmen Notfalleinsätze",
       "orPick": "oder wählen Sie einen Startpunkt",
       "understoodEyebrow": "Das habe ich verstanden",
-      "youreIn": "Sie sind im Bereich {{industry}}",
+      "youreIn": "Sie sind im Arbeitsbereich {{industry}}",
       "understoodSub": "Basierend auf Ihrer Eingabe richte ich Sie so ein.",
       "areasLabel": "Arbeitsbereiche, die ich anlege",
       "toolsLabel": "Funktionen, die ich aktiviere",
@@ -4726,7 +4726,7 @@
       },
       "manage": {
         "title": "Verwaltungszentrale",
-        "body": "Schnellzugriff auf alles, was Sie verwalten — Mitglieder, Einladungen, Beitrittsanfragen, Zeitplan, Bereiche und mehr."
+        "body": "Schnellzugriff auf alles, was Sie verwalten — Mitglieder, Einladungen, Beitrittsanfragen, Zeitplan, Arbeitsbereiche und mehr."
       },
       "settings": {
         "title": "Einstellungen",
@@ -4759,16 +4759,16 @@
           "body": "Ihre Zentrale — ein Live-Überblick über Aufträge, Ihr Team und die heutige Aktivität."
         },
         "yourSpaces": {
-          "title": "Ihre Bereiche",
-          "body": "Jeder Bereich gruppiert seine Aufträge, Personen und Berichte — klicken Sie einen an, um ihn zu öffnen und alles darin zu sehen."
+          "title": "Ihre Arbeitsbereiche",
+          "body": "Jeder Arbeitsbereich gruppiert seine Aufträge, Personen und Berichte — klicken Sie einen an, um ihn zu öffnen und alles darin zu sehen."
         },
         "spaceHeader": {
           "title": "Live-Personenzahl",
-          "body": "Die Kopfzeile fasst den Bereich auf einen Blick zusammen — wie viele Personen zugewiesen sind und wie viele gerade im Dienst, im Einsatz, außer Haus oder abwesend sind. Sie aktualisiert sich live, sobald sich jemand ein- oder ausstempelt."
+          "body": "Die Kopfzeile fasst den Arbeitsbereich auf einen Blick zusammen — wie viele Personen zugewiesen sind und wie viele gerade im Dienst, im Einsatz, außer Haus oder abwesend sind. Sie aktualisiert sich live, sobald sich jemand ein- oder ausstempelt."
         },
         "openSpace": {
           "title": "Jetzt vor Ort",
-          "body": "Der Hauptbereich zeigt, wer gerade physisch in diesem Bereich anwesend ist. Ein grüner Ring bedeutet eingestempelt; das Abzeichen zeigt Stunden oder aktuellen Auftrag."
+          "body": "Der Hauptbereich zeigt, wer gerade physisch in diesem Arbeitsbereich anwesend ist. Ein grüner Ring bedeutet eingestempelt; das Abzeichen zeigt Stunden oder aktuellen Auftrag."
         },
         "member": {
           "title": "Ein Teammitglied",
@@ -4780,15 +4780,15 @@
         },
         "offSite": {
           "title": "Außer Haus",
-          "body": "Personen, die heute remote oder von einem anderen Standort arbeiten — im Dienst, nur nicht in diesem Bereich."
+          "body": "Personen, die heute remote oder von einem anderen Standort arbeiten — im Dienst, nur nicht in diesem Arbeitsbereich."
         },
         "offDuty": {
           "title": "Abwesend",
           "body": "Wer heute nicht arbeitet — und warum (freier Tag, krank, Urlaub). Der Grund ist nur für Manager sichtbar."
         },
         "spaceActions": {
-          "title": "Bereichsaktionen",
-          "body": "In einem geöffneten Bereich können Sie die Einstellungen verwalten, ein Mitglied hinzufügen oder direkt zu seinen Aufträgen springen."
+          "title": "Arbeitsbereichsaktionen",
+          "body": "In einem geöffneten Arbeitsbereich können Sie die Einstellungen verwalten, ein Mitglied hinzufügen oder direkt zu seinen Aufträgen springen."
         },
         "activity": {
           "title": "Letzte Aktivität",
@@ -4808,7 +4808,7 @@
         },
         "spaces": {
           "title": "Arbeitsbereiche",
-          "body": "Die Bereiche, die Ihre Aufträge, Personen und Berichte gruppieren."
+          "body": "Die Arbeitsbereiche, die Ihre Aufträge, Personen und Berichte gruppieren."
         },
         "reports": {
           "title": "Berichte",
@@ -4885,11 +4885,11 @@
           "body": "Sie brauchen etwas? Schreiben Sie Ihrer Führungskraft oder einem Kollegen direkt von hier aus."
         },
         "yourSpaces": {
-          "title": "Ihre Bereiche",
+          "title": "Ihre Arbeitsbereiche",
           "body": "Ihre Arbeitsbereiche — öffnen Sie einen, um seine Aufträge und die Personen darin zu sehen."
         },
         "openSpace": {
-          "title": "In Ihrem Bereich",
+          "title": "In Ihrem Arbeitsbereich",
           "body": "Sehen Sie Ihre Kollegen und deren Status — wer im Dienst, im Einsatz oder abwesend ist — und tippen Sie auf eine Person, um Kontakt aufzunehmen."
         },
         "tasks": {
@@ -5011,55 +5011,55 @@
       }
     },
     "spacesTour": {
-      "title": "Ihre Bereiche einrichten",
+      "title": "Ihre Arbeitsbereiche einrichten",
       "steps": {
         "intro": {
-          "title": "Ihre Bereiche",
-          "body": "Bereiche gruppieren Ihre Aufträge, Personen und Berichte — z. B. einen Standort, eine Abteilung oder ein Projekt. Alles in einem Bereich ist darauf beschränkt."
+          "title": "Ihre Arbeitsbereiche",
+          "body": "Arbeitsbereiche gruppieren Ihre Aufträge, Personen und Berichte — z. B. einen Standort, eine Abteilung oder ein Projekt. Alles in einem Arbeitsbereich ist darauf beschränkt."
         },
         "card": {
-          "title": "Ein Bereich auf einen Blick",
-          "body": "Jede Karte zeigt Name, ob aktiv, Mitgliederzahl, Adresse und die aktivierten Funktionen (Module) des Bereichs."
+          "title": "Ein Arbeitsbereich auf einen Blick",
+          "body": "Jede Karte zeigt Name, ob aktiv, Mitgliederzahl, Adresse und die aktivierten Funktionen (Module) des Arbeitsbereichs."
         },
         "configure": {
           "title": "Konfigurieren",
-          "body": "Öffnen Sie die vollständigen Einstellungen eines Bereichs — allgemeine Details & Karte, genutzte Module, Auftrags-Workflow und zugewiesene Personen."
+          "body": "Öffnen Sie die vollständigen Einstellungen eines Arbeitsbereichs — allgemeine Details & Karte, genutzte Module, Auftrags-Workflow und zugewiesene Personen."
         },
         "viewTasks": {
           "title": "Aufträge ansehen",
-          "body": "Springen Sie direkt zu allen Aufträgen dieses Bereichs."
+          "body": "Springen Sie direkt zu allen Aufträgen dieses Arbeitsbereichs."
         },
         "actions": {
           "title": "Weitere Aktionen",
-          "body": "Deaktivieren Sie einen Bereich (er wird nie endgültig gelöscht) oder reaktivieren Sie ihn später hier."
+          "body": "Deaktivieren Sie einen Arbeitsbereich (er wird nie endgültig gelöscht) oder reaktivieren Sie ihn später hier."
         },
         "create": {
-          "title": "Bereich hinzufügen",
-          "body": "Klicken Sie auf Neuer Bereich — gehen wir das Formular durch."
+          "title": "Arbeitsbereich hinzufügen",
+          "body": "Klicken Sie auf Neuer Arbeitsbereich — gehen wir das Formular durch."
         },
         "name": {
           "title": "Benennen",
-          "body": "Geben Sie dem Bereich einen klaren Namen — Standort, Team oder Projekt."
+          "body": "Geben Sie dem Arbeitsbereich einen klaren Namen — Standort, Team oder Projekt."
         },
         "type": {
           "title": "Arbeitsbereich oder physisch",
-          "body": "Ein Arbeitsbereich ist eine logische Gruppe (Team oder Projekt). Ein physischer Bereich ist ein echter Standort mit Adresse und Geofence — wählen Sie diesen für die Vor-Ort-Anwesenheit."
+          "body": "Ein Arbeitsbereich ist eine logische Gruppe (Team oder Projekt). Ein physischer Arbeitsbereich ist ein echter Standort mit Adresse und Geofence — wählen Sie diesen für die Vor-Ort-Anwesenheit."
         },
         "physical": {
           "title": "Standort & Geofence",
-          "body": "Für einen physischen Bereich: Adresse festlegen, Pin auf der Karte setzen und den Geofence-Radius bestimmen — die Zone, in der Mitglieder sein müssen, um vor Ort einzustempeln."
+          "body": "Für einen physischen Arbeitsbereich: Adresse festlegen, Pin auf der Karte setzen und den Geofence-Radius bestimmen — die Zone, in der Mitglieder sein müssen, um vor Ort einzustempeln."
         },
         "workflow": {
           "title": "Auftrags-Workflow",
-          "body": "Wählen Sie den Statusablauf für Aufträge dieses Bereichs (Neu → In Arbeit → Fertig …) — oder erstellen Sie hier einen eigenen."
+          "body": "Wählen Sie den Statusablauf für Aufträge dieses Arbeitsbereichs (Neu → In Arbeit → Fertig …) — oder erstellen Sie hier einen eigenen."
         },
         "modules": {
           "title": "Funktionen (Module)",
-          "body": "Aufklappen, um Funktionen für diesen Bereich ein- oder auszuschalten — Unteraufgaben, Checklisten, Anhänge, Tracking und mehr, oder ein Preset anwenden."
+          "body": "Aufklappen, um Funktionen für diesen Arbeitsbereich ein- oder auszuschalten — Unteraufgaben, Checklisten, Anhänge, Tracking und mehr, oder ein Preset anwenden."
         },
         "submit": {
           "title": "Erstellen",
-          "body": "Erstellen Sie den Bereich — alles lässt sich später über Konfigurieren ändern."
+          "body": "Erstellen Sie den Arbeitsbereich — alles lässt sich später über Konfigurieren ändern."
         }
       }
     },
@@ -5137,7 +5137,7 @@
         },
         "dimensions": {
           "title": "Gruppieren nach",
-          "body": "Schlüsseln Sie die Zahlen auf — nach Person, Bereich, Kunde, Status… Leer lassen für eine Gesamtsumme."
+          "body": "Schlüsseln Sie die Zahlen auf — nach Person, Arbeitsbereich, Kunde, Status… Leer lassen für eine Gesamtsumme."
         },
         "period": {
           "title": "Zeitraum",
@@ -5227,7 +5227,7 @@
       "steps": {
         "profile": {
           "title": "Mitgliedsprofil",
-          "body": "Name, Rolle, Status, E-Mail und die Bereiche dieser Person. Über Bearbeiten ändern Sie Profil und Arbeitszeitplan oder setzen das Passwort zurück."
+          "body": "Name, Rolle, Status, E-Mail und die Arbeitsbereiche dieser Person. Über Bearbeiten ändern Sie Profil und Arbeitszeitplan oder setzen das Passwort zurück."
         },
         "tasks": {
           "title": "Ihre Arbeit",
@@ -5254,8 +5254,8 @@
           "body": "Erlauben Sie das Einstempeln von überall, ohne an einem Standort-Geofence zu stehen (Homeoffice / unterwegs). Erfordert den aktivierten Zeiterfassungs-Tab oben."
         },
         "spaces": {
-          "title": "Bereichssichtbarkeit",
-          "body": "Wie viel sie sehen — nur ihre zugewiesenen Bereiche, diese plus Bereiche aus ihren Aufträgen oder alle Bereiche der Organisation."
+          "title": "Arbeitsbereichssichtbarkeit",
+          "body": "Wie viel sie sehen — nur ihre zugewiesenen Arbeitsbereiche, diese plus Arbeitsbereiche aus ihren Aufträgen oder alle Arbeitsbereiche der Organisation."
         },
         "collaboration": {
           "title": "Nachrichten",
@@ -5295,8 +5295,8 @@
           "body": "Wechseln Sie zwischen Wochenansicht (Tag für Tag) und Monatsansicht (der ganze Monat auf einmal)."
         },
         "space": {
-          "title": "Nach Bereich filtern",
-          "body": "Grenzen Sie den Kalender auf einen einzelnen Bereich ein oder zeigen Sie alle an."
+          "title": "Nach Arbeitsbereich filtern",
+          "body": "Grenzen Sie den Kalender auf einen einzelnen Arbeitsbereich ein oder zeigen Sie alle an."
         },
         "dateNav": {
           "title": "Durch die Zeit navigieren",
@@ -5308,11 +5308,11 @@
         },
         "calendar": {
           "title": "Der Kalender",
-          "body": "Jeder Tag zeigt einen Balken für verfügbar, abwesend und nicht eingeplant. Klicken Sie auf einen Tag, um genau zu sehen, wer — nach Bereich gruppiert, mit Arbeitszeiten."
+          "body": "Jeder Tag zeigt einen Balken für verfügbar, abwesend und nicht eingeplant. Klicken Sie auf einen Tag, um genau zu sehen, wer — nach Arbeitsbereich gruppiert, mit Arbeitszeiten."
         },
         "dayDetail": {
           "title": "Wer an diesem Tag da ist",
-          "body": "Beim Öffnen eines Tages werden alle nach Bereich gruppiert aufgelistet — mit Schichtzeiten, Abwesenheitsgrund und Status. Klicken Sie auf einen Namen, um das Profil zu öffnen."
+          "body": "Beim Öffnen eines Tages werden alle nach Arbeitsbereich gruppiert aufgelistet — mit Schichtzeiten, Abwesenheitsgrund und Status. Klicken Sie auf einen Namen, um das Profil zu öffnen."
         },
         "legend": {
           "title": "Farbschlüssel",
@@ -5400,9 +5400,9 @@
     }
   },
   "welcome": {
-    "title": "Richten Sie Ihren ersten Bereich ein",
-    "subtitle": "In einem Bereich befinden sich Ihre Aufgaben – ein Standort, ein Team oder ein Projekt. Sie können jederzeit weitere hinzufügen.",
-    "createAndContinue": "Bereich erstellen & fortfahren"
+    "title": "Richten Sie Ihren ersten Arbeitsbereich ein",
+    "subtitle": "In einem Arbeitsbereich befinden sich Ihre Aufgaben – ein Standort, ein Team oder ein Projekt. Sie können jederzeit weitere hinzufügen.",
+    "createAndContinue": "Arbeitsbereich erstellen & fortfahren"
   },
   "presence": {
     "title": "Verfügbarkeit",
@@ -5501,7 +5501,7 @@
     "cannotMessageSelf": "Sie können keine Unterhaltung mit sich selbst beginnen",
     "external": "Extern",
     "closed": "Geschlossen",
-    "conversationClosed": "Dieser Bereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
+    "conversationClosed": "Dieser Arbeitsbereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
     "externalMember": "In einer anderen Organisation"
   },
   "audit": {
@@ -5618,9 +5618,9 @@
     "catTeamPlaceholder": "HLK-Team",
     "catIssuesPlaceholder": "Kühlt nicht, Kein Strom",
     "andItsFlow": "und dessen Workflow übernehmen.",
-    "apartmentLockHint": "Um ein Miet-/Immobilien-Portal (Wohnungen) anzulegen, aktivieren Sie zuerst das Modul „Wohnungen“ für diesen Bereich.",
+    "apartmentLockHint": "Um ein Miet-/Immobilien-Portal (Wohnungen) anzulegen, aktivieren Sie zuerst das Modul „Wohnungen“ für diesen Arbeitsbereich.",
     "apartmentModuleNeeded": "Benötigt das Modul „Wohnungen“ — dieses Portal verwaltet Wohnungen.",
-    "apartmentModuleRequired": "Aktivieren Sie das Modul „Wohnungen“ für diesen Bereich, um diesen Typ zu nutzen.",
+    "apartmentModuleRequired": "Aktivieren Sie das Modul „Wohnungen“ für diesen Arbeitsbereich, um diesen Typ zu nutzen.",
     "changeCover": "Ändern",
     "changeType": "Typ ändern",
     "changeTypeHint": "Beim Wechsel werden die Anliegen-Kategorien durch die Standards des neuen Typs ersetzt. Kunden und ihre Anfragen bleiben erhalten.",
@@ -5640,9 +5640,9 @@
     "deletePortalEmpty": "Dieses Portal hat noch keine Kunden oder Anfragen.",
     "deletePortalStats": "Dieses Portal hat {{clients}} Kunde(n) und {{requests}} Anfrage(n). Ihre Historie bleibt erhalten, sie verlieren jedoch den Zugang.",
     "deleted": "Portal gelöscht",
-    "emptyHintSpace": "Legen Sie ein Portal für diesen Bereich an — Typ wählen, dann Kunden einladen.",
+    "emptyHintSpace": "Legen Sie ein Portal für diesen Arbeitsbereich an — Typ wählen, dann Kunden einladen.",
     "enableInModules": "In Modulen aktivieren",
-    "introMulti": "Die B2C-Portale dieses Bereichs. Eingeladene Kunden melden sich an, beauftragen und verfolgen. Betreiben Sie so viele, wie Sie brauchen.",
+    "introMulti": "Die B2C-Portale dieses Arbeitsbereichs. Eingeladene Kunden melden sich an, beauftragen und verfolgen. Betreiben Sie so viele, wie Sie brauchen.",
     "inviteHint2": "Wählen Sie den Kunden und dessen {{entity}} — oder legen Sie beides an — und teilen Sie dann den Code. Der Kunde vergibt seinen eigenen Namen.",
     "locked": "Gesperrt",
     "newShort": "Neu",
@@ -5658,33 +5658,33 @@
     "removeClientWarn": "Der Zugang zur App entfällt sofort und die Verbindung zu diesem Portal wird gelöst (eine gehaltene Wohnung wird frei). Die Anfragen bleiben erhalten.",
     "requestRouted": "Anfrage zugeordnet",
     "routesToThisSpace": "Anfragen gehen an",
-    "thisSpace": "diesen Bereich",
+    "thisSpace": "diesen Arbeitsbereich",
     "title": "Kundenportal",
     "triageAccept": "Annehmen & zuordnen",
     "triageFlow": "Ablauf",
-    "triageFlowDefault": "Standard des Bereichs",
-    "triageHint": "Schicken Sie diese Anfrage in einen Bereich, wählen Sie den Ablauf und weisen Sie jemanden zu.",
-    "triageNoMembers": "Diesem Bereich sind noch keine Mitarbeitenden zugewiesen. Fügen Sie Mitglieder hinzu oder lassen Sie die Anfrage unzugewiesen.",
-    "triagePickSpace": "Bereich wählen…",
-    "triagePickSpaceFirst": "Zuerst einen Bereich wählen",
+    "triageFlowDefault": "Standard des Arbeitsbereichs",
+    "triageHint": "Schicken Sie diese Anfrage in einen Arbeitsbereich, wählen Sie den Ablauf und weisen Sie jemanden zu.",
+    "triageNoMembers": "Diesem Arbeitsbereich sind noch keine Mitarbeitenden zugewiesen. Fügen Sie Mitglieder hinzu oder lassen Sie die Anfrage unzugewiesen.",
+    "triagePickSpace": "Arbeitsbereich wählen…",
+    "triagePickSpaceFirst": "Zuerst einen Arbeitsbereich wählen",
     "triagePriority": "Priorität",
-    "triageSpace": "Bereich",
+    "triageSpace": "Arbeitsbereich",
     "triageTitle": "Anfrage zuordnen",
     "triageUnassigned": "Unzugewiesen lassen",
     "triageWorker": "Mitarbeiter zuweisen",
     "uploadCover": "Titelbild hochladen"
   },
   "scheduling": {
-    "title": "Bereichseinstellungen",
-    "subtitle": "Legen Sie fest, wie dieser Bereich Anwesenheit, Schichten und Mitglieder verwaltet.",
-    "backToSpaces": "Zurück zu den Bereichen",
+    "title": "Arbeitsbereichseinstellungen",
+    "subtitle": "Legen Sie fest, wie dieser Arbeitsbereich Anwesenheit, Schichten und Mitglieder verwaltet.",
+    "backToSpaces": "Zurück zu den Arbeitsbereichen",
     "unauthorized": {
       "title": "Zugriff eingeschränkt",
-      "description": "Sie benötigen die Berechtigung zur Mitgliederverwaltung, um die Bereichsplanung zu konfigurieren."
+      "description": "Sie benötigen die Berechtigung zur Mitgliederverwaltung, um die Arbeitsbereichsplanung zu konfigurieren."
     },
     "notFound": {
-      "title": "Bereich nicht gefunden",
-      "description": "Dieser Bereich existiert nicht oder Sie haben keinen Zugriff darauf."
+      "title": "Arbeitsbereich nicht gefunden",
+      "description": "Dieser Arbeitsbereich existiert nicht oder Sie haben keinen Zugriff darauf."
     },
     "tabs": {
       "workModel": "Arbeitsmodell",
@@ -5695,7 +5695,7 @@
     },
     "workModel": {
       "heading": "Arbeitsmodell",
-      "intro": "Wählen Sie, wie dieser Bereich Anwesenheit und Zeitvorgaben interpretiert.",
+      "intro": "Wählen Sie, wie dieser Arbeitsbereich Anwesenheit und Zeitvorgaben interpretiert.",
       "saved": "Arbeitsmodell aktualisiert",
       "saveFailed": "Arbeitsmodell konnte nicht aktualisiert werden",
       "remindersBadge": "Aktiviert Erinnerungen",
@@ -5731,7 +5731,7 @@
     },
     "shifts": {
       "heading": "Schichten",
-      "intro": "Definieren Sie benannte Schichtfenster für diesen Bereich. Zeiten gelten in der Zeitzone des Bereichs.",
+      "intro": "Definieren Sie benannte Schichtfenster für diesen Arbeitsbereich. Zeiten gelten in der Zeitzone des Arbeitsbereichs.",
       "new": "Neue Schicht",
       "orgWide": "Organisationsweit",
       "crossesMidnight": "Über Mitternacht",
@@ -5843,11 +5843,11 @@
       }
     },
     "roles": {
-      "heading": "Bereichsrollen",
+      "heading": "Arbeitsbereichsrollen",
       "intro": "Definieren Sie Unterrollen wie „Schichtleiter“ und die Anwesenheitsberechtigungen, die sie gewähren.",
       "new": "Neue Rolle",
       "editTitle": "Rolle bearbeiten",
-      "dialogDescription": "Benennen Sie die Rolle und wählen Sie, welche Bereichsberechtigungen sie gewährt.",
+      "dialogDescription": "Benennen Sie die Rolle und wählen Sie, welche Arbeitsbereichsberechtigungen sie gewährt.",
       "builtIn": "Vordefiniert",
       "noPermissions": "Keine Berechtigungen",
       "namePlaceholder": "z. B. Schichtleiter",
@@ -5856,7 +5856,7 @@
       "deleteConfirm": "„{{name}}“ löschen? Mitglieder mit dieser Rolle verlieren sie.",
       "empty": {
         "title": "Noch keine eigenen Rollen",
-        "description": "Erstellen Sie eine Rolle, um Berechtigungen auf Bereichsebene zu gewähren."
+        "description": "Erstellen Sie eine Rolle, um Berechtigungen auf Arbeitsbereichsebene zu gewähren."
       },
       "fields": {
         "name": "Name",
@@ -5867,7 +5867,7 @@
       "permissions": {
         "canApproveOvertime": {
           "label": "Überstunden genehmigen",
-          "description": "Kann Anträge auf Mehrarbeit für diesen Bereich genehmigen"
+          "description": "Kann Anträge auf Mehrarbeit für diesen Arbeitsbereich genehmigen"
         },
         "canManageRota": {
           "label": "Dienstplan verwalten",
@@ -5878,8 +5878,8 @@
           "description": "Erhält Eskalationen und kann offene Einträge schließen oder korrigieren"
         },
         "canViewSpaceAttendance": {
-          "label": "Bereichsanwesenheit anzeigen",
-          "description": "Kann die Anwesenheit aller in diesem Bereich sehen"
+          "label": "Arbeitsbereichsanwesenheit anzeigen",
+          "description": "Kann die Anwesenheit aller in diesem Arbeitsbereich sehen"
         }
       },
       "toast": {
@@ -5891,9 +5891,9 @@
       }
     },
     "members": {
-      "heading": "Bereichsmitglieder",
-      "intro": "Weisen Sie diesem Bereich Mitglieder zu und geben Sie ihnen optional eine Unterrolle.",
-      "empty": "Diesem Bereich sind noch keine Mitglieder zugewiesen.",
+      "heading": "Arbeitsbereichsmitglieder",
+      "intro": "Weisen Sie diesem Arbeitsbereich Mitglieder zu und geben Sie ihnen optional eine Unterrolle.",
+      "empty": "Diesem Arbeitsbereich sind noch keine Mitglieder zugewiesen.",
       "unknownMember": "Unbekanntes Mitglied",
       "addHeading": "Mitglied hinzufügen",
       "addButton": "Mitglied hinzufügen",
@@ -5917,7 +5917,7 @@
     },
     "attendanceTab": {
       "heading": "Anwesenheit",
-      "intro": "Wie dieser Bereich die Zeit erfasst.",
+      "intro": "Wie dieser Arbeitsbereich die Zeit erfasst.",
       "clockTitle": "Stempeluhr — immer aktiv",
       "clockDesc": "Jeder mit dem Zeiterfassungs-Modul stempelt ein und aus — vor Ort (Geofence) oder remote. Geofence und Remote-Zeiterfassung im Tab „Allgemein“ festlegen.",
       "modeQuestion": "Wie werden die Stunden hier erfasst?",
@@ -5927,7 +5927,7 @@
       "scheduledDesc": "Personen zu Schichten zuweisen. Eingeplante Mitglieder erhalten Erinnerungen zum Schichtende; nicht zugewiesene arbeiten zu offenen Zeiten.",
       "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus.",
       "geofenceOn": "Vor-Ort-Zeiterfassung wird im Umkreis von {{radius}} m um die Markierung geprüft.",
-      "geofenceOff": "Standortfreie Zeiterfassung — für diesen Bereich ist kein Geofence festgelegt."
+      "geofenceOff": "Standortfreie Zeiterfassung — für diesen Arbeitsbereich ist kein Geofence festgelegt."
     },
     "routing": {
       "heading": "Benachrichtigungen & Kontakt",
@@ -6059,20 +6059,20 @@
       "titleRequired": "Geben Sie einen Titel für Ihre Anfrage ein.",
       "add": "Hinzufügen",
       "addWorker": "Mitarbeiter hinzufügen",
-      "addWorkerDescription": "Fügen Sie jemanden aus Ihrem Team zu diesem geteilten Bereich hinzu.",
+      "addWorkerDescription": "Fügen Sie jemanden aus Ihrem Team zu diesem geteilten Arbeitsbereich hinzu.",
       "assignTo": "Zuweisen an",
       "assigned": "Aufgabe zugewiesen",
       "attendanceHeading": "Anwesenheit",
       "justNow": "gerade eben",
       "minsAgo": "vor {{m}} Min.",
       "newTask": "Neue Aufgabe",
-      "newTaskDescription": "Erstellen Sie eine Aufgabe in diesem geteilten Bereich.",
+      "newTaskDescription": "Erstellen Sie eine Aufgabe in diesem geteilten Arbeitsbereich.",
       "noTeam": "Keine Teammitglieder gefunden.",
       "taskCreated": "Aufgabe erstellt",
       "trackingHeading": "Live-Standorte",
       "unassigned": "Nicht zugewiesen",
-      "workerAdded": "Mitarbeiter zum Bereich hinzugefügt",
-      "workersHeading": "Mitarbeiter in diesem Bereich"
+      "workerAdded": "Mitarbeiter zum Arbeitsbereich hinzugefügt",
+      "workersHeading": "Mitarbeiter in diesem Arbeitsbereich"
     }
   },
   "apartments": {
@@ -6154,15 +6154,15 @@
     },
     "apartments": {
       "label": "Wohnungen / Einheiten",
-      "description": "Ein Verzeichnis der Wohnungen/Einheiten in diesem Bereich — ein Mitglied oder einen Kunden als Bewohner zuordnen; die Arbeit läuft über Aufgaben"
+      "description": "Ein Verzeichnis der Wohnungen/Einheiten in diesem Arbeitsbereich — ein Mitglied oder einen Kunden als Bewohner zuordnen; die Arbeit läuft über Aufgaben"
     },
     "b2c_portal": {
       "label": "B2C-Portal",
       "description": "Kunden in die App einladen, um Aufträge zu erteilen und zu verfolgen"
     },
     "space_sharing": {
-      "label": "Bereich teilen",
-      "description": "Diesen Bereich mit einer anderen Organisation teilen (Ansehen / Mitarbeiten / Steuern)"
+      "label": "Arbeitsbereich teilen",
+      "description": "Diesen Arbeitsbereich mit einer anderen Organisation teilen (Ansehen / Mitarbeiten / Steuern)"
     },
     "groups": {
       "task": {
@@ -6233,12 +6233,12 @@
   "billing": {
     "perMonth": "/Monat",
     "perMonthShort": "/Mon.",
-    "spaceCostLabel": "Dieser Bereich kostet",
+    "spaceCostLabel": "Dieser Arbeitsbereich kostet",
     "spaceCostPending": "Vorher {{was}} — wird beim Speichern der Module übernommen",
     "spaceCostPerModule": "Jedes Modul hat seinen eigenen Preis",
     "seatLine": "Benutzer werden separat mit je {{price}} berechnet",
     "usage": {
-      "heading": "{{module}} in diesem Bereich — die ersten {{included}} kostenlos",
+      "heading": "{{module}} in diesem Arbeitsbereich — die ersten {{included}} kostenlos",
       "onTop": "zusätzlich zur Grundgebühr von {{base}}",
       "included": "Die ersten {{count}} sind enthalten",
       "free": "Kostenlos",
@@ -6259,8 +6259,8 @@
         "portal_other": "{{count}} Portale"
       },
       "chargingStarts": "Noch {{count}}, bevor etwas berechnet wird — danach je {{price}}",
-      "otherSpacesSeparate": "Andere Bereiche werden separat gezählt und berechnet",
-      "includesCounted": "Enthält, was die Objekte dieses Bereichs hinzufügen",
+      "otherSpacesSeparate": "Andere Arbeitsbereiche werden separat gezählt und berechnet",
+      "includesCounted": "Enthält, was die Objekte dieses Arbeitsbereichs hinzufügen",
       "perMonthShort": "/Mon."
     },
     "bill": {
@@ -6268,21 +6268,21 @@
       "perMonth": "/Monat",
       "seats": "Personen",
       "seatsDetail": "{{count}} × {{price}}",
-      "spaces": "Bereiche",
-      "spacesDetail_one": "{{count}} Bereich",
-      "spacesDetail_other": "{{count}} Bereiche",
+      "spaces": "Arbeitsbereiche",
+      "spacesDetail_one": "{{count}} Arbeitsbereich",
+      "spacesDetail_other": "{{count}} Arbeitsbereiche",
       "addOns": "Zusatzmodule",
       "addOnsDetail_one": "{{count}} gebucht",
       "addOnsDetail_other": "{{count}} gebucht",
-      "bySpace": "Nach Bereich",
+      "bySpace": "Nach Arbeitsbereich",
       "usageLine": "{{module}} Nutzung {{price}}",
-      "noModules": "Nichts aktiviert — dieser Bereich ist kostenlos",
+      "noModules": "Nichts aktiviert — dieser Arbeitsbereich ist kostenlos",
       "addOnsBought": "Zusatzmodule",
       "estimate": "Zum Listenpreis"
     },
     "addOns": {
       "title": "Zusatzmodule",
-      "subtitle": "Einmal für die gesamte Organisation gebucht, nicht pro Bereich",
+      "subtitle": "Einmal für die gesamte Organisation gebucht, nicht pro Arbeitsbereich",
       "perMonth": "/Mon."
     },
     "status": {
@@ -6293,13 +6293,13 @@
       "incomplete": "Inaktiv"
     },
     "title": "Abrechnung",
-    "subtitle": "Sie zahlen für die Personen, die HBCField nutzen, für das, was jeder Bereich aktiviert hat, und für Zusatzmodule.",
+    "subtitle": "Sie zahlen für die Personen, die HBCField nutzen, für das, was jeder Arbeitsbereich aktiviert hat, und für Zusatzmodule.",
     "paymentAndInvoices": "Zahlung & Rechnungen",
     "cancel": "Kündigen",
     "adminOnly": "Nur ein Organisations-Admin kann ändern, wofür Sie zahlen.",
     "trialDaysLeft": "Noch {{count}} Tage in Ihrer Testphase",
     "cancelsOn": "Endet am {{date}}",
-    "modulesElsewhere": "Module gehören zu einem Bereich — aktivieren Sie sie im Reiter „Module“ des Bereichs, direkt neben der Anzahl, nach der sie berechnet werden.",
+    "modulesElsewhere": "Module gehören zu einem Arbeitsbereich — aktivieren Sie sie im Reiter „Module“ des Arbeitsbereichs, direkt neben der Anzahl, nach der sie berechnet werden.",
     "byAgreement": "Abrechnung nach Vereinbarung",
     "byAgreementHint": "Es wird nichts automatisch abgebucht. Die Zahlen unten zeigen, was diese Organisation zum Listenpreis kosten würde — hilfreich für eine Verlängerung, keine Rechnung."
   },
@@ -6478,16 +6478,16 @@
     "emailPh": "name@beispiel.de"
   },
   "orphanAssets": {
-    "title_one": "{{count}} Objekt gehört zu keinem Bereich",
-    "title_other": "{{count}} Objekte gehören zu keinem Bereich",
+    "title_one": "{{count}} Objekt gehört zu keinem Arbeitsbereich",
+    "title_other": "{{count}} Objekte gehören zu keinem Arbeitsbereich",
     "subtitle": "Sie erscheinen in keinem Assets-Tab, zählen aber weiterhin zu Ihren Kosten. Verschieben Sie sie hierher oder löschen Sie sie.",
     "review": "Ansehen",
-    "dialogTitle": "Objekte ohne Bereich",
-    "dialogHint": "Wählen Sie einen Typ, um ein Objekt in diesen Bereich zu verschieben, oder löschen Sie es. Verlauf und Aufgaben kommen mit.",
-    "noTypes": "Dieser Bereich hat noch keine Objekttypen. Legen Sie zuerst einen an oder löschen Sie diese Einträge.",
+    "dialogTitle": "Objekte ohne Arbeitsbereich",
+    "dialogHint": "Wählen Sie einen Typ, um ein Objekt in diesen Arbeitsbereich zu verschieben, oder löschen Sie es. Verlauf und Aufgaben kommen mit.",
+    "noTypes": "Dieser Arbeitsbereich hat noch keine Objekttypen. Legen Sie zuerst einen an oder löschen Sie diese Einträge.",
     "moveInto": "Verschieben nach …",
     "move": "Verschieben",
-    "moved": "In diesen Bereich verschoben",
+    "moved": "In diesen Arbeitsbereich verschoben",
     "moveFailed": "Objekt konnte nicht verschoben werden",
     "deleted": "Gelöscht",
     "deleteFailed": "Objekt konnte nicht gelöscht werden",
@@ -6581,7 +6581,7 @@
     "hide": "Ausblenden",
     "industry": "Branche",
     "industryPh": "z. B. Bauwesen",
-    "intro": "Personen und Firmen dieses Bereichs. Der Vertrieb bearbeitet sie mit Aufgaben; eingeladene nutzen zusätzlich die App.",
+    "intro": "Personen und Firmen dieses Arbeitsbereichs. Der Vertrieb bearbeitet sie mit Aufgaben; eingeladene nutzen zusätzlich die App.",
     "invite": "In die App einladen",
     "inviteIntro": "Geben Sie diesem Kunden einen Zugang, um Aufträge zu erteilen und zu verfolgen.",
     "inviteShare": "Teilen Sie diesen Code (oder den per E-Mail gesendeten Link), damit sie sich anmelden können.",
@@ -6597,13 +6597,13 @@
     "moreInfoHint": "Ergänzen Sie alles Weitere — Zahlungsziel, bevorzugter Kontakt, Kundenbetreuer…",
     "movedTo": "verschoben nach",
     "name": "Name",
-    "needB2C": "Aktivieren Sie das Modul „B2C-Portal“ (Reiter Module des Bereichs), um Kunden einzuladen.",
+    "needB2C": "Aktivieren Sie das Modul „B2C-Portal“ (Reiter Module des Arbeitsbereichs), um Kunden einzuladen.",
     "newTask": "Aufgabe",
     "noActivity": "Noch keine Aktivität. Fügen Sie oben eine Notiz hinzu oder erfassen Sie einen Anruf.",
     "noAddress": "Noch keine Adresse. Fügen Sie eine hinzu, damit sie auf der Karte erscheint.",
     "noMembers": "Keine Mitglieder",
     "noReminders": "Keine Erinnerungen. Fügen Sie oben eine hinzu, um nachzufassen.",
-    "noVacant": "Keine freie(n) {{label}}. Legen Sie eine im Reiter „Kundenportal“ des Bereichs an.",
+    "noVacant": "Keine freie(n) {{label}}. Legen Sie eine im Reiter „Kundenportal“ des Arbeitsbereichs an.",
     "notFound": "Kunde nicht gefunden",
     "notePlaceholder": "Notiz schreiben…",
     "notes": "Notizen",
@@ -6611,7 +6611,7 @@
     "nudgeStale": "Seit {{d}} Tagen keine Aktivität — Zeit, sich zu melden?",
     "overdueCount": "{{count}} überfällige Nachfassaktion",
     "phone": "Telefon",
-    "pickPortalHint": "Dieser Bereich betreibt mehrere Portale. Das gewählte bestimmt, welche Einheit der Kunde erhält und welche Kategorien er sieht.",
+    "pickPortalHint": "Dieser Arbeitsbereich betreibt mehrere Portale. Das gewählte bestimmt, welche Einheit der Kunde erhält und welche Kategorien er sieht.",
     "pickPortalMeta": "{{entity}} · {{count}} Kategorien",
     "pickPortalTitle": "Welches Portal sollen sie nutzen?",
     "primary": "Haupt",

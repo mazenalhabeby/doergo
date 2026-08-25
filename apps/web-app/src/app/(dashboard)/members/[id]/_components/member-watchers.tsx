@@ -86,7 +86,7 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
         </p>
         {usingDefault && (
           <span className="mt-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            {t("members.watchers.usingDefault", "No one selected — space routing only")}
+            {t("members.watchers.usingDefault", "No one selected — workspace routing only")}
           </span>
         )}
       </div>

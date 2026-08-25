@@ -302,7 +302,7 @@ export function CommandPalette() {
           </CommandGroup>
         ) : null}
         {results?.spaces?.length ? (
-          <CommandGroup heading={t("commandPalette.groups.spaces", "Spaces")}>
+          <CommandGroup heading={t("commandPalette.groups.spaces", "Workspaces")}>
             {results.spaces.map((s) => resultRow(`space-${s.id}`, MapPin, s.name, s.address, () => navigate(`/locations/${s.id}`)))}
           </CommandGroup>
         ) : null}

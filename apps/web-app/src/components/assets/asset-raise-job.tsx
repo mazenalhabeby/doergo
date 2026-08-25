@@ -79,7 +79,7 @@ export function AssetRaiseJob({
         <DialogHeader>
           <DialogTitle>{t("assetJobs.title", "Raise a job")}</DialogTitle>
           <DialogDescription>
-            {t("assetJobs.hint", "About {{name}}. It goes to the space this one belongs to.", { name: assetName })}
+            {t("assetJobs.hint", "About {{name}}. It goes to the workspace this one belongs to.", { name: assetName })}
           </DialogDescription>
         </DialogHeader>
 

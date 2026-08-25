@@ -316,7 +316,7 @@ export default function SharedSpaceViewPage() {
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this space")}</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this workspace")}</h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {workers.map((w) => (
@@ -471,7 +471,7 @@ function AddWorkerDialog({
     mutationFn: (userId: string) => locationsApi.assignMember(spaceId, { userId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shared-space-workers", spaceId] })
-      notify.success(t("spaceSharing.guest.workerAdded", "Worker added to the space"))
+      notify.success(t("spaceSharing.guest.workerAdded", "Worker added to the workspace"))
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -481,7 +481,7 @@ function AddWorkerDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("spaceSharing.guest.addWorker", "Add worker")}</DialogTitle>
-          <DialogDescription>{t("spaceSharing.guest.addWorkerDescription", "Add one of your team to this shared space.")}</DialogDescription>
+          <DialogDescription>{t("spaceSharing.guest.addWorkerDescription", "Add one of your team to this shared workspace.")}</DialogDescription>
         </DialogHeader>
         <div className="max-h-80 overflow-y-auto -mx-1 px-1 py-1 space-y-1">
           {list.length === 0 ? (
@@ -541,7 +541,7 @@ function CreateTaskDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("spaceSharing.guest.newTask", "New task")}</DialogTitle>
-          <DialogDescription>{t("spaceSharing.guest.newTaskDescription", "Create a task in this shared space.")}</DialogDescription>
+          <DialogDescription>{t("spaceSharing.guest.newTaskDescription", "Create a task in this shared workspace.")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">

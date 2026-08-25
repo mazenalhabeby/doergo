@@ -77,11 +77,11 @@
         {
           "kicker": "Salle de contrôle",
           "title": "Toute votre exploitation, en temps réel.",
-          "body": "Un fil d'activité en direct, les approbations en attente et chaque espace en un coup d'œil — la vue bureau du terrain."
+          "body": "Un fil d'activité en direct, les approbations en attente et chaque espace de travail en un coup d'œil — la vue bureau du terrain."
         },
         {
           "kicker": "Planification",
-          "title": "Planifiez sur tous vos espaces.",
+          "title": "Planifiez sur tous vos espaces de travail.",
           "body": "Une chronologie couvrant tous vos sites, interventions récurrentes et disponibilités — une capacité que vous pouvez réellement visualiser."
         }
       ]
@@ -167,7 +167,7 @@
         {
           "kicker": "Équipe",
           "title": "Toute l'équipe, à portée d'un geste.",
-          "body": "Envoyez un message ou appelez n'importe quel collègue de tous vos espaces, directement depuis le terrain."
+          "body": "Envoyez un message ou appelez n'importe quel collègue de tous vos espaces de travail, directement depuis le terrain."
         }
       ]
     },
@@ -289,7 +289,7 @@
           "benefit": "Des rondes vérifiées et horodatées que vous pouvez présenter au client."
         },
         {
-          "name": "Paysagisme et entretien des espaces verts",
+          "name": "Paysagisme et entretien des espaces de travail verts",
           "who": "Équipes en extérieur intervenant sur de nombreux sites.",
           "how": "Planifiez les visites récurrentes, suivez les équipes par trajet GPS et pointage, et étayez le travail avec des photos.",
           "benefit": "Une visibilité complète sur des sites dispersés et le travail réalisé."
@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Tarifs",
       "heading": "Payez ce que vous activez.",
-      "lead": "Pas de forfaits, pas de paliers, rien derrière une mise à niveau. 9,99 € par personne qui utilise HBCField, plus ce que chaque espace active réellement. 14 jours d’essai, sans carte.",
+      "lead": "Pas de forfaits, pas de paliers, rien derrière une mise à niveau. 9,99 € par personne qui utilise HBCField, plus ce que chaque espace de travail active réellement. 14 jours d’essai, sans carte.",
       "outcomes": [
         {
           "title": "Mettez fin au chaos des appels de suivi",
@@ -422,16 +422,16 @@
           "desc": "Bureau ou terrain, même prix. Aucun type de licence à débattre."
         },
         {
-          "name": "Par espace",
+          "name": "Par espace de travail",
           "price": "à partir de 3 €",
           "unit": "/ module / mois",
-          "desc": "Un espace est un site, un projet ou un client. Chacun paie exactement ce qu’il a activé, et cesse de payer dès qu’il le désactive."
+          "desc": "Un espace de travail est un site, un projet ou un client. Chacun paie exactement ce qu’il a activé, et cesse de payer dès qu’il le désactive."
         },
         {
           "name": "Options entreprise",
           "price": "à partir de 9 €",
           "unit": "/ mois",
-          "desc": "Facturation, flux, journal d’audit. Souscrits une fois, quel que soit le nombre d’espaces."
+          "desc": "Facturation, flux, journal d’audit. Souscrits une fois, quel que soit le nombre d’espaces de travail."
         }
       ],
       "seePrices": "Voir tous les prix"
@@ -446,7 +446,7 @@
         },
         {
           "q": "À qui s’adresse HBCField ?",
-          "a": "Aux entreprises qui envoient des techniciens ou du personnel de terrain — maintenance, CVC, plomberie, électricité, nettoyage, sécurité, espaces verts et gestion immobilière — et qui veulent les interventions, les équipes et le suivi du temps au même endroit."
+          "a": "Aux entreprises qui envoient des techniciens ou du personnel de terrain — maintenance, CVC, plomberie, électricité, nettoyage, sécurité, espaces de travail verts et gestion immobilière — et qui veulent les interventions, les équipes et le suivi du temps au même endroit."
         },
         {
           "q": "Sur quelles plateformes fonctionne HBCField ?",
@@ -497,7 +497,7 @@
       "seeAll": "Voir tous les prix"
     },
     "groups": {
-      "perSpace": "/ espace / mois",
+      "perSpace": "/ espace de travail / mois",
       "from": "à partir de {{price}}",
       "where": {
         "title": "Savoir où est chacun",
@@ -524,7 +524,7 @@
       "office": {
         "title": "Gérer le côté bureau",
         "body": "Factures issues du travail terminé, interventions récurrentes, plannings, et un journal de qui a changé quoi.",
-        "note": "Souscrit une fois pour l’entreprise, pas par espace."
+        "note": "Souscrit une fois pour l’entreprise, pas par espace de travail."
       },
       "share": {
         "title": "Travailler avec une autre entreprise",
@@ -637,7 +637,7 @@
     "toggleSidebar": "Afficher/Masquer la barre latérale",
     "accessDenied": "Accès refusé",
     "noPermissionView": "Vous n’avez pas l’autorisation d’afficher cette page.",
-    "allSpaces": "Tous les espaces",
+    "allSpaces": "Tous les espaces de travail",
     "pickColor": "Choisir une couleur",
     "more": "Plus",
     "goHome": "Aller à l’accueil",
@@ -844,7 +844,7 @@
       "endYourSession": "Terminer votre session",
       "billing": "Abonnement et facturation"
     },
-    "spaces": "Espaces",
+    "spaces": "Espaces de travail",
     "customers": "Clients",
     "reports": "Rapports",
     "timeOff": "Congés",
@@ -932,21 +932,21 @@
     },
     "client": {
       "myTasks": "Mes tâches",
-      "mySpaces": "Mes espaces",
+      "mySpaces": "Mes espaces de travail",
       "viewAll": "Tout voir →",
       "setupTitleLine1": "Configurez votre",
       "setupTitleLine2": "espace de travail",
-      "setupDescription": "Créez des espaces, ajoutez votre équipe et suivez tout le monde en temps réel — le tout depuis une seule vue.",
-      "addSpace": "Ajouter un espace",
+      "setupDescription": "Créez des espaces de travail, ajoutez votre équipe et suivez tout le monde en temps réel — le tout depuis une seule vue.",
+      "addSpace": "Ajouter un espace de travail",
       "inviteTeam": "Inviter l'équipe",
-      "newSpace": "Nouvel espace",
-      "exampleLabel": "Exemple — voici à quoi ressemble un espace",
+      "newSpace": "Nouvel espace de travail",
+      "exampleLabel": "Exemple — voici à quoi ressemble un espace de travail",
       "exampleSpaceName": "Bureau principal",
       "exampleOnShift": "En service",
       "exampleInField": "Sur le terrain",
       "exampleJob": "Réparation de climatiseur — Centre-ville",
-      "noSpacesTitle": "Aucun espace attribué pour l'instant",
-      "noSpacesDescription": "Vous n'avez pas encore été ajouté à un espace. Consultez l'onglet Tâches pour votre travail attribué, ou demandez à votre responsable de vous ajouter.",
+      "noSpacesTitle": "Aucun espace de travail attribué pour l'instant",
+      "noSpacesDescription": "Vous n'avez pas encore été ajouté à un espace de travail. Consultez l'onglet Tâches pour votre travail attribué, ou demandez à votre responsable de vous ajouter.",
       "assignSaved": "Équipe mise à jour",
       "assignPartial": "{{ok}} enregistrés, {{failed}} en échec"
     },
@@ -1089,12 +1089,12 @@
       "errorMessage": "Échec de la création de la tâche. Veuillez réessayer.",
       "fillRequiredFields": "Veuillez remplir tous les champs obligatoires",
       "dialogDescription": "Créez une nouvelle tâche pour votre organisation",
-      "selectSpace": "Sélectionner un espace",
+      "selectSpace": "Sélectionner un espace de travail",
       "taskType": "Type de tâche",
-      "taskTypeInherit": "Défaut de l’espace",
+      "taskTypeInherit": "Défaut de l’espace de travail",
       "type": "Type",
       "auto": "Auto",
-      "autoFromSpace": "Auto (depuis l'espace)",
+      "autoFromSpace": "Auto (depuis l'espace de travail)",
       "assignment": "Attribution",
       "assignedToYou": "Attribuée à vous",
       "assignedToYouFull": "Cette tâche vous sera attribuée",
@@ -1209,7 +1209,7 @@
     },
     "page": {
       "heading": "Tâches",
-      "subtitle": "Gérez les tâches dans tous les espaces — créez, attribuez et suivez la progression.",
+      "subtitle": "Gérez les tâches dans tous les espaces de travail — créez, attribuez et suivez la progression.",
       "searchPlaceholder": "Rechercher...",
       "recurring": "Récurrentes",
       "newTask": "Nouvelle tâche",
@@ -1228,7 +1228,7 @@
       "epic": "Épopée",
       "assignee": "Personne assignée",
       "priority": "Priorité",
-      "space": "Espace"
+      "space": "Espace de travail"
     },
     "fallbackColumns": {
       "open": "Ouverte",
@@ -1264,8 +1264,8 @@
       "epicRemoved": "Épopée supprimée",
       "pointsSet": "Défini à {{points}} points",
       "pointsCleared": "Points effacés",
-      "movedToSpace": "Déplacée vers l'espace",
-      "spaceRemoved": "Espace supprimé",
+      "movedToSpace": "Déplacée vers l'espace de travail",
+      "spaceRemoved": "Espace de travail supprimé",
       "taskDeleted": "Tâche supprimée",
       "updatesFailed": "{{failed}} mises à jour sur {{total}} ont échoué",
       "deletesFailed": "{{failed}} suppressions sur {{total}} ont échoué",
@@ -1389,7 +1389,7 @@
       "planning": "Planification",
       "backlog": "Backlog",
       "noEpic": "Aucune épopée",
-      "noSpace": "Aucun espace",
+      "noSpace": "Aucun espace de travail",
       "noTasksToGroup": "Aucune tâche à grouper",
       "noTasksToGroupHint": "Aucune tâche ne correspond aux filtres actuels pour être organisée en groupes.",
       "newSprint": "Nouveau sprint",
@@ -1525,12 +1525,12 @@
       "dayOfWeek": "Jour de la semaine",
       "dayOfMonth": "Jour du mois",
       "endDateOptional": "Date de fin (facultatif)",
-      "generatesHint": "Génère une tâche dans l'espace et le type choisis selon ce planning. La date d'échéance et les pièces jointes ne s'appliquent pas.",
+      "generatesHint": "Génère une tâche dans l'espace de travail et le type choisis selon ce planning. La date d'échéance et les pièces jointes ne s'appliquent pas.",
       "created": "Tâche récurrente créée",
       "createdDescription": "Elle sera générée selon le planning.",
       "createFailed": "Impossible de créer la tâche récurrente",
       "createButton": "Créer une tâche récurrente",
-      "noSpace": "Aucun espace",
+      "noSpace": "Aucun espace de travail",
       "defaultType": "Type par défaut",
       "nextRun": "Prochaine : {{date}}",
       "checklistItemsCount": "{{count}} éléments de liste de contrôle",
@@ -1550,7 +1550,7 @@
       "pageTitle": "Tâches récurrentes",
       "pageSubtitle": "Automatisez la création de tâches selon un planning",
       "newTemplate": "Nouveau modèle",
-      "emptyInSpace": "Aucun modèle récurrent dans cet espace",
+      "emptyInSpace": "Aucun modèle récurrent dans cet espace de travail",
       "emptyTitle": "Aucun modèle récurrent pour le moment",
       "emptyHint": "Créez des modèles pour générer automatiquement des tâches selon un planning quotidien, hebdomadaire, mensuel ou personnalisé.",
       "createFirst": "Créez votre premier modèle",
@@ -1642,18 +1642,18 @@
       "assignTo": "Assigner à",
       "backlog": "Backlog",
       "delete": "Supprimer",
-      "moveToSpace": "Déplacer vers l’espace",
+      "moveToSpace": "Déplacer vers l’espace de travail",
       "moveToSprint": "Déplacer vers le sprint",
       "newTask": "Nouvelle tâche",
       "noEpic": "Aucune épopée",
       "noPhase": "Aucune phase",
-      "noSpace": "Aucun espace",
+      "noSpace": "Aucun espace de travail",
       "none": "Aucun",
       "open": "Ouvrir",
       "priority": "Priorité",
       "setEpic": "Définir l’épopée",
       "setPhase": "Définir la phase",
-      "space": "Espace",
+      "space": "Espace de travail",
       "sprint": "Sprint",
       "status": "Statut",
       "storyPoints": "Points d’effort",
@@ -2039,8 +2039,8 @@
     "searchPlaceholder": "Rechercher par nom ou e-mail...",
     "watchers": {
       "title": "Notifications concernant {{name}}",
-      "hint": "Choisissez qui est alerté au sujet de ce membre (approbations, géorepérage, …). Si personne n'est sélectionné ici, seuls les destinataires configurés sur les espaces du membre sont alertés — il n'y a pas de repli automatique vers les administrateurs de l'organisation.",
-      "usingDefault": "Aucune sélection — routage par espace uniquement",
+      "hint": "Choisissez qui est alerté au sujet de ce membre (approbations, géorepérage, …). Si personne n'est sélectionné ici, seuls les destinataires configurés sur les espaces de travail du membre sont alertés — il n'y a pas de repli automatique vers les administrateurs de l'organisation.",
+      "usingDefault": "Aucune sélection — routage par espace de travail uniquement",
       "noManagers": "Aucun administrateur ou responsable à attribuer pour l'instant.",
       "saved": "Destinataires des notifications mis à jour"
     },
@@ -2082,7 +2082,7 @@
       "joined": "A rejoint le",
       "title": "Intitulé",
       "schedule": "Planning",
-      "spaces": "Espaces"
+      "spaces": "Espaces de travail"
     },
     "roles": {
       "admin": "Administrateur",
@@ -2131,10 +2131,10 @@
       "remove": "Supprimer"
     },
     "team": "Équipe",
-    "teamSubtitle": "Gérez les membres de votre équipe — attribuez rôles, autorisations et espaces.",
+    "teamSubtitle": "Gérez les membres de votre équipe — attribuez rôles, autorisations et espaces de travail.",
     "inviteShort": "Inviter",
     "you": "vous",
-    "noSpaces": "Aucun espace",
+    "noSpaces": "Aucun espace de travail",
     "schedule": {
       "fixed": "Fixe",
       "flexible": "Flexible"
@@ -2142,7 +2142,7 @@
     "bulk": {
       "selected": "{{count}} sélectionné(s)",
       "role": "Rôle",
-      "space": "Espace",
+      "space": "Espace de travail",
       "removeConfirm": "Supprimer {{count}} membre(s) de l'organisation ?",
       "access": "Accès",
       "accessTitle": "Accès groupé",
@@ -2150,7 +2150,7 @@
     },
     "empty": {
       "title": "Constituez votre équipe",
-      "description": "Ajoutez des membres à l'équipe et attribuez-les à des espaces. Chaque membre peut avoir des rôles et des autorisations différents."
+      "description": "Ajoutez des membres à l'équipe et attribuez-les à des espaces de travail. Chaque membre peut avoir des rôles et des autorisations différents."
     },
     "pendingInvitations": {
       "title": "Invitations en attente",
@@ -2169,8 +2169,8 @@
       "revokeFailed": "Échec de la révocation de l'invitation",
       "roleUpdated": "rôle mis à jour",
       "updateRolesFailed": "Échec de la mise à jour des rôles",
-      "assignedToSpace": "{{count}} membre(s) attribué(s) à l'espace",
-      "assignFailed": "Échec de l'attribution à l'espace",
+      "assignedToSpace": "{{count}} membre(s) attribué(s) à l'espace de travail",
+      "assignFailed": "Échec de l'attribution à l'espace de travail",
       "removedCount": "{{count}} membre(s) supprimé(s)",
       "removeMembersFailed": "Échec de la suppression des membres",
       "bulkPartial": "{{ok}} mis à jour, {{failed}} échoués"
@@ -2328,9 +2328,9 @@
       "positionLabel": "Poste",
       "positionPlaceholder": "ex. Plombier, Technicien de terrain",
       "optional": "(facultatif)",
-      "spaceLabel": "Espace",
-      "spacePlaceholder": "Attribuer à un espace lors de l'adhésion",
-      "noSpace": "Aucun espace",
+      "spaceLabel": "Espace de travail",
+      "spacePlaceholder": "Attribuer à un espace de travail lors de l'adhésion",
+      "noSpace": "Aucun espace de travail",
       "sending": "Envoi...",
       "sendInvitation": "Envoyer l'invitation",
       "generateCode": "Générer un code",
@@ -2725,11 +2725,11 @@
     "firstNameRequired": "Le prénom est obligatoire",
     "firstNameMinLength": "Le prénom doit comporter au moins 2 caractères",
     "firstNameMaxLength": "Le prénom ne doit pas dépasser 50 caractères",
-    "firstNameInvalid": "Le prénom ne peut contenir que des lettres, des espaces, des traits d'union et des apostrophes",
+    "firstNameInvalid": "Le prénom ne peut contenir que des lettres, des espaces de travail, des traits d'union et des apostrophes",
     "lastNameRequired": "Le nom est obligatoire",
     "lastNameMinLength": "Le nom doit comporter au moins 2 caractères",
     "lastNameMaxLength": "Le nom ne doit pas dépasser 50 caractères",
-    "lastNameInvalid": "Le nom ne peut contenir que des lettres, des espaces, des traits d'union et des apostrophes",
+    "lastNameInvalid": "Le nom ne peut contenir que des lettres, des espaces de travail, des traits d'union et des apostrophes",
     "companyNameRequired": "Le nom de l'entreprise est obligatoire",
     "companyNameMinLength": "Le nom de l'entreprise doit comporter au moins 2 caractères",
     "companyNameMaxLength": "Le nom de l'entreprise ne doit pas dépasser 100 caractères",
@@ -3266,8 +3266,8 @@
       "INVITATION_ACCEPTED": "Invitation acceptée",
       "JOIN_REQUEST_APPROVED": "Adhésion approuvée",
       "JOIN_REQUEST_REJECTED": "Adhésion refusée",
-      "SPACE_CREATED": "Espace créé",
-      "SPACE_DELETED": "Espace supprimé",
+      "SPACE_CREATED": "Espace de travail créé",
+      "SPACE_DELETED": "Espace de travail supprimé",
       "RECURRING_CREATED": "Récurrence créée",
       "RECURRING_DELETED": "Récurrence supprimée",
       "RECURRING_GENERATED": "Récurrence générée",
@@ -3293,12 +3293,12 @@
       "longitude": "Longitude",
       "hint": "Recherchez ci-dessus, cliquez sur la carte, ou saisissez l'adresse et les coordonnées manuellement."
     },
-    "title": "Espaces",
-    "subtitle": "Gérez vos espaces de travail — chaque espace a son propre flux de travail, ses modules et son équipe.",
-    "newSpace": "Nouvel espace",
-    "createSpace": "Créer un espace",
+    "title": "Espaces de travail",
+    "subtitle": "Gérez vos espaces de travail — chaque espace de travail a son propre flux de travail, ses modules et son équipe.",
+    "newSpace": "Nouvel espace de travail",
+    "createSpace": "Créer un espace de travail",
     "createDescription": "Configurez un nouvel espace de travail avec son propre flux de travail et ses modules.",
-    "deactivateSpace": "Désactiver l'espace",
+    "deactivateSpace": "Désactiver l'espace de travail",
     "deactivateConfirmBefore": "Êtes-vous sûr de vouloir désactiver ",
     "deactivateConfirmAfter": " ? Les employés ne pourront plus pointer à cet emplacement. Vous pourrez le réactiver ultérieurement.",
     "deactivate": "Désactiver",
@@ -3311,23 +3311,23 @@
     "statusCountSuffix_one": " ({{count}} statut)",
     "statusCountSuffix_other": " ({{count}} statuts)",
     "configureTitle": "Configurer — {{name}}",
-    "configureDescription": "Gérez les paramètres, modules, flux de travail et membres de cet espace.",
+    "configureDescription": "Gérez les paramètres, modules, flux de travail et membres de cet espace de travail.",
     "name": "Nom",
     "address": "Adresse",
     "geofenceRadius": "Rayon de géorepérage",
     "timezone": "Fuseau horaire",
     "activeLabel": "Actif",
-    "activeHint": "Les employés peuvent pointer dans cet espace",
+    "activeHint": "Les employés peuvent pointer dans cet espace de travail",
     "nameRequired": "Le nom est obligatoire",
-    "modulesIntro": "Les modules ajoutent des fonctionnalités facultatives aux tâches de cet espace. Choisissez un préréglage, puis affinez.",
+    "modulesIntro": "Les modules ajoutent des fonctionnalités facultatives aux tâches de cet espace de travail. Choisissez un préréglage, puis affinez.",
     "presets": "Préréglages",
     "currentWorkflow": "Flux de travail actuel",
     "statusesWithCount": "Statuts ({{count}})",
     "editWorkflow": "Modifier le flux de travail",
     "resyncTasks": "Resynchroniser les tâches existantes",
-    "resyncTasksHint": "Déplacez les tâches existantes de cet espace vers les colonnes de ce flux de travail.",
+    "resyncTasksHint": "Déplacez les tâches existantes de cet espace de travail vers les colonnes de ce flux de travail.",
     "resyncTasksConfirmTitle": "Resynchroniser les tâches avec ce flux de travail ?",
-    "resyncTasksConfirmDescription": "Chaque tâche de cet espace sera déplacée vers ce flux de travail. Les statuts qui ne correspondent pas seront réinitialisés au premier statut du flux. Cette action est irréversible.",
+    "resyncTasksConfirmDescription": "Chaque tâche de cet espace de travail sera déplacée vers ce flux de travail. Les statuts qui ne correspondent pas seront réinitialisés au premier statut du flux. Cette action est irréversible.",
     "createNew": "Créer nouveau",
     "membersWithCount": "Membres ({{count}})",
     "noMembers": "Aucun membre attribué pour le moment",
@@ -3347,8 +3347,8 @@
       "members": "Membres"
     },
     "empty": {
-      "title": "Créez votre premier espace",
-      "description": "Les espaces sont l'endroit où le travail se fait — bureaux, entrepôts, chantiers. Chaque espace peut avoir son propre flux de travail, ses modules et son équipe."
+      "title": "Créez votre premier espace de travail",
+      "description": "Les espaces de travail sont l'endroit où le travail se fait — bureaux, entrepôts, chantiers. Chaque espace de travail peut avoir son propre flux de travail, ses modules et son équipe."
     },
     "form": {
       "namePlaceholder": "ex. Bureau principal, Équipe du centre-ville",
@@ -3362,7 +3362,7 @@
       "geofenceHint": "Les employés peuvent pointer à cette distance du point.",
       "advancedModules": "Avancé — Modules",
       "enabledCount": "{{count}} activé(s)",
-      "modulesIntro": "Les modules ajoutent des fonctionnalités facultatives aux tâches de cet espace (listes de contrôle, suivi GPS, sprints…). Partez d'un préréglage, puis affinez ci-dessous.",
+      "modulesIntro": "Les modules ajoutent des fonctionnalités facultatives aux tâches de cet espace de travail (listes de contrôle, suivi GPS, sprints…). Partez d'un préréglage, puis affinez ci-dessous.",
       "ownership": "Appartenance",
       "kindProject": "Mon projet",
       "kindCompany": "Mon entreprise",
@@ -3376,11 +3376,11 @@
       "billableRateHint": "Calcule automatiquement les lignes de main-d’œuvre sur les factures de ce client. Laissez vide pour utiliser la valeur par défaut de l’organisation."
     },
     "toast": {
-      "deactivated": "Espace désactivé",
-      "deactivateFailed": "Échec de la désactivation de l'espace",
-      "reactivated": "Espace réactivé",
+      "deactivated": "Espace de travail désactivé",
+      "deactivateFailed": "Échec de la désactivation de l'espace de travail",
+      "reactivated": "Espace de travail réactivé",
       "reactivateFailed": "Échec de la réactivation",
-      "updated": "Espace mis à jour",
+      "updated": "Espace de travail mis à jour",
       "updateFailed": "Échec de la mise à jour",
       "modulesUpdated": "Modules mis à jour",
       "modulesUpdateFailed": "Échec de la mise à jour des modules",
@@ -3392,15 +3392,15 @@
       "memberAddFailed": "Échec de l'ajout du membre",
       "memberRemoved": "Membre retiré",
       "memberRemoveFailed": "Échec du retrait du membre",
-      "created": "Espace créé",
-      "createFailed": "Échec de la création de l'espace",
-      "resyncAllDone": "{{updated}} tâche(s) resynchronisée(s) sur {{spaces}} espace(s)",
-      "archiveFailed": "Impossible d’archiver l’espace",
-      "archived": "Espace archivé",
-      "purgeFailed": "Impossible de supprimer l’espace",
-      "purged": "Espace définitivement supprimé",
-      "restoreFailed": "Impossible de restaurer l’espace",
-      "restored": "Espace restauré"
+      "created": "Espace de travail créé",
+      "createFailed": "Échec de la création de l'espace de travail",
+      "resyncAllDone": "{{updated}} tâche(s) resynchronisée(s) sur {{spaces}} espace de travail(s)",
+      "archiveFailed": "Impossible d’archiver l’espace de travail",
+      "archived": "Espace de travail archivé",
+      "purgeFailed": "Impossible de supprimer l’espace de travail",
+      "purged": "Espace de travail définitivement supprimé",
+      "restoreFailed": "Impossible de restaurer l’espace de travail",
+      "restored": "Espace de travail restauré"
     },
     "workflowLabel": "Flux de travail",
     "selectWorkflow": "Sélectionner un flux de travail...",
@@ -3408,55 +3408,55 @@
     "statusCount_one": "{{count}} statut",
     "statusCount_other": "{{count}} statuts",
     "createNewWorkflow": "Créer un nouveau flux de travail",
-    "resyncAllTasks": "Resynchroniser tous les espaces",
-    "resyncAllTasksHint": "Aligner les tâches de chaque espace sur son flux",
-    "resyncAllTasksConfirmTitle": "Resynchroniser tous les espaces ?",
-    "resyncAllTasksConfirmDescription": "Cette action resynchronise toutes les tâches de chaque espace sur le flux de travail de son espace. Les statuts qui n’existent pas dans le flux d’un espace sont réinitialisés à sa première étape ; les tâches terminées et annulées sont conservées.",
-    "spaceSettings": "Paramètres de l'espace",
+    "resyncAllTasks": "Resynchroniser tous les espaces de travail",
+    "resyncAllTasksHint": "Aligner les tâches de chaque espace de travail sur son flux",
+    "resyncAllTasksConfirmTitle": "Resynchroniser tous les espaces de travail ?",
+    "resyncAllTasksConfirmDescription": "Cette action resynchronise toutes les tâches de chaque espace de travail sur le flux de travail de son espace de travail. Les statuts qui n’existent pas dans le flux d’un espace de travail sont réinitialisés à sa première étape ; les tâches terminées et annulées sont conservées.",
+    "spaceSettings": "Paramètres de l'espace de travail",
     "selectTimezone": "Sélectionner le fuseau horaire",
     "searchTimezone": "Rechercher un fuseau horaire…",
     "timezoneAutoHint": "Rempli automatiquement depuis la carte. Recherchez pour le modifier.",
-    "detailsSection": "Détails de l’espace",
+    "detailsSection": "Détails de l’espace de travail",
     "locationSection": "Emplacement et fuseau horaire",
     "locationHint": "Recherchez une adresse ou placez un repère — le fuseau horaire se remplit selon l’emplacement.",
     "modulesEnabledCount": "{{count}} activés",
-    "detailsHint": "Nommez cet espace et indiquez s'il est actuellement actif.",
-    "workflowHint": "Choisissez les colonnes du tableau de tâches que les membres voient dans cet espace, ou créez-en une nouvelle.",
-    "typeSection": "Type d’espace",
+    "detailsHint": "Nommez cet espace de travail et indiquez s'il est actuellement actif.",
+    "workflowHint": "Choisissez les colonnes du tableau de tâches que les membres voient dans cet espace de travail, ou créez-en une nouvelle.",
+    "typeSection": "Type d’espace de travail",
     "typeHint": "S’agit-il d’un site physique avec une adresse ou d’un espace de travail logique ?",
     "timezoneOnlyHint": "Le fuseau horaire utilisé pour afficher les heures de cet espace de travail.",
     "timezoneManualHint": "Utilisé pour afficher les heures de présence et de tâches de cet espace de travail.",
     "danger": {
       "title": "Zone de danger",
       "hint": "Actions irréversibles et destructrices.",
-      "deleteTitle": "Supprimer cet espace",
-      "deleteHint": "Archive l’espace et le masque des sélecteurs. Ses tâches sont déplacées vers votre espace par défaut. Irréversible.",
-      "lockedDefault": "Ceci est votre espace par défaut : il contient les tâches non attribuées et ne peut pas être supprimé.",
-      "lockedRemote": "Ceci est l’espace À distance : il est requis pour les pointages à distance et ne peut pas être supprimé.",
-      "deleteButton": "Supprimer l’espace",
+      "deleteTitle": "Supprimer cet espace de travail",
+      "deleteHint": "Archive l’espace de travail et le masque des sélecteurs. Ses tâches sont déplacées vers votre espace de travail par défaut. Irréversible.",
+      "lockedDefault": "Ceci est votre espace de travail par défaut : il contient les tâches non attribuées et ne peut pas être supprimé.",
+      "lockedRemote": "Ceci est l’espace de travail À distance : il est requis pour les pointages à distance et ne peut pas être supprimé.",
+      "deleteButton": "Supprimer l’espace de travail",
       "dialogTitle": "Supprimer « {{name}} » ?",
-      "dialogDesc": "L’espace est archivé et retiré des sélecteurs. Cette action est irréversible.",
-      "tasksMoved": "{{count}} tâche(s) de cet espace seront déplacées vers votre espace par défaut.",
-      "tasksNone": "Cet espace n’a aucune tâche.",
+      "dialogDesc": "L’espace de travail est archivé et retiré des sélecteurs. Cette action est irréversible.",
+      "tasksMoved": "{{count}} tâche(s) de cet espace de travail seront déplacées vers votre espace de travail par défaut.",
+      "tasksNone": "Cet espace de travail n’a aucune tâche.",
       "confirmLabel": "Saisissez « {{name}} » pour confirmer",
-      "confirmButton": "Supprimer l’espace",
+      "confirmButton": "Supprimer l’espace de travail",
       "deleting": "Suppression…",
-      "deleted": "Espace supprimé",
-      "deleteFailed": "Impossible de supprimer l’espace",
-      "purgeDialogDesc": "Cette action supprime définitivement l’espace. Elle n’aboutit que tant qu’il n’a ni tâches, ni pointages, ni historique de créneaux — sinon, archivez-le.",
-      "purgeHint": "Supprime l’espace pour de bon. Possible uniquement tant qu’il n’a ni tâches, ni pointages, ni historique de créneaux. Irréversible.",
-      "restoreHint": "Cet espace est archivé. Le restaurer le rend à nouveau actif et visible dans les sélecteurs.",
-      "restoreTitle": "Restaurer cet espace"
+      "deleted": "Espace de travail supprimé",
+      "deleteFailed": "Impossible de supprimer l’espace de travail",
+      "purgeDialogDesc": "Cette action supprime définitivement l’espace de travail. Elle n’aboutit que tant qu’il n’a ni tâches, ni pointages, ni historique de créneaux — sinon, archivez-le.",
+      "purgeHint": "Supprime l’espace de travail pour de bon. Possible uniquement tant qu’il n’a ni tâches, ni pointages, ni historique de créneaux. Irréversible.",
+      "restoreHint": "Cet espace de travail est archivé. Le restaurer le rend à nouveau actif et visible dans les sélecteurs.",
+      "restoreTitle": "Restaurer cet espace de travail"
     },
     "ownershipSection": "Appartenance",
     "ownershipHint": "S'agit-il d'un projet, de votre propre entreprise ou d'une entreprise cliente pour laquelle vous travaillez ?",
     "workflows": {
-      "title": "Types de tâche dans cet espace",
+      "title": "Types de tâche dans cet espace de travail",
       "hint": "Les nouvelles tâches utilisent ici le type par défaut, sauf choix contraire.",
       "none": "Aucun type de tâche pour l’instant — le flux standard s’applique.",
       "default": "Par défaut",
       "makeDefault": "Définir par défaut",
-      "remove": "Retirer de cet espace",
+      "remove": "Retirer de cet espace de travail",
       "addPlaceholder": "Ajouter un type de tâche…",
       "added": "Type de tâche ajouté",
       "removed": "Type de tâche retiré",
@@ -3464,19 +3464,19 @@
       "addFailed": "Impossible d’ajouter ce type de tâche",
       "removeFailed": "Impossible de retirer ce type de tâche",
       "defaultFailed": "Impossible de changer la valeur par défaut",
-      "libraryHint": "Ou partez d’un type de tâche prêt à l’emploi. Vous obtenez votre propre copie dans cet espace — modifiable librement, sans effet sur les autres.",
+      "libraryHint": "Ou partez d’un type de tâche prêt à l’emploi. Vous obtenez votre propre copie dans cet espace de travail — modifiable librement, sans effet sur les autres.",
       "libraryPlaceholder": "Choisir dans la bibliothèque…",
       "useTemplate": "Utiliser le modèle",
       "onlyHere": "Ici seulement",
       "sharedBadge": "Partagé",
-      "localHint": "Seul cet espace l’utilise. Les modifications restent ici.",
+      "localHint": "Seul cet espace de travail l’utilise. Les modifications restent ici.",
       "sharedHint": "Partagé avec l’organisation. Le modifier le change partout où il est proposé.",
       "fork": "Copier ici",
-      "forkHint": "Obtenez une copie propre à cet espace, modifiable sans affecter les autres",
-      "forked": "« {{name}} » est désormais la copie de cet espace — modifiez-la librement.",
+      "forkHint": "Obtenez une copie propre à cet espace de travail, modifiable sans affecter les autres",
+      "forked": "« {{name}} » est désormais la copie de cet espace de travail — modifiez-la librement.",
       "forkFailed": "Impossible de copier ce type de tâche",
       "share": "Partager",
-      "shareHint": "Permettre à tout espace de l’organisation de proposer cette définition",
+      "shareHint": "Permettre à tout espace de travail de l’organisation de proposer cette définition",
       "shared": "Partagé avec l’organisation",
       "shareFailed": "Impossible de partager ce type de tâche"
     },
@@ -3488,7 +3488,7 @@
     "archived": "Archivé",
     "logicalNoTimezone": "Aucun lieu fixe — les pointages utilisent le fuseau horaire de chaque personne. Ajoutez un lieu pour définir un fuseau horaire de site et une géo-barrière.",
     "purge": "Supprimer définitivement",
-    "purgeSpace": "Supprimer définitivement l’espace",
+    "purgeSpace": "Supprimer définitivement l’espace de travail",
     "restoreAction": "Restaurer",
     "settingsNav": "Paramètres"
   },
@@ -3498,7 +3498,7 @@
     "select": "Sélectionner",
     "goToDashboard": "Aller au tableau de bord",
     "goToTasks": "Aller aux tâches",
-    "goToSpaces": "Aller aux espaces",
+    "goToSpaces": "Aller aux espaces de travail",
     "goToSchedule": "Aller au planning",
     "goToAttendance": "Aller aux présences",
     "goToMembers": "Aller aux membres",
@@ -3510,7 +3510,7 @@
       "navigation": "Navigation",
       "tasks": "Tâches",
       "sprints": "Sprints",
-      "spaces": "Espaces",
+      "spaces": "Espaces de travail",
       "quickActions": "Actions rapides",
       "people": "Personnes",
       "tasksResults": "Tâches"
@@ -3522,7 +3522,7 @@
     "addedToSprint": "Ajouté au sprint",
     "epicUpdated": "Épopée mise à jour",
     "taskAssigned": "Tâche affectée",
-    "movedToSpace": "Déplacé vers l’espace",
+    "movedToSpace": "Déplacé vers l’espace de travail",
     "taskCreated": "Tâche créée",
     "bulkUpdatedOne": "{{count}} tâche mise à jour",
     "bulkUpdatedMany": "{{count}} tâches mises à jour",
@@ -3553,7 +3553,7 @@
     "selectDescription": "Sélectionnez un membre à qui affecter cette tâche.",
     "searchPlaceholder": "Rechercher des membres…",
     "noMembersFound": "Aucun membre trouvé",
-    "spaceMembers": "Membres de l’espace",
+    "spaceMembers": "Membres de l’espace de travail",
     "otherMembers": "Autres membres",
     "membersSelected": "{{count}} membres sélectionnés"
   },
@@ -3571,7 +3571,7 @@
     "platformAccess": "Accès aux plateformes",
     "permissions": "Autorisations",
     "featureTabsLabel": "Onglets de fonctionnalités",
-    "spaceVisibility": "Visibilité des espaces",
+    "spaceVisibility": "Visibilité des espaces de travail",
     "attendance": "Présences",
     "allowRemoteNeedsClock": "Activez le module Pointage ci-dessus pour utiliser le pointage à distance.",
     "collaboration": "Collaboration",
@@ -3587,21 +3587,21 @@
     },
     "scopes": {
       "own": {
-        "label": "Mes espaces uniquement",
-        "desc": "Voit uniquement les espaces auxquels il est affecté."
+        "label": "Mes espaces de travail uniquement",
+        "desc": "Voit uniquement les espaces de travail auxquels il est affecté."
       },
       "tasks": {
         "label": "Tâches uniquement",
-        "desc": "Aucune vue des espaces — seulement sa propre liste de tâches."
+        "desc": "Aucune vue des espaces de travail — seulement sa propre liste de tâches."
       },
       "all": {
-        "label": "Tous les espaces",
-        "desc": "Aperçu en lecture seule de chaque espace."
+        "label": "Tous les espaces de travail",
+        "desc": "Aperçu en lecture seule de chaque espace de travail."
       }
     },
     "taskScopes": {
       "self": "Ses propres tâches",
-      "space": "Les tâches de ses espaces",
+      "space": "Les tâches de ses espaces de travail",
       "org": "Toute tâche de l’organisation"
     },
     "perms": {
@@ -3713,7 +3713,7 @@
     "noActiveMembers": "Aucun membre actif",
     "inFieldCount": "{{count}} sur le terrain",
     "offSiteCount": "{{count}} hors site",
-    "manageSpace": "Gérer l'espace",
+    "manageSpace": "Gérer l'espace de travail",
     "addMember": "Ajouter un membre",
     "viewTasks": "Voir les tâches",
     "allQuietToday": "Journée calme",
@@ -3802,7 +3802,7 @@
     },
     "page": {
       "title": "Types de tâche",
-      "subtitle": "Définissez le flux de statuts, les capacités et les champs de chaque type de tâche. Les espaces choisissent un type ; les tâches peuvent le remplacer.",
+      "subtitle": "Définissez le flux de statuts, les capacités et les champs de chaque type de tâche. Les espaces de travail choisissent un type ; les tâches peuvent le remplacer.",
       "newTaskType": "Nouveau type de tâche",
       "createTaskType": "Créer un type de tâche",
       "createDescription": "Partez d'un modèle prêt à l'emploi ou créez le vôtre à partir de zéro.",
@@ -3870,7 +3870,7 @@
       "localTo": "{{count}} étapes · seul {{space}} l’utilise",
       "submitToLibrary": "Proposer à la bibliothèque",
       "submitHint": "Proposer ce flux à d’autres organisations. Il est d’abord relu.",
-      "spaceSubtitle": "Les flux que suivent les tâches de cet espace. Modifier un flux partagé le change partout où il est proposé."
+      "spaceSubtitle": "Les flux que suivent les tâches de cet espace de travail. Modifier un flux partagé le change partout où il est proposé."
     },
     "capabilities": {
       "gps": "GPS",
@@ -3887,7 +3887,7 @@
       "reportHint": "Travail effectué et pièces utilisées. Nécessite les rapports d’intervention.",
       "form": "Formulaire",
       "formHint": "Notes de visite ou formulaire de résultat. Nécessite les champs personnalisés.",
-      "moduleOff": "Le module « {{module}} » est désactivé dans cet espace, cela ne peut pas encore se produire."
+      "moduleOff": "Le module « {{module}} » est désactivé dans cet espace de travail, cela ne peut pas encore se produire."
     }
   },
   "assets": {
@@ -4086,8 +4086,8 @@
   },
   "team": {
     "title": "Équipe",
-    "subtitle": "Coéquipiers dans vos espaces.",
-    "empty": "Aucun coéquipier dans vos espaces pour le moment.",
+    "subtitle": "Coéquipiers dans vos espaces de travail.",
+    "empty": "Aucun coéquipier dans vos espaces de travail pour le moment.",
     "callsComingSoon": "Appels bientôt disponibles"
   },
   "privacy": {
@@ -4193,7 +4193,7 @@
     },
     "s7": {
       "title": "7. Vos droits (RGPD)",
-      "intro": "Si vous êtes situé dans l'Union européenne ou l'Espace économique européen, vous disposez des droits suivants en vertu du Règlement général sur la protection des données (RGPD) :",
+      "intro": "Si vous êtes situé dans l'Union européenne ou l'Espace de travail économique européen, vous disposez des droits suivants en vertu du Règlement général sur la protection des données (RGPD) :",
       "accessLabel": "Droit d'accès",
       "accessText": " — Demander une copie de vos données à caractère personnel",
       "rectificationLabel": "Droit de rectification",
@@ -4469,7 +4469,7 @@
         "desc": "Disponibilité et plannings de l'équipe"
       },
       "spaces": {
-        "label": "Espaces",
+        "label": "Espaces de travail",
         "desc": "Gérez les espaces de travail et les listes de membres"
       }
     }
@@ -4629,7 +4629,7 @@
       "facilities": "Bâtiments et installations",
       "cleaning": "Nettoyage",
       "security": "Sécurité et gardiennage",
-      "grounds": "Jardins et espaces verts",
+      "grounds": "Jardins et espaces de travail verts",
       "construction": "Construction",
       "it": "Informatique et télécoms",
       "solar": "Solaire et énergie",
@@ -4663,7 +4663,7 @@
       "deliveries": "Livraisons",
       "treatments": "Traitements",
       "followUps": "Suivis",
-      "grounds": "Espaces verts",
+      "grounds": "Espaces de travail verts",
       "jobs": "Interventions"
     },
     "tools": {
@@ -4735,7 +4735,7 @@
       },
       "manage": {
         "title": "Hub de gestion",
-        "body": "Des liens rapides vers tout ce que vous gérez — membres, invitations, demandes d’adhésion, planning, espaces et plus encore."
+        "body": "Des liens rapides vers tout ce que vous gérez — membres, invitations, demandes d’adhésion, planning, espaces de travail et plus encore."
       },
       "settings": {
         "title": "Paramètres",
@@ -4768,16 +4768,16 @@
           "body": "Votre base d’accueil — un aperçu en direct des interventions, de votre équipe et de l’activité du jour."
         },
         "yourSpaces": {
-          "title": "Vos espaces",
-          "body": "Chaque espace regroupe ses interventions, ses personnes et ses rapports — cliquez sur l’un d’eux pour l’ouvrir et voir tout ce qu’il contient."
+          "title": "Vos espaces de travail",
+          "body": "Chaque espace de travail regroupe ses interventions, ses personnes et ses rapports — cliquez sur l’un d’eux pour l’ouvrir et voir tout ce qu’il contient."
         },
         "spaceHeader": {
           "title": "Effectif en direct",
-          "body": "L’en-tête résume l’espace en un coup d’œil — combien de personnes sont affectées et, à l’instant, combien sont sur site, sur le terrain, hors site ou hors service. Il se met à jour en direct à mesure que les personnes pointent et se déplacent."
+          "body": "L’en-tête résume l’espace de travail en un coup d’œil — combien de personnes sont affectées et, à l’instant, combien sont sur site, sur le terrain, hors site ou hors service. Il se met à jour en direct à mesure que les personnes pointent et se déplacent."
         },
         "openSpace": {
           "title": "Sur site maintenant",
-          "body": "La zone principale montre qui est physiquement présent sur cet espace en ce moment. Un anneau vert signifie qu’ils ont pointé ; le badge indique leurs heures ou leur intervention en cours."
+          "body": "La zone principale montre qui est physiquement présent sur cet espace de travail en ce moment. Un anneau vert signifie qu’ils ont pointé ; le badge indique leurs heures ou leur intervention en cours."
         },
         "member": {
           "title": "Un collègue",
@@ -4789,15 +4789,15 @@
         },
         "offSite": {
           "title": "Hors site",
-          "body": "Les personnes travaillant à distance ou depuis un autre lieu aujourd’hui — toujours au travail, mais pas sur cet espace."
+          "body": "Les personnes travaillant à distance ou depuis un autre lieu aujourd’hui — toujours au travail, mais pas sur cet espace de travail."
         },
         "offDuty": {
           "title": "Hors service",
           "body": "Qui ne travaille pas aujourd’hui — et pourquoi (jour de repos, maladie, congés). Le motif n’est visible que par les responsables."
         },
         "spaceActions": {
-          "title": "Actions de l’espace",
-          "body": "Depuis un espace ouvert, vous pouvez gérer ses paramètres, ajouter un membre ou accéder directement à ses interventions."
+          "title": "Actions de l’espace de travail",
+          "body": "Depuis un espace de travail ouvert, vous pouvez gérer ses paramètres, ajouter un membre ou accéder directement à ses interventions."
         },
         "activity": {
           "title": "Activité récente",
@@ -4817,7 +4817,7 @@
         },
         "spaces": {
           "title": "Zones de travail",
-          "body": "Les espaces qui regroupent vos interventions, vos personnes et vos rapports."
+          "body": "Les espaces de travail qui regroupent vos interventions, vos personnes et vos rapports."
         },
         "reports": {
           "title": "Rapports",
@@ -4894,11 +4894,11 @@
           "body": "Besoin de quelque chose ? Écrivez à votre responsable ou à un collègue directement d’ici."
         },
         "yourSpaces": {
-          "title": "Vos espaces",
+          "title": "Vos espaces de travail",
           "body": "Vos zones de travail — ouvrez-en une pour voir ses interventions et les personnes qui la composent."
         },
         "openSpace": {
-          "title": "Dans votre espace",
+          "title": "Dans votre espace de travail",
           "body": "Voyez vos collègues et leur statut — qui est en poste, sur le terrain ou absent — et appuyez sur l’un d’eux pour le contacter."
         },
         "tasks": {
@@ -5020,55 +5020,55 @@
       }
     },
     "spacesTour": {
-      "title": "Configurez vos espaces",
+      "title": "Configurez vos espaces de travail",
       "steps": {
         "intro": {
-          "title": "Vos espaces",
-          "body": "Les espaces regroupent vos interventions, vos personnes et vos rapports — comme un site, un service ou un projet. Tout ce qui se trouve sur un espace lui est rattaché."
+          "title": "Vos espaces de travail",
+          "body": "Les espaces de travail regroupent vos interventions, vos personnes et vos rapports — comme un site, un service ou un projet. Tout ce qui se trouve sur un espace de travail lui est rattaché."
         },
         "card": {
-          "title": "Un espace en un coup d’œil",
-          "body": "Chaque carte affiche le nom de l’espace, s’il est actif, son nombre de membres, son adresse et les fonctionnalités (modules) qu’il a activées."
+          "title": "Un espace de travail en un coup d’œil",
+          "body": "Chaque carte affiche le nom de l’espace de travail, s’il est actif, son nombre de membres, son adresse et les fonctionnalités (modules) qu’il a activées."
         },
         "configure": {
           "title": "Configurer",
-          "body": "Ouvrez tous les paramètres d’un espace — détails généraux et carte, les modules qu’il utilise, son flux de travail d’interventions et les personnes qui lui sont affectées."
+          "body": "Ouvrez tous les paramètres d’un espace de travail — détails généraux et carte, les modules qu’il utilise, son flux de travail d’interventions et les personnes qui lui sont affectées."
         },
         "viewTasks": {
           "title": "Voir ses interventions",
-          "body": "Accédez directement à chaque intervention rattachée à cet espace."
+          "body": "Accédez directement à chaque intervention rattachée à cet espace de travail."
         },
         "actions": {
           "title": "Plus d’actions",
-          "body": "Désactivez un espace (il n’est jamais supprimé définitivement) ou réactivez-le plus tard depuis cet écran."
+          "body": "Désactivez un espace de travail (il n’est jamais supprimé définitivement) ou réactivez-le plus tard depuis cet écran."
         },
         "create": {
-          "title": "Ajoutez un espace",
-          "body": "Cliquez sur Nouvel espace pour en créer un — parcourons le formulaire ensemble."
+          "title": "Ajoutez un espace de travail",
+          "body": "Cliquez sur Nouvel espace de travail pour en créer un — parcourons le formulaire ensemble."
         },
         "name": {
           "title": "Nommez-le",
-          "body": "Donnez à l’espace un nom clair — un site, une équipe ou un projet."
+          "body": "Donnez à l’espace de travail un nom clair — un site, une équipe ou un projet."
         },
         "type": {
           "title": "Espace de travail ou physique",
-          "body": "Un espace de travail est un groupe logique (une équipe ou un projet). Un espace physique est un lieu réel avec une adresse et une zone géographique — choisissez cette option pour les présences sur site."
+          "body": "Un espace de travail est un groupe logique (une équipe ou un projet). Un espace de travail physique est un lieu réel avec une adresse et une zone géographique — choisissez cette option pour les présences sur site."
         },
         "physical": {
           "title": "Localisation et zone géographique",
-          "body": "Pour un espace physique : définissez l’adresse, placez le repère sur la carte et dimensionnez le rayon de la zone géographique — la zone dans laquelle les membres doivent se trouver pour pointer sur site."
+          "body": "Pour un espace de travail physique : définissez l’adresse, placez le repère sur la carte et dimensionnez le rayon de la zone géographique — la zone dans laquelle les membres doivent se trouver pour pointer sur site."
         },
         "workflow": {
           "title": "Flux de travail des interventions",
-          "body": "Choisissez le flux de statuts que suivent les interventions de cet espace (Nouveau → En cours → Terminé…) — ou créez-en un personnalisé directement ici."
+          "body": "Choisissez le flux de statuts que suivent les interventions de cet espace de travail (Nouveau → En cours → Terminé…) — ou créez-en un personnalisé directement ici."
         },
         "modules": {
           "title": "Fonctionnalités (modules)",
-          "body": "Développez pour activer ou désactiver des fonctionnalités pour cet espace — sous-tâches, listes de contrôle, pièces jointes, suivi et plus encore, ou appliquez un ensemble prédéfini."
+          "body": "Développez pour activer ou désactiver des fonctionnalités pour cet espace de travail — sous-tâches, listes de contrôle, pièces jointes, suivi et plus encore, ou appliquez un ensemble prédéfini."
         },
         "submit": {
           "title": "Créez-le",
-          "body": "Créez l’espace — vous pourrez tout modifier plus tard depuis Configurer."
+          "body": "Créez l’espace de travail — vous pourrez tout modifier plus tard depuis Configurer."
         }
       }
     },
@@ -5146,7 +5146,7 @@
         },
         "dimensions": {
           "title": "Grouper par",
-          "body": "Détaillez les chiffres — par personne, espace, client, statut… Laissez vide pour un total général unique."
+          "body": "Détaillez les chiffres — par personne, espace de travail, client, statut… Laissez vide pour un total général unique."
         },
         "period": {
           "title": "Période",
@@ -5236,7 +5236,7 @@
       "steps": {
         "profile": {
           "title": "Profil du membre",
-          "body": "Son nom, son rôle, son statut, son e-mail et les espaces auxquels il appartient. Utilisez Modifier pour changer son profil, son horaire de travail ou réinitialiser son mot de passe."
+          "body": "Son nom, son rôle, son statut, son e-mail et les espaces de travail auxquels il appartient. Utilisez Modifier pour changer son profil, son horaire de travail ou réinitialiser son mot de passe."
         },
         "tasks": {
           "title": "Son travail",
@@ -5263,8 +5263,8 @@
           "body": "Permettez-lui de pointer depuis n’importe où sans se trouver dans la zone géographique d’un site (télétravail / en déplacement). Nécessite l’onglet Pointage activé ci-dessus."
         },
         "spaces": {
-          "title": "Visibilité des espaces",
-          "body": "Ce qu’il peut voir — uniquement les espaces qui lui sont affectés, ceux-ci plus les espaces de ses interventions, ou tous les espaces de l’organisation."
+          "title": "Visibilité des espaces de travail",
+          "body": "Ce qu’il peut voir — uniquement les espaces de travail qui lui sont affectés, ceux-ci plus les espaces de travail de ses interventions, ou tous les espaces de travail de l’organisation."
         },
         "collaboration": {
           "title": "Messagerie",
@@ -5304,8 +5304,8 @@
           "body": "Basculez entre une vue semaine (détail jour par jour) et une vue mois (tout le mois d’un coup)."
         },
         "space": {
-          "title": "Filtrer par espace",
-          "body": "Restreignez le calendrier à un seul espace, ou affichez tout le monde à travers l’ensemble."
+          "title": "Filtrer par espace de travail",
+          "body": "Restreignez le calendrier à un seul espace de travail, ou affichez tout le monde à travers l’ensemble."
         },
         "dateNav": {
           "title": "Se déplacer dans le temps",
@@ -5317,11 +5317,11 @@
         },
         "calendar": {
           "title": "Le calendrier",
-          "body": "Chaque jour affiche une barre pour disponible, en congé et non planifié. Cliquez sur un jour pour voir exactement qui — groupé par espace, avec leurs heures."
+          "body": "Chaque jour affiche une barre pour disponible, en congé et non planifié. Cliquez sur un jour pour voir exactement qui — groupé par espace de travail, avec leurs heures."
         },
         "dayDetail": {
           "title": "Qui est présent ce jour-là",
-          "body": "Ouvrir un jour affiche tout le monde groupé par espace — leurs heures de poste, le motif du congé et le statut. Cliquez sur un nom pour ouvrir son profil."
+          "body": "Ouvrir un jour affiche tout le monde groupé par espace de travail — leurs heures de poste, le motif du congé et le statut. Cliquez sur un nom pour ouvrir son profil."
         },
         "legend": {
           "title": "Légende des couleurs",
@@ -5409,9 +5409,9 @@
     }
   },
   "welcome": {
-    "title": "Configurez votre premier espace",
-    "subtitle": "Un espace est l’endroit où vivent vos tâches — un site, une équipe ou un projet. Vous pourrez en ajouter d’autres à tout moment.",
-    "createAndContinue": "Créer l’espace et continuer"
+    "title": "Configurez votre premier espace de travail",
+    "subtitle": "Un espace de travail est l’endroit où vivent vos tâches — un site, une équipe ou un projet. Vous pourrez en ajouter d’autres à tout moment.",
+    "createAndContinue": "Créer l’espace de travail et continuer"
   },
   "presence": {
     "title": "Disponibilité",
@@ -5510,7 +5510,7 @@
     "cannotMessageSelf": "Vous ne pouvez pas démarrer une conversation avec vous-même",
     "external": "Externe",
     "closed": "Fermée",
-    "conversationClosed": "Cet espace n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents.",
+    "conversationClosed": "Cet espace de travail n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents.",
     "externalMember": "Dans une autre organisation"
   },
   "audit": {
@@ -5564,7 +5564,7 @@
     "invite": "Inviter au portail",
     "units": "Unités",
     "addUnit": "Ajouter une unité",
-    "noUnits": "Aucune unité pour l'instant. Ajoutez l'appartement / la commande / l'espace auquel ce client est rattaché.",
+    "noUnits": "Aucune unité pour l'instant. Ajoutez l'appartement / la commande / l'espace de travail auquel ce client est rattaché.",
     "requests": "Demandes",
     "noRequestsOffice": "Aucune demande de ce client pour l'instant.",
     "unitName": "Nom",
@@ -5627,9 +5627,9 @@
     "catTeamPlaceholder": "Équipe CVC",
     "catIssuesPlaceholder": "Ne refroidit pas, Pas de courant",
     "andItsFlow": "et hérite de son flux de travail.",
-    "apartmentLockHint": "Pour créer un portail Location / Immobilier (logements), activez d’abord le module Logements sur cet espace.",
+    "apartmentLockHint": "Pour créer un portail Location / Immobilier (logements), activez d’abord le module Logements sur cet espace de travail.",
     "apartmentModuleNeeded": "Nécessite le module Logements — ce portail gère des logements.",
-    "apartmentModuleRequired": "Activez le module Logements sur cet espace pour utiliser ce type.",
+    "apartmentModuleRequired": "Activez le module Logements sur cet espace de travail pour utiliser ce type.",
     "changeCover": "Changer",
     "changeType": "Changer de type",
     "changeTypeHint": "Le changement remplace les catégories de demandes par celles du nouveau type. Les clients et leurs demandes sont conservés.",
@@ -5649,9 +5649,9 @@
     "deletePortalEmpty": "Ce portail n’a encore ni clients ni demandes.",
     "deletePortalStats": "Ce portail compte {{clients}} client(s) et {{requests}} demande(s). Leur historique est conservé, mais ils perdent l’accès.",
     "deleted": "Portail supprimé",
-    "emptyHintSpace": "Créez un portail pour cet espace — choisissez un type, puis invitez vos clients.",
+    "emptyHintSpace": "Créez un portail pour cet espace de travail — choisissez un type, puis invitez vos clients.",
     "enableInModules": "Activer dans Modules",
-    "introMulti": "Les portails B2C de cet espace. Les clients invités se connectent pour commander et suivre. Ouvrez-en autant que nécessaire.",
+    "introMulti": "Les portails B2C de cet espace de travail. Les clients invités se connectent pour commander et suivre. Ouvrez-en autant que nécessaire.",
     "inviteHint2": "Choisissez le client et son {{entity}} — ou créez l’un ou l’autre — puis partagez le code. Le client choisit lui-même son nom.",
     "locked": "Verrouillé",
     "newShort": "Nouveau",
@@ -5667,33 +5667,33 @@
     "removeClientWarn": "Il perd immédiatement l’accès à l’app et est détaché de ce portail (le logement qu’il occupait est libéré). Ses demandes sont conservées.",
     "requestRouted": "Demande orientée",
     "routesToThisSpace": "Les demandes sont dirigées vers",
-    "thisSpace": "cet espace",
+    "thisSpace": "cet espace de travail",
     "title": "Portail client",
     "triageAccept": "Accepter et orienter",
     "triageFlow": "Flux",
-    "triageFlowDefault": "Par défaut de l’espace",
-    "triageHint": "Envoyez cette demande dans un espace, choisissez son flux, puis attribuez-la.",
-    "triageNoMembers": "Aucun intervenant n’est encore affecté à cet espace. Ajoutez des membres ou laissez non attribuée.",
-    "triagePickSpace": "Choisir un espace…",
-    "triagePickSpaceFirst": "Choisissez d’abord un espace",
+    "triageFlowDefault": "Par défaut de l’espace de travail",
+    "triageHint": "Envoyez cette demande dans un espace de travail, choisissez son flux, puis attribuez-la.",
+    "triageNoMembers": "Aucun intervenant n’est encore affecté à cet espace de travail. Ajoutez des membres ou laissez non attribuée.",
+    "triagePickSpace": "Choisir un espace de travail…",
+    "triagePickSpaceFirst": "Choisissez d’abord un espace de travail",
     "triagePriority": "Priorité",
-    "triageSpace": "Espace",
+    "triageSpace": "Espace de travail",
     "triageTitle": "Orienter la demande",
     "triageUnassigned": "Laisser non attribuée",
     "triageWorker": "Attribuer un intervenant",
     "uploadCover": "Téléverser une couverture"
   },
   "scheduling": {
-    "title": "Paramètres de l’espace",
-    "subtitle": "Configurez la façon dont cet espace gère la présence, les postes et les membres.",
-    "backToSpaces": "Retour aux espaces",
+    "title": "Paramètres de l’espace de travail",
+    "subtitle": "Configurez la façon dont cet espace de travail gère la présence, les postes et les membres.",
+    "backToSpaces": "Retour aux espaces de travail",
     "unauthorized": {
       "title": "Accès restreint",
-      "description": "Vous avez besoin de l’autorisation de gestion des membres pour configurer la planification de l’espace."
+      "description": "Vous avez besoin de l’autorisation de gestion des membres pour configurer la planification de l’espace de travail."
     },
     "notFound": {
-      "title": "Espace introuvable",
-      "description": "Cet espace n’existe pas ou vous n’y avez pas accès."
+      "title": "Espace de travail introuvable",
+      "description": "Cet espace de travail n’existe pas ou vous n’y avez pas accès."
     },
     "tabs": {
       "workModel": "Modèle de travail",
@@ -5704,7 +5704,7 @@
     },
     "workModel": {
       "heading": "Modèle de travail",
-      "intro": "Choisissez comment cet espace interprète la présence et les attentes horaires.",
+      "intro": "Choisissez comment cet espace de travail interprète la présence et les attentes horaires.",
       "saved": "Modèle de travail mis à jour",
       "saveFailed": "Impossible de mettre à jour le modèle de travail",
       "remindersBadge": "Active les rappels",
@@ -5740,7 +5740,7 @@
     },
     "shifts": {
       "heading": "Postes",
-      "intro": "Définissez des créneaux de poste nommés pour cet espace. Les heures sont locales au fuseau horaire de l’espace.",
+      "intro": "Définissez des créneaux de poste nommés pour cet espace de travail. Les heures sont locales au fuseau horaire de l’espace de travail.",
       "new": "Nouveau poste",
       "orgWide": "Toute l’organisation",
       "crossesMidnight": "Passe minuit",
@@ -5852,11 +5852,11 @@
       }
     },
     "roles": {
-      "heading": "Rôles de l’espace",
+      "heading": "Rôles de l’espace de travail",
       "intro": "Définissez des sous-rôles comme « Chef de poste » et les autorisations de présence qu’ils accordent.",
       "new": "Nouveau rôle",
       "editTitle": "Modifier le rôle",
-      "dialogDescription": "Nommez le rôle et choisissez les autorisations d’espace qu’il accorde.",
+      "dialogDescription": "Nommez le rôle et choisissez les autorisations d’espace de travail qu’il accorde.",
       "builtIn": "Prédéfini",
       "noPermissions": "Aucune autorisation",
       "namePlaceholder": "ex. Chef de poste",
@@ -5865,7 +5865,7 @@
       "deleteConfirm": "Supprimer « {{name}} » ? Les membres ayant ce rôle le perdront.",
       "empty": {
         "title": "Aucun rôle personnalisé pour l’instant",
-        "description": "Créez un rôle pour accorder des autorisations au niveau de l’espace."
+        "description": "Créez un rôle pour accorder des autorisations au niveau de l’espace de travail."
       },
       "fields": {
         "name": "Nom",
@@ -5876,7 +5876,7 @@
       "permissions": {
         "canApproveOvertime": {
           "label": "Approuver les heures sup.",
-          "description": "Peut approuver les demandes de temps supplémentaire pour cet espace"
+          "description": "Peut approuver les demandes de temps supplémentaire pour cet espace de travail"
         },
         "canManageRota": {
           "label": "Gérer le planning",
@@ -5887,8 +5887,8 @@
           "description": "Reçoit les escalades et peut clôturer ou corriger les entrées ouvertes"
         },
         "canViewSpaceAttendance": {
-          "label": "Voir la présence de l’espace",
-          "description": "Peut voir la présence de tout le monde dans cet espace"
+          "label": "Voir la présence de l’espace de travail",
+          "description": "Peut voir la présence de tout le monde dans cet espace de travail"
         }
       },
       "toast": {
@@ -5900,9 +5900,9 @@
       }
     },
     "members": {
-      "heading": "Membres de l’espace",
-      "intro": "Affectez des membres à cet espace et donnez-leur éventuellement un sous-rôle.",
-      "empty": "Aucun membre n’est encore affecté à cet espace.",
+      "heading": "Membres de l’espace de travail",
+      "intro": "Affectez des membres à cet espace de travail et donnez-leur éventuellement un sous-rôle.",
+      "empty": "Aucun membre n’est encore affecté à cet espace de travail.",
       "unknownMember": "Membre inconnu",
       "addHeading": "Ajouter un membre",
       "addButton": "Ajouter un membre",
@@ -5921,12 +5921,12 @@
         "removeFailed": "Impossible de retirer le membre"
       },
       "remove": "Retirer",
-      "removeTitle": "Retirer de l espace ?",
-      "removeConfirm": "{{name}} perdra son rôle et son routage dans cet espace. Cela ne le retire pas de l organisation."
+      "removeTitle": "Retirer de l espace de travail ?",
+      "removeConfirm": "{{name}} perdra son rôle et son routage dans cet espace de travail. Cela ne le retire pas de l organisation."
     },
     "attendanceTab": {
       "heading": "Présence",
-      "intro": "Comment cet espace suit le temps.",
+      "intro": "Comment cet espace de travail suit le temps.",
       "clockTitle": "Pointeuse — toujours active",
       "clockDesc": "Toute personne disposant du module Pointage pointe l’entrée et la sortie — sur site (géorepérage) ou à distance. Réglez le géorepérage et le pointage à distance dans l’onglet Général.",
       "modeQuestion": "Comment les heures sont-elles suivies ici ?",
@@ -5936,23 +5936,23 @@
       "scheduledDesc": "Affectez des personnes à des créneaux. Les membres planifiés reçoivent des rappels de fin de créneau ; les non-affectés travaillent en horaires libres.",
       "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires.",
       "geofenceOn": "Le pointage sur site est vérifié dans un rayon de {{radius}} m autour du repère.",
-      "geofenceOff": "Pointage sans localisation — aucun géorepérage défini pour cet espace."
+      "geofenceOff": "Pointage sans localisation — aucun géorepérage défini pour cet espace de travail."
     },
     "routing": {
       "heading": "Notifications et contact",
-      "intro": "Choisissez quels rôles de l'espace sont notifiés à propos des membres ici, et quels rôles les membres peuvent contacter. Vide = les responsables de l'espace.",
+      "intro": "Choisissez quels rôles de l'espace de travail sont notifiés à propos des membres ici, et quels rôles les membres peuvent contacter. Vide = les responsables de l'espace de travail.",
       "saved": "Routage mis à jour",
-      "noRoles": "Aucun rôle d'espace défini pour le moment.",
+      "noRoles": "Aucun rôle d'espace de travail défini pour le moment.",
       "notifyTitle": "Notifiés à propos des membres ici",
       "contactTitle": "Contactables par les membres ici",
-      "notifyEmpty": "Par défaut : les responsables de l'espace",
-      "contactEmpty": "Par défaut : les responsables de l'espace",
+      "notifyEmpty": "Par défaut : les responsables de l'espace de travail",
+      "contactEmpty": "Par défaut : les responsables de l'espace de travail",
       "perMember": "Routage",
       "roles": "Rôles",
       "people": "Personnes spécifiques",
       "memberNotify": "Notifiés à propos de {{name}}",
       "memberContact": "{{name}} peut contacter",
-      "noPeople": "Aucun autre membre avec un rôle dans cet espace."
+      "noPeople": "Aucun autre membre avec un rôle dans cet espace de travail."
     }
   },
   "spaceSharing": {
@@ -6002,18 +6002,18 @@
     },
     "shares": {
       "heading": "Partagé avec",
-      "intro": "Entreprises que vous avez invitées dans cet espace.",
+      "intro": "Entreprises que vous avez invitées dans cet espace de travail.",
       "empty": {
         "title": "Pas encore partagé",
-        "description": "Invitez une autre entreprise ci-dessus pour partager cet espace."
+        "description": "Invitez une autre entreprise ci-dessus pour partager cet espace de travail."
       },
       "revoke": "Révoquer",
       "revokeTitle": "Révoquer l'accès ?",
-      "revokeConfirm": "{{org}} perdra l'accès à cet espace."
+      "revokeConfirm": "{{org}} perdra l'accès à cet espace de travail."
     },
     "requests": {
       "heading": "Demandes entrantes",
-      "intro": "Demandes créées par les entreprises invitées sur cet espace.",
+      "intro": "Demandes créées par les entreprises invitées sur cet espace de travail.",
       "empty": "Aucune demande en attente",
       "approve": "Approuver",
       "reject": "Refuser"
@@ -6050,15 +6050,15 @@
       "noTasks": "Aucune tâche sur ce tableau pour le moment",
       "myRequests": "Vos demandes",
       "notFound": {
-        "title": "Espace indisponible",
-        "description": "Cet espace partagé n'est plus actif pour votre organisation."
+        "title": "Espace de travail indisponible",
+        "description": "Cet espace de travail partagé n'est plus actif pour votre organisation."
       },
-      "inviteTitle": "{{org}} a partagé l'espace \"{{space}}\" avec vous",
+      "inviteTitle": "{{org}} a partagé l'espace de travail \"{{space}}\" avec vous",
       "accept": "Accepter",
       "decline": "Refuser",
       "sharedWithUs": "Partagé avec nous",
       "requestDialogTitle": "Demander plus",
-      "requestDialogDescription": "Demandez au propriétaire une tâche ou un employé supplémentaire sur cet espace.",
+      "requestDialogDescription": "Demandez au propriétaire une tâche ou un employé supplémentaire sur cet espace de travail.",
       "requestType": "Type",
       "requestTitle": "Titre",
       "requestTitlePlaceholder": "De quoi avez-vous besoin ?",
@@ -6068,20 +6068,20 @@
       "titleRequired": "Saisissez un titre pour votre demande.",
       "add": "Ajouter",
       "addWorker": "Ajouter un intervenant",
-      "addWorkerDescription": "Ajoutez quelqu’un de votre équipe à cet espace partagé.",
+      "addWorkerDescription": "Ajoutez quelqu’un de votre équipe à cet espace de travail partagé.",
       "assignTo": "Attribuer à",
       "assigned": "Tâche attribuée",
       "attendanceHeading": "Présences",
       "justNow": "à l’instant",
       "minsAgo": "il y a {{m}} min",
       "newTask": "Nouvelle tâche",
-      "newTaskDescription": "Créez une tâche dans cet espace partagé.",
+      "newTaskDescription": "Créez une tâche dans cet espace de travail partagé.",
       "noTeam": "Aucun membre d’équipe trouvé.",
       "taskCreated": "Tâche créée",
       "trackingHeading": "Positions en direct",
       "unassigned": "Non attribuée",
-      "workerAdded": "Intervenant ajouté à l’espace",
-      "workersHeading": "Intervenants sur cet espace"
+      "workerAdded": "Intervenant ajouté à l’espace de travail",
+      "workersHeading": "Intervenants sur cet espace de travail"
     }
   },
   "apartments": {
@@ -6163,15 +6163,15 @@
     },
     "apartments": {
       "label": "Appartements / Lots",
-      "description": "Un répertoire des appartements ou lots de cet espace — affectez un membre ou un client comme résident ; le travail passe par des tâches"
+      "description": "Un répertoire des appartements ou lots de cet espace de travail — affectez un membre ou un client comme résident ; le travail passe par des tâches"
     },
     "b2c_portal": {
       "label": "Portail B2C",
       "description": "Inviter un client dans l’application pour passer commande et suivre ses interventions"
     },
     "space_sharing": {
-      "label": "Partage d’espace",
-      "description": "Partager cet espace avec une autre organisation (voir / contribuer / gérer)"
+      "label": "Partage d’espace de travail",
+      "description": "Partager cet espace de travail avec une autre organisation (voir / contribuer / gérer)"
     },
     "groups": {
       "task": {
@@ -6242,12 +6242,12 @@
   "billing": {
     "perMonth": "/mois",
     "perMonthShort": "/mois",
-    "spaceCostLabel": "Cet espace coûte",
+    "spaceCostLabel": "Cet espace de travail coûte",
     "spaceCostPending": "Avant {{was}} — pris en compte à l’enregistrement des modules",
     "spaceCostPerModule": "Chaque module ajoute son propre prix",
     "seatLine": "Les utilisateurs sont facturés séparément, {{price}} chacun",
     "usage": {
-      "heading": "{{module}} dans cet espace — les {{included}} premiers gratuits",
+      "heading": "{{module}} dans cet espace de travail — les {{included}} premiers gratuits",
       "onTop": "en plus de la base de {{base}}",
       "included": "Les {{count}} premiers sont inclus",
       "free": "Gratuit",
@@ -6268,8 +6268,8 @@
         "portal_other": "{{count}} portails"
       },
       "chargingStarts": "{{count}} de plus avant toute facturation, puis {{price}} chacun",
-      "otherSpacesSeparate": "Les autres espaces sont comptés et facturés séparément",
-      "includesCounted": "Inclut ce qu’ajoutent les actifs de cet espace",
+      "otherSpacesSeparate": "Les autres espaces de travail sont comptés et facturés séparément",
+      "includesCounted": "Inclut ce qu’ajoutent les actifs de cet espace de travail",
       "perMonthShort": "/mois"
     },
     "bill": {
@@ -6277,21 +6277,21 @@
       "perMonth": "/mois",
       "seats": "Personnes",
       "seatsDetail": "{{count}} × {{price}}",
-      "spaces": "Espaces",
-      "spacesDetail_one": "{{count}} espace",
-      "spacesDetail_other": "{{count}} espaces",
+      "spaces": "Espaces de travail",
+      "spacesDetail_one": "{{count}} espace de travail",
+      "spacesDetail_other": "{{count}} espaces de travail",
       "addOns": "Options",
       "addOnsDetail_one": "{{count}} souscrite",
       "addOnsDetail_other": "{{count}} souscrites",
-      "bySpace": "Par espace",
+      "bySpace": "Par espace de travail",
       "usageLine": "Usage {{module}} {{price}}",
-      "noModules": "Rien d’activé — cet espace est gratuit",
+      "noModules": "Rien d’activé — cet espace de travail est gratuit",
       "addOnsBought": "Options",
       "estimate": "Au tarif public"
     },
     "addOns": {
       "title": "Options",
-      "subtitle": "Souscrites une fois pour toute l’organisation, pas par espace",
+      "subtitle": "Souscrites une fois pour toute l’organisation, pas par espace de travail",
       "perMonth": "/mois"
     },
     "status": {
@@ -6302,19 +6302,19 @@
       "incomplete": "Inactif"
     },
     "title": "Facturation",
-    "subtitle": "Vous payez pour les personnes qui utilisent HBCField, pour ce que chaque espace active, et pour les options.",
+    "subtitle": "Vous payez pour les personnes qui utilisent HBCField, pour ce que chaque espace de travail active, et pour les options.",
     "paymentAndInvoices": "Paiement et factures",
     "cancel": "Annuler",
     "adminOnly": "Seul un administrateur de l’organisation peut modifier ce que vous payez.",
     "trialDaysLeft": "Il vous reste {{count}} jours d’essai",
     "cancelsOn": "Se termine le {{date}}",
-    "modulesElsewhere": "Les modules appartiennent à un espace — activez-les dans l’onglet Modules de cet espace, à côté du décompte qui les facture.",
+    "modulesElsewhere": "Les modules appartiennent à un espace de travail — activez-les dans l’onglet Modules de cet espace de travail, à côté du décompte qui les facture.",
     "byAgreement": "Facturation par accord",
     "byAgreementHint": "Rien n’est prélevé automatiquement. Les chiffres ci-dessous correspondent au tarif public — utiles pour un renouvellement, ce n’est pas une facture."
   },
   "assetKinds": {
     "title": "Biens",
-    "intro": "Ce que cet espace possède — appartements, véhicules, machines. Créez un type, puis ajoutez les vôtres.",
+    "intro": "Ce que cet espace de travail possède — appartements, véhicules, machines. Créez un type, puis ajoutez les vôtres.",
     "add": "Nouveau type",
     "empty": "Aucun type",
     "count": "{{count}} à l’intérieur",
@@ -6388,7 +6388,7 @@
     "holderSeveralHint": "Une colocation, une équipe d’opérateurs — les fiches peuvent en lister plusieurs."
   },
   "assetRecords": {
-    "intro": "Tout ce type dans cet espace.",
+    "intro": "Tout ce type dans cet espace de travail.",
     "empty": "Rien pour le moment",
     "added": "Ajouté",
     "removed": "Supprimé",
@@ -6400,7 +6400,7 @@
     "holder": "Détenu par",
     "nobody": "Personne",
     "client": "Client",
-    "noClients": "Aucun client dans cet espace",
+    "noClients": "Aucun client dans cet espace de travail",
     "fields": "Détails",
     "taken": "Attribué",
     "free": "Personne",
@@ -6466,7 +6466,7 @@
   "assetJobs": {
     "raise": "Créer une intervention",
     "title": "Créer une intervention",
-    "hint": "À propos de {{name}}. Elle part dans l’espace auquel il appartient.",
+    "hint": "À propos de {{name}}. Elle part dans l’espace de travail auquel il appartient.",
     "what": "Ce qu’il faut faire",
     "whatPh": "Remplacer la courroie",
     "detail": "Détail",
@@ -6487,16 +6487,16 @@
     "emailPh": "nom@exemple.fr"
   },
   "orphanAssets": {
-    "title_one": "{{count}} actif n’appartient à aucun espace",
-    "title_other": "{{count}} actifs n’appartiennent à aucun espace",
+    "title_one": "{{count}} actif n’appartient à aucun espace de travail",
+    "title_other": "{{count}} actifs n’appartiennent à aucun espace de travail",
     "subtitle": "Ils n’apparaissent dans aucun onglet Actifs, mais comptent toujours dans ce que vous payez. Déplacez-les ici ou supprimez-les.",
     "review": "Les examiner",
-    "dialogTitle": "Actifs sans espace",
-    "dialogHint": "Choisissez un type pour déplacer un actif dans cet espace, ou supprimez-le. Son historique et ses tâches le suivent.",
-    "noTypes": "Cet espace n’a pas encore de types d’actif. Créez-en un d’abord, ou supprimez ces enregistrements.",
+    "dialogTitle": "Actifs sans espace de travail",
+    "dialogHint": "Choisissez un type pour déplacer un actif dans cet espace de travail, ou supprimez-le. Son historique et ses tâches le suivent.",
+    "noTypes": "Cet espace de travail n’a pas encore de types d’actif. Créez-en un d’abord, ou supprimez ces enregistrements.",
     "moveInto": "Déplacer vers…",
     "move": "Déplacer",
-    "moved": "Déplacé dans cet espace",
+    "moved": "Déplacé dans cet espace de travail",
     "moveFailed": "Impossible de déplacer cet actif",
     "deleted": "Supprimé",
     "deleteFailed": "Impossible de supprimer cet actif",
@@ -6590,7 +6590,7 @@
     "hide": "Masquer",
     "industry": "Secteur",
     "industryPh": "p. ex. Construction",
-    "intro": "Personnes et entreprises de cet espace. Les ventes les travaillent via des tâches ; les invités utilisent aussi l’app.",
+    "intro": "Personnes et entreprises de cet espace de travail. Les ventes les travaillent via des tâches ; les invités utilisent aussi l’app.",
     "invite": "Inviter dans l’app",
     "inviteIntro": "Donnez à ce client un accès pour commander et suivre ses interventions.",
     "inviteShare": "Partagez ce code (ou le lien envoyé par e-mail) pour qu’ils puissent se connecter.",
@@ -6606,13 +6606,13 @@
     "moreInfoHint": "Ajoutez tout le reste — conditions de paiement, contact préféré, gestionnaire de compte…",
     "movedTo": "déplacé vers",
     "name": "Nom",
-    "needB2C": "Activez le module Portail B2C (onglet Modules de l’espace) pour inviter des clients.",
+    "needB2C": "Activez le module Portail B2C (onglet Modules de l’espace de travail) pour inviter des clients.",
     "newTask": "Tâche",
     "noActivity": "Aucune activité pour l’instant. Ajoutez une note ou consignez un appel ci-dessus.",
     "noAddress": "Aucune adresse pour l’instant. Ajoutez-en une pour l’afficher sur la carte.",
     "noMembers": "Aucun membre",
     "noReminders": "Aucun rappel. Ajoutez-en un ci-dessus pour relancer.",
-    "noVacant": "Aucun {{label}} libre. Ajoutez-en un dans l’onglet Portail client de l’espace.",
+    "noVacant": "Aucun {{label}} libre. Ajoutez-en un dans l’onglet Portail client de l’espace de travail.",
     "notFound": "Client introuvable",
     "notePlaceholder": "Écrire une note…",
     "notes": "Notes",
@@ -6620,7 +6620,7 @@
     "nudgeStale": "Aucune activité depuis {{d}} jours — le moment de relancer ?",
     "overdueCount": "{{count}} relance en retard",
     "phone": "Téléphone",
-    "pickPortalHint": "Cet espace gère plusieurs portails. Celui que vous choisissez détermine l’entité du client et les catégories qu’il verra.",
+    "pickPortalHint": "Cet espace de travail gère plusieurs portails. Celui que vous choisissez détermine l’entité du client et les catégories qu’il verra.",
     "pickPortalMeta": "{{entity}} · {{count}} catégories",
     "pickPortalTitle": "Quel portail doivent-ils utiliser ?",
     "primary": "Principale",

@@ -784,7 +784,7 @@ function InviteCard({ customer, hasB2C, onChanged }: { customer: Customer; hasB2
       ) : (
         <>
           <Button className="w-full" disabled><Send className="mr-1.5 h-4 w-4" /> {t("customers.invite", "Invite to app")}</Button>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">🔒 {t("customers.needB2C", "Turn on the B2C Portal module (space Modules tab) to invite customers.")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">🔒 {t("customers.needB2C", "Turn on the B2C Portal module (workspace Modules tab) to invite customers.")}</p>
         </>
       )}
     </div>

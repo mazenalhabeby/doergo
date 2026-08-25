@@ -203,7 +203,9 @@ export function TopNavbar() {
           right. 1024–1280px now uses the hamburger, which carries every item.
           (The `MoreDropdown` overflow path below never ran — `overflowItems` is
           initialised empty and never populated, so `hasOverflow` is always false.) */}
-      <nav className="hidden xl:flex items-center gap-1">
+      <nav
+        className="hidden xl:flex items-center gap-1 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {/* Dashboard */}
         <Link
           href="/dashboard"
@@ -316,7 +318,7 @@ export function TopNavbar() {
       </nav>
 
       {/* Right side */}
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         <CommandPaletteButton />
         <ClockWidget />
         <LanguageSwitcher />

@@ -116,7 +116,7 @@ export default function BillingPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {t(
               'billing.subtitle',
-              'You pay for the people who use HBCField, what each space switches on, and any add-ons.',
+              'You pay for the people who use HBCField, what each workspace switches on, and any add-ons.',
             )}
           </p>
         </div>

@@ -136,7 +136,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-foreground">
-            {t("locations.workflows.title", "Task types in this space")}
+            {t("locations.workflows.title", "Task types in this workspace")}
           </p>
           <p className="text-xs text-muted-foreground">
             {t("locations.workflows.hint", "New tasks here use the default unless another is chosen.")}
@@ -181,7 +181,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                       )}
                       title={
                         isLocal
-                          ? t("locations.workflows.localHint", "Only this space uses it. Edits stay here.")
+                          ? t("locations.workflows.localHint", "Only this workspace uses it. Edits stay here.")
                           : t("locations.workflows.sharedHint", "Shared with the organization. Editing it changes it everywhere it is offered.")
                       }
                     >
@@ -216,7 +216,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                     size="sm"
                     className="h-7 shrink-0 text-xs"
                     disabled={busy}
-                    title={t("locations.workflows.shareHint", "Let any space in the organization offer this one definition")}
+                    title={t("locations.workflows.shareHint", "Let any workspace in the organization offer this one definition")}
                     onClick={() => share.mutate(wf.id)}
                   >
                     <Globe className="mr-1 size-3" />
@@ -240,7 +240,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                   size="sm"
                   className={cn("h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-red-600")}
                   disabled={busy}
-                  title={t("locations.workflows.remove", "Remove from this space")}
+                  title={t("locations.workflows.remove", "Remove from this workspace")}
                   onClick={() => detach.mutate(wf.id)}
                 >
                   <Trash2 className="size-3.5" />

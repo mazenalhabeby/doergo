@@ -157,9 +157,9 @@
       "addressPlaceholder": "123 avenue des Affaires",
       "submitButton": "Créer une organisation",
       "failedToCreate": "Échec de la création de l'organisation",
-      "firstSpaceLabel": "Votre premier espace",
+      "firstSpaceLabel": "Votre premier espace de travail",
       "firstSpacePlaceholder": "ex. Bureau principal",
-      "firstSpaceHint": "Renommez-le ou ajoutez d'autres espaces plus tard.",
+      "firstSpaceHint": "Renommez-le ou ajoutez d'autres espaces de travail plus tard.",
       "typeLabel": "Type",
       "typeWorkspace": "Espace de travail",
       "typeWorkspaceDesc": "Une équipe ou un projet",
@@ -232,7 +232,7 @@
       "recentTasks": "Tâches récentes",
       "noTasksYet": "Aucune tâche pour l'instant. Créez-en une pour commencer !",
       "setUpWorkspace": "Configurez votre espace de travail",
-      "setUpWorkspaceSub": "Créez des espaces et affectez votre équipe pour suivre chacun en temps réel.",
+      "setUpWorkspaceSub": "Créez des espaces de travail et affectez votre équipe pour suivre chacun en temps réel.",
       "activity": {
         "actions": {
           "IN_PROGRESS": "a commencé à travailler sur",
@@ -517,7 +517,7 @@
     "titleRequired": "Veuillez saisir un titre de tâche.",
     "successMessage": "Tâche créée avec succès !",
     "failedToCreate": "Échec de la création de la tâche",
-    "spaceLabel": "Espace",
+    "spaceLabel": "Espace de travail",
     "spaceCount": "{{count}} disponibles"
   },
   "attendance": {
@@ -629,7 +629,7 @@
       "openSettings": "Ouvrir les réglages",
       "notNow": "Pas maintenant"
     },
-    "unknownLocation": "cet espace",
+    "unknownLocation": "cet espace de travail",
     "clockedInRemotely": "Pointé à distance"
   },
   "overtime": {
@@ -903,8 +903,8 @@
         "employee": "Employé",
         "jobTitleLabel": "Intitulé du poste (facultatif)",
         "jobTitlePlaceholder": "ex. Électricien",
-        "spaceLabel": "Espace (facultatif)",
-        "noSpace": "Aucun espace",
+        "spaceLabel": "Espace de travail (facultatif)",
+        "noSpace": "Aucun espace de travail",
         "generateButton": "Générer le code",
         "tapToCopy": "Appuyez pour copier · Expire dans 3 jours",
         "shareMessage": "Rejoignez avec le code d'invitation : {{code}}"
@@ -1126,8 +1126,8 @@
   ],
   "team": {
     "title": "Équipe",
-    "subtitle": "Coéquipiers dans vos espaces.",
-    "empty": "Aucun coéquipier dans vos espaces pour l'instant.",
+    "subtitle": "Coéquipiers dans vos espaces de travail.",
+    "empty": "Aucun coéquipier dans vos espaces de travail pour l'instant.",
     "managers": "Responsables",
     "members": "Équipe",
     "messagingSoon": "Messagerie bientôt disponible",
@@ -1187,7 +1187,7 @@
     },
     "external": "Externe",
     "closed": "Fermée",
-    "conversationClosed": "Cet espace n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents.",
+    "conversationClosed": "Cet espace de travail n’est plus partagé, cette conversation est donc fermée. Vous pouvez toujours lire les messages précédents.",
     "externalMember": "Dans une autre organisation"
   },
   "locationConsent": {
@@ -1400,7 +1400,7 @@
       "facilities": "Bâtiments et installations",
       "cleaning": "Nettoyage",
       "security": "Sécurité et gardiennage",
-      "grounds": "Jardins et espaces verts",
+      "grounds": "Jardins et espaces de travail verts",
       "construction": "Construction",
       "it": "Informatique et télécoms",
       "solar": "Solaire et énergie",
@@ -1434,7 +1434,7 @@
       "deliveries": "Livraisons",
       "treatments": "Traitements",
       "followUps": "Suivis",
-      "grounds": "Espaces verts",
+      "grounds": "Espaces de travail verts",
       "jobs": "Interventions"
     },
     "tools": {

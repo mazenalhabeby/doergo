@@ -632,7 +632,7 @@ function Thread({ conversation, meId }: { conversation: ChatConversation; meId: 
           <p className="text-center text-xs text-muted-foreground">
             {t(
               'chat.conversationClosed',
-              'This space is no longer shared, so this conversation is closed. You can still read what was said.',
+              'This workspace is no longer shared, so this conversation is closed. You can still read what was said.',
             )}
           </p>
         </div>

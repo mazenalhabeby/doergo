@@ -63,12 +63,12 @@ export function SpaceLifecycleDialog({
         <DialogHeader>
           <DialogTitle>
             {mode === "purge"
-              ? t("locations.purgeSpace", "Delete space permanently")
+              ? t("locations.purgeSpace", "Delete workspace permanently")
               : t("locations.danger.dialogTitle", { name: space.name })}
           </DialogTitle>
           <DialogDescription>
             {mode === "purge"
-              ? t("locations.danger.purgeDialogDesc", "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead.")
+              ? t("locations.danger.purgeDialogDesc", "This permanently removes the workspace. It only succeeds while the workspace has no tasks, attendance or shift history — otherwise archive it instead.")
               : t("locations.danger.dialogDesc")}
           </DialogDescription>
         </DialogHeader>

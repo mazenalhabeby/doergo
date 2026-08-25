@@ -77,7 +77,7 @@ export function FeatureMatrix() {
                   ? t('home.groups.from', 'from {{price}}', { price: formatCents(from) })
                   : formatCents(from)}
               </span>
-              <span className="text-foreground/40"> {t('home.groups.perSpace', '/ space / month')}</span>
+              <span className="text-foreground/40"> {t('home.groups.perSpace', '/ workspace / month')}</span>
             </p>
 
             {g.note && <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/35">{g.note}</p>}

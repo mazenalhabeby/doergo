@@ -157,9 +157,9 @@
       "addressPlaceholder": "123 Business Ave",
       "submitButton": "Create Organization",
       "failedToCreate": "Failed to create organization",
-      "firstSpaceLabel": "Your first space",
+      "firstSpaceLabel": "Your first workspace",
       "firstSpacePlaceholder": "e.g. Main Office",
-      "firstSpaceHint": "Rename it or add more spaces later.",
+      "firstSpaceHint": "Rename it or add more workspaces later.",
       "typeLabel": "Type",
       "typeWorkspace": "Workspace",
       "typeWorkspaceDesc": "A team or project",
@@ -232,7 +232,7 @@
       "recentTasks": "Recent Tasks",
       "noTasksYet": "No tasks yet. Create one to get started!",
       "setUpWorkspace": "Set up your workspace",
-      "setUpWorkspaceSub": "Create spaces and assign your team to track everyone in real time.",
+      "setUpWorkspaceSub": "Create workspaces and assign your team to track everyone in real time.",
       "activity": {
         "actions": {
           "IN_PROGRESS": "started working on",
@@ -517,7 +517,7 @@
     "titleRequired": "Please enter a task title.",
     "successMessage": "Task created successfully!",
     "failedToCreate": "Failed to create task",
-    "spaceLabel": "Space",
+    "spaceLabel": "Workspace",
     "spaceCount": "{{count}} available"
   },
   "attendance": {
@@ -629,7 +629,7 @@
       "openSettings": "Open Settings",
       "notNow": "Not now"
     },
-    "unknownLocation": "this space",
+    "unknownLocation": "this workspace",
     "clockedInRemotely": "Clocked in remotely"
   },
   "overtime": {
@@ -903,8 +903,8 @@
         "employee": "Employee",
         "jobTitleLabel": "Job Title (optional)",
         "jobTitlePlaceholder": "e.g. Electrician",
-        "spaceLabel": "Space (optional)",
-        "noSpace": "No space",
+        "spaceLabel": "Workspace (optional)",
+        "noSpace": "No workspace",
         "generateButton": "Generate Code",
         "tapToCopy": "Tap to copy · Expires in 3 days",
         "shareMessage": "Join with invitation code: {{code}}"
@@ -1130,8 +1130,8 @@
   ],
   "team": {
     "title": "Team",
-    "subtitle": "Teammates in your spaces.",
-    "empty": "No teammates in your spaces yet.",
+    "subtitle": "Teammates in your workspaces.",
+    "empty": "No teammates in your workspaces yet.",
     "managers": "Managers",
     "members": "Team",
     "messagingSoon": "Messaging coming soon",
@@ -1191,7 +1191,7 @@
     },
     "external": "External",
     "closed": "Closed",
-    "conversationClosed": "This space is no longer shared, so this conversation is closed. You can still read what was said.",
+    "conversationClosed": "This workspace is no longer shared, so this conversation is closed. You can still read what was said.",
     "externalMember": "At another organization"
   },
   "locationConsent": {

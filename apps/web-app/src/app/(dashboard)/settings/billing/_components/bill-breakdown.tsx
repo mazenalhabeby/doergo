@@ -71,8 +71,8 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
           />
           <Part
             icon={<Boxes className="h-4 w-4" />}
-            label={t('billing.bill.spaces', 'Spaces')}
-            detail={t('billing.bill.spacesDetail_other', '{{count}} spaces', { count: bill.spaces.length })}
+            label={t('billing.bill.spaces', 'Workspaces')}
+            detail={t('billing.bill.spacesDetail_other', '{{count}} workspaces', { count: bill.spaces.length })}
             cents={bill.spacesMonthlyCents + bill.usageMonthlyCents}
           />
           <Part
@@ -88,7 +88,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
       {bill.spaces.length > 0 && (
         <div className="rounded-xl border border-border bg-card">
           <p className="border-b border-border px-5 py-3 text-sm font-semibold text-foreground">
-            {t('billing.bill.bySpace', 'By space')}
+            {t('billing.bill.bySpace', 'By workspace')}
           </p>
           <ul className="divide-y divide-border">
             {bill.spaces.map((s) => {
@@ -122,7 +122,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
                   )}
                   {s.cost.lines.length === 0 && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {t('billing.bill.noModules', 'Nothing switched on — this space is free')}
+                      {t('billing.bill.noModules', 'Nothing switched on — this workspace is free')}
                     </p>
                   )}
                 </li>

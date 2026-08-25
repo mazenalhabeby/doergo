@@ -77,11 +77,11 @@
         {
           "kicker": "Control room",
           "title": "Your whole operation, in real time.",
-          "body": "A live activity feed, pending approvals and every space at a glance — the office view of the field."
+          "body": "A live activity feed, pending approvals and every workspace at a glance — the office view of the field."
         },
         {
           "kicker": "Planning",
-          "title": "Plan across every space.",
+          "title": "Plan across every workspace.",
           "body": "A timeline across all your sites, recurring jobs and availability — capacity you can actually see."
         }
       ]
@@ -167,7 +167,7 @@
         {
           "kicker": "Team",
           "title": "The whole crew, one tap away.",
-          "body": "Message or call any teammate across every space, straight from the field."
+          "body": "Message or call any teammate across every workspace, straight from the field."
         }
       ]
     },
@@ -397,7 +397,7 @@
     "pricing": {
       "label": "(07) — Pricing",
       "heading": "Pay for what you switch on.",
-      "lead": "No plans, no tiers, nothing locked behind an upgrade. €9.99 for each person who uses HBCField, plus whatever each of your spaces actually turns on. 14-day trial, no card.",
+      "lead": "No plans, no tiers, nothing locked behind an upgrade. €9.99 for each person who uses HBCField, plus whatever each of your workspaces actually turns on. 14-day trial, no card.",
       "outcomes": [
         {
           "title": "End the status-call chaos",
@@ -422,16 +422,16 @@
           "desc": "Office or field, same price. No seat types to argue about."
         },
         {
-          "name": "Each space",
+          "name": "Each workspace",
           "price": "from €3",
           "unit": "/ module / mo",
-          "desc": "A space is a site, a project or a client. Each pays for exactly what it switched on — and stops when you switch it off."
+          "desc": "A workspace is a site, a project or a client. Each pays for exactly what it switched on — and stops when you switch it off."
         },
         {
           "name": "Company add-ons",
           "price": "from €9",
           "unit": "/ mo",
-          "desc": "Invoicing, workflows, the audit log. Bought once, however many spaces you run."
+          "desc": "Invoicing, workflows, the audit log. Bought once, however many workspaces you run."
         }
       ],
       "seePrices": "See every price"
@@ -497,7 +497,7 @@
       "seeAll": "See every price"
     },
     "groups": {
-      "perSpace": "/ space / month",
+      "perSpace": "/ workspace / month",
       "from": "from {{price}}",
       "where": {
         "title": "Know where everyone is",
@@ -524,7 +524,7 @@
       "office": {
         "title": "Handle the office side",
         "body": "Invoices from finished work, jobs that repeat themselves, rotas, and a record of who changed what.",
-        "note": "Bought once for the company, not per space."
+        "note": "Bought once for the company, not per workspace."
       },
       "share": {
         "title": "Work with another company",
@@ -637,7 +637,7 @@
     "toggleSidebar": "Toggle Sidebar",
     "accessDenied": "Access Denied",
     "noPermissionView": "You don't have permission to view this page.",
-    "allSpaces": "All Spaces",
+    "allSpaces": "All Workspaces",
     "pickColor": "Pick color",
     "more": "More",
     "goHome": "Go Home",
@@ -844,7 +844,7 @@
       "endYourSession": "End your session",
       "billing": "Subscription & billing"
     },
-    "spaces": "Spaces",
+    "spaces": "Workspaces",
     "customers": "Customers",
     "reports": "Reports",
     "timeOff": "Time Off",
@@ -932,21 +932,21 @@
     },
     "client": {
       "myTasks": "My Tasks",
-      "mySpaces": "My Spaces",
+      "mySpaces": "My Workspaces",
       "viewAll": "View all →",
       "setupTitleLine1": "Set up your",
       "setupTitleLine2": "workspace",
-      "setupDescription": "Create spaces, add your team, and track everyone in real time — all from one view.",
-      "addSpace": "Add Space",
+      "setupDescription": "Create workspaces, add your team, and track everyone in real time — all from one view.",
+      "addSpace": "Add Workspace",
       "inviteTeam": "Invite Team",
-      "newSpace": "New Space",
-      "exampleLabel": "Example — this is how a space looks",
+      "newSpace": "New Workspace",
+      "exampleLabel": "Example — this is how a workspace looks",
       "exampleSpaceName": "Main Office",
       "exampleOnShift": "On shift",
       "exampleInField": "In field",
       "exampleJob": "AC unit repair — Downtown",
-      "noSpacesTitle": "No spaces assigned yet",
-      "noSpacesDescription": "You haven't been added to a space. Check the Tasks tab for your assigned work, or ask your manager to add you.",
+      "noSpacesTitle": "No workspaces assigned yet",
+      "noSpacesDescription": "You haven't been added to a workspace. Check the Tasks tab for your assigned work, or ask your manager to add you.",
       "assignSaved": "Team updated",
       "assignPartial": "{{ok}} saved, {{failed}} failed"
     },
@@ -1089,12 +1089,12 @@
       "errorMessage": "Failed to create task. Please try again.",
       "fillRequiredFields": "Please fill in all required fields",
       "dialogDescription": "Create a new task for your organization",
-      "selectSpace": "Select a space",
+      "selectSpace": "Select a workspace",
       "taskType": "Task type",
-      "taskTypeInherit": "Space default",
+      "taskTypeInherit": "Workspace default",
       "type": "Type",
       "auto": "Auto",
-      "autoFromSpace": "Auto (from space)",
+      "autoFromSpace": "Auto (from workspace)",
       "assignment": "Assignment",
       "assignedToYou": "Assigned to you",
       "assignedToYouFull": "This task will be assigned to you",
@@ -1209,7 +1209,7 @@
     },
     "page": {
       "heading": "Tasks",
-      "subtitle": "Manage tasks across spaces — create, assign, and track progress.",
+      "subtitle": "Manage tasks across workspaces — create, assign, and track progress.",
       "searchPlaceholder": "Search...",
       "recurring": "Recurring",
       "newTask": "New Task",
@@ -1228,7 +1228,7 @@
       "epic": "Epic",
       "assignee": "Assignee",
       "priority": "Priority",
-      "space": "Space"
+      "space": "Workspace"
     },
     "fallbackColumns": {
       "open": "Open",
@@ -1264,8 +1264,8 @@
       "epicRemoved": "Epic removed",
       "pointsSet": "Set to {{points}} points",
       "pointsCleared": "Points cleared",
-      "movedToSpace": "Moved to space",
-      "spaceRemoved": "Space removed",
+      "movedToSpace": "Moved to workspace",
+      "spaceRemoved": "Workspace removed",
       "taskDeleted": "Task deleted",
       "updatesFailed": "{{failed}} of {{total}} updates failed",
       "deletesFailed": "{{failed}} of {{total}} deletes failed",
@@ -1389,7 +1389,7 @@
       "planning": "Planning",
       "backlog": "Backlog",
       "noEpic": "No Epic",
-      "noSpace": "No Space",
+      "noSpace": "No Workspace",
       "noTasksToGroup": "No tasks to group",
       "noTasksToGroupHint": "There are no tasks matching the current filters to organize into groups.",
       "newSprint": "New Sprint",
@@ -1525,12 +1525,12 @@
       "dayOfWeek": "Day of week",
       "dayOfMonth": "Day of month",
       "endDateOptional": "End date (optional)",
-      "generatesHint": "Generates a task in the chosen space & type on this schedule. Due date & attachments don't apply.",
+      "generatesHint": "Generates a task in the chosen workspace & type on this schedule. Due date & attachments don't apply.",
       "created": "Recurring task created",
       "createdDescription": "It will generate on schedule.",
       "createFailed": "Could not create recurring task",
       "createButton": "Create Recurring Task",
-      "noSpace": "No space",
+      "noSpace": "No workspace",
       "defaultType": "Default type",
       "nextRun": "Next: {{date}}",
       "checklistItemsCount": "{{count}} checklist items",
@@ -1550,7 +1550,7 @@
       "pageTitle": "Recurring Tasks",
       "pageSubtitle": "Automate task creation on a schedule",
       "newTemplate": "New Template",
-      "emptyInSpace": "No recurring templates in this space",
+      "emptyInSpace": "No recurring templates in this workspace",
       "emptyTitle": "No recurring templates yet",
       "emptyHint": "Create templates to automatically generate tasks on a daily, weekly, monthly, or custom schedule.",
       "createFirst": "Create Your First Template",
@@ -1642,18 +1642,18 @@
       "assignTo": "Assign to",
       "backlog": "Backlog",
       "delete": "Delete",
-      "moveToSpace": "Move to Space",
+      "moveToSpace": "Move to Workspace",
       "moveToSprint": "Move to Sprint",
       "newTask": "New Task",
       "noEpic": "No Epic",
       "noPhase": "No Phase",
-      "noSpace": "No Space",
+      "noSpace": "No Workspace",
       "none": "None",
       "open": "Open",
       "priority": "Priority",
       "setEpic": "Set Epic",
       "setPhase": "Set Phase",
-      "space": "Space",
+      "space": "Workspace",
       "sprint": "Sprint",
       "status": "Status",
       "storyPoints": "Story Points",
@@ -2045,8 +2045,8 @@
     "searchPlaceholder": "Search by name or email...",
     "watchers": {
       "title": "Notifications about {{name}}",
-      "hint": "Choose who is alerted about this member (approvals, geofence, …). If no one is selected here, only the recipients configured on the member's spaces are notified — there is no automatic fallback to org admins.",
-      "usingDefault": "No one selected — space routing only",
+      "hint": "Choose who is alerted about this member (approvals, geofence, …). If no one is selected here, only the recipients configured on the member's workspaces are notified — there is no automatic fallback to org admins.",
+      "usingDefault": "No one selected — workspace routing only",
       "noManagers": "No admins or managers to assign yet.",
       "saved": "Notification recipients updated"
     },
@@ -2088,7 +2088,7 @@
       "joined": "Joined",
       "title": "Title",
       "schedule": "Schedule",
-      "spaces": "Spaces"
+      "spaces": "Workspaces"
     },
     "roles": {
       "admin": "Admin",
@@ -2137,10 +2137,10 @@
       "remove": "Remove"
     },
     "team": "Team",
-    "teamSubtitle": "Manage your team members — assign roles, permissions, and spaces.",
+    "teamSubtitle": "Manage your team members — assign roles, permissions, and workspaces.",
     "inviteShort": "Invite",
     "you": "you",
-    "noSpaces": "No spaces",
+    "noSpaces": "No workspaces",
     "schedule": {
       "fixed": "Fixed",
       "flexible": "Flexible"
@@ -2148,7 +2148,7 @@
     "bulk": {
       "selected": "{{count}} selected",
       "role": "Role",
-      "space": "Space",
+      "space": "Workspace",
       "removeConfirm": "Remove {{count}} member(s) from the organization?",
       "access": "Access",
       "accessTitle": "Bulk access",
@@ -2156,7 +2156,7 @@
     },
     "empty": {
       "title": "Build your team",
-      "description": "Add team members and assign them to spaces. Each member can have different roles and permissions."
+      "description": "Add team members and assign them to workspaces. Each member can have different roles and permissions."
     },
     "pendingInvitations": {
       "title": "Pending Invitations",
@@ -2175,8 +2175,8 @@
       "revokeFailed": "Failed to revoke invitation",
       "roleUpdated": "role updated",
       "updateRolesFailed": "Failed to update roles",
-      "assignedToSpace": "Assigned {{count}} member(s) to space",
-      "assignFailed": "Failed to assign to space",
+      "assignedToSpace": "Assigned {{count}} member(s) to workspace",
+      "assignFailed": "Failed to assign to workspace",
       "removedCount": "Removed {{count}} member(s)",
       "removeMembersFailed": "Failed to remove members",
       "bulkPartial": "{{ok}} updated, {{failed}} failed"
@@ -2328,9 +2328,9 @@
       "positionLabel": "Position",
       "positionPlaceholder": "e.g. Plumber, Field Technician",
       "optional": "(optional)",
-      "spaceLabel": "Space",
-      "spacePlaceholder": "Assign to a space on join",
-      "noSpace": "No space",
+      "spaceLabel": "Workspace",
+      "spacePlaceholder": "Assign to a workspace on join",
+      "noSpace": "No workspace",
       "sending": "Sending...",
       "sendInvitation": "Send Invitation",
       "generateCode": "Generate Code",
@@ -2725,11 +2725,11 @@
     "firstNameRequired": "First name is required",
     "firstNameMinLength": "First name must be at least 2 characters",
     "firstNameMaxLength": "First name must not exceed 50 characters",
-    "firstNameInvalid": "First name can only contain letters, spaces, hyphens, and apostrophes",
+    "firstNameInvalid": "First name can only contain letters, workspaces, hyphens, and apostrophes",
     "lastNameRequired": "Last name is required",
     "lastNameMinLength": "Last name must be at least 2 characters",
     "lastNameMaxLength": "Last name must not exceed 50 characters",
-    "lastNameInvalid": "Last name can only contain letters, spaces, hyphens, and apostrophes",
+    "lastNameInvalid": "Last name can only contain letters, workspaces, hyphens, and apostrophes",
     "companyNameRequired": "Company name is required",
     "companyNameMinLength": "Company name must be at least 2 characters",
     "companyNameMaxLength": "Company name must not exceed 100 characters",
@@ -3266,8 +3266,8 @@
       "INVITATION_ACCEPTED": "Invitation Accepted",
       "JOIN_REQUEST_APPROVED": "Join Approved",
       "JOIN_REQUEST_REJECTED": "Join Rejected",
-      "SPACE_CREATED": "Space Created",
-      "SPACE_DELETED": "Space Deleted",
+      "SPACE_CREATED": "Workspace Created",
+      "SPACE_DELETED": "Workspace Deleted",
       "RECURRING_CREATED": "Recurring Created",
       "RECURRING_DELETED": "Recurring Deleted",
       "RECURRING_GENERATED": "Recurring Generated",
@@ -3293,10 +3293,10 @@
       "longitude": "Longitude",
       "hint": "Search above, click on the map, or enter the address and coordinates manually."
     },
-    "title": "Spaces",
-    "subtitle": "Manage your workspaces — each space has its own workflow, modules, and team.",
-    "newSpace": "New Space",
-    "createSpace": "Create Space",
+    "title": "Workspaces",
+    "subtitle": "Manage your workspaces — each workspace has its own workflow, modules, and team.",
+    "newSpace": "New Workspace",
+    "createSpace": "Create Workspace",
     "createDescription": "Set up a new workspace with its own workflow and modules.",
     "configure": "Configure",
     "viewTasks": "View Tasks",
@@ -3306,23 +3306,23 @@
     "statusCountSuffix_one": " ({{count}} status)",
     "statusCountSuffix_other": " ({{count}} statuses)",
     "configureTitle": "Configure — {{name}}",
-    "configureDescription": "Manage this space's settings, modules, workflow, and team members.",
+    "configureDescription": "Manage this workspace's settings, modules, workflow, and team members.",
     "name": "Name",
     "address": "Address",
     "geofenceRadius": "Geofence Radius",
     "timezone": "Timezone",
-    "activeLabel": "Space status",
-    "activeHint": "Archived spaces are hidden from pickers; all history is kept. Archive or restore in the Danger zone below.",
+    "activeLabel": "Workspace status",
+    "activeHint": "Archived workspaces are hidden from pickers; all history is kept. Archive or restore in the Danger zone below.",
     "nameRequired": "Name is required",
-    "modulesIntro": "Modules add optional features to this space's tasks. Pick a preset, then fine-tune.",
+    "modulesIntro": "Modules add optional features to this workspace's tasks. Pick a preset, then fine-tune.",
     "presets": "Presets",
     "currentWorkflow": "Current Workflow",
     "statusesWithCount": "Statuses ({{count}})",
     "editWorkflow": "Edit Workflow",
     "resyncTasks": "Re-sync existing tasks",
-    "resyncTasksHint": "Move this space's existing tasks onto this workflow's columns.",
+    "resyncTasksHint": "Move this workspace's existing tasks onto this workflow's columns.",
     "resyncTasksConfirmTitle": "Re-sync tasks to this workflow?",
-    "resyncTasksConfirmDescription": "Every task in this space will be moved onto this workflow. Statuses that don't match will be reset to the workflow's first status. This can't be undone.",
+    "resyncTasksConfirmDescription": "Every task in this workspace will be moved onto this workflow. Statuses that don't match will be reset to the workflow's first status. This can't be undone.",
     "createNew": "Create New",
     "membersWithCount": "Members ({{count}})",
     "noMembers": "No members assigned yet",
@@ -3342,8 +3342,8 @@
       "members": "Members"
     },
     "empty": {
-      "title": "Create your first space",
-      "description": "Spaces are where work happens — offices, warehouses, job sites. Each space can have its own workflow, modules, and team."
+      "title": "Create your first workspace",
+      "description": "Workspaces are where work happens — offices, warehouses, job sites. Each workspace can have its own workflow, modules, and team."
     },
     "form": {
       "namePlaceholder": "e.g. Main Office, Downtown Crew",
@@ -3357,7 +3357,7 @@
       "geofenceHint": "Workers can clock in within this distance of the pin.",
       "advancedModules": "Advanced — Modules",
       "enabledCount": "{{count}} enabled",
-      "modulesIntro": "Modules add optional features to this space's tasks (checklists, GPS tracking, sprints…). Start from a preset, then fine-tune below.",
+      "modulesIntro": "Modules add optional features to this workspace's tasks (checklists, GPS tracking, sprints…). Start from a preset, then fine-tune below.",
       "ownership": "Ownership",
       "kindProject": "My project",
       "kindCompany": "My company",
@@ -3371,7 +3371,7 @@
       "billableRateHint": "Auto-prices labor lines on this customer's invoices. Leave empty to use the organization default."
     },
     "toast": {
-      "updated": "Space updated",
+      "updated": "Workspace updated",
       "updateFailed": "Failed to update",
       "modulesUpdated": "Modules updated",
       "modulesUpdateFailed": "Failed to update modules",
@@ -3383,15 +3383,15 @@
       "memberAddFailed": "Failed to add member",
       "memberRemoved": "Member removed",
       "memberRemoveFailed": "Failed to remove member",
-      "created": "Space created",
-      "createFailed": "Failed to create space",
-      "resyncAllDone": "Re-synced {{updated}} task(s) across {{spaces}} space(s)",
-      "purged": "Space permanently deleted",
-      "purgeFailed": "Could not delete space",
-      "archived": "Space archived",
-      "archiveFailed": "Could not archive the space",
-      "restored": "Space restored",
-      "restoreFailed": "Could not restore the space"
+      "created": "Workspace created",
+      "createFailed": "Failed to create workspace",
+      "resyncAllDone": "Re-synced {{updated}} task(s) across {{spaces}} workspace(s)",
+      "purged": "Workspace permanently deleted",
+      "purgeFailed": "Could not delete workspace",
+      "archived": "Workspace archived",
+      "archiveFailed": "Could not archive the workspace",
+      "restored": "Workspace restored",
+      "restoreFailed": "Could not restore the workspace"
     },
     "workflowLabel": "Workflow",
     "selectWorkflow": "Select workflow...",
@@ -3399,60 +3399,60 @@
     "statusCount_one": "{{count}} status",
     "statusCount_other": "{{count}} statuses",
     "createNewWorkflow": "Create new workflow",
-    "resyncAllTasks": "Re-sync all spaces",
-    "resyncAllTasksHint": "Update every space’s tasks to match its workflow",
-    "resyncAllTasksConfirmTitle": "Re-sync all spaces?",
-    "resyncAllTasksConfirmDescription": "This re-syncs every task in every space onto its space’s workflow. Statuses that don’t exist in a space’s workflow are reset to that workflow’s first stage — Completed and Canceled tasks are preserved.",
-    "spaceSettings": "Space settings",
+    "resyncAllTasks": "Re-sync all workspaces",
+    "resyncAllTasksHint": "Update every workspace’s tasks to match its workflow",
+    "resyncAllTasksConfirmTitle": "Re-sync all workspaces?",
+    "resyncAllTasksConfirmDescription": "This re-syncs every task in every workspace onto its workspace’s workflow. Statuses that don’t exist in a workspace’s workflow are reset to that workflow’s first stage — Completed and Canceled tasks are preserved.",
+    "spaceSettings": "Workspace settings",
     "selectTimezone": "Select timezone",
     "searchTimezone": "Search timezone…",
     "timezoneAutoHint": "Auto-filled from the map. Search to override.",
-    "detailsSection": "Space details",
+    "detailsSection": "Workspace details",
     "locationSection": "Location & timezone",
     "locationHint": "Search an address or drop a pin — the timezone fills in from the location.",
     "modulesEnabledCount": "{{count}} enabled",
-    "detailsHint": "Name this space. Its status is managed in the Danger zone below.",
-    "workflowHint": "Choose the task board columns members see in this space, or build a new one.",
-    "typeSection": "Space type",
+    "detailsHint": "Name this workspace. Its status is managed in the Danger zone below.",
+    "workflowHint": "Choose the task board columns members see in this workspace, or build a new one.",
+    "typeSection": "Workspace type",
     "typeHint": "Is this a physical site with an address, or a logical workspace?",
     "timezoneOnlyHint": "The timezone used to display this workspace’s times.",
     "timezoneManualHint": "Used to display attendance and task times for this workspace.",
     "danger": {
       "title": "Danger zone",
       "hint": "Irreversible and destructive actions.",
-      "deleteTitle": "Archive this space",
-      "deleteHint": "Deactivates the space and hides it from pickers. History stays intact and its tasks move to your default space. You can reactivate it later.",
-      "lockedDefault": "This is your default space — it holds unassigned tasks and can’t be deleted.",
-      "lockedRemote": "This is the Remote space — it’s required for remote clock-ins and can’t be deleted.",
-      "deleteButton": "Archive space",
+      "deleteTitle": "Archive this workspace",
+      "deleteHint": "Deactivates the workspace and hides it from pickers. History stays intact and its tasks move to your default workspace. You can reactivate it later.",
+      "lockedDefault": "This is your default workspace — it holds unassigned tasks and can’t be deleted.",
+      "lockedRemote": "This is the Remote workspace — it’s required for remote clock-ins and can’t be deleted.",
+      "deleteButton": "Archive workspace",
       "dialogTitle": "Archive “{{name}}”?",
-      "dialogDesc": "The space is deactivated and removed from pickers. All history is kept and you can reactivate it any time.",
-      "tasksMoved": "{{count}} task(s) in this space will move to your default space.",
-      "tasksNone": "This space has no tasks.",
+      "dialogDesc": "The workspace is deactivated and removed from pickers. All history is kept and you can reactivate it any time.",
+      "tasksMoved": "{{count}} task(s) in this workspace will move to your default workspace.",
+      "tasksNone": "This workspace has no tasks.",
       "confirmLabel": "Type “{{name}}” to confirm",
-      "confirmButton": "Archive space",
+      "confirmButton": "Archive workspace",
       "deleting": "Working…",
-      "deleted": "Space archived",
-      "deleteFailed": "Could not archive the space",
-      "purgeHint": "Removes the space forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.",
-      "purgeDialogDesc": "This permanently removes the space. It only succeeds while the space has no tasks, attendance or shift history — otherwise archive it instead.",
-      "restoreTitle": "Restore this space",
-      "restoreHint": "This space is archived. Restoring makes it active and visible in pickers again."
+      "deleted": "Workspace archived",
+      "deleteFailed": "Could not archive the workspace",
+      "purgeHint": "Removes the workspace forever. Only possible while it has no tasks, attendance or shift history. This cannot be undone.",
+      "purgeDialogDesc": "This permanently removes the workspace. It only succeeds while the workspace has no tasks, attendance or shift history — otherwise archive it instead.",
+      "restoreTitle": "Restore this workspace",
+      "restoreHint": "This workspace is archived. Restoring makes it active and visible in pickers again."
     },
     "ownershipSection": "Ownership",
     "ownershipHint": "Is this a project, your own company, or a customer company you do work for?",
-    "purgeSpace": "Delete space permanently",
+    "purgeSpace": "Delete workspace permanently",
     "purge": "Delete permanently",
     "archiveAction": "Archive",
     "restoreAction": "Restore",
     "archived": "Archived",
     "workflows": {
-      "title": "Task types in this space",
+      "title": "Task types in this workspace",
       "hint": "New tasks here use the default unless another is chosen.",
       "none": "No task types yet — tasks here use the standard flow.",
       "default": "Default",
       "makeDefault": "Make default",
-      "remove": "Remove from this space",
+      "remove": "Remove from this workspace",
       "addPlaceholder": "Add a task type…",
       "added": "Task type added",
       "removed": "Task type removed",
@@ -3460,19 +3460,19 @@
       "addFailed": "Could not add that task type",
       "removeFailed": "Could not remove that task type",
       "defaultFailed": "Could not change the default",
-      "libraryHint": "Or start from a ready-made task type. You get your own copy in this space — edit it freely, nobody else is affected.",
+      "libraryHint": "Or start from a ready-made task type. You get your own copy in this workspace — edit it freely, nobody else is affected.",
       "libraryPlaceholder": "Choose from the library…",
       "useTemplate": "Use template",
       "onlyHere": "Only here",
       "sharedBadge": "Shared",
-      "localHint": "Only this space uses it. Edits stay here.",
+      "localHint": "Only this workspace uses it. Edits stay here.",
       "sharedHint": "Shared with the organization. Editing it changes it everywhere it is offered.",
       "fork": "Copy here",
-      "forkHint": "Take this space's own copy so you can change it without affecting other spaces",
-      "forked": "\"{{name}}\" is now this space’s own copy — edit it freely.",
+      "forkHint": "Take this workspace's own copy so you can change it without affecting other workspaces",
+      "forked": "\"{{name}}\" is now this workspace’s own copy — edit it freely.",
       "forkFailed": "Could not copy that task type",
       "share": "Share",
-      "shareHint": "Let any space in the organization offer this one definition",
+      "shareHint": "Let any workspace in the organization offer this one definition",
       "shared": "Shared with the organization",
       "shareFailed": "Could not share that task type"
     },
@@ -3489,7 +3489,7 @@
     "select": "Select",
     "goToDashboard": "Go to Dashboard",
     "goToTasks": "Go to Tasks",
-    "goToSpaces": "Go to Spaces",
+    "goToSpaces": "Go to Workspaces",
     "goToSchedule": "Go to Schedule",
     "goToAttendance": "Go to Attendance",
     "goToMembers": "Go to Members",
@@ -3501,7 +3501,7 @@
       "navigation": "Navigation",
       "tasks": "Tasks",
       "sprints": "Sprints",
-      "spaces": "Spaces",
+      "spaces": "Workspaces",
       "quickActions": "Quick Actions",
       "people": "People",
       "tasksResults": "Tasks"
@@ -3513,7 +3513,7 @@
     "addedToSprint": "Added to sprint",
     "epicUpdated": "Epic updated",
     "taskAssigned": "Task assigned",
-    "movedToSpace": "Moved to space",
+    "movedToSpace": "Moved to workspace",
     "taskCreated": "Task created",
     "bulkUpdatedOne": "{{count}} task updated",
     "bulkUpdatedMany": "{{count}} tasks updated",
@@ -3544,7 +3544,7 @@
     "selectDescription": "Select a member to assign this task to.",
     "searchPlaceholder": "Search members...",
     "noMembersFound": "No members found",
-    "spaceMembers": "Space members",
+    "spaceMembers": "Workspace members",
     "otherMembers": "Other members",
     "membersSelected": "{{count}} members selected"
   },
@@ -3562,7 +3562,7 @@
     "platformAccess": "Platform access",
     "permissions": "Permissions",
     "featureTabsLabel": "Feature tabs",
-    "spaceVisibility": "Space visibility",
+    "spaceVisibility": "Workspace visibility",
     "attendance": "Attendance",
     "allowRemoteNeedsClock": "Enable the Clock module above to use remote clock-in.",
     "collaboration": "Collaboration",
@@ -3578,21 +3578,21 @@
     },
     "scopes": {
       "own": {
-        "label": "My spaces only",
-        "desc": "Sees only the spaces they're assigned to."
+        "label": "My workspaces only",
+        "desc": "Sees only the workspaces they're assigned to."
       },
       "tasks": {
         "label": "Tasks only",
-        "desc": "No space view — just their own task list."
+        "desc": "No workspace view — just their own task list."
       },
       "all": {
-        "label": "All spaces",
-        "desc": "Read-only overview of every space."
+        "label": "All workspaces",
+        "desc": "Read-only overview of every workspace."
       }
     },
     "taskScopes": {
       "self": "Their own tasks",
-      "space": "Tasks in their spaces",
+      "space": "Tasks in their workspaces",
       "org": "Any task in the org"
     },
     "perms": {
@@ -3704,7 +3704,7 @@
     "noActiveMembers": "No active members",
     "inFieldCount": "{{count}} in field",
     "offSiteCount": "{{count}} off-site",
-    "manageSpace": "Manage Space",
+    "manageSpace": "Manage Workspace",
     "addMember": "Add Member",
     "viewTasks": "View Tasks",
     "allQuietToday": "All quiet today",
@@ -3793,7 +3793,7 @@
     },
     "page": {
       "title": "Task Types",
-      "subtitle": "Define each task type's status flow, capabilities & fields. Spaces pick a type; tasks can override.",
+      "subtitle": "Define each task type's status flow, capabilities & fields. Workspaces pick a type; tasks can override.",
       "newTaskType": "New Task Type",
       "createTaskType": "Create Task Type",
       "createDescription": "Start from a ready-made template, or build your own from scratch.",
@@ -3861,7 +3861,7 @@
       "localTo": "{{count}} steps · only {{space}} uses it",
       "submitToLibrary": "Offer to library",
       "submitHint": "Offer this flow to other organizations. It is reviewed first.",
-      "spaceSubtitle": "The flows tasks in this space run through. Editing a shared one changes it everywhere it is offered."
+      "spaceSubtitle": "The flows tasks in this workspace run through. Editing a shared one changes it everywhere it is offered."
     },
     "capabilities": {
       "gps": "GPS",
@@ -3878,7 +3878,7 @@
       "reportHint": "Work performed and parts used. Needs Service reports.",
       "form": "Form",
       "formHint": "Visit notes or an outcome form. Needs Custom fields.",
-      "moduleOff": "The \"{{module}}\" module is off in this space, so this cannot happen yet."
+      "moduleOff": "The \"{{module}}\" module is off in this workspace, so this cannot happen yet."
     }
   },
   "assets": {
@@ -4077,8 +4077,8 @@
   },
   "team": {
     "title": "Team",
-    "subtitle": "Teammates in your spaces.",
-    "empty": "No teammates in your spaces yet.",
+    "subtitle": "Teammates in your workspaces.",
+    "empty": "No teammates in your workspaces yet.",
     "callsComingSoon": "Calls coming soon"
   },
   "privacy": {
@@ -4460,7 +4460,7 @@
         "desc": "Team availability and schedules"
       },
       "spaces": {
-        "label": "Spaces",
+        "label": "Workspaces",
         "desc": "Manage workspaces and rosters"
       }
     }
@@ -4726,7 +4726,7 @@
       },
       "manage": {
         "title": "Management hub",
-        "body": "Quick links to everything you manage — members, invitations, join requests, schedule, spaces and more."
+        "body": "Quick links to everything you manage — members, invitations, join requests, schedule, workspaces and more."
       },
       "settings": {
         "title": "Settings",
@@ -4759,16 +4759,16 @@
           "body": "Your home base — a live overview of jobs, your team and today's activity."
         },
         "yourSpaces": {
-          "title": "Your spaces",
-          "body": "Each space groups its jobs, people and reports — click one to open it and see everything inside."
+          "title": "Your workspaces",
+          "body": "Each workspace groups its jobs, people and reports — click one to open it and see everything inside."
         },
         "spaceHeader": {
           "title": "Live headcount",
-          "body": "The header sums up the space at a glance — how many people are assigned, and right now how many are on site, in the field, off-site or off duty. It updates live as people clock in and move."
+          "body": "The header sums up the workspace at a glance — how many people are assigned, and right now how many are on site, in the field, off-site or off duty. It updates live as people clock in and move."
         },
         "openSpace": {
           "title": "On site now",
-          "body": "The main area shows who's physically present at this space right now. A green ring means they're clocked in; the badge shows their hours or current job."
+          "body": "The main area shows who's physically present at this workspace right now. A green ring means they're clocked in; the badge shows their hours or current job."
         },
         "member": {
           "title": "A teammate",
@@ -4780,15 +4780,15 @@
         },
         "offSite": {
           "title": "Off-site",
-          "body": "People working remotely or from another location today — still on the clock, just not at this space."
+          "body": "People working remotely or from another location today — still on the clock, just not at this workspace."
         },
         "offDuty": {
           "title": "Off duty",
           "body": "Who isn't working today — and why (day off, sick, vacation). The reason is visible to managers only."
         },
         "spaceActions": {
-          "title": "Space actions",
-          "body": "From an open space you can manage its settings, add a member, or jump straight to its jobs."
+          "title": "Workspace actions",
+          "body": "From an open workspace you can manage its settings, add a member, or jump straight to its jobs."
         },
         "activity": {
           "title": "Recent activity",
@@ -4808,7 +4808,7 @@
         },
         "spaces": {
           "title": "Work areas",
-          "body": "The spaces that group your jobs, people and reports."
+          "body": "The workspaces that group your jobs, people and reports."
         },
         "reports": {
           "title": "Reports",
@@ -4885,11 +4885,11 @@
           "body": "Need something? Message your manager or a teammate straight from here."
         },
         "yourSpaces": {
-          "title": "Your spaces",
+          "title": "Your workspaces",
           "body": "Your work areas — open one to see its jobs and the people in it."
         },
         "openSpace": {
-          "title": "Inside your space",
+          "title": "Inside your workspace",
           "body": "See your teammates and their status — who's on shift, in the field or off — and tap anyone to get in touch."
         },
         "tasks": {
@@ -5011,55 +5011,55 @@
       }
     },
     "spacesTour": {
-      "title": "Set up your spaces",
+      "title": "Set up your workspaces",
       "steps": {
         "intro": {
-          "title": "Your spaces",
-          "body": "Spaces group your jobs, people and reports — like a site, a department or a project. Everything on a space is scoped to it."
+          "title": "Your workspaces",
+          "body": "Workspaces group your jobs, people and reports — like a site, a department or a project. Everything on a workspace is scoped to it."
         },
         "card": {
-          "title": "A space at a glance",
-          "body": "Each card shows the space's name, whether it's active, how many members it has, its address, and the features (modules) it has turned on."
+          "title": "A workspace at a glance",
+          "body": "Each card shows the workspace's name, whether it's active, how many members it has, its address, and the features (modules) it has turned on."
         },
         "configure": {
           "title": "Configure",
-          "body": "Open the full settings for a space — general details & map, the modules it uses, its job workflow, and the people assigned to it."
+          "body": "Open the full settings for a workspace — general details & map, the modules it uses, its job workflow, and the people assigned to it."
         },
         "viewTasks": {
           "title": "View its jobs",
-          "body": "Jump straight to every job that belongs to this space."
+          "body": "Jump straight to every job that belongs to this workspace."
         },
         "actions": {
           "title": "More actions",
-          "body": "Deactivate a space (it's never hard-deleted) or reactivate it later from here."
+          "body": "Deactivate a workspace (it's never hard-deleted) or reactivate it later from here."
         },
         "create": {
-          "title": "Add a space",
-          "body": "Click New Space to create one — let's walk through the form."
+          "title": "Add a workspace",
+          "body": "Click New Workspace to create one — let's walk through the form."
         },
         "name": {
           "title": "Name it",
-          "body": "Give the space a clear name — a site, team or project."
+          "body": "Give the workspace a clear name — a site, team or project."
         },
         "type": {
           "title": "Workspace or physical",
-          "body": "A Workspace is a logical group (a team or project). A Physical space is a real location with an address and geofence — pick that for on-site attendance."
+          "body": "A Workspace is a logical group (a team or project). A Physical workspace is a real location with an address and geofence — pick that for on-site attendance."
         },
         "physical": {
           "title": "Location & geofence",
-          "body": "For a physical space: set the address, drop the pin on the map, and size the geofence radius — the zone members must be inside to clock in on site."
+          "body": "For a physical workspace: set the address, drop the pin on the map, and size the geofence radius — the zone members must be inside to clock in on site."
         },
         "workflow": {
           "title": "Job workflow",
-          "body": "Choose the status flow jobs in this space follow (New → In Progress → Done…) — or build a custom one right here."
+          "body": "Choose the status flow jobs in this workspace follow (New → In Progress → Done…) — or build a custom one right here."
         },
         "modules": {
           "title": "Features (modules)",
-          "body": "Expand to turn features on or off for this space — subtasks, checklists, attachments, tracking and more, or apply a preset bundle."
+          "body": "Expand to turn features on or off for this workspace — subtasks, checklists, attachments, tracking and more, or apply a preset bundle."
         },
         "submit": {
           "title": "Create it",
-          "body": "Create the space — you can change everything later from Configure."
+          "body": "Create the workspace — you can change everything later from Configure."
         }
       }
     },
@@ -5137,7 +5137,7 @@
         },
         "dimensions": {
           "title": "Group by",
-          "body": "Break the numbers down — by person, space, customer, status… Leave empty for a single grand total."
+          "body": "Break the numbers down — by person, workspace, customer, status… Leave empty for a single grand total."
         },
         "period": {
           "title": "Period",
@@ -5227,7 +5227,7 @@
       "steps": {
         "profile": {
           "title": "Member profile",
-          "body": "Their name, role, status, email and the spaces they belong to. Use Edit to change their profile, work schedule or reset their password."
+          "body": "Their name, role, status, email and the workspaces they belong to. Use Edit to change their profile, work schedule or reset their password."
         },
         "tasks": {
           "title": "Their work",
@@ -5254,8 +5254,8 @@
           "body": "Let them clock in from anywhere without standing at a site geofence (WFH / on the road). Needs the Clock tab enabled above."
         },
         "spaces": {
-          "title": "Space visibility",
-          "body": "How much they can see — only their assigned spaces, those plus spaces from their jobs, or every space in the org."
+          "title": "Workspace visibility",
+          "body": "How much they can see — only their assigned workspaces, those plus workspaces from their jobs, or every workspace in the org."
         },
         "collaboration": {
           "title": "Messaging",
@@ -5295,8 +5295,8 @@
           "body": "Switch between a week view (day-by-day detail) and a month view (the whole month at once)."
         },
         "space": {
-          "title": "Filter by space",
-          "body": "Narrow the calendar to a single space, or show everyone across all of them."
+          "title": "Filter by workspace",
+          "body": "Narrow the calendar to a single workspace, or show everyone across all of them."
         },
         "dateNav": {
           "title": "Move through time",
@@ -5308,11 +5308,11 @@
         },
         "calendar": {
           "title": "The calendar",
-          "body": "Each day shows a bar for available, on time off and not scheduled. Click a day to see exactly who — grouped by space, with their hours."
+          "body": "Each day shows a bar for available, on time off and not scheduled. Click a day to see exactly who — grouped by workspace, with their hours."
         },
         "dayDetail": {
           "title": "Who's on that day",
-          "body": "Opening a day lists everyone grouped by space — their shift hours, time-off reason and status. Click a name to open their profile."
+          "body": "Opening a day lists everyone grouped by workspace — their shift hours, time-off reason and status. Click a name to open their profile."
         },
         "legend": {
           "title": "Colour key",
@@ -5400,9 +5400,9 @@
     }
   },
   "welcome": {
-    "title": "Set up your first space",
-    "subtitle": "A space is where your tasks live — a site, a team, or a project. You can add more anytime.",
-    "createAndContinue": "Create space & continue"
+    "title": "Set up your first workspace",
+    "subtitle": "A workspace is where your tasks live — a site, a team, or a project. You can add more anytime.",
+    "createAndContinue": "Create workspace & continue"
   },
   "presence": {
     "title": "Availability",
@@ -5501,7 +5501,7 @@
     "cannotMessageSelf": "You cannot start a conversation with yourself",
     "external": "External",
     "closed": "Closed",
-    "conversationClosed": "This space is no longer shared, so this conversation is closed. You can still read what was said.",
+    "conversationClosed": "This workspace is no longer shared, so this conversation is closed. You can still read what was said.",
     "externalMember": "At another organization"
   },
   "audit": {
@@ -5618,9 +5618,9 @@
     "catTeamPlaceholder": "HVAC team",
     "catIssuesPlaceholder": "Not cooling, No power",
     "andItsFlow": "and inherit its workflow.",
-    "apartmentLockHint": "To create a Rental / Property (Apartment) portal, turn on the Apartments module for this space first.",
+    "apartmentLockHint": "To create a Rental / Property (Apartment) portal, turn on the Apartments module for this workspace first.",
     "apartmentModuleNeeded": "Needs the Apartments module — this portal manages apartments as its entity.",
-    "apartmentModuleRequired": "Enable the Apartments module for this space to use this type.",
+    "apartmentModuleRequired": "Enable the Apartments module for this workspace to use this type.",
     "changeCover": "Change",
     "changeType": "Change type",
     "changeTypeHint": "Switching replaces the issue categories with the new type's defaults. Clients and their requests are kept.",
@@ -5640,9 +5640,9 @@
     "deletePortalEmpty": "This portal has no clients or requests yet.",
     "deletePortalStats": "This portal has {{clients}} client(s) and {{requests}} request(s). Their history is kept but they lose access here.",
     "deleted": "Portal deleted",
-    "emptyHintSpace": "Create a portal for this space — pick a type, then invite your clients.",
+    "emptyHintSpace": "Create a portal for this workspace — pick a type, then invite your clients.",
     "enableInModules": "Enable in Modules",
-    "introMulti": "This space's B2C portals. Clients you invite log in to order & follow. Run as many as you need.",
+    "introMulti": "This workspace's B2C portals. Clients you invite log in to order & follow. Run as many as you need.",
     "inviteHint2": "Pick the client and their {{entity}} — or create either — then share the code. The client sets their own name on sign-up.",
     "locked": "Locked",
     "newShort": "New",
@@ -5658,33 +5658,33 @@
     "removeClientWarn": "They immediately lose app access and are detached from this portal (any apartment they held is freed). Their record and history are kept — you can invite them again later.",
     "requestRouted": "Request routed",
     "routesToThisSpace": "Requests route to",
-    "thisSpace": "this space",
+    "thisSpace": "this workspace",
     "title": "Client portal",
     "triageAccept": "Accept & route",
     "triageFlow": "Flow",
-    "triageFlowDefault": "Space default",
-    "triageHint": "Send this request into a space and choose how it should flow, then assign a worker.",
-    "triageNoMembers": "No workers assigned to this space yet. Add members to the space, or leave unassigned.",
-    "triagePickSpace": "Pick a space…",
-    "triagePickSpaceFirst": "Pick a space first",
+    "triageFlowDefault": "Workspace default",
+    "triageHint": "Send this request into a workspace and choose how it should flow, then assign a worker.",
+    "triageNoMembers": "No workers assigned to this workspace yet. Add members to the workspace, or leave unassigned.",
+    "triagePickSpace": "Pick a workspace…",
+    "triagePickSpaceFirst": "Pick a workspace first",
     "triagePriority": "Priority",
-    "triageSpace": "Space",
+    "triageSpace": "Workspace",
     "triageTitle": "Route request",
     "triageUnassigned": "Leave unassigned",
     "triageWorker": "Assign worker",
     "uploadCover": "Upload cover"
   },
   "scheduling": {
-    "title": "Space settings",
-    "subtitle": "Configure how this space handles attendance, shifts and members.",
-    "backToSpaces": "Back to spaces",
+    "title": "Workspace settings",
+    "subtitle": "Configure how this workspace handles attendance, shifts and members.",
+    "backToSpaces": "Back to workspaces",
     "unauthorized": {
       "title": "Access restricted",
-      "description": "You need the manage-members permission to configure space scheduling."
+      "description": "You need the manage-members permission to configure workspace scheduling."
     },
     "notFound": {
-      "title": "Space not found",
-      "description": "This space doesn't exist or you don't have access to it."
+      "title": "Workspace not found",
+      "description": "This workspace doesn't exist or you don't have access to it."
     },
     "tabs": {
       "workModel": "Work model",
@@ -5695,7 +5695,7 @@
     },
     "workModel": {
       "heading": "Work model",
-      "intro": "Choose how this space interprets attendance and time expectations.",
+      "intro": "Choose how this workspace interprets attendance and time expectations.",
       "saved": "Work model updated",
       "saveFailed": "Failed to update work model",
       "remindersBadge": "Enables reminders",
@@ -5731,7 +5731,7 @@
     },
     "shifts": {
       "heading": "Shifts",
-      "intro": "Define named shift windows for this space. Times are local to the space timezone.",
+      "intro": "Define named shift windows for this workspace. Times are local to the workspace timezone.",
       "new": "New shift",
       "orgWide": "Org-wide",
       "crossesMidnight": "Crosses midnight",
@@ -5843,11 +5843,11 @@
       }
     },
     "roles": {
-      "heading": "Space roles",
+      "heading": "Workspace roles",
       "intro": "Define sub-roles like \"Shift Leader\" and the attendance permissions they grant.",
       "new": "New role",
       "editTitle": "Edit role",
-      "dialogDescription": "Name the role and choose which space permissions it grants.",
+      "dialogDescription": "Name the role and choose which workspace permissions it grants.",
       "builtIn": "Built-in",
       "noPermissions": "No permissions",
       "namePlaceholder": "e.g. Shift Leader",
@@ -5856,7 +5856,7 @@
       "deleteConfirm": "Delete \"{{name}}\"? Members with this role will lose it.",
       "empty": {
         "title": "No custom roles yet",
-        "description": "Create a role to grant space-level permissions."
+        "description": "Create a role to grant workspace-level permissions."
       },
       "fields": {
         "name": "Name",
@@ -5867,7 +5867,7 @@
       "permissions": {
         "canApproveOvertime": {
           "label": "Approve overtime",
-          "description": "Can approve extra-time requests for this space"
+          "description": "Can approve extra-time requests for this workspace"
         },
         "canManageRota": {
           "label": "Manage rota",
@@ -5878,8 +5878,8 @@
           "description": "Receives escalations and can close or fix open entries"
         },
         "canViewSpaceAttendance": {
-          "label": "View space attendance",
-          "description": "Can see attendance for everyone in this space"
+          "label": "View workspace attendance",
+          "description": "Can see attendance for everyone in this workspace"
         }
       },
       "toast": {
@@ -5891,9 +5891,9 @@
       }
     },
     "members": {
-      "heading": "Space members",
-      "intro": "Assign members to this space and optionally give them a sub-role.",
-      "empty": "No members assigned to this space yet.",
+      "heading": "Workspace members",
+      "intro": "Assign members to this workspace and optionally give them a sub-role.",
+      "empty": "No members assigned to this workspace yet.",
       "unknownMember": "Unknown member",
       "addHeading": "Add a member",
       "addButton": "Add member",
@@ -5912,12 +5912,12 @@
         "removeFailed": "Failed to remove member"
       },
       "remove": "Remove",
-      "removeTitle": "Remove from space?",
-      "removeConfirm": "{{name}} will lose their role and routing in this space. This does not remove them from the organization."
+      "removeTitle": "Remove from workspace?",
+      "removeConfirm": "{{name}} will lose their role and routing in this workspace. This does not remove them from the organization."
     },
     "attendanceTab": {
       "heading": "Attendance",
-      "intro": "How this space tracks time.",
+      "intro": "How this workspace tracks time.",
       "clockTitle": "Time clock — always on",
       "clockDesc": "Everyone with the Clock module clocks in and out — on-site (geofence) or remotely. Set the geofence and remote clock-in in the General tab.",
       "modeQuestion": "How are hours tracked here?",
@@ -5927,23 +5927,23 @@
       "scheduledDesc": "Assign people to shifts. Scheduled members get end-of-shift reminders; anyone left unassigned works open hours.",
       "openHoursNote": "Nothing else to set up — members clock in and out on their own hours.",
       "geofenceOn": "On-site clock-in is verified within {{radius}} m of the location pin.",
-      "geofenceOff": "Location-free clock-in — no geofence set for this space."
+      "geofenceOff": "Location-free clock-in — no geofence set for this workspace."
     },
     "routing": {
       "heading": "Notifications & contact",
-      "intro": "Choose which space roles are notified about members here, and which roles members here can contact. Empty = the space's leaders.",
+      "intro": "Choose which workspace roles are notified about members here, and which roles members here can contact. Empty = the workspace's leaders.",
       "saved": "Routing updated",
-      "noRoles": "No space roles defined yet.",
+      "noRoles": "No workspace roles defined yet.",
       "notifyTitle": "Notified about members here",
       "contactTitle": "Contactable by members here",
-      "notifyEmpty": "Default: the space's leaders",
-      "contactEmpty": "Default: the space's leaders",
+      "notifyEmpty": "Default: the workspace's leaders",
+      "contactEmpty": "Default: the workspace's leaders",
       "perMember": "Routing",
       "roles": "Roles",
       "people": "Specific people",
       "memberNotify": "Notified about {{name}}",
       "memberContact": "{{name}} can contact",
-      "noPeople": "No other members with a role in this space."
+      "noPeople": "No other members with a role in this workspace."
     }
   },
   "spaceSharing": {
@@ -5993,18 +5993,18 @@
     },
     "shares": {
       "heading": "Shared with",
-      "intro": "Companies you've invited to this space.",
+      "intro": "Companies you've invited to this workspace.",
       "empty": {
         "title": "Not shared yet",
-        "description": "Invite another company above to share this space."
+        "description": "Invite another company above to share this workspace."
       },
       "revoke": "Revoke",
       "revokeTitle": "Revoke access?",
-      "revokeConfirm": "{{org}} will lose access to this space."
+      "revokeConfirm": "{{org}} will lose access to this workspace."
     },
     "requests": {
       "heading": "Incoming requests",
-      "intro": "Requests raised by guest companies on this space.",
+      "intro": "Requests raised by guest companies on this workspace.",
       "empty": "No pending requests",
       "approve": "Approve",
       "reject": "Reject"
@@ -6041,15 +6041,15 @@
       "noTasks": "No tasks on this board yet",
       "myRequests": "Your requests",
       "notFound": {
-        "title": "Space not available",
-        "description": "This shared space is no longer active for your organization."
+        "title": "Workspace not available",
+        "description": "This shared workspace is no longer active for your organization."
       },
-      "inviteTitle": "{{org}} shared the \"{{space}}\" space with you",
+      "inviteTitle": "{{org}} shared the \"{{space}}\" workspace with you",
       "accept": "Accept",
       "decline": "Decline",
       "sharedWithUs": "Shared with us",
       "requestDialogTitle": "Request more",
-      "requestDialogDescription": "Ask the owner for an extra task or worker on this space.",
+      "requestDialogDescription": "Ask the owner for an extra task or worker on this workspace.",
       "requestType": "Type",
       "requestTitle": "Title",
       "requestTitlePlaceholder": "What do you need?",
@@ -6059,20 +6059,20 @@
       "titleRequired": "Enter a title for your request.",
       "add": "Add",
       "addWorker": "Add worker",
-      "addWorkerDescription": "Add one of your team to this shared space.",
+      "addWorkerDescription": "Add one of your team to this shared workspace.",
       "assignTo": "Assign to",
       "assigned": "Task assigned",
       "attendanceHeading": "Attendance",
       "justNow": "just now",
       "minsAgo": "{{m}} min ago",
       "newTask": "New task",
-      "newTaskDescription": "Create a task in this shared space.",
+      "newTaskDescription": "Create a task in this shared workspace.",
       "noTeam": "No team members found.",
       "taskCreated": "Task created",
       "trackingHeading": "Live locations",
       "unassigned": "Unassigned",
-      "workerAdded": "Worker added to the space",
-      "workersHeading": "Workers on this space"
+      "workerAdded": "Worker added to the workspace",
+      "workersHeading": "Workers on this workspace"
     }
   },
   "apartments": {
@@ -6154,15 +6154,15 @@
     },
     "apartments": {
       "label": "Apartments / Units",
-      "description": "A directory of apartments/units in this space — assign a member or a client as resident; work is handled by tasks"
+      "description": "A directory of apartments/units in this workspace — assign a member or a client as resident; work is handled by tasks"
     },
     "b2c_portal": {
       "label": "B2C Portal",
       "description": "Invite a customer to the app to make orders & follow their jobs"
     },
     "space_sharing": {
-      "label": "Space Sharing",
-      "description": "Share this space with another organisation (view / contribute / control)"
+      "label": "Workspace Sharing",
+      "description": "Share this workspace with another organisation (view / contribute / control)"
     },
     "groups": {
       "task": {
@@ -6233,12 +6233,12 @@
   "billing": {
     "perMonth": "/month",
     "perMonthShort": "/mo",
-    "spaceCostLabel": "This space costs",
+    "spaceCostLabel": "This workspace costs",
     "spaceCostPending": "Was {{was}} — saved when you save modules",
     "spaceCostPerModule": "Each module adds its own price",
     "seatLine": "Users are billed separately at {{price}} each",
     "usage": {
-      "heading": "{{module}} in this space — first {{included}} free",
+      "heading": "{{module}} in this workspace — first {{included}} free",
       "onTop": "on top of the {{base}} base",
       "included": "First {{count}} included",
       "free": "Free",
@@ -6259,8 +6259,8 @@
         "portal_other": "{{count}} portals"
       },
       "chargingStarts": "{{count}} more before anything is charged, then {{price}} each",
-      "otherSpacesSeparate": "Other spaces are counted and charged separately",
-      "includesCounted": "Includes what this space's assets add",
+      "otherSpacesSeparate": "Other workspaces are counted and charged separately",
+      "includesCounted": "Includes what this workspace's assets add",
       "perMonthShort": "/mo"
     },
     "bill": {
@@ -6268,21 +6268,21 @@
       "perMonth": "/month",
       "seats": "People",
       "seatsDetail": "{{count}} × {{price}}",
-      "spaces": "Spaces",
-      "spacesDetail_one": "{{count}} space",
-      "spacesDetail_other": "{{count}} spaces",
+      "spaces": "Workspaces",
+      "spacesDetail_one": "{{count}} workspace",
+      "spacesDetail_other": "{{count}} workspaces",
       "addOns": "Add-ons",
       "addOnsDetail_one": "{{count}} bought",
       "addOnsDetail_other": "{{count}} bought",
-      "bySpace": "By space",
+      "bySpace": "By workspace",
       "usageLine": "{{module}} usage {{price}}",
-      "noModules": "Nothing switched on — this space is free",
+      "noModules": "Nothing switched on — this workspace is free",
       "addOnsBought": "Add-ons",
       "estimate": "At list price"
     },
     "addOns": {
       "title": "Add-ons",
-      "subtitle": "Bought once for the whole organization, not per space",
+      "subtitle": "Bought once for the whole organization, not per workspace",
       "perMonth": "/mo"
     },
     "status": {
@@ -6293,19 +6293,19 @@
       "incomplete": "Inactive"
     },
     "title": "Billing",
-    "subtitle": "You pay for the people who use HBCField, what each space switches on, and any add-ons.",
+    "subtitle": "You pay for the people who use HBCField, what each workspace switches on, and any add-ons.",
     "paymentAndInvoices": "Payment & invoices",
     "cancel": "Cancel",
     "adminOnly": "Only an organization admin can change what you pay for.",
     "trialDaysLeft": "{{count}} days left in your trial",
     "cancelsOn": "Cancels on {{date}}",
-    "modulesElsewhere": "Modules belong to a space — switch them on in that space's Modules tab, next to the count they are priced by.",
+    "modulesElsewhere": "Modules belong to a workspace — switch them on in that workspace's Modules tab, next to the count they are priced by.",
     "byAgreement": "Billed by agreement",
     "byAgreementHint": "Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice."
   },
   "assetKinds": {
     "title": "Assets",
-    "intro": "What this space owns — apartments, vehicles, machines. Set up a type, then add the ones you have.",
+    "intro": "What this workspace owns — apartments, vehicles, machines. Set up a type, then add the ones you have.",
     "add": "New type",
     "empty": "No types yet",
     "count": "{{count}} inside",
@@ -6379,7 +6379,7 @@
     "holderSeveralHint": "A shared flat, a shift of operators — records can list more than one."
   },
   "assetRecords": {
-    "intro": "Everything of this kind in this space.",
+    "intro": "Everything of this kind in this workspace.",
     "empty": "Nothing added yet",
     "added": "Added",
     "removed": "Removed",
@@ -6391,7 +6391,7 @@
     "holder": "Held by",
     "nobody": "Nobody",
     "client": "Client",
-    "noClients": "No clients in this space yet",
+    "noClients": "No clients in this workspace yet",
     "fields": "Details",
     "taken": "Taken",
     "free": "Nobody",
@@ -6457,7 +6457,7 @@
   "assetJobs": {
     "raise": "Raise a job",
     "title": "Raise a job",
-    "hint": "About {{name}}. It goes to the space this one belongs to.",
+    "hint": "About {{name}}. It goes to the workspace this one belongs to.",
     "what": "What needs doing",
     "whatPh": "Replace the drive belt",
     "detail": "Detail",
@@ -6478,16 +6478,16 @@
     "emailPh": "name@example.com"
   },
   "orphanAssets": {
-    "title_one": "{{count}} asset is not in any space",
-    "title_other": "{{count}} assets are not in any space",
+    "title_one": "{{count}} asset is not in any workspace",
+    "title_other": "{{count}} assets are not in any workspace",
     "subtitle": "They appear on no Assets tab, but they still count towards what you pay. Move them here or delete them.",
     "review": "Review them",
-    "dialogTitle": "Assets without a space",
-    "dialogHint": "Pick a type to move an asset into this space, or delete it. Its history and tasks come with it.",
-    "noTypes": "This space has no asset types yet. Create one first, or delete these records.",
+    "dialogTitle": "Assets without a workspace",
+    "dialogHint": "Pick a type to move an asset into this workspace, or delete it. Its history and tasks come with it.",
+    "noTypes": "This workspace has no asset types yet. Create one first, or delete these records.",
     "moveInto": "Move into…",
     "move": "Move",
-    "moved": "Moved into this space",
+    "moved": "Moved into this workspace",
     "moveFailed": "Could not move this asset",
     "deleted": "Deleted",
     "deleteFailed": "Could not delete this asset",
@@ -6581,7 +6581,7 @@
     "hide": "Hide",
     "industry": "Industry",
     "industryPh": "e.g. Construction",
-    "intro": "People & companies for this space. Sales works them with tasks; invited ones also use the app.",
+    "intro": "People & companies for this workspace. Sales works them with tasks; invited ones also use the app.",
     "invite": "Invite to app",
     "inviteIntro": "Give this customer a login to order & follow their jobs.",
     "inviteShare": "Share this code (or the emailed link) so they can sign in.",
@@ -6597,13 +6597,13 @@
     "moreInfoHint": "Add anything else — payment terms, preferred contact, account manager…",
     "movedTo": "moved to",
     "name": "Name",
-    "needB2C": "Turn on the B2C Portal module (space Modules tab) to invite customers.",
+    "needB2C": "Turn on the B2C Portal module (workspace Modules tab) to invite customers.",
     "newTask": "Task",
     "noActivity": "No activity yet. Add a note or log a call above.",
     "noAddress": "No address yet. Add one to show it on the map.",
     "noMembers": "No members",
     "noReminders": "No reminders. Add one above to follow up.",
-    "noVacant": "No vacant {{label}}. Add one in the space's Client portal tab.",
+    "noVacant": "No vacant {{label}}. Add one in the workspace's Client portal tab.",
     "notFound": "Customer not found",
     "notePlaceholder": "Write a note…",
     "notes": "Notes",
@@ -6611,7 +6611,7 @@
     "nudgeStale": "No activity in {{d}} days — time to check in?",
     "overdueCount": "{{count}} overdue follow-up",
     "phone": "Phone",
-    "pickPortalHint": "This space runs several portals. The one you pick decides the client's entity and the categories they can report.",
+    "pickPortalHint": "This workspace runs several portals. The one you pick decides the client's entity and the categories they can report.",
     "pickPortalMeta": "{{entity}} · {{count}} categories",
     "pickPortalTitle": "Which portal should they use?",
     "primary": "Primary",

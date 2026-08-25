@@ -49,7 +49,7 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
       // space. Dropping the old type id too: it belonged to the type that was
       // left behind, and keeping it would point the record at two of them.
       assetsApi.updateAsset(id, { categoryId, typeId: null }),
-    onSuccess: () => { notify.success(t("orphanAssets.moved", "Moved into this space")); refresh() },
+    onSuccess: () => { notify.success(t("orphanAssets.moved", "Moved into this workspace")); refresh() },
     onError: (e: Error) => notify.error(e?.message || t("orphanAssets.moveFailed", "Could not move this asset")),
   })
 
@@ -68,7 +68,7 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-              {t("orphanAssets.title", "{{count}} asset is not in any space", { count: orphans.length })}
+              {t("orphanAssets.title", "{{count}} asset is not in any workspace", { count: orphans.length })}
             </p>
             <p className="text-xs text-amber-800/80 dark:text-amber-300/70">
               {t(
@@ -86,11 +86,11 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{t("orphanAssets.dialogTitle", "Assets without a space")}</DialogTitle>
+            <DialogTitle>{t("orphanAssets.dialogTitle", "Assets without a workspace")}</DialogTitle>
             <DialogDescription>
               {types.length > 0
-                ? t("orphanAssets.dialogHint", "Pick a type to move an asset into this space, or delete it. Its history and tasks come with it.")
-                : t("orphanAssets.noTypes", "This space has no asset types yet. Create one first, or delete these records.")}
+                ? t("orphanAssets.dialogHint", "Pick a type to move an asset into this workspace, or delete it. Its history and tasks come with it.")
+                : t("orphanAssets.noTypes", "This workspace has no asset types yet. Create one first, or delete these records.")}
             </DialogDescription>
           </DialogHeader>
 

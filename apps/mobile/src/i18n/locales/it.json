@@ -157,9 +157,9 @@
       "addressPlaceholder": "Via Roma 123",
       "submitButton": "Crea organizzazione",
       "failedToCreate": "Impossibile creare l'organizzazione",
-      "firstSpaceLabel": "Il tuo primo spazio",
+      "firstSpaceLabel": "Il tuo primo spazio di lavoro",
       "firstSpacePlaceholder": "es. Sede principale",
-      "firstSpaceHint": "Puoi rinominarlo o aggiungere altri spazi in seguito.",
+      "firstSpaceHint": "Puoi rinominarlo o aggiungere altri spazi di lavoro in seguito.",
       "typeLabel": "Tipo",
       "typeWorkspace": "Spazio di lavoro",
       "typeWorkspaceDesc": "Un team o un progetto",
@@ -232,7 +232,7 @@
       "recentTasks": "Attività recenti",
       "noTasksYet": "Nessuna attività ancora. Creane una per iniziare!",
       "setUpWorkspace": "Configura il tuo spazio di lavoro",
-      "setUpWorkspaceSub": "Crea spazi e assegna il tuo team per monitorare tutti in tempo reale.",
+      "setUpWorkspaceSub": "Crea spazi di lavoro e assegna il tuo team per monitorare tutti in tempo reale.",
       "activity": {
         "actions": {
           "IN_PROGRESS": "ha iniziato a lavorare su",
@@ -517,7 +517,7 @@
     "titleRequired": "Inserisci un titolo per l'attività.",
     "successMessage": "Attività creata con successo!",
     "failedToCreate": "Impossibile creare l'attività",
-    "spaceLabel": "Spazio",
+    "spaceLabel": "Spazio di lavoro",
     "spaceCount": "{{count}} disponibili"
   },
   "attendance": {
@@ -629,7 +629,7 @@
       "openSettings": "Apri Impostazioni",
       "notNow": "Non ora"
     },
-    "unknownLocation": "questo spazio",
+    "unknownLocation": "questo spazio di lavoro",
     "clockedInRemotely": "Timbratura da remoto"
   },
   "overtime": {
@@ -903,8 +903,8 @@
         "employee": "Dipendente",
         "jobTitleLabel": "Mansione (facoltativo)",
         "jobTitlePlaceholder": "es. Elettricista",
-        "spaceLabel": "Spazio (facoltativo)",
-        "noSpace": "Nessuno spazio",
+        "spaceLabel": "Spazio di lavoro (facoltativo)",
+        "noSpace": "Nessuno spazio di lavoro",
         "generateButton": "Genera codice",
         "tapToCopy": "Tocca per copiare · Scade tra 3 giorni",
         "shareMessage": "Unisciti con il codice di invito: {{code}}"
@@ -1126,8 +1126,8 @@
   ],
   "team": {
     "title": "Team",
-    "subtitle": "Colleghi nei tuoi spazi.",
-    "empty": "Ancora nessun collega nei tuoi spazi.",
+    "subtitle": "Colleghi nei tuoi spazi di lavoro.",
+    "empty": "Ancora nessun collega nei tuoi spazi di lavoro.",
     "managers": "Responsabili",
     "members": "Team",
     "messagingSoon": "Messaggistica in arrivo",
@@ -1187,7 +1187,7 @@
     },
     "external": "Esterno",
     "closed": "Chiusa",
-    "conversationClosed": "Questo spazio non è più condiviso, quindi questa conversazione è chiusa. Puoi ancora leggere quanto è stato scritto.",
+    "conversationClosed": "Questo spazio di lavoro non è più condiviso, quindi questa conversazione è chiusa. Puoi ancora leggere quanto è stato scritto.",
     "externalMember": "In un'altra organizzazione"
   },
   "locationConsent": {

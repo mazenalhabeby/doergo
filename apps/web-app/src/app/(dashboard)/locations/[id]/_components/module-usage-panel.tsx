@@ -76,7 +76,7 @@ export function ModuleUsagePanel({ moduleKey, units }: { moduleKey: string; unit
               free ones were pooled too — which is the question this line kept
               being asked.
             */}
-            {t("billing.usage.heading", "{{module}} in this space — first {{included}} free", {
+            {t("billing.usage.heading", "{{module}} in this workspace — first {{included}} free", {
               module: moduleLabel,
               included: price.included,
             })}
@@ -84,7 +84,7 @@ export function ModuleUsagePanel({ moduleKey, units }: { moduleKey: string; unit
           <p className="mt-0.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground tabular-nums">{unitLabel(cost.units)}</span>
             <span className="mx-1.5 text-border">·</span>
-            {t("billing.usage.otherSpacesSeparate", "Other spaces are counted and charged separately")}
+            {t("billing.usage.otherSpacesSeparate", "Other workspaces are counted and charged separately")}
           </p>
         </div>
         <div className="text-right">

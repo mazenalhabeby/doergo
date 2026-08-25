@@ -63,7 +63,7 @@ export function CustomersTab({ space }: { space: CompanyLocation }) {
         icon={Contact}
         accent="blue"
         title={t("customers.title", "Customers")}
-        description={t("customers.intro", "People & companies for this space. Sales works them with tasks; invited ones also use the app.")}
+        description={t("customers.intro", "People & companies for this workspace. Sales works them with tasks; invited ones also use the app.")}
         action={<CustomerForm spaceId={spaceId} onSaved={invalidate} trigger={
           <Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("customers.add", "Add customer")}</Button>
         } />}

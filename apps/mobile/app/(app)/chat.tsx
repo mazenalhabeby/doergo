@@ -418,7 +418,7 @@ export default function ChatScreen() {
               <Text style={[styles.closedText, { color: colors.textSecondary }]}>
                 {t(
                   'chat.conversationClosed',
-                  'This space is no longer shared, so this conversation is closed. You can still read what was said.',
+                  'This workspace is no longer shared, so this conversation is closed. You can still read what was said.',
                 )}
               </Text>
             </View>

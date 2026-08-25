@@ -298,7 +298,7 @@ export function AssetRecordDialog({
                   ) : list.length === 0 ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">
                       {tab === "clients"
-                        ? t("assetRecords.noClients", "No clients in this space yet")
+                        ? t("assetRecords.noClients", "No clients in this workspace yet")
                         : t("assetRecords.noMembers", "No members to choose from")}
                     </p>
                   ) : list.map((r) => {

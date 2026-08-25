@@ -181,7 +181,7 @@ export default function CreateTaskScreen() {
         {spaces.length > 1 && (
           <View style={styles.field}>
             <View style={styles.labelRow}>
-              <Text style={[styles.label, styles.labelInline, { color: colors.textPrimary }]}>{t('createTask.spaceLabel', 'Space')}</Text>
+              <Text style={[styles.label, styles.labelInline, { color: colors.textPrimary }]}>{t('createTask.spaceLabel', 'Workspace')}</Text>
               <View style={[styles.countBadge, { backgroundColor: COLORS.primary + '18' }]}>
                 <Text style={[styles.countBadgeText, { color: COLORS.primary }]}>
                   {t('createTask.spaceCount', '{{count}} available', { count: spaces.length })}

@@ -543,9 +543,9 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
       <AlertDialog open={!!removeTarget} onOpenChange={(open) => { if (!open) setRemoveTarget(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("scheduling.members.removeTitle", "Remove from space?")}</AlertDialogTitle>
+            <AlertDialogTitle>{t("scheduling.members.removeTitle", "Remove from workspace?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("scheduling.members.removeConfirm", "{{name}} will lose their role and routing in this space. This does not remove them from the organization.", {
+              {t("scheduling.members.removeConfirm", "{{name}} will lose their role and routing in this workspace. This does not remove them from the organization.", {
                 name: removeTarget?.user ? `${removeTarget.user.firstName} ${removeTarget.user.lastName}` : t("scheduling.members.unknownMember"),
               })}
             </AlertDialogDescription>
