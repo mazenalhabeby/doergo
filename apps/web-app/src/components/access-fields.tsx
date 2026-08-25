@@ -445,7 +445,7 @@ export function AccessFields({
               <Select value={value.contactScope} onValueChange={(v) => onChange({ contactScope: v })}>
                 <SelectTrigger className="h-8 w-[168px] shrink-0 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE" className="text-xs">{t("accessBuilder.contactScope.none", "No one")}</SelectItem>
+                  <SelectItem value="NONE" className="text-xs">{t("accessBuilder.contactScope.none", "Space contacts only")}</SelectItem>
                   <SelectItem value="ALL" className="text-xs">{t("accessBuilder.contactScope.all", "All contacts")}</SelectItem>
                   <SelectItem value="SELECTED" className="text-xs">{t("accessBuilder.contactScope.selected", "Specific contacts…")}</SelectItem>
                 </SelectContent>

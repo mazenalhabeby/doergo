@@ -78,12 +78,26 @@ export class ChatService {
   ): Promise<boolean> {
     // External customers are never part of member chat (neither direction).
     if (me.role === 'CUSTOMER' || target.role === 'CUSTOMER') return false;
-    // Admins and managers (canManageUsers) may contact anyone and are always reachable.
-    const meIsManager = me.role === 'ADMIN' || me.canManageUsers === true;
-    const targetIsManager = target.role === 'ADMIN' || target.canManageUsers === true;
-    if (meIsManager) return true;
-    if (!canContactColleagues({ enabledModules: me.enabledModules })) return false; // admin disabled messaging
-    if (!(target.contactable || targetIsManager)) return false;
+
+    /*
+      The Messaging switch is absolute, and is tested BEFORE the manager bypass.
+
+      It used to come after, which made "remove this member from chat entirely"
+      untrue in both directions: an admin or any canManageUsers holder still
+      reached a member who had been switched off, and a manager who switched
+      their own messaging off stayed reachable regardless (the `targetIsManager`
+      escape). The control muted a member toward their peers and nothing more —
+      an admin who used it to take someone out of chat had not done that.
+
+      Off now means off. It is the admin's own setting, defaults to on, and they
+      can turn it back on; a switch that half works is worse than either answer.
+    */
+    if (!canContactColleagues({ enabledModules: me.enabledModules })) return false;
+    if (!target.contactable) return false;
+
+    // Admins and managers (canManageUsers) reach anyone who is IN chat, with no
+    // shared space or allow-list entry needed.
+    if (me.role === 'ADMIN' || me.canManageUsers === true) return true;
     if (me.contactScope === 'ALL') return true;
     // Space-driven: a leader in a space we share is always reachable. Only this
     // branch and SELECTED need the space lookup.

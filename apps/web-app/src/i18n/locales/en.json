@@ -3615,7 +3615,7 @@
     },
     "contact": {
       "title": "Messaging",
-      "desc": "Message & call teammates — and be reachable by them. Turn off to remove this member from chat entirely."
+      "desc": "Message and call teammates — and be reachable by them. Turning it off takes the member out of chat in both directions: they can reach no one, and no one can reach them, admins included."
     },
     "contactAccess": "Contact access",
     "contactable": {
@@ -3624,10 +3624,10 @@
     },
     "canContact": {
       "title": "Contact management",
-      "desc": "Which admins/contacts this member may reach. Secure by default."
+      "desc": "Who this member may start a conversation with, on top of the leads of spaces they work — those stay reachable either way."
     },
     "contactScope": {
-      "none": "No one",
+      "none": "Space contacts only",
       "all": "All contacts",
       "selected": "Specific contacts…"
     },

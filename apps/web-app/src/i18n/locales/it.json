@@ -3624,7 +3624,7 @@
     },
     "contact": {
       "title": "Messaggistica",
-      "desc": "Scriva e chiami i colleghi — e sia raggiungibile da loro. Disattivi per rimuovere completamente questo membro dalla chat."
+      "desc": "Scrivere e chiamare i colleghi — ed essere raggiungibile da loro. Disattivandolo il membro esce dalla chat in entrambe le direzioni: non può contattare nessuno e nessuno può contattare lui, amministratori compresi."
     },
     "contactAccess": "Accesso ai contatti",
     "contactable": {
@@ -3633,10 +3633,10 @@
     },
     "canContact": {
       "title": "Gestione dei contatti",
-      "desc": "Quali amministratori/contatti questo membro può raggiungere. Sicuro per impostazione predefinita."
+      "desc": "Con chi questo membro può avviare una conversazione, oltre ai responsabili degli spazi in cui lavora, che restano comunque raggiungibili."
     },
     "contactScope": {
-      "none": "Nessuno",
+      "none": "Solo contatti dello spazio",
       "all": "Tutti i contatti",
       "selected": "Contatti specifici…"
     },

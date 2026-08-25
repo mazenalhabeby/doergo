@@ -3624,7 +3624,7 @@
     },
     "contact": {
       "title": "Messagerie",
-      "desc": "Envoyez des messages et appelez vos collègues — et soyez joignable par eux. Désactivez pour retirer entièrement ce membre de la messagerie."
+      "desc": "Écrire et appeler ses collègues — et être joignable par eux. En le désactivant, le membre sort du chat dans les deux sens : il ne peut joindre personne, et personne ne peut le joindre, administrateurs compris."
     },
     "contactAccess": "Accès aux contacts",
     "contactable": {
@@ -3633,10 +3633,10 @@
     },
     "canContact": {
       "title": "Gestion des contacts",
-      "desc": "Quels administrateurs/contacts ce membre peut joindre. Sécurisé par défaut."
+      "desc": "Avec qui ce membre peut engager une conversation, en plus des responsables des espaces où il travaille, qui restent joignables."
     },
     "contactScope": {
-      "none": "Personne",
+      "none": "Contacts des espaces uniquement",
       "all": "Tous les contacts",
       "selected": "Contacts spécifiques…"
     },

@@ -3615,7 +3615,7 @@
     },
     "contact": {
       "title": "Mensajería",
-      "desc": "Enviar mensajes y llamar a compañeros, y que puedan contactarlo. Desactívalo para quitar por completo a este miembro del chat."
+      "desc": "Enviar mensajes y llamar a compañeros, y ser localizable por ellos. Al desactivarlo, el miembro queda fuera del chat en ambos sentidos: no puede contactar con nadie y nadie puede contactar con él, tampoco los administradores."
     },
     "contactAccess": "Acceso a contactos",
     "contactable": {
@@ -3624,10 +3624,10 @@
     },
     "canContact": {
       "title": "Gestión de contactos",
-      "desc": "A qué administradores o contactos puede contactar este miembro. Seguro por defecto."
+      "desc": "Con quién puede iniciar una conversación este miembro, además de los responsables de los espacios en los que trabaja, que siguen siendo localizables."
     },
     "contactScope": {
-      "none": "Nadie",
+      "none": "Solo contactos del espacio",
       "all": "Todos los contactos",
       "selected": "Contactos específicos…"
     },

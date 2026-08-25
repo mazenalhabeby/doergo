@@ -3615,7 +3615,7 @@
     },
     "contact": {
       "title": "Nachrichten",
-      "desc": "Teammitglieder anschreiben & anrufen – und für sie erreichbar sein. Ausschalten, um dieses Mitglied ganz aus dem Chat zu entfernen."
+      "desc": "Kolleginnen und Kollegen schreiben und anrufen — und für sie erreichbar sein. Beim Ausschalten wird das Mitglied in beide Richtungen aus dem Chat genommen: Es erreicht niemanden, und niemand erreicht es, auch keine Admins."
     },
     "contactAccess": "Kontaktzugriff",
     "contactable": {
@@ -3624,10 +3624,10 @@
     },
     "canContact": {
       "title": "Leitung kontaktieren",
-      "desc": "Welche Admins/Kontakte dieses Mitglied erreichen darf. Standardmäßig gesperrt."
+      "desc": "Mit wem dieses Mitglied ein Gespräch beginnen darf — zusätzlich zu den Leitungen seiner Arbeitsbereiche, die ohnehin erreichbar bleiben."
     },
     "contactScope": {
-      "none": "Niemanden",
+      "none": "Nur Kontakte aus Arbeitsbereichen",
       "all": "Alle Kontakte",
       "selected": "Bestimmte Kontakte…"
     },
