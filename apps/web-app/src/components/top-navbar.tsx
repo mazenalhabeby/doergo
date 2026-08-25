@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { hasAccessModule, resolveCrmCaps } from "@hbcfield/shared/client"
@@ -128,7 +129,7 @@ export function TopNavbar() {
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   if (!user) return null
 
@@ -161,26 +162,63 @@ export function TopNavbar() {
   // (My Attendance hides only when the management Attendance view is present, to
   // avoid two "Attendance" links.)
   const showMyTimeOff = hasAccessModule(user, "time_off")
+
+  // Measured overflow for the navigation row (see hooks/use-overflow-nav).
+  // Re-measures whenever the language changes, because that changes every width.
+  const { containerRef: navRef, overflow: navOverflow } = useOverflowNav(i18n.language)
   const showMyAttendance = hasAccessModule(user, "clock") && !showAttendance
   // "Manage" is the management hub — redundant with "Team", so only show it when
   // the user doesn't already have Team (i.e. not managers/admins).
   const showManage = hasAccessModule(user, "manage") && !showTeam
   // Overflow items go into "More" menu
-  const overflowItems: { label: string; href: string; icon: typeof MapPin }[] = []
-
-  const hasOverflow = overflowItems.length > 0
-
   return (
-    <header className="sticky top-0 z-50 h-14 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-full max-w-[1440px] items-center px-6">
+    /*
+      Two rows, because one was a fight the navigation kept losing.
+      Row 1 — who you are, what you're looking for, what needs you now.
+      Row 2 — where you can go, with the WHOLE width to itself.
+
+      The single row carried eleven links and seven controls in 56px. Labels are
+      written by translators ("Customer Invoices" is 17 characters; "Facturas de
+      clientes" is 20), so it overflowed in some language at any width, and the
+      previous fixes each failed visibly: a breakpoint was wrong in Spanish, and
+      scrolling clipped a label mid-word with nothing to say more existed.
+      Giving navigation its own row removes the competition instead of rationing it.
+    */
+    <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
+      {/* ── Row 1 ─────────────────────────────────────────────────────────── */}
+      <div className="mx-auto flex h-12 max-w-[1440px] items-center gap-4 px-6">
       {/* Logo */}
       <Link
         href="/dashboard"
-        className="mr-6 flex items-center transition-opacity hover:opacity-80"
+        className="flex shrink-0 items-center transition-opacity hover:opacity-80"
       >
         <AnimatedLogo size="small" textColor={resolvedTheme === 'dark' ? '#fafafa' : '#18181b'} />
       </Link>
 
+      <div className="flex min-w-0 flex-1 justify-center px-2">
+        <CommandPaletteButton />
+      </div>
+
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {/* Only what is time-critical lives here now. Language is a preference set
+            once; help and support are never urgent — all three moved into the
+            avatar menu, which is where settings already live. That returned about
+            150px to the row and cut it from seven controls to three. */}
+        <ClockWidget />
+        <span data-tour="nav-notifications" className="inline-flex"><NotificationBell /></span>
+        <span data-tour="nav-profile" className="inline-flex"><UserDropdown
+          user={user}
+          initials={initials}
+          fullName={fullName}
+          avatarUrl={user.avatarUrl}
+          canManageUsers={user.canManageUsers}
+          onLogout={logout}
+        /></span>
+      </div>
+      </div>
+
+      {/* ── Row 2 — navigation, with the full width to itself ─────────────── */}
+      <div className="mx-auto flex h-11 max-w-[1440px] items-center border-t border-border/50 px-6">
       {/* Mobile hamburger menu */}
       <MobileMenu
         pathname={pathname}
@@ -204,11 +242,16 @@ export function TopNavbar() {
           (The `MoreDropdown` overflow path below never ran — `overflowItems` is
           initialised empty and never populated, so `hasOverflow` is always false.) */}
       <nav
-        className="hidden xl:flex items-center gap-1 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        ref={navRef}
+        className="hidden md:flex min-w-0 flex-1 items-center gap-1"
       >
         {/* Dashboard */}
         <Link
           href="/dashboard"
+          data-nav-item
+          data-nav-href="/dashboard"
+          data-nav-label={t("nav.sidebar.dashboard")}
+          data-nav-active={isActive(pathname, "/dashboard")}
           data-tour="nav-dashboard"
           onMouseEnter={prefetch.prefetchDashboard}
           className={cn(
@@ -224,6 +267,10 @@ export function TopNavbar() {
         {/* Tasks — direct link (sprints merged into tasks page) */}
         <Link
           href="/tasks"
+          data-nav-item
+          data-nav-href="/tasks"
+          data-nav-label={t("nav.sidebar.tasks")}
+          data-nav-active={isActive(pathname, "/tasks")}
           data-tour="nav-tasks"
           onMouseEnter={prefetch.prefetchTasks}
           className={cn(
@@ -241,6 +288,10 @@ export function TopNavbar() {
         {showCrm && (
           <Link
             href="/clients"
+          data-nav-item
+          data-nav-href="/clients"
+          data-nav-label={t("nav.crm")}
+          data-nav-active={isActive(pathname, "/clients")}
             className={cn(
               navItemBase,
               isActive(pathname, "/clients")
@@ -259,6 +310,10 @@ export function TopNavbar() {
         {showSpaces && (
           <Link
             href="/locations"
+          data-nav-item
+          data-nav-href="/locations"
+          data-nav-label={t("nav.spaces")}
+          data-nav-active={isActive(pathname, "/locations")}
             data-tour="nav-spaces"
             onMouseEnter={prefetch.prefetchSpaces}
             className={cn(
@@ -295,6 +350,10 @@ export function TopNavbar() {
         {showReports && (
           <Link
             href="/reports"
+          data-nav-item
+          data-nav-href="/reports"
+          data-nav-label={t("nav.reports")}
+          data-nav-active={isActive(pathname, "/reports")}
             data-tour="nav-reports"
             className={cn(navItemBase, isActive(pathname, "/reports") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}
           >
@@ -304,6 +363,10 @@ export function TopNavbar() {
         {showInvoices && (
           <Link
             href="/invoices"
+          data-nav-item
+          data-nav-href="/invoices"
+          data-nav-label={t("nav.sidebar.invoices")}
+          data-nav-active={isActive(pathname, "/invoices")}
             data-tour="nav-invoices"
             className={cn(navItemBase, isActive(pathname, "/invoices") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}
           >
@@ -315,42 +378,40 @@ export function TopNavbar() {
             when the user has no Time & Attendance dropdown to host it (i.e. a
             non-management member); managers get it inside that dropdown. */}
         {showMyTimeOff && (
-          <Link href="/my/time-off" data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+          <Link href="/my/time-off"
+          data-nav-item
+          data-nav-href="/my/time-off"
+          data-nav-label={t("nav.timeOff")}
+          data-nav-active={isActive(pathname, "/my/time-off")} data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.timeOff")}
           </Link>
         )}
         {showMyAttendance && (
-          <Link href="/my/attendance" data-tour="nav-my-attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+          <Link href="/my/attendance"
+          data-nav-item
+          data-nav-href="/my/attendance"
+          data-nav-label={t("nav.sidebar.attendance")}
+          data-nav-active={isActive(pathname, "/my/attendance")} data-tour="nav-my-attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.sidebar.attendance")}
           </Link>
         )}
         {showManage && (
-          <Link href="/manage" className={cn(navItemBase, isActive(pathname, "/manage") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+          <Link href="/manage"
+          data-nav-item
+          data-nav-href="/manage"
+          data-nav-label={t("nav.manage")}
+          data-nav-active={isActive(pathname, "/manage")} className={cn(navItemBase, isActive(pathname, "/manage") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.manage")}
           </Link>
         )}
 
-        {/* More overflow */}
-        {hasOverflow && <MoreDropdown items={overflowItems} pathname={pathname} />}
+        {/* Measured overflow — the guarantee. The nav row fits everything at normal
+            widths, but Italian needs ~1010px and a 1024px window leaves 976px, so
+            whatever does not fit collapses here rather than being clipped. */}
+        <span data-nav-more className={navOverflow.length ? "inline-flex" : "hidden"}>
+          <MoreDropdown items={navOverflow} pathname={pathname} />
+        </span>
       </nav>
-
-      {/* Right side */}
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <CommandPaletteButton />
-        <ClockWidget />
-        <LanguageSwitcher />
-        <span data-tour="nav-notifications" className="inline-flex"><NotificationBell /></span>
-        <span data-tour="nav-help" className="inline-flex"><HelpButton /></span>
-        <span data-tour="nav-support" className="inline-flex"><SupportButton /></span>
-        <span data-tour="nav-profile" className="inline-flex"><UserDropdown
-          user={user}
-          initials={initials}
-          fullName={fullName}
-          avatarUrl={user.avatarUrl}
-          canManageUsers={user.canManageUsers}
-          onLogout={logout}
-        /></span>
-      </div>
       </div>
     </header>
   )
@@ -370,11 +431,11 @@ function CommandPaletteButton() {
     <button
       onClick={() => setOpen(true)}
       data-tour="nav-command"
-      className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-xs"
+      className="flex w-full max-w-[460px] items-center gap-2 h-9 px-3 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
     >
-      <Search className="size-3.5" />
-      <span className="hidden sm:inline text-[11px]">{t("common.search")}</span>
-      <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+      <Search className="size-4 shrink-0" />
+      <span className="hidden sm:inline text-[13px]">{t("common.search")}</span>
+      <kbd className="pointer-events-none ml-auto hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
         {isMac ? "\u2318" : "Ctrl+"}K
       </kbd>
     </button>
@@ -534,7 +595,7 @@ function MobileMenu({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger className="xl:hidden mr-2 flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors outline-none">
+      <DropdownMenuTrigger className="md:hidden mr-2 flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors outline-none">
         <Menu className="h-5 w-5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">
@@ -744,7 +805,8 @@ function MoreDropdown({
   items,
   pathname,
 }: {
-  items: { label: string; href: string; icon: typeof MapPin }[]
+  // `icon` optional: these come from the measured nav row, which is text-only.
+  items: { label: string; href: string; icon?: typeof MapPin }[]
   pathname: string
 }) {
   const active = isDropdownActive(
@@ -769,7 +831,7 @@ function MoreDropdown({
           return (
             <DropdownMenuItem key={item.href} asChild className="rounded-md cursor-pointer">
               <Link href={item.href} className="flex items-center gap-2 px-2 py-1.5 text-sm">
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
                 {item.label}
               </Link>
             </DropdownMenuItem>
@@ -886,6 +948,16 @@ function UserDropdown({
 
           {/* Replay the role-appropriate guided tour */}
           <TourLauncherMenuItem />
+
+          {/* Moved out of the top bar (see row 1). Language is a preference set
+              once; help and support are never time-critical. All three were
+              competing with navigation for space in the busiest row of the
+              product, and none of them needed to be there. */}
+          <div className="flex items-center gap-1 px-2 py-1.5">
+            <LanguageSwitcher />
+            <HelpButton />
+            <SupportButton />
+          </div>
 
           {/* Subscription & billing (this org's plan/payment) — admins only */}
           {canManageUsers && (
