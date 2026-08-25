@@ -13,9 +13,9 @@ export {
 export {
   getDefaultModules, hasModule, hasAccessModule, canReceiveTasks, byAssignableFirst,
   getModuleLabel, getModules,
-  getSpaceScope, getAccessPlatforms, canContactColleagues, getWebScreens,
+  getSpaceScope, getAccessPlatforms, canContactColleagues,
   getFeatureModules, hasFeatureModule, DEFAULT_ORG_MODULES,
-  type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform, type WebScreen,
+  type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform,
   DEFAULT_MODULES, ALL_MODULES,
   // Editable access draft — shared by member-edit, invite pre-config, backend accept
   FEATURE_TAB_MODULES, defaultAccessDraft, readAccessDraft, serializeAccessDraft, normalizeAccessProfile,

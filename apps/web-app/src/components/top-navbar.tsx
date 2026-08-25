@@ -154,7 +154,15 @@ export function TopNavbar() {
   // Invoices: admins bill their customers. Shown for admins regardless of tier —
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.
-  const showInvoices = user.canManageUsers
+  // Matches what the API actually enforces: every read on /invoices is
+  // @RequirePermission('canViewAllTasks'); writes are ADMIN-only (audit).
+  //
+  // It was canManageUsers, and the four permission flags are independent — so a
+  // member with canManageUsers but not canViewAllTasks (an office administrator,
+  // the obvious case) SAW the nav item and then hit a page whose every request
+  // 403s. The reverse also held: a manager with canViewAllTasks had no nav item
+  // for something they could already open by URL, so hiding it protected nothing.
+  const showInvoices = user.canViewAllTasks
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by

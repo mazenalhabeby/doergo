@@ -22,12 +22,8 @@ export const ALL_MODULES: MobileModule[] = ['tasks', 'clock', 'time_off', 'creat
 export type SpaceScope = 'own' | 'tasks' | 'all';
 /** Which platforms a user may sign in to. */
 export type AccessPlatform = 'web' | 'mobile' | 'both';
-/** Web screens a user may open. */
-export type WebScreen = 'dashboard' | 'tasks' | 'team' | 'schedule' | 'attendance';
-
 export interface AccessProfile {
   modules: MobileModule[];     // mobile tabs / home modules
-  webScreens?: WebScreen[];    // allowed web screens
   spaceScope?: SpaceScope;     // space visibility
   platforms?: AccessPlatform;  // web / mobile / both
   canContact?: boolean;        // can message & call colleagues
@@ -90,11 +86,6 @@ export function canContactColleagues(user: { enabledModules?: unknown }): boolea
   return asProfile(user.enabledModules)?.canContact !== false;
 }
 
-/** Allowed web screens (defaults: Dashboard + Tasks when not specified). */
-export function getWebScreens(user: { enabledModules?: unknown }): WebScreen[] {
-  const profile = asProfile(user.enabledModules);
-  return profile?.webScreens ?? ['dashboard', 'tasks'];
-}
 
 /** Default modules by position */
 export const DEFAULT_MODULES: Record<string, MobileModule[]> = {

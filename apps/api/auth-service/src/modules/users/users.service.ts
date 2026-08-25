@@ -1092,7 +1092,7 @@ export class UsersService {
     // role, so a self { memberRoleId: adminRoleId } would be an escalation.
     // enabledModules is included for the SAME reason (audit M-B1): the Access
     // Profile's `spaceScope` is a server-enforced READ control — 'all' returns every
-    // space in the org (task-service locations.service) — and `webScreens`/`platforms`
+    // space in the org (task-service locations.service) — and `platforms`
     // decide what the member can reach. Leaving it out let a non-admin holding
     // canManageUsers PATCH their own id with { enabledModules: { spaceScope: 'all' } }
     // and widen their own visibility.
@@ -1150,7 +1150,7 @@ export class UsersService {
     if (dto.position !== undefined) data.position = dto.position;
     if (dto.scheduleType !== undefined) data.scheduleType = dto.scheduleType;
     if (dto.monthlyHourBudget !== undefined) data.monthlyHourBudget = dto.monthlyHourBudget;
-    // Per-user Access Profile (modules / spaceScope / platforms / canContact / webScreens)
+    // Per-user Access Profile (modules / spaceScope / platforms / canContact)
     if ((dto as any).enabledModules !== undefined) data.enabledModules = (dto as any).enabledModules;
     // Contact directory + access control
     if ((dto as any).contactable !== undefined) data.contactable = (dto as any).contactable;
