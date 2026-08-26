@@ -57,11 +57,22 @@ function PulseGlyph(p: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
-function PersonGlyph(p: React.SVGProps<SVGSVGElement>) {
+function FamilyGlyph(p: React.SVGProps<SVGSVGElement>) {
+  /*
+    Two figures, not one.
+
+    A single head-and-shoulders is the default avatar shape — it reads as "user
+    account", which is what it means everywhere else in this app, and says
+    nothing about why someone is away. Personal leave is overwhelmingly a family
+    matter: childcare, an appointment, someone at home who needs you. A second,
+    smaller figure names that, and is a shape nothing else here uses.
+  */
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" {...p}>
-      <circle cx="12" cy="8" r="3.25" />
-      <path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+      <circle cx="8.75" cy="7" r="2.75" />
+      <path d="M4 19.5c0-2.9 2.1-4.75 4.75-4.75S13.5 16.6 13.5 19.5" />
+      <circle cx="17" cy="10.5" r="2" />
+      <path d="M13.9 19.5c0-2.05 1.4-3.4 3.1-3.4s3.1 1.35 3.1 3.4" />
     </svg>
   )
 }
@@ -77,7 +88,7 @@ function DotsGlyph(p: React.SVGProps<SVGSVGElement>) {
 const REASON_TYPES = [
   { key: "vacation", glyph: SunGlyph, tint: "text-amber-500", ring: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   { key: "sickLeave", glyph: PulseGlyph, tint: "text-rose-500", ring: "border-rose-500/60 bg-rose-500/10 text-rose-600 dark:text-rose-400" },
-  { key: "personal", glyph: PersonGlyph, tint: "text-violet-500", ring: "border-violet-500/60 bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+  { key: "personal", glyph: FamilyGlyph, tint: "text-violet-500", ring: "border-violet-500/60 bg-violet-500/10 text-violet-600 dark:text-violet-400" },
   { key: "other", glyph: DotsGlyph, tint: "text-slate-400", ring: "border-slate-400/60 bg-slate-400/10 text-slate-600 dark:text-slate-300" },
 ] as const
 type ReasonKey = (typeof REASON_TYPES)[number]["key"]
