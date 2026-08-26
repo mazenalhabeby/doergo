@@ -126,7 +126,14 @@ step "Applying database migrations"
 # migrate deploy, never migrate dev: the shadow database this project needs for
 # `dev` is broken by an old migration. Runs against DIRECT_DATABASE_URL because
 # PgBouncer is in transaction pooling mode and cannot carry a migration session.
-compose run --rm auth-service sh -c 'cd apps/api/auth-service && npx prisma migrate deploy' \
+# --entrypoint is the whole point of this line. The auth-service image's
+# entrypoint runs `migrate deploy` itself and then STARTS THE SERVICE, so
+# passing a command without overriding the entrypoint migrates correctly and
+# then blocks forever: `compose run` waits for an exit that a long-running
+# server never makes. The migrations land, the deploy hangs after them, and the
+# stack is left half-updated with no error to explain it.
+compose run --rm --entrypoint sh auth-service \
+  -c 'cd apps/api/auth-service && npx prisma migrate deploy' \
   || die "migrations failed — the stack has NOT been restarted, and $BACKUP is your restore point"
 
 # ── Start ───────────────────────────────────────────────────────────────────
