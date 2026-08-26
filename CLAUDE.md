@@ -1101,6 +1101,7 @@ export class TasksController {
 | Port already in use | Kill process: `lsof -ti:PORT \| xargs kill -9` |
 | Redis connection refused | Check Redis container: `docker ps` |
 | CORS errors | Check `CORS_ORIGINS` in gateway `.env` |
+| localhost:3000 errors after a code change | **A bare `next build` was run while `next dev` was running** — they share `.next`, so the build corrupts the dev server and it errors until restarted. Use `pnpm build:check` instead: it builds into `.next-check` and removes it after, leaving `.next` alone. |
 | Duplicate tasks created | Kill zombie processes: `pkill -f task-service`, restart API |
 | Job stuck in queue | Check Bull Board at `/admin/queues`, retry or remove |
 | BullMQ connection error | Verify Redis is running, check `REDIS_HOST` and `REDIS_PORT` |
