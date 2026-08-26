@@ -661,7 +661,8 @@
     "collapse": "Contraer",
     "approve": "Aprobar",
     "backToHome": "Volver al inicio",
-    "reject": "Rechazar"
+    "reject": "Rechazar",
+    "clear": "Borrar"
   },
   "auth": {
     "login": {
@@ -3774,7 +3775,7 @@
       "cancelError": "No se pudo cancelar",
       "noAccess": "No tienes acceso a Ausencias.",
       "title": "Ausencias",
-      "subtitle": "Solicita ausencias y da seguimiento a tus solicitudes.",
+      "subtitle": "Elija un motivo, seleccione las fechas y envíelo para aprobación.",
       "newRequest": "Nueva solicitud",
       "from": "Desde",
       "to": "Hasta",
@@ -3782,7 +3783,22 @@
       "requestButton": "Solicitar vacaciones",
       "myRequests": "Mis solicitudes",
       "noRequests": "Aún no hay solicitudes de vacaciones.",
-      "rejectedReason": "Rechazada: {{reason}}"
+      "rejectedReason": "Rechazada: {{reason}}",
+      "stepReason": "¿Por qué se ausenta?",
+      "stepDates": "¿Qué días?",
+      "notesPlaceholder": "Añadir una nota (opcional) — p. ej. vuelvo el lunes",
+      "notesRequiredPlaceholder": "Indique el motivo",
+      "dayCount_one": "{{count}} día",
+      "dayCount_other": "{{count}} días",
+      "prevMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "weekdays": "Lu,Ma,Mi,Ju,Vi,Sá,Do"
+    },
+    "reasonTypes": {
+      "vacation": "Vacaciones",
+      "sickLeave": "Baja por enfermedad",
+      "personal": "Personal",
+      "other": "Otro"
     }
   },
   "workflows": {

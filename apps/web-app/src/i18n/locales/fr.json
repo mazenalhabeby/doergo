@@ -661,7 +661,8 @@
     "collapse": "Réduire",
     "approve": "Approuver",
     "backToHome": "Retour à l’accueil",
-    "reject": "Refuser"
+    "reject": "Refuser",
+    "clear": "Effacer"
   },
   "auth": {
     "login": {
@@ -3783,7 +3784,7 @@
       "cancelError": "Impossible d'annuler",
       "noAccess": "Vous n'avez pas accès aux Congés.",
       "title": "Congés",
-      "subtitle": "Demandez des congés et suivez vos demandes.",
+      "subtitle": "Choisissez un motif, sélectionnez vos dates et envoyez pour validation.",
       "newRequest": "Nouvelle demande",
       "from": "Du",
       "to": "Au",
@@ -3791,7 +3792,22 @@
       "requestButton": "Demander des congés",
       "myRequests": "Mes demandes",
       "noRequests": "Aucune demande de congés pour l’instant.",
-      "rejectedReason": "Refusée : {{reason}}"
+      "rejectedReason": "Refusée : {{reason}}",
+      "stepReason": "Pourquoi êtes-vous absent ?",
+      "stepDates": "Quels jours ?",
+      "notesPlaceholder": "Ajouter une note (facultatif) — p. ex. retour lundi",
+      "notesRequiredPlaceholder": "Précisez le motif",
+      "dayCount_one": "{{count}} jour",
+      "dayCount_other": "{{count}} jours",
+      "prevMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "weekdays": "Lu,Ma,Me,Je,Ve,Sa,Di"
+    },
+    "reasonTypes": {
+      "vacation": "Congés",
+      "sickLeave": "Maladie",
+      "personal": "Personnel",
+      "other": "Autre"
     }
   },
   "workflows": {

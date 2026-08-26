@@ -661,7 +661,8 @@
     "collapse": "Comprimi",
     "approve": "Approva",
     "backToHome": "Torna alla home",
-    "reject": "Rifiuta"
+    "reject": "Rifiuta",
+    "clear": "Cancella"
   },
   "auth": {
     "login": {
@@ -3783,7 +3784,7 @@
       "cancelError": "Impossibile annullare",
       "noAccess": "Non hai accesso a Ferie e permessi.",
       "title": "Ferie e permessi",
-      "subtitle": "Richiedi ferie e tieni traccia delle tue richieste.",
+      "subtitle": "Scegli un motivo, seleziona le date e invia per approvazione.",
       "newRequest": "Nuova richiesta",
       "from": "Dal",
       "to": "Al",
@@ -3791,7 +3792,22 @@
       "requestButton": "Richiedi ferie",
       "myRequests": "Le mie richieste",
       "noRequests": "Nessuna richiesta di ferie.",
-      "rejectedReason": "Rifiutata: {{reason}}"
+      "rejectedReason": "Rifiutata: {{reason}}",
+      "stepReason": "Perché sei assente?",
+      "stepDates": "Quali giorni?",
+      "notesPlaceholder": "Aggiungi una nota (facoltativo) — es. torno lunedì",
+      "notesRequiredPlaceholder": "Indica il motivo",
+      "dayCount_one": "{{count}} giorno",
+      "dayCount_other": "{{count}} giorni",
+      "prevMonth": "Mese precedente",
+      "nextMonth": "Mese successivo",
+      "weekdays": "Lu,Ma,Me,Gi,Ve,Sa,Do"
+    },
+    "reasonTypes": {
+      "vacation": "Ferie",
+      "sickLeave": "Malattia",
+      "personal": "Personale",
+      "other": "Altro"
     }
   },
   "workflows": {

@@ -661,7 +661,8 @@
     "collapse": "Collapse",
     "approve": "Approve",
     "backToHome": "Back to home",
-    "reject": "Reject"
+    "reject": "Reject",
+    "clear": "Clear"
   },
   "auth": {
     "login": {
@@ -3774,7 +3775,7 @@
       "cancelError": "Couldn't cancel",
       "noAccess": "You don't have access to Time Off.",
       "title": "Time Off",
-      "subtitle": "Request time off and track your requests.",
+      "subtitle": "Pick a reason, choose your dates, and send it for approval.",
       "newRequest": "New request",
       "from": "From",
       "to": "To",
@@ -3782,7 +3783,22 @@
       "requestButton": "Request vacation",
       "myRequests": "My requests",
       "noRequests": "No vacation requests yet.",
-      "rejectedReason": "Rejected: {{reason}}"
+      "rejectedReason": "Rejected: {{reason}}",
+      "stepReason": "Why are you away?",
+      "stepDates": "Which days?",
+      "notesPlaceholder": "Add a note (optional) — e.g. back Monday",
+      "notesRequiredPlaceholder": "Tell us the reason",
+      "dayCount_one": "{{count}} day",
+      "dayCount_other": "{{count}} days",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "weekdays": "Mo,Tu,We,Th,Fr,Sa,Su"
+    },
+    "reasonTypes": {
+      "vacation": "Vacation",
+      "sickLeave": "Sick Leave",
+      "personal": "Personal",
+      "other": "Other"
     }
   },
   "workflows": {

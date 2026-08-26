@@ -661,7 +661,8 @@
     "collapse": "Einklappen",
     "approve": "Genehmigen",
     "backToHome": "Zurück zur Startseite",
-    "reject": "Ablehnen"
+    "reject": "Ablehnen",
+    "clear": "Zurücksetzen"
   },
   "auth": {
     "login": {
@@ -3774,7 +3775,7 @@
       "cancelError": "Stornierung fehlgeschlagen",
       "noAccess": "Sie haben keinen Zugriff auf Urlaub.",
       "title": "Urlaub",
-      "subtitle": "Beantragen Sie Urlaub und verfolgen Sie Ihre Anträge.",
+      "subtitle": "Grund wählen, Tage auswählen und zur Genehmigung senden.",
       "newRequest": "Neuer Antrag",
       "from": "Von",
       "to": "Bis",
@@ -3782,7 +3783,22 @@
       "requestButton": "Urlaub beantragen",
       "myRequests": "Meine Anträge",
       "noRequests": "Noch keine Urlaubsanträge.",
-      "rejectedReason": "Abgelehnt: {{reason}}"
+      "rejectedReason": "Abgelehnt: {{reason}}",
+      "stepReason": "Warum sind Sie abwesend?",
+      "stepDates": "Welche Tage?",
+      "notesPlaceholder": "Notiz hinzufügen (optional) — z. B. ab Montag zurück",
+      "notesRequiredPlaceholder": "Bitte den Grund angeben",
+      "dayCount_one": "{{count}} Tag",
+      "dayCount_other": "{{count}} Tage",
+      "prevMonth": "Voriger Monat",
+      "nextMonth": "Nächster Monat",
+      "weekdays": "Mo,Di,Mi,Do,Fr,Sa,So"
+    },
+    "reasonTypes": {
+      "vacation": "Urlaub",
+      "sickLeave": "Krankheit",
+      "personal": "Persönlich",
+      "other": "Sonstiges"
     }
   },
   "workflows": {
