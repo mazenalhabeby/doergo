@@ -48,11 +48,20 @@ grep -q "CHANGE_ME" "$ENV_FILE" && die "$ENV_FILE still contains CHANGE_ME place
 # Read the DB identity FROM THE ENV FILE rather than hardcoding it. A previous
 # backup ran as the wrong user, and pg_dump exited 0 while writing a valid, EMPTY
 # 20-byte gzip — a backup that looked fine and restored nothing.
-# shellcheck disable=SC1090
-set -a; . "$ENV_FILE"; set +a
+#
+# Parsed, never SOURCED. A compose env file is not a shell script: values are
+# literal, so they are not quoted, and `. "$ENV_FILE"` hands the shell whatever
+# is in them. A password containing `#` aborted the entire pre-flight with
+# "command not found" — the shell had reached the middle of a secret and tried
+# to run it. Anything after `$(`, a backtick or `;` would have been worse.
+read_env() { grep -E "^${1}=" "$ENV_FILE" | tail -1 | cut -d= -f2-; }
+POSTGRES_USER="$(read_env POSTGRES_USER)"
+POSTGRES_DB="$(read_env POSTGRES_DB)"
 : "${POSTGRES_USER:?POSTGRES_USER missing from $ENV_FILE}"
 : "${POSTGRES_DB:?POSTGRES_DB missing from $ENV_FILE}"
-: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing from $ENV_FILE}"
+# Presence only — never read into a variable that could be echoed or leak into
+# a trace. The container gets the password from the env file itself.
+grep -qE "^POSTGRES_PASSWORD=.+" "$ENV_FILE" || die "POSTGRES_PASSWORD missing or empty in $ENV_FILE"
 
 compose config --quiet || die "compose file does not render with this env file"
 
