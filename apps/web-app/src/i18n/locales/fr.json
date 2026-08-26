@@ -2221,7 +2221,12 @@
       "cantChangeOwnRole": "Vous ne pouvez pas modifier votre propre rôle.",
       "email": "E-mail",
       "emailChangeHint": "C’est l’identifiant du membre — il se connectera avec la nouvelle adresse.",
-      "invalidEmail": "Veuillez saisir une adresse e-mail valide"
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide",
+      "startDateLabel": "Date d’entrée",
+      "startDateHint": "Quand cette personne a réellement commencé. Sert à calculer au prorata sa première année de congés.",
+      "allowanceLabel": "Jours de congés par an",
+      "allowancePlaceholder": "Valeur par défaut de l’organisation",
+      "allowanceHint": "Laissez vide pour utiliser la valeur de l’organisation. Saisissez 0 pour aucun congé payé."
     },
     "detail": {
       "backToTeam": "Retour à l'équipe",
@@ -3819,7 +3824,8 @@
       "allowanceTitle": "Jours de congés restants {{year}}",
       "allowanceOf": "{{taken}} jours sur {{total}} utilisés",
       "allowancePending_one": "{{count}} jour en attente de validation",
-      "allowancePending_other": "{{count}} jours en attente de validation"
+      "allowancePending_other": "{{count}} jours en attente de validation",
+      "allowanceProrated": "Calculé au prorata depuis le {{date}} — une année complète fait {{full}} jours."
     },
     "reasonTypes": {
       "vacation": "Congés",

@@ -2221,7 +2221,12 @@
       "cantChangeOwnRole": "Non puoi cambiare il tuo ruolo.",
       "email": "E-mail",
       "emailChangeHint": "Questo è l’accesso del membro: accederà con il nuovo indirizzo.",
-      "invalidEmail": "Inserisci un indirizzo e-mail valido"
+      "invalidEmail": "Inserisci un indirizzo e-mail valido",
+      "startDateLabel": "Data di inizio",
+      "startDateHint": "Quando questa persona ha iniziato davvero. Serve a calcolare in proporzione il primo anno di ferie.",
+      "allowanceLabel": "Giorni di ferie all’anno",
+      "allowancePlaceholder": "Valore predefinito dell’organizzazione",
+      "allowanceHint": "Lascia vuoto per usare il valore dell’organizzazione. Inserisci 0 se non ha ferie retribuite."
     },
     "detail": {
       "backToTeam": "Torna al team",
@@ -3819,7 +3824,8 @@
       "allowanceTitle": "Giorni di ferie rimasti {{year}}",
       "allowanceOf": "{{taken}} di {{total}} giorni usati",
       "allowancePending_one": "{{count}} giorno in attesa di approvazione",
-      "allowancePending_other": "{{count}} giorni in attesa di approvazione"
+      "allowancePending_other": "{{count}} giorni in attesa di approvazione",
+      "allowanceProrated": "Proporzionale dal {{date}} — un anno intero è di {{full}} giorni."
     },
     "reasonTypes": {
       "vacation": "Ferie",

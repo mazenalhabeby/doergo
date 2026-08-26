@@ -2227,7 +2227,12 @@
       "email": "E-Mail",
       "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
       "emailChangeHint": "Das ist der Login des Mitglieds — es meldet sich künftig mit der neuen Adresse an.",
-      "cantChangeOwnRole": "Sie können Ihre eigene Rolle nicht ändern."
+      "cantChangeOwnRole": "Sie können Ihre eigene Rolle nicht ändern.",
+      "startDateLabel": "Eintrittsdatum",
+      "startDateHint": "Wann diese Person tatsächlich angefangen hat. Damit wird das erste Urlaubsjahr anteilig berechnet.",
+      "allowanceLabel": "Urlaubstage pro Jahr",
+      "allowancePlaceholder": "Standard der Organisation",
+      "allowanceHint": "Leer lassen für den Standard der Organisation. 0 bedeutet kein bezahlter Urlaub."
     },
     "detail": {
       "backToTeam": "Zurück zum Team",
@@ -3810,7 +3815,8 @@
       "allowanceTitle": "Resturlaub {{year}}",
       "allowanceOf": "{{taken}} von {{total}} Tagen genommen",
       "allowancePending_one": "{{count}} Tag wartet auf Genehmigung",
-      "allowancePending_other": "{{count}} Tage warten auf Genehmigung"
+      "allowancePending_other": "{{count}} Tage warten auf Genehmigung",
+      "allowanceProrated": "Anteilig ab {{date}} — ein volles Jahr sind {{full}} Tage."
     },
     "reasonTypes": {
       "vacation": "Urlaub",

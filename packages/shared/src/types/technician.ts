@@ -229,6 +229,10 @@ export interface UpdateEmployeeInput {
   /** 'IN_HOUSE' (€9 field seat) | 'EXTERNAL' (€15). */
   employmentType?: string;
   maxDailyJobs?: number;
+  /** Annual vacation days. Null = use the organization's default; 0 = none. */
+  leaveAllowance?: number | null;
+  /** When they actually started (YYYY-MM-DD) — pro-rates their first year. */
+  employmentStartDate?: string | null;
   isActive?: boolean;
   rating?: number;
   ratingCount?: number;

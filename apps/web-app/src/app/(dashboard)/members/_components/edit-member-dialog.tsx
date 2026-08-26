@@ -208,6 +208,10 @@ export function EditMemberDialog({
   // Worker fields (consolidated from the retired /employees editor).
   const [specialty, setSpecialty] = useState("")
   const [employmentType, setEmploymentType] = useState("EXTERNAL")
+  // Empty string means "use the organization's default" — distinct from "0",
+  // which is a real answer meaning no paid leave.
+  const [leaveAllowance, setLeaveAllowance] = useState("")
+  const [employmentStartDate, setEmploymentStartDate] = useState("")
 
   // Initialize form whenever a (new) member is opened.
   useEffect(() => {
@@ -223,6 +227,9 @@ export function EditMemberDialog({
     setCopied(false)
     setSpecialty(member.specialty || "")
     setEmploymentType(member.employmentType || "EXTERNAL")
+    const m = member as { leaveAllowance?: number | null; employmentStartDate?: string | null }
+    setLeaveAllowance(m.leaveAllowance === null || m.leaveAllowance === undefined ? "" : String(m.leaveAllowance))
+    setEmploymentStartDate(m.employmentStartDate ? String(m.employmentStartDate).slice(0, 10) : "")
   }, [member])
 
   // ── Data (self-contained; shared query keys dedupe across pages) ──
@@ -368,6 +375,10 @@ export function EditMemberDialog({
     const workerPatch: UpdateEmployeeInput = {
       specialty: specialty.trim() || undefined,
       employmentType,
+      // "" clears the override back to the organization default; "0" is a real
+      // value and must not be swallowed by a falsy check.
+      leaveAllowance: leaveAllowance.trim() === "" ? null : Number(leaveAllowance),
+      employmentStartDate: employmentStartDate || null,
     }
     workerMutation.mutate(workerPatch)
   }
@@ -461,6 +472,37 @@ export function EditMemberDialog({
                 </Select>
               </div>
             )}
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("members.memberEditor.startDateLabel")}
+              </Label>
+              <Input
+                type="date"
+                value={employmentStartDate}
+                onChange={(e) => setEmploymentStartDate(e.target.value)}
+                className="h-9"
+              />
+              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.startDateHint")}</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("members.memberEditor.allowanceLabel")}
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={leaveAllowance}
+                onChange={(e) => setLeaveAllowance(e.target.value)}
+                placeholder={t("members.memberEditor.allowancePlaceholder")}
+                className="h-9"
+              />
+              {/* Says what BLANK means. Without it an admin reads an empty box
+                  as "no holiday" and types a number they did not need to. */}
+              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.allowanceHint")}</p>
+            </div>
           </div>
 
           <EditSection label={t("members.memberEditor.sectionWorkSchedule")} />

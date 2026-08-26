@@ -468,6 +468,11 @@ export interface LeaveBalance {
   taken: number;
   pending: number;
   remaining: number;
+  /** True when this is a joiner's first year and the allowance is a share. */
+  prorated?: boolean;
+  /** What a full year would be — so the screen can show the share honestly. */
+  fullAllowance?: number;
+  startedOn?: string | null;
 }
 
 export interface TaskAssignee {

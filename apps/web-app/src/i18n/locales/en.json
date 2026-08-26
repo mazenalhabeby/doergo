@@ -2227,7 +2227,12 @@
       "email": "Email",
       "invalidEmail": "Please enter a valid email address",
       "emailChangeHint": "This is the member's login — they will sign in with the new address.",
-      "cantChangeOwnRole": "You can't change your own role."
+      "cantChangeOwnRole": "You can't change your own role.",
+      "startDateLabel": "Start date",
+      "startDateHint": "When they actually started working here. Used to pro-rate their first year of vacation.",
+      "allowanceLabel": "Vacation days per year",
+      "allowancePlaceholder": "Organization default",
+      "allowanceHint": "Leave blank to use the organization's default. Enter 0 for no paid vacation."
     },
     "detail": {
       "backToTeam": "Back to Team",
@@ -3810,7 +3815,8 @@
       "allowanceTitle": "{{year}} vacation days left",
       "allowanceOf": "{{taken}} of {{total}} days used",
       "allowancePending_one": "{{count}} day awaiting approval",
-      "allowancePending_other": "{{count}} days awaiting approval"
+      "allowancePending_other": "{{count}} days awaiting approval",
+      "allowanceProrated": "Pro-rated from {{date}} — a full year is {{full}} days."
     },
     "reasonTypes": {
       "vacation": "Vacation",

@@ -313,6 +313,17 @@ export default function MyTimeOffPage() {
                 {t("timeOff.my.allowancePending", { count: balance.pending })}
               </p>
             )}
+            {balance?.prorated && (
+              /* A joiner sees a number nobody else has. Unexplained, that reads
+                 as an error or as being short-changed — so it says why, and
+                 what a full year would have been. */
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t("timeOff.my.allowanceProrated", {
+                  full: balance.fullAllowance ?? 0,
+                  date: balance.startedOn ? fmt(balance.startedOn) : "",
+                })}
+              </p>
+            )}
           </div>
         </div>
 

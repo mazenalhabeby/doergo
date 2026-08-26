@@ -2221,7 +2221,12 @@
       "email": "Correo electrónico",
       "invalidEmail": "Introduce una dirección de correo válida",
       "emailChangeHint": "Este es el acceso del miembro: iniciará sesión con la nueva dirección.",
-      "cantChangeOwnRole": "No puedes cambiar tu propio rol."
+      "cantChangeOwnRole": "No puedes cambiar tu propio rol.",
+      "startDateLabel": "Fecha de incorporación",
+      "startDateHint": "Cuándo empezó a trabajar realmente. Sirve para prorratear su primer año de vacaciones.",
+      "allowanceLabel": "Días de vacaciones al año",
+      "allowancePlaceholder": "Valor por defecto de la organización",
+      "allowanceHint": "Déjelo en blanco para usar el valor de la organización. Introduzca 0 si no tiene vacaciones pagadas."
     },
     "detail": {
       "backToTeam": "Volver a Equipo",
@@ -3810,7 +3815,8 @@
       "allowanceTitle": "Días de vacaciones restantes {{year}}",
       "allowanceOf": "{{taken}} de {{total}} días usados",
       "allowancePending_one": "{{count}} día pendiente de aprobación",
-      "allowancePending_other": "{{count}} días pendientes de aprobación"
+      "allowancePending_other": "{{count}} días pendientes de aprobación",
+      "allowanceProrated": "Proporcional desde el {{date}} — un año completo son {{full}} días."
     },
     "reasonTypes": {
       "vacation": "Vacaciones",
