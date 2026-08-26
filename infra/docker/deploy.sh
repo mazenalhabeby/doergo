@@ -41,7 +41,14 @@ step "Pre-flight checks"
 # an empty REDIS_PASSWORD (redis crash-loops) and the wrong web DOMAIN. Since the
 # audit, POSTGRES_PASSWORD has no default either, so an env-less run now fails
 # immediately instead of silently starting with a password published in the repo.
-compose() { docker compose --env-file "$ENV_FILE" "$@"; }
+# Run FROM the compose directory, in a subshell so the caller's cwd is untouched.
+# Without the cd, `docker compose` looks in whatever directory the script was
+# invoked from — the repository root, when this is run as ./infra/docker/deploy.sh
+# — and reports "no configuration file provided". Being in this directory is also
+# what makes docker-compose.override.yml load automatically, and that file holds
+# the production-only configuration, so a deploy that missed it would come up
+# subtly wrong rather than fail outright.
+compose() { (cd "$SCRIPT_DIR" && docker compose --env-file "$ENV_FILE" "$@"); }
 
 grep -q "CHANGE_ME" "$ENV_FILE" && die "$ENV_FILE still contains CHANGE_ME placeholders."
 
