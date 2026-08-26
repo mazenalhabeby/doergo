@@ -3808,7 +3808,7 @@
     "reasonTypes": {
       "vacation": "Urlaub",
       "sickLeave": "Krankheit",
-      "personal": "Persönlich",
+      "family": "Familie",
       "other": "Sonstiges"
     }
   },

@@ -709,7 +709,7 @@
     "reasonTypes": {
       "vacation": "Ferie",
       "sickLeave": "Malattia",
-      "personal": "Motivi personali",
+      "family": "Famiglia",
       "other": "Altro"
     },
     "myRequests": "Le mie richieste",
@@ -732,7 +732,7 @@
     "typeLabels": {
       "vacation": "Ferie",
       "sickLeave": "Malattia",
-      "personal": "Motivi personali",
+      "family": "Famiglia",
       "timeOff": "Ferie e permessi"
     }
   },

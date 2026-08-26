@@ -3817,7 +3817,7 @@
     "reasonTypes": {
       "vacation": "Congés",
       "sickLeave": "Maladie",
-      "personal": "Personnel",
+      "family": "Famille",
       "other": "Autre"
     }
   },

@@ -709,7 +709,7 @@
     "reasonTypes": {
       "vacation": "Urlaub",
       "sickLeave": "Krankmeldung",
-      "personal": "Persönlich",
+      "family": "Familie",
       "other": "Sonstiges"
     },
     "myRequests": "Meine Anträge",
@@ -732,7 +732,7 @@
     "typeLabels": {
       "vacation": "Urlaub",
       "sickLeave": "Krankmeldung",
-      "personal": "Persönlich",
+      "family": "Familie",
       "timeOff": "Abwesenheit"
     }
   },

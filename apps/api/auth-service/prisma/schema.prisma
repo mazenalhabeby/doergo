@@ -210,7 +210,7 @@ enum GeofenceExcursionStatus {
 enum TimeOffType {
   VACATION // Counts against the annual allowance
   SICK // Does not
-  PERSONAL // Does not
+  FAMILY // Childcare, a family matter — does not
   OTHER // Does not
 }
 

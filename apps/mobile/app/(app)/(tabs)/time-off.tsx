@@ -44,7 +44,7 @@ import { FilterChip } from '../../../src/components/filter-chip';
 // HELPERS
 // =============================================================================
 
-const REASON_TYPE_KEYS = ['vacation', 'sickLeave', 'personal', 'other'] as const;
+const REASON_TYPE_KEYS = ['vacation', 'sickLeave', 'family', 'other'] as const;
 
 function getDayCount(startDate: string, endDate: string): number {
   const start = new Date(startDate);
@@ -65,7 +65,7 @@ function getTypeLabelKey(reason?: string): string {
   if (!reason) return 'timeOff.typeLabels.timeOff';
   const lower = reason.toLowerCase();
   if (lower.includes('sick') || lower.includes('medical')) return 'timeOff.typeLabels.sickLeave';
-  if (lower.includes('personal') || lower.includes('family')) return 'timeOff.typeLabels.personal';
+  if (lower.includes('personal') || lower.includes('family')) return 'timeOff.typeLabels.family';
   if (lower.includes('vacation') || lower.includes('holiday')) return 'timeOff.typeLabels.vacation';
   return 'timeOff.typeLabels.timeOff';
 }

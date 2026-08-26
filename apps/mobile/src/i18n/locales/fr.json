@@ -709,7 +709,7 @@
     "reasonTypes": {
       "vacation": "Vacances",
       "sickLeave": "Congé maladie",
-      "personal": "Personnel",
+      "family": "Famille",
       "other": "Autre"
     },
     "myRequests": "Mes demandes",
@@ -732,7 +732,7 @@
     "typeLabels": {
       "vacation": "Vacances",
       "sickLeave": "Congé maladie",
-      "personal": "Personnel",
+      "family": "Famille",
       "timeOff": "Congé"
     }
   },

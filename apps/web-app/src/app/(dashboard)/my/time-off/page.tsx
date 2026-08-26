@@ -85,11 +85,23 @@ function DotsGlyph(p: React.SVGProps<SVGSVGElement>) {
   )
 }
 
+/*
+  Monochrome on purpose.
+
+  Giving each reason its own hue is the old tag-colour pattern: four saturated
+  swatches competing on one small panel, none of which mean anything until you
+  have learnt the legend. It also fights the rest of the page, where colour is
+  reserved for STATE — amber for pending, green for approved, the accent for
+  what is selected. Spending it on identity too leaves nothing to say "this one
+  is chosen".
+
+  So the cards are neutral and selection is the only thing that colours.
+*/
 const REASON_TYPES = [
-  { key: "vacation", glyph: SunGlyph, tint: "text-amber-500", ring: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  { key: "sickLeave", glyph: PulseGlyph, tint: "text-rose-500", ring: "border-rose-500/60 bg-rose-500/10 text-rose-600 dark:text-rose-400" },
-  { key: "personal", glyph: FamilyGlyph, tint: "text-violet-500", ring: "border-violet-500/60 bg-violet-500/10 text-violet-600 dark:text-violet-400" },
-  { key: "other", glyph: DotsGlyph, tint: "text-slate-400", ring: "border-slate-400/60 bg-slate-400/10 text-slate-600 dark:text-slate-300" },
+  { key: "vacation", glyph: SunGlyph },
+  { key: "sickLeave", glyph: PulseGlyph },
+  { key: "family", glyph: FamilyGlyph },
+  { key: "other", glyph: DotsGlyph },
 ] as const
 type ReasonKey = (typeof REASON_TYPES)[number]["key"]
 
@@ -97,7 +109,7 @@ type ReasonKey = (typeof REASON_TYPES)[number]["key"]
 const REASON_TO_TYPE: Record<ReasonKey, string> = {
   vacation: "VACATION",
   sickLeave: "SICK",
-  personal: "PERSONAL",
+  family: "FAMILY",
   other: "OTHER",
 }
 
@@ -384,7 +396,7 @@ export default function MyTimeOffPage() {
         <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-foreground">{t("timeOff.my.stepReason")}</h2>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {REASON_TYPES.map(({ key, glyph: Glyph, tint, ring }) => {
+            {REASON_TYPES.map(({ key, glyph: Glyph }) => {
               const active = reasonType === key
               return (
                 <button
@@ -396,32 +408,17 @@ export default function MyTimeOffPage() {
                     "group relative flex flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 transition-all duration-200",
                     "motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     active
-                      ? cn(ring, "shadow-sm")
-                      : "border-border text-muted-foreground hover:border-foreground/20 hover:bg-accent/40",
+                      ? "border-foreground bg-foreground text-background shadow-sm"
+                      : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground",
                   )}
                 >
-                  {/* The glyph sits in its own tinted well, so the colour reads
-                      even when the card itself is unselected — that is what
-                      makes the row scannable by hue rather than by drawing. */}
-                  <span
+                  <Glyph
                     className={cn(
-                      "flex size-9 items-center justify-center rounded-xl transition-colors duration-200",
-                      active ? "bg-background/70" : "bg-muted/60 group-hover:bg-muted",
+                      "size-6 stroke-current transition-transform duration-200",
+                      active && "motion-safe:scale-110",
                     )}
-                  >
-                    <Glyph
-                      className={cn(
-                        "size-[18px] stroke-current transition-transform duration-200",
-                        active ? "motion-safe:scale-110" : tint,
-                      )}
-                    />
-                  </span>
+                  />
                   <span className="text-[11px] font-medium leading-none">{t(`timeOff.reasonTypes.${key}`)}</span>
-                  {active && (
-                    <span className="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-current/15">
-                      <Check className="size-2.5" />
-                    </span>
-                  )}
                 </button>
               )
             })}

@@ -709,7 +709,7 @@
     "reasonTypes": {
       "vacation": "Vacation",
       "sickLeave": "Sick Leave",
-      "personal": "Personal",
+      "family": "Family",
       "other": "Other"
     },
     "myRequests": "My Requests",
@@ -732,7 +732,7 @@
     "typeLabels": {
       "vacation": "Vacation",
       "sickLeave": "Sick Leave",
-      "personal": "Personal",
+      "family": "Family",
       "timeOff": "Time Off"
     }
   },

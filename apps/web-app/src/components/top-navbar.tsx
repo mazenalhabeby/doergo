@@ -537,7 +537,14 @@ function TimeAttendanceDropdown({
   const { t } = useTranslation()
   // Trigger is active on any of the grouped routes (schedule also covers its
   // legacy /employees/availability target; my/time-off is the personal time-off page).
-  const active = isDropdownActive(pathname, ["/attendance", "/schedule", "/employees/availability", "/my/time-off"])
+  /*
+    Exactly the routes this menu contains, plus the legacy alias that redirects
+    into it. It listed "/my/time-off" — which moved out to its own top-level
+    link — so on that page the standalone link AND this trigger both lit up,
+    and the bar pointed at two places. It also omitted /issues and /overtime,
+    which ARE in the menu, so on those pages it highlighted nothing.
+  */
+  const active = isDropdownActive(pathname, ["/attendance", "/schedule", "/overtime", "/issues", "/employees/availability"])
 
   return (
     <DropdownMenu onOpenChange={(open) => { if (open && onOpen) onOpen() }}>

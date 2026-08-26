@@ -45,4 +45,32 @@ describe("navbar active link", () => {
     expect(activeFor("/dashboard")).toEqual(["/dashboard"])
     expect(isActive("/dashboard/anything", "/dashboard")).toBe(false)
   })
+
+  /*
+    The dropdown is a second way to be "active", and it was the real cause of
+    two highlights at once: its list named /my/time-off, which had moved out to
+    its own top-level link.
+  */
+  describe("attendance dropdown", () => {
+    const DROPDOWN = ["/attendance", "/schedule", "/overtime", "/issues", "/employees/availability"]
+    const MENU_LINKS = ["/attendance", "/issues", "/overtime", "/schedule"]
+    const isDropdownActive = (pathname: string) => DROPDOWN.some((h) => matches(pathname, h))
+
+    it("does not claim a page that has its own top-level link", () => {
+      expect(isDropdownActive("/my/time-off")).toBe(false)
+      expect(activeFor("/my/time-off")).toEqual(["/my/time-off"])
+    })
+
+    it("highlights on every route the menu actually contains", () => {
+      for (const href of MENU_LINKS) expect(isDropdownActive(href)).toBe(true)
+    })
+
+    it("claims nothing the menu does not contain", () => {
+      // Except the legacy alias, which redirects into it.
+      for (const h of DROPDOWN) {
+        if (h === "/employees/availability") continue
+        expect(MENU_LINKS).toContain(h)
+      }
+    })
+  })
 })
