@@ -461,6 +461,15 @@ export const authApi = {
 };
 
 // Task types
+/** This year's vacation allowance for one person. */
+export interface LeaveBalance {
+  year: number;
+  allowance: number;
+  taken: number;
+  pending: number;
+  remaining: number;
+}
+
 export interface TaskAssignee {
   id: string;
   userId: string;
@@ -2999,8 +3008,16 @@ export const employeesApi = {
     return response.data?.data || [];
   },
 
+  /** This year's vacation allowance: total, taken, pending, remaining. */
+  getLeaveBalance: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: LeaveBalance }>(
+      `/technicians/${id}/leave-balance`,
+    );
+    return response.data?.data ?? null;
+  },
+
   // Request time off
-  requestTimeOff: async (id: string, data: { startDate: string; endDate: string; reason?: string }) => {
+  requestTimeOff: async (id: string, data: { startDate: string; endDate: string; reason?: string; type?: string }) => {
     const response = await api.post<{
       success: boolean;
       data: TimeOffRequest;

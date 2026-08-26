@@ -16,19 +16,19 @@ import { hasAccessModule } from "@hbcfield/shared/client"
 import type { TimeOffRequest } from "@hbcfield/shared"
 
 /*
-  Leave-management products all lead with the same three things: how much
-  allowance is left, who else is away, and where a request has got to.
+  Leave products lead with three things: allowance remaining, who else is away,
+  and where a request has got to.
 
-  Two of those cannot be built honestly here. TimeOff has no allowance or
-  entitlement column, so "12 days remaining" would be a number this system
-  invented; and a member has no permission to read colleagues' absence, so a
-  team calendar would be empty or forbidden depending on who looked.
+  The allowance is real now — TimeOff carries a `type`, and only VACATION is
+  deducted, because an allowance that eats sick days is a penalty for being ill.
+  APPROVED days are subtracted; PENDING days are shown beside the figure rather
+  than inside it, so a request nobody has looked at yet does not silently reduce
+  what someone believes they have.
 
-  What IS real is the person's own history, and it answers the question the
-  balance widget is standing in for — "what have I already got booked?" So the
-  calendar renders their existing requests in place, the summary counts real
-  days, and picking days that collide with something already booked says so
-  before it is submitted rather than after it is rejected.
+  A team calendar is still not built: a member has no permission to read
+  colleagues' absence, so it would be empty or forbidden depending on who
+  looked. Their own booked days ARE drawn on the calendar, which answers the
+  question the team view is usually reached for — "does this clash?".
 */
 
 const REASON_TYPES = [
@@ -38,6 +38,14 @@ const REASON_TYPES = [
   { key: "other", icon: MoreHorizontal },
 ] as const
 type ReasonKey = (typeof REASON_TYPES)[number]["key"]
+
+/** UI key → stored enum. Only VACATION is deducted from the allowance. */
+const REASON_TO_TYPE: Record<ReasonKey, string> = {
+  vacation: "VACATION",
+  sickLeave: "SICK",
+  personal: "PERSONAL",
+  other: "OTHER",
+}
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: "text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/15",
@@ -111,7 +119,16 @@ export default function MyTimeOffPage() {
     queryFn: () => employeesApi.getTimeOff(user!.id),
     enabled: canSee && !!user?.id,
   })
-  const refetch = () => qc.invalidateQueries({ queryKey: ["my-time-off", user?.id] })
+  const { data: balance } = useQuery({
+    queryKey: ["my-leave-balance", user?.id],
+    queryFn: () => employeesApi.getLeaveBalance(user!.id),
+    enabled: canSee && !!user?.id,
+  })
+
+  const refetch = () => {
+    qc.invalidateQueries({ queryKey: ["my-time-off", user?.id] })
+    qc.invalidateQueries({ queryKey: ["my-leave-balance", user?.id] })
+  }
 
   const list: TimeOffRequest[] = (requests as TimeOffRequest[]) ?? []
   const booked = useMemo(() => bookedDays(list), [list])
@@ -146,6 +163,7 @@ export default function MyTimeOffPage() {
         startDate: toISO(rangeStart!),
         endDate: toISO(rangeEnd ?? rangeStart!),
         reason,
+        type: REASON_TO_TYPE[reasonType!],
       })
     },
     onSuccess: () => {
@@ -207,15 +225,38 @@ export default function MyTimeOffPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t("timeOff.my.subtitle")}</p>
       </header>
 
-      {/* Real counts only. There is no allowance in the data, so there is no
-          "days remaining" here — it would be a number nothing backs. */}
-      <div className="mb-5 grid grid-cols-3 gap-3">
-        <Stat icon={CalendarCheck} value={String(stats.daysThisYear)} label={t("timeOff.my.statBooked")} />
-        <Stat icon={Clock3} value={String(stats.pending)} label={t("timeOff.my.statPending")}
-              tone={stats.pending > 0 ? "amber" : undefined} />
-        <Stat icon={CalendarDays}
-              value={stats.next ? fmt(stats.next.startDate) : "—"}
-              label={t("timeOff.my.statNext")} small />
+      {/* The allowance, and what is actually left of it. */}
+      <div className="mb-5 grid gap-3 sm:grid-cols-[auto_1fr]">
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
+          <AllowanceRing
+            remaining={balance?.remaining ?? 0}
+            allowance={balance?.allowance ?? 0}
+            loading={!balance}
+          />
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("timeOff.my.allowanceTitle", { year: balance?.year ?? new Date().getFullYear() })}
+            </p>
+            <p className="mt-1 text-sm text-foreground">
+              {t("timeOff.my.allowanceOf", { taken: balance?.taken ?? 0, total: balance?.allowance ?? 0 })}
+            </p>
+            {!!balance?.pending && (
+              /* Beside the figure, never inside it: a request nobody has
+                 approved yet is not time the person has taken. */
+              <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                {t("timeOff.my.allowancePending", { count: balance.pending })}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Stat icon={Clock3} value={String(stats.pending)} label={t("timeOff.my.statPending")}
+                tone={stats.pending > 0 ? "amber" : undefined} />
+          <Stat icon={CalendarDays} small
+                value={stats.next ? fmt(stats.next.startDate) : "—"}
+                label={t("timeOff.my.statNext")} />
+        </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -435,5 +476,44 @@ function Legend({ className, label }: { className: string; label: string }) {
       <span className={cn("size-2 rounded-full", className)} />
       {label}
     </span>
+  )
+}
+
+/**
+ * Remaining vacation as a ring.
+ *
+ * Only the APPROVED portion is filled. Pending days are reported next to it in
+ * words rather than shaded in, because a half-shaded ring reads as "already
+ * gone" for days a manager has not yet agreed to.
+ */
+function AllowanceRing({ remaining, allowance, loading }: {
+  remaining: number; allowance: number; loading?: boolean
+}) {
+  const pct = allowance > 0 ? Math.max(0, Math.min(1, remaining / allowance)) : 0
+  const r = 26
+  const circumference = 2 * Math.PI * r
+  return (
+    <div className="relative size-[68px] shrink-0">
+      <svg viewBox="0 0 64 64" className="size-full -rotate-90">
+        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="6" className="stroke-muted" />
+        <circle
+          cx="32" cy="32" r={r} fill="none" strokeWidth="6" strokeLinecap="round"
+          className={cn(
+            "transition-[stroke-dashoffset] duration-700 ease-out",
+            pct > 0.25 ? "stroke-primary" : "stroke-amber-500",
+          )}
+          strokeDasharray={circumference}
+          strokeDashoffset={loading ? circumference : circumference * (1 - pct)}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-lg font-semibold leading-none tabular-nums text-foreground">
+          {loading ? "—" : remaining}
+        </span>
+        <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
+          {allowance > 0 ? `/ ${allowance}` : ""}
+        </span>
+      </div>
+    </div>
   )
 }

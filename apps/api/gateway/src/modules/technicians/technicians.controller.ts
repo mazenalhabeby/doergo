@@ -623,6 +623,26 @@ export class EmployeesController {
     );
   }
 
+  @Get(':id/leave-balance')
+  @ApiOperation({ summary: "This year's vacation allowance, taken and remaining" })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  async getLeaveBalance(@Param('id') id: string, @CurrentUser() user?: CurrentUserData) {
+    // Same rule as the list above: a manager may read anyone's, a member only
+    // their own. An allowance says what someone is entitled to and how much
+    // they have used, which is theirs, not the team's.
+    const privileged = user?.role === Role.ADMIN || !!user?.canViewAllTasks;
+    if (!privileged && user?.id !== id) {
+      throw new ForbiddenException('You can only view your own leave balance');
+    }
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'get_leave_balance' }, {
+        technicianId: id,
+        organizationId: user?.organizationId,
+      }),
+    );
+  }
+
   @Post(':id/time-off')
   // Creating a request needs the tab; cancelling one (DELETE below) deliberately does not.
   @RequireAccessModule('time_off')
@@ -632,7 +652,7 @@ export class EmployeesController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   async requestTimeOff(
     @Param('id') id: string,
-    @Body() body: { startDate: string; endDate: string; reason?: string },
+    @Body() body: { startDate: string; endDate: string; reason?: string; type?: string },
     @CurrentUser() user: CurrentUserData,
   ) {
     // Employees can only request time off for themselves
@@ -649,6 +669,9 @@ export class EmployeesController {
           startDate: body.startDate,
           endDate: body.endDate,
           reason: body.reason,
+          // Only VACATION is deducted from the allowance. Defaulted in the
+          // service, so an older client that sends nothing keeps working.
+          type: body.type,
         },
       ),
     );

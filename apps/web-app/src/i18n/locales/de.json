@@ -3793,14 +3793,17 @@
       "prevMonth": "Voriger Monat",
       "nextMonth": "Nächster Monat",
       "weekdays": "Mo,Di,Mi,Do,Fr,Sa,So",
-      "statBooked": "Tage dieses Jahr gebucht",
       "statPending": "wartet auf Genehmigung",
       "statNext": "nächste Abwesenheit",
       "pickDaysHint": "Wählen Sie Ihre Tage im Kalender",
       "overlapWarning": "Sie haben bereits Abwesenheit von {{from}} bis {{to}} gebucht.",
       "legendApproved": "Genehmigt",
       "legendPending": "Ausstehend",
-      "legendSelected": "Ausgewählt"
+      "legendSelected": "Ausgewählt",
+      "allowanceTitle": "Resturlaub {{year}}",
+      "allowanceOf": "{{taken}} von {{total}} Tagen genommen",
+      "allowancePending_one": "{{count}} Tag wartet auf Genehmigung",
+      "allowancePending_other": "{{count}} Tage warten auf Genehmigung"
     },
     "reasonTypes": {
       "vacation": "Urlaub",

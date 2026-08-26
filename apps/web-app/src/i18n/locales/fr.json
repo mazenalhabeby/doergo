@@ -3802,14 +3802,17 @@
       "prevMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
       "weekdays": "Lu,Ma,Me,Je,Ve,Sa,Di",
-      "statBooked": "jours réservés cette année",
       "statPending": "en attente de validation",
       "statNext": "prochaine absence",
       "pickDaysHint": "Choisissez vos jours dans le calendrier",
       "overlapWarning": "Vous avez déjà une absence du {{from}} au {{to}}.",
       "legendApproved": "Validé",
       "legendPending": "En attente",
-      "legendSelected": "Sélectionné"
+      "legendSelected": "Sélectionné",
+      "allowanceTitle": "Jours de congés restants {{year}}",
+      "allowanceOf": "{{taken}} jours sur {{total}} utilisés",
+      "allowancePending_one": "{{count}} jour en attente de validation",
+      "allowancePending_other": "{{count}} jours en attente de validation"
     },
     "reasonTypes": {
       "vacation": "Congés",

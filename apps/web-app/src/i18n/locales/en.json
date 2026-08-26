@@ -3793,14 +3793,17 @@
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
       "weekdays": "Mo,Tu,We,Th,Fr,Sa,Su",
-      "statBooked": "days booked this year",
       "statPending": "awaiting approval",
       "statNext": "next time off",
       "pickDaysHint": "Pick your days on the calendar",
       "overlapWarning": "You already have time off booked from {{from}} to {{to}}.",
       "legendApproved": "Approved",
       "legendPending": "Pending",
-      "legendSelected": "Selected"
+      "legendSelected": "Selected",
+      "allowanceTitle": "{{year}} vacation days left",
+      "allowanceOf": "{{taken}} of {{total}} days used",
+      "allowancePending_one": "{{count}} day awaiting approval",
+      "allowancePending_other": "{{count}} days awaiting approval"
     },
     "reasonTypes": {
       "vacation": "Vacation",

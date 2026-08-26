@@ -410,6 +410,9 @@ export class TechniciansService {
    */
   async requestTimeOff(dto: RequestTimeOffDto) {
     const { technicianId, organizationId, startDate, endDate, reason } = dto;
+    // Only VACATION is deducted from the allowance, so the kind has to be stored
+    // rather than inferred from the reason text at read time.
+    const type = (dto as any).type ?? 'VACATION';
 
     // Verify technician belongs to organization
     const technician = await this.prisma.user.findFirst({
@@ -467,6 +470,7 @@ export class TechniciansService {
         startDate: start,
         endDate: end,
         reason,
+        type: type as any,
         status: 'PENDING',
       },
       include: {
@@ -571,7 +575,67 @@ export class TechniciansService {
       },
     });
 
+    // Shape unchanged on purpose: mobile reads `data` as an array. The balance
+    // is its own call (getLeaveBalance) rather than a new key here.
     return success(timeOffs);
+  }
+
+  /** This year's allowance for one person, with what is taken and pending. */
+  async getLeaveBalance(dto: { technicianId: string; organizationId: string }) {
+    const technician = await this.prisma.user.findFirst({
+      where: { id: dto.technicianId, organizationId: dto.organizationId },
+      select: { id: true, leaveAllowance: true, organizationId: true },
+    });
+    if (!technician) throw new NotFoundException('Employee not found in organization');
+
+    const rows = await this.prisma.timeOff.findMany({
+      where: { technicianId: dto.technicianId, type: 'VACATION' as any },
+      select: { type: true, status: true, startDate: true, endDate: true },
+    });
+    return success(await this.leaveBalance(technician, rows as any));
+  }
+
+  /**
+   * This year's vacation allowance and what is left of it.
+   *
+   * Deducts APPROVED vacation only. Pending days are reported separately rather
+   * than subtracted: a request a manager has not looked at yet is not time the
+   * person has taken, and quietly counting it makes the number drop for a
+   * booking that may never happen. Showing both lets someone see the optimistic
+   * and the committed figure without the page choosing for them.
+   *
+   * Sick, personal and other absence never touch the allowance — an allowance
+   * that deducts sick days is a penalty for being ill.
+   */
+  private async leaveBalance(
+    technician: { id: string; leaveAllowance?: number | null; organizationId?: string | null },
+    timeOffs: Array<{ type?: string; status: string; startDate: Date; endDate: Date }>,
+  ) {
+    // Per-person override, else the organization's default. Null is "use the
+    // default"; 0 is a real answer meaning no paid leave, so `??` not `||`.
+    let allowance = technician.leaveAllowance ?? null;
+    if (allowance === null && technician.organizationId) {
+      const org = await this.prisma.organization.findUnique({
+        where: { id: technician.organizationId },
+        select: { defaultLeaveAllowance: true },
+      });
+      allowance = org?.defaultLeaveAllowance ?? 25;
+    }
+
+    const year = new Date().getFullYear();
+    const daysIn = (a: Date, b: Date) =>
+      Math.round((new Date(b).setHours(0, 0, 0, 0) - new Date(a).setHours(0, 0, 0, 0)) / 86400000) + 1;
+
+    let taken = 0;
+    let pending = 0;
+    for (const r of timeOffs) {
+      if ((r.type ?? 'VACATION') !== 'VACATION') continue;
+      if (new Date(r.startDate).getFullYear() !== year) continue;
+      if (r.status === 'APPROVED') taken += daysIn(r.startDate, r.endDate);
+      else if (r.status === 'PENDING') pending += daysIn(r.startDate, r.endDate);
+    }
+
+    return { year, allowance: allowance ?? 0, taken, pending, remaining: (allowance ?? 0) - taken };
   }
 
   /**

@@ -201,6 +201,19 @@ enum GeofenceExcursionStatus {
 }
 
 // Time-off request status
+/// What KIND of absence a request is.
+///
+/// Added with the leave allowance, because an allowance that deducts sick days
+/// is not an allowance — it is a penalty for being ill. Only VACATION counts
+/// against it. Until now the kind lived in a free-text `reason`, so nothing
+/// could tell the two apart.
+enum TimeOffType {
+  VACATION // Counts against the annual allowance
+  SICK // Does not
+  PERSONAL // Does not
+  OTHER // Does not
+}
+
 enum TimeOffStatus {
   PENDING // Awaiting manager approval
   APPROVED // Manager approved
@@ -384,6 +397,9 @@ model Organization {
   email        String? // Contact email (org-level, not user)
   website      String? // Website URL
   timezone     String? @default("Europe/Vienna") // IANA timezone
+  /// Annual paid vacation days for this organization. The per-person override
+  /// lives on User.leaveAllowance; this is what applies when that is unset.
+  defaultLeaveAllowance Int @default(25)
   logoUrl      String? // Organization logo
 
   // Join system
@@ -639,6 +655,9 @@ model User {
   canAssignTasks    Boolean           @default(false) // Can assign tasks to technicians
   canManageUsers    Boolean           @default(false) // Can manage users in organization
   canViewReports    Boolean           @default(false) // May build/run reports (granted to Show-in-Management members)
+  /// Overrides the organization default for this person (seniority, part-time,
+  /// a negotiated contract). Null means "whatever the organization allows".
+  leaveAllowance    Int?
   allowRemote       Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
   presence          String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
   lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
@@ -2437,7 +2456,8 @@ model TimeOff {
 
   startDate DateTime @db.Date // First day of time off
   endDate   DateTime @db.Date // Last day of time off (inclusive)
-  reason    String? // "Vacation", "Sick leave", "Personal", etc.
+  type   TimeOffType @default(VACATION) // Only VACATION is deducted from the allowance
+  reason String? // Free-text note; the KIND is `type`, not this
 
   status TimeOffStatus @default(PENDING)
 

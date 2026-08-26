@@ -3793,14 +3793,17 @@
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
       "weekdays": "Lu,Ma,Mi,Ju,Vi,Sá,Do",
-      "statBooked": "días reservados este año",
       "statPending": "pendiente de aprobación",
       "statNext": "próxima ausencia",
       "pickDaysHint": "Elija sus días en el calendario",
       "overlapWarning": "Ya tiene ausencia reservada del {{from}} al {{to}}.",
       "legendApproved": "Aprobado",
       "legendPending": "Pendiente",
-      "legendSelected": "Seleccionado"
+      "legendSelected": "Seleccionado",
+      "allowanceTitle": "Días de vacaciones restantes {{year}}",
+      "allowanceOf": "{{taken}} de {{total}} días usados",
+      "allowancePending_one": "{{count}} día pendiente de aprobación",
+      "allowancePending_other": "{{count}} días pendientes de aprobación"
     },
     "reasonTypes": {
       "vacation": "Vacaciones",

@@ -66,6 +66,11 @@ export class TechniciansController {
     return this.techniciansService.getTimeOff(data);
   }
 
+  @MessagePattern({ cmd: 'get_leave_balance' })
+  async getLeaveBalance(@Payload() dto: { technicianId: string; organizationId: string }) {
+    return this.techniciansService.getLeaveBalance(dto);
+  }
+
   @MessagePattern({ cmd: 'get_org_time_off' })
   async getOrgTimeOff(@Payload() data: GetOrgTimeOffDto) {
     return this.techniciansService.getOrgTimeOff(data);
