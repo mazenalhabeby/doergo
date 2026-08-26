@@ -3792,7 +3792,15 @@
       "dayCount_other": "{{count}} Tage",
       "prevMonth": "Voriger Monat",
       "nextMonth": "Nächster Monat",
-      "weekdays": "Mo,Di,Mi,Do,Fr,Sa,So"
+      "weekdays": "Mo,Di,Mi,Do,Fr,Sa,So",
+      "statBooked": "Tage dieses Jahr gebucht",
+      "statPending": "wartet auf Genehmigung",
+      "statNext": "nächste Abwesenheit",
+      "pickDaysHint": "Wählen Sie Ihre Tage im Kalender",
+      "overlapWarning": "Sie haben bereits Abwesenheit von {{from}} bis {{to}} gebucht.",
+      "legendApproved": "Genehmigt",
+      "legendPending": "Ausstehend",
+      "legendSelected": "Ausgewählt"
     },
     "reasonTypes": {
       "vacation": "Urlaub",

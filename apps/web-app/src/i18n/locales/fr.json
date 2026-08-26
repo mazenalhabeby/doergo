@@ -3801,7 +3801,15 @@
       "dayCount_other": "{{count}} jours",
       "prevMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
-      "weekdays": "Lu,Ma,Me,Je,Ve,Sa,Di"
+      "weekdays": "Lu,Ma,Me,Je,Ve,Sa,Di",
+      "statBooked": "jours réservés cette année",
+      "statPending": "en attente de validation",
+      "statNext": "prochaine absence",
+      "pickDaysHint": "Choisissez vos jours dans le calendrier",
+      "overlapWarning": "Vous avez déjà une absence du {{from}} au {{to}}.",
+      "legendApproved": "Validé",
+      "legendPending": "En attente",
+      "legendSelected": "Sélectionné"
     },
     "reasonTypes": {
       "vacation": "Congés",

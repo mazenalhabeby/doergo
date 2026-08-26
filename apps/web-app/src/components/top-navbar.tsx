@@ -61,9 +61,31 @@ import {
 // ---------------------------------------------------------------------------
 // Nav item active-state helper
 // ---------------------------------------------------------------------------
-function isActive(pathname: string, href: string): boolean {
+/*
+  Every href the bar can render. Needed because a prefix match alone lights up
+  TWO items at once: on /settings/billing both "/settings" and
+  "/settings/billing" matched, so the bar showed two active links and neither
+  told you where you were.
+
+  A nav item is active when it matches AND no LONGER href also matches — the
+  most specific route wins, which is what a person reads the highlight to mean.
+*/
+const NAV_HREFS = [
+  "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
+  "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
+  "/invitations", "/join-requests", "/settings", "/settings/billing",
+  "/my/attendance", "/my/time-off",
+] as const
+
+function matches(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard"
   return pathname === href || pathname.startsWith(href + "/")
+}
+
+function isActive(pathname: string, href: string): boolean {
+  if (!matches(pathname, href)) return false
+  // Beaten by anything more specific that also matches.
+  return !NAV_HREFS.some((other) => other.length > href.length && matches(pathname, other))
 }
 
 function isDropdownActive(pathname: string, hrefs: string[]): boolean {

@@ -3801,7 +3801,15 @@
       "dayCount_other": "{{count}} giorni",
       "prevMonth": "Mese precedente",
       "nextMonth": "Mese successivo",
-      "weekdays": "Lu,Ma,Me,Gi,Ve,Sa,Do"
+      "weekdays": "Lu,Ma,Me,Gi,Ve,Sa,Do",
+      "statBooked": "giorni prenotati quest’anno",
+      "statPending": "in attesa di approvazione",
+      "statNext": "prossima assenza",
+      "pickDaysHint": "Scegli i tuoi giorni sul calendario",
+      "overlapWarning": "Hai già un’assenza prenotata dal {{from}} al {{to}}.",
+      "legendApproved": "Approvato",
+      "legendPending": "In attesa",
+      "legendSelected": "Selezionato"
     },
     "reasonTypes": {
       "vacation": "Ferie",

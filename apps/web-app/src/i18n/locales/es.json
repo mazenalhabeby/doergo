@@ -3792,7 +3792,15 @@
       "dayCount_other": "{{count}} días",
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
-      "weekdays": "Lu,Ma,Mi,Ju,Vi,Sá,Do"
+      "weekdays": "Lu,Ma,Mi,Ju,Vi,Sá,Do",
+      "statBooked": "días reservados este año",
+      "statPending": "pendiente de aprobación",
+      "statNext": "próxima ausencia",
+      "pickDaysHint": "Elija sus días en el calendario",
+      "overlapWarning": "Ya tiene ausencia reservada del {{from}} al {{to}}.",
+      "legendApproved": "Aprobado",
+      "legendPending": "Pendiente",
+      "legendSelected": "Seleccionado"
     },
     "reasonTypes": {
       "vacation": "Vacaciones",

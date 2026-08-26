@@ -3792,7 +3792,15 @@
       "dayCount_other": "{{count}} days",
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
-      "weekdays": "Mo,Tu,We,Th,Fr,Sa,Su"
+      "weekdays": "Mo,Tu,We,Th,Fr,Sa,Su",
+      "statBooked": "days booked this year",
+      "statPending": "awaiting approval",
+      "statNext": "next time off",
+      "pickDaysHint": "Pick your days on the calendar",
+      "overlapWarning": "You already have time off booked from {{from}} to {{to}}.",
+      "legendApproved": "Approved",
+      "legendPending": "Pending",
+      "legendSelected": "Selected"
     },
     "reasonTypes": {
       "vacation": "Vacation",
