@@ -885,6 +885,30 @@ export class OnboardingService {
     return { success: true, data: { joinPolicy } };
   }
 
+  /** The organization's annual vacation days, for members with no override. */
+  async updateLeavePolicy(organizationId: string, defaultLeaveAllowance: number) {
+    // Bounded rather than merely non-negative: 0 is legitimate (an
+    // organization of contractors), but a typed 250 is a slip that would show
+    // everybody an allowance they do not have, and nothing downstream would
+    // question it.
+    const days = Number(defaultLeaveAllowance);
+    if (!Number.isInteger(days) || days < 0 || days > 100) {
+      return {
+        success: false,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'Annual vacation days must be a whole number between 0 and 100',
+      };
+    }
+
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { defaultLeaveAllowance: days },
+    });
+
+    this.logger.log(`Leave allowance set to ${days} for org ${organizationId}`);
+    return { success: true, data: { defaultLeaveAllowance: days } };
+  }
+
   async updateProfileBadges(organizationId: string, profileBadges: any) {
     // Validate the shape
     const valid = profileBadges
@@ -921,6 +945,9 @@ export class OnboardingService {
         name: true,
         industry: true,
         usesExternalWorkers: true,
+        // Shown on the Settings screen, so an admin can see and change the
+        // number every member's vacation balance is measured against.
+        defaultLeaveAllowance: true,
         address: true,
         addressLine1: true,
         addressLine2: true,

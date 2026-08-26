@@ -3565,6 +3565,12 @@ export const organizationsApi = {
     return response.data?.data;
   },
 
+  /** The organization's annual vacation days (ADMIN only). */
+  updateLeavePolicy: async (defaultLeaveAllowance: number) => {
+    const response = await api.patch('/organizations/leave-policy', { defaultLeaveAllowance });
+    return response.data;
+  },
+
   getRoles: async (scope?: "org" | "space"): Promise<AccessRole[]> => {
     const endpoint = scope === "space" ? "/organizations/roles?scope=space" : "/organizations/roles";
     const response = await api.get<{ success: boolean; data: AccessRole[] }>(endpoint);

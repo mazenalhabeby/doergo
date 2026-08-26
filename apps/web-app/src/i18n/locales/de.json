@@ -2558,6 +2558,13 @@
       "passwordChanged": "Passwort geändert",
       "passwordChangedDetail": "Möglicherweise müssen Sie sich auf anderen Geräten erneut anmelden.",
       "changeFailed": "Passwort konnte nicht geändert werden"
+    },
+    "leave": {
+      "title": "Jahresurlaub",
+      "description": "Wie viele bezahlte Urlaubstage ein Mitglied pro Jahr erhält.",
+      "label": "Tage pro Jahr",
+      "saved": "Urlaubsanspruch aktualisiert",
+      "hint": "Gilt für alle ohne eigenen Anspruch. Einen abweichenden Wert legen Sie auf der Mitgliederseite fest. Wer unterjährig eintritt, erhält einen anteiligen Anspruch ab dem Eintrittsdatum."
     }
   },
   "profile": {

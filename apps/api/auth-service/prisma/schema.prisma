@@ -658,6 +658,14 @@ model User {
   /// Overrides the organization default for this person (seniority, part-time,
   /// a negotiated contract). Null means "whatever the organization allows".
   leaveAllowance    Int?
+  /// When this person actually started working here — NOT when their account
+  /// was made. Used to pro-rate the first year's vacation.
+  ///
+  /// Deliberately separate from createdAt, and deliberately optional: an
+  /// organization importing existing staff creates every account on the same
+  /// day, and pro-rating from that would cut a third off everyone's allowance
+  /// for a "join date" that never happened. Unset means no pro-rating.
+  employmentStartDate DateTime? @db.Date
   allowRemote       Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
   presence          String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
   lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen

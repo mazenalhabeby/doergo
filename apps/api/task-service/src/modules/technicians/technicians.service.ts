@@ -584,7 +584,7 @@ export class TechniciansService {
   async getLeaveBalance(dto: { technicianId: string; organizationId: string }) {
     const technician = await this.prisma.user.findFirst({
       where: { id: dto.technicianId, organizationId: dto.organizationId },
-      select: { id: true, leaveAllowance: true, organizationId: true },
+      select: { id: true, leaveAllowance: true, organizationId: true, employmentStartDate: true },
     });
     if (!technician) throw new NotFoundException('Employee not found in organization');
 
@@ -623,6 +623,29 @@ export class TechniciansService {
     }
 
     const year = new Date().getFullYear();
+    const fullAllowance = allowance ?? 0;
+
+    /*
+      Someone who started in July did not earn a full year of vacation, so the
+      first year is pro-rated by the months they are actually here — including
+      the month they started, because a day worked in a month is a month
+      started.
+
+      Only ever from an explicitly recorded start date. createdAt would be the
+      tempting fallback and it is the wrong date: an organization importing its
+      existing staff makes every account on one afternoon, and pro-rating from
+      that would quietly cut months off everyone's allowance for a start date
+      none of them had. No date recorded means the full allowance.
+    */
+    let prorated = false;
+    const start = (technician as any).employmentStartDate as Date | null | undefined;
+    if (start && new Date(start).getFullYear() === year) {
+      const monthsHere = 12 - new Date(start).getMonth();
+      // Half days, because a twelfth of 25 is not a whole number and rounding
+      // down every time quietly costs people days they are owed.
+      allowance = Math.round(((fullAllowance * monthsHere) / 12) * 2) / 2;
+      prorated = true;
+    }
     const daysIn = (a: Date, b: Date) =>
       Math.round((new Date(b).setHours(0, 0, 0, 0) - new Date(a).setHours(0, 0, 0, 0)) / 86400000) + 1;
 
@@ -635,7 +658,18 @@ export class TechniciansService {
       else if (r.status === 'PENDING') pending += daysIn(r.startDate, r.endDate);
     }
 
-    return { year, allowance: allowance ?? 0, taken, pending, remaining: (allowance ?? 0) - taken };
+    return {
+      year,
+      allowance: allowance ?? 0,
+      taken,
+      pending,
+      remaining: (allowance ?? 0) - taken,
+      // The screen has to be able to explain a number that is not the round
+      // one everybody else has.
+      prorated,
+      fullAllowance,
+      startedOn: prorated && start ? new Date(start).toISOString().slice(0, 10) : null,
+    };
   }
 
   /**

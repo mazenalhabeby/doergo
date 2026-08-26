@@ -238,6 +238,15 @@ export class UpdateSecuritySettingsDto {
  * Update member profile, role, and permissions DTO
  */
 export class UpdateMemberDto {
+  @ApiPropertyOptional({ description: "Annual vacation days for this member. Null = use the organization's default; 0 = no paid leave." })
+  @IsOptional()
+  leaveAllowance?: number | null;
+
+  @ApiPropertyOptional({ description: 'The date this person started working here (YYYY-MM-DD). Pro-rates their first year.' })
+  @IsOptional()
+  @IsString()
+  employmentStartDate?: string | null;
+
   @ApiPropertyOptional({ description: 'Login email (must be unique across all users)' })
   @IsOptional()
   @IsEmail({}, { message: 'Please provide a valid email address' })

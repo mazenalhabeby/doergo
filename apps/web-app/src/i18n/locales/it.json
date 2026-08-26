@@ -2558,6 +2558,13 @@
       "passwordChanged": "Password cambiata",
       "passwordChangedDetail": "Potrebbe essere necessario accedere di nuovo su altri dispositivi.",
       "changeFailed": "Impossibile cambiare la password"
+    },
+    "leave": {
+      "title": "Giorni di ferie annuali",
+      "description": "Quanti giorni di ferie retribuite riceve ogni membro all’anno.",
+      "label": "Giorni all’anno",
+      "saved": "Ferie aggiornate",
+      "hint": "Vale per chi non ha un valore proprio. Puoi impostarne uno diverso nella pagina del membro. Chi entra a metà anno riceve una quota calcolata dalla data di inizio."
     }
   },
   "profile": {

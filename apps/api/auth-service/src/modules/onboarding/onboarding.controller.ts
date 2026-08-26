@@ -66,6 +66,11 @@ export class OnboardingController {
     return this.onboardingService.updateJoinPolicy(data.organizationId, data.joinPolicy);
   }
 
+  @MessagePattern({ cmd: 'onboarding_update_leave_policy' })
+  async updateLeavePolicy(@Payload() data: { organizationId: string; defaultLeaveAllowance: number }) {
+    return this.onboardingService.updateLeavePolicy(data.organizationId, data.defaultLeaveAllowance);
+  }
+
   @MessagePattern({ cmd: 'update_profile_badges' })
   async updateProfileBadges(@Payload() data: { organizationId: string; profileBadges: any }) {
     return this.onboardingService.updateProfileBadges(data.organizationId, data.profileBadges);

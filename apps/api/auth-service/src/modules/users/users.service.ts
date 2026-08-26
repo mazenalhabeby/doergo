@@ -85,6 +85,8 @@ const ORG_MEMBER_SELECT = {
   specialty: true,
   employmentType: true,
   maxDailyJobs: true,
+  leaveAllowance: true,
+  employmentStartDate: true,
   canCreateTasks: true,
   taskCreationScope: true,
   canViewAllTasks: true,
@@ -584,6 +586,21 @@ export class UsersService {
         ...(dto.specialty !== undefined && { specialty: dto.specialty }),
         ...(dto.employmentType !== undefined && { employmentType: dto.employmentType }),
         ...(dto.maxDailyJobs !== undefined && { maxDailyJobs: dto.maxDailyJobs }),
+        // Vacation entitlement. Null is meaningful — "use the organization's
+        // default" — and is NOT the same as 0, which is no paid leave at all,
+        // so an explicit null has to reach the database rather than be treated
+        // as "field omitted".
+        ...((dto as any).leaveAllowance !== undefined && {
+          leaveAllowance:
+            (dto as any).leaveAllowance === null || (dto as any).leaveAllowance === ''
+              ? null
+              : Number((dto as any).leaveAllowance),
+        }),
+        ...((dto as any).employmentStartDate !== undefined && {
+          employmentStartDate: (dto as any).employmentStartDate
+            ? new Date((dto as any).employmentStartDate)
+            : null,
+        }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         ...(dto.rating !== undefined && { rating: dto.rating }),
         ...(dto.ratingCount !== undefined && { ratingCount: dto.ratingCount }),

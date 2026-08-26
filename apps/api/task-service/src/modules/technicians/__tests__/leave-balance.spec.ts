@@ -86,4 +86,40 @@ describe("leave balance", () => {
     const b = balance(5, 25, [{ type: "VACATION", status: "APPROVED", startDate: d(7, 1), endDate: d(7, 10) }])
     expect(b.remaining).toBe(-5)
   })
+
+  describe("pro-rating a mid-year joiner", () => {
+    const prorate = (full: number, startMonth: number | null, startYear = year) => {
+      if (startMonth === null || startYear !== year) return { allowance: full, prorated: false }
+      const monthsHere = 12 - startMonth // startMonth is 0-indexed
+      return { allowance: Math.round(((full * monthsHere) / 12) * 2) / 2, prorated: true }
+    }
+
+    it("gives half a year to someone who started in July", () => {
+      expect(prorate(25, 6).allowance).toBe(12.5)
+    })
+
+    it("counts the month they started as a whole month", () => {
+      // Starting on the 28th still means that month was begun; the alternative
+      // is telling someone their first three days cost them a month of leave.
+      expect(prorate(24, 0).allowance).toBe(24) // January → full year
+      expect(prorate(24, 11).allowance).toBe(2) // December → one month
+    })
+
+    it("rounds to half days rather than down", () => {
+      // A twelfth of 25 is not whole. Flooring every time quietly costs people
+      // days they are owed.
+      expect(prorate(25, 7).allowance).toBe(10.5) // 5/12 of 25 = 10.416…
+    })
+
+    it("does NOT pro-rate without a recorded start date", () => {
+      // createdAt is the tempting fallback and the wrong date: importing
+      // existing staff creates every account on one day, which would cut
+      // months off everyone at once.
+      expect(prorate(25, null)).toEqual({ allowance: 25, prorated: false })
+    })
+
+    it("does not pro-rate someone who started in an earlier year", () => {
+      expect(prorate(25, 6, year - 1)).toEqual({ allowance: 25, prorated: false })
+    })
+  })
 })

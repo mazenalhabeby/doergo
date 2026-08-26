@@ -2558,6 +2558,13 @@
       "passwordChanged": "Contraseña cambiada",
       "passwordChangedDetail": "Puede que debas iniciar sesión de nuevo en otros dispositivos.",
       "changeFailed": "No se pudo cambiar la contraseña"
+    },
+    "leave": {
+      "title": "Días de vacaciones anuales",
+      "description": "Cuántos días de vacaciones pagadas recibe cada miembro al año.",
+      "label": "Días por año",
+      "saved": "Días de vacaciones actualizados",
+      "hint": "Se aplica a quienes no tengan un valor propio. Puede fijar otro número en la página del miembro. Quien se incorpore a mitad de año recibe la parte proporcional desde su fecha de inicio."
     }
   },
   "profile": {

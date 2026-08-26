@@ -2558,6 +2558,13 @@
       "passwordChanged": "Mot de passe modifié",
       "passwordChangedDetail": "Vous devrez peut-être vous reconnecter sur d'autres appareils.",
       "changeFailed": "Échec de la modification du mot de passe"
+    },
+    "leave": {
+      "title": "Jours de congés annuels",
+      "description": "Combien de jours de congés payés chaque membre reçoit par an.",
+      "label": "Jours par an",
+      "saved": "Droit à congés mis à jour",
+      "hint": "S’applique à toute personne sans droit propre. Vous pouvez définir un autre nombre sur sa fiche. Une arrivée en cours d’année donne droit à une part calculée depuis la date d’entrée."
     }
   },
   "profile": {

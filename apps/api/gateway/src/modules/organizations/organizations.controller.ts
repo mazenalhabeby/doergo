@@ -74,6 +74,25 @@ export class OrganizationsController {
     return result;
   }
 
+  @Patch('leave-policy')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: "Set the organization's annual vacation days (ADMIN only)" })
+  async updateLeavePolicy(
+    @Body() dto: { defaultLeaveAllowance: number },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'onboarding_update_leave_policy' }, {
+        organizationId: user.organizationId,
+        defaultLeaveAllowance: dto.defaultLeaveAllowance,
+      }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return result;
+  }
+
   @Patch('settings')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update organization settings (ADMIN only)' })
@@ -250,6 +269,11 @@ export class OrganizationsController {
           firstName: dto.firstName,
           lastName: dto.lastName,
           position: dto.position,
+          // Vacation entitlement. Forwarded even when null — null means "use
+          // the organization's default" and has to reach the database as a
+          // clear, not be dropped as an omitted field.
+          leaveAllowance: dto.leaveAllowance,
+          employmentStartDate: dto.employmentStartDate,
           scheduleType: dto.scheduleType,
           monthlyHourBudget: dto.monthlyHourBudget,
           role: dto.role,
