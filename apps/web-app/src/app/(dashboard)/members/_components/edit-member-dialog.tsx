@@ -308,6 +308,10 @@ export function EditMemberDialog({
       organizationsApi.updateMember(memberId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      // The vacation allowance is edited here and rendered on the member's own
+      // Vacation Requests page from a separately cached query — without this it
+      // would keep showing the old entitlement.
+      queryClient.invalidateQueries({ queryKey: ["my-leave-balance"] })
       onSaved?.()
       onClose()
       setTempPassword(null)

@@ -3016,7 +3016,10 @@ export const employeesApi = {
   /** This year's vacation allowance: total, taken, pending, remaining. */
   getLeaveBalance: async (id: string) => {
     const response = await api.get<{ success: boolean; data: LeaveBalance }>(
-      `/technicians/${id}/leave-balance`,
+      // `/employees`, like every other call in this group — the controller's
+      // prefix is 'employees'. `/technicians` 404s, and the page showed a
+      // silent zero rather than an error.
+      `/employees/${id}/leave-balance`,
     );
     return response.data?.data ?? null;
   },

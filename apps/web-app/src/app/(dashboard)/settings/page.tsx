@@ -669,6 +669,10 @@ function MembersSection() {
     mutationFn: (days: number) => organizationsApi.updateLeavePolicy(days),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      // The balance is measured against this number and is cached separately,
+      // so without this the vacation ring keeps showing the old allowance
+      // until something else happens to refetch it.
+      queryClient.invalidateQueries({ queryKey: ["my-leave-balance"] })
       setLeaveDays(null)
       notify.success(t("settings.leave.saved"))
     },
