@@ -4,8 +4,8 @@ import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  CalendarDays, ChevronLeft, ChevronRight, Check, X, Plane, Stethoscope,
-  User2, MoreHorizontal, Loader2, AlertTriangle, Clock3, CalendarCheck,
+  CalendarDays, ChevronLeft, ChevronRight, Check, X,
+  Loader2, AlertTriangle, Clock3,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { employeesApi } from "@/lib/api"
@@ -31,11 +31,54 @@ import type { TimeOffRequest } from "@hbcfield/shared"
   question the team view is usually reached for — "does this clash?".
 */
 
+/*
+  Drawn here rather than taken from an icon set.
+
+  A plane for vacation and a stethoscope for sickness are the literal reading,
+  and they date a page instantly — every product used them a decade ago. These
+  are four glyphs in one geometric language (a 24-grid, 1.75 stroke, round
+  caps), each carrying its own hue, so the row reads as a considered set rather
+  than four unrelated pictures. The colour does most of the work: after the
+  first use, people pick by hue, not by squinting at a small drawing.
+*/
+function SunGlyph(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" {...p}>
+      <circle cx="12" cy="11" r="4" />
+      <path d="M12 3v1.5M12 17.5V19M4.2 11H5.7M18.3 11h1.5M6.5 5.5l1 1M16.5 5.5l-1 1" />
+      <path d="M3 20.5c1.6 0 1.6-1.2 3.2-1.2s1.6 1.2 3.2 1.2 1.6-1.2 3.2-1.2 1.6 1.2 3.2 1.2 1.6-1.2 3.2-1.2" />
+    </svg>
+  )
+}
+function PulseGlyph(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M3 12h3.5l2-5 3 10 2.5-5H21" />
+    </svg>
+  )
+}
+function PersonGlyph(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" {...p}>
+      <circle cx="12" cy="8" r="3.25" />
+      <path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+    </svg>
+  )
+}
+function DotsGlyph(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" {...p}>
+      <circle cx="12" cy="12" r="8.5" strokeDasharray="3 3.2" />
+      <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" strokeWidth="2.4" />
+    </svg>
+  )
+}
+
 const REASON_TYPES = [
-  { key: "vacation", icon: Plane },
-  { key: "sickLeave", icon: Stethoscope },
-  { key: "personal", icon: User2 },
-  { key: "other", icon: MoreHorizontal },
+  { key: "vacation", glyph: SunGlyph, tint: "text-amber-500", ring: "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+  { key: "sickLeave", glyph: PulseGlyph, tint: "text-rose-500", ring: "border-rose-500/60 bg-rose-500/10 text-rose-600 dark:text-rose-400" },
+  { key: "personal", glyph: PersonGlyph, tint: "text-violet-500", ring: "border-violet-500/60 bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+  { key: "other", glyph: DotsGlyph, tint: "text-slate-400", ring: "border-slate-400/60 bg-slate-400/10 text-slate-600 dark:text-slate-300" },
 ] as const
 type ReasonKey = (typeof REASON_TYPES)[number]["key"]
 
@@ -330,7 +373,7 @@ export default function MyTimeOffPage() {
         <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-foreground">{t("timeOff.my.stepReason")}</h2>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {REASON_TYPES.map(({ key, icon: Icon }) => {
+            {REASON_TYPES.map(({ key, glyph: Glyph, tint, ring }) => {
               const active = reasonType === key
               return (
                 <button
@@ -339,15 +382,35 @@ export default function MyTimeOffPage() {
                   aria-pressed={active}
                   onClick={() => setReasonType(active ? null : key)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition-all duration-200",
+                    "group relative flex flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 transition-all duration-200",
                     "motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     active
-                      ? "border-primary bg-primary/10 text-primary shadow-sm"
-                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                      ? cn(ring, "shadow-sm")
+                      : "border-border text-muted-foreground hover:border-foreground/20 hover:bg-accent/40",
                   )}
                 >
-                  <Icon className={cn("size-4 transition-transform duration-200", active && "scale-110")} />
-                  <span className="text-[11px] font-medium">{t(`timeOff.reasonTypes.${key}`)}</span>
+                  {/* The glyph sits in its own tinted well, so the colour reads
+                      even when the card itself is unselected — that is what
+                      makes the row scannable by hue rather than by drawing. */}
+                  <span
+                    className={cn(
+                      "flex size-9 items-center justify-center rounded-xl transition-colors duration-200",
+                      active ? "bg-background/70" : "bg-muted/60 group-hover:bg-muted",
+                    )}
+                  >
+                    <Glyph
+                      className={cn(
+                        "size-[18px] stroke-current transition-transform duration-200",
+                        active ? "motion-safe:scale-110" : tint,
+                      )}
+                    />
+                  </span>
+                  <span className="text-[11px] font-medium leading-none">{t(`timeOff.reasonTypes.${key}`)}</span>
+                  {active && (
+                    <span className="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-current/15">
+                      <Check className="size-2.5" />
+                    </span>
+                  )}
                 </button>
               )
             })}
