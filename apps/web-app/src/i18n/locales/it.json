@@ -847,7 +847,7 @@
     "spaces": "Spazi di lavoro",
     "customers": "Clienti",
     "reports": "Report",
-    "timeOff": "Le mie assenze",
+    "timeOff": "Richieste di ferie",
     "manage": "Gestisci",
     "shop": "Shop",
     "team": "Membri del team",
@@ -3787,10 +3787,10 @@
       "newRequest": "Nuova richiesta",
       "from": "Dal",
       "to": "Al",
-      "reasonPlaceholder": "Motivo (opzionale)",
+      "reasonPlaceholder": "Motivo (facoltativo) — es. ferie, malattia, personale",
       "requestButton": "Richiedi ferie",
       "myRequests": "Le mie richieste",
-      "noRequests": "Ancora nessuna richiesta di ferie.",
+      "noRequests": "Nessuna richiesta di ferie.",
       "rejectedReason": "Rifiutata: {{reason}}"
     }
   },

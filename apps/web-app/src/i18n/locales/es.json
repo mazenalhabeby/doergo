@@ -847,7 +847,7 @@
     "spaces": "Espacios de trabajo",
     "customers": "Clientes",
     "reports": "Informes",
-    "timeOff": "Mis ausencias",
+    "timeOff": "Solicitudes de vacaciones",
     "manage": "Gestionar",
     "shop": "Tienda",
     "team": "Miembros del equipo",
@@ -3767,7 +3767,7 @@
   },
   "timeOff": {
     "my": {
-      "requestedTitle": "Ausencia solicitada",
+      "requestedTitle": "Vacaciones solicitadas",
       "requestedDesc": "Tu responsable la revisará.",
       "submitError": "No se pudo enviar la solicitud",
       "canceledToast": "Solicitud cancelada",
@@ -3778,10 +3778,10 @@
       "newRequest": "Nueva solicitud",
       "from": "Desde",
       "to": "Hasta",
-      "reasonPlaceholder": "Motivo (opcional)",
-      "requestButton": "Solicitar ausencia",
+      "reasonPlaceholder": "Motivo (opcional) — p. ej. vacaciones, baja por enfermedad, personal",
+      "requestButton": "Solicitar vacaciones",
       "myRequests": "Mis solicitudes",
-      "noRequests": "Aún no hay solicitudes de ausencia.",
+      "noRequests": "Aún no hay solicitudes de vacaciones.",
       "rejectedReason": "Rechazada: {{reason}}"
     }
   },

@@ -847,7 +847,7 @@
     "spaces": "Workspaces",
     "customers": "Customers",
     "reports": "Reports",
-    "timeOff": "My Leave",
+    "timeOff": "Vacation Requests",
     "manage": "Manage",
     "shop": "Shop",
     "team": "Team Members",
@@ -3767,7 +3767,7 @@
   },
   "timeOff": {
     "my": {
-      "requestedTitle": "Time-off requested",
+      "requestedTitle": "Vacation requested",
       "requestedDesc": "Your manager will review it.",
       "submitError": "Couldn't submit request",
       "canceledToast": "Request canceled",
@@ -3778,10 +3778,10 @@
       "newRequest": "New request",
       "from": "From",
       "to": "To",
-      "reasonPlaceholder": "Reason (optional)",
-      "requestButton": "Request time off",
+      "reasonPlaceholder": "Reason (optional) — e.g. vacation, sick leave, personal",
+      "requestButton": "Request vacation",
       "myRequests": "My requests",
-      "noRequests": "No time-off requests yet.",
+      "noRequests": "No vacation requests yet.",
       "rejectedReason": "Rejected: {{reason}}"
     }
   },

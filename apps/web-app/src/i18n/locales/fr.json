@@ -847,7 +847,7 @@
     "spaces": "Espaces de travail",
     "customers": "Clients",
     "reports": "Rapports",
-    "timeOff": "Mes congés",
+    "timeOff": "Demandes de congés",
     "manage": "Gérer",
     "shop": "Boutique",
     "team": "Membres de l’équipe",
@@ -3776,7 +3776,7 @@
   },
   "timeOff": {
     "my": {
-      "requestedTitle": "Congé demandé",
+      "requestedTitle": "Congés demandés",
       "requestedDesc": "Votre responsable l'examinera.",
       "submitError": "Impossible de soumettre la demande",
       "canceledToast": "Demande annulée",
@@ -3787,10 +3787,10 @@
       "newRequest": "Nouvelle demande",
       "from": "Du",
       "to": "Au",
-      "reasonPlaceholder": "Motif (facultatif)",
-      "requestButton": "Demander un congé",
+      "reasonPlaceholder": "Motif (facultatif) — p. ex. congés, maladie, personnel",
+      "requestButton": "Demander des congés",
       "myRequests": "Mes demandes",
-      "noRequests": "Aucune demande de congé pour l'instant.",
+      "noRequests": "Aucune demande de congés pour l’instant.",
       "rejectedReason": "Refusée : {{reason}}"
     }
   },
