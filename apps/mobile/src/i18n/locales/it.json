@@ -1649,5 +1649,12 @@
     "title": "Cosa ho fatto oggi",
     "titlePast": "Attività di questo turno",
     "viewActivity": "Vedi attività"
+  },
+  "updateRequired": {
+    "title": "Aggiornamento necessario",
+    "body": "Questa versione dell’app non è più supportata. Installa l’ultima versione per continuare.",
+    "yours": "Hai",
+    "needed": "Richiesta",
+    "action": "Ottieni l’ultima versione"
   }
 }

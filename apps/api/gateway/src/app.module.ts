@@ -27,6 +27,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { GeoModule } from './modules/geo/geo.module';
+import { AppVersionModule } from './modules/app-version/app-version.module';
 import { RoutesModule } from './modules/routes/routes.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { SearchModule } from './modules/search/search.module';
@@ -64,6 +65,8 @@ import { StorageModule } from './common/storage/storage.module';
 
 @Module({
   imports: [
+    // Public: what mobile version is still allowed to talk to this API.
+    AppVersionModule,
     StorageModule,
     AuthCacheModule,
     // Global: ModuleGuard is an APP_GUARD, so it is constructed in every

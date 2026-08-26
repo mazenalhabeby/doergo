@@ -1649,5 +1649,12 @@
     "title": "Lo que hice hoy",
     "titlePast": "Actividad de esta sesión",
     "viewActivity": "Ver actividad"
+  },
+  "updateRequired": {
+    "title": "Actualización necesaria",
+    "body": "Esta versión de la aplicación ya no es compatible. Instale la última versión para continuar.",
+    "yours": "Tiene",
+    "needed": "Necesaria",
+    "action": "Obtener la última versión"
   }
 }

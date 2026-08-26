@@ -1649,5 +1649,12 @@
     "title": "Ce que j’ai fait aujourd’hui",
     "titlePast": "Activité de ce service",
     "viewActivity": "Voir l’activité"
+  },
+  "updateRequired": {
+    "title": "Mise à jour requise",
+    "body": "Cette version de l’application n’est plus prise en charge. Veuillez installer la dernière version pour continuer.",
+    "yours": "Vous avez",
+    "needed": "Requise",
+    "action": "Obtenir la dernière version"
   }
 }

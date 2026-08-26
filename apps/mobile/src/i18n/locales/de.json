@@ -1649,5 +1649,12 @@
     "title": "Was ich heute gemacht habe",
     "titlePast": "Aktivität dieser Schicht",
     "viewActivity": "Aktivität ansehen"
+  },
+  "updateRequired": {
+    "title": "Update erforderlich",
+    "body": "Diese Version der App wird nicht mehr unterstützt. Bitte installieren Sie die neueste Version, um fortzufahren.",
+    "yours": "Ihre Version",
+    "needed": "Erforderlich",
+    "action": "Neueste Version holen"
   }
 }

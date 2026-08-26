@@ -25,6 +25,8 @@ import { useFonts, Outfit_400Regular, Outfit_800ExtraBold } from '@expo-google-f
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { ToastProvider } from '../src/contexts/toast-context';
+import { UpdateRequired } from '../src/components/update-required';
+import { checkVersion, type VersionStatus } from '../src/lib/version-gate';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
 import { LocationConsentModal } from '../src/components/LocationConsentModal';
@@ -104,6 +106,25 @@ function RootLayoutNav() {
     }
   }, [isAuthenticated, needsOnboarding, isLoading, segments, showAnimatedSplash, user?.role]);
 
+  /*
+    Is this build still allowed to run?
+
+    Checked once per launch, before anything is rendered. Starts as null
+    meaning "not answered yet", and only a definite `blocked: true` shows the
+    wall — every failure inside checkVersion resolves to blocked:false, so a
+    timeout or an older API cannot lock anyone out of a working app.
+  */
+  const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    checkVersion().then((s) => {
+      if (!cancelled) setVersionStatus(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSplashComplete = useCallback(() => {
     setShowAnimatedSplash(false);
   }, []);
@@ -114,6 +135,17 @@ function RootLayoutNav() {
       <View style={styles.container}>
         <StatusBar style="light" />
         <AnimatedSplash onAnimationComplete={handleSplashComplete} />
+      </View>
+    );
+  }
+
+  // Nothing else renders when the build is too old — no dismiss, no "later".
+  // "Later" is how a sideloaded phone stays on a two-year-old release.
+  if (versionStatus?.blocked) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="auto" />
+        <UpdateRequired status={versionStatus} />
       </View>
     );
   }

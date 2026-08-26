@@ -579,7 +579,7 @@ pnpm build            # Build all packages
 
 | App | File | Key Variables |
 |-----|------|---------------|
-| gateway | `apps/api/gateway/.env` | `PORT`, `JWT_SECRET`, `REDIS_*`, `CORS_ORIGINS`, `AUTH_CACHE_TTL_SECONDS` (optional, default 60 — TTL for the per-request token/user cache) |
+| gateway | `apps/api/gateway/.env` | `PORT`, `JWT_SECRET`, `REDIS_*`, `CORS_ORIGINS`, `AUTH_CACHE_TTL_SECONDS` (optional, default 60 — TTL for the per-request token/user cache) | Mobile version gate: `MOBILE_MIN_VERSION` (unset = no gate), `MOBILE_LATEST_VERSION`, `MOBILE_ANDROID_URL`, `MOBILE_IOS_URL` — served publicly at `GET /app/version`
 | auth-service | `apps/api/auth-service/.env` | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `REDIS_*`, **Stripe billing** (StripeService lives here only): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_AUTOMATIC_TAX` (true/false). ⚠️ **No module price IDs in env** — the 62 prices resolve by Stripe `lookup_key` (see `billing/stripe-catalog.ts`). The 8 legacy `STRIPE_PRICE_*` tier vars remain only for the operator price book |
 | task-service | `apps/api/task-service/.env` | `DATABASE_URL`, `REDIS_*` |
 | notification-service | `apps/api/notification-service/.env` | `REDIS_*`, `SMTP_*`, `FCM_SERVER_KEY` |

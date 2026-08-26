@@ -1653,5 +1653,12 @@
     "title": "What I did today",
     "titlePast": "Activity for this session",
     "viewActivity": "View activity"
+  },
+  "updateRequired": {
+    "title": "Update required",
+    "body": "This version of the app is no longer supported. Please install the latest version to continue.",
+    "yours": "You have",
+    "needed": "Required",
+    "action": "Get the latest version"
   }
 }
