@@ -59,8 +59,16 @@ compose config --quiet || die "compose file does not render with this env file"
 # The server cannot `git pull` — the deploy key is dead. Code arrives as a git
 # bundle pushed over SSH and merged by hand. Refuse to deploy a dirty tree rather
 # than silently shipping a local edit nobody can trace.
-if [ -n "$(git -C "$ROOT_DIR" status --porcelain)" ]; then
-  die "working tree is dirty on the server. Commit or stash before deploying."
+# --untracked-files=no on purpose. The production checkout legitimately carries
+# untracked files that must never be committed and must never be deleted: the
+# distributed APKs, a decade of .env.production backups, and
+# docker-compose.override.yml, which holds prod-only configuration. Counting
+# those as "dirty" refuses every deploy for the wrong reason. What matters here
+# is a MODIFIED TRACKED file — an edit made directly on the box that a deploy
+# would silently overwrite.
+if [ -n "$(git -C "$ROOT_DIR" status --porcelain --untracked-files=no)" ]; then
+  die "tracked files are modified on the server. Commit or stash before deploying:
+$(git -C "$ROOT_DIR" status --short --untracked-files=no | head -20)"
 fi
 DEPLOY_SHA="$(git -C "$ROOT_DIR" rev-parse --short HEAD)"
 echo "  deploying $DEPLOY_SHA ($(git -C "$ROOT_DIR" log -1 --format=%s | cut -c1-60))"
