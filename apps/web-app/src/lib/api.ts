@@ -3580,6 +3580,8 @@ export const organizationsApi = {
     includeIds?: string[];
     /** Member to leave out — the person the picker is about. */
     excludeId?: string;
+    /** Identity + presence only. For lists that show people, not permissions. */
+    lite?: boolean;
   }) => {
     const endpoint = buildUrlWithQuery('/organizations/members', {
       search: params?.search,
@@ -3589,6 +3591,7 @@ export const organizationsApi = {
       managersOnly: params?.managersOnly ? 'true' : undefined,
       includeIds: params?.includeIds?.length ? params.includeIds.join(',') : undefined,
       excludeId: params?.excludeId,
+      lite: params?.lite ? 'true' : undefined,
     });
     const response = await api.get<{
       success: boolean;

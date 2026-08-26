@@ -44,6 +44,10 @@ export class ListMembersQueryDto {
   @IsString()
   excludeId?: string;
 
+  @ApiPropertyOptional({ description: 'Directory projection only — identity and presence, no permissions or profile' })
+  @IsOptional()
+  lite?: boolean;
+
   @ApiPropertyOptional({ description: 'Comma-separated ids to keep in the result even if they no longer qualify' })
   @IsOptional()
   @IsString()

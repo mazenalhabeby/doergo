@@ -122,6 +122,7 @@ export class OrganizationsController {
         // rather than shipping the whole staff list for the browser to filter.
         managersOnly: query.managersOnly === true || (query.managersOnly as any) === 'true',
         excludeId: query.excludeId,
+        lite: query.lite === true || (query.lite as any) === 'true',
         includeIds: query.includeIds
           ? String(query.includeIds).split(',').map((v) => v.trim()).filter(Boolean).slice(0, 200)
           : undefined,

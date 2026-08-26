@@ -27,6 +27,31 @@ const BCRYPT_COST_FACTOR = 12;
 // Single source of truth for the fields the Members list + a single member share,
 // so a member detail page can fetch ONE row in the same shape as a list row
 // (instead of pulling the whole org and finding it client-side).
+/**
+ * The directory projection: who a person is, not what they may do.
+ *
+ * The dashboard pages through EVERY member on a 60-second interval to refresh
+ * presence, and was pulling the full member row to do it — the Access Profile
+ * JSON, the contact allow-list array, the role join and a dozen permission
+ * columns, none of which it reads. For a few hundred staff that is the heaviest
+ * repeating query in the product, and all but a handful of fields were dropped
+ * on arrival.
+ */
+const DIRECTORY_MEMBER_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+  role: true,
+  position: true,
+  isActive: true,
+  presence: true,
+  lastActiveAt: true,
+  specialty: true,
+  canManageUsers: true,
+  canViewAllTasks: true,
+} as const;
+
 /** Just enough to draw one row of a manager picker. */
 const MANAGER_CANDIDATE_SELECT = {
   id: true,
@@ -807,7 +832,7 @@ export class UsersService {
   /**
    * List all members of an organization with filtering and pagination
    */
-  async listOrgMembers(dto: ListOrgMembersDto & { managersOnly?: boolean; includeIds?: string[]; excludeId?: string }) {
+  async listOrgMembers(dto: ListOrgMembersDto & { managersOnly?: boolean; includeIds?: string[]; excludeId?: string; lite?: boolean }) {
     const { organizationId, search, role } = dto;
     // Clamp pagination server-side so a client can't request an unbounded page (M6).
     const page = Math.max(1, Number(dto.page) || 1);
@@ -887,7 +912,11 @@ export class UsersService {
       where,
       // The picker renders a name, an avatar and a label — it has no use for
       // Access Profiles or allow-lists, and those are the expensive columns.
-      select: dto.managersOnly ? MANAGER_CANDIDATE_SELECT : ORG_MEMBER_SELECT,
+      select: dto.managersOnly
+        ? MANAGER_CANDIDATE_SELECT
+        : dto.lite
+        ? DIRECTORY_MEMBER_SELECT
+        : ORG_MEMBER_SELECT,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,

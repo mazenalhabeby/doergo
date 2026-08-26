@@ -103,7 +103,10 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     queryKey: ["orgMembers", "dashboard"],
     queryFn: () =>
       fetchAllPages<OrgMember>((page) =>
-        organizationsApi.getMembers({ page, limit: MEMBERS_PAGE_SIZE }),
+        // `lite`: this list is drawn as faces and names and refreshed every
+        // minute for presence. It has no use for Access Profiles, contact
+        // allow-lists or the role join, which are the expensive columns.
+        organizationsApi.getMembers({ page, limit: MEMBERS_PAGE_SIZE, lite: true }),
       ),
     enabled: canReadMembers,
     staleTime: 30000,
