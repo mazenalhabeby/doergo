@@ -70,6 +70,7 @@ POSTGRES_DB="$(read_env POSTGRES_DB)"
 # a trace. The container gets the password from the env file itself.
 grep -qE "^POSTGRES_PASSWORD=.+" "$ENV_FILE" || die "POSTGRES_PASSWORD missing or empty in $ENV_FILE"
 
+
 compose config --quiet || die "compose file does not render with this env file"
 
 # The server cannot `git pull` — the deploy key is dead. Code arrives as a git
@@ -132,8 +133,25 @@ step "Applying database migrations"
 # then blocks forever: `compose run` waits for an exit that a long-running
 # server never makes. The migrations land, the deploy hangs after them, and the
 # stack is left half-updated with no error to explain it.
-compose run --rm --entrypoint sh auth-service \
-  -c 'cd apps/api/auth-service && npx prisma migrate deploy' \
+# The connection guard runs INSIDE the container, because DIRECT_DATABASE_URL is
+# built by docker-compose.yml from POSTGRES_* — it is not a key in the env file
+# and cannot be read from here.
+#
+# It matters because `prisma migrate deploy` takes a session-scoped advisory
+# lock, and PgBouncer's transaction pooling hands that session's server
+# connection to other clients, so the lock is never released and every later
+# migration blocks on it forever. On 2026-08-26 exactly that held lock 72707369
+# for an hour: auth-service could not finish starting, was restarted, queued
+# another waiter each time, and logins stopped working entirely.
+#
+# The entrypoint carries the same guard; this repeats it because --entrypoint
+# below bypasses the entrypoint.
+compose run --rm --entrypoint sh auth-service -c '
+  case "${DIRECT_DATABASE_URL:-}" in
+    "") echo "FATAL: DIRECT_DATABASE_URL is not set" >&2; exit 1 ;;
+    *pgbouncer*|*:6432*) echo "FATAL: DIRECT_DATABASE_URL points at PgBouncer" >&2; exit 1 ;;
+  esac
+  cd apps/api/auth-service && DATABASE_URL="$DIRECT_DATABASE_URL" npx prisma migrate deploy' \
   || die "migrations failed — the stack has NOT been restarted, and $BACKUP is your restore point"
 
 # ── Start ───────────────────────────────────────────────────────────────────
