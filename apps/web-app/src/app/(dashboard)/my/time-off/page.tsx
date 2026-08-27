@@ -515,7 +515,11 @@ export default function MyTimeOffPage() {
                   {r.reason && <p className="mt-0.5 truncate text-xs text-muted-foreground">{r.reason}</p>}
                   {r.status === "REJECTED" && r.rejectionReason && (
                     <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                      {t("timeOff.my.rejectedReason")}: {r.rejectionReason}
+                      {/* The string carries its own "Rejected:" prefix AND a
+                          {{reason}} placeholder. Calling t() without the value
+                          and appending the reason by hand printed the literal
+                          placeholder, then the reason, after a second colon. */}
+                      {t("timeOff.my.rejectedReason", { reason: r.rejectionReason })}
                     </p>
                   )}
                 </div>
