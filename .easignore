@@ -1,85 +1,38 @@
-# .easignore — controls what gets uploaded to EAS Build.
-# NOTE: when this file exists, EAS uses it INSTEAD OF .gitignore, so the
-# standard ignores below are duplicated from .gitignore on purpose. Keep them
-# in sync. Everything under the "EAS-only excludes" section is extra content
-# not needed to build the mobile app (design assets, docs, worktrees).
+# What an EAS build of the MOBILE app does not need.
 #
-# Do NOT ignore any workspace package.json / pnpm-lock.yaml / pnpm-workspace.yaml
-# or the packages/ dir — pnpm's frozen install on the builder needs them.
+# Without this the archive is the whole monorepo — the web app, all four API
+# services, infra and tooling — 202 MB that took nineteen minutes to upload
+# before a build could even start. Three attempts died on that upload before
+# one got through.
+#
+# .easignore REPLACES .gitignore for the build archive, so the usual ignores
+# have to be restated below. Anything not listed is uploaded.
 
-# ── standard .gitignore (must stay mirrored) ──────────────────────────
-# Dependencies
+# ── Not part of the mobile app ──────────────────────────────────────────────
+apps/web-app/
+apps/admin/
+apps/api/
+infra/
+docs/
+tools/
+backups/
+scripts/
+
+# packages/shared IS needed — apps/mobile imports @hbcfield/shared — so it is
+# deliberately absent from the list above.
+
+# ── The usual ignores, restated because .easignore replaces .gitignore ──────
 node_modules/
-.pnpm-store/
-
-# Build outputs
+.git/
+.next/
 dist/
 build/
-.next/
-.expo/
-out/
-documentation/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-!.env.example
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# Testing
 coverage/
-.nyc_output/
-
-# Prisma
-apps/api/prisma/*.db
-apps/api/prisma/*.db-journal
-
-# Mobile
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-*.orig.*
-web-build/
-ios/
-android/
-
-# Misc
-*.tsbuildinfo
-.turbo/
-
-# Confidential / Internal
-AI_FEATURES_ANALYSIS.md
-dashboard-*.html
-
-# ── EAS-only excludes (not needed to build the mobile app) ────────────
-# Agent worktrees / harness scratch — biggest offender (~1.4 GB on disk)
-.claude/
-
-# Design assets, store screenshots, mockups (~80 MB, media only)
-doergo design/
-store-listing/
-.mockups/
-
-# Docs & audits (not compiled into the app)
-docs/
-*.pdf
-*.md
-!apps/mobile/**/*.md
-
-# Git metadata
-.git/
+*.log
+.env
+.env.*
+!.env.example
+*.apk
+*.aab
+*.ipa
+.DS_Store
