@@ -1665,6 +1665,9 @@
   "updateBanner": {
     "title": "La versione {{version}} è disponibile",
     "subtitle": "Aggiorna da {{store}}",
-    "action": "Aggiorna"
+    "action": "Aggiorna",
+    "subtitleInApp": "Si installa in background",
+    "readyTitle": "Aggiornamento pronto da installare",
+    "readySubtitle": "Riavvia per completare"
   }
 }

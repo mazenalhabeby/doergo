@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { API_URL } from './api/client';
+import { IN_APP_UPDATES_SUPPORTED, checkStore } from './in-app-updates';
 
 /**
  * Is this build still allowed to run?
@@ -76,11 +77,33 @@ export async function checkVersion(): Promise<VersionStatus> {
       (Platform.OS === 'ios' ? data?.downloads?.ios : data?.downloads?.android) ?? null;
 
     const latest = data?.latest ?? null;
+    const serverBlocked = !!minimum && compareVersions(current, minimum) < 0;
+
+    /*
+      Android asks Play as well, and Play has the final say on blocking.
+
+      A configured minimum is a number a human typed. When it ran ahead of what
+      the stores were serving, every older build was blocked with nowhere to go
+      — the update screen pointed at a store that had nothing newer, and the
+      only way out was a server-side rollback.
+
+      Play cannot be wrong about this: it reports what it can actually install.
+      So on Android a block only stands if Play genuinely has something to
+      offer, which makes that failure impossible rather than merely unlikely.
+      If Play cannot be reached the server's decision stands — being asked to
+      update is recoverable; silently skipping a security floor is not.
+    */
+    let blocked = serverBlocked;
+    if (serverBlocked && IN_APP_UPDATES_SUPPORTED) {
+      const store = await checkStore();
+      if (store.storeVersion && !store.available) blocked = false;
+    }
+
     return {
       // No minimum configured means no gate. The server ships that way on
       // purpose: a gate that blocks the day it deploys, before anyone has been
       // given a version to move to, locks out the whole fleet at once.
-      blocked: !!minimum && compareVersions(current, minimum) < 0,
+      blocked,
       updateAvailable: !!latest && compareVersions(current, latest) < 0,
       current,
       minimum,

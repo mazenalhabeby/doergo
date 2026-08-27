@@ -1669,6 +1669,9 @@
   "updateBanner": {
     "title": "Version {{version}} is available",
     "subtitle": "Update from {{store}}",
-    "action": "Update"
+    "action": "Update",
+    "subtitleInApp": "Installs in the background",
+    "readyTitle": "Update ready to install",
+    "readySubtitle": "Restart to finish"
   }
 }

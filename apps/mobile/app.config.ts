@@ -102,6 +102,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
     },
     plugins: [
+      // Play In-App Updates (Android). No-ops on iOS — Apple has no equivalent.
+      'expo-in-app-updates',
       'expo-router',
       ['expo-location', { isIosBackgroundLocationEnabled: true, isAndroidBackgroundLocationEnabled: true }],
       'expo-camera',

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import type { VersionStatus } from '../lib/version-gate';
+import { IN_APP_UPDATES_SUPPORTED, startStoreUpdate, onDownloaded } from '../lib/in-app-updates';
 
 const DISMISS_KEY = 'update_banner_dismissed_for';
 
@@ -52,9 +53,21 @@ export function UpdateBanner({ status }: { status: VersionStatus }) {
     AsyncStorage.setItem(DISMISS_KEY, version).catch(() => {});
   };
 
-  const open = () => {
+  /*
+    Android updates in place; iOS opens the store, because Apple offers no
+    equivalent. Falls back to the link whenever Play cannot start one — a
+    device without Play Services, a managed install — so the button never
+    appears to do nothing.
+  */
+  const open = async () => {
+    if (IN_APP_UPDATES_SUPPORTED && (await startStoreUpdate(false))) return;
     if (status.downloadUrl) Linking.openURL(status.downloadUrl).catch(() => {});
   };
+
+  // A flexible update that downloads and is never installed is the usual way
+  // this feature quietly does nothing, so say when it is ready.
+  const [ready, setReady] = useState(false);
+  useEffect(() => onDownloaded(() => setReady(true)), []);
 
   const storeName =
     Platform.OS === 'ios'

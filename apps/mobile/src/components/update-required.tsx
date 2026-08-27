@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/theme-context';
 import { AnimatedLogo } from './animated-logo';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import type { VersionStatus } from '../lib/version-gate';
+import { IN_APP_UPDATES_SUPPORTED, startStoreUpdate } from '../lib/in-app-updates';
 
 /**
  * Shown INSTEAD of the app when this build is older than the server allows.
@@ -24,7 +25,14 @@ export function UpdateRequired({ status }: { status: VersionStatus }) {
       ? t('updateRequired.appStore', 'the App Store')
       : t('updateRequired.playStore', 'Google Play');
 
-  const open = () => {
+  /*
+    The blocking case, so Android asks Play for its IMMEDIATE flow: Play shows
+    its own sheet, downloads, installs and restarts, and can only ever offer a
+    version it genuinely has. That is what makes a hard block safe on Android
+    and merely careful on iOS, where the store link is all Apple allows.
+  */
+  const open = async () => {
+    if (IN_APP_UPDATES_SUPPORTED && (await startStoreUpdate(true))) return;
     if (status.downloadUrl) Linking.openURL(status.downloadUrl).catch(() => {});
   };
 
