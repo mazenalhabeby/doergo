@@ -19,6 +19,15 @@ import { API_URL } from './api/client';
  */
 export interface VersionStatus {
   blocked: boolean;
+  /**
+   * A newer version exists, but this one still works.
+   *
+   * Separate from `blocked` on purpose. Blocking is how a fleet gets stranded
+   * when the store has not published yet — it happened, and people were locked
+   * out of a working app. Telling everyone an update exists reaches exactly the
+   * same people and costs nobody their day.
+   */
+  updateAvailable: boolean;
   current: string;
   minimum: string | null;
   latest: string | null;
@@ -44,7 +53,10 @@ const TIMEOUT_MS = 6000;
 
 export async function checkVersion(): Promise<VersionStatus> {
   const current = currentVersion();
-  const open: VersionStatus = { blocked: false, current, minimum: null, latest: null, downloadUrl: null };
+  const open: VersionStatus = {
+    blocked: false, updateAvailable: false, current,
+    minimum: null, latest: null, downloadUrl: null,
+  };
 
   try {
     const controller = new AbortController();
@@ -63,14 +75,16 @@ export async function checkVersion(): Promise<VersionStatus> {
     const downloadUrl =
       (Platform.OS === 'ios' ? data?.downloads?.ios : data?.downloads?.android) ?? null;
 
+    const latest = data?.latest ?? null;
     return {
       // No minimum configured means no gate. The server ships that way on
       // purpose: a gate that blocks the day it deploys, before anyone has been
       // given a version to move to, locks out the whole fleet at once.
       blocked: !!minimum && compareVersions(current, minimum) < 0,
+      updateAvailable: !!latest && compareVersions(current, latest) < 0,
       current,
       minimum,
-      latest: data?.latest ?? null,
+      latest,
       downloadUrl,
     };
   } catch {

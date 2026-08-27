@@ -26,6 +26,7 @@ import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { ToastProvider } from '../src/contexts/toast-context';
 import { UpdateRequired } from '../src/components/update-required';
+import { UpdateBanner } from '../src/components/update-banner';
 import { checkVersion, type VersionStatus } from '../src/lib/version-gate';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
@@ -161,6 +162,11 @@ function RootLayoutNav() {
         <Stack.Screen name="(customer)" />
         <Stack.Screen name="splash-preview" />
       </Stack>
+      {/* Everyone hears about a new version — without anyone losing the app.
+          Raising the minimum blocks every older build the instant it is set,
+          and if the store has not published yet those people are locked out of
+          something that works. This says the same thing and costs nobody. */}
+      {versionStatus && <UpdateBanner status={versionStatus} />}
       {/* Prominent background-location disclosure — overlays the app when a
           background service needs consent (Google Play requirement). */}
       <LocationConsentModal />

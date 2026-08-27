@@ -66,7 +66,8 @@
       "minutes": "{{count}} min fa",
       "hours": "{{count}} h fa",
       "days": "{{count}} g fa"
-    }
+    },
+    "dismiss": "Chiudi"
   },
   "auth": {
     "login": {
@@ -1651,10 +1652,19 @@
     "viewActivity": "Vedi attività"
   },
   "updateRequired": {
-    "title": "Aggiornamento necessario",
-    "body": "Questa versione dell’app non è più supportata. Installa l’ultima versione per continuare.",
+    "title": "È ora di aggiornare",
+    "body": "Questa versione non è più supportata. Aggiorna da {{store}} per continuare: ci vuole un attimo.",
     "yours": "Hai",
     "needed": "Richiesta",
-    "action": "Ottieni l’ultima versione"
+    "action": "Ottieni l’ultima versione",
+    "actionStore": "Apri {{store}}",
+    "appStore": "l’App Store",
+    "playStore": "Google Play",
+    "footnote": "Se l’aggiornamento non è ancora disponibile, sta arrivando: riprova tra poco."
+  },
+  "updateBanner": {
+    "title": "La versione {{version}} è disponibile",
+    "subtitle": "Aggiorna da {{store}}",
+    "action": "Aggiorna"
   }
 }
