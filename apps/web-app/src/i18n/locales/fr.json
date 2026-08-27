@@ -4141,7 +4141,11 @@
     "by": "par {{name}}",
     "timeToDecide": "{{time}} pour décider",
     "windowClosed": "Délai dépassé",
-    "alreadyWorked": "Déjà {{duration}} travaillées"
+    "alreadyWorked": "Déjà {{duration}} travaillées",
+    "statWaiting": "en attente de vous",
+    "statHoursRequested": "heures demandées",
+    "statRunning": "en cours",
+    "statThisWeek": "validées cette semaine"
   },
   "payments": {
     "title": "Paiements",

@@ -4132,7 +4132,11 @@
     "by": "von {{name}}",
     "timeToDecide": "{{time}} zum Entscheiden",
     "windowClosed": "Frist abgelaufen",
-    "alreadyWorked": "Bereits {{duration}} gearbeitet"
+    "alreadyWorked": "Bereits {{duration}} gearbeitet",
+    "statWaiting": "warten auf Sie",
+    "statHoursRequested": "Stunden beantragt",
+    "statRunning": "läuft gerade",
+    "statThisWeek": "diese Woche genehmigt"
   },
   "payments": {
     "title": "Zahlungen",

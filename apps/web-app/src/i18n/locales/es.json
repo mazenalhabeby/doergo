@@ -4132,7 +4132,11 @@
     "by": "por {{name}}",
     "timeToDecide": "{{time}} para decidir",
     "windowClosed": "Plazo cerrado",
-    "alreadyWorked": "Ya lleva {{duration}} trabajadas"
+    "alreadyWorked": "Ya lleva {{duration}} trabajadas",
+    "statWaiting": "esperan su decisión",
+    "statHoursRequested": "horas solicitadas",
+    "statRunning": "en curso ahora",
+    "statThisWeek": "aprobadas esta semana"
   },
   "payments": {
     "title": "Pagos",

@@ -4132,7 +4132,11 @@
     "by": "by {{name}}",
     "timeToDecide": "{{time}} to decide",
     "windowClosed": "Window closed",
-    "alreadyWorked": "Already worked {{duration}}"
+    "alreadyWorked": "Already worked {{duration}}",
+    "statWaiting": "waiting for you",
+    "statHoursRequested": "hours requested",
+    "statRunning": "running now",
+    "statThisWeek": "approved this week"
   },
   "payments": {
     "title": "Payments",

@@ -4141,7 +4141,11 @@
     "by": "da {{name}}",
     "timeToDecide": "{{time}} per decidere",
     "windowClosed": "Finestra chiusa",
-    "alreadyWorked": "Già {{duration}} lavorate"
+    "alreadyWorked": "Già {{duration}} lavorate",
+    "statWaiting": "in attesa di te",
+    "statHoursRequested": "ore richieste",
+    "statRunning": "in corso ora",
+    "statThisWeek": "approvate questa settimana"
   },
   "payments": {
     "title": "Pagamenti",

@@ -20,6 +20,7 @@ import {
   MapPin,
   User,
   Pen,
+  Zap,
 } from "lucide-react"
 
 import {
@@ -113,6 +114,46 @@ function OvertimePageInner() {
     }),
   })
 
+  /*
+    A triage layer, which the page had none of.
+
+    It opened straight onto two cards on an otherwise empty screen: no sense of
+    how much is waiting, how long it would cost in hours, or what is running
+    right now. Approval-queue practice is consistent on this — a manager
+    processing a queue needs the staffing and hours impact of saying yes, not
+    just the individual request in front of them.
+
+    Every figure below is derived from data that exists. There is no hourly
+    rate anywhere in the schema, so there is no euro cost here — that number
+    would be invented, and on a screen about authorising spend an invented
+    figure is worse than a missing one.
+  */
+  const pendingRaw: OvertimeRequest[] = (pendingData as OvertimeRequest[]) ?? []
+
+  // Most urgent first. The queue is ordered by deadline, because the one about
+  // to expire is the one that costs someone their overtime if it is missed.
+  const pending = [...pendingRaw].sort((a, b) => {
+    const at = (a as { approvalTimeoutAt?: string }).approvalTimeoutAt
+    const bt = (b as { approvalTimeoutAt?: string }).approvalTimeoutAt
+    if (!at || !bt) return at ? -1 : bt ? 1 : 0
+    return new Date(at).getTime() - new Date(bt).getTime()
+  })
+
+  const historyRows: OvertimeRequest[] = (historyData?.data as OvertimeRequest[]) ?? []
+  const weekAgo = Date.now() - 7 * 86_400_000
+
+  const stats = {
+    waiting: pending.length,
+    // Hours a yes would authorise, so the queue's size is in the unit that
+    // matters rather than a count of cards.
+    hoursRequested: pending.reduce((n, r) => n + ((r as { maxDurationMinutes?: number }).maxDurationMinutes ?? 60), 0) / 60,
+    running: historyRows.filter((r) => r.status === "APPROVED").length,
+    approvedThisWeek: historyRows.filter(
+      (r) => (r.status === "APPROVED" || r.status === "COMPLETED") &&
+             new Date(r.approvedAt ?? r.createdAt).getTime() >= weekAgo,
+    ).length,
+  }
+
   const approveMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { maxDurationMinutes: number; notes?: string } }) =>
       overtimeApi.approve(id, data),
@@ -137,7 +178,6 @@ function OvertimePageInner() {
     onError: (err: Error) => notify.error(err.message || t("overtime.toastFailedReject")),
   })
 
-  const pending = pendingData || []
   const history = historyData?.data || []
   const historyMeta = historyData?.meta
 
@@ -162,6 +202,34 @@ function OvertimePageInner() {
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Triage. The page opened onto two cards and a lot of empty screen —
+            no sense of how much was waiting, what it would cost in hours, or
+            what was already running. */}
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile
+            icon={AlertTriangle}
+            value={String(stats.waiting)}
+            label={t("overtime.statWaiting")}
+            tone={stats.waiting > 0 ? "amber" : undefined}
+          />
+          <StatTile
+            icon={Timer}
+            value={stats.hoursRequested ? `${stats.hoursRequested.toFixed(1)}h` : "—"}
+            label={t("overtime.statHoursRequested")}
+          />
+          <StatTile
+            icon={Zap}
+            value={String(stats.running)}
+            label={t("overtime.statRunning")}
+            tone={stats.running > 0 ? "emerald" : undefined}
+          />
+          <StatTile
+            icon={CheckCircle2}
+            value={String(stats.approvedThisWeek)}
+            label={t("overtime.statThisWeek")}
+          />
         </div>
 
         {/* Tabs */}
@@ -525,6 +593,36 @@ function HistoryCard({ request }: { request: OvertimeRequest }) {
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * One figure and what it means.
+ *
+ * Deliberately no euro amount anywhere on this screen: there is no hourly rate
+ * in the schema, so a cost would be invented — and on a page about authorising
+ * spend, an invented number is worse than a missing one. Hours are real, and
+ * carry the same weight for the person deciding.
+ */
+function StatTile({
+  icon: Icon, value, label, tone,
+}: {
+  icon: typeof Timer; value: string; label: string; tone?: "amber" | "emerald"
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card px-4 py-3.5">
+      <Icon className={cn(
+        "size-4",
+        tone === "amber" ? "text-amber-500" : tone === "emerald" ? "text-emerald-500" : "text-muted-foreground",
+      )} />
+      <p className={cn(
+        "mt-2 text-2xl font-semibold tabular-nums",
+        tone === "amber" ? "text-amber-600 dark:text-amber-400"
+        : tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
+        : "text-foreground",
+      )}>{value}</p>
+      <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{label}</p>
     </div>
   )
 }
