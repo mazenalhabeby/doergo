@@ -1,0 +1,257 @@
+<title>Invoice Email Templates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+  :root{ --ground:#0d0f14; --ground-2:#141821; --rule:#232833;
+         --ink:#e8eaf0; --ink-2:#98a0b0; --ink-3:#6b7385; --accent:#34d399; }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--ground); color:var(--ink);
+       font-family:Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px; margin:0 auto; padding:44px 24px 100px}
+  h1{font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 8px}
+  .lede{color:var(--ink-2); font-size:15px; max-width:66ch; margin:0}
+  .callout{border:1px solid #4a3a1a; background:#1c1508; border-radius:12px;
+    padding:14px 16px; margin:22px 0 0; font-size:13.5px; color:#e8d5a8}
+  .callout b{color:#ffd98a}
+  h2{font-size:12px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+     color:var(--ink-3); margin:46px 0 6px}
+  .h2sub{color:var(--ink-2); font-size:13.5px; margin:0 0 18px; max-width:74ch}
+  .h2sub b{color:var(--ink)}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:24px}
+  .client{background:#20242e; border-radius:12px; padding:10px 12px 0}
+  .chrome{display:flex; align-items:center; gap:7px; padding-bottom:9px}
+  .cdot{width:9px; height:9px; border-radius:50%}
+  .subj{margin-left:6px; font-size:12px; color:var(--ink-2); white-space:nowrap;
+        overflow:hidden; text-overflow:ellipsis}
+  .paper{background:#fff; border-radius:8px 8px 0 0; padding:0; overflow:hidden}
+  .note{color:var(--ink-2); font-size:12.5px; margin:12px 2px 0; line-height:1.55}
+  .note b{color:var(--ink); font-weight:600}
+  .scroll{overflow-x:auto}
+  table.spec{border-collapse:collapse; width:100%; font-size:13.5px; margin-top:8px; min-width:520px}
+  .spec th,.spec td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--rule); vertical-align:top}
+  .spec th{color:var(--ink-3); font-weight:600; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase}
+  .spec code{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; background:var(--ground-2);
+             padding:2px 6px; border-radius:5px; color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <h1>Invoice emails — what they would look like</h1>
+  <p class="lede">
+    Two templates in the house style already used by invitations and task alerts, so an invoice
+    email arrives looking like the rest of the product rather than like a different company.
+  </p>
+
+  <div class="callout">
+    <b>Neither exists yet.</b> “Send” currently writes <code style="color:#ffd98a">status = 'SENT'</code>
+    and stops — no mailer, no template, no event anywhere in the invoices module. The client receives
+    nothing, and <code style="color:#ffd98a">clientEmail</code> is collected and never used. This page
+    is a proposal, not a screenshot of something running.
+  </div>
+
+  <h2>The house style, as it exists today</h2>
+  <p class="h2sub">
+    Taken from <b>sendInvitationEmail</b> — 600px, Arial, a blue wordmark over a light card. The two
+    proposals below follow it exactly, so the only new thing is the content.
+  </p>
+
+  <div class="grid">
+    <div>
+      <div class="client">
+        <div class="chrome">
+          <span class="cdot" style="background:#ff5f57"></span>
+          <span class="cdot" style="background:#febc2e"></span>
+          <span class="cdot" style="background:#28c840"></span>
+          <span class="subj">You're invited to join Acme Corporation on HBCField</span>
+        </div>
+        <div class="paper">
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:0 16px 18px">
+            <div style="text-align:center;padding:26px 0 18px">
+              <h1 style="color:#2563eb;margin:0;font-size:23px">HBC FIELD</h1>
+              <p style="color:#64748b;margin-top:4px;font-size:13px">Field Service Management</p>
+            </div>
+            <div style="background-color:#f8fafc;border-radius:12px;padding:22px;text-align:center">
+              <h2 style="color:#1e293b;margin-top:0;font-size:18px">You've been invited!</h2>
+              <p style="color:#475569;font-size:14px">
+                You've been invited to join <strong>Acme Corporation</strong> as a <strong>Technician</strong>.
+              </p>
+              <div style="background:linear-gradient(135deg,#eff6ff,#e0e7ff);border:2px solid #bfdbfe;border-radius:12px;padding:16px;margin:20px 0">
+                <p style="color:#64748b;font-size:12px;margin:0 0 6px">Your invitation code</p>
+                <p style="font-family:monospace;font-size:26px;font-weight:bold;letter-spacing:.3em;color:#1e40af;margin:0">
+                  K4M9XZ2QER
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">The existing pattern — <b>this one is real</b> and sends today.</p>
+    </div>
+
+    <div>
+      <div class="client">
+        <div class="chrome">
+          <span class="cdot" style="background:#ff5f57"></span>
+          <span class="cdot" style="background:#febc2e"></span>
+          <span class="cdot" style="background:#28c840"></span>
+          <span class="subj">Invoice INV-2026-0042 from Acme Corporation — €1,680.00</span>
+        </div>
+        <div class="paper">
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:0 16px 18px">
+            <div style="text-align:center;padding:26px 0 18px">
+              <h1 style="color:#2563eb;margin:0;font-size:23px">HBC FIELD</h1>
+              <p style="color:#64748b;margin-top:4px;font-size:13px">Field Service Management</p>
+            </div>
+
+            <div style="background-color:#f8fafc;border-radius:12px;padding:22px">
+              <h2 style="color:#1e293b;margin:0 0 4px;font-size:18px">Invoice INV-2026-0042</h2>
+              <p style="color:#475569;font-size:14px;margin:0 0 18px">From <strong>Acme Corporation</strong></p>
+
+              <!-- The amount and the date are the whole message. Everything else
+                   is evidence for them. -->
+              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:16px">
+                <p style="color:#64748b;font-size:12px;margin:0">Amount due</p>
+                <p style="color:#1e293b;font-size:30px;font-weight:bold;margin:2px 0 6px">€1,680.00</p>
+                <p style="color:#475569;font-size:13px;margin:0">Due by <strong>14 July 2026</strong></p>
+              </div>
+
+              <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px">
+                <tr>
+                  <td style="color:#475569;padding:6px 0;border-bottom:1px solid #e2e8f0">
+                    Heizungswartung — Jahresvertrag
+                    <span style="color:#94a3b8"> × 1</span>
+                  </td>
+                  <td style="color:#1e293b;text-align:right;padding:6px 0;border-bottom:1px solid #e2e8f0">€1,400.00</td>
+                </tr>
+                <tr>
+                  <td style="color:#64748b;padding:6px 0">Subtotal</td>
+                  <td style="color:#475569;text-align:right;padding:6px 0">€1,400.00</td>
+                </tr>
+                <tr>
+                  <td style="color:#64748b;padding:2px 0">VAT 20%</td>
+                  <td style="color:#475569;text-align:right;padding:2px 0">€280.00</td>
+                </tr>
+                <tr>
+                  <td style="color:#1e293b;font-weight:bold;padding:8px 0 0;border-top:2px solid #e2e8f0">Total</td>
+                  <td style="color:#1e293b;font-weight:bold;text-align:right;padding:8px 0 0;border-top:2px solid #e2e8f0">€1,680.00</td>
+                </tr>
+              </table>
+
+              <div style="text-align:center;margin-top:18px">
+                <a style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;
+                          padding:11px 26px;border-radius:8px;font-size:14px;font-weight:bold">
+                  View invoice
+                </a>
+              </div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 12px">
+            <p style="color:#94a3b8;font-size:11.5px;text-align:center;margin:0">
+              Questions about this invoice? Reply to this email and it reaches Acme Corporation directly.
+            </p>
+          </div>
+        </div>
+      </div>
+      <p class="note">
+        <b>Proposed — the invoice itself.</b> Amount and due date carry the message; the line items are
+        evidence beneath them. The subject line leads with the number and the amount, because that is
+        what someone searches for months later.
+      </p>
+    </div>
+
+    <div>
+      <div class="client">
+        <div class="chrome">
+          <span class="cdot" style="background:#ff5f57"></span>
+          <span class="cdot" style="background:#febc2e"></span>
+          <span class="cdot" style="background:#28c840"></span>
+          <span class="subj">Reminder: invoice INV-2026-0042 is 45 days overdue</span>
+        </div>
+        <div class="paper">
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:0 16px 18px">
+            <div style="text-align:center;padding:26px 0 18px">
+              <h1 style="color:#2563eb;margin:0;font-size:23px">HBC FIELD</h1>
+              <p style="color:#64748b;margin-top:4px;font-size:13px">Field Service Management</p>
+            </div>
+
+            <div style="background-color:#f8fafc;border-radius:12px;padding:22px">
+              <h2 style="color:#1e293b;margin:0 0 4px;font-size:18px">A friendly reminder</h2>
+              <p style="color:#475569;font-size:14px;margin:0 0 16px">
+                Invoice <strong>INV-2026-0042</strong> from <strong>Acme Corporation</strong> is still open.
+              </p>
+
+              <!-- Amber, not red. This is a first reminder to a client who has
+                   probably just missed it — the tone of the message and the
+                   colour of the box should agree. -->
+              <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;margin-bottom:16px">
+                <p style="color:#92400e;font-size:12px;margin:0">Outstanding since 14 July 2026</p>
+                <p style="color:#1e293b;font-size:30px;font-weight:bold;margin:2px 0 6px">€1,680.00</p>
+                <p style="color:#92400e;font-size:13px;margin:0"><strong>45 days</strong> past the due date</p>
+              </div>
+
+              <p style="color:#475569;font-size:13.5px;margin:0 0 16px">
+                If payment is already on its way, please ignore this message — and thank you.
+              </p>
+
+              <div style="text-align:center">
+                <a style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;
+                          padding:11px 26px;border-radius:8px;font-size:14px;font-weight:bold">
+                  View invoice
+                </a>
+              </div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 12px">
+            <p style="color:#94a3b8;font-size:11.5px;text-align:center;margin:0">
+              Already paid? Reply to this email and we will update our records.
+            </p>
+          </div>
+        </div>
+      </div>
+      <p class="note">
+        <b>Proposed — the reminder.</b> Amber rather than red, and it opens by assuming the best: most
+        late payments are an oversight, and a first reminder that reads like a debt collection letter
+        costs a client relationship to recover money that was coming anyway.
+      </p>
+    </div>
+  </div>
+
+  <h2>What building it involves</h2>
+  <div class="scroll">
+    <table class="spec">
+      <tr><th>Piece</th><th>Where</th><th>Note</th></tr>
+      <tr>
+        <td><code>sendInvoiceEmail()</code></td>
+        <td>notification-service <code>email.service.ts</code></td>
+        <td>Eight templates already follow this shape</td>
+      </tr>
+      <tr>
+        <td><code>sendInvoiceReminderEmail()</code></td>
+        <td>same</td>
+        <td>Takes the days-overdue the list already computes</td>
+      </tr>
+      <tr>
+        <td>Emit on <code>DRAFT → SENT</code></td>
+        <td>auth-service <code>invoice.service.ts</code></td>
+        <td>Where the status is written today</td>
+      </tr>
+      <tr>
+        <td>“Send reminder” action</td>
+        <td>invoices list</td>
+        <td>The obvious next step on an overdue row</td>
+      </tr>
+      <tr>
+        <td>A hosted invoice page</td>
+        <td>new public route</td>
+        <td>“View invoice” has to lead somewhere a client can open without an account</td>
+      </tr>
+    </table>
+  </div>
+  <p class="note" style="margin-top:14px">
+    The last row is the real decision. A link is simpler than a PDF attachment and lets you see whether
+    the client opened it — but it means a public, unguessable URL per invoice, which is a security
+    surface worth designing rather than adding. <b>A PDF attachment avoids that entirely</b> and is what
+    most clients' accounting departments expect to file.
+  </p>
+</div>
