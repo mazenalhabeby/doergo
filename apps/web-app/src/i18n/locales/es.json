@@ -4073,7 +4073,8 @@
       "d31_60": "31–60 días",
       "d61_90": "61–90 días",
       "d90_plus": "90+ días"
-    }
+    },
+    "mixedCurrencies": "Los totales mezclan monedas ({{list}}) y son solo orientativos."
   },
   "overtime": {
     "title": "Gestión de horas extra",

@@ -122,6 +122,14 @@ function InvoicesPageInner() {
     counts across the four cards, so nothing could be compared with anything.
   */
   const aging = summarise(invoices)
+  /*
+    The summary figures were printed with formatCurrency's DEFAULT — dollars —
+    while every row printed the invoice's own currency. The screen showed
+    $23,610.50 above a list of euro amounts, which on a money screen is not a
+    cosmetic slip.
+  */
+  const ccy = aging.currencies[0] ?? invoices[0]?.currency ?? "EUR"
+  const mixedCurrencies = aging.currencies.length > 1
   const totalPaid = invoices.filter((i) => i.status === "PAID").reduce((s: number, i: Invoice) => s + (i.total || 0), 0)
 
   const BAND_STYLE: Record<AgeBand, { bar: string; dot: string; label: string }> = {
@@ -155,14 +163,14 @@ function InvoicesPageInner() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground">{t("invoices.outstanding")}</p>
                 <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
-                  {formatCurrency(aging.outstanding)}
+                  {formatCurrency(aging.outstanding, ccy)}
                 </p>
               </div>
               {aging.overdueCount > 0 && (
                 <div className="text-right">
                   <p className="text-xs font-medium text-red-600 dark:text-red-400">{t("invoices.overdue")}</p>
                   <p className="text-lg font-semibold tabular-nums text-red-600 dark:text-red-400">
-                    {formatCurrency(aging.overdue)}
+                    {formatCurrency(aging.overdue, ccy)}
                   </p>
                 </div>
               )}
@@ -187,7 +195,7 @@ function InvoicesPageInner() {
                       <span key={b} className="flex items-center gap-1.5 text-xs">
                         <span className={cn("size-2 rounded-full", BAND_STYLE[b].dot)} />
                         <span className="text-muted-foreground">{BAND_STYLE[b].label}</span>
-                        <span className="font-medium tabular-nums text-foreground">{formatCurrency(cell.amount)}</span>
+                        <span className="font-medium tabular-nums text-foreground">{formatCurrency(cell.amount, ccy)}</span>
                       </span>
                     )
                   })}
@@ -196,13 +204,20 @@ function InvoicesPageInner() {
             ) : (
               <p className="mt-4 text-sm text-muted-foreground">{t("invoices.nothingOutstanding")}</p>
             )}
+            {/* Adding euros to dollars produces a number that means nothing.
+                Better to admit it than to print a confident total. */}
+            {mixedCurrencies && (
+              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                {t("invoices.mixedCurrencies", { list: aging.currencies.join(", ") })}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-2xl border border-border bg-card p-4">
               <p className="text-xs font-medium text-muted-foreground">{t("invoices.paid")}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(totalPaid)}
+                {formatCurrency(totalPaid, ccy)}
               </p>
             </div>
             {/* The oldest debt, because that is the one that decides what to do

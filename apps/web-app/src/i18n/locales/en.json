@@ -4073,7 +4073,8 @@
       "d31_60": "31–60 days",
       "d61_90": "61–90 days",
       "d90_plus": "90+ days"
-    }
+    },
+    "mixedCurrencies": "Totals mix currencies ({{list}}) and are only indicative."
   },
   "overtime": {
     "title": "Overtime Management",

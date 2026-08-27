@@ -4082,7 +4082,8 @@
       "d31_60": "31–60 giorni",
       "d61_90": "61–90 giorni",
       "d90_plus": "90+ giorni"
-    }
+    },
+    "mixedCurrencies": "I totali mescolano valute ({{list}}) e sono solo indicativi."
   },
   "overtime": {
     "title": "Gestione degli straordinari",

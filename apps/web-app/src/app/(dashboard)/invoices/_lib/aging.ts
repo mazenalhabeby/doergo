@@ -53,6 +53,13 @@ export interface AgingSummary {
   bands: Record<AgeBand, { amount: number; count: number }>
   /** The single oldest unpaid invoice, in days. Null when nothing is overdue. */
   oldestDays: number | null
+  /**
+   * Every distinct currency among the outstanding invoices.
+   *
+   * More than one means the totals above are adding euros to dollars, which is
+   * not a number — the screen has to say so rather than print a confident sum.
+   */
+  currencies: string[]
 }
 
 export function summarise(invoices: Invoice[], now = new Date()): AgingSummary {
@@ -62,6 +69,7 @@ export function summarise(invoices: Invoice[], now = new Date()): AgingSummary {
 
   let outstanding = 0, outstandingCount = 0, overdue = 0, overdueCount = 0
   let oldestDays: number | null = null
+  const currencies = new Set<string>()
 
   for (const inv of invoices) {
     if (!isOutstanding(inv)) continue
@@ -71,6 +79,7 @@ export function summarise(invoices: Invoice[], now = new Date()): AgingSummary {
 
     outstanding += amount
     outstandingCount++
+    currencies.add(inv.currency || "EUR")
     bands[band].amount += amount
     bands[band].count++
 
@@ -81,7 +90,10 @@ export function summarise(invoices: Invoice[], now = new Date()): AgingSummary {
     }
   }
 
-  return { outstanding, outstandingCount, overdue, overdueCount, bands, oldestDays }
+  return {
+    outstanding, outstandingCount, overdue, overdueCount, bands, oldestDays,
+    currencies: [...currencies],
+  }
 }
 
 /**

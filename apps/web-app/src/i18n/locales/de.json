@@ -4073,7 +4073,8 @@
       "d31_60": "31–60 Tage",
       "d61_90": "61–90 Tage",
       "d90_plus": "90+ Tage"
-    }
+    },
+    "mixedCurrencies": "Summen mischen Währungen ({{list}}) und sind nur ein Anhaltspunkt."
   },
   "overtime": {
     "title": "Überstundenverwaltung",
