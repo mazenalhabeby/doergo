@@ -262,7 +262,7 @@ function InvoicesPageInner() {
 
         {/* Table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
-          <div className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
+          <div className="grid grid-cols-[100px_1fr_120px_100px_110px_80px_120px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
             <div>{t("invoices.columns.invoiceNumber")}</div>
             <div>{t("invoices.columns.client")}</div>
             <div className="text-right">{t("invoices.columns.amount")}</div>
@@ -286,7 +286,7 @@ function InvoicesPageInner() {
             rows.map((inv) => {
               const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
               return (
-                <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">
+                <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_110px_80px_120px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">
                   <span className="text-sm font-mono font-medium text-foreground">{inv.invoiceNumber}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{inv.clientName}</p>
@@ -320,6 +320,22 @@ function InvoicesPageInner() {
                     })()}
                   </span>
                   <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>{t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}</span>
+                  <div className="flex items-center justify-end gap-1">
+                    {/* The next step, stated. Burying "Mark paid" in a kebab
+                        menu makes the one action a row exists for the hardest
+                        thing on it to find. */}
+                    {isAdmin && (inv.status === "DRAFT" || inv.status === "SENT" || inv.status === "OVERDUE") && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          statusMutation.mutate({ id: inv.id, status: inv.status === "DRAFT" ? "SENT" : "PAID" })
+                        }}
+                        disabled={statusMutation.isPending}
+                        className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+                      >
+                        {inv.status === "DRAFT" ? t("invoices.actions.send") : t("invoices.actions.markPaid")}
+                      </button>
+                    )}
                   {isAdmin && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -334,7 +350,11 @@ function InvoicesPageInner() {
                             <Send className="size-3.5 mr-2" /> {t("invoices.actions.send")}
                           </DropdownMenuItem>
                         )}
-                        {inv.status === "SENT" && (
+                        {/* OVERDUE too, not just SENT. Being paid late is the
+                            most likely thing to happen to an overdue invoice,
+                            and the only option here used to be Cancel — which
+                            records that it was never owed. */}
+                        {(inv.status === "SENT" || inv.status === "OVERDUE") && (
                           <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "PAID" })}>
                             <CheckCircle className="size-3.5 mr-2" /> {t("invoices.actions.markPaid")}
                           </DropdownMenuItem>
@@ -353,6 +373,7 @@ function InvoicesPageInner() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
+                  </div>
                 </div>
               )
             })
