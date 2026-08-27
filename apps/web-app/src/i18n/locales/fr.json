@@ -4138,7 +4138,10 @@
     "minOvertime": "{{count}} min d'heures supplémentaires",
     "signed": "Signé",
     "remote": "À distance",
-    "by": "par {{name}}"
+    "by": "par {{name}}",
+    "timeToDecide": "{{time}} pour décider",
+    "windowClosed": "Délai dépassé",
+    "alreadyWorked": "Déjà {{duration}} travaillées"
   },
   "payments": {
     "title": "Paiements",

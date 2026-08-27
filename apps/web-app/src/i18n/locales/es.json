@@ -4129,7 +4129,10 @@
     "minOvertime": "{{count}} min de horas extra",
     "signed": "Firmado",
     "remote": "Remoto",
-    "by": "por {{name}}"
+    "by": "por {{name}}",
+    "timeToDecide": "{{time}} para decidir",
+    "windowClosed": "Plazo cerrado",
+    "alreadyWorked": "Ya lleva {{duration}} trabajadas"
   },
   "payments": {
     "title": "Pagos",

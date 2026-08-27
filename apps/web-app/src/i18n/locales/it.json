@@ -4138,7 +4138,10 @@
     "minOvertime": "{{count}} min di straordinario",
     "signed": "Firmato",
     "remote": "Da remoto",
-    "by": "da {{name}}"
+    "by": "da {{name}}",
+    "timeToDecide": "{{time}} per decidere",
+    "windowClosed": "Finestra chiusa",
+    "alreadyWorked": "Già {{duration}} lavorate"
   },
   "payments": {
     "title": "Pagamenti",

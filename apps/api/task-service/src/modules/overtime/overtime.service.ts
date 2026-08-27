@@ -396,6 +396,11 @@ export class OvertimeService {
       include: {
         technician: { select: { id: true, firstName: true, lastName: true, email: true } },
         location: { select: { id: true, name: true } },
+        // The shift itself. An approver deciding on overtime needs to know how
+        // long this person has ALREADY been working — a request after eight
+        // hours and one after thirteen are not the same decision, and the
+        // screen could not tell them apart.
+        timeEntry: { select: { clockInAt: true, clockOutAt: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -428,6 +433,9 @@ export class OvertimeService {
           technician: { select: { id: true, firstName: true, lastName: true } },
           location: { select: { id: true, name: true } },
           approvedBy: { select: { id: true, firstName: true, lastName: true } },
+          // So history can say how much overtime was actually worked, rather
+          // than only that it happened.
+          timeEntry: { select: { clockInAt: true, clockOutAt: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),

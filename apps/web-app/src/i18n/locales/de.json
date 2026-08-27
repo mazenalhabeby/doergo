@@ -4129,7 +4129,10 @@
     "minOvertime": "{{count}} Min. Überstunden",
     "signed": "Unterschrieben",
     "remote": "Remote",
-    "by": "von {{name}}"
+    "by": "von {{name}}",
+    "timeToDecide": "{{time}} zum Entscheiden",
+    "windowClosed": "Frist abgelaufen",
+    "alreadyWorked": "Bereits {{duration}} gearbeitet"
   },
   "payments": {
     "title": "Zahlungen",

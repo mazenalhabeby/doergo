@@ -4129,7 +4129,10 @@
     "minOvertime": "{{count}} min overtime",
     "signed": "Signed",
     "remote": "Remote",
-    "by": "by {{name}}"
+    "by": "by {{name}}",
+    "timeToDecide": "{{time}} to decide",
+    "windowClosed": "Window closed",
+    "alreadyWorked": "Already worked {{duration}}"
   },
   "payments": {
     "title": "Payments",

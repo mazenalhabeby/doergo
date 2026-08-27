@@ -2,12 +2,14 @@
 
 import { PlanGate } from "@/components/plan-gate"
 import type { LucideIcon } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { cn } from "@/lib/utils"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat } from "@/hooks"
 import { notify } from "@/lib/toast"
 import { format, formatDistanceToNow } from "date-fns"
+import { msLeft, formatCountdown, urgencyOf, shiftLength, isLongShift } from "./_lib/countdown"
 import {
   Clock,
   CheckCircle2,
@@ -381,8 +383,32 @@ function OvertimeCard({
   const { t } = useTranslation()
   const badge = STATUS_BADGES[request.status] || STATUS_BADGES.PENDING_APPROVAL
 
+  /*
+    A live clock, not a number frozen at render.
+
+    The approval window is measured in minutes, so a countdown that only
+    updated when something else re-rendered would sit at "6:04" while the
+    request quietly expired.
+  */
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const left = msLeft((request as { approvalTimeoutAt?: string }).approvalTimeoutAt, now)
+  const urgency = urgencyOf(left)
+  const entry = (request as { timeEntry?: { clockInAt?: string } }).timeEntry
+  const shift = shiftLength(entry?.clockInAt, now)
+  const longShift = isLongShift(entry?.clockInAt, now)
+
   return (
-    <div className="rounded-xl border border-blue-200 bg-card p-5 shadow-sm">
+    <div className={cn(
+      "rounded-xl border bg-card p-5 shadow-sm transition-colors",
+      urgency === "critical" ? "border-red-400/70"
+      : urgency === "warning" ? "border-amber-400/70"
+      : "border-blue-200 dark:border-blue-900",
+    )}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4 flex-1">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
@@ -400,8 +426,16 @@ function OvertimeCard({
                 <MapPin className="h-3.5 w-3.5" />
                 {request.location?.name}
               </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
+              {/* How long this person had ALREADY worked. A request after eight
+                  hours and one after thirteen are not the same decision. */}
+              {shift && (
+                <span className={cn("inline-flex items-center gap-1", longShift && "font-medium text-amber-600 dark:text-amber-400")}>
+                  <Clock className="h-3.5 w-3.5" />
+                  {t("overtime.alreadyWorked", { duration: shift })}
+                  {longShift && <AlertTriangle className="h-3.5 w-3.5" />}
+                </span>
+              )}
+              <span className="text-muted-foreground/70">
                 {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
               </span>
             </div>
@@ -413,7 +447,24 @@ function OvertimeCard({
           </div>
         </div>
 
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {/* Next to the buttons, because that is where the decision happens —
+              a deadline in the corner of a card gets read after the fact. */}
+          {left !== null && (
+            <span className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
+              urgency === "expired" ? "bg-muted text-muted-foreground"
+              : urgency === "critical" ? "bg-red-500/15 text-red-600 dark:text-red-400 motion-safe:animate-pulse"
+              : urgency === "warning" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              : "bg-muted text-muted-foreground",
+            )}>
+              <Timer className="size-3.5" />
+              {urgency === "expired"
+                ? t("overtime.windowClosed")
+                : t("overtime.timeToDecide", { time: formatCountdown(left) })}
+            </span>
+          )}
+        <div className="flex gap-2">
           <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={onReject}>
             <XCircle className="h-4 w-4 mr-1" />
             {t("overtime.reject")}
@@ -422,6 +473,7 @@ function OvertimeCard({
             <CheckCircle2 className="h-4 w-4 mr-1" />
             {t("overtime.approve")}
           </Button>
+        </div>
         </div>
       </div>
     </div>
