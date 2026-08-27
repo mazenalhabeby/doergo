@@ -20,6 +20,7 @@ import {
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, type Invoice } from "@/lib/api"
+import { summarise, byUrgency, daysOverdue, bandFor, isOutstanding, AGE_BANDS, type AgeBand } from "./_lib/aging"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -108,13 +109,28 @@ function InvoicesPageInner() {
       )
     : invoices
 
-  // Summary stats
-  const totalDraft = invoices.filter((i) => i.status === "DRAFT").length
-  const totalSent = invoices.filter((i) => i.status === "SENT").length
-  const totalPaid = invoices.filter((i) => i.status === "PAID").length
-  const totalOverdue = invoices.filter((i) => i.status === "OVERDUE").length
-  const totalRevenue = invoices.filter((i) => i.status === "PAID").reduce((sum: number, i: Invoice) => sum + (i.total || 0), 0)
-  const totalPending = invoices.filter((i) => i.status === "SENT").reduce((sum: number, i: Invoice) => sum + (i.total || 0), 0)
+  // Most urgent first. A list ordered by invoice number says nothing about what
+  // to do next, which is the only question this page exists to answer.
+  const rows = [...filtered].sort((a, b) => byUrgency(a, b))
+
+  /*
+    Ageing, not four disconnected numbers.
+
+    The old summary counted overdue INVOICES, so five days late and four months
+    late were the same fact. They are different problems — a reminder versus a
+    phone call — and the age is what decides which. It also mixed money with
+    counts across the four cards, so nothing could be compared with anything.
+  */
+  const aging = summarise(invoices)
+  const totalPaid = invoices.filter((i) => i.status === "PAID").reduce((s: number, i: Invoice) => s + (i.total || 0), 0)
+
+  const BAND_STYLE: Record<AgeBand, { bar: string; dot: string; label: string }> = {
+    current:  { bar: "bg-emerald-500",  dot: "bg-emerald-500",  label: t("invoices.aging.current") },
+    d1_30:    { bar: "bg-amber-400",    dot: "bg-amber-400",    label: t("invoices.aging.d1_30") },
+    d31_60:   { bar: "bg-orange-500",   dot: "bg-orange-500",   label: t("invoices.aging.d31_60") },
+    d61_90:   { bar: "bg-red-500",      dot: "bg-red-500",      label: t("invoices.aging.d61_90") },
+    d90_plus: { bar: "bg-red-700",      dot: "bg-red-700",      label: t("invoices.aging.d90_plus") },
+  }
 
   return (
     <div className="min-h-full bg-background">
@@ -132,24 +148,74 @@ function InvoicesPageInner() {
           )}
         </div>
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.totalRevenue")}</p>
-            <p className="text-xl font-bold text-foreground tabular-nums">{formatCurrency(totalRevenue)}</p>
+        {/* One figure that matters, and the shape of it. */}
+        <div className="grid gap-4 mb-6 lg:grid-cols-[1.6fr_1fr]">
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">{t("invoices.outstanding")}</p>
+                <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
+                  {formatCurrency(aging.outstanding)}
+                </p>
+              </div>
+              {aging.overdueCount > 0 && (
+                <div className="text-right">
+                  <p className="text-xs font-medium text-red-600 dark:text-red-400">{t("invoices.overdue")}</p>
+                  <p className="text-lg font-semibold tabular-nums text-red-600 dark:text-red-400">
+                    {formatCurrency(aging.overdue)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* The ageing bar. Proportional, so the eye lands on the oldest
+                money without reading a single number. */}
+            {aging.outstanding > 0 ? (
+              <>
+                <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                  {AGE_BANDS.map((b) => {
+                    const pct = (aging.bands[b].amount / aging.outstanding) * 100
+                    if (pct <= 0) return null
+                    return <div key={b} className={cn("h-full", BAND_STYLE[b].bar)} style={{ width: `${pct}%` }} title={BAND_STYLE[b].label} />
+                  })}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                  {AGE_BANDS.map((b) => {
+                    const cell = aging.bands[b]
+                    if (!cell.count) return null
+                    return (
+                      <span key={b} className="flex items-center gap-1.5 text-xs">
+                        <span className={cn("size-2 rounded-full", BAND_STYLE[b].dot)} />
+                        <span className="text-muted-foreground">{BAND_STYLE[b].label}</span>
+                        <span className="font-medium tabular-nums text-foreground">{formatCurrency(cell.amount)}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">{t("invoices.nothingOutstanding")}</p>
+            )}
           </div>
-          <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.pending")}</p>
-            <p className="text-xl font-bold text-foreground tabular-nums">{formatCurrency(totalPending)}</p>
-            <p className="text-[11px] text-muted-foreground">{t("invoices.invoicesCount", { count: totalSent })}</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.paid")}</p>
-            <p className="text-xl font-bold text-green-600 tabular-nums">{totalPaid}</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">{t("invoices.overdue")}</p>
-            <p className="text-xl font-bold text-red-600 tabular-nums">{totalOverdue}</p>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">{t("invoices.paid")}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(totalPaid)}
+              </p>
+            </div>
+            {/* The oldest debt, because that is the one that decides what to do
+                today — an average would hide it. */}
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">{t("invoices.oldestDebt")}</p>
+              <p className={cn("mt-1 text-xl font-semibold tabular-nums",
+                aging.oldestDays === null ? "text-muted-foreground"
+                : aging.oldestDays > 60 ? "text-red-600 dark:text-red-400"
+                : "text-amber-600 dark:text-amber-400")}>
+                {aging.oldestDays === null ? "—" : t("invoices.daysCount", { count: aging.oldestDays })}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -195,14 +261,14 @@ function InvoicesPageInner() {
             <div className="p-4 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : rows.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="size-10 mx-auto text-muted-foreground/20 mb-3" />
               <p className="text-sm text-muted-foreground">{t("invoices.empty")}</p>
               {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.emptyHint")}</p>}
             </div>
           ) : (
-            filtered.map((inv) => {
+            rows.map((inv) => {
               const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
               return (
                 <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_100px_80px_40px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">
@@ -213,7 +279,31 @@ function InvoicesPageInner() {
                   </div>
                   <span className="text-sm font-semibold text-foreground text-right tabular-nums">{formatCurrency(inv.total, inv.currency)}</span>
                   <span className="text-xs text-muted-foreground">{new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })}</span>
-                  <span className="text-xs text-muted-foreground">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) : "—"}</span>
+                  {/* The due date alone does not say how late something is —
+                      the reader has to do the arithmetic for every row. The age
+                      is the thing that decides whether this is a reminder or a
+                      phone call, so it is stated. */}
+                  <span className="text-xs">
+                    <span className="text-muted-foreground">
+                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) : "—"}
+                    </span>
+                    {(() => {
+                      if (!isOutstanding(inv)) return null
+                      const d = daysOverdue(inv.dueDate)
+                      if (d === null || d <= 0) return null
+                      const band = bandFor(d)
+                      return (
+                        <span className={cn(
+                          "mt-0.5 block font-medium",
+                          band === "d1_30" ? "text-amber-600 dark:text-amber-400"
+                          : band === "d31_60" ? "text-orange-600 dark:text-orange-400"
+                          : "text-red-600 dark:text-red-400",
+                        )}>
+                          {t("invoices.daysLate", { count: d })}
+                        </span>
+                      )
+                    })()}
+                  </span>
                   <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>{t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}</span>
                   {isAdmin && (
                     <DropdownMenu>

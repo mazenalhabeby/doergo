@@ -4069,6 +4069,19 @@
       "billParts": "Fattura pezzi",
       "extraLines": "Righe aggiuntive",
       "noExtraLines": "Nessuna riga aggiuntiva. Aggiungi qui addebiti occasionali."
+    },
+    "oldestDebt": "Più vecchia non pagata",
+    "nothingOutstanding": "Tutto saldato — nulla in sospeso.",
+    "daysCount_one": "{{count}} giorno",
+    "daysCount_other": "{{count}} giorni",
+    "daysLate_one": "{{count}} giorno di ritardo",
+    "daysLate_other": "{{count}} giorni di ritardo",
+    "aging": {
+      "current": "Non ancora scaduta",
+      "d1_30": "1–30 giorni",
+      "d31_60": "31–60 giorni",
+      "d61_90": "61–90 giorni",
+      "d90_plus": "90+ giorni"
     }
   },
   "overtime": {

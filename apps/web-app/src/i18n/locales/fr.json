@@ -4019,7 +4019,7 @@
       "statusUpdated": "Statut de la facture mis à jour",
       "deleted": "Facture supprimée"
     },
-    "outstanding": "En souffrance",
+    "outstanding": "En attente de paiement",
     "notFound": "Facture introuvable",
     "emptyForSpace": "Aucune facture pour {{name}} pour l’instant",
     "emptyForSpaceHint": "Créez-en une ou intégrez le travail terminé dans un brouillon.",
@@ -4069,6 +4069,19 @@
       "billParts": "Facturer les pièces",
       "extraLines": "Lignes supplémentaires",
       "noExtraLines": "Aucune ligne supplémentaire. Ajoutez ici des frais ponctuels."
+    },
+    "oldestDebt": "Plus ancienne impayée",
+    "nothingOutstanding": "Tout est réglé — rien en attente.",
+    "daysCount_one": "{{count}} jour",
+    "daysCount_other": "{{count}} jours",
+    "daysLate_one": "{{count}} jour de retard",
+    "daysLate_other": "{{count}} jours de retard",
+    "aging": {
+      "current": "Pas encore échue",
+      "d1_30": "1–30 jours",
+      "d31_60": "31–60 jours",
+      "d61_90": "61–90 jours",
+      "d90_plus": "90+ jours"
     }
   },
   "overtime": {

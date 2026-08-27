@@ -4060,6 +4060,19 @@
       "billParts": "Bill parts",
       "extraLines": "Extra lines",
       "noExtraLines": "No extra lines. Add ad-hoc charges here."
+    },
+    "oldestDebt": "Oldest unpaid",
+    "nothingOutstanding": "Everything is settled — nothing outstanding.",
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
+    "daysLate_one": "{{count}} day late",
+    "daysLate_other": "{{count}} days late",
+    "aging": {
+      "current": "Not yet due",
+      "d1_30": "1–30 days",
+      "d31_60": "31–60 days",
+      "d61_90": "61–90 days",
+      "d90_plus": "90+ days"
     }
   },
   "overtime": {

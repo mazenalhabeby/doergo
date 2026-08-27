@@ -4060,6 +4060,19 @@
       "billParts": "Teile abrechnen",
       "extraLines": "Zusätzliche Positionen",
       "noExtraLines": "Keine zusätzlichen Positionen. Fügen Sie hier Ad-hoc-Posten hinzu."
+    },
+    "oldestDebt": "Älteste offene",
+    "nothingOutstanding": "Alles beglichen — nichts offen.",
+    "daysCount_one": "{{count}} Tag",
+    "daysCount_other": "{{count}} Tage",
+    "daysLate_one": "{{count}} Tag überfällig",
+    "daysLate_other": "{{count}} Tage überfällig",
+    "aging": {
+      "current": "Noch nicht fällig",
+      "d1_30": "1–30 Tage",
+      "d31_60": "31–60 Tage",
+      "d61_90": "61–90 Tage",
+      "d90_plus": "90+ Tage"
     }
   },
   "overtime": {
