@@ -22,6 +22,18 @@ scripts/
 # deliberately absent from the list above.
 
 # ── The usual ignores, restated because .easignore replaces .gitignore ──────
+#
+# Miss one and the archive GROWS. Leaving ios/ out took it from 202 MB to
+# 529 MB, because that generated directory alone is a gigabyte and .gitignore
+# was the only thing excluding it.
+
+# Generated native projects. This is a managed (CNG) app — EAS generates these
+# on the build server from app.config.ts, so uploading a local copy is both
+# pointless and the single largest thing in the archive.
+ios/
+android/
+.expo/
+
 node_modules/
 .git/
 .next/
@@ -33,6 +45,12 @@ coverage/
 .env.*
 !.env.example
 *.apk
+.pnpm-store/
+.turbo/
+out/
+logs/
+.idea/
+.vscode/
 *.aab
 *.ipa
 .DS_Store
