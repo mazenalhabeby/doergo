@@ -9,6 +9,15 @@
 # have to be restated below. Anything not listed is uploaded.
 
 # ── Not part of the mobile app ──────────────────────────────────────────────
+# Design sources, screenshots, store artwork and a stray build output: 170 MB
+# of material no compiler ever reads. Most is not in .gitignore because it is
+# meant to be version-controlled — it just has no business in a build archive.
+android-build/
+doergo design/
+screenshots/
+store-listing/
+.mockups/
+
 apps/web-app/
 apps/admin/
 apps/api/
