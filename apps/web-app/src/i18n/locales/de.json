@@ -4088,7 +4088,9 @@
       "rejected": "Abgelehnt",
       "expired": "Abgelaufen",
       "completed": "Abgeschlossen",
-      "declined": "Abgelehnt"
+      "declined": "Abgelehnt",
+      "noEmployeeReply": "Keine Antwort vom Mitarbeiter",
+      "missedByApprover": "Von der Führungskraft verpasst"
     },
     "durations": {
       "d30min": "30 Min.",
@@ -4136,7 +4138,9 @@
     "statWaiting": "warten auf Sie",
     "statHoursRequested": "Stunden beantragt",
     "statRunning": "läuft gerade",
-    "statThisWeek": "diese Woche genehmigt"
+    "statThisWeek": "diese Woche genehmigt",
+    "andCounting": "und läuft",
+    "onShiftOf": "bei {{duration}} Schicht"
   },
   "payments": {
     "title": "Zahlungen",

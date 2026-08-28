@@ -4088,7 +4088,9 @@
       "rejected": "Rejected",
       "expired": "Expired",
       "completed": "Completed",
-      "declined": "Declined"
+      "declined": "Declined",
+      "noEmployeeReply": "No reply from employee",
+      "missedByApprover": "Missed by approver"
     },
     "durations": {
       "d30min": "30 min",
@@ -4136,7 +4138,9 @@
     "statWaiting": "waiting for you",
     "statHoursRequested": "hours requested",
     "statRunning": "running now",
-    "statThisWeek": "approved this week"
+    "statThisWeek": "approved this week",
+    "andCounting": "and counting",
+    "onShiftOf": "on a {{duration}} shift"
   },
   "payments": {
     "title": "Payments",

@@ -138,7 +138,10 @@ async function main() {
         approverNotes: `demo:${p.notes ?? ''}`,
         leaderName: p.approval === 'SIGNATURE' ? 'Anna Müller' : null,
         maxDurationMinutes: p.maxMinutes ?? null,
-        overtimeStartAt: decided ? ago(p.startedMinAgo - 485) : null,
+        // A rejected request never started, so it must not carry a start time —
+        // a screen computing "how long has this been running" from one will
+        // report overtime that was refused.
+        overtimeStartAt: decided && p.status !== 'REJECTED' ? ago(p.startedMinAgo - 485) : null,
         overtimeEndAt: p.status === 'COMPLETED' ? ago(p.startedMinAgo - 545) : null,
         // Only a request still waiting has a live deadline; a settled one must
         // not look like it is counting down.

@@ -4097,7 +4097,9 @@
       "rejected": "Rifiutato",
       "expired": "Scaduto",
       "completed": "Completato",
-      "declined": "Respinto"
+      "declined": "Respinto",
+      "noEmployeeReply": "Nessuna risposta del dipendente",
+      "missedByApprover": "Non gestita dal responsabile"
     },
     "durations": {
       "d30min": "30 min",
@@ -4145,7 +4147,9 @@
     "statWaiting": "in attesa di te",
     "statHoursRequested": "ore richieste",
     "statRunning": "in corso ora",
-    "statThisWeek": "approvate questa settimana"
+    "statThisWeek": "approvate questa settimana",
+    "andCounting": "e in corso",
+    "onShiftOf": "su un turno di {{duration}}"
   },
   "payments": {
     "title": "Pagamenti",

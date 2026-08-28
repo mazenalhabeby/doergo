@@ -4088,7 +4088,9 @@
       "rejected": "Rechazada",
       "expired": "Caducada",
       "completed": "Completada",
-      "declined": "Rechazada"
+      "declined": "Rechazada",
+      "noEmployeeReply": "Sin respuesta del empleado",
+      "missedByApprover": "No atendida por el responsable"
     },
     "durations": {
       "d30min": "30 min",
@@ -4136,7 +4138,9 @@
     "statWaiting": "esperan su decisión",
     "statHoursRequested": "horas solicitadas",
     "statRunning": "en curso ahora",
-    "statThisWeek": "aprobadas esta semana"
+    "statThisWeek": "aprobadas esta semana",
+    "andCounting": "y sigue",
+    "onShiftOf": "en un turno de {{duration}}"
   },
   "payments": {
     "title": "Pagos",

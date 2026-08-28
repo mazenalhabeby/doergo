@@ -4097,7 +4097,9 @@
       "rejected": "Rejetée",
       "expired": "Expirée",
       "completed": "Terminée",
-      "declined": "Refusée"
+      "declined": "Refusée",
+      "noEmployeeReply": "Pas de réponse de l’employé",
+      "missedByApprover": "Manquée par le responsable"
     },
     "durations": {
       "d30min": "30 min",
@@ -4145,7 +4147,9 @@
     "statWaiting": "en attente de vous",
     "statHoursRequested": "heures demandées",
     "statRunning": "en cours",
-    "statThisWeek": "validées cette semaine"
+    "statThisWeek": "validées cette semaine",
+    "andCounting": "et en cours",
+    "onShiftOf": "sur un poste de {{duration}}"
   },
   "payments": {
     "title": "Paiements",

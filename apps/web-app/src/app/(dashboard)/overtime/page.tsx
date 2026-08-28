@@ -59,8 +59,16 @@ const STATUS_BADGES: Record<string, { labelKey: string; className: string; icon:
   PENDING_APPROVAL: { labelKey: "overtime.badges.needsApproval", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400", icon: AlertTriangle },
   APPROVED: { labelKey: "overtime.badges.active", className: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
   REJECTED: { labelKey: "overtime.badges.rejected", className: "bg-red-500/15 text-red-600 dark:text-red-400", icon: XCircle },
-  EXPIRED_NO_RESPONSE: { labelKey: "overtime.badges.expired", className: "bg-muted text-muted-foreground", icon: Clock },
-  EXPIRED_NO_APPROVAL: { labelKey: "overtime.badges.expired", className: "bg-muted text-muted-foreground", icon: Clock },
+  /*
+    Two different failures, shown identically until now — both said "Expired".
+
+    NO_RESPONSE is the employee never answering; NO_APPROVAL is the request
+    reaching an approver who never answered. The second is the organisation's
+    own miss, and the one a manager reviewing this list should be able to see,
+    so it is marked rather than greyed out with the rest.
+  */
+  EXPIRED_NO_RESPONSE: { labelKey: "overtime.badges.noEmployeeReply", className: "bg-muted text-muted-foreground", icon: Clock },
+  EXPIRED_NO_APPROVAL: { labelKey: "overtime.badges.missedByApprover", className: "bg-orange-500/15 text-orange-600 dark:text-orange-400", icon: AlertTriangle },
   COMPLETED: { labelKey: "overtime.badges.completed", className: "bg-muted text-foreground", icon: CheckCircle2 },
   CANCELED: { labelKey: "overtime.badges.declined", className: "bg-muted text-muted-foreground", icon: XCircle },
 }
@@ -575,9 +583,47 @@ function HistoryCard({ request }: { request: OvertimeRequest }) {
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
               <span>{request.location?.name}</span>
               <span>{format(new Date(request.createdAt), `MMM d, ${timeToken}`)}</span>
-              {request.overtimeMinutes && (
-                <span className="font-medium text-muted-foreground">{t("overtime.minOvertime", { count: request.overtimeMinutes })}</span>
-              )}
+              {/* How much overtime was actually worked — the fact the whole
+                  record exists to capture. It was rendered only when the
+                  backend had computed overtimeMinutes, which it does not for a
+                  request that was approved and is still running, so the number
+                  simply vanished from the rows most worth reading. */}
+              {(() => {
+                /*
+                  Only a request that RAN has a duration.
+
+                  Counting to now for anything without an end date claimed
+                  "1017 min overtime" on a REJECTED request — overtime that was
+                  refused and never worked, growing by a minute every minute.
+                  A finished request uses its own end; only an APPROVED one is
+                  still running and may count against the clock.
+                */
+                const ran = request.status === "APPROVED" || request.status === "COMPLETED"
+                const end = request.overtimeEndAt
+                  ? new Date(request.overtimeEndAt).getTime()
+                  : request.status === "APPROVED" ? Date.now() : null
+                const worked = request.overtimeMinutes
+                  ?? (ran && request.overtimeStartAt && end !== null
+                      ? Math.round((end - new Date(request.overtimeStartAt).getTime()) / 60_000)
+                      : null)
+                if (!worked || worked <= 0) return null
+                return (
+                  <span className="font-medium text-foreground">
+                    {t("overtime.minOvertime", { count: worked })}
+                    {!request.overtimeEndAt && request.status === "APPROVED" && (
+                      <span className="ml-1 text-emerald-600 dark:text-emerald-400">{t("overtime.andCounting")}</span>
+                    )}
+                  </span>
+                )
+              })()}
+              {/* The shift this overtime sat on top of. Two hours after a
+                  seven-hour day and two after a twelve-hour one are not the
+                  same record to review later. */}
+              {(() => {
+                const e = (request as { timeEntry?: { clockInAt?: string; clockOutAt?: string } }).timeEntry
+                const len = shiftLength(e?.clockInAt, e?.clockOutAt ? new Date(e.clockOutAt).getTime() : Date.now())
+                return len ? <span className="text-muted-foreground/70">{t("overtime.onShiftOf", { duration: len })}</span> : null
+              })()}
               {request.approvalMethod && (
                 <span className="inline-flex items-center gap-1">
                   {request.approvalMethod === "SIGNATURE" ? <Pen className="h-3 w-3" /> : <User className="h-3 w-3" />}
