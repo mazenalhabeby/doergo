@@ -6891,6 +6891,10 @@
       "support": {
         "label": "Soporte"
       }
+    },
+    "documents": {
+      "label": "Documentos del personal",
+      "description": "Cada miembro tiene su propio expediente — nóminas y contratos que puede abrir en el móvil y firmar en pantalla, con certificados que le avisan antes de caducar"
     }
   },
   "planGate": {

@@ -43,10 +43,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Handle user data from token refresh (eliminates /auth/me call)
+  /*
+    A token refresh returns a NARROWER user than login does.
+
+    `/auth/login` and `/auth/me` both project the resolved access set onto the
+    user — `access` plus every derived `can…` field. `/auth/refresh` does not:
+    it reads the stored token's user row directly and carries only the columns
+    that live on it, because widening that query would put two extra joins on
+    the hottest path in the API.
+
+    So this MERGES rather than replaces. Replacing silently dropped every
+    permission field the refresh payload happens not to mention, roughly fifteen
+    minutes into any session — latent until now only because the three flags
+    mobile reads today are all columns that survive the trip.
+  */
   const handleUserRefreshed = useCallback(async (userData: User) => {
     console.log('[AuthContext] User data refreshed from token refresh');
-    setUser(userData);
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+    setUser((prev) => {
+      const merged = prev ? { ...prev, ...userData } : userData;
+      // Fire-and-forget: persistence must not block the render, and a failed
+      // write only costs a re-fetch on next launch.
+      void SecureStore.setItemAsync(USER_KEY, JSON.stringify(merged));
+      return merged;
+    });
   }, []);
 
   // Set up callbacks

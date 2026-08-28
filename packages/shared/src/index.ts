@@ -58,6 +58,11 @@ export * from './access/workflow-validation';
 export * from './access/workflow-template';
 export * from './access/workflow-scope';
 export * from './access/asset-kind-shape';
+
+// Personnel file — document types, retention/credential rules and contract
+// merge fields. Pure data + pure functions, so both entries carry it.
+export * from './documents';
+
 export * from './access/asset-kind-templates';
 export * from './access/workflow-status-label';
 

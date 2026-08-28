@@ -100,6 +100,25 @@ export const AVAILABLE_ADD_ONS: AddOnDef[] = [
     monthlyCents: 1500,
   },
 
+  // ── The personnel file ───────────────────────────────────────────────────
+  {
+    key: 'documents',
+    label: 'Member Documents',
+    // What the customer is buying, in their words: the filing cabinet, the
+    // contract that gets signed on a phone, and the certificate that stops a
+    // technician being sent to a job they are no longer qualified for.
+    description:
+      'Give every member their own document file — payslips and contracts they can open on their phone, signed on screen, with certificates that warn you before they expire',
+    // 'work' rather than 'insight': this is part of running the team, not
+    // something you read a chart about.
+    group: 'work',
+    // Level with invoicing and shift scheduling. It replaces a filing cabinet
+    // and an email thread, not a product — and it is ORGANIZATION-wide, so it
+    // must never become a per-space module: a customer with four sites would
+    // otherwise be billed four times for one filing cabinet.
+    monthlyCents: 1900,
+  },
+
   // ── Support ──────────────────────────────────────────────────────────────
   {
     key: 'priority_routing',

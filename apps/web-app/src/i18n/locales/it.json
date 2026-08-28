@@ -6900,6 +6900,10 @@
       "support": {
         "label": "Supporto"
       }
+    },
+    "documents": {
+      "label": "Documenti del personale",
+      "description": "Ogni membro ha il proprio fascicolo — buste paga e contratti da aprire sul telefono e firmare a schermo, con certificati che ti avvisano prima della scadenza"
     }
   },
   "planGate": {

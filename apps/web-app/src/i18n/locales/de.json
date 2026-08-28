@@ -6891,6 +6891,10 @@
       "support": {
         "label": "Support"
       }
+    },
+    "documents": {
+      "label": "Mitarbeiterdokumente",
+      "description": "Jedes Teammitglied erhält eine eigene Dokumentenakte — Gehaltszettel und Verträge, die am Handy geöffnet und direkt am Bildschirm unterschrieben werden, samt Nachweisen, die Sie vor dem Ablauf warnen"
     }
   },
   "planGate": {

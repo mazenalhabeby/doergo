@@ -6900,6 +6900,10 @@
       "support": {
         "label": "Support"
       }
+    },
+    "documents": {
+      "label": "Documents des membres",
+      "description": "Chaque membre dispose de son propre dossier — bulletins de paie et contrats consultables sur mobile et signés à l’écran, avec des certificats qui vous alertent avant leur expiration"
     }
   },
   "planGate": {

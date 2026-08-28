@@ -129,6 +129,27 @@ function orgPermissionFields(access: ReturnType<typeof buildResolvedAccess>) {
       accessAllows(access, 'canViewAllTasks'),
     canViewTracking:
       accessAllows(access, 'canViewTracking') || accessAllows(access, 'canViewAllTasks'),
+
+    /*
+      Personnel file — the four document permissions, deliberately with NO `||`
+      bridge on any of them.
+
+      Every bridge above exists to preserve access somebody already had when a
+      broad flag was split into precise ones. That argument does not apply here:
+      documents are a NEW capability, so nobody holds it today and there is
+      nothing to preserve. A bridge would therefore not preserve power, it would
+      GRANT it — silently handing every holder of `canManageUsers` the ability to
+      read their colleagues' payslips on the day this ships.
+
+      The built-in Admin role still receives all four through `allPermissions()`,
+      which is honest: the org owner is the employer, and could tick the box for
+      themselves in any case. Everyone else — Manager included — is granted
+      explicitly, in a UI that already exists, once.
+    */
+    canViewMemberDocuments: accessAllows(access, 'canViewMemberDocuments'),
+    canOpenMemberDocuments: accessAllows(access, 'canOpenMemberDocuments'),
+    canIssueDocuments: accessAllows(access, 'canIssueDocuments'),
+    canManageDocumentTemplates: accessAllows(access, 'canManageDocumentTemplates'),
   };
 }
 

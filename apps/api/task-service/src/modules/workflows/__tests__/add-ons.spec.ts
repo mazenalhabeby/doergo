@@ -38,7 +38,13 @@ describe('the add-on catalogue', () => {
       'dedicated_support',
     ];
     for (const key of wasTierGated) expect(isAddOn(key)).toBe(true);
-    expect(ADD_ON_KEYS.length).toBe(wasTierGated.length);
+
+    // A SUPERSET, not an exact match. The invariant worth protecting is that
+    // nothing from the tier era was dropped — the catalogue is meant to grow,
+    // and asserting on its exact size made adding any new capability fail a
+    // test about a migration that finished in August 2026.
+    for (const key of wasTierGated) expect(ADD_ON_KEYS).toContain(key);
+    expect(ADD_ON_KEYS.length).toBeGreaterThanOrEqual(wasTierGated.length);
   });
 
   it('costs nothing for an unknown key rather than breaking a bill', () => {

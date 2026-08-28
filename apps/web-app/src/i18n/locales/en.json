@@ -6891,6 +6891,10 @@
       "support": {
         "label": "Support"
       }
+    },
+    "documents": {
+      "label": "Member Documents",
+      "description": "Give every member their own document file — payslips and contracts they can open on their phone, signed on screen, with certificates that warn you before they expire"
     }
   },
   "planGate": {

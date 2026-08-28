@@ -41,6 +41,11 @@ export * from './constants/attendance';
 export * from './constants/task';
 // The single per-task authorization rule — pure, shared by every service.
 export * from './access/task-access';
+
+// Personnel file — document types, retention/credential rules and contract
+// merge fields. Pure data + pure functions, so both entries carry it.
+export * from './documents';
+
 export * from './access/cross-org-chat';
 export * from './access/legacy-flag-migration';
 export * from './access/workflow-modules';

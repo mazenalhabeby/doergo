@@ -53,6 +53,14 @@ export const PERMISSION_KEYS = [
   // Where staff physically are. Split from canViewAllTasks because reading a
   // task list and tracking a person's location are not the same permission.
   'canViewTracking',
+  // The personnel file. Split three ways on purpose: seeing THAT a colleague has
+  // documents, OPENING one, and ISSUING them are different powers. A dispatcher
+  // needs the first to schedule around a lapsed certificate and the second never
+  // — a payslip is the most sensitive object in this product.
+  'canViewMemberDocuments',
+  'canOpenMemberDocuments',
+  'canIssueDocuments',
+  'canManageDocumentTemplates',
 ] as const;
 
 export type AccessPermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -64,7 +72,7 @@ export type PermissionSet = Partial<Record<AccessPermissionKey, boolean>>;
 export type PermissionGrantScope = 'org' | 'space';
 
 /** Domain grouping for UI. */
-export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets' | 'workspaces' | 'tracking';
+export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets' | 'workspaces' | 'tracking' | 'documents';
 
 /** Human-facing metadata for every permission — drives the role-builder UI. */
 export const ACCESS_PERMISSION_SCHEMA: {
@@ -95,7 +103,14 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] },
   { key: 'canManagePortals', label: 'Manage client portals', description: 'Create and configure the portals customers log in to', domain: 'crm', scopes: ['org'] },
   { key: 'canManageTaskTypes', label: 'Manage task types', description: 'Define task types, statuses and how work flows through them', domain: 'tasks', scopes: ['org'] },
-  { key: 'canViewTracking', label: 'View location tracking', description: 'See where field staff are and the routes they travelled', domain: 'tracking', scopes: ['org', 'space'] }
+  { key: 'canViewTracking', label: 'View location tracking', description: 'See where field staff are and the routes they travelled', domain: 'tracking', scopes: ['org', 'space'] },
+  // Personnel file. Org scope only: a document belongs to a PERSON, not to a
+  // site, so granting it per space would say "you may read their payslip while
+  // they are working in Laakirchen", which is not a thing anyone means.
+  { key: 'canViewMemberDocuments', label: 'See member documents', description: 'See that a member has documents — names and dates only, never the contents', domain: 'documents', scopes: ['org'] },
+  { key: 'canOpenMemberDocuments', label: 'Open member documents', description: 'Open and download another member’s documents, including payslips', domain: 'documents', scopes: ['org'] },
+  { key: 'canIssueDocuments', label: 'Issue documents', description: 'Upload and publish documents to members, and withdraw them', domain: 'documents', scopes: ['org'] },
+  { key: 'canManageDocumentTemplates', label: 'Manage document types', description: 'Define document types, contract templates and retention rules', domain: 'documents', scopes: ['org'] }
 ];
 
 /** Resolved CRM abilities for a caller — what the customers service enforces. */

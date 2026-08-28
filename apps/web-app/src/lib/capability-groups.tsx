@@ -42,7 +42,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
     key: 'office',
     icon: <Receipt className={ICON} />,
     modules: [],
-    addOns: ['invoicing', 'recurring', 'shift_scheduling', 'audit_log'],
+    addOns: ['invoicing', 'recurring', 'shift_scheduling', 'documents', 'audit_log'],
     hasNote: true,
   },
   { key: 'share', icon: <Share2 className={ICON} />, modules: ['space_sharing'], hasNote: true },

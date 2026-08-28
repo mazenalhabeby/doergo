@@ -379,28 +379,28 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   // Organization profile
-  industry     String? // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
+  industry              String? // e.g. "HVAC", "Plumbing", "Electrical", "General Contracting"
   // Opt-in capability: this org distinguishes in-house (employed) vs external
   // (freelance) FIELD workers. When false (default), the concept is hidden
   // everywhere and every field seat bills at the standard rate; when true, field
   // members carry an employmentType and in-house ones get the €9 seat. Defaulted
   // from industry at setup (trades on, IT/office off), toggleable in Settings.
-  usesExternalWorkers Boolean @default(false)
-  address      String? // Legacy single-line address (kept for back-compat)
-  addressLine1 String? // Street address
-  addressLine2 String? // Suite / floor / unit (optional)
-  city         String?
-  state        String? // State / province / region
-  postalCode   String? // ZIP / postal code
-  country      String? // ISO 3166-1 alpha-2 code (e.g. "DE", "AT")
-  phone        String? // Contact phone
-  email        String? // Contact email (org-level, not user)
-  website      String? // Website URL
-  timezone     String? @default("Europe/Vienna") // IANA timezone
+  usesExternalWorkers   Boolean @default(false)
+  address               String? // Legacy single-line address (kept for back-compat)
+  addressLine1          String? // Street address
+  addressLine2          String? // Suite / floor / unit (optional)
+  city                  String?
+  state                 String? // State / province / region
+  postalCode            String? // ZIP / postal code
+  country               String? // ISO 3166-1 alpha-2 code (e.g. "DE", "AT")
+  phone                 String? // Contact phone
+  email                 String? // Contact email (org-level, not user)
+  website               String? // Website URL
+  timezone              String? @default("Europe/Vienna") // IANA timezone
   /// Annual paid vacation days for this organization. The per-person override
   /// lives on User.leaveAllowance; this is what applies when that is unset.
-  defaultLeaveAllowance Int @default(25)
-  logoUrl      String? // Organization logo
+  defaultLeaveAllowance Int     @default(25)
+  logoUrl               String? // Organization logo
 
   // Join system
   joinCode     String? // Plaintext join code (displayed to admin)
@@ -455,6 +455,11 @@ model Organization {
   // Unified role model (Phase 1) — supersedes orgRoles + spaceRoles
   accessRoles      AccessRole[]
   spaceAssignments SpaceAssignment[]
+
+  // Personnel file
+  documentTypes     DocumentType[]
+  documentTemplates DocumentTemplate[]
+  documents         Document[]
 
   // Shift scheduling (space-centric attendance)
   shifts           Shift[]
@@ -649,15 +654,15 @@ model User {
   lockedUntil         DateTime?
 
   // Permission fields (granular access control)
-  canCreateTasks    Boolean           @default(false) // Can create new tasks
-  taskCreationScope TaskCreationScope @default(NONE) // Granular task creation scope
-  canViewAllTasks   Boolean           @default(false) // Can view all org tasks (vs only assigned/created)
-  canAssignTasks    Boolean           @default(false) // Can assign tasks to technicians
-  canManageUsers    Boolean           @default(false) // Can manage users in organization
-  canViewReports    Boolean           @default(false) // May build/run reports (granted to Show-in-Management members)
+  canCreateTasks      Boolean           @default(false) // Can create new tasks
+  taskCreationScope   TaskCreationScope @default(NONE) // Granular task creation scope
+  canViewAllTasks     Boolean           @default(false) // Can view all org tasks (vs only assigned/created)
+  canAssignTasks      Boolean           @default(false) // Can assign tasks to technicians
+  canManageUsers      Boolean           @default(false) // Can manage users in organization
+  canViewReports      Boolean           @default(false) // May build/run reports (granted to Show-in-Management members)
   /// Overrides the organization default for this person (seniority, part-time,
   /// a negotiated contract). Null means "whatever the organization allows".
-  leaveAllowance    Int?
+  leaveAllowance      Int?
   /// When this person actually started working here — NOT when their account
   /// was made. Used to pro-rate the first year's vacation.
   ///
@@ -665,22 +670,22 @@ model User {
   /// organization importing existing staff creates every account on the same
   /// day, and pro-rating from that would cut a third off everyone's allowance
   /// for a "join date" that never happened. Unset means no pro-rating.
-  employmentStartDate DateTime? @db.Date
-  allowRemote       Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
-  presence          String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
-  lastActiveAt      DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
+  employmentStartDate DateTime?         @db.Date
+  allowRemote         Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
+  presence            String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
+  lastActiveAt        DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
   // Contact directory / access — open within the org by default; admins restrict
   // via the Access Builder (canContact:false, or contactScope SELECTED).
-  contactable       Boolean           @default(true) // CHAT: reachable in chat / messaging (inbound)
-  contactScope      String            @default("NONE") // Who this member may contact: NONE | ALL | SELECTED (Phase 3: default none → space-driven)
-  contactAllowedIds String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
+  contactable         Boolean           @default(true) // CHAT: reachable in chat / messaging (inbound)
+  contactScope        String            @default("NONE") // Who this member may contact: NONE | ALL | SELECTED (Phase 3: default none → space-driven)
+  contactAllowedIds   String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
   // MANAGEMENT DIRECTORY (separate from chat): surfaces this member in the org
   // "Management" contacts list teammates use to reach leadership. Admins always
   // appear regardless. Decoupled from chat `contactable` and from the perm role.
-  showInManagement  Boolean           @default(false) // Listed in the Management directory
+  showInManagement    Boolean           @default(false) // Listed in the Management directory
   // Per-recipient notification opt-outs by category, e.g. { "attendance": false }.
   // Missing/true = subscribed. Filters what THIS user receives (see NotificationWatch).
-  notificationPrefs Json?
+  notificationPrefs   Json?
 
   // Worker configuration
   position          String? // Free-form: "technician", "driver", "sales", "office_manager"
@@ -740,9 +745,9 @@ model User {
   memberRoleId String?
   memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
 
-  createdTasks        Task[]                 @relation("TaskCreator")
-  assignedTasks       Task[]                 @relation("TaskAssignee")
-  taskAssignments     TaskAssignee[]         @relation("TaskAssignees")
+  createdTasks        Task[]               @relation("TaskCreator")
+  assignedTasks       Task[]               @relation("TaskAssignee")
+  taskAssignments     TaskAssignee[]       @relation("TaskAssignees")
   comments            Comment[]
   attachments         Attachment[]
   taskEvents          TaskEvent[]
@@ -751,12 +756,12 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   serviceReports      ServiceReport[]
-  reportDefinitions   ReportDefinition[]     @relation("ReportCreator") // saved reports created
-  reportSchedules     ReportSchedule[]       @relation("ReportScheduleCreator")
+  reportDefinitions   ReportDefinition[]   @relation("ReportCreator") // saved reports created
+  reportSchedules     ReportSchedule[]     @relation("ReportScheduleCreator")
   spaceAssignments    SpaceAssignment[] // Unified per-space assignments (Phase 1)
   timeEntries         TimeEntry[] // Clock-in/clock-out records
-  approvedTimeEntries TimeEntry[]            @relation("ApprovedTimeEntries") // Time entries approved by this user
-  editedTimeEntries   TimeEntry[]            @relation("EditedTimeEntries") // Time entries edited by this user
+  approvedTimeEntries TimeEntry[]          @relation("ApprovedTimeEntries") // Time entries approved by this user
+  editedTimeEntries   TimeEntry[]          @relation("EditedTimeEntries") // Time entries edited by this user
 
   // Monitoring
   activityLogs           ActivityLog[]          @relation("ActivityLogUser") // Activity performed by this user
@@ -802,6 +807,12 @@ model User {
   // Notification routing: who is watched by whom (per-employee override)
   watchedBy NotificationWatch[] @relation("WatchSubject") // managers watching THIS user
   watching  NotificationWatch[] @relation("WatchWatcher") // users THIS manager watches
+
+  // Personnel file
+  documents          Document[]          @relation("UserDocuments") // their own file
+  documentsIssued    Document[]          @relation("DocumentsIssued") // documents they published to others
+  documentSignatures DocumentSignature[]
+  documentEvents     DocumentEvent[] // evidence-trail entries they are the actor of
 
   @@index([role])
   @@index([email])
@@ -1112,7 +1123,7 @@ model AssetActivity {
   asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   /// NOTE (somebody wrote it) or a system event such as HOLDER_CHANGED.
-  type String @default("NOTE")
+  type String  @default("NOTE")
   body String?
 
   /// Who logged it — a plain marker id with no FK, so removing a member never
@@ -1142,9 +1153,9 @@ model AssetMoney {
   asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   /// The kind's category label, as it read when the entry was made.
-  category String
+  category    String
   /// IN (rent, a deposit) or OUT (a repair, fuel).
-  direction String
+  direction   String
   /// Always positive. The direction beside it decides what it does to a total.
   amountCents Int
   note        String?
@@ -1152,7 +1163,7 @@ model AssetMoney {
   /// When the money moved, which is not when somebody typed it in.
   occurredAt DateTime @default(now())
   /// Plain marker id, no FK — removing a member must not erase the books.
-  authorId String?
+  authorId   String?
 
   createdAt DateTime @default(now())
 
@@ -1183,7 +1194,7 @@ model AssetListRow {
   categoryId String?
   category   AssetCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  list String
+  list   String
   /// Values keyed by COLUMN LABEL. JSON because the columns are the customer's,
   /// not ours, and a new column must not need a migration.
   values Json
@@ -1259,8 +1270,8 @@ model AssetCategory {
   // it is JSON, so nothing may assume it is well formed.
   config Json?
 
-  types  AssetType[]
-  assets Asset[]
+  types    AssetType[]
+  assets   Asset[]
   /// Shared catalogue rows — parts, fault codes — typed once for the kind.
   listRows AssetListRow[]
 
@@ -1337,12 +1348,12 @@ model Asset {
 
   /// Who has it. A kind decides whether that is one person or several; the
   /// join table carries both cases, so "several" is not a second code path.
-  holders    AssetHolder[]
-  activities AssetActivity[]
-  money      AssetMoney[]
-  listRows   AssetListRow[]
+  holders     AssetHolder[]
+  activities  AssetActivity[]
+  money       AssetMoney[]
+  listRows    AssetListRow[]
   /// Portal logins confined to this asset (see User.assetId).
-  portalUsers User[] @relation("AssetPortalUsers")
+  portalUsers User[]          @relation("AssetPortalUsers")
 
   // Tasks linked to this asset (maintenance history)
   tasks          Task[]
@@ -1366,13 +1377,13 @@ model Customer {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  name         String
-  contactName  String?
-  email        String?
-  phone        String?
-  address      String?
-  notes        String?
-  isActive     Boolean  @default(true)
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  notes       String?
+  isActive    Boolean @default(true)
 
   // Person vs Company. A COMPANY unlocks the B2B fields below (legal name, VAT,
   // register number, website, industry) + a flexible custom-details list.
@@ -1432,14 +1443,14 @@ model Customer {
 
   /// Assets this client holds — flats, vehicles, machines.
   assetHolders AssetHolder[]
+  // Things this client holds (see Asset.customerId).
+  assets       Asset[]
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
-  // Things this client holds (see Asset.customerId).
-  assets Asset[]
 }
 
 // Kind of CRM timeline entry on a customer.
@@ -1483,7 +1494,7 @@ model CustomerActivity {
   reminderAssigneeId String?
   // Recurrence: NONE | DAILY | WEEKLY | MONTHLY. On complete, the next
   // occurrence is auto-created so periodic check-ins never fall off.
-  repeat String? @default("NONE")
+  repeat             String? @default("NONE")
 
   metadata Json? // e.g. { from, to } for a STATUS change
 
@@ -1503,13 +1514,13 @@ model Portal {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  name        String // "Rivergate Rentals", "Downtown Deliveries"
-  templateKey String // rental | logistics | workplace | custom — the vertical/type
-  entityLabel String // "Apartment" | "Order" | "Workspace"
-  contactLabel String?
-  accent      String?
-  features    Json? // PortalFeatureFlags
-  isActive    Boolean @default(true)
+  name          String // "Rivergate Rentals", "Downtown Deliveries"
+  templateKey   String // rental | logistics | workplace | custom — the vertical/type
+  entityLabel   String // "Apartment" | "Order" | "Workspace"
+  contactLabel  String?
+  accent        String?
+  features      Json? // PortalFeatureFlags
+  isActive      Boolean @default(true)
   coverImageUrl String? // optional hero/background photo for the client home
 
   // Optional: the space this portal routes to. When set, a client request is
@@ -1579,8 +1590,8 @@ model CustomerUnit {
   // churn per new field (mirrors Customer.details).
   details Json?
 
-  users      User[]         // portal logins whose default unit is this
-  tasks      Task[]         // requests submitted about this unit
+  users      User[] // portal logins whose default unit is this
+  tasks      Task[] // requests submitted about this unit
   activities UnitActivity[] // apartment activity timeline (notes + system events)
 
   createdAt DateTime @default(now())
@@ -1800,31 +1811,31 @@ model PartUsed {
 // geofencing) or a logical workspace/project (no coordinates). Every task
 // belongs to a space; modules + workflow are configured per space.
 model CompanyLocation {
-  id             String  @id @default(cuid())
-  name           String // "Main Office", "Warehouse A", "General"
-  address        String? // Full address string
-  lat            Float? // Latitude (only for physical locations / attendance)
-  lng            Float? // Longitude (only for physical locations / attendance)
-  geofenceRadius Int     @default(15) // Radius in meters for clock-in zone
-  timezone       String  @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
-  workModel      WorkModel @default(NONE) // How attendance is interpreted for this space
+  id                String    @id @default(cuid())
+  name              String // "Main Office", "Warehouse A", "General"
+  address           String? // Full address string
+  lat               Float? // Latitude (only for physical locations / attendance)
+  lng               Float? // Longitude (only for physical locations / attendance)
+  geofenceRadius    Int       @default(15) // Radius in meters for clock-in zone
+  timezone          String    @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
+  workModel         WorkModel @default(NONE) // How attendance is interpreted for this space
   // Ownership classification (project / my company / customer company). Orthogonal
   // to physical-vs-workspace (derived from lat/lng). CUSTOMER spaces carry the
   // contact fields below and represent a customer you do work for.
-  kind           SpaceKind @default(COMPANY)
-  contactName    String? // CUSTOMER kind: primary contact
-  contactEmail   String? // CUSTOMER kind: contact email
-  contactPhone   String? // CUSTOMER kind: contact phone
+  kind              SpaceKind @default(COMPANY)
+  contactName       String? // CUSTOMER kind: primary contact
+  contactEmail      String? // CUSTOMER kind: contact email
+  contactPhone      String? // CUSTOMER kind: contact phone
   // Provenance: the legacy Customer this CUSTOMER space was migrated from (plain
   // marker, no FK). Makes the one-off backfill idempotent by id (never merges two
   // same-named customers) and links a customer-space back to its Customer record.
-  sourceCustomerId String?
+  sourceCustomerId  String?
   // CUSTOMER kind: per-space override of the org's default billable labor rate
   // (integer EUR cents). Null → fall back to Organization.billableRateCents.
   billableRateCents Int?
-  isActive       Boolean @default(true)
-  isDefault      Boolean @default(false) // The org's default space (holds otherwise-unassigned tasks)
-  isRemote       Boolean @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
+  isActive          Boolean   @default(true)
+  isDefault         Boolean   @default(false) // The org's default space (holds otherwise-unassigned tasks)
+  isRemote          Boolean   @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1835,7 +1846,7 @@ model CompanyLocation {
   // Space configuration
   enabledModules Json? // Override org modules for this space, e.g. ["time_tracking", "sprints"]
   workflowId     String?
-  workflow       StatusWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  workflow       StatusWorkflow?  @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   // The workflows this space offers (supersedes the single workflowId above).
   workflows      SpaceWorkflow[]
   // Task types created here, or forked here from the library — this space's own.
@@ -1877,14 +1888,14 @@ model CompanyLocation {
   intakeCategories IntakeCategory[]
 
   // CRM: customer records belonging to this space's Customers list
-  customers Customer[] @relation("SpaceCustomers")
+  customers       Customer[]      @relation("SpaceCustomers")
+  // Kinds of thing this space tracks (see AssetCategory.spaceId).
+  assetCategories AssetCategory[]
 
   @@index([isActive])
   @@index([organizationId, kind, name]) // filter by kind + name-sorted lists (pickers, customer directory)
   @@index([sourceCustomerId]) // backfill idempotency + customer-space ↔ Customer lookup
   @@map("company_locations")
-  // Kinds of thing this space tracks (see AssetCategory.spaceId).
-  assetCategories AssetCategory[]
 }
 
 // Technician assignment to company location (many-to-many)
@@ -2101,7 +2112,7 @@ model ShiftIssue {
   organizationId String
   timeEntryId    String? // the shift it happened on (fk-less; validated in service)
   spaceId        String? // CompanyLocation
-  reportedById   String  // the member who hit the blocker
+  reportedById   String // the member who hit the blocker
   assignedToId   String? // dispatched worker ("send someone")
 
   title       String
@@ -2270,8 +2281,8 @@ model Shift {
   description String?
   color       String? @default("#3b82f6")
 
-  startLocal      String  // "22:00" (24h, in the space's timezone)
-  endLocal        String  // "06:00"
+  startLocal      String // "22:00" (24h, in the space's timezone)
+  endLocal        String // "06:00"
   crossesMidnight Boolean @default(false) // derived: endLocal <= startLocal
 
   breakMinutes        Int @default(0) // Unpaid break subtracted from expected duration
@@ -2403,9 +2414,10 @@ model AccessRole {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members          User[] // org-wide holders (User.memberRoleId)
-  spaceAssignments SpaceAssignment[] // per-space holders
-  invitations      Invitation[] // invites pre-assigning this role
+  members           User[] // org-wide holders (User.memberRoleId)
+  spaceAssignments  SpaceAssignment[] // per-space holders
+  documentTemplates DocumentTemplate[] // contract templates bound to this role
+  invitations       Invitation[] // invites pre-assigning this role
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -2462,10 +2474,10 @@ model TimeOff {
   technicianId String
   technician   User   @relation("TechnicianTimeOff", fields: [technicianId], references: [id], onDelete: Cascade)
 
-  startDate DateTime @db.Date // First day of time off
-  endDate   DateTime @db.Date // Last day of time off (inclusive)
-  type   TimeOffType @default(VACATION) // Only VACATION is deducted from the allowance
-  reason String? // Free-text note; the KIND is `type`, not this
+  startDate DateTime    @db.Date // First day of time off
+  endDate   DateTime    @db.Date // Last day of time off (inclusive)
+  type      TimeOffType @default(VACATION) // Only VACATION is deducted from the allowance
+  reason    String? // Free-text note; the KIND is `type`, not this
 
   status TimeOffStatus @default(PENDING)
 
@@ -2550,8 +2562,8 @@ model Invitation {
   @@index([createdById])
   @@index([expiresAt])
   @@index([organizationId, status])
-  @@map("invitations")
   @@index([assetId])
+  @@map("invitations")
 }
 
 // ==================== JOIN REQUEST SYSTEM ====================
@@ -2833,21 +2845,19 @@ model OvertimeRequest {
 
 // Phase or milestone for grouping tasks
 model Phase {
-  id             String       @id @default(cuid())
+  id             String           @id @default(cuid())
   name           String
   description    String?
-  color          String       @default("#3b82f6")
-  type           String       @default("phase") // "phase" or "milestone"
+  color          String           @default("#3b82f6")
+  type           String           @default("phase") // "phase" or "milestone"
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   /**
    * The space this belongs to.
-   *
    * NULL means organization-wide — how every one of these worked before spaces
    * owned anything, and what existing rows stay. Set means it belongs to that
    * space, and the modules that govern it are that space's rather than the
    * organization's.
-   *
    * Nullable on purpose: making it required would have forced every existing
    * row into some arbitrary space, and "belongs everywhere" is a real answer
    * for an organization that runs one backlog across its sites.
@@ -2856,10 +2866,10 @@ model Phase {
   space          CompanyLocation? @relation("SpacePhases", fields: [spaceId], references: [id], onDelete: SetNull)
   startDate      DateTime?
   endDate        DateTime?
-  position       Int          @default(0)
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  position       Int              @default(0)
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   tasks          Task[]
 
   @@index([organizationId])
@@ -2868,19 +2878,17 @@ model Phase {
 
 // Sprint for agile workflow
 model Sprint {
-  id             String        @id @default(cuid())
+  id             String           @id @default(cuid())
   name           String
   goal           String?
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   /**
    * The space this belongs to.
-   *
    * NULL means organization-wide — how every one of these worked before spaces
    * owned anything, and what existing rows stay. Set means it belongs to that
    * space, and the modules that govern it are that space's rather than the
    * organization's.
-   *
    * Nullable on purpose: making it required would have forced every existing
    * row into some arbitrary space, and "belongs everywhere" is a real answer
    * for an organization that runs one backlog across its sites.
@@ -2889,10 +2897,10 @@ model Sprint {
   space          CompanyLocation? @relation("SpaceSprints", fields: [spaceId], references: [id], onDelete: SetNull)
   startDate      DateTime
   endDate        DateTime
-  status         SprintStatus  @default(PLANNING)
-  position       Int           @default(0)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  status         SprintStatus     @default(PLANNING)
+  position       Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   tasks          Task[]
   report         SprintReport?
 
@@ -2902,21 +2910,19 @@ model Sprint {
 
 // Epic for grouping tasks into larger initiatives
 model Epic {
-  id             String       @id @default(cuid())
+  id             String           @id @default(cuid())
   name           String
   description    String?
-  color          String       @default("#8b5cf6")
-  status         String       @default("OPEN") // OPEN, IN_PROGRESS, DONE
+  color          String           @default("#8b5cf6")
+  status         String           @default("OPEN") // OPEN, IN_PROGRESS, DONE
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   /**
    * The space this belongs to.
-   *
    * NULL means organization-wide — how every one of these worked before spaces
    * owned anything, and what existing rows stay. Set means it belongs to that
    * space, and the modules that govern it are that space's rather than the
    * organization's.
-   *
    * Nullable on purpose: making it required would have forced every existing
    * row into some arbitrary space, and "belongs everywhere" is a real answer
    * for an organization that runs one backlog across its sites.
@@ -2925,9 +2931,9 @@ model Epic {
   space          CompanyLocation? @relation("SpaceEpics", fields: [spaceId], references: [id], onDelete: SetNull)
   startDate      DateTime?
   targetDate     DateTime?
-  position       Int          @default(0)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  position       Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   tasks          Task[]
 
   @@index([organizationId])
@@ -2997,13 +3003,11 @@ model StatusWorkflow {
   organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   /**
    * How far this task type reaches.
-   *
    * NULL — the organization's: any of its spaces may offer it, and one edit
    * fixes a typo everywhere. Set — this space's own, created here or forked
    * from the library, and no other space may offer it. Local is the default
    * because widening later is easy and narrowing after five spaces adopted it
    * is not.
-   *
    * Not a separate ownership model on purpose: a space-scoped type is still an
    * org-owned row, so every tenancy check, cache key and query cost is the one
    * that was already there.
@@ -3014,7 +3018,6 @@ model StatusWorkflow {
   /**
    * What the TASK carries throughout its life — sprint, story points, epic,
    * phase, subtasks, dependencies, crm.
-   *
    * Separate from WorkflowStatus.capabilities, which say what the member does
    * at one step. "A task belongs to a sprint" is not true at step three and
    * false at step four, so it cannot live on a status. Both lists feed the same
@@ -3043,13 +3046,11 @@ model StatusWorkflow {
 
 /**
  * Which workflows a space offers.
- *
  * A workflow stays owned by the ORGANIZATION — one definition, so fixing a typo
  * fixes it everywhere — and this decides which of them each space presents and
  * which is its default. Space-owned workflows would mean a copy per space and a
  * typo fixed once per space; when a space genuinely needs to diverge, it
  * duplicates the workflow, deliberately.
- *
  * Supersedes CompanyLocation.workflowId, which stays as the fallback until this
  * has run quietly for a while.
  */
@@ -3074,41 +3075,37 @@ model SpaceWorkflow {
 
 /**
  * The task-type LIBRARY — platform-curated, shared by every tenant.
- *
  * Deliberately has no organizationId: it belongs to the platform, and tenants
  * only ever read it. A tenant that picks one gets a COPY (StatusWorkflow +
  * WorkflowStatus rows of its own). Nothing points back here afterwards.
- *
  * Referencing a template live instead of copying it would mean a curator's edit
  * rewriting the state machine under every tenant's in-flight tasks — and a task
  * whose current status stopped existing has no transition out of it. Letting
  * tenants write here would make one org's edit another org's options, a
  * cross-tenant write in a system that otherwise has none.
- *
  * `definition` is the status list as JSON. It is read back through
  * `normalizeTemplateStatuses` (shared) before any of it becomes a row, because
  * JSON has no schema and this row was written by a different party than the one
  * using it.
  */
 model WorkflowTemplate {
-  id          String   @id @default(cuid())
+  id               String    @id @default(cuid())
   // Stable across renames, and how a built-in template is recognised so seeding
   // never creates it twice.
-  slug        String   @unique
-  name        String
-  description String?
-  industry    String? // "field-service", "logistics", "cleaning" — for grouping
-  icon        String?
-  position    Int      @default(0)
+  slug             String    @unique
+  name             String
+  description      String?
+  industry         String? // "field-service", "logistics", "cleaning" — for grouping
+  icon             String?
+  position         Int       @default(0)
   // Unpublished means invisible to tenants. A template is published only once it
   // passes validation, so the library cannot hand out a workflow that traps work.
-  isPublished Boolean  @default(false)
+  isPublished      Boolean   @default(false)
   // Seeded from code. Kept so a curator can tell a shipped template from one
   // they wrote, and so seeding can leave curated edits alone.
-  isBuiltIn   Boolean  @default(false)
+  isBuiltIn        Boolean   @default(false)
   /**
    * Where a submitted template came from — for the curator only.
-   *
    * The tenant-facing read selects named fields and never includes these, so a
    * published template carries no trace of who wrote it. That is deliberate: a
    * flow's step names are a business's process, and often a customer's name.
@@ -3120,9 +3117,9 @@ model WorkflowTemplate {
   // "<orgId>:<workflowId>" — so re-submitting the same task type updates the row
   // a curator may already be reading instead of queueing a second copy of it.
   sourceKey        String?   @unique
-  definition  Json
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  definition       Json
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([isPublished, industry])
   @@map("workflow_templates")
@@ -3136,18 +3133,15 @@ model WorkflowStatus {
   name         String // "New", "In Transit", "Delivered", etc.
   /**
    * Translation key, for steps that came from a SHIPPED template.
-   *
    * A status name is tenant data — someone typed it — so it cannot live in a
    * locale file. But most names are not typed at all: they arrive from the
    * library, in English, and then a German org reads "On The Way" forever.
-   *
    * So a step copied from a shipped template carries the key its name came
    * from, and the client renders `t(nameKey, { defaultValue: name })`. Costs
    * nothing: no join, no extra query, no per-locale table — the lookup is a
    * hash hit in a bundle already in memory. A step someone wrote has no key and
    * renders exactly what they wrote, which is correct: a name typed in German
    * must not be "translated" into anything.
-   *
    * Renaming a shipped step clears the key, because it is then their name.
    */
   nameKey      String?
@@ -3273,7 +3267,7 @@ model Invoice {
 
   // The CUSTOMER-kind space this invoice bills (plain marker, no FK — mirrors
   // InvoiceItem.taskId/reportId). Null = ad-hoc invoice not tied to a space.
-  spaceId       String?
+  spaceId String?
 
   // Client info (auto-filled from the space's contact fields at create time,
   // then editable — snapshotted so the invoice is stable if the space changes)
@@ -3392,7 +3386,7 @@ model SupportTicket {
   assignedAgentId String?
   // Support team that owns this ticket, stamped at creation by the routing resolver
   // (manual org pin > routing rule > null = unassigned triage queue). Plain id.
-  assignedTeamId String?
+  assignedTeamId  String?
 
   // SLA (first response). Due date computed from tier's business-hours SLA.
   slaFirstResponseDueAt DateTime?
@@ -3467,9 +3461,9 @@ model SupportTeam {
 }
 
 model SupportTeamMember {
-  id     String      @id @default(cuid())
-  teamId String
-  team   SupportTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id             String          @id @default(cuid())
+  teamId         String
+  team           SupportTeam     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   // A PlatformUser id (not a hard FK so team membership survives independent of
   // the platform_users table lifecycle; resolved in the service layer).
   platformUserId String
@@ -3526,7 +3520,7 @@ model Conversation {
   // share freezes the thread with nothing to update here. For a cross-org row
   // `organizationId` is the space OWNER's org, deterministically, so both sides
   // upsert the same conversation instead of one thread each.
-  originSpaceId  String?
+  originSpaceId String?
 
   members  ConversationMember[]
   messages Message[]
@@ -3696,10 +3690,10 @@ model SeatPrice {
   configId String
   config   PricingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
-  seatType     String // office | field | field_inhouse
-  tier         String? // office only: starter | professional | business
-  monthlyCents Int
-  annualCents  Int
+  seatType      String // office | field | field_inhouse
+  tier          String? // office only: starter | professional | business
+  monthlyCents  Int
+  annualCents   Int
   stripePriceId String? // set by C3
 
   @@index([configId])
@@ -3711,10 +3705,10 @@ model ModulePrice {
   configId String
   config   PricingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
-  moduleKey    String
-  monthlyCents Int
-  annualCents  Int
-  billingScope String  @default("per_org") // per_org | per_office_seat | per_space
+  moduleKey     String
+  monthlyCents  Int
+  annualCents   Int
+  billingScope  String  @default("per_org") // per_org | per_office_seat | per_space
   stripePriceId String? // set by C3
 
   @@index([configId])
@@ -3724,18 +3718,18 @@ model ModulePrice {
 // ─── Public marketing blog (AI-authored via platform API/MCP) ───────────────────
 
 model BlogPost {
-  id          String    @id @default(cuid())
-  slug        String    @unique
+  id          String   @id @default(cuid())
+  slug        String   @unique
   title       String
   description String
   content     String // Markdown body
   coverUrl    String? // e.g. /api/v1/blog/images/<id> or any absolute URL
-  author      String    @default("HBCField Team")
-  tags        String[]  @default([])
-  status      String    @default("PUBLISHED") // DRAFT | PUBLISHED
-  publishedAt DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  author      String   @default("HBCField Team")
+  tags        String[] @default([])
+  status      String   @default("PUBLISHED") // DRAFT | PUBLISHED
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([status, publishedAt])
   @@map("blog_posts")
@@ -3767,4 +3761,276 @@ model CronLock {
 
   @@index([lockedUntil])
   @@map("cron_locks")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE PERSONNEL FILE
+//
+// Documents that belong to a PERSON, not to a task. Everything file-shaped in
+// this system until now hung off a Task, a ServiceReport, a ShiftIssue or a
+// WorkLog; a payslip belongs to none of those.
+//
+// Bytes are never stored here. A Document row carries a content-addressed
+// object key and the SHA-256 of what is behind it, so the key is the integrity
+// check and identical files are stored once — see
+// packages/shared/src/storage/object-store.ts.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// How often a document type produces a new document — drives the list UI.
+enum DocumentCadence {
+  MONTHLY // a payslip: one per month, listed inside a year
+  ANNUAL // a tax certificate: one per year
+  ONE_OFF // a contract: no period at all
+}
+
+/// Who produced the document, which decides who may delete it.
+enum DocumentDirection {
+  ISSUED // company → member. Read and download, never delete.
+  SUPPLIED // member → company. The member owns it and may replace it.
+}
+
+/// What the member must do before a document stops blocking them.
+enum SignatureMode {
+  NONE // reading is enough
+  ACKNOWLEDGE // a recorded "I have read this", no drawn signature
+  IN_APP // consent + drawn signature + seal
+  WET_INK // refuses in-app signing: the law excludes some contract types
+}
+
+enum DocumentStatus {
+  DRAFT // staged in a batch, invisible to the member
+  ISSUED
+  AWAITING_SIGNATURE
+  SIGNED // sealed and frozen
+  EXPIRED // a credential past its date
+  SUPERSEDED
+  REVOKED
+}
+
+enum DocumentEventType {
+  ISSUED
+  DELIVERED
+  OPENED
+  DOWNLOADED
+  CONSENTED
+  SIGNED
+  SEALED
+  ACKNOWLEDGED
+  VERIFIED
+  REVOKED
+  SUPERSEDED
+}
+
+/// A kind of document, defined per organization.
+///
+/// A CREDENTIAL is just a type with `isCredential` and an expiry — there is no
+/// separate credentials table, because a driving licence is a document that
+/// happens to run out. `requiredForWorkflowIds` is what turns it operational:
+/// list a task type here and an expired credential removes the member from the
+/// assignable pool for it.
+model DocumentType {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  key         String // stable machine key, unique per org: 'payslip'
+  label       String
+  description String?
+  cadence     DocumentCadence   @default(ONE_OFF)
+  direction   DocumentDirection @default(ISSUED)
+
+  /// Months to keep after issue; null = keep indefinitely. A property of the
+  /// TYPE, never a global setting: Austrian employee records run ~3 years past
+  /// termination, payroll far longer, a written reference thirty.
+  retentionMonths Int?
+
+  signatureMode SignatureMode @default(NONE)
+
+  isCredential           Boolean  @default(false)
+  hasExpiry              Boolean  @default(false)
+  requiredForWorkflowIds String[] @default([])
+
+  isActive  Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+  templates DocumentTemplate[]
+
+  @@unique([organizationId, key])
+  @@index([organizationId, isActive])
+  // The dispatch gate's first question is "does this org gate anything at all?".
+  @@index([organizationId, isCredential])
+  @@map("document_types")
+}
+
+/// A contract template, bound to a role and a job title.
+///
+/// Selection keys off the invitation, which already carries `memberRoleId` and
+/// `position` — no new invitation fields were needed for this.
+model DocumentTemplate {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  typeId String
+  type   DocumentType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  name String
+  /// Body with {{merge.tokens}} — see packages/shared/src/documents/merge-fields.ts
+  body String @db.Text
+
+  /// Which members this applies to. Both null = the organization's default.
+  appliesToRoleId   String?
+  appliesToRole     AccessRole? @relation(fields: [appliesToRoleId], references: [id], onDelete: SetNull)
+  appliesToPosition String?
+
+  signatureMode SignatureMode @default(IN_APP)
+
+  /// Days an unsigned contract stays signable. An offer that can still be
+  /// signed six weeks later is a liability, and a deadline is fairer anyway.
+  offerValidDays Int? @default(14)
+
+  version   Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, appliesToRoleId, appliesToPosition])
+  @@map("document_templates")
+}
+
+/// One document belonging to one member.
+model Document {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
+
+  typeId String
+  type   DocumentType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+
+  templateId String?
+  template   DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  title String
+
+  /// Present only for cadenced types. Drives the year/month grouping.
+  periodYear  Int?
+  periodMonth Int?
+
+  /// Content-addressed key — {orgId}/documents/{sha[0:2]}/{sha}.ext
+  storageKey String
+  sha256     String
+  sizeBytes  Int
+  mimeType   String @default("application/pdf")
+
+  status DocumentStatus @default(ISSUED)
+
+  issuedById String?
+  issuedBy   User?   @relation("DocumentsIssued", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  issuedAt      DateTime  @default(now())
+  /// The notification was accepted for delivery. A LINK IS NOT DELIVERY — the
+  /// document must be permanently available to the member and receipt provable.
+  deliveredAt   DateTime?
+  firstOpenedAt DateTime?
+
+  /// Credentials only.
+  expiresOn    DateTime? @db.Date
+  verifiedAt   DateTime?
+  verifiedById String?
+
+  /// Null means keep indefinitely; see DocumentType.retentionMonths.
+  retentionUntil DateTime?
+
+  /// A renewal points at what it replaces, so history stays readable.
+  supersedesId String?   @unique
+  supersedes   Document? @relation("DocumentSupersession", fields: [supersedesId], references: [id], onDelete: SetNull)
+  supersededBy Document? @relation("DocumentSupersession")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  signature DocumentSignature?
+  events    DocumentEvent[]
+
+  // The member's own list: their documents, by type, newest year first.
+  @@index([userId, typeId, periodYear])
+  // The admin's list and the batch view.
+  @@index([organizationId, status])
+  // The compliance board: what expires soon, org-wide.
+  @@index([organizationId, expiresOn])
+  // Dedup: the same bytes issued to thirty people are one object, but each
+  // member still gets their own row.
+  @@index([organizationId, sha256])
+  @@map("documents")
+}
+
+/// Everything captured at the moment of signing.
+///
+/// A drawn squiggle alone is the weakest tier eIDAS recognises. What lifts it
+/// is this row: linked to an identified signer under sole control, with any
+/// later change detectable. If `hashAfter` still matches the stored bytes, the
+/// document provably has not been altered since it was sealed.
+model DocumentSignature {
+  id         String   @id @default(cuid())
+  documentId String   @unique
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The drawing lives in object storage, NOT in this row. Three columns in
+  /// this schema already hold base64 PNGs inline; that is the mistake this
+  /// deliberately does not repeat.
+  signatureKey    String
+  signatureSha256 String
+
+  /// Consent is its own recorded act, separate from the signature.
+  consentText String   @db.Text
+  consentAt   DateTime
+
+  signedAt DateTime @default(now())
+
+  hashBefore String
+  hashAfter  String
+  sealedAt   DateTime?
+
+  /// Makes signing safely retryable: a dropped connection returns the existing
+  /// seal instead of signing a second time.
+  idempotencyKey String @unique
+
+  @@index([userId])
+  @@map("document_signatures")
+}
+
+/// The evidence trail. Append-only by contract: no update path is written and
+/// no service method exposes one.
+model DocumentEvent {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  type DocumentEventType
+  at   DateTime          @default(now())
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  ip         String?
+  userAgent  String?
+  appVersion String?
+  lat        Float?
+  lng        Float?
+  meta       Json?
+
+  @@index([documentId, at])
+  @@map("document_events")
 }
