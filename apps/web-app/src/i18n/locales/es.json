@@ -6376,7 +6376,8 @@
     "addOns": {
       "title": "Complementos",
       "subtitle": "Se contratan una vez para toda la organización, no por espacio de trabajo",
-      "perMonth": "/mes"
+      "perMonth": "/mes",
+      "unsaved": "Cambios sin guardar"
     },
     "status": {
       "trialing": "Prueba",

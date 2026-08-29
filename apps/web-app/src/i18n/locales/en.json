@@ -6376,7 +6376,8 @@
     "addOns": {
       "title": "Add-ons",
       "subtitle": "Bought once for the whole organization, not per workspace",
-      "perMonth": "/mo"
+      "perMonth": "/mo",
+      "unsaved": "Unsaved changes"
     },
     "status": {
       "trialing": "Trial",

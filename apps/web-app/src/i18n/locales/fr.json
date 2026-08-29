@@ -6385,7 +6385,8 @@
     "addOns": {
       "title": "Options",
       "subtitle": "Souscrites une fois pour toute l’organisation, pas par espace de travail",
-      "perMonth": "/mois"
+      "perMonth": "/mois",
+      "unsaved": "Modifications non enregistrées"
     },
     "status": {
       "trialing": "Essai",

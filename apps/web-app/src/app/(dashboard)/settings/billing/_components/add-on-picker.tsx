@@ -29,6 +29,14 @@ const GROUP_ORDER: AddOnDef['group'][] = ['work', 'money', 'insight', 'support']
  * to the monthly total is shown while you decide, and one Save sends the whole
  * list. Per-toggle saving would mean a Stripe proration for every click and no
  * moment where somebody sees the cost of what they are about to do.
+ *
+ * The Save lives in a STICKY FOOTER, not in the card header where it started.
+ * There are twelve add-ons across four groups, so the card is taller than the
+ * viewport: switching something on near the bottom put the only Save button
+ * off-screen above, and the change looked as though it had applied itself.
+ * The footer follows the same shape as the member editor's dialog — Discard
+ * beside Save — so the two places in the product where you change what an
+ * organization can do behave the same way.
  */
 export function AddOnPicker({
   purchased,
@@ -81,25 +89,11 @@ export function AddOnPicker({
           </p>
         </div>
 
-        {/* The cost of the decision, while it is still a decision. */}
-        {dirty && (
-          <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                'text-sm font-semibold tabular-nums',
-                delta > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400',
-              )}
-            >
-              {delta > 0 ? '+' : ''}
-              {formatCents(delta)}
-              {t('billing.addOns.perMonth', '/mo')}
-            </span>
-            <Button size="sm" onClick={save} disabled={saving}>
-              {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              {t('common.save', 'Save')}
-            </Button>
-          </div>
-        )}
+        {/* What it costs now. The change, and the buttons, are in the footer. */}
+        <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+          {formatCents(current)}
+          {t('billing.addOns.perMonth', '/mo')}
+        </span>
       </div>
 
       <div className="divide-y divide-border">
@@ -140,6 +134,57 @@ export function AddOnPicker({
           );
         })}
       </div>
+
+      {/*
+        Sticky, and only present when something changed.
+
+        Sticky because the list is longer than the screen and the button has to
+        be reachable from wherever the switch you just touched is. Absent when
+        nothing changed because a Save that is always live invites a click that
+        does nothing, and on this screen "nothing" is a Stripe call.
+      */}
+      {dirty && !disabled && (
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-b-xl border-t border-border bg-card/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">
+              {t('billing.addOns.unsaved', 'Unsaved changes')}
+            </p>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {formatCents(current)} → <span className="font-semibold text-foreground">{formatCents(proposed)}</span>
+              {t('billing.addOns.perMonth', '/mo')}
+              {' · '}
+              <span
+                className={cn(
+                  'font-semibold',
+                  delta > 0
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400',
+                )}
+              >
+                {delta > 0 ? '+' : ''}
+                {formatCents(delta)}
+              </span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Discard, not Cancel: nothing is being cancelled, and putting the
+                switches back by hand is the alternative. */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSelected(purchased)}
+              disabled={saving}
+            >
+              {t('common.discard', 'Discard')}
+            </Button>
+            <Button size="sm" onClick={save} disabled={saving}>
+              {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {saving ? t('common.saving', 'Saving…') : t('common.saveChanges', 'Save changes')}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6385,7 +6385,8 @@
     "addOns": {
       "title": "Componenti aggiuntivi",
       "subtitle": "Si attivano una volta per tutta l’organizzazione, non per spazio di lavoro",
-      "perMonth": "/mese"
+      "perMonth": "/mese",
+      "unsaved": "Modifiche non salvate"
     },
     "status": {
       "trialing": "Prova",

@@ -6376,7 +6376,8 @@
     "addOns": {
       "title": "Zusatzmodule",
       "subtitle": "Einmal für die gesamte Organisation gebucht, nicht pro Arbeitsbereich",
-      "perMonth": "/Mon."
+      "perMonth": "/Mon.",
+      "unsaved": "Nicht gespeicherte Änderungen"
     },
     "status": {
       "trialing": "Testphase",
