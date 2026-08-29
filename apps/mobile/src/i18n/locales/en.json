@@ -1738,7 +1738,11 @@
       "acknowledgedBody": "We have recorded that you read this document.",
       "viewDocuments": "View my documents",
       "failed": "That did not go through. Please try again.",
-      "alreadySigned": "Already signed — your earlier signature was kept."
-    }
+      "alreadySigned": "Already signed — your earlier signature was kept.",
+      "yourSignature": "Your signature",
+      "onDocument": "This is now on your document, with the date and a record of how it was signed.",
+      "openSigned": "Open the signed document"
+    },
+    "sectionWaiting": "Waiting for you"
   }
 }

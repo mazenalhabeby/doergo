@@ -7160,7 +7160,10 @@
       "clear": "Cancella",
       "finish": "Firma e sigilla",
       "signTitleWeb": "Firma con il mouse o il trackpad",
-      "signBodyWeb": "Disegna la tua firma nel riquadro."
+      "signBodyWeb": "Disegna la tua firma nel riquadro.",
+      "yourSignature": "La tua firma",
+      "onDocument": "Ora è sul tuo documento, con la data e il dettaglio di come è stato firmato.",
+      "openSigned": "Apri il documento firmato"
     },
     "signAction": "Firma",
     "templates": {
@@ -7221,6 +7224,7 @@
       "ready_other": "{{count}} documenti pronti",
       "hint": "Questi link scadono tra 15 minuti. Aprili uno a uno per salvarli.",
       "nothing": "Non c’è ancora nulla da esportare"
-    }
+    },
+    "sectionWaiting": "In attesa di te"
   }
 }

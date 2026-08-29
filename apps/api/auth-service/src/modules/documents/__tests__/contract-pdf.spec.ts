@@ -122,11 +122,25 @@ describe('sealSignedPdf', () => {
     signatureSha256: '7b1ec904'.repeat(8),
   };
 
-  it('appends exactly one page — the certificate', async () => {
+  it('appends TWO pages — the signature, then the certificate', async () => {
+    /*
+      Two, not one. The first version put the signature at the bottom of a page
+      headed "Certificate of completion", so somebody opening their contract to
+      check they had signed it found a page of hashes and device strings, and
+      the document itself still read as unsigned.
+    */
     const original = await renderContractPdf(VALUES);
     const before = (await PDFDocument.load(original)).getPageCount();
     const sealed = await sealSignedPdf(original, evidence);
-    expect((await PDFDocument.load(sealed)).getPageCount()).toBe(before + 1);
+    expect((await PDFDocument.load(sealed)).getPageCount()).toBe(before + 2);
+  });
+
+  it('leaves the original pages untouched, so the before-hash still describes them', async () => {
+    const original = await renderContractPdf(VALUES);
+    const originalPages = (await PDFDocument.load(original)).getPageCount();
+    const sealed = await sealSignedPdf(original, evidence);
+    // The contract keeps its own pages; only new ones are added after them.
+    expect((await PDFDocument.load(sealed)).getPageCount()).toBeGreaterThan(originalPages);
   });
 
   it('is itself deterministic', async () => {

@@ -1734,7 +1734,11 @@
       "acknowledgedBody": "Wir haben festgehalten, dass Sie dieses Dokument gelesen haben.",
       "viewDocuments": "Meine Dokumente ansehen",
       "failed": "Das hat nicht geklappt. Bitte erneut versuchen.",
-      "alreadySigned": "Bereits unterschrieben — Ihre frühere Unterschrift bleibt erhalten."
-    }
+      "alreadySigned": "Bereits unterschrieben — Ihre frühere Unterschrift bleibt erhalten.",
+      "yourSignature": "Ihre Unterschrift",
+      "onDocument": "Sie steht jetzt auf Ihrem Dokument, mit Datum und einem Nachweis, wie unterschrieben wurde.",
+      "openSigned": "Unterschriebenes Dokument öffnen"
+    },
+    "sectionWaiting": "Wartet auf Sie"
   }
 }

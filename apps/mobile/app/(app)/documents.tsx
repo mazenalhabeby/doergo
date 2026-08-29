@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
+  SectionList,
   RefreshControl,
   ScrollView,
   ActivityIndicator,
@@ -45,6 +45,34 @@ function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/*
+  A glyph and a hue per KIND of document.
+
+  Every row used the same outline page icon, so a payslip, a contract and a
+  driving licence were distinguishable only by reading them — in a list of
+  twenty-six, mostly payslips. Colour and shape do that work at a glance, and
+  reading becomes confirmation rather than search.
+
+  Keyed off the type's machine key, with a fallback, so an organization that
+  invents its own type still gets something sensible rather than nothing.
+*/
+type Glyph = { icon: keyof typeof Ionicons.glyphMap; hue: string };
+
+function glyphFor(typeKey: string, isCredential: boolean): Glyph {
+  if (typeKey.includes('payslip') || typeKey.includes('salary')) {
+    return { icon: 'cash-outline', hue: COLORS.primary };
+  }
+  if (typeKey.includes('contract')) return { icon: 'document-text-outline', hue: COLORS.inProgress };
+  if (typeKey.includes('policy') || typeKey.includes('safety')) {
+    return { icon: 'shield-checkmark-outline', hue: COLORS.amber };
+  }
+  if (typeKey.includes('annual') || typeKey.includes('statement')) {
+    return { icon: 'calendar-outline', hue: COLORS.purple };
+  }
+  if (isCredential) return { icon: 'ribbon-outline', hue: COLORS.warning };
+  return { icon: 'document-outline', hue: COLORS.slate500 };
 }
 
 export default function DocumentsScreen() {
@@ -91,6 +119,38 @@ export default function DocumentsScreen() {
       }),
     [documents, activeType, year],
   );
+
+  /*
+    Grouped by year, newest first.
+
+    Twenty payslips in a flat list is a wall: every row looks the same and the
+    only way to find March is to count. A year header turns scrolling into
+    navigation, and the sticky header means you always know where you are.
+
+    Anything WAITING is lifted into its own section at the top, because it is
+    the only part of this screen that is asking something of the person reading
+    it — and in date order it sits among the payslips and gets missed.
+  */
+  const sections = useMemo(() => {
+    const waiting = visible.filter((d) => d.needsSignature);
+    const rest = visible.filter((d) => !d.needsSignature);
+
+    const byYear = new Map<number, MemberDocument[]>();
+    for (const d of rest) {
+      const y = d.periodYear ?? new Date(d.issuedAt).getFullYear();
+      if (!byYear.has(y)) byYear.set(y, []);
+      byYear.get(y)!.push(d);
+    }
+
+    const out: { title: string; key: string; data: MemberDocument[] }[] = [];
+    if (waiting.length > 0) {
+      out.push({ title: t('documents.sectionWaiting'), key: 'waiting', data: waiting });
+    }
+    for (const y of [...byYear.keys()].sort((a, b) => b - a)) {
+      out.push({ title: String(y), key: String(y), data: byYear.get(y)! });
+    }
+    return out;
+  }, [visible, t]);
 
   const years = useMemo(() => {
     const set = new Set<number>();
@@ -152,42 +212,58 @@ export default function DocumentsScreen() {
   const renderItem = ({ item }: { item: MemberDocument }) => {
     const period =
       item.periodMonth && item.periodYear
-        ? `${t(`documents.months.${MONTH_KEYS[item.periodMonth - 1]}`)} ${item.periodYear}`
+        ? t(`documents.months.${MONTH_KEYS[item.periodMonth - 1]}`)
         : item.periodYear
           ? String(item.periodYear)
           : new Date(item.issuedAt).toLocaleDateString();
     const chip = standingStyle(item.standing);
+    const g = glyphFor(item.typeKey, !!item.standing);
+    const busy = opening === item.id;
 
     return (
       <TouchableOpacity
         style={[s.row, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => open(item)}
-        disabled={opening === item.id}
+        disabled={busy}
+        activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={`${item.title}, ${period}`}
       >
-        {/* Fixed-width slot so rows do not shift when a dot appears */}
-        <View style={s.dotSlot}>
-          {item.unread && <View style={[s.dot, { backgroundColor: COLORS.primary }]} />}
+        {/* A tinted disc, not a bare outline. Colour and shape identify the kind
+            of document before any of the text is read. */}
+        <View style={[s.glyph, { backgroundColor: g.hue + '22' }]}>
+          <Ionicons name={g.icon} size={20} color={g.hue} />
+          {item.unread && (
+            <View style={[s.unreadDot, { backgroundColor: COLORS.primary, borderColor: colors.card }]} />
+          )}
         </View>
 
-        <Ionicons
-          name={item.mimeType.startsWith('image/') ? 'image-outline' : 'document-text-outline'}
-          size={22}
-          color={colors.textMuted}
-        />
-
         <View style={s.body}>
-          <Text style={[s.title, { color: colors.textPrimary }]} numberOfLines={1}>
+          <Text
+            style={[
+              s.title,
+              { color: colors.textPrimary },
+              // Unread reads as heavier, the way an unread message does.
+              item.unread && s.titleUnread,
+            ]}
+            numberOfLines={1}
+          >
             {item.title}
           </Text>
-          <Text style={[s.meta, { color: colors.textMuted }]} numberOfLines={1}>
-            {item.typeLabel} · {period} · {fileSize(item.sizeBytes)}
-          </Text>
+
+          <View style={s.metaRow}>
+            <Text style={[s.meta, { color: colors.textMuted }]} numberOfLines={1}>
+              {item.typeLabel}
+            </Text>
+            <Text style={[s.metaDot, { color: colors.textMuted }]}>·</Text>
+            <Text style={[s.meta, { color: colors.textMuted }]}>{fileSize(item.sizeBytes)}</Text>
+          </View>
+
           {(item.needsSignature || chip) && (
             <View style={s.chips}>
               {item.needsSignature && (
                 <View style={[s.chip, { backgroundColor: colors.warningLight }]}>
+                  <Ionicons name="create-outline" size={11} color={COLORS.warning} />
                   <Text style={[s.chipText, { color: COLORS.warning }]}>
                     {t('documents.needsSignature')}
                   </Text>
@@ -202,11 +278,20 @@ export default function DocumentsScreen() {
           )}
         </View>
 
-        {opening === item.id ? (
-          <ActivityIndicator size="small" color={COLORS.primary} />
-        ) : (
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        )}
+        {/* The period on the right, so the column aligns down the list and the
+            eye can run it like an index rather than reading every line. */}
+        <View style={s.tail}>
+          {busy ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <>
+              <Text style={[s.period, { color: colors.textSecondary }]} numberOfLines={1}>
+                {period}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -225,12 +310,26 @@ export default function DocumentsScreen() {
         {/* Anything waiting on the reader goes above the list, not in date order
             among twelve payslips where it gets missed. */}
         {awaiting.length > 0 && (
-          <View style={[s.banner, { backgroundColor: colors.primaryLight, borderColor: COLORS.primary }]}>
-            <Ionicons name="create-outline" size={20} color={COLORS.primary} />
-            <Text style={[s.bannerText, { color: colors.textPrimary }]}>
-              {t('documents.my.awaiting', { count: awaiting.length })}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={[s.banner, { backgroundColor: colors.warningLight, borderColor: COLORS.warning }]}
+            onPress={() => open(awaiting[0]!)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+          >
+            <View style={[s.bannerIcon, { backgroundColor: COLORS.warning }]}>
+              <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+            </View>
+            <View style={s.bannerBody}>
+              <Text style={[s.bannerText, { color: colors.textPrimary }]}>
+                {t('documents.my.awaiting', { count: awaiting.length })}
+              </Text>
+              <Text style={[s.bannerSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                {awaiting[0]!.title}
+              </Text>
+            </View>
+            {/* Tappable, because a notice you cannot act on is just decoration. */}
+            <Ionicons name="chevron-forward" size={18} color={COLORS.warning} />
+          </TouchableOpacity>
         )}
 
         {usedTypes.length > 0 && (
@@ -270,10 +369,17 @@ export default function DocumentsScreen() {
             ))}
           </View>
         ) : (
-          <FlatList
-            data={visible}
+          <SectionList
+            sections={sections}
             keyExtractor={(d) => d.id}
             renderItem={renderItem}
+            stickySectionHeadersEnabled
+            renderSectionHeader={({ section }) => (
+              <View style={[s.sectionHeader, { backgroundColor: colors.background }]}>
+                <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{section.title}</Text>
+                <View style={[s.sectionRule, { backgroundColor: colors.border }]} />
+              </View>
+            )}
             contentContainerStyle={[s.list, { paddingBottom: insets.bottom + SPACING.xl }]}
             refreshControl={
               <RefreshControl refreshing={isRefreshing} onRefresh={() => load(true)} tintColor={COLORS.primary} />
@@ -326,42 +432,74 @@ const s = StyleSheet.create({
   screen: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
   headerSpacer: { width: 26 },
 
+  // The one thing on this screen asking something of the reader.
   banner: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
     marginHorizontal: SPACING.md, marginTop: SPACING.md,
-    padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.md, borderRadius: RADIUS.lg, borderWidth: 1,
   },
-  bannerText: { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
+  bannerIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  bannerBody: { flex: 1, minWidth: 0 },
+  bannerText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
+  bannerSub: { fontSize: FONT_SIZE.sm, marginTop: 1 },
 
   // Height is intrinsic to the chips; the row must not be stretched or squeezed.
   chipRow: { flexGrow: 0, flexShrink: 0 },
   tabs: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: SPACING.xs, alignItems: 'center' },
   tab: {
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md, paddingVertical: 6,
     borderRadius: RADIUS.full, borderWidth: StyleSheet.hairlineWidth,
   },
-  tabSmall: { paddingVertical: 4 },
+  tabSmall: { paddingVertical: 4, paddingHorizontal: SPACING.sm },
   tabText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
 
   list: { paddingHorizontal: SPACING.md },
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    padding: SPACING.md, marginBottom: SPACING.sm,
-    borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
+
+  // Sticky, so the year is always visible while scrolling twenty payslips.
+  sectionHeader: { paddingTop: SPACING.md, paddingBottom: SPACING.xs, gap: SPACING.xs },
+  sectionTitle: {
+    fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold,
+    letterSpacing: 1.1, textTransform: 'uppercase',
   },
-  dotSlot: { width: 8, alignItems: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  body: { flex: 1, minWidth: 0 },
-  title: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
-  meta: { fontSize: FONT_SIZE.xs, marginTop: 2 },
-  chips: { flexDirection: 'row', gap: SPACING.xs, marginTop: 6, flexWrap: 'wrap' },
-  chip: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.full },
+  sectionRule: { height: StyleSheet.hairlineWidth },
+
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth,
+  },
+  glyph: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  // Sits on the glyph rather than in its own column, so the row keeps one
+  // rhythm whether or not anything is unread.
+  unreadDot: {
+    position: 'absolute', top: -2, right: -2,
+    width: 11, height: 11, borderRadius: 6, borderWidth: 2,
+  },
+
+  body: { flex: 1, minWidth: 0, gap: 2 },
+  title: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.medium },
+  titleUnread: { fontWeight: FONT_WEIGHT.bold },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  meta: { fontSize: FONT_SIZE.sm },
+  metaDot: { fontSize: FONT_SIZE.sm },
+
+  chips: { flexDirection: 'row', gap: SPACING.xs, marginTop: 5, flexWrap: 'wrap' },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full,
+  },
   chipText: { fontSize: 11, fontWeight: FONT_WEIGHT.bold },
+
+  // Right-aligned period: the column the eye runs down to find a month.
+  tail: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 110 },
+  period: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
 
   empty: { alignItems: 'center', paddingVertical: SPACING.xl * 2, gap: SPACING.xs },
   emptyTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, marginTop: SPACING.sm },

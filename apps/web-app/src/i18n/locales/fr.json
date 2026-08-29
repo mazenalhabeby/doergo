@@ -7160,7 +7160,10 @@
       "clear": "Effacer",
       "finish": "Signer et sceller",
       "signTitleWeb": "Signez à la souris ou au trackpad",
-      "signBodyWeb": "Tracez votre signature dans le cadre."
+      "signBodyWeb": "Tracez votre signature dans le cadre.",
+      "yourSignature": "Votre signature",
+      "onDocument": "Elle figure désormais sur votre document, avec la date et le détail de la signature.",
+      "openSigned": "Ouvrir le document signé"
     },
     "signAction": "Signer",
     "templates": {
@@ -7221,6 +7224,7 @@
       "ready_other": "{{count}} documents prêts",
       "hint": "Ces liens expirent dans 15 minutes. Ouvrez chacun pour l’enregistrer.",
       "nothing": "Il n’y a encore rien à exporter"
-    }
+    },
+    "sectionWaiting": "En attente de vous"
   }
 }

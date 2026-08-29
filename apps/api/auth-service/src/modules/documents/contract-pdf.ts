@@ -112,10 +112,20 @@ export async function renderContractPdf(values: ContractValues): Promise<Buffer>
 /**
  * Append the signature block and the certificate of completion, then freeze.
  *
- * The signature image and the evidence go on their own final page rather than
- * into the body: the body is the document that was AGREED, and the certificate
- * is the record of HOW it was agreed. Keeping them apart is what lets the
- * before-hash describe exactly what the signer read.
+ * TWO pages, not one, and the distinction matters:
+ *
+ *   SIGNATURE   — reads as part of the contract. The mark, on a rule, with the
+ *                 name and date beneath it, the way a signed page looks on
+ *                 paper. This is what somebody opening their contract expects
+ *                 to find, and the first version buried it at the bottom of a
+ *                 page headed "Certificate of completion", so the document
+ *                 itself still read as unsigned.
+ *
+ *   CERTIFICATE — the record of HOW it was signed: consent, device, hashes.
+ *                 Evidence, not contract.
+ *
+ * Neither touches the original pages, so the before-hash still describes
+ * exactly what the signer read.
  */
 export async function sealSignedPdf(
   originalPdf: Buffer,
@@ -124,7 +134,79 @@ export async function sealSignedPdf(
   const pdf = await PDFDocument.load(originalPdf);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const png = await pdf.embedPng(evidence.signatureImage);
 
+  // ── The signature page ────────────────────────────────────────────────────
+  {
+    const sig = pdf.addPage([PAGE.width, PAGE.height]);
+    let sy = PAGE.height - MARGIN.top;
+
+    sig.drawText('Signature', {
+      x: MARGIN.left, y: sy, size: 18, font: bold, color: rgb(0.06, 0.09, 0.15),
+    });
+    sy -= 40;
+
+    sig.drawText(sanitise(evidence.documentTitle), {
+      x: MARGIN.left, y: sy, size: 11, font: regular, color: rgb(0.42, 0.48, 0.58),
+    });
+    sy -= 56;
+
+    /*
+      Scaled to fit a generous box, aspect ratio preserved.
+
+      Bigger than the thumbnail on the certificate: this is the page somebody
+      opens to check that they signed, and a signature the size of a postage
+      stamp does not answer that question.
+    */
+    const box = { w: 260, h: 96 };
+    const scale = Math.min(box.w / png.width, box.h / png.height, 1);
+    const w = png.width * scale;
+    const h = png.height * scale;
+
+    sy -= h;
+    sig.drawImage(png, { x: MARGIN.left, y: sy, width: w, height: h });
+
+    // The rule the mark sits on, drawn at signature-block width rather than the
+    // width of the image, so a short signature does not get a short line.
+    sig.drawLine({
+      start: { x: MARGIN.left, y: sy - 6 },
+      end: { x: MARGIN.left + box.w, y: sy - 6 },
+      thickness: 1,
+      color: rgb(0.55, 0.6, 0.68),
+    });
+    sy -= 26;
+
+    sig.drawText(sanitise(evidence.signerName), {
+      x: MARGIN.left, y: sy, size: 12, font: bold, color: rgb(0.06, 0.09, 0.15),
+    });
+    sy -= 17;
+    sig.drawText(sanitise(evidence.signerEmail), {
+      x: MARGIN.left, y: sy, size: 9.5, font: regular, color: rgb(0.42, 0.48, 0.58),
+    });
+    sy -= 22;
+    sig.drawText(`Signed ${longDate(evidence.signedAt)}`, {
+      x: MARGIN.left, y: sy, size: 10, font: regular, color: rgb(0.06, 0.09, 0.15),
+    });
+    sy -= 34;
+
+    for (const line of [
+      `Issued by ${evidence.organizationName}.`,
+      'Signed electronically. The following page records how, and carries the',
+      'fingerprint that shows the document has not been altered since.',
+    ]) {
+      sig.drawText(sanitise(line), {
+        x: MARGIN.left, y: sy, size: 9, font: regular, color: rgb(0.42, 0.48, 0.58),
+      });
+      sy -= 14;
+    }
+
+    drawFooter(sig, regular, {
+      left: `${evidence.organizationName} · signature`,
+      right: `${pdf.getPageCount()}`,
+    });
+  }
+
+  // ── The certificate page ──────────────────────────────────────────────────
   const page = pdf.addPage([PAGE.width, PAGE.height]);
   let y = PAGE.height - MARGIN.top;
 
@@ -155,11 +237,11 @@ export async function sealSignedPdf(
   muted(evidence.documentTitle);
   y -= 14;
 
-  // ── The signature itself ─────────────────────────────────────────────────
-  const png = await pdf.embedPng(evidence.signatureImage);
-  // Scale to fit a fixed box, preserving the aspect ratio: a signature squashed
-  // to fill a rectangle no longer looks like the mark the person made.
-  const box = { w: 200, h: 70 };
+  // ── The signature, small, as part of the record ──────────────────────────
+  // Deliberately a thumbnail here. The page before it is where the signature is
+  // meant to be READ; this one is evidence, and repeating it full size would
+  // make the record look like a second signature.
+  const box = { w: 150, h: 52 };
   const scale = Math.min(box.w / png.width, box.h / png.height, 1);
   const w = png.width * scale;
   const h = png.height * scale;
@@ -265,6 +347,15 @@ async function finalise(pdf: PDFDocument, title: string, org: string): Promise<B
  * question mark in a user-agent is better than a failed seal, because the
  * signature has already been made by then.
  */
+/** "29 August 2026, 11:20 UTC" — a date a person reads, not a timestamp. */
+function longDate(d: Date): string {
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${hh}:${mm} UTC`;
+}
+
 function sanitise(s: string): string {
   const bad = unencodableCharacters(s);
   if (bad.length === 0) return s;

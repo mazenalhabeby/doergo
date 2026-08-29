@@ -7151,7 +7151,10 @@
       "clear": "Clear",
       "finish": "Sign and seal",
       "signTitleWeb": "Sign with your mouse or trackpad",
-      "signBodyWeb": "Draw your signature in the box below."
+      "signBodyWeb": "Draw your signature in the box below.",
+      "yourSignature": "Your signature",
+      "onDocument": "This is now on your document, with the date and a record of how it was signed.",
+      "openSigned": "Open the signed document"
     },
     "signAction": "Sign",
     "templates": {
@@ -7212,6 +7215,7 @@
       "ready_other": "{{count}} documents ready",
       "hint": "These links expire in 15 minutes. Open each one to save it.",
       "nothing": "There is nothing to export yet"
-    }
+    },
+    "sectionWaiting": "Waiting for you"
   }
 }

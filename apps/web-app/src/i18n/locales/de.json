@@ -7151,7 +7151,10 @@
       "clear": "Löschen",
       "finish": "Unterschreiben und versiegeln",
       "signTitleWeb": "Mit Maus oder Trackpad unterschreiben",
-      "signBodyWeb": "Zeichnen Sie Ihre Unterschrift in das Feld."
+      "signBodyWeb": "Zeichnen Sie Ihre Unterschrift in das Feld.",
+      "yourSignature": "Ihre Unterschrift",
+      "onDocument": "Sie steht jetzt auf Ihrem Dokument, mit Datum und einem Nachweis, wie unterschrieben wurde.",
+      "openSigned": "Unterschriebenes Dokument öffnen"
     },
     "signAction": "Unterschreiben",
     "templates": {
@@ -7212,6 +7215,7 @@
       "ready_other": "{{count}} Dokumente bereit",
       "hint": "Diese Links laufen in 15 Minuten ab. Öffnen Sie jeden, um ihn zu speichern.",
       "nothing": "Es gibt noch nichts zu exportieren"
-    }
+    },
+    "sectionWaiting": "Wartet auf Sie"
   }
 }

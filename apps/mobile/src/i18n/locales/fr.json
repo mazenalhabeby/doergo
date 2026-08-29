@@ -1734,7 +1734,11 @@
       "acknowledgedBody": "Nous avons enregistré que vous avez lu ce document.",
       "viewDocuments": "Voir mes documents",
       "failed": "Cela n’a pas abouti. Veuillez réessayer.",
-      "alreadySigned": "Déjà signé — votre signature précédente a été conservée."
-    }
+      "alreadySigned": "Déjà signé — votre signature précédente a été conservée.",
+      "yourSignature": "Votre signature",
+      "onDocument": "Elle figure désormais sur votre document, avec la date et le détail de la signature.",
+      "openSigned": "Ouvrir le document signé"
+    },
+    "sectionWaiting": "En attente de vous"
   }
 }

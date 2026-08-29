@@ -1734,7 +1734,11 @@
       "acknowledgedBody": "Abbiamo registrato che hai letto questo documento.",
       "viewDocuments": "Vedi i miei documenti",
       "failed": "Non è andata a buon fine. Riprova.",
-      "alreadySigned": "Già firmato: la tua firma precedente è stata mantenuta."
-    }
+      "alreadySigned": "Già firmato: la tua firma precedente è stata mantenuta.",
+      "yourSignature": "La tua firma",
+      "onDocument": "Ora è sul tuo documento, con la data e il dettaglio di come è stato firmato.",
+      "openSigned": "Apri il documento firmato"
+    },
+    "sectionWaiting": "In attesa di te"
   }
 }

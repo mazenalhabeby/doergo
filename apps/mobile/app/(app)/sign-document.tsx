@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Image,
   Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -53,6 +54,7 @@ export default function SignDocumentScreen() {
   const [opening, setOpening] = useState(false);
   const [hasRead, setHasRead] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
 
   /*
     Made once, deliberately, and never regenerated.
@@ -104,6 +106,8 @@ export default function SignDocumentScreen() {
     setBusy(true);
     try {
       const res = await documentsApi.sign(String(params.id), { signatureImage, idempotencyKey });
+      // Kept so the confirmation can show the mark they actually made.
+      setSignature(signatureImage);
       setStep('done');
       if (res?.alreadySigned) {
         // Not an error. A retry found the seal that already existed, which is
@@ -293,12 +297,54 @@ export default function SignDocumentScreen() {
                 {isAcknowledge ? t('documents.sign.acknowledgedBody') : t('documents.sign.sealedBody')}
               </Text>
 
+              {/*
+                The mark they just made, shown back to them.
+
+                Signing something and being handed only a green tick leaves the
+                obvious question unanswered — what did it actually record? This
+                is the same image that is now on the document.
+              */}
+              {signature && (
+                <View style={[s.sigCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Text style={[s.sigLabel, { color: colors.textMuted }]}>
+                    {t('documents.sign.yourSignature')}
+                  </Text>
+                  <Image source={{ uri: signature }} style={s.sigImage} resizeMode="contain" />
+                  <View style={[s.sigRule, { backgroundColor: colors.border }]} />
+                  <Text style={[s.sigHint, { color: colors.textMuted }]}>
+                    {t('documents.sign.onDocument')}
+                  </Text>
+                </View>
+              )}
+
+              {/* Opening the SEALED document is the proof. Offered first,
+                  because "let me see it" is the next thing anybody thinks. */}
+              {!isAcknowledge && (
+                <TouchableOpacity
+                  style={[s.primary, { backgroundColor: COLORS.primary }]}
+                  onPress={openDocument}
+                  disabled={opening}
+                  accessibilityRole="button"
+                >
+                  {opening ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
+                      <Text style={s.primaryText}>{t('documents.sign.openSigned')}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
-                style={[s.primary, { backgroundColor: COLORS.primary }]}
+                style={[s.secondary, { borderColor: colors.border }]}
                 onPress={() => router.replace('/documents' as never)}
                 accessibilityRole="button"
               >
-                <Text style={s.primaryText}>{t('documents.sign.viewDocuments')}</Text>
+                <Text style={[s.secondaryText, { color: colors.textPrimary }]}>
+                  {t('documents.sign.viewDocuments')}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -354,6 +400,18 @@ const s = StyleSheet.create({
 
   busyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm },
 
-  done: { alignItems: 'center', paddingTop: SPACING.xxxl, gap: SPACING.md },
+  done: { alignItems: 'center', paddingTop: SPACING.xxl, gap: SPACING.md },
+  sigCard: {
+    width: '100%', padding: SPACING.md, borderRadius: RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', gap: SPACING.xs,
+  },
+  sigLabel: {
+    fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold,
+    letterSpacing: 1, textTransform: 'uppercase',
+  },
+  // On white, because that is how it was captured and how it sits on the page.
+  sigImage: { width: '80%', height: 90, backgroundColor: '#FFFFFF', borderRadius: RADIUS.sm },
+  sigRule: { width: '80%', height: StyleSheet.hairlineWidth },
+  sigHint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
   ring: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
 });

@@ -7151,7 +7151,10 @@
       "clear": "Borrar",
       "finish": "Firmar y sellar",
       "signTitleWeb": "Firma con el ratón o el trackpad",
-      "signBodyWeb": "Dibuja tu firma en el recuadro."
+      "signBodyWeb": "Dibuja tu firma en el recuadro.",
+      "yourSignature": "Tu firma",
+      "onDocument": "Ya está en tu documento, con la fecha y el registro de cómo se firmó.",
+      "openSigned": "Abrir el documento firmado"
     },
     "signAction": "Firmar",
     "templates": {
@@ -7212,6 +7215,7 @@
       "ready_other": "{{count}} documentos listos",
       "hint": "Estos enlaces caducan en 15 minutos. Abre cada uno para guardarlo.",
       "nothing": "Todavía no hay nada que exportar"
-    }
+    },
+    "sectionWaiting": "Pendiente de ti"
   }
 }
