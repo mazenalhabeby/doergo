@@ -217,6 +217,13 @@ export default function DocumentsScreen() {
           : new Date(item.issuedAt).toLocaleDateString();
     const chip = standingStyle(item.standing);
     const g = glyphFor(item.typeKey, !!item.standing);
+    /*
+      A WET_INK document is never "awaiting" — the app cannot clear it, so
+      leaving it in the signing queue would be a task nobody can finish. But
+      saying nothing is worse: it looks like an ordinary file, and the member
+      never learns they have to sign a printed copy and return it.
+    */
+    const onPaper = types.find((ty) => ty.id === item.typeId)?.signatureMode === 'WET_INK';
     const busy = opening === item.id;
 
     return (
@@ -258,8 +265,16 @@ export default function DocumentsScreen() {
             <Text style={[s.meta, { color: colors.textMuted }]}>{fileSize(item.sizeBytes)}</Text>
           </View>
 
-          {(item.needsSignature || chip) && (
+          {(item.needsSignature || chip || onPaper) && (
             <View style={s.chips}>
+              {onPaper && (
+                <View style={[s.chip, { backgroundColor: colors.inProgressLight }]}>
+                  <Ionicons name="print-outline" size={11} color={COLORS.inProgress} />
+                  <Text style={[s.chipText, { color: COLORS.inProgress }]}>
+                    {t('documents.signOnPaper')}
+                  </Text>
+                </View>
+              )}
               {item.needsSignature && (
                 <View style={[s.chip, { backgroundColor: colors.warningLight }]}>
                   <Ionicons name="create-outline" size={11} color={COLORS.warning} />

@@ -7216,6 +7216,7 @@
       "hint": "Diese Links laufen in 15 Minuten ab. Öffnen Sie jeden, um ihn zu speichern.",
       "nothing": "Es gibt noch nichts zu exportieren"
     },
-    "sectionWaiting": "Wartet auf Sie"
+    "sectionWaiting": "Wartet auf Sie",
+    "signOnPaper": "Auf Papier unterschreiben"
   }
 }

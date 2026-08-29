@@ -352,6 +352,14 @@ export default function MyDocumentsPage() {
                         {t("documents.new")}
                       </span>
                     )}
+                    {/* Never in the signing queue — the app cannot clear it —
+                        but silence would leave the member unaware they must
+                        sign a printed copy and return it. */}
+                    {types.find((ty) => ty.id === d.typeId)?.signatureMode === "WET_INK" && (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                        {t("documents.signOnPaper")}
+                      </span>
+                    )}
                     {d.needsSignature && (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
                         {t("documents.needsSignature")}

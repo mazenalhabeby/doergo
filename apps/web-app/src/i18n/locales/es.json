@@ -7216,6 +7216,7 @@
       "hint": "Estos enlaces caducan en 15 minutos. Abre cada uno para guardarlo.",
       "nothing": "Todavía no hay nada que exportar"
     },
-    "sectionWaiting": "Pendiente de ti"
+    "sectionWaiting": "Pendiente de ti",
+    "signOnPaper": "Firmar en papel"
   }
 }

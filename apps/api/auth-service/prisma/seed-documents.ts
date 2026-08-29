@@ -269,6 +269,42 @@ async function main() {
     key: 'demo_safety_policy', label: 'Safety policy', cadence: 'ONE_OFF',
     direction: 'ISSUED', retentionMonths: 60, signatureMode: 'ACKNOWLEDGE', position: 3,
   });
+  /*
+    The rest of what an employer actually asks people to sign.
+
+    One of each MODE, so every path through the signing flow is reachable
+    without editing the database:
+      IN_APP      draw a signature, seal, certificate
+      ACKNOWLEDGE "I have read this" — receipt, no drawing
+      WET_INK     the app REFUSES, which was previously only provable in a test
+  */
+  const nda = await type({
+    key: 'demo_confidentiality', label: 'Confidentiality agreement', cadence: 'ONE_OFF',
+    direction: 'ISSUED', retentionMonths: 120, signatureMode: 'IN_APP', position: 3,
+    description: 'Signed once, on joining',
+  });
+  const equipment = await type({
+    key: 'demo_equipment_handover', label: 'Equipment handover', cadence: 'ONE_OFF',
+    direction: 'ISSUED', retentionMonths: 60, signatureMode: 'IN_APP', position: 4,
+    description: 'Van, tools and devices issued to a member',
+  });
+  const amendment = await type({
+    key: 'demo_contract_amendment', label: 'Contract amendment', cadence: 'ONE_OFF',
+    direction: 'ISSUED', retentionMonths: 360, signatureMode: 'IN_APP', position: 5,
+  });
+  const conduct = await type({
+    key: 'demo_code_of_conduct', label: 'Code of conduct', cadence: 'ONE_OFF',
+    direction: 'ISSUED', retentionMonths: 60, signatureMode: 'ACKNOWLEDGE', position: 6,
+  });
+  const privacy = await type({
+    key: 'demo_privacy_notice', label: 'Privacy notice', cadence: 'ONE_OFF',
+    direction: 'ISSUED', retentionMonths: 60, signatureMode: 'ACKNOWLEDGE', position: 7,
+  });
+  const fixedTerm = await type({
+    key: 'demo_fixed_term', label: 'Fixed-term contract', cadence: 'ONE_OFF',
+    direction: 'ISSUED', retentionMonths: 360, signatureMode: 'WET_INK', position: 8,
+  });
+
   const licence = await type({
     key: 'demo_driving_licence', label: 'Driving licence', cadence: 'ONE_OFF',
     direction: 'SUPPLIED', signatureMode: 'NONE', isCredential: true, hasExpiry: true, position: 4,
@@ -294,7 +330,7 @@ async function main() {
   if (gatedWorkflow) {
     console.log(`  Gas Safe gates the "${gatedWorkflow.name}" task type`);
   }
-  console.log('  6 document types');
+  console.log('  12 document types');
 
   // ── A contract template ───────────────────────────────────────────────────
   await prisma.documentTemplate.create({
@@ -560,6 +596,148 @@ async function main() {
           ip: '84.115.20.11', userAgent: 'HBCField/1.0.2 iOS 18.4', appVersion: '1.0.2',
           lat: 47.9813, lng: 13.8269,
         },
+      });
+    }
+  }
+
+  /*
+    Everything else that needs a signature or an acknowledgement.
+
+    Spread deliberately unevenly: some people have a queue, some have one, and
+    the admin has none outstanding — a demo where everybody has exactly the same
+    two documents does not show what the list looks like when it is busy.
+  */
+  const signables: {
+    type: typeof nda;
+    title: string;
+    lines: string[];
+    /** Which members get it, by index. */
+    who: number[];
+    issuedDaysAgo: number;
+  }[] = [
+    {
+      type: nda,
+      title: 'Confidentiality agreement',
+      who: [1, 2, 3, 5],
+      issuedDaysAgo: 5,
+      lines: [
+        '§1 Scope',
+        'The employee will encounter customer addresses, access codes, pricing and',
+        'site details that are confidential to the company and its clients.',
+        '',
+        '§2 Obligation',
+        'This information may not be shared, photographed or retained after the',
+        'engagement ends, in any form, including on personal devices.',
+        '',
+        '§3 Duration',
+        'This obligation continues for three years after the engagement ends.',
+      ],
+    },
+    {
+      type: equipment,
+      title: 'Equipment handover',
+      who: [1, 3, 4],
+      issuedDaysAgo: 3,
+      lines: [
+        'Issued to the employee:',
+        '  Van                            Ford Transit · W-12345X',
+        '  Phone                          iPhone 15 · IMEI 35•••••••••42',
+        '  Tool case                      Serial TK-88214',
+        '  Fuel card                      •••• 4417',
+        '',
+        'Condition:',
+        '  Checked and photographed at handover. Damage beyond fair wear is',
+        '  reported on the day it happens.',
+        '',
+        'Return:',
+        '  All items return on the last working day of the engagement.',
+      ],
+    },
+    {
+      type: amendment,
+      title: `Contract amendment — working time ${thisYear}`,
+      who: [2, 4],
+      issuedDaysAgo: 11,
+      lines: [
+        '§1 Amendment',
+        'Regular weekly working time changes from 38.5 to 40.0 hours with effect',
+        `from 1 October ${thisYear}.`,
+        '',
+        '§2 Remuneration',
+        'Base salary is adjusted proportionally. All other terms of the original',
+        'agreement are unchanged and remain in force.',
+      ],
+    },
+    {
+      type: conduct,
+      title: `Code of conduct ${thisYear}`,
+      who: [1, 2, 3, 4, 5, 6],
+      issuedDaysAgo: 14,
+      lines: [
+        'On site:',
+        '  Identify yourself, work to the agreed scope, and leave the site as you',
+        '  found it.',
+        '',
+        'With customers:',
+        '  No work is agreed verbally. Anything beyond the order goes back to the',
+        '  office before it starts.',
+        '',
+        'Reporting:',
+        '  Anything unsafe, damaged or disputed is reported the same day.',
+      ],
+    },
+    {
+      type: privacy,
+      title: 'Privacy notice — employee data',
+      who: [1, 2, 4, 6],
+      issuedDaysAgo: 17,
+      lines: [
+        'What is held:',
+        '  Contact details, contract terms, attendance, location while on a job,',
+        '  and the documents in this file.',
+        '',
+        'Why:',
+        '  To pay you, to schedule work, and to meet record-keeping obligations.',
+        '',
+        'How long:',
+        '  Employment records for three years after the engagement ends; payroll',
+        '  records for longer, where the law requires it.',
+        '',
+        'Your rights:',
+        '  You can export everything in this file at any time from My documents.',
+      ],
+    },
+    {
+      type: fixedTerm,
+      title: `Fixed-term contract — seasonal ${thisYear}`,
+      who: [2],
+      issuedDaysAgo: 8,
+      lines: [
+        '§1 Term',
+        `This engagement runs from 1 November ${thisYear} to 28 February ${thisYear + 1}.`,
+        '',
+        '§2 Form',
+        'A fixed-term agreement must be signed on paper. Please sign the printed',
+        'copy and return it to the office — it cannot be signed in the app.',
+      ],
+    },
+  ];
+
+  for (const item of signables) {
+    const bytes = await makePdf(item.title, item.lines, true);
+    for (const idx of item.who) {
+      const m = members[idx];
+      if (!m) continue;
+      await file({
+        user: m,
+        typeId: item.type.id,
+        title: item.title,
+        bytes,
+        // WET_INK is issued, not "awaiting" — the app cannot clear it, so
+        // leaving it blocking would be a queue item nobody can ever finish.
+        status: item.type.signatureMode === 'WET_INK' ? 'ISSUED' : 'AWAITING_SIGNATURE',
+        firstOpenedAt: null,
+        issuedAt: daysFromNow(-item.issuedDaysAgo),
       });
     }
   }

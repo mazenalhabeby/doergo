@@ -1743,6 +1743,7 @@
       "onDocument": "This is now on your document, with the date and a record of how it was signed.",
       "openSigned": "Open the signed document"
     },
-    "sectionWaiting": "Waiting for you"
+    "sectionWaiting": "Waiting for you",
+    "signOnPaper": "Sign on paper"
   }
 }

@@ -1739,6 +1739,7 @@
       "onDocument": "Ya está en tu documento, con la fecha y el registro de cómo se firmó.",
       "openSigned": "Abrir el documento firmado"
     },
-    "sectionWaiting": "Pendiente de ti"
+    "sectionWaiting": "Pendiente de ti",
+    "signOnPaper": "Firmar en papel"
   }
 }

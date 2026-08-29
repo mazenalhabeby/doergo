@@ -374,14 +374,34 @@ const s = StyleSheet.create({
   body: { fontSize: FONT_SIZE.base, lineHeight: 21 },
   hint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
 
+  /*
+    alignSelf: 'stretch' on BOTH.
+
+    The confirmation pane centres its children so the tick and the headline sit
+    on the middle line — and that made every button shrink to the width of its
+    own label. "Open the signed document" came out wide, "View my documents"
+    narrow, neither aligned with the card above them, and the pair read as two
+    unrelated controls rather than a primary and its alternative.
+
+    Setting it on the button rather than fixing the parent means the same button
+    keeps its full width in any pane, however that pane chooses to align things.
+  */
   primary: {
+    alignSelf: 'stretch',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    paddingVertical: SPACING.md, borderRadius: RADIUS.md, marginTop: SPACING.xs,
+    minHeight: 52,
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md, marginTop: SPACING.xs,
   },
   primaryText: { color: '#FFFFFF', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
   secondary: {
-    alignItems: 'center', paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    // Same height as the primary, so the pair reads as one stack rather than
+    // two controls that happen to be near each other.
+    minHeight: 52,
+    alignItems: 'center', justifyContent: 'center',
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md, borderWidth: 1,
   },
   secondaryText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.medium },
   disabled: { opacity: 0.45 },

@@ -1739,6 +1739,7 @@
       "onDocument": "Elle figure désormais sur votre document, avec la date et le détail de la signature.",
       "openSigned": "Ouvrir le document signé"
     },
-    "sectionWaiting": "En attente de vous"
+    "sectionWaiting": "En attente de vous",
+    "signOnPaper": "Signer sur papier"
   }
 }

@@ -7225,6 +7225,7 @@
       "hint": "Ces liens expirent dans 15 minutes. Ouvrez chacun pour l’enregistrer.",
       "nothing": "Il n’y a encore rien à exporter"
     },
-    "sectionWaiting": "En attente de vous"
+    "sectionWaiting": "En attente de vous",
+    "signOnPaper": "Signer sur papier"
   }
 }

@@ -7216,6 +7216,7 @@
       "hint": "These links expire in 15 minutes. Open each one to save it.",
       "nothing": "There is nothing to export yet"
     },
-    "sectionWaiting": "Waiting for you"
+    "sectionWaiting": "Waiting for you",
+    "signOnPaper": "Sign on paper"
   }
 }

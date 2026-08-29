@@ -1739,6 +1739,7 @@
       "onDocument": "Sie steht jetzt auf Ihrem Dokument, mit Datum und einem Nachweis, wie unterschrieben wurde.",
       "openSigned": "Unterschriebenes Dokument öffnen"
     },
-    "sectionWaiting": "Wartet auf Sie"
+    "sectionWaiting": "Wartet auf Sie",
+    "signOnPaper": "Auf Papier unterschreiben"
   }
 }

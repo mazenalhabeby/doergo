@@ -1739,6 +1739,7 @@
       "onDocument": "Ora è sul tuo documento, con la data e il dettaglio di come è stato firmato.",
       "openSigned": "Apri il documento firmato"
     },
-    "sectionWaiting": "In attesa di te"
+    "sectionWaiting": "In attesa di te",
+    "signOnPaper": "Firma su carta"
   }
 }
