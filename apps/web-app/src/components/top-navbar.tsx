@@ -75,7 +75,7 @@ const NAV_HREFS = [
   "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/settings", "/settings/billing",
-  "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/templates", "/documents/compliance",
+  "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/types", "/documents/templates", "/documents/compliance",
 ] as const
 
 function matches(pathname: string, href: string): boolean {
@@ -589,6 +589,7 @@ function DocumentsDropdown({
   const items = [
     { href: "/my/documents", label: t("nav.myDocuments"), show: true },
     { href: "/documents", label: t("nav.issueDocuments"), show: showIssue },
+    { href: "/documents/types", label: t("documents.types.title"), show: showTemplates },
     { href: "/documents/templates", label: t("documents.templates.title"), show: showTemplates },
     { href: "/documents/compliance", label: t("documents.compliance.title"), show: showCompliance },
   ].filter((i) => i.show)

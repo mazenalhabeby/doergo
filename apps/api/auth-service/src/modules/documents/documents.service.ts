@@ -25,6 +25,7 @@ import {
   type SignatureMode,
   scoreTemplateBinding,
   MERGE_FIELDS,
+  documentTypeKey,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -1678,13 +1679,16 @@ function decodeSignaturePng(dataUrl: string): Buffer {
 
 
 /** Machine keys are lowercase, underscore-separated, and stable. */
+/**
+ * The shared rule, not a second copy of it.
+ *
+ * The types screen shows the key WHILE somebody types the label. If the two
+ * normalisers ever disagreed, the key on screen and the key in the database
+ * would differ — and the key is what a type is identified by for the rest of
+ * its life.
+ */
 function normaliseKey(raw: string): string {
-  return raw
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 60);
+  return documentTypeKey(raw);
 }
 
 /** A staging-key suffix. Not an id — nothing is stored under it. */

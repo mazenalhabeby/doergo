@@ -7310,6 +7310,128 @@
       "nothing": "Todavía no hay nada que exportar"
     },
     "sectionWaiting": "Pendiente de ti",
-    "signOnPaper": "Firmar en papel"
+    "signOnPaper": "Firmar en papel",
+    "types": {
+      "title": "Tipos de documento",
+      "explainer": "Un tipo define QUÉ es un documento: quién lo aporta, si caduca y si perderlo impide trabajar. No se puede archivar nada sin uno.",
+      "startWith": "Empieza con",
+      "addAnother": "Añadir otro",
+      "startWithHint": "Elige uno y ajústalo. Puedes cambiar todo salvo quién lo aporta y con qué frecuencia.",
+      "blank": "Otra cosa",
+      "blankHint": "Un tipo en blanco, si ninguno encaja.",
+      "new": "Nuevo tipo de documento",
+      "edit": "Editar tipo de documento",
+      "created": "Tipo creado",
+      "saved": "Tipo guardado",
+      "retire": "Retirar",
+      "retired": "Tipo retirado",
+      "restore": "Restaurar",
+      "restored": "Tipo restaurado",
+      "retiredCount_one": "{{count}} tipo retirado",
+      "retiredCount_other": "{{count}} tipos retirados",
+      "retiredHint": "Retirar impide archivar documentos nuevos de ese tipo. Lo ya archivado sigue accesible: por eso se retira y no se borra.",
+      "credential": "Certificado",
+      "step1": "¿De qué se trata?",
+      "step2": "¿Quién lo aporta?",
+      "step3": "¿Con qué frecuencia?",
+      "step4": "¿Es un certificado?",
+      "step5": "¿Alguien lo firma?",
+      "step6": "¿Cuánto tiempo se conserva?",
+      "label": "Nombre",
+      "description": "Descripción",
+      "descriptionHint": "Se muestra a la persona. Con una línea basta.",
+      "keyIs": "Se guarda como {{key}}",
+      "keyTaken": "Ya existe un tipo guardado como {{key}}",
+      "direction": {
+        "issued": "Lo emites tú",
+        "supplied": "Lo aporta la persona"
+      },
+      "directionHint": {
+        "issued": "Nóminas, contratos, cartas. Tú lo subes y lo archivas en su expediente.",
+        "supplied": "Carnés, certificados, DNI. Solo lo tiene esa persona, así que lo sube y tú lo apruebas."
+      },
+      "directionLocked": "Quién lo aporta no puede cambiar después: daría a las personas un botón de borrar nóminas, o les quitaría sus propias subidas.",
+      "cadence": {
+        "one_off": "Una vez",
+        "monthly": "Cada mes",
+        "annual": "Cada año"
+      },
+      "cadenceHint": {
+        "one_off": "Uno por persona, archivado cuando toca.",
+        "monthly": "Uno por persona y mes, agrupado por mes.",
+        "annual": "Uno por persona y año, agrupado por año."
+      },
+      "cadenceLocked": "La frecuencia no puede cambiar después: los documentos ya archivados están agrupados por su periodo.",
+      "isCredential": "Es un certificado",
+      "isCredentialHint": "Aparece en el panel de vigencias, con avisos antes de que caduque.",
+      "hasExpiry": "Caduca",
+      "hasExpiryHint": "La fecha de caducidad es obligatoria al archivarlo. Avisos a 60, 30 y 7 días.",
+      "gates": "Trabajos que lo exigen",
+      "gatesHint": "Elige los tipos de tarea que lo requieren. Si lo dejas vacío, caducar solo genera un aviso.",
+      "gatesWarning_one": "Sin uno vigente no se puede asignar a {{count}} tipo de tarea.",
+      "gatesWarning_other": "Sin uno vigente no se puede asignar a {{count}} tipos de tarea.",
+      "noTaskTypes": "Aún no hay tipos de tarea, así que no hay nada que bloquear.",
+      "years_one": "{{count}} año",
+      "years_other": "{{count}} años",
+      "forever": "Conservar indefinidamente",
+      "retentionNote": "Se conserva ese tiempo desde su emisión y luego se elimina. Práctica habitual, no asesoramiento legal: consulta con tu asesoría cuánto debes conservar.",
+      "consequences": {
+        "youIssue": "Lo emites tú",
+        "memberUploads": "Lo sube la persona",
+        "perPeriod": "Uno por periodo",
+        "mustSign": "Se firma en la app",
+        "mustAcknowledge": "Leído y confirmado",
+        "onPaper": "Se firma en papel",
+        "expiresTracked": "Caducidad controlada",
+        "credentialNoExpiry": "Certificado, sin caducidad",
+        "gatesWork": "Exigido para"
+      },
+      "starters": {
+        "payslip": {
+          "label": "Nómina",
+          "description": "Una al mes por persona. El motivo por el que la mayoría entra aquí."
+        },
+        "employment_contract": {
+          "label": "Contrato de trabajo",
+          "description": "Se emite al incorporarse y se firma en la app. Se guarda muchísimo tiempo."
+        },
+        "annual_statement": {
+          "label": "Certificado anual de retenciones",
+          "description": "Uno al año, para la declaración."
+        },
+        "reference": {
+          "label": "Certificado de servicios",
+          "description": "Se escribe al salir. Lo pedirán años después."
+        },
+        "safety_briefing": {
+          "label": "Instrucción de seguridad",
+          "description": "Se lee y se confirma, no se firma. Prueba de que se recibió."
+        },
+        "warning_letter": {
+          "label": "Carta de amonestación",
+          "description": "Se confirma la recepción, que es lo que importa después."
+        },
+        "driving_licence": {
+          "label": "Carné de conducir",
+          "description": "Solo lo tiene la persona, así que lo sube. Caduca y puede bloquear trabajos de conducción."
+        },
+        "trade_certificate": {
+          "label": "Certificado profesional",
+          "description": "Gas, electricidad, refrigerantes. El certificado que habilita el trabajo."
+        },
+        "first_aid": {
+          "label": "Certificado de primeros auxilios",
+          "description": "Caduca cada pocos años y se olvida hasta que ya ha caducado."
+        },
+        "training_record": {
+          "label": "Registro de formación",
+          "description": "Carnés de máquina, formaciones de obra, todo lo que se renueva."
+        },
+        "id_document": {
+          "label": "Documento de identidad",
+          "description": "Identidad o permiso de trabajo. Lo aporta la persona, no es un certificado."
+        }
+      }
+    }
   }
 }

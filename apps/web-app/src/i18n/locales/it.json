@@ -7319,6 +7319,128 @@
       "nothing": "Non c’è ancora nulla da esportare"
     },
     "sectionWaiting": "In attesa di te",
-    "signOnPaper": "Firma su carta"
+    "signOnPaper": "Firma su carta",
+    "types": {
+      "title": "Tipi di documento",
+      "explainer": "Un tipo definisce COS’È un documento: chi lo fornisce, se scade e se la scadenza impedisce di lavorare. Senza un tipo non si può archiviare nulla.",
+      "startWith": "Inizia con",
+      "addAnother": "Aggiungine un altro",
+      "startWithHint": "Scegline uno e adattalo. Puoi cambiare tutto tranne chi lo fornisce e con che frequenza.",
+      "blank": "Altro",
+      "blankHint": "Un tipo vuoto, se nessuno di questi va bene.",
+      "new": "Nuovo tipo di documento",
+      "edit": "Modifica tipo di documento",
+      "created": "Tipo creato",
+      "saved": "Tipo salvato",
+      "retire": "Ritira",
+      "retired": "Tipo ritirato",
+      "restore": "Ripristina",
+      "restored": "Tipo ripristinato",
+      "retiredCount_one": "{{count}} tipo ritirato",
+      "retiredCount_other": "{{count}} tipi ritirati",
+      "retiredHint": "Ritirare impedisce di archiviare nuovi documenti di quel tipo. Quanto già archiviato resta leggibile: per questo si ritira invece di eliminare.",
+      "credential": "Attestato",
+      "step1": "Di cosa si tratta?",
+      "step2": "Chi lo fornisce?",
+      "step3": "Con che frequenza?",
+      "step4": "È un attestato?",
+      "step5": "Qualcuno lo firma?",
+      "step6": "Per quanto va conservato?",
+      "label": "Nome",
+      "description": "Descrizione",
+      "descriptionHint": "Mostrata alla persona. Basta una riga.",
+      "keyIs": "Salvato come {{key}}",
+      "keyTaken": "Esiste già un tipo salvato come {{key}}",
+      "direction": {
+        "issued": "Lo emetti tu",
+        "supplied": "Lo fornisce la persona"
+      },
+      "directionHint": {
+        "issued": "Buste paga, contratti, lettere. Lo carichi tu e lo archivi nel fascicolo.",
+        "supplied": "Patenti, attestati, documenti. Ce l’ha solo la persona: lo carica e tu lo approvi."
+      },
+      "directionLocked": "Chi lo fornisce non può cambiare in seguito: darebbe alle persone un pulsante per cancellare le buste paga, o toglierebbe loro i propri caricamenti.",
+      "cadence": {
+        "one_off": "Una volta",
+        "monthly": "Ogni mese",
+        "annual": "Ogni anno"
+      },
+      "cadenceHint": {
+        "one_off": "Uno a persona, archiviato quando serve.",
+        "monthly": "Uno a persona al mese, raggruppato per mese.",
+        "annual": "Uno a persona all’anno, raggruppato per anno."
+      },
+      "cadenceLocked": "La frequenza non può cambiare in seguito: i documenti già archiviati sono raggruppati per il loro periodo.",
+      "isCredential": "È un attestato",
+      "isCredentialHint": "Compare nel quadro delle validità, con promemoria prima della scadenza.",
+      "hasExpiry": "Scade",
+      "hasExpiryHint": "La data di scadenza è obbligatoria all’archiviazione. Promemoria a 60, 30 e 7 giorni.",
+      "gates": "Lavori che lo richiedono",
+      "gatesHint": "Scegli i tipi di attività che lo richiedono. Se lasci vuoto, la scadenza è solo un promemoria.",
+      "gatesWarning_one": "Senza un attestato valido non si può assegnare a {{count}} tipo di attività.",
+      "gatesWarning_other": "Senza un attestato valido non si può assegnare a {{count}} tipi di attività.",
+      "noTaskTypes": "Non ci sono ancora tipi di attività, quindi non c’è nulla da bloccare.",
+      "years_one": "{{count}} anno",
+      "years_other": "{{count}} anni",
+      "forever": "Conserva a tempo indeterminato",
+      "retentionNote": "Conservato per questo periodo dall’emissione, poi rimosso. Prassi comune, non consulenza legale — per quanto vada conservato chiedi al tuo commercialista.",
+      "consequences": {
+        "youIssue": "Lo emetti tu",
+        "memberUploads": "Lo carica la persona",
+        "perPeriod": "Uno per periodo",
+        "mustSign": "Firmato nell’app",
+        "mustAcknowledge": "Letto e confermato",
+        "onPaper": "Firmato su carta",
+        "expiresTracked": "Scadenza monitorata",
+        "credentialNoExpiry": "Attestato, senza scadenza",
+        "gatesWork": "Richiesto per"
+      },
+      "starters": {
+        "payslip": {
+          "label": "Busta paga",
+          "description": "Una al mese a persona. Il motivo per cui quasi tutti aprono questa pagina."
+        },
+        "employment_contract": {
+          "label": "Contratto di lavoro",
+          "description": "Emesso all’assunzione e firmato nell’app. Da conservare a lungo."
+        },
+        "annual_statement": {
+          "label": "Certificazione unica",
+          "description": "Una all’anno, per la dichiarazione."
+        },
+        "reference": {
+          "label": "Attestato di servizio",
+          "description": "Scritto alla cessazione. Verrà richiesto anni dopo."
+        },
+        "safety_briefing": {
+          "label": "Informativa di sicurezza",
+          "description": "Si legge e si conferma, non si firma. Prova di ricezione."
+        },
+        "warning_letter": {
+          "label": "Richiamo scritto",
+          "description": "Se ne conferma la ricezione: è la parte che conta dopo."
+        },
+        "driving_licence": {
+          "label": "Patente di guida",
+          "description": "Ce l’ha solo la persona, quindi la carica lei. Scade e può bloccare le attività di guida."
+        },
+        "trade_certificate": {
+          "label": "Attestato professionale",
+          "description": "Gas, elettrico, refrigeranti. L’attestato che abilita al lavoro."
+        },
+        "first_aid": {
+          "label": "Attestato di primo soccorso",
+          "description": "Scade ogni pochi anni ed è facile dimenticarlo."
+        },
+        "training_record": {
+          "label": "Attestato di formazione",
+          "description": "Patentini macchine, formazioni di cantiere, tutto ciò che si rinnova."
+        },
+        "id_document": {
+          "label": "Documento d’identità",
+          "description": "Identità o permesso di lavoro. Fornito dalla persona, non è un attestato."
+        }
+      }
+    }
   }
 }

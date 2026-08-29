@@ -108,13 +108,14 @@ describe('the documents navigation', () => {
 
   it('registers every document route in NAV_HREFS', () => {
     /*
-      All four, or the active-link resolver cannot tell which is most specific
+      All of them, or the active-link resolver cannot tell which is most specific
       and lights up two items at once — a bug this codebase has already had and
       fixed once, on /settings vs /settings/billing.
     */
     for (const href of [
       '"/my/documents"',
       '"/documents"',
+      '"/documents/types"',
       '"/documents/templates"',
       '"/documents/compliance"',
     ]) {
@@ -139,15 +140,15 @@ describe('the documents navigation', () => {
   it('marks the dropdown active from exactly the routes it contains', () => {
     /*
       The attendance menu listed a route it did not contain and omitted two it
-      did, so the bar lit up twice on one page and nowhere on two others. Three
-      of these four share a prefix, which makes the same mistake easier here.
+      did, so the bar lit up twice on one page and nowhere on two others. Four
+      of these five share a prefix, which makes the same mistake easier here.
     */
     const block = navbar.slice(
       navbar.indexOf('function DocumentsDropdown'),
       navbar.indexOf('// Time & Attendance Dropdown'),
     );
     expect(block).toContain('isDropdownActive(pathname, items.map((i) => i.href))');
-    for (const href of ['/my/documents', '/documents', '/documents/templates', '/documents/compliance']) {
+    for (const href of ['/my/documents', '/documents', '/documents/types', '/documents/templates', '/documents/compliance']) {
       expect(block).toContain(`"${href}"`);
     }
   });

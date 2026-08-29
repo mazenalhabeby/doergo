@@ -7310,6 +7310,128 @@
       "nothing": "Es gibt noch nichts zu exportieren"
     },
     "sectionWaiting": "Wartet auf Sie",
-    "signOnPaper": "Auf Papier unterschreiben"
+    "signOnPaper": "Auf Papier unterschreiben",
+    "types": {
+      "title": "Dokumentarten",
+      "explainer": "Eine Art legt fest, WAS ein Dokument ist: wer es bereitstellt, ob es abläuft und ob ein Ablauf jemanden von der Arbeit ausschließt. Ohne Art kann nichts abgelegt werden.",
+      "startWith": "Beginnen mit",
+      "addAnother": "Weitere hinzufügen",
+      "startWithHint": "Wählen Sie eine und passen Sie sie an. Alles ist änderbar außer wer sie bereitstellt und wie oft.",
+      "blank": "Etwas anderes",
+      "blankHint": "Eine leere Art, wenn nichts davon passt.",
+      "new": "Neue Dokumentart",
+      "edit": "Dokumentart bearbeiten",
+      "created": "Dokumentart angelegt",
+      "saved": "Dokumentart gespeichert",
+      "retire": "Stilllegen",
+      "retired": "Art stillgelegt",
+      "restore": "Wieder aktivieren",
+      "restored": "Art wieder aktiv",
+      "retiredCount_one": "{{count}} stillgelegte Art",
+      "retiredCount_other": "{{count}} stillgelegte Arten",
+      "retiredHint": "Stilllegen verhindert neue Dokumente dieser Art. Bereits Abgelegtes bleibt lesbar — deshalb wird stillgelegt und nicht gelöscht.",
+      "credential": "Nachweis",
+      "step1": "Worum geht es?",
+      "step2": "Wer stellt es bereit?",
+      "step3": "Wie oft?",
+      "step4": "Ist es ein Nachweis?",
+      "step5": "Wird unterschrieben?",
+      "step6": "Wie lange aufbewahren?",
+      "label": "Bezeichnung",
+      "description": "Beschreibung",
+      "descriptionHint": "Wird dem Teammitglied angezeigt. Eine Zeile genügt.",
+      "keyIs": "Gespeichert als {{key}}",
+      "keyTaken": "Es gibt bereits eine Art mit dem Schlüssel {{key}}",
+      "direction": {
+        "issued": "Sie stellen es aus",
+        "supplied": "Das Teammitglied reicht es ein"
+      },
+      "directionHint": {
+        "issued": "Lohnzettel, Verträge, Schreiben. Sie laden es hoch und legen es ab.",
+        "supplied": "Führerschein, Zeugnisse, Ausweis. Nur die Person hat es, also lädt sie es hoch und Sie bestätigen."
+      },
+      "directionLocked": "Wer es bereitstellt, lässt sich später nicht ändern — sonst bekämen Teammitglieder einen Löschknopf für Lohnzettel oder verlören ihre eigenen Uploads.",
+      "cadence": {
+        "one_off": "Einmalig",
+        "monthly": "Monatlich",
+        "annual": "Jährlich"
+      },
+      "cadenceHint": {
+        "one_off": "Eines je Person, abgelegt wenn es anfällt.",
+        "monthly": "Eines je Person und Monat, nach Monat gruppiert.",
+        "annual": "Eines je Person und Jahr, nach Jahr gruppiert."
+      },
+      "cadenceLocked": "Die Häufigkeit lässt sich später nicht ändern — bereits abgelegte Dokumente sind nach ihrem Zeitraum gruppiert.",
+      "isCredential": "Das ist ein Nachweis",
+      "isCredentialHint": "Erscheint auf der Nachweis-Übersicht, mit Erinnerung vor dem Ablauf.",
+      "hasExpiry": "Läuft ab",
+      "hasExpiryHint": "Beim Ablegen ist ein Ablaufdatum verpflichtend. Erinnerungen bei 60, 30 und 7 Tagen.",
+      "gates": "Erforderlich für",
+      "gatesHint": "Wählen Sie die Aufgabenarten, für die der Nachweis nötig ist. Leer lassen: ein Ablauf ist dann nur eine Erinnerung.",
+      "gatesWarning_one": "Ohne gültigen Nachweis ist keine Zuweisung zu {{count}} Aufgabenart möglich.",
+      "gatesWarning_other": "Ohne gültigen Nachweis ist keine Zuweisung zu {{count}} Aufgabenarten möglich.",
+      "noTaskTypes": "Es gibt noch keine Aufgabenarten, also nichts zu sperren.",
+      "years_one": "{{count}} Jahr",
+      "years_other": "{{count}} Jahre",
+      "forever": "Unbegrenzt aufbewahren",
+      "retentionNote": "So lange nach Ausstellung aufbewahrt, danach entfernt. Übliche Praxis, keine Rechtsberatung — wie lange Lohn- und Personalunterlagen aufzubewahren sind, klären Sie mit Ihrer Steuerberatung.",
+      "consequences": {
+        "youIssue": "Sie stellen es aus",
+        "memberUploads": "Das Teammitglied lädt es hoch",
+        "perPeriod": "Eines je Zeitraum",
+        "mustSign": "In der App unterschrieben",
+        "mustAcknowledge": "Gelesen und bestätigt",
+        "onPaper": "Auf Papier unterschrieben",
+        "expiresTracked": "Ablauf wird verfolgt",
+        "credentialNoExpiry": "Nachweis, ohne Ablauf",
+        "gatesWork": "Erforderlich für"
+      },
+      "starters": {
+        "payslip": {
+          "label": "Lohnzettel",
+          "description": "Einer pro Monat und Person. Der häufigste Grund, das hier zu öffnen."
+        },
+        "employment_contract": {
+          "label": "Dienstvertrag",
+          "description": "Beim Eintritt ausgestellt und in der App unterschrieben. Sehr lange aufzubewahren."
+        },
+        "annual_statement": {
+          "label": "Jahreslohnzettel",
+          "description": "Einer pro Jahr, für die Steuererklärung."
+        },
+        "reference": {
+          "label": "Dienstzeugnis",
+          "description": "Beim Austritt geschrieben. Es wird noch Jahre später verlangt."
+        },
+        "safety_briefing": {
+          "label": "Sicherheitsunterweisung",
+          "description": "Gelesen und bestätigt statt unterschrieben. Nachweis des Erhalts."
+        },
+        "warning_letter": {
+          "label": "Abmahnung",
+          "description": "Erhalt wird bestätigt — genau darauf kommt es später an."
+        },
+        "driving_licence": {
+          "label": "Führerschein",
+          "description": "Nur die Person hat ihn, also lädt sie ihn hoch. Läuft ab und kann Fahrtätigkeiten sperren."
+        },
+        "trade_certificate": {
+          "label": "Fachnachweis",
+          "description": "Gas, Elektro, Kältemittel. Der Nachweis, der die Arbeit erlaubt."
+        },
+        "first_aid": {
+          "label": "Erste-Hilfe-Nachweis",
+          "description": "Läuft alle paar Jahre ab und wird gern übersehen."
+        },
+        "training_record": {
+          "label": "Schulungsnachweis",
+          "description": "Maschinenscheine, Unterweisungen, alles mit Auffrischungsdatum."
+        },
+        "id_document": {
+          "label": "Ausweisdokument",
+          "description": "Identität oder Arbeitserlaubnis. Vom Teammitglied beigebracht, kein Nachweis."
+        }
+      }
+    }
   }
 }

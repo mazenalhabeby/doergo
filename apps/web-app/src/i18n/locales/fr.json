@@ -7319,6 +7319,128 @@
       "nothing": "Il n’y a encore rien à exporter"
     },
     "sectionWaiting": "En attente de vous",
-    "signOnPaper": "Signer sur papier"
+    "signOnPaper": "Signer sur papier",
+    "types": {
+      "title": "Types de document",
+      "explainer": "Un type définit CE QU’EST un document : qui le fournit, s’il expire, et si sa péremption empêche de travailler. Rien ne peut être classé sans lui.",
+      "startWith": "Commencer avec",
+      "addAnother": "En ajouter un",
+      "startWithHint": "Choisissez-en un et ajustez-le. Tout est modifiable sauf qui le fournit et à quelle fréquence.",
+      "blank": "Autre chose",
+      "blankHint": "Un type vierge, si aucun ne correspond.",
+      "new": "Nouveau type de document",
+      "edit": "Modifier le type",
+      "created": "Type créé",
+      "saved": "Type enregistré",
+      "retire": "Retirer",
+      "retired": "Type retiré",
+      "restore": "Réactiver",
+      "restored": "Type réactivé",
+      "retiredCount_one": "{{count}} type retiré",
+      "retiredCount_other": "{{count}} types retirés",
+      "retiredHint": "Le retrait empêche de classer de nouveaux documents de ce type. Ce qui est déjà classé reste lisible — d’où un retrait plutôt qu’une suppression.",
+      "credential": "Attestation",
+      "step1": "De quoi s’agit-il ?",
+      "step2": "Qui le fournit ?",
+      "step3": "À quelle fréquence ?",
+      "step4": "Est-ce une attestation ?",
+      "step5": "Quelqu’un le signe-t-il ?",
+      "step6": "Combien de temps le conserver ?",
+      "label": "Nom",
+      "description": "Description",
+      "descriptionHint": "Affichée au membre. Une ligne suffit.",
+      "keyIs": "Enregistré sous {{key}}",
+      "keyTaken": "Un type enregistré sous {{key}} existe déjà",
+      "direction": {
+        "issued": "Vous l’émettez",
+        "supplied": "Le membre le fournit"
+      },
+      "directionHint": {
+        "issued": "Bulletins, contrats, courriers. Vous le déposez et le classez dans son dossier.",
+        "supplied": "Permis, attestations, pièce d’identité. Lui seul l’a : il le dépose et vous l’approuvez."
+      },
+      "directionLocked": "Qui le fournit ne peut plus changer : cela donnerait aux membres un bouton pour supprimer des bulletins, ou leur retirerait leurs propres dépôts.",
+      "cadence": {
+        "one_off": "Une fois",
+        "monthly": "Chaque mois",
+        "annual": "Chaque année"
+      },
+      "cadenceHint": {
+        "one_off": "Un par personne, classé le moment venu.",
+        "monthly": "Un par personne et par mois, groupé par mois.",
+        "annual": "Un par personne et par an, groupé par année."
+      },
+      "cadenceLocked": "La fréquence ne peut plus changer : les documents déjà classés sont groupés par leur période.",
+      "isCredential": "C’est une attestation",
+      "isCredentialHint": "Apparaît sur le tableau de validité, avec des rappels avant expiration.",
+      "hasExpiry": "Elle expire",
+      "hasExpiryHint": "Une date d’expiration est obligatoire au dépôt. Rappels à 60, 30 et 7 jours.",
+      "gates": "Travaux qui l’exigent",
+      "gatesHint": "Choisissez les types de tâche qui l’exigent. Laissé vide, une expiration n’est qu’un rappel.",
+      "gatesWarning_one": "Sans attestation valide, aucune affectation à {{count}} type de tâche.",
+      "gatesWarning_other": "Sans attestation valide, aucune affectation à {{count}} types de tâche.",
+      "noTaskTypes": "Aucun type de tâche pour l’instant, donc rien à bloquer.",
+      "years_one": "{{count}} an",
+      "years_other": "{{count}} ans",
+      "forever": "Conserver sans limite",
+      "retentionNote": "Conservé ce temps après émission, puis supprimé. Pratique courante, pas un conseil juridique — la durée légale relève de votre comptable.",
+      "consequences": {
+        "youIssue": "Vous l’émettez",
+        "memberUploads": "Le membre le dépose",
+        "perPeriod": "Un par période",
+        "mustSign": "Signé dans l’application",
+        "mustAcknowledge": "Lu et confirmé",
+        "onPaper": "Signé sur papier",
+        "expiresTracked": "Expiration suivie",
+        "credentialNoExpiry": "Attestation, sans expiration",
+        "gatesWork": "Exigé pour"
+      },
+      "starters": {
+        "payslip": {
+          "label": "Bulletin de paie",
+          "description": "Un par mois et par personne. La raison pour laquelle la plupart ouvrent cette page."
+        },
+        "employment_contract": {
+          "label": "Contrat de travail",
+          "description": "Émis à l’arrivée et signé dans l’application. Conservé très longtemps."
+        },
+        "annual_statement": {
+          "label": "Récapitulatif annuel",
+          "description": "Un par an, pour la déclaration."
+        },
+        "reference": {
+          "label": "Certificat de travail",
+          "description": "Rédigé au départ. On le redemandera des années plus tard."
+        },
+        "safety_briefing": {
+          "label": "Consigne de sécurité",
+          "description": "Lue et confirmée plutôt que signée. Preuve de réception."
+        },
+        "warning_letter": {
+          "label": "Avertissement écrit",
+          "description": "Réception confirmée — c’est ce qui compte ensuite."
+        },
+        "driving_licence": {
+          "label": "Permis de conduire",
+          "description": "Lui seul l’a, il le dépose donc. Il expire et peut bloquer les tâches de conduite."
+        },
+        "trade_certificate": {
+          "label": "Habilitation professionnelle",
+          "description": "Gaz, électricité, fluides. L’attestation qui autorise le travail."
+        },
+        "first_aid": {
+          "label": "Attestation de secourisme",
+          "description": "Expire tous les quelques années et s’oublie facilement."
+        },
+        "training_record": {
+          "label": "Attestation de formation",
+          "description": "CACES, accueils chantier, tout ce qui se renouvelle."
+        },
+        "id_document": {
+          "label": "Pièce d’identité",
+          "description": "Identité ou droit de travailler. Fournie par le membre, pas une attestation."
+        }
+      }
+    }
   }
 }

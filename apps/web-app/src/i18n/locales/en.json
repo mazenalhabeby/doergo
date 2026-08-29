@@ -7310,6 +7310,128 @@
       "nothing": "There is nothing to export yet"
     },
     "sectionWaiting": "Waiting for you",
-    "signOnPaper": "Sign on paper"
+    "signOnPaper": "Sign on paper",
+    "types": {
+      "title": "Document types",
+      "explainer": "A type says what a document IS: who provides it, whether it expires, and whether losing it stops somebody working. Nothing can be filed until one exists.",
+      "startWith": "Start with",
+      "addAnother": "Add another",
+      "startWithHint": "Pick one and adjust it. You can change everything except who provides it and how often.",
+      "blank": "Something else",
+      "blankHint": "A blank type, if none of these is what you file.",
+      "new": "New document type",
+      "edit": "Edit document type",
+      "created": "Document type created",
+      "saved": "Document type saved",
+      "retire": "Retire",
+      "retired": "Type retired",
+      "restore": "Restore",
+      "restored": "Type restored",
+      "retiredCount_one": "{{count}} retired type",
+      "retiredCount_other": "{{count}} retired types",
+      "retiredHint": "Retiring stops new documents being filed under a type. Everything already filed stays readable — that is why it is retired rather than deleted.",
+      "credential": "Certificate",
+      "step1": "What is it?",
+      "step2": "Who provides it?",
+      "step3": "How often?",
+      "step4": "Is it a certificate?",
+      "step5": "Does anyone sign it?",
+      "step6": "How long do you keep it?",
+      "label": "Name",
+      "description": "Description",
+      "descriptionHint": "Shown to the member. One line is enough.",
+      "keyIs": "Stored as {{key}}",
+      "keyTaken": "You already have a type stored as {{key}}",
+      "direction": {
+        "issued": "You issue it",
+        "supplied": "The member provides it"
+      },
+      "directionHint": {
+        "issued": "Payslips, contracts, letters. You upload or generate it and file it to them.",
+        "supplied": "Licences, certificates, ID. Only they have it, so they upload it and you approve it."
+      },
+      "directionLocked": "Who provides it cannot change later — it would hand members a delete button for payslips, or take their own uploads away from them.",
+      "cadence": {
+        "one_off": "Once",
+        "monthly": "Every month",
+        "annual": "Every year"
+      },
+      "cadenceHint": {
+        "one_off": "One per person, filed when it happens.",
+        "monthly": "One per person per month, grouped by month.",
+        "annual": "One per person per year, grouped by year."
+      },
+      "cadenceLocked": "How often cannot change later — documents already filed are grouped by the period they were filed under.",
+      "isCredential": "This is a certificate",
+      "isCredentialHint": "It appears on the compliance board, and you can be reminded before it lapses.",
+      "hasExpiry": "It expires",
+      "hasExpiryHint": "An expiry date is required whenever one is filed. Reminders go out at 60, 30 and 7 days.",
+      "gates": "Work it is required for",
+      "gatesHint": "Pick the task types this certificate is needed for. Leave it empty and a lapse is only a reminder.",
+      "gatesWarning_one": "Anyone without a valid one cannot be assigned to {{count}} task type.",
+      "gatesWarning_other": "Anyone without a valid one cannot be assigned to {{count}} task types.",
+      "noTaskTypes": "You have no task types yet, so there is nothing to gate.",
+      "years_one": "{{count}} year",
+      "years_other": "{{count}} years",
+      "forever": "Keep indefinitely",
+      "retentionNote": "Kept for this long after issue, then removed. Ordinary practice, not legal advice — how long you must keep payroll and personnel records is a question for your accountant.",
+      "consequences": {
+        "youIssue": "You issue it",
+        "memberUploads": "The member uploads it",
+        "perPeriod": "One per period",
+        "mustSign": "Signed in the app",
+        "mustAcknowledge": "Read and confirmed",
+        "onPaper": "Signed on paper",
+        "expiresTracked": "Expiry tracked",
+        "credentialNoExpiry": "Certificate, no expiry",
+        "gatesWork": "Required for"
+      },
+      "starters": {
+        "payslip": {
+          "label": "Payslip",
+          "description": "One per month, per person. The reason most people open this at all."
+        },
+        "employment_contract": {
+          "label": "Employment contract",
+          "description": "Issued on joining and signed in the app. Kept for a working lifetime."
+        },
+        "annual_statement": {
+          "label": "Annual pay statement",
+          "description": "One per year, for the tax return."
+        },
+        "reference": {
+          "label": "Reference",
+          "description": "Written when somebody leaves. They will ask for it years later."
+        },
+        "safety_briefing": {
+          "label": "Safety briefing",
+          "description": "Read and confirmed rather than signed. Proof that it was received."
+        },
+        "warning_letter": {
+          "label": "Written warning",
+          "description": "Confirmed as received, which is the part that matters later."
+        },
+        "driving_licence": {
+          "label": "Driving licence",
+          "description": "Only they have it, so they upload it. Expires, and can gate driving work."
+        },
+        "trade_certificate": {
+          "label": "Trade certificate",
+          "description": "Gas, electrical, refrigerant. The certificate that lets someone do the work."
+        },
+        "first_aid": {
+          "label": "First-aid certificate",
+          "description": "Lapses every few years and is easy to forget until it has."
+        },
+        "training_record": {
+          "label": "Training record",
+          "description": "Machine tickets, site inductions, anything with a renewal date."
+        },
+        "id_document": {
+          "label": "ID document",
+          "description": "Identity or right-to-work. Supplied by the member, not a certificate."
+        }
+      }
+    }
   }
 }
