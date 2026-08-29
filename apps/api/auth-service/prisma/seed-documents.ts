@@ -4,6 +4,7 @@
  *   npx tsx prisma/seed-documents.ts                    (the biggest organization)
  *   npx tsx prisma/seed-documents.ts john@johngroup.com  (a specific one)
  *   npx tsx prisma/seed-documents.ts "John Group"
+ *   npx tsx prisma/seed-documents.ts --all               (every organization)
  *
  * Run from apps/api/auth-service.
  *
@@ -526,14 +527,51 @@ async function main() {
   console.log('    /documents                 issue a batch');
   console.log('    /documents/templates       the contract template');
   console.log('    /documents/compliance      1 valid · 1 expiring · 1 expired');
-  // members[0] is the admin, already listed above.
-  console.log(`\n  MEMBER ${members[1]!.email}   (password123)`);
-  console.log('    /my/documents              payslips, contract SIGNED, policy read');
-  console.log(`\n  MEMBER ${members[2]!.email}   (password123)`);
-  console.log('    /my/documents              a contract AWAITING SIGNATURE — sign it');
+  // members[0] is the admin, already listed above. A one-person organization
+  // has nobody else, and the summary must not crash on that.
+  if (members[1]) {
+    console.log(`\n  MEMBER ${members[1].email}   (password123)`);
+    console.log('    /my/documents              payslips, contract SIGNED, policy read');
+  }
+  if (members[2]) {
+    console.log(`\n  MEMBER ${members[2].email}   (password123)`);
+    console.log('    /my/documents              a contract AWAITING SIGNATURE — sign it');
+  }
   console.log('    mobile: Profile → Documents\n');
 }
 
-main()
+/**
+ * `--all` fills EVERY organization that has users.
+ *
+ * On a developer database there are a dozen organizations from old experiments,
+ * and "which one am I actually logged into?" is not a question anybody should
+ * have to answer before they can see whether a feature works. Filling all of
+ * them costs a few seconds and removes the question.
+ */
+async function seedEverything() {
+  const orgs = await prisma.organization.findMany({
+    where: { users: { some: { role: 'ADMIN' } } },
+    include: { _count: { select: { users: true } } },
+  });
+  const ordered = orgs.sort((a, b) => b._count.users - a._count.users);
+  console.log(`\n── Filling ${ordered.length} organizations ──`);
+
+  for (const o of ordered) {
+    const admin = await prisma.user.findFirst({
+      where: { organizationId: o.id, role: 'ADMIN' },
+      select: { email: true },
+    });
+    if (!admin) continue;
+    try {
+      process.argv[2] = admin.email;
+      await main();
+    } catch (e) {
+      console.error(`  ${o.name}: ${(e as Error).message}`);
+    }
+  }
+}
+
+const runner = process.argv[2] === '--all' ? seedEverything() : main();
+runner
   .catch((e) => { console.error('\nSeed failed:', e); process.exit(1); })
   .finally(() => prisma.$disconnect());
