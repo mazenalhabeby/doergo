@@ -1,7 +1,11 @@
 /**
  * Demo data for the personnel file.
  *
- *   npx tsx prisma/seed-documents.ts        (from apps/api/auth-service)
+ *   npx tsx prisma/seed-documents.ts                    (the biggest organization)
+ *   npx tsx prisma/seed-documents.ts john@johngroup.com  (a specific one)
+ *   npx tsx prisma/seed-documents.ts "John Group"
+ *
+ * Run from apps/api/auth-service.
  *
  * Everything it creates is REAL: the PDFs are rendered and uploaded to whatever
  * object store the service is configured against, so documents genuinely open
@@ -116,26 +120,80 @@ async function main() {
   console.log('\n── Personnel file demo data ──\n');
   await ensureBucket();
 
-  const org = await prisma.organization.findFirst({
-    where: { users: { some: { role: 'ADMIN' } } },
-    orderBy: { createdAt: 'asc' },
+  /*
+    Which organization to fill.
+
+    Pass one as an argument — an admin's email, or part of the organization's
+    name — otherwise the BIGGEST one is used.
+
+    Size, not age. This first picked the oldest organization with an admin, which
+    on a developer database is a long-abandoned test org: the seed reported 141
+    documents and the screen showed nothing, because the person looking was
+    logged into the organization they actually work in. Headcount is the honest
+    proxy for "the one in use".
+  */
+  const wanted = process.argv[2]?.trim();
+  const candidates = await prisma.organization.findMany({
+    where: {
+      users: { some: { role: 'ADMIN' } },
+      ...(wanted
+        ? {
+            OR: [
+              { name: { contains: wanted, mode: 'insensitive' } },
+              { users: { some: { email: { equals: wanted, mode: 'insensitive' } } } },
+            ],
+          }
+        : {}),
+    },
+    include: { _count: { select: { users: true } } },
   });
-  if (!org) throw new Error('No organization with an admin. Run the main seed first.');
+
+  if (candidates.length === 0) {
+    throw new Error(
+      wanted
+        ? `No organization matches "${wanted}". Pass an admin email or part of the name.`
+        : 'No organization with an admin. Run the main seed first.',
+    );
+  }
+
+  const org = candidates.sort((a, b) => b._count.users - a._count.users)[0]!;
+
+  if (!wanted && candidates.length > 1) {
+    const others = candidates
+      .filter((c) => c.id !== org.id)
+      .sort((a, b) => b._count.users - a._count.users)
+      .slice(0, 4)
+      .map((c) => `${c.name} (${c._count.users})`)
+      .join(', ');
+    console.log(`  (largest of ${candidates.length}; others: ${others})`);
+    console.log('  pass an admin email or org name to choose a different one\n');
+  }
 
   const admin = await prisma.user.findFirst({
     where: { organizationId: org.id, role: 'ADMIN' },
     orderBy: { createdAt: 'asc' },
   });
-  const members = await prisma.user.findMany({
+  if (!admin) throw new Error('That organization has no admin.');
+
+  /*
+    The ADMIN is included, and first.
+
+    They were excluded on the first pass — "members get documents, admins issue
+    them" — which meant the person most likely to open /my/documents to see
+    whether any of this works found "Nothing here yet". An admin is also an
+    employee: they have a contract and get paid.
+  */
+  const others = await prisma.user.findMany({
     where: { organizationId: org.id, isActive: true, role: { not: 'ADMIN' } },
     orderBy: { firstName: 'asc' },
-    take: 6,
+    take: 7,
   });
-  if (!admin || members.length === 0) throw new Error('Need an admin and at least one member.');
+  const members = [admin, ...others].slice(0, 8);
+  if (members.length === 0) throw new Error('That organization has no active users.');
 
   console.log(`  organization : ${org.name}`);
   console.log(`  admin        : ${admin.email}`);
-  console.log(`  members      : ${members.map((m) => m.firstName).join(', ')}\n`);
+  console.log(`  files for    : ${members.map((m) => m.firstName).join(', ')}\n`);
 
   // ── Clear the previous run ────────────────────────────────────────────────
   /*
@@ -464,12 +522,14 @@ async function main() {
   console.log(`  ${created} documents (real PDFs, uploaded)\n`);
   console.log('── What to look at ──\n');
   console.log(`  ADMIN  ${admin.email}`);
+  console.log('    /my/documents              their OWN file — an admin is an employee too');
   console.log('    /documents                 issue a batch');
   console.log('    /documents/templates       the contract template');
   console.log('    /documents/compliance      1 valid · 1 expiring · 1 expired');
-  console.log(`\n  MEMBER ${members[0]!.email}   (password123)`);
-  console.log('    /my/documents              payslips, contract SIGNED, policy read');
+  // members[0] is the admin, already listed above.
   console.log(`\n  MEMBER ${members[1]!.email}   (password123)`);
+  console.log('    /my/documents              payslips, contract SIGNED, policy read');
+  console.log(`\n  MEMBER ${members[2]!.email}   (password123)`);
   console.log('    /my/documents              a contract AWAITING SIGNATURE — sign it');
   console.log('    mobile: Profile → Documents\n');
 }
