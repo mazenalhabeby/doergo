@@ -5945,6 +5945,9 @@ export interface MatchCandidateRow {
   firstName: string;
   lastName: string;
   email: string;
+  /** For resolving which members a contract template would reach. */
+  memberRoleId?: string | null;
+  position?: string | null;
 }
 
 export interface DraftDocumentRow {

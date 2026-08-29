@@ -13,6 +13,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { unknownTokens, STARTER_TEMPLATES } from '@hbcfield/shared/client';
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 
@@ -156,5 +157,58 @@ describe('the documents navigation', () => {
     // one item is a click for nothing.
     const block = navbar.slice(navbar.indexOf('function DocumentsDropdown'));
     expect(block).toContain('if (items.length === 1)');
+  });
+});
+
+/**
+ * The starter contracts ship translated, and a translator has no reason to
+ * treat `{{member.fullName}}` as anything other than text. Two ways that goes
+ * wrong, both of which reach a real contract:
+ *
+ *  - a token dropped in translation leaves a clause with the name missing
+ *  - a token misspelled renders literally as "{{member.fullname}}" in the PDF,
+ *    because the editor's unknown-token check only guards what an ADMIN types
+ *
+ * So every language's body must carry exactly the tokens English carries.
+ */
+describe('starter contract bodies', () => {
+  const tokensIn = (s: string) => [...s.matchAll(/\{\{([^}]+)\}\}/g)].map((m) => m[1]!.trim()).sort();
+  const en = load('en').documents.templates.starters;
+
+  it.each(LOCALES)('keeps every merge field intact in %s', (locale) => {
+    const other = load(locale).documents.templates.starters;
+    for (const key of Object.keys(en)) {
+      const source = en[key].body;
+      if (typeof source !== 'string') continue;
+      expect({ key, tokens: tokensIn(other[key].body) }).toEqual({ key, tokens: tokensIn(source) });
+    }
+  });
+
+  it.each(LOCALES)('uses only tokens the renderer knows in %s', (locale) => {
+    const starters = load(locale).documents.templates.starters;
+    const bodies = Object.values(starters)
+      .map((s: any) => s.body)
+      .filter((b): b is string => typeof b === 'string');
+    for (const body of bodies) expect(unknownTokens(body)).toEqual([]);
+  });
+});
+
+/**
+ * The English starter copy exists twice: in the shared module, which carries the
+ * structure (signature mode, suggested type) and an English source, and in
+ * en.json, which the page actually renders and the other four languages are
+ * translated from. Two copies drift, and the drift is invisible — the page
+ * renders en.json, so an edit to the shared body would simply never appear.
+ */
+describe('starter copy matches its shared source', () => {
+  const en = load('en').documents.templates.starters;
+
+  it.each(STARTER_TEMPLATES.map((s) => s.key))('is in step for %s', (key) => {
+    const shared = STARTER_TEMPLATES.find((s) => s.key === key)!;
+    expect(en[key]).toBeTruthy();
+    expect(en[key].name).toBe(shared.name);
+    expect(en[key].description).toBe(shared.description);
+    // The blank starter has no body in either place.
+    expect(en[key].body ?? '').toBe(shared.body);
   });
 });

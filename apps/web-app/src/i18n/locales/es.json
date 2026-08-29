@@ -7187,7 +7187,104 @@
         "acknowledge": "Solo confirmar",
         "wet_ink": "Firma en papel",
         "none": "Sin firma"
-      }
+      },
+      "explainer": "Una plantilla se convierte en un contrato real en cuanto alguien acepta una invitación, con su nombre, puesto y fecha de inicio. Una por rol, o una para todos.",
+      "startWith": "Empieza con",
+      "addAnother": "Añadir otra",
+      "startWithHint": "Elige algo parecido y edítalo. Nada de esto es asesoramiento legal: el texto es tuyo.",
+      "step1": "¿De qué se trata?",
+      "step2": "¿Quién la recibe?",
+      "step3": "¿Cómo se firma?",
+      "step4": "El texto",
+      "documentTypeHint": "Dónde aparecerá en el expediente de la persona.",
+      "peopleToday_one": "{{count}} persona",
+      "peopleToday_other": "{{count}} personas",
+      "reaches_one": "Alcanza a {{count}} persona hoy",
+      "reaches_other": "Alcanza a {{count}} personas hoy",
+      "reachesNobody": "Hoy no alcanza a nadie",
+      "reachesNobodyHint": "Ninguna persona activa coincide con ese rol y puesto. La plantilla quedará sin usar.",
+      "audience": {
+        "everyone": "Todos",
+        "role": "Quien tenga el rol {{role}}",
+        "job": "Quien tenga el puesto {{job}}",
+        "roleAndJob": "{{role}} · {{job}}"
+      },
+      "insertField": "Inserta un campo: se rellena por persona",
+      "preview": "Lo que recibirán",
+      "previewFor": "Rellenado para {{name}}",
+      "previewNoOne": "Aún no hay personas: se muestran marcadores.",
+      "previewEmpty": "El contrato aparecerá aquí mientras escribes.",
+      "untitled": "Sin título",
+      "noJobTitle": "(sin puesto asignado)",
+      "yourCompany": "Tu empresa",
+      "yourAddress": "La dirección de tu empresa",
+      "notAdvice": "Un punto de partida, no asesoramiento legal. Haz revisar tu texto antes de que alguien firme.",
+      "modeHints": {
+        "in_app": "Firman en pantalla. Sellado, con certificado.",
+        "acknowledge": "Confirman que lo han leído. Sin firma.",
+        "wet_ink": "La app se negará a firmarlo. Para contratos que la ley exige en papel.",
+        "none": "Solo se archiva. Nada que hacer."
+      },
+      "starters": {
+        "employment": {
+          "name": "Contrato de trabajo",
+          "description": "Puesto, jornada, preaviso. El que casi todos necesitan primero.",
+          "body": "§1 Puesto\n\n{{member.fullName}} es contratado por {{org.legalName}}, {{org.address}}, como {{member.jobTitle}}, con efecto desde el {{contract.startDate}}.\n\n§2 Jornada\n\nLa jornada semanal ordinaria es de {{contract.weeklyHours}} horas. Su distribución sigue el cuadrante acordado y puede modificarse de mutuo acuerdo.\n\n§3 Lugar de trabajo\n\nEl trabajo se presta en las instalaciones de los clientes y en las de la empresa, según asignación.\n\n§4 Preaviso\n\nCualquiera de las partes puede resolver este contrato respetando los plazos de preaviso legales.\n\n§5 Confidencialidad\n\nLos datos de clientes, los precios y la información de las obras son confidenciales y no pueden compartirse ni conservarse una vez finalizada la relación.\n\nEmitido el {{contract.issuedOn}}."
+        },
+        "freelance": {
+          "name": "Contrato mercantil",
+          "description": "Para autónomos que facturan, tienen su propio seguro y organizan su horario.",
+          "body": "§1 Objeto\n\n{{member.fullName}} es contratado por {{org.legalName}}, {{org.address}}, como profesional independiente para prestar servicios de {{member.jobTitle}} desde el {{contract.startDate}}.\n\n§2 Independencia\n\nEl profesional organiza su propio tiempo y método de trabajo, cuenta con su propio seguro y responde de sus impuestos y cotizaciones. Nada en este contrato crea una relación laboral.\n\n§3 Honorarios\n\nLos trabajos se facturan mensualmente según las tarifas acordadas. Las facturas se abonan en un plazo de 30 días desde su recepción.\n\n§4 Herramientas\n\nEl profesional aporta sus propias herramientas, salvo el equipo que se entregue por separado con recibo.\n\nEmitido el {{contract.issuedOn}}."
+        },
+        "confidentiality": {
+          "name": "Acuerdo de confidencialidad",
+          "description": "Se firma una vez, al incorporarse. Cubre datos de clientes y acceso a las obras.",
+          "body": "§1 Alcance\n\nEn el desarrollo de esta relación, {{member.fullName}} tendrá acceso a direcciones de clientes, códigos de acceso, precios y datos de obra que son confidenciales para {{org.legalName}} y para sus clientes.\n\n§2 Obligación\n\nEsta información no puede compartirse, fotografiarse ni conservarse tras el fin de la relación, en ningún formato, incluidos los dispositivos personales.\n\n§3 Duración\n\nEsta obligación se mantiene durante tres años tras el fin de la relación.\n\nEmitido el {{contract.issuedOn}}."
+        },
+        "equipment": {
+          "name": "Entrega de equipo",
+          "description": "Qué se entregó, en qué estado y cuándo se devuelve.",
+          "body": "Entregado a {{member.fullName}} el {{contract.issuedOn}}:\n\n  Vehículo                       —\n  Teléfono                       —\n  Herramientas                   —\n  Tarjeta de combustible         —\n\nEstado\n\nLos artículos se revisan y fotografían en la entrega. Los daños que excedan el desgaste normal se comunican el mismo día.\n\nDevolución\n\nTodos los artículos se devuelven a {{org.legalName}} el último día de trabajo."
+        },
+        "conduct": {
+          "name": "Código de conducta",
+          "description": "Se lee y se confirma, no se firma. Útil para lo que aplica a todos.",
+          "body": "En la obra\n\nIdentifícate, trabaja dentro del alcance acordado y deja la obra como la encontraste.\n\nCon los clientes\n\nNo se acuerdan trabajos adicionales de palabra. Todo lo que exceda el pedido vuelve a la oficina antes de empezar.\n\nComunicación\n\nTodo lo que sea inseguro, esté dañado o en disputa se comunica el mismo día.\n\nEmitido por {{org.legalName}} el {{contract.issuedOn}}."
+        },
+        "blank": {
+          "name": "Empezar en blanco",
+          "description": "Una página vacía, si vas a pegar tu propio texto."
+        }
+      },
+      "fieldLabels": {
+        "member": {
+          "fullName": "Nombre completo",
+          "firstName": "Nombre",
+          "lastName": "Apellidos",
+          "email": "Correo",
+          "jobTitle": "Puesto",
+          "specialty": "Especialidad"
+        },
+        "org": {
+          "legalName": "Empresa",
+          "address": "Dirección de la empresa",
+          "country": "País",
+          "email": "Correo de la empresa",
+          "phone": "Teléfono de la empresa"
+        },
+        "space": {
+          "name": "Espacio de trabajo",
+          "address": "Dirección del espacio de trabajo"
+        },
+        "contract": {
+          "startDate": "Fecha de inicio",
+          "weeklyHours": "Horas semanales",
+          "issuedOn": "Fecha de emisión"
+        }
+      },
+      "alreadyCovered": "Todas las personas que cubriría ya reciben una plantilla más específica: {{templates}}. Acota esta o edita aquella.",
+      "othersTake_one": "{{count}} persona más encaja, pero ya recibe {{templates}}.",
+      "othersTake_other": "{{count}} personas más encajan, pero ya reciben {{templates}}."
     },
     "compliance": {
       "title": "Cumplimiento de certificados",

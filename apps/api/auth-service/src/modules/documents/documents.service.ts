@@ -23,6 +23,7 @@ import {
   type DocumentCadence,
   type DocumentDirection,
   type SignatureMode,
+  scoreTemplateBinding,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -520,25 +521,13 @@ export class DocumentsService {
     });
     if (candidates.length === 0) return null;
 
-    const position = data.position?.trim().toLowerCase() || null;
-    const score = (t: (typeof candidates)[number]): number => {
-      const roleMatches = !!t.appliesToRoleId && t.appliesToRoleId === data.roleId;
-      const posMatches =
-        !!t.appliesToPosition && !!position && t.appliesToPosition.trim().toLowerCase() === position;
-
-      // A template naming a role or a position that does NOT match is not a
-      // fallback — it is a template for somebody else.
-      if (t.appliesToRoleId && !roleMatches) return -1;
-      if (t.appliesToPosition && !posMatches) return -1;
-
-      if (roleMatches && posMatches) return 3;
-      if (roleMatches) return 2;
-      if (posMatches) return 1;
-      return 0; // binds to nothing: the organization default
-    };
+    // The scoring lives in the shared package because the admin screen shows
+    // who a template will reach BEFORE it is saved. A second copy here would be
+    // a screen that promises one contract and an invitation that issues another.
+    const person = { memberRoleId: data.roleId ?? null, position: data.position ?? null };
 
     const best = candidates
-      .map((t) => ({ t, s: score(t) }))
+      .map((t) => ({ t, s: scoreTemplateBinding(t, person) }))
       .filter((x) => x.s >= 0)
       .sort((a, b) => b.s - a.s)[0];
 
@@ -923,7 +912,13 @@ export class DocumentsService {
     this.assertCanIssue(data.actor);
     return this.prisma.user.findMany({
       where: { organizationId: data.actor.organizationId, isActive: true },
-      select: { id: true, firstName: true, lastName: true, email: true },
+      select: {
+        id: true, firstName: true, lastName: true, email: true,
+        // Role and job title, so the template editor can answer "who would
+        // actually receive this?" while the bindings are being chosen rather
+        // than after a save. Same two fields the server resolves a template by.
+        memberRoleId: true, position: true,
+      },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     });
   }

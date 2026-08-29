@@ -7187,7 +7187,104 @@
         "acknowledge": "Nur bestätigen",
         "wet_ink": "Papierunterschrift",
         "none": "Keine Unterschrift"
-      }
+      },
+      "explainer": "Aus einer Vorlage wird ein echter Vertrag, sobald jemand eine Einladung annimmt — ausgefüllt mit Name, Position und Eintrittsdatum. Eine je Rolle oder eine für alle.",
+      "startWith": "Beginnen mit",
+      "addAnother": "Weitere hinzufügen",
+      "startWithHint": "Wählen Sie etwas Passendes und passen Sie es an. Nichts davon ist Rechtsberatung — der Wortlaut liegt bei Ihnen.",
+      "step1": "Worum geht es?",
+      "step2": "Wer bekommt sie?",
+      "step3": "Wie wird unterschrieben?",
+      "step4": "Der Wortlaut",
+      "documentTypeHint": "Wo sie in der Dokumentenakte erscheint.",
+      "peopleToday_one": "{{count}} Person",
+      "peopleToday_other": "{{count}} Personen",
+      "reaches_one": "Erreicht heute {{count}} Person",
+      "reaches_other": "Erreicht heute {{count}} Personen",
+      "reachesNobody": "Erreicht heute niemanden",
+      "reachesNobodyHint": "Kein aktives Teammitglied passt zu dieser Rolle und Position. Die Vorlage bleibt ungenutzt.",
+      "audience": {
+        "everyone": "Alle",
+        "role": "Alle mit der Rolle {{role}}",
+        "job": "Alle mit der Position {{job}}",
+        "roleAndJob": "{{role}} · {{job}}"
+      },
+      "insertField": "Feld einfügen — wird pro Person ausgefüllt",
+      "preview": "Was ankommt",
+      "previewFor": "Ausgefüllt für {{name}}",
+      "previewNoOne": "Noch keine Mitarbeitenden — es werden Platzhalter gezeigt.",
+      "previewEmpty": "Der Vertrag erscheint hier, während Sie schreiben.",
+      "untitled": "Ohne Titel",
+      "noJobTitle": "(keine Position hinterlegt)",
+      "yourCompany": "Ihr Unternehmen",
+      "yourAddress": "Ihre Firmenadresse",
+      "notAdvice": "Ein Ausgangspunkt, keine Rechtsberatung. Lassen Sie Ihren Wortlaut prüfen, bevor jemand unterschreibt.",
+      "modeHints": {
+        "in_app": "Unterschrift am Bildschirm. Versiegelt, mit Nachweis.",
+        "acknowledge": "Bestätigung, dass gelesen wurde. Keine Unterschrift.",
+        "wet_ink": "Die App verweigert die Unterschrift. Für Verträge, die das Gesetz auf Papier verlangt.",
+        "none": "Wird nur abgelegt. Nichts zu tun."
+      },
+      "starters": {
+        "employment": {
+          "name": "Dienstvertrag",
+          "description": "Position, Arbeitszeit, Kündigung. Der Vertrag, den die meisten zuerst brauchen.",
+          "body": "§1 Tätigkeit\n\n{{member.fullName}} wird von {{org.legalName}}, {{org.address}}, als {{member.jobTitle}} mit Wirkung vom {{contract.startDate}} beschäftigt.\n\n§2 Arbeitszeit\n\nDie regelmäßige wöchentliche Arbeitszeit beträgt {{contract.weeklyHours}} Stunden. Die Lage der Arbeitszeit richtet sich nach dem vereinbarten Dienstplan und kann einvernehmlich geändert werden.\n\n§3 Arbeitsort\n\nDie Arbeitsleistung wird nach Zuteilung bei Kundinnen und Kunden sowie am Betriebsstandort erbracht.\n\n§4 Kündigung\n\nBeide Vertragsteile können dieses Dienstverhältnis unter Einhaltung der gesetzlichen Fristen beenden.\n\n§5 Verschwiegenheit\n\nKundendaten, Preise und Objektinformationen sind vertraulich. Sie dürfen nicht weitergegeben und nach Ende des Dienstverhältnisses nicht aufbewahrt werden.\n\nAusgestellt am {{contract.issuedOn}}."
+        },
+        "freelance": {
+          "name": "Werkvertrag",
+          "description": "Für Selbstständige, die Rechnungen stellen und ihre Zeit selbst einteilen.",
+          "body": "§1 Auftrag\n\n{{member.fullName}} wird von {{org.legalName}}, {{org.address}}, ab {{contract.startDate}} als selbstständige Auftragnehmerin bzw. selbstständiger Auftragnehmer mit Leistungen als {{member.jobTitle}} beauftragt.\n\n§2 Selbstständigkeit\n\nDie Auftragnehmerin bzw. der Auftragnehmer bestimmt Arbeitszeit und Arbeitsweise selbst, trägt die eigene Versicherung und ist für Steuern und Sozialabgaben selbst verantwortlich. Ein Dienstverhältnis wird dadurch nicht begründet.\n\n§3 Honorar\n\nDie Leistungen werden monatlich zu den vereinbarten Sätzen abgerechnet. Rechnungen sind binnen 30 Tagen ab Erhalt zu begleichen.\n\n§4 Arbeitsmittel\n\nDie Arbeitsmittel werden selbst beigestellt, sofern nicht Geräte gesondert übergeben und bestätigt werden.\n\nAusgestellt am {{contract.issuedOn}}."
+        },
+        "confidentiality": {
+          "name": "Verschwiegenheitserklärung",
+          "description": "Einmalig beim Eintritt. Kundendaten und Objektzugang.",
+          "body": "§1 Umfang\n\nIm Rahmen dieser Tätigkeit erhält {{member.fullName}} Kenntnis von Kundenadressen, Zugangscodes, Preisen und Objektdaten, die {{org.legalName}} und ihren Kundinnen und Kunden gegenüber vertraulich sind.\n\n§2 Verpflichtung\n\nDiese Informationen dürfen weder weitergegeben noch fotografiert noch nach Ende der Tätigkeit in irgendeiner Form aufbewahrt werden, auch nicht auf privaten Geräten.\n\n§3 Dauer\n\nDiese Verpflichtung gilt drei Jahre über das Ende der Tätigkeit hinaus.\n\nAusgestellt am {{contract.issuedOn}}."
+        },
+        "equipment": {
+          "name": "Geräteübergabe",
+          "description": "Was übergeben wurde, in welchem Zustand, und wann es zurückkommt.",
+          "body": "Übergeben an {{member.fullName}} am {{contract.issuedOn}}:\n\n  Fahrzeug                       —\n  Telefon                        —\n  Werkzeug                       —\n  Tankkarte                      —\n\nZustand\n\nDie Gegenstände werden bei der Übergabe geprüft und fotografiert. Schäden über die normale Abnützung hinaus sind am selben Tag zu melden.\n\nRückgabe\n\nAlle Gegenstände sind am letzten Arbeitstag an {{org.legalName}} zurückzugeben."
+        },
+        "conduct": {
+          "name": "Verhaltensrichtlinie",
+          "description": "Wird gelesen und bestätigt statt unterschrieben. Gut für alles, was für alle gilt.",
+          "body": "Vor Ort\n\nStellen Sie sich vor, arbeiten Sie im vereinbarten Umfang und hinterlassen Sie die Baustelle so, wie Sie sie vorgefunden haben.\n\nIm Umgang mit Kundinnen und Kunden\n\nZusatzarbeiten werden nicht mündlich vereinbart. Alles über den Auftrag hinaus geht vor Beginn zurück ins Büro.\n\nMeldungen\n\nAlles, was unsicher, beschädigt oder strittig ist, wird noch am selben Tag gemeldet.\n\nAusgestellt von {{org.legalName}} am {{contract.issuedOn}}."
+        },
+        "blank": {
+          "name": "Leer beginnen",
+          "description": "Eine leere Seite, wenn Sie eigenen Text einfügen."
+        }
+      },
+      "fieldLabels": {
+        "member": {
+          "fullName": "Vollständiger Name",
+          "firstName": "Vorname",
+          "lastName": "Nachname",
+          "email": "E-Mail",
+          "jobTitle": "Position",
+          "specialty": "Fachgebiet"
+        },
+        "org": {
+          "legalName": "Unternehmen",
+          "address": "Firmenadresse",
+          "country": "Land",
+          "email": "Firmen-E-Mail",
+          "phone": "Firmentelefon"
+        },
+        "space": {
+          "name": "Arbeitsbereich",
+          "address": "Adresse des Arbeitsbereichs"
+        },
+        "contract": {
+          "startDate": "Eintrittsdatum",
+          "weeklyHours": "Wochenstunden",
+          "issuedOn": "Ausstellungsdatum"
+        }
+      },
+      "alreadyCovered": "Alle Betroffenen erhalten bereits eine genauere Vorlage: {{templates}}. Grenzen Sie diese ein oder bearbeiten Sie stattdessen jene.",
+      "othersTake_one": "{{count}} weitere Person passt, erhält aber bereits {{templates}}.",
+      "othersTake_other": "{{count}} weitere Personen passen, erhalten aber bereits {{templates}}."
     },
     "compliance": {
       "title": "Nachweise",

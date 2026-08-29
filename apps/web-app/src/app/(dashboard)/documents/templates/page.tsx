@@ -3,15 +3,19 @@
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  FileSignature, Plus, Loader2, AlertTriangle, PenSquare, Trash2, ArrowLeft,
-} from "lucide-react"
 import { useRouter } from "next/navigation"
 import {
+  FileSignature, Plus, Loader2, AlertTriangle, PenSquare, Trash2, ArrowLeft,
+  Users, PenLine, CheckCheck, Printer, Ban, Eye,
+} from "lucide-react"
+import {
   documentsApi, organizationsApi,
-  type ContractTemplateRow, type DocumentTypeRow,
+  type ContractTemplateRow, type DocumentTypeRow, type MatchCandidateRow,
 } from "@/lib/api"
-import { MERGE_FIELDS, unknownTokens } from "@hbcfield/shared/client"
+import {
+  MERGE_FIELDS, unknownTokens, renderTemplate, resolveAudiences, audienceFor,
+  STARTER_TEMPLATES, type StarterTemplate,
+} from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
@@ -20,21 +24,30 @@ import { cn } from "@/lib/utils"
 /*
   Contract templates.
 
-  A template is bound to a ROLE and a JOB TITLE — the two things an invitation
-  already carries — so when somebody accepts, the system knows which contract
-  applies without anyone choosing.
+  The first version asked somebody to write an employment contract into an empty
+  textarea, using tokens they had to learn first, bound by two dropdowns whose
+  effect was invisible until a real person accepted an invitation. Three things
+  fix that, and they are the whole of this redesign:
 
-  Two things this editor does that a plain textarea would not:
+  1. NEVER A BLANK PAGE. You pick a starter and edit it. Almost nobody writes a
+     legal document from nothing — they start from the last one and change what
+     differs.
 
-  1. IT LISTS THE FIELDS AND INSERTS THEM. Nobody should have to remember
-     whether it is {{member.jobTitle}} or {{member.position}}, and a token that
-     does not exist produces a contract with braces printed in it.
+  2. A LIVE PREVIEW, filled with a REAL member's real values. Tokens are a
+     detail of how this works; what an administrator needs to see is the letter
+     somebody will actually receive.
 
-  2. IT VALIDATES AS YOU TYPE, against the same catalogue the server checks.
-     Finding out at issue time means finding out during somebody's onboarding.
+  3. WHO GETS IT, COUNTED AND NAMED, while the bindings are being chosen. "Did I
+     set this up right?" is the only question the two dropdowns left unanswered,
+     and it is the one that matters.
 */
 
-const SIGNATURE_MODES = ["IN_APP", "ACKNOWLEDGE", "WET_INK", "NONE"] as const
+const SIGNATURE_MODES = [
+  { key: "IN_APP", Icon: PenLine },
+  { key: "ACKNOWLEDGE", Icon: CheckCheck },
+  { key: "WET_INK", Icon: Printer },
+  { key: "NONE", Icon: Ban },
+] as const
 
 export default function TemplatesPage() {
   const { t } = useTranslation()
@@ -42,7 +55,7 @@ export default function TemplatesPage() {
   const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState<ContractTemplateRow | null>(null)
-  const [creating, setCreating] = useState(false)
+  const [starter, setStarter] = useState<StarterTemplate | null>(null)
 
   const { data: templates = [], isLoading } = useQuery<ContractTemplateRow[]>({
     queryKey: ["document-templates"],
@@ -52,12 +65,25 @@ export default function TemplatesPage() {
     queryKey: ["document-types"],
     queryFn: () => documentsApi.listTypes(),
   })
-  /* The org-scope roles an invitation can name — the same list the Access tab
-     uses, so a template binds to a role that actually exists. */
   const { data: roles = [] } = useQuery({
     queryKey: ["org-roles"],
     queryFn: () => organizationsApi.getRoles("org"),
   })
+  const { data: members = [] } = useQuery<MatchCandidateRow[]>({
+    queryKey: ["document-match-candidates"],
+    queryFn: () => documentsApi.matchCandidates(),
+  })
+
+  /*
+    Who each template ACTUALLY reaches, resolved against all the others.
+
+    Not who it is eligible for: the server issues one contract per person, the
+    best-matching one, so an organization default is eligible for everybody
+    while reaching only the people no sharper template claims. Counting
+    eligibility would tell an administrator their default covers thirteen people
+    on the day it covers four.
+  */
+  const audiences = useMemo(() => resolveAudiences(members, templates), [members, templates])
 
   const remove = useMutation({
     mutationFn: (id: string) => documentsApi.deactivateTemplate(id),
@@ -68,19 +94,22 @@ export default function TemplatesPage() {
     onError: (e: Error) => notify.error(e.message),
   })
 
-  if (editing || creating) {
+  if (editing || starter) {
     return (
       <TemplateEditor
         template={editing}
+        starter={starter}
+        templates={templates}
         types={types}
         roles={roles}
-        onClose={() => { setEditing(null); setCreating(false) }}
+        members={members}
+        onClose={() => { setEditing(null); setStarter(null) }}
       />
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
       <button
         onClick={() => router.push("/documents")}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -89,23 +118,17 @@ export default function TemplatesPage() {
         {t("documents.issue.title")}
       </button>
 
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            {t("documents.templates.title")}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {t("documents.templates.subtitle")}
-          </p>
-        </div>
-        <Button onClick={() => setCreating(true)} disabled={types.length === 0}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t("documents.templates.new")}
-        </Button>
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          {t("documents.templates.title")}
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+          {t("documents.templates.explainer")}
+        </p>
       </header>
 
       {types.length === 0 && (
-        <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+        <div className="mb-5 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             {t("documents.templates.needTypeFirst")}
@@ -113,96 +136,257 @@ export default function TemplatesPage() {
         </div>
       )}
 
+      {/* Existing templates */}
       {isLoading ? (
         <div className="space-y-2">
           {[0, 1].map((i) => <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />)}
         </div>
-      ) : templates.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-14 text-center dark:border-slate-700">
-          <FileSignature className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
-          <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-            {t("documents.templates.empty")}
-          </p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {t("documents.templates.emptyHint")}
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {templates.map((tpl) => (
-            <li
-              key={tpl.id}
-              className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{tpl.name}</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                    v{tpl.version}
-                  </span>
-                  <ModeChip mode={tpl.signatureMode} />
+      ) : templates.length > 0 ? (
+        <ul className="mb-8 space-y-2">
+          {templates.map((tpl) => {
+            const reach = audiences.get(tpl.id) ?? []
+            return (
+              <li
+                key={tpl.id}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{tpl.name}</span>
+                    <ModeChip mode={tpl.signatureMode} />
+                    <span className="text-[11px] text-slate-400">v{tpl.version}</span>
+                  </div>
+                  {/*
+                    Who it reaches, in a sentence, with today's number. The two
+                    dropdowns said "Field Technician"; this says whether anybody
+                    is actually a Field Technician.
+                  */}
+                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{describeAudience(tpl, roles, t)}</span>
+                    <span className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+                      reach.length === 0
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                    )}>
+                      {t("documents.templates.peopleToday", { count: reach.length })}
+                    </span>
+                  </p>
                 </div>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {tpl.type?.label}
-                  {" · "}
-                  {tpl.appliesToRole?.name || tpl.appliesToPosition
-                    ? [tpl.appliesToRole?.name, tpl.appliesToPosition].filter(Boolean).join(" · ")
-                    : t("documents.templates.appliesToAll")}
-                </p>
-              </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="ghost" onClick={() => setEditing(tpl)} aria-label={t("common.edit")}>
-                  <PenSquare className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => remove.mutate(tpl.id)} aria-label={t("common.delete")}>
-                  <Trash2 className="h-4 w-4 text-slate-400" />
-                </Button>
-              </div>
-            </li>
-          ))}
+                <div className="flex gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(tpl)} aria-label={t("common.edit")}>
+                    <PenSquare className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove.mutate(tpl.id)} aria-label={t("common.delete")}>
+                    <Trash2 className="h-4 w-4 text-slate-400" />
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
-      )}
+      ) : null}
+
+      {/* Starters — the alternative to an empty page */}
+      <section>
+        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {templates.length > 0
+            ? t("documents.templates.addAnother")
+            : t("documents.templates.startWith")}
+        </h2>
+        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
+          {t("documents.templates.startWithHint")}
+        </p>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {STARTER_TEMPLATES.map((st) => {
+            const isBlank = st.key === "blank"
+            return (
+              <button
+                key={st.key}
+                onClick={() => setStarter(st)}
+                disabled={types.length === 0}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition-colors disabled:opacity-50",
+                  isBlank
+                    ? "border-dashed border-slate-300 hover:border-slate-400 dark:border-slate-700"
+                    : "border-slate-200 bg-white hover:border-blue-400 dark:border-slate-800 dark:bg-slate-900",
+                )}
+              >
+                <div className="mb-1.5 flex items-center gap-2">
+                  {isBlank
+                    ? <Plus className="h-4 w-4 text-slate-400" />
+                    : <FileSignature className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {t(`documents.templates.starters.${st.key}.name`, { defaultValue: st.name })}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                  {t(`documents.templates.starters.${st.key}.description`, { defaultValue: st.description })}
+                </p>
+              </button>
+            )
+          })}
+        </div>
+      </section>
     </div>
   )
 }
 
+/** "Everyone" · "Field Technicians" · "Anyone in Manager who is a Driver". */
+function describeAudience(
+  tpl: { appliesToRole?: { name: string } | null; appliesToRoleId: string | null; appliesToPosition: string | null },
+  roles: { id: string; name: string }[],
+  t: (k: string, o?: Record<string, unknown>) => string,
+): string {
+  const role = tpl.appliesToRole?.name ?? roles.find((r) => r.id === tpl.appliesToRoleId)?.name ?? null
+  const pos = tpl.appliesToPosition
+  if (role && pos) return t("documents.templates.audience.roleAndJob", { role, job: pos })
+  if (role) return t("documents.templates.audience.role", { role })
+  if (pos) return t("documents.templates.audience.job", { job: pos })
+  return t("documents.templates.audience.everyone")
+}
+
 function ModeChip({ mode }: { mode: string }) {
   const { t } = useTranslation()
-  const map: Record<string, string> = {
-    IN_APP: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
-    ACKNOWLEDGE: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-    // Amber, not red: it is not a fault, it is a legal fact about the document.
-    WET_INK: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-    NONE: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  const map: Record<string, { cls: string; Icon: typeof PenLine }> = {
+    IN_APP: { cls: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400", Icon: PenLine },
+    ACKNOWLEDGE: { cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400", Icon: CheckCheck },
+    // Amber, not red: not a fault, a legal fact about the document.
+    WET_INK: { cls: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400", Icon: Printer },
+    NONE: { cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400", Icon: Ban },
   }
+  const v = map[mode] ?? map.NONE!
   return (
-    <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", map[mode])}>
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", v.cls)}>
+      <v.Icon className="h-3 w-3" />
       {t(`documents.templates.modes.${mode.toLowerCase()}`)}
     </span>
   )
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+
 function TemplateEditor({
-  template, types, roles, onClose,
+  template, starter, templates, types, roles, members, onClose,
 }: {
   template: ContractTemplateRow | null
+  starter: StarterTemplate | null
+  templates: ContractTemplateRow[]
   types: DocumentTypeRow[]
   roles: { id: string; name: string }[]
+  members: MatchCandidateRow[]
   onClose: () => void
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
-  const [name, setName] = useState(template?.name ?? "")
-  const [typeId, setTypeId] = useState(template?.typeId ?? types[0]?.id ?? "")
-  const [body, setBody] = useState(template?.body ?? "")
+  const [name, setName] = useState(
+    template?.name ??
+      // The blank starter's card label ("Start from nothing") is not a name
+      // anybody wants on a contract.
+      (starter && starter.key !== "blank"
+        ? t(`documents.templates.starters.${starter.key}.name`, { defaultValue: starter.name })
+        : ""),
+  )
+  const [typeId, setTypeId] = useState(
+    template?.typeId ??
+      // A conditional, not `includes(starter?.suggestedTypeKey ?? " ")`: the
+      // blank starter suggests no type, and `includes("")` matches every key.
+      (starter?.suggestedTypeKey
+        ? types.find((ty) => ty.key.includes(starter.suggestedTypeKey))?.id
+        : undefined) ??
+      types[0]?.id ??
+      "",
+  )
+  // The wording ships in the reader's language — an Austrian admin opening
+  // "Dienstvertrag" and finding English clauses would rewrite it from scratch.
+  const [body, setBody] = useState(
+    template?.body ??
+      (starter
+        ? t(`documents.templates.starters.${starter.key}.body`, { defaultValue: starter.body })
+        : ""),
+  )
   const [roleId, setRoleId] = useState(template?.appliesToRoleId ?? "")
   const [position, setPosition] = useState(template?.appliesToPosition ?? "")
-  const [mode, setMode] = useState<string>(template?.signatureMode ?? "IN_APP")
+  const [mode, setMode] = useState<string>(template?.signatureMode ?? starter?.signatureMode ?? "IN_APP")
 
-  /* Validated against the SAME catalogue the server checks, so the editor and
-     the API can never disagree about what a valid template is. */
   const unknown = useMemo(() => unknownTokens(body), [body])
+  /*
+    Who this draft would reach, resolved against the templates already saved.
+
+    Not eligibility: an existing Field Technician contract keeps its people even
+    while a broader draft is open, so a new organization default correctly
+    reports the handful nobody else claims rather than the whole company.
+
+    A NEW template goes last, because that is the order the server will read it
+    in and ties go to the older one. An EDIT keeps its own place.
+  */
+  const DRAFT = "__draft__"
+  const { reach, takenBy } = useMemo(() => {
+    const binding = {
+      appliesToRoleId: roleId || null,
+      appliesToPosition: position || null,
+    }
+    const draft = { id: DRAFT, ...binding }
+    const set = template
+      ? templates.map((t) => (t.id === template.id ? { ...t, ...draft, id: DRAFT } : t))
+      : [...templates, draft]
+
+    const resolved = resolveAudiences(members, set)
+    const mine = resolved.get(DRAFT) ?? []
+
+    /*
+      "Reaches nobody" has TWO causes and they need different sentences.
+
+      Nobody matches the binding — a job title nobody holds — is a mistake to
+      fix. Everybody who matches is already covered by a sharper template is
+      correct behaviour, and telling somebody "no active member matches that
+      role" while thirteen of them plainly do is the sort of wrong that sends
+      them hunting for a bug in their own data.
+    */
+    const claimed = new Set(mine)
+    const takers = new Map<string, number>()
+    for (const m of audienceFor(members, binding)) {
+      if (claimed.has(m)) continue
+      const winner = [...resolved.entries()].find(([, ms]) => ms.includes(m))?.[0]
+      const label = templates.find((t) => t.id === winner)?.name
+      if (label) takers.set(label, (takers.get(label) ?? 0) + 1)
+    }
+
+    return { reach: mine, takenBy: [...takers.entries()].sort((a, b) => b[1] - a[1]) }
+  }, [members, templates, template, roleId, position])
+
+  /*
+    The preview, filled with a REAL member.
+
+    Whoever this template would actually reach — not a fictional "John Doe" —
+    because the thing an administrator is checking is whether the letter reads
+    correctly for their own people, including the ones whose job title is blank.
+  */
+  const sample = reach[0] ?? members[0] ?? null
+  const preview = useMemo(() => {
+    const values: Record<string, string> = {
+      "member.fullName": sample ? `${sample.firstName} ${sample.lastName}` : "—",
+      "member.firstName": sample?.firstName ?? "—",
+      "member.lastName": sample?.lastName ?? "—",
+      "member.email": sample?.email ?? "—",
+      "member.jobTitle": sample?.position || t("documents.templates.noJobTitle"),
+      "member.specialty": "—",
+      "org.legalName": t("documents.templates.yourCompany"),
+      "org.address": t("documents.templates.yourAddress"),
+      "org.country": "AT",
+      "org.email": "—",
+      "org.phone": "—",
+      "space.name": "—",
+      "space.address": "—",
+      "contract.startDate": new Date().toLocaleDateString(),
+      "contract.weeklyHours": "38.5",
+      "contract.issuedOn": new Date().toLocaleDateString(),
+    }
+    return renderTemplate(body, values).text
+  }, [body, sample, t])
 
   const save = useMutation({
     mutationFn: async () => {
@@ -228,7 +412,7 @@ function TemplateEditor({
   const canSave = !!name.trim() && !!typeId && !!body.trim() && unknown.length === 0
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <button
         onClick={onClose}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -237,69 +421,146 @@ function TemplateEditor({
         {t("documents.templates.title")}
       </button>
 
-      <h1 className="mb-5 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
         {template ? t("documents.templates.edit") : t("documents.templates.new")}
       </h1>
 
-      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-4">
-          <Field label={t("documents.templates.name")}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </Field>
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        {/* ── Left: three numbered steps ─────────────────────────────────── */}
+        <div className="space-y-6">
+          <Step n={1} title={t("documents.templates.step1")}>
+            <div className="space-y-3">
+              <Field label={t("documents.templates.name")}>
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
+              </Field>
+              <Field label={t("documents.templates.documentType")} hint={t("documents.templates.documentTypeHint")}>
+                <Select value={typeId} onChange={setTypeId}
+                  options={types.map((ty) => ({ value: ty.id, label: ty.label }))} />
+              </Field>
+            </div>
+          </Step>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("documents.templates.documentType")}>
-              <Select value={typeId} onChange={setTypeId}
-                options={types.map((ty) => ({ value: ty.id, label: ty.label }))} />
-            </Field>
-            <Field label={t("documents.templates.signatureMode")}>
-              <Select value={mode} onChange={setMode}
-                options={SIGNATURE_MODES.map((m) => ({
-                  value: m, label: t(`documents.templates.modes.${m.toLowerCase()}`),
-                }))} />
-            </Field>
-          </div>
+          <Step n={2} title={t("documents.templates.step2")}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label={t("documents.templates.role")}>
+                <Select value={roleId} onChange={setRoleId}
+                  options={[{ value: "", label: t("documents.templates.anyRole") },
+                            ...roles.map((r) => ({ value: r.id, label: r.name }))]} />
+              </Field>
+              <Field label={t("documents.templates.jobTitle")}>
+                <Input value={position} onChange={(e) => setPosition(e.target.value)}
+                  placeholder={t("documents.templates.anyJobTitle")} />
+              </Field>
+            </div>
 
-          {mode === "WET_INK" && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-slate-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-slate-300">
-              {t("documents.templates.wetInkNotice")}
-            </p>
-          )}
+            {/* The answer to "did I set this up right?" */}
+            <div className={cn(
+              "mt-3 flex items-start gap-2.5 rounded-lg border p-3",
+              reach.length === 0
+                ? "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40"
+                : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50",
+            )}>
+              <Users className={cn("mt-0.5 h-4 w-4 shrink-0",
+                reach.length === 0 ? "text-amber-600" : "text-slate-400")} />
+              <div className="min-w-0 text-sm">
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {reach.length === 0
+                    ? t("documents.templates.reachesNobody")
+                    : t("documents.templates.reaches", { count: reach.length })}
+                </p>
+                <p className="mt-0.5 text-slate-500 dark:text-slate-400">
+                  {reach.length > 0
+                    ? reach.slice(0, 8).map((m) => m.firstName).join(", ") +
+                      (reach.length > 8 ? ` +${reach.length - 8}` : "")
+                    : takenBy.length > 0
+                      ? t("documents.templates.alreadyCovered", {
+                          templates: takenBy.map(([label]) => label).join(", "),
+                        })
+                      : t("documents.templates.reachesNobodyHint")}
+                </p>
+                {/* A sharper template winning people is not a warning; it is the
+                    rule working. Only say so when it is not the whole story. */}
+                {reach.length > 0 && takenBy.length > 0 && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    {t("documents.templates.othersTake", {
+                      count: takenBy.reduce((n, [, c]) => n + c, 0),
+                      templates: takenBy.map(([label]) => label).join(", "),
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Step>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("documents.templates.role")} hint={t("documents.templates.anyRole")}>
-              <Select value={roleId} onChange={setRoleId}
-                options={[{ value: "", label: t("documents.templates.anyRole") },
-                          ...roles.map((r) => ({ value: r.id, label: r.name }))]} />
-            </Field>
-            <Field label={t("documents.templates.jobTitle")} hint={t("documents.templates.anyJobTitle")}>
-              <Input value={position} onChange={(e) => setPosition(e.target.value)}
-                placeholder={t("documents.templates.anyJobTitle")} />
-            </Field>
-          </div>
+          <Step n={3} title={t("documents.templates.step3")}>
+            {/* Radio cards rather than a dropdown: four options, each with a
+                real consequence, and a dropdown hides three of them. */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SIGNATURE_MODES.map(({ key, Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setMode(key)}
+                  className={cn(
+                    "flex items-start gap-2.5 rounded-lg border p-3 text-left transition-colors",
+                    mode === key
+                      ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500 dark:bg-blue-950/40"
+                      : "border-slate-200 hover:border-slate-300 dark:border-slate-800",
+                  )}
+                >
+                  <Icon className={cn("mt-0.5 h-4 w-4 shrink-0",
+                    mode === key ? "text-blue-600 dark:text-blue-400" : "text-slate-400")} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {t(`documents.templates.modes.${key.toLowerCase()}`)}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                      {t(`documents.templates.modeHints.${key.toLowerCase()}`)}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Step>
 
-          <Field label={t("documents.templates.body")}>
+          <Step n={4} title={t("documents.templates.step4")}>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              rows={18}
+              rows={16}
               spellCheck
               className="w-full rounded-lg border border-slate-200 bg-white p-3 font-mono text-sm leading-relaxed text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               placeholder={t("documents.templates.bodyPlaceholder")}
             />
-          </Field>
 
-          {unknown.length > 0 && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900 dark:bg-red-950/40">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-              <p className="text-slate-700 dark:text-slate-300">
-                {t("documents.templates.unknownFields")}{" "}
-                <span className="font-mono">{unknown.join(", ")}</span>
-              </p>
+            {/* Fields as chips under the box, showing what each becomes. */}
+            <p className="mb-1.5 mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t("documents.templates.insertField")}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {MERGE_FIELDS.map((f) => (
+                <button
+                  key={f.token}
+                  onClick={() => insert(f.token)}
+                  title={f.example}
+                  className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-400"
+                >
+                  {t(`documents.templates.fieldLabels.${f.token}`, { defaultValue: f.label })}
+                </button>
+              ))}
             </div>
-          )}
 
-          <div className="flex justify-end gap-2">
+            {unknown.length > 0 && (
+              <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900 dark:bg-red-950/40">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+                <p className="text-slate-700 dark:text-slate-300">
+                  {t("documents.templates.unknownFields")}{" "}
+                  <span className="font-mono">{unknown.join(", ")}</span>
+                </p>
+              </div>
+            )}
+          </Step>
+
+          <div className="flex justify-end gap-2 pb-4">
             <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
             <Button onClick={() => save.mutate()} disabled={!canSave || save.isPending}>
               {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -308,33 +569,59 @@ function TemplateEditor({
           </div>
         </div>
 
-        {/* The field list. Click to insert — nobody should have to remember
-            whether it is jobTitle or position. */}
-        <aside className="h-fit rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-          <h2 className="mb-3 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            {t("documents.templates.fields")}
-          </h2>
-          <ul className="space-y-1">
-            {MERGE_FIELDS.map((f) => (
-              <li key={f.token}>
-                <button
-                  onClick={() => insert(f.token)}
-                  className="flex w-full items-baseline justify-between gap-2 rounded px-2 py-1 text-left hover:bg-white dark:hover:bg-slate-800"
-                >
-                  <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400">
-                    {f.token}
-                  </span>
-                  <span className="truncate text-[11px] text-slate-400">{f.example}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            {t("documents.templates.fieldsHint")}
+        {/* ── Right: what the member will actually receive ───────────────── */}
+        <aside className="lg:sticky lg:top-6 lg:h-fit">
+          <div className="mb-2 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-slate-400" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {t("documents.templates.preview")}
+            </h2>
+          </div>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            {sample
+              ? t("documents.templates.previewFor", { name: `${sample.firstName} ${sample.lastName}` })
+              : t("documents.templates.previewNoOne")}
+          </p>
+
+          {/* A page, not a code block: the point is that it reads like the
+              letter somebody receives, with the tokens already gone. */}
+          <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {body.trim() ? (
+              <>
+                <p className="mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 dark:border-slate-800 dark:text-slate-100">
+                  {types.find((ty) => ty.id === typeId)?.label || name || t("documents.templates.untitled")}
+                </p>
+                <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
+                  {preview}
+                </pre>
+              </>
+            ) : (
+              <p className="py-10 text-center text-sm text-slate-400">
+                {t("documents.templates.previewEmpty")}
+              </p>
+            )}
+          </div>
+
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">
+            {t("documents.templates.notAdvice")}
           </p>
         </aside>
       </div>
     </div>
+  )
+}
+
+function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900">
+          {n}
+        </span>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      </div>
+      <div className="pl-[34px]">{children}</div>
+    </section>
   )
 }
 

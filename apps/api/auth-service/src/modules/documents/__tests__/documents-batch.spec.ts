@@ -82,11 +82,24 @@ describe('DocumentsService — the staged batch', () => {
       expect(where).toMatchObject({ organizationId: 'org1', isActive: true });
     });
 
-    it('returns names and emails only — never a permission or a hash', async () => {
+    it('selects an explicit column list — never a permission or a hash', async () => {
+      /*
+        An allow-list, not a fixed list: the template screen needs `position`
+        and `memberRoleId` to say who a contract will reach, and pinning the
+        exact four columns turned that into a test failure rather than the
+        review question it should be. What must never widen is the KIND of
+        column — a credential, a permission flag, or anything about pay.
+      */
       prisma.user.findMany.mockResolvedValue([]);
       await service.listMatchCandidates({ actor: issuer });
       const select = prisma.user.findMany.mock.calls[0][0].select;
-      expect(Object.keys(select).sort()).toEqual(['email', 'firstName', 'id', 'lastName']);
+
+      const ALLOWED = ['id', 'firstName', 'lastName', 'email', 'position', 'memberRoleId'];
+      expect(Object.keys(select).filter((k) => !ALLOWED.includes(k))).toEqual([]);
+      // Named outright, so a rename cannot quietly reintroduce one.
+      for (const forbidden of ['passwordHash', 'password', 'canManageUsers', 'hourlyRate', 'salary']) {
+        expect(select[forbidden]).toBeUndefined();
+      }
     });
   });
 

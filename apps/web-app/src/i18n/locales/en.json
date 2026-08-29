@@ -7187,7 +7187,104 @@
         "acknowledge": "Acknowledge only",
         "wet_ink": "Wet ink",
         "none": "No signature"
-      }
+      },
+      "explainer": "A template becomes a real contract the moment somebody accepts an invitation — filled in with their name, job title and start date. One per role, or one for everyone.",
+      "startWith": "Start with",
+      "addAnother": "Add another",
+      "startWithHint": "Pick something close and edit it. Nothing here is legal advice — the wording is yours to change.",
+      "step1": "What is it?",
+      "step2": "Who gets it?",
+      "step3": "How is it signed?",
+      "step4": "The wording",
+      "documentTypeHint": "Where it will appear in the member’s file.",
+      "peopleToday_one": "{{count}} person",
+      "peopleToday_other": "{{count}} people",
+      "reaches_one": "Reaches {{count}} person today",
+      "reaches_other": "Reaches {{count}} people today",
+      "reachesNobody": "This reaches nobody today",
+      "reachesNobodyHint": "No active member matches that role and job title. The template will sit unused until someone does.",
+      "audience": {
+        "everyone": "Everyone",
+        "role": "Anyone with the {{role}} role",
+        "job": "Anyone whose job title is {{job}}",
+        "roleAndJob": "{{role}} · {{job}}"
+      },
+      "insertField": "Insert a field — it fills in per person",
+      "preview": "What they will receive",
+      "previewFor": "Filled in for {{name}}",
+      "previewNoOne": "No members yet, so this shows placeholders.",
+      "previewEmpty": "The contract will appear here as you write it.",
+      "untitled": "Untitled",
+      "noJobTitle": "(no job title set)",
+      "yourCompany": "Your company",
+      "yourAddress": "Your company address",
+      "notAdvice": "A starting point, not legal advice. Have your own wording checked before anyone signs it.",
+      "modeHints": {
+        "in_app": "They draw a signature on screen. Sealed, with a certificate.",
+        "acknowledge": "They confirm they have read it. No signature.",
+        "wet_ink": "The app will refuse to sign it. For contracts the law requires on paper.",
+        "none": "Just filed. Nothing to do."
+      },
+      "starters": {
+        "employment": {
+          "name": "Employment contract",
+          "description": "Position, hours, notice. The one most people need first.",
+          "body": "§1 Position\n\n{{member.fullName}} is engaged by {{org.legalName}}, {{org.address}}, as {{member.jobTitle}}, commencing {{contract.startDate}}.\n\n§2 Working time\n\nRegular weekly working time is {{contract.weeklyHours}} hours. The distribution of those hours follows the agreed rota and may be varied by agreement.\n\n§3 Place of work\n\nWork is performed at customer sites and at the company premises, as assigned.\n\n§4 Notice\n\nEither party may terminate this agreement in accordance with the statutory notice periods.\n\n§5 Confidentiality\n\nCustomer details, pricing and site information are confidential and may not be shared or retained after this engagement ends.\n\nIssued on {{contract.issuedOn}}."
+        },
+        "freelance": {
+          "name": "Freelance agreement",
+          "description": "For contractors who invoice, carry their own insurance and set their own hours.",
+          "body": "§1 Engagement\n\n{{member.fullName}} is engaged by {{org.legalName}}, {{org.address}}, as an independent contractor providing {{member.jobTitle}} services from {{contract.startDate}}.\n\n§2 Independence\n\nThe contractor determines their own working time and method, carries their own insurance, and is responsible for their own tax and social contributions. Nothing in this agreement creates an employment relationship.\n\n§3 Fees\n\nWork is invoiced monthly against agreed rates. Invoices are settled within 30 days of receipt.\n\n§4 Equipment\n\nThe contractor provides their own tools unless equipment is issued separately and receipted.\n\nIssued on {{contract.issuedOn}}."
+        },
+        "confidentiality": {
+          "name": "Confidentiality agreement",
+          "description": "Signed once, on joining. Covers customer data and site access.",
+          "body": "§1 Scope\n\nIn the course of this engagement {{member.fullName}} will encounter customer addresses, access codes, pricing and site details that are confidential to {{org.legalName}} and to its clients.\n\n§2 Obligation\n\nThis information may not be shared, photographed or retained after the engagement ends, in any form, including on personal devices.\n\n§3 Duration\n\nThis obligation continues for three years after the engagement ends.\n\nIssued on {{contract.issuedOn}}."
+        },
+        "equipment": {
+          "name": "Equipment handover",
+          "description": "What was issued, in what condition, and when it comes back.",
+          "body": "Issued to {{member.fullName}} on {{contract.issuedOn}}:\n\n  Vehicle                        —\n  Phone                          —\n  Tools                          —\n  Fuel card                      —\n\nCondition\n\nItems are checked and photographed at handover. Damage beyond fair wear and tear is reported on the day it happens.\n\nReturn\n\nAll items return to {{org.legalName}} on the last working day of the engagement."
+        },
+        "conduct": {
+          "name": "Code of conduct",
+          "description": "Read and confirmed rather than signed. Good for anything that applies to everyone.",
+          "body": "On site\n\nIdentify yourself, work to the agreed scope, and leave the site as you found it.\n\nWith customers\n\nNo additional work is agreed verbally. Anything beyond the order goes back to the office before it starts.\n\nReporting\n\nAnything unsafe, damaged or disputed is reported the same day.\n\nIssued by {{org.legalName}} on {{contract.issuedOn}}."
+        },
+        "blank": {
+          "name": "Start from nothing",
+          "description": "An empty page, if you are pasting in your own wording."
+        }
+      },
+      "fieldLabels": {
+        "member": {
+          "fullName": "Full name",
+          "firstName": "First name",
+          "lastName": "Last name",
+          "email": "Email",
+          "jobTitle": "Job title",
+          "specialty": "Specialty"
+        },
+        "org": {
+          "legalName": "Company",
+          "address": "Company address",
+          "country": "Country",
+          "email": "Company email",
+          "phone": "Company phone"
+        },
+        "space": {
+          "name": "Workspace",
+          "address": "Workspace address"
+        },
+        "contract": {
+          "startDate": "Start date",
+          "weeklyHours": "Weekly hours",
+          "issuedOn": "Issue date"
+        }
+      },
+      "alreadyCovered": "Everyone it would cover already gets a more specific template: {{templates}}. Narrow this one, or edit that one instead.",
+      "othersTake_one": "{{count}} more person matches but already gets {{templates}}.",
+      "othersTake_other": "{{count}} more people match but already get {{templates}}."
     },
     "compliance": {
       "title": "Credential compliance",

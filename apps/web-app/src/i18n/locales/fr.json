@@ -7196,7 +7196,104 @@
         "acknowledge": "Accusé seulement",
         "wet_ink": "Signature papier",
         "none": "Sans signature"
-      }
+      },
+      "explainer": "Un modèle devient un vrai contrat dès qu’une invitation est acceptée — rempli avec le nom, le poste et la date d’entrée. Un par rôle, ou un pour tout le monde.",
+      "startWith": "Commencer avec",
+      "addAnother": "En ajouter un",
+      "startWithHint": "Choisissez ce qui s’en rapproche et modifiez-le. Rien ici n’est un conseil juridique : le texte vous appartient.",
+      "step1": "De quoi s’agit-il ?",
+      "step2": "Qui le reçoit ?",
+      "step3": "Comment est-il signé ?",
+      "step4": "Le texte",
+      "documentTypeHint": "Où il apparaîtra dans le dossier du membre.",
+      "peopleToday_one": "{{count}} personne",
+      "peopleToday_other": "{{count}} personnes",
+      "reaches_one": "Concerne {{count}} personne aujourd’hui",
+      "reaches_other": "Concerne {{count}} personnes aujourd’hui",
+      "reachesNobody": "Ne concerne personne aujourd’hui",
+      "reachesNobodyHint": "Aucun membre actif ne correspond à ce rôle et ce poste. Le modèle restera inutilisé.",
+      "audience": {
+        "everyone": "Tout le monde",
+        "role": "Toute personne ayant le rôle {{role}}",
+        "job": "Toute personne au poste {{job}}",
+        "roleAndJob": "{{role}} · {{job}}"
+      },
+      "insertField": "Insérer un champ — rempli pour chaque personne",
+      "preview": "Ce qu’ils recevront",
+      "previewFor": "Rempli pour {{name}}",
+      "previewNoOne": "Aucun membre pour l’instant : des exemples sont affichés.",
+      "previewEmpty": "Le contrat apparaîtra ici au fur et à mesure.",
+      "untitled": "Sans titre",
+      "noJobTitle": "(aucun poste renseigné)",
+      "yourCompany": "Votre société",
+      "yourAddress": "L’adresse de votre société",
+      "notAdvice": "Un point de départ, pas un conseil juridique. Faites vérifier votre texte avant toute signature.",
+      "modeHints": {
+        "in_app": "Signature à l’écran. Scellée, avec certificat.",
+        "acknowledge": "Confirmation de lecture. Sans signature.",
+        "wet_ink": "L’application refusera de le signer. Pour les contrats exigés sur papier.",
+        "none": "Simplement classé. Rien à faire."
+      },
+      "starters": {
+        "employment": {
+          "name": "Contrat de travail",
+          "description": "Poste, horaires, préavis. Celui dont la plupart ont besoin en premier.",
+          "body": "§1 Poste\n\n{{member.fullName}} est engagé par {{org.legalName}}, {{org.address}}, en qualité de {{member.jobTitle}}, à compter du {{contract.startDate}}.\n\n§2 Temps de travail\n\nLa durée hebdomadaire ordinaire est de {{contract.weeklyHours}} heures. Sa répartition suit le planning convenu et peut être modifiée d’un commun accord.\n\n§3 Lieu de travail\n\nLe travail est effectué chez les clients et dans les locaux de la société, selon les affectations.\n\n§4 Préavis\n\nChaque partie peut mettre fin au contrat dans le respect des délais de préavis légaux.\n\n§5 Confidentialité\n\nLes coordonnées des clients, les prix et les informations de chantier sont confidentiels et ne peuvent être communiqués ni conservés après la fin du contrat.\n\nÉtabli le {{contract.issuedOn}}."
+        },
+        "freelance": {
+          "name": "Contrat de prestation",
+          "description": "Pour les indépendants qui facturent, ont leur assurance et gèrent leurs horaires.",
+          "body": "§1 Mission\n\n{{member.fullName}} est missionné par {{org.legalName}}, {{org.address}}, en qualité de prestataire indépendant pour des prestations de {{member.jobTitle}} à compter du {{contract.startDate}}.\n\n§2 Indépendance\n\nLe prestataire organise librement son temps et ses méthodes de travail, dispose de sa propre assurance et répond de ses impôts et cotisations. Le présent contrat ne crée aucun lien de subordination.\n\n§3 Honoraires\n\nLes prestations sont facturées mensuellement aux tarifs convenus. Les factures sont réglées sous 30 jours à compter de leur réception.\n\n§4 Matériel\n\nLe prestataire fournit son propre outillage, sauf matériel remis séparément avec accusé de réception.\n\nÉtabli le {{contract.issuedOn}}."
+        },
+        "confidentiality": {
+          "name": "Accord de confidentialité",
+          "description": "Signé une fois, à l’arrivée. Couvre les données clients et l’accès aux sites.",
+          "body": "§1 Champ\n\nDans le cadre de cette mission, {{member.fullName}} aura connaissance d’adresses de clients, de codes d’accès, de prix et d’informations de chantier confidentiels pour {{org.legalName}} et pour ses clients.\n\n§2 Engagement\n\nCes informations ne peuvent être communiquées, photographiées ni conservées après la fin de la mission, sous quelque forme que ce soit, y compris sur des appareils personnels.\n\n§3 Durée\n\nCet engagement se poursuit pendant trois ans après la fin de la mission.\n\nÉtabli le {{contract.issuedOn}}."
+        },
+        "equipment": {
+          "name": "Remise de matériel",
+          "description": "Ce qui a été remis, dans quel état, et quand il revient.",
+          "body": "Remis à {{member.fullName}} le {{contract.issuedOn}} :\n\n  Véhicule                       —\n  Téléphone                      —\n  Outillage                      —\n  Carte carburant                —\n\nÉtat\n\nLe matériel est vérifié et photographié à la remise. Tout dommage dépassant l’usure normale est signalé le jour même.\n\nRestitution\n\nL’ensemble du matériel est restitué à {{org.legalName}} le dernier jour travaillé."
+        },
+        "conduct": {
+          "name": "Code de conduite",
+          "description": "Lu et confirmé plutôt que signé. Idéal pour ce qui s’applique à tous.",
+          "body": "Sur le chantier\n\nPrésentez-vous, tenez-vous au périmètre convenu et laissez le chantier tel que vous l’avez trouvé.\n\nAvec les clients\n\nAucun travail supplémentaire ne se convient oralement. Tout ce qui dépasse la commande repasse par le bureau avant d’être commencé.\n\nSignalements\n\nTout ce qui est dangereux, endommagé ou contesté est signalé le jour même.\n\nÉtabli par {{org.legalName}} le {{contract.issuedOn}}."
+        },
+        "blank": {
+          "name": "Partir de zéro",
+          "description": "Une page vide, si vous collez votre propre texte."
+        }
+      },
+      "fieldLabels": {
+        "member": {
+          "fullName": "Nom complet",
+          "firstName": "Prénom",
+          "lastName": "Nom",
+          "email": "E-mail",
+          "jobTitle": "Poste",
+          "specialty": "Spécialité"
+        },
+        "org": {
+          "legalName": "Société",
+          "address": "Adresse de la société",
+          "country": "Pays",
+          "email": "E-mail de la société",
+          "phone": "Téléphone de la société"
+        },
+        "space": {
+          "name": "Espace de travail",
+          "address": "Adresse de l’espace de travail"
+        },
+        "contract": {
+          "startDate": "Date d’entrée",
+          "weeklyHours": "Heures hebdomadaires",
+          "issuedOn": "Date d’émission"
+        }
+      },
+      "alreadyCovered": "Toutes les personnes concernées reçoivent déjà un modèle plus précis : {{templates}}. Restreignez celui-ci, ou modifiez plutôt l’autre.",
+      "othersTake_one": "{{count}} personne de plus correspond, mais reçoit déjà {{templates}}.",
+      "othersTake_other": "{{count}} personnes de plus correspondent, mais reçoivent déjà {{templates}}."
     },
     "compliance": {
       "title": "Conformité des certificats",

@@ -7196,7 +7196,104 @@
         "acknowledge": "Solo conferma",
         "wet_ink": "Firma su carta",
         "none": "Nessuna firma"
-      }
+      },
+      "explainer": "Un modello diventa un contratto reale nel momento in cui qualcuno accetta un invito, compilato con nome, mansione e data di inizio. Uno per ruolo, o uno per tutti.",
+      "startWith": "Inizia con",
+      "addAnother": "Aggiungine un altro",
+      "startWithHint": "Scegli qualcosa di simile e modificalo. Nulla di questo è consulenza legale: il testo è tuo.",
+      "step1": "Di cosa si tratta?",
+      "step2": "Chi lo riceve?",
+      "step3": "Come si firma?",
+      "step4": "Il testo",
+      "documentTypeHint": "Dove comparirà nel fascicolo della persona.",
+      "peopleToday_one": "{{count}} persona",
+      "peopleToday_other": "{{count}} persone",
+      "reaches_one": "Oggi riguarda {{count}} persona",
+      "reaches_other": "Oggi riguarda {{count}} persone",
+      "reachesNobody": "Oggi non riguarda nessuno",
+      "reachesNobodyHint": "Nessuna persona attiva corrisponde a quel ruolo e mansione. Il modello resterà inutilizzato.",
+      "audience": {
+        "everyone": "Tutti",
+        "role": "Chi ha il ruolo {{role}}",
+        "job": "Chi ha la mansione {{job}}",
+        "roleAndJob": "{{role}} · {{job}}"
+      },
+      "insertField": "Inserisci un campo: si compila per ogni persona",
+      "preview": "Cosa riceveranno",
+      "previewFor": "Compilato per {{name}}",
+      "previewNoOne": "Ancora nessuna persona: vengono mostrati segnaposto.",
+      "previewEmpty": "Il contratto comparirà qui mentre scrivi.",
+      "untitled": "Senza titolo",
+      "noJobTitle": "(nessuna mansione impostata)",
+      "yourCompany": "La tua azienda",
+      "yourAddress": "L’indirizzo della tua azienda",
+      "notAdvice": "Un punto di partenza, non consulenza legale. Fai verificare il testo prima che qualcuno firmi.",
+      "modeHints": {
+        "in_app": "Firmano a schermo. Sigillato, con certificato.",
+        "acknowledge": "Confermano di averlo letto. Nessuna firma.",
+        "wet_ink": "L’app rifiuterà di firmarlo. Per contratti che la legge richiede su carta.",
+        "none": "Solo archiviato. Nulla da fare."
+      },
+      "starters": {
+        "employment": {
+          "name": "Contratto di lavoro",
+          "description": "Mansione, orario, preavviso. Quello che serve per primo alla maggior parte.",
+          "body": "§1 Mansione\n\n{{member.fullName}} è assunto da {{org.legalName}}, {{org.address}}, con la mansione di {{member.jobTitle}}, a decorrere dal {{contract.startDate}}.\n\n§2 Orario di lavoro\n\nL’orario settimanale ordinario è di {{contract.weeklyHours}} ore. La distribuzione segue il turno concordato e può essere modificata di comune accordo.\n\n§3 Luogo di lavoro\n\nLa prestazione si svolge presso i clienti e presso la sede aziendale, secondo assegnazione.\n\n§4 Preavviso\n\nCiascuna parte può recedere dal presente contratto nel rispetto dei termini di preavviso di legge.\n\n§5 Riservatezza\n\nI dati dei clienti, i prezzi e le informazioni di cantiere sono riservati e non possono essere divulgati né conservati dopo la cessazione del rapporto.\n\nEmesso il {{contract.issuedOn}}."
+        },
+        "freelance": {
+          "name": "Contratto di collaborazione",
+          "description": "Per chi fattura, ha una propria assicurazione e gestisce i propri orari.",
+          "body": "§1 Incarico\n\n{{member.fullName}} riceve da {{org.legalName}}, {{org.address}}, incarico come collaboratore autonomo per prestazioni di {{member.jobTitle}} a partire dal {{contract.startDate}}.\n\n§2 Autonomia\n\nIl collaboratore determina autonomamente tempi e modalità di lavoro, dispone di una propria assicurazione ed è responsabile di imposte e contributi. Il presente accordo non costituisce un rapporto di lavoro subordinato.\n\n§3 Compenso\n\nLe prestazioni sono fatturate mensilmente alle tariffe concordate. Le fatture sono saldate entro 30 giorni dal ricevimento.\n\n§4 Attrezzature\n\nIl collaboratore utilizza attrezzature proprie, salvo materiale consegnato separatamente con ricevuta.\n\nEmesso il {{contract.issuedOn}}."
+        },
+        "confidentiality": {
+          "name": "Accordo di riservatezza",
+          "description": "Si firma una volta, all’ingresso. Copre dati dei clienti e accesso ai cantieri.",
+          "body": "§1 Ambito\n\nNello svolgimento dell’incarico {{member.fullName}} verrà a conoscenza di indirizzi dei clienti, codici di accesso, prezzi e dati di cantiere riservati per {{org.legalName}} e per i suoi clienti.\n\n§2 Obbligo\n\nTali informazioni non possono essere divulgate, fotografate né conservate dopo la fine dell’incarico, in alcuna forma, compresi i dispositivi personali.\n\n§3 Durata\n\nL’obbligo permane per tre anni dalla cessazione dell’incarico.\n\nEmesso il {{contract.issuedOn}}."
+        },
+        "equipment": {
+          "name": "Consegna attrezzatura",
+          "description": "Cosa è stato consegnato, in che stato e quando torna indietro.",
+          "body": "Consegnato a {{member.fullName}} il {{contract.issuedOn}}:\n\n  Veicolo                        —\n  Telefono                       —\n  Attrezzatura                   —\n  Carta carburante               —\n\nStato\n\nIl materiale viene controllato e fotografato alla consegna. I danni oltre la normale usura sono segnalati lo stesso giorno.\n\nRestituzione\n\nTutto il materiale rientra a {{org.legalName}} nell’ultimo giorno lavorativo."
+        },
+        "conduct": {
+          "name": "Codice di condotta",
+          "description": "Si legge e si conferma, non si firma. Adatto a ciò che vale per tutti.",
+          "body": "In cantiere\n\nPresentati, lavora nell’ambito concordato e lascia il cantiere come lo hai trovato.\n\nCon i clienti\n\nNessun lavoro aggiuntivo si concorda a voce. Tutto ciò che eccede l’ordine torna in ufficio prima di iniziare.\n\nSegnalazioni\n\nTutto ciò che è pericoloso, danneggiato o contestato viene segnalato lo stesso giorno.\n\nEmesso da {{org.legalName}} il {{contract.issuedOn}}."
+        },
+        "blank": {
+          "name": "Partire da zero",
+          "description": "Una pagina vuota, se incolli un testo tuo."
+        }
+      },
+      "fieldLabels": {
+        "member": {
+          "fullName": "Nome completo",
+          "firstName": "Nome",
+          "lastName": "Cognome",
+          "email": "E-mail",
+          "jobTitle": "Mansione",
+          "specialty": "Specializzazione"
+        },
+        "org": {
+          "legalName": "Azienda",
+          "address": "Indirizzo dell’azienda",
+          "country": "Paese",
+          "email": "E-mail aziendale",
+          "phone": "Telefono aziendale"
+        },
+        "space": {
+          "name": "Spazio di lavoro",
+          "address": "Indirizzo dello spazio di lavoro"
+        },
+        "contract": {
+          "startDate": "Data di inizio",
+          "weeklyHours": "Ore settimanali",
+          "issuedOn": "Data di emissione"
+        }
+      },
+      "alreadyCovered": "Tutte le persone interessate ricevono già un modello più specifico: {{templates}}. Restringi questo, oppure modifica quello.",
+      "othersTake_one": "{{count}} persona in più corrisponde, ma riceve già {{templates}}.",
+      "othersTake_other": "{{count}} persone in più corrispondono, ma ricevono già {{templates}}."
     },
     "compliance": {
       "title": "Conformità dei certificati",
