@@ -44,6 +44,9 @@ export class DocumentsGatewayService extends BaseGatewayService {
   publishBatch(data: unknown) { return this.sendOnce({ cmd: 'documents_publish_batch' }, data); }
   discardDraft(data: unknown) { return this.sendOnce({ cmd: 'documents_discard_draft' }, data); }
   createTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_create_template' }, data); }
+  // A read in every sense that matters: it stores nothing and writes no event,
+  // so a retried preview costs a second render and nothing else.
+  previewTemplate(data: unknown) { return this.send({ cmd: 'documents_preview_template' }, data); }
   updateTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_update_template' }, data); }
   deactivateTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_template' }, data); }
 

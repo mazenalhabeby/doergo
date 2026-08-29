@@ -1,12 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   FileSignature, Plus, Loader2, AlertTriangle, PenSquare, Trash2, ArrowLeft,
-  Users, PenLine, CheckCheck, Printer, Ban, Eye,
+  Users, PenLine, CheckCheck, Printer, Ban, Eye, Download,
 } from "lucide-react"
 import {
   documentsApi, organizationsApi,
@@ -311,6 +311,7 @@ function TemplateEditor({
   const [roleId, setRoleId] = useState(template?.appliesToRoleId ?? "")
   const [position, setPosition] = useState(template?.appliesToPosition ?? "")
   const [mode, setMode] = useState<string>(template?.signatureMode ?? starter?.signatureMode ?? "IN_APP")
+  const [previewMode, setPreviewMode] = useState<"text" | "pdf">("text")
 
   const unknown = useMemo(() => unknownTokens(body), [body])
   /*
@@ -366,27 +367,34 @@ function TemplateEditor({
     correctly for their own people, including the ones whose job title is blank.
   */
   const sample = reach[0] ?? members[0] ?? null
+
+  /*
+    The member's REAL values, resolved once by the server.
+
+    This screen used to invent them — today's date where a start date belongs,
+    "Your company" for the company — which made its text preview disagree with
+    the PDF beside it about the same contract, and disagree with what the
+    member would actually receive. Asked once per member, so the live preview
+    below still re-renders on every keystroke without a round trip.
+  */
+  const { data: resolved } = useQuery({
+    queryKey: ["template-preview-values", sample?.id ?? null],
+    queryFn: () => documentsApi.previewTemplate({ memberId: sample?.id }),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  /*
+    An em dash for every field until the real values arrive.
+
+    The fallback used to be the raw body, so for the first moment on the screen
+    the preview read "{{member.fullName}} is engaged by {{org.legalName}}" —
+    which is the exact thing this pane exists to stop anybody having to read.
+  */
   const preview = useMemo(() => {
-    const values: Record<string, string> = {
-      "member.fullName": sample ? `${sample.firstName} ${sample.lastName}` : "—",
-      "member.firstName": sample?.firstName ?? "—",
-      "member.lastName": sample?.lastName ?? "—",
-      "member.email": sample?.email ?? "—",
-      "member.jobTitle": sample?.position || t("documents.templates.noJobTitle"),
-      "member.specialty": "—",
-      "org.legalName": t("documents.templates.yourCompany"),
-      "org.address": t("documents.templates.yourAddress"),
-      "org.country": "AT",
-      "org.email": "—",
-      "org.phone": "—",
-      "space.name": "—",
-      "space.address": "—",
-      "contract.startDate": new Date().toLocaleDateString(),
-      "contract.weeklyHours": "38.5",
-      "contract.issuedOn": new Date().toLocaleDateString(),
-    }
+    const values =
+      resolved?.values ?? Object.fromEntries(MERGE_FIELDS.map((f) => [f.token, "—"]))
     return renderTemplate(body, values).text
-  }, [body, sample, t])
+  }, [body, resolved])
 
   const save = useMutation({
     mutationFn: async () => {
@@ -571,42 +579,226 @@ function TemplateEditor({
 
         {/* ── Right: what the member will actually receive ───────────────── */}
         <aside className="lg:sticky lg:top-6 lg:h-fit">
-          <div className="mb-2 flex items-center gap-2">
-            <Eye className="h-4 w-4 text-slate-400" />
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {t("documents.templates.preview")}
-            </h2>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-slate-400" />
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {t("documents.templates.preview")}
+              </h2>
+            </div>
+
+            {/*
+              Text or PDF, and both are worth having.
+
+              Text is instant and reads while you type. The PDF is the actual
+              artefact — the real font, the real margins, the real page breaks —
+              rendered by the SAME code that issues contracts, so a clause
+              orphaned at the foot of page two is visible here rather than in
+              somebody's personnel file.
+            */}
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-800">
+              {(["text", "pdf"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setPreviewMode(m)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                    previewMode === m
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
+                  )}
+                >
+                  {t(`documents.templates.preview_${m}`)}
+                </button>
+              ))}
+            </div>
           </div>
+
           <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
             {sample
               ? t("documents.templates.previewFor", { name: `${sample.firstName} ${sample.lastName}` })
               : t("documents.templates.previewNoOne")}
           </p>
 
-          {/* A page, not a code block: the point is that it reads like the
-              letter somebody receives, with the tokens already gone. */}
-          <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            {body.trim() ? (
-              <>
-                <p className="mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 dark:border-slate-800 dark:text-slate-100">
-                  {types.find((ty) => ty.id === typeId)?.label || name || t("documents.templates.untitled")}
+          {previewMode === "pdf" ? (
+            <PdfPreview
+              body={body}
+              title={types.find((ty) => ty.id === typeId)?.label || name}
+              memberId={sample?.id}
+            />
+          ) : (
+            /* A page, not a code block: the point is that it reads like the
+               letter somebody receives, with the tokens already gone. */
+            <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              {body.trim() ? (
+                <>
+                  <p className="mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 dark:border-slate-800 dark:text-slate-100">
+                    {types.find((ty) => ty.id === typeId)?.label || name || t("documents.templates.untitled")}
+                  </p>
+                  <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
+                    {preview}
+                  </pre>
+                </>
+              ) : (
+                <p className="py-10 text-center text-sm text-slate-400">
+                  {t("documents.templates.previewEmpty")}
                 </p>
-                <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
-                  {preview}
-                </pre>
-              </>
-            ) : (
-              <p className="py-10 text-center text-sm text-slate-400">
-                {t("documents.templates.previewEmpty")}
-              </p>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <p className="mt-2 text-xs leading-relaxed text-slate-400">
             {t("documents.templates.notAdvice")}
           </p>
         </aside>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The draft, rendered by the server into the PDF a member would receive.
+ *
+ * Rendered SERVER-side on purpose. A second renderer in the browser would draw
+ * a document nobody is ever sent — different font metrics, different page
+ * breaks — and the one question this pane exists to answer is what the real
+ * file looks like.
+ *
+ * Debounced rather than live: a render is real work at both ends, and a
+ * contract is read in pauses, not per keystroke.
+ */
+function PdfPreview({
+  body,
+  title,
+  memberId,
+}: {
+  body: string
+  title: string
+  memberId?: string
+}) {
+  const { t } = useTranslation()
+  const [url, setUrl] = useState<string | null>(null)
+  const [missing, setMissing] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!body.trim()) {
+      setUrl(null)
+      setError(null)
+      return
+    }
+
+    let cancelled = false
+    let objectUrl: string | null = null
+    setLoading(true)
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await documentsApi.previewTemplate({ body, title, memberId })
+        if (cancelled || !res?.pdf) return
+
+        // base64 → bytes → blob. The PDF is never stored, so there is no URL to
+        // presign and nothing to clean up server-side.
+        const binary = atob(res.pdf)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        objectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }))
+
+        setUrl((old) => {
+          // Revoke the one being replaced, or every edit leaks a few kilobytes
+          // for as long as the tab stays open.
+          if (old) URL.revokeObjectURL(old)
+          return objectUrl
+        })
+        setMissing(res.missing)
+        setError(null)
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : t("documents.templates.previewFailed"))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, 700)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [body, title, memberId, t])
+
+  // The last render is revoked when the pane goes away, not before — switching
+  // back to Text and returning should not have to re-render.
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
+
+  if (!body.trim()) {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <p className="py-10 text-center text-sm text-slate-400">
+          {t("documents.templates.previewEmpty")}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {error ? (
+        <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/40">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+          <p className="text-sm text-slate-700 dark:text-slate-300">{error}</p>
+        </div>
+      ) : (
+        <div className="relative">
+          {url && (
+            <iframe
+              /* Chrome's viewer opens with the thumbnail rail out, which eats
+                 half of a pane that is already narrow. */
+              src={`${url}#view=FitH&navpanes=0`}
+              title={t("documents.templates.preview")}
+              className="h-[70vh] w-full rounded-lg border border-slate-200 bg-white dark:border-slate-800"
+            />
+          )}
+          {(loading || !url) && (
+            <div className={cn(
+              "flex items-center justify-center gap-2 rounded-lg text-sm text-slate-400",
+              url ? "absolute inset-0 bg-white/60 dark:bg-slate-950/60" : "h-[70vh] border border-slate-200 dark:border-slate-800",
+            )}>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("documents.templates.previewRendering")}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/*
+        Values the member's record does not have. They print as an em dash here
+        and would REFUSE to issue — better named now than discovered on the day
+        somebody is waiting for their contract.
+      */}
+      {missing.length > 0 && !error && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            {t("documents.templates.previewMissing", {
+              count: missing.length,
+              fields: missing
+                .map((f) => t(`documents.templates.fieldLabels.${f}`, { defaultValue: f }))
+                .join(", "),
+            })}
+          </p>
+        </div>
+      )}
+
+      {url && !error && (
+        <a
+          href={url}
+          download={`${title || t("documents.templates.untitled")}.pdf`}
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+        >
+          <Download className="h-4 w-4" />
+          {t("documents.templates.previewDownload")}
+        </a>
+      )}
     </div>
   )
 }

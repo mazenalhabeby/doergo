@@ -23,22 +23,35 @@ const routesFor = (target: any, method: RequestMethod): string[] =>
     )
     .map((fn) => (Reflect.getMetadata(PATH_METADATA, fn) as string) ?? '');
 
+/**
+ * Express's own rule: an earlier route swallows a later one when every one of
+ * its segments either is a parameter or matches the later route's segment.
+ *
+ * Segment COUNTS alone are not enough — that flagged `templates/preview` as
+ * swallowed by `:id/sign`, which cannot match it, because the second segment is
+ * the literal "sign". A guard that cries wolf gets relaxed, and this one
+ * protects something worth protecting.
+ */
+const swallows = (earlier: string, later: string): boolean => {
+  const a = earlier.split('/');
+  const b = later.split('/');
+  if (a.length !== b.length) return false;
+  return a.every((seg, i) => seg.startsWith(':') || seg === b[i]);
+};
+
 describe('document route order', () => {
   const gets = routesFor(DocumentsController, RequestMethod.GET);
   const posts = routesFor(DocumentsController, RequestMethod.POST);
   const deletes = routesFor(DocumentsController, RequestMethod.DELETE);
 
-  /** A literal is at risk only from a parameter route with the same shape. */
-  const segments = (p: string) => (p === '' ? 0 : p.split('/').length);
-
   const swallowed = (routes: string[]) => {
     const out: string[] = [];
     routes.forEach((path, index) => {
       if (path.startsWith(':') || path === '') return;
-      const earlierParam = routes
+      const shadowed = routes
         .slice(0, index)
-        .some((other) => other.startsWith(':') && segments(other) === segments(path));
-      if (earlierParam) out.push(path);
+        .some((other) => other.includes(':') && swallows(other, path));
+      if (shadowed) out.push(path);
     });
     return out;
   };
@@ -72,6 +85,30 @@ describe('document route order', () => {
     // own document instead.
     expect(deletes).toContain('drafts/:id');
     expect(deletes).toContain(':id');
-    expect(segments('drafts/:id')).not.toBe(segments(':id'));
+    expect(swallows(':id', 'drafts/:id')).toBe(false);
+  });
+});
+
+describe('the guard itself', () => {
+  /*
+    Tightening `swallowed` to Express's real rule made it stricter about WHICH
+    parameter route is a threat. These pin that it still catches the bug it was
+    written for — `/assets/usage` declared after `/assets/:id` — rather than
+    having been quietly widened into something that passes everything.
+  */
+  it('catches a literal hidden behind a bare parameter', () => {
+    expect(swallows(':id', 'drafts')).toBe(true);
+  });
+
+  it('catches a literal hidden behind a parameter with the same tail', () => {
+    expect(swallows(':id/report', 'latest/report')).toBe(true);
+  });
+
+  it('does not flag a route the parameter route cannot match', () => {
+    expect(swallows(':id/sign', 'templates/preview')).toBe(false);
+  });
+
+  it('does not flag routes of a different depth', () => {
+    expect(swallows(':id', 'templates/preview')).toBe(false);
   });
 });

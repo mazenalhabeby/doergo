@@ -253,6 +253,34 @@ export class PublishBatchDto {
 
 const SIGN_MODES_TEMPLATE = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as const;
 
+/**
+ * A draft to lay out as a PDF. Deliberately NOT `CreateTemplateDto`: a preview
+ * is asked for while the template is still half-written, so it must not require
+ * the document type or the bindings that saving does.
+ */
+export class PreviewTemplateDto {
+  @ApiPropertyOptional({
+    description:
+      'Body with {{merge.tokens}}. Omit to ask only for the resolved values — ' +
+      'the editor does that once per member to render its live text preview.',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(0, 200_000)
+  body?: string;
+
+  @ApiPropertyOptional({ description: 'Heading printed on the first page' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 160)
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'Fill it in for this member; defaults to anyone' })
+  @IsOptional()
+  @IsString()
+  memberId?: string;
+}
+
 export class CreateTemplateDto {
   @ApiProperty()
   @IsString()

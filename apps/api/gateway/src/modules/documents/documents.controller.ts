@@ -20,6 +20,7 @@ import {
   ConfirmUploadDto,
   CreateDocumentTypeDto,
   CreateTemplateDto,
+  PreviewTemplateDto,
   IssueFromTemplateDto,
   ListDocumentsQueryDto,
   PresignUploadDto,
@@ -184,6 +185,16 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Create a contract template' })
   async createTemplate(@CurrentUser() user: CurrentUserData, @Body() body: CreateTemplateDto) {
     return this.documents.createTemplate({ actor: documentActor(user), ...body });
+  }
+
+  @Post('templates/preview')
+  @RequirePermission('canManageDocumentTemplates')
+  // Rendering a PDF is real work, and the editor asks on demand rather than on
+  // every keystroke — a person clicking Preview does not reach this rate.
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: 'Lay a draft out as the PDF a member would receive — stores nothing' })
+  async previewTemplate(@CurrentUser() user: CurrentUserData, @Body() body: PreviewTemplateDto) {
+    return this.documents.previewTemplate({ actor: documentActor(user), ...body });
   }
 
   @Patch('templates/:id')

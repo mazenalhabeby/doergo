@@ -69,6 +69,9 @@ export class DocumentsController {
   @MessagePattern({ cmd: 'documents_deactivate_template' })
   deactivateTemplate(@Payload() data: any) { return this.documents.deactivateTemplate(data); }
 
+  @MessagePattern({ cmd: 'documents_preview_template' })
+  previewTemplate(@Payload() data: any) { return this.documents.previewTemplate(data); }
+
   @MessagePattern({ cmd: 'documents_issue_from_template' })
   issueFromTemplate(@Payload() data: any) { return this.documents.issueFromTemplate(data); }
 

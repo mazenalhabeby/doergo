@@ -6024,6 +6024,15 @@ function unwrapDocuments<T>(response: { data?: unknown; error?: string }): T | u
   return body as T;
 }
 
+export interface TemplatePreview {
+  /** The PDF, base64. Null when only the values were asked for. */
+  pdf: string | null;
+  /** Every merge field resolved for one real member; '—' where the record is blank. */
+  values: Record<string, string>;
+  filledFor: string | null;
+  missing: string[];
+}
+
 export const documentsApi = {
   listTypes: async (includeInactive = false) => {
     const response = await api.get<{ success: boolean; data: DocumentTypeRow[] }>(
@@ -6184,6 +6193,20 @@ export const documentsApi = {
   }) => {
     const response = await api.post<{ success: boolean; data: ContractTemplateRow }>('/documents/templates', data);
     return unwrapDocuments<any>(response);
+  },
+
+  /**
+   * The draft laid out as the PDF a member would receive.
+   *
+   * Returns base64 rather than a URL because nothing is stored — there is no
+   * object to presign, and a preview that had to be written to storage first
+   * would leave a trail of dead files behind every edit.
+   */
+  previewTemplate: async (data: { body?: string; title?: string; memberId?: string }) => {
+    const response = await api.post<{ success: boolean; data: TemplatePreview }>(
+      '/documents/templates/preview', data,
+    );
+    return unwrapDocuments<TemplatePreview>(response);
   },
 
   updateTemplate: async (id: string, data: Record<string, unknown>) => {
