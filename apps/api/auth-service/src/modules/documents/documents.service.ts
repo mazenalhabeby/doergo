@@ -261,6 +261,20 @@ export class DocumentsService {
     periodYear?: number | null;
     periodMonth?: number | null;
     expiresOn?: string | null;
+    /*
+      Stage instead of publish.
+
+      A payroll batch confirms thirty files one at a time — the browser drives
+      it, so each upload/hash/store round trip is its own small request and a
+      failure is isolated to one row. They land as DRAFT: invisible to the
+      member, and no notification is sent. `publishBatch` releases them all at
+      once, which is the only moment anything becomes visible.
+
+      This is why there is no job queue here. The expensive work is already
+      spread across many requests; a queue would only move the same work
+      somewhere it is harder to watch.
+    */
+    asDraft?: boolean;
     ctx?: RequestContext;
   }) {
     this.assertCanIssue(data.actor);
@@ -322,26 +336,178 @@ export class DocumentsService {
           sha256: hash,
           sizeBytes: bytes.length,
           mimeType,
-          status: isBlocking(type.signatureMode) ? 'AWAITING_SIGNATURE' : 'ISSUED',
+          status: data.asDraft
+            ? 'DRAFT'
+            : isBlocking(type.signatureMode)
+              ? 'AWAITING_SIGNATURE'
+              : 'ISSUED',
           issuedById: data.actor.userId,
           issuedAt,
           expiresOn: data.expiresOn ? new Date(data.expiresOn) : null,
           retentionUntil: retentionUntil(issuedAt, type.retentionMonths),
         },
       });
-      await tx.documentEvent.create({
-        data: {
-          documentId: created.id,
-          type: 'ISSUED',
-          actorId: data.actor.userId,
-          ...eventContext(data.ctx),
-        },
-      });
+      /*
+        No event for a staged row.
+
+        The trail begins at ISSUED, written by `publishBatch`, because that is
+        the moment the document exists for the member. Recording something at
+        upload time would either be a lie (ISSUED, when nobody has it) or a
+        state with no meaning outside this screen — and an evidence trail whose
+        first line is neither of those is not evidence.
+      */
+      if (!data.asDraft) {
+        await tx.documentEvent.create({
+          data: {
+            documentId: created.id,
+            type: 'ISSUED',
+            actorId: data.actor.userId,
+            ...eventContext(data.ctx),
+          },
+        });
+      }
       return created;
     });
 
-    this.notifyIssued(document.id, member, type.label, document.title, isBlocking(type.signatureMode));
+    // Staged documents notify on publish, not on upload.
+    if (!data.asDraft) {
+      this.notifyIssued(document.id, member, type.label, document.title, isBlocking(type.signatureMode));
+    }
     return document;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Payroll day — the staged batch
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * The people a batch can be matched against.
+   *
+   * Returned so the browser can run the matcher itself: thirty filenames
+   * resolved locally is instant and lets the admin correct a row without a
+   * round trip per keystroke. The matching is only a SUGGESTION — every
+   * document is still filed by an explicit userId that the server re-checks
+   * belongs to this organization.
+   */
+  async listMatchCandidates(data: { actor: DocumentActor }) {
+    this.assertCanIssue(data.actor);
+    return this.prisma.user.findMany({
+      where: { organizationId: data.actor.organizationId, isActive: true },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+  }
+
+  /** Everything staged and not yet released, with who it is for. */
+  async listDrafts(data: { actor: DocumentActor }) {
+    this.assertCanIssue(data.actor);
+    return this.prisma.document.findMany({
+      where: { organizationId: data.actor.organizationId, status: 'DRAFT' },
+      select: {
+        id: true,
+        title: true,
+        periodYear: true,
+        periodMonth: true,
+        sizeBytes: true,
+        mimeType: true,
+        createdAt: true,
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        type: { select: { id: true, label: true, signatureMode: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * Release a staged batch.
+   *
+   * ALL OR NOTHING, in one transaction. Publishing the rows that resolved and
+   * leaving the rest would put some payslips out and hide the problem behind a
+   * half-finished screen — and one payslip in the wrong hands is not something
+   * that can be taken back. Everything here is cheap: the uploading, hashing
+   * and storing already happened, one request per file, so this is a status
+   * flip and a set of event rows.
+   */
+  async publishBatch(data: { actor: DocumentActor; documentIds: string[]; ctx?: RequestContext }) {
+    this.assertCanIssue(data.actor);
+
+    const ids = [...new Set(data.documentIds.filter(Boolean))];
+    if (ids.length === 0) throw new BadRequestException('Nothing to publish');
+
+    // Scoped by organization AND status: an id from another tenant, or one that
+    // was already published, simply is not found — and the count check below
+    // then refuses the whole batch rather than publishing the rest.
+    const drafts = await this.prisma.document.findMany({
+      where: { id: { in: ids }, organizationId: data.actor.organizationId, status: 'DRAFT' },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        type: { select: { label: true, signatureMode: true } },
+      },
+    });
+
+    if (drafts.length !== ids.length) {
+      throw new BadRequestException(
+        'Some of these documents are no longer staged. Reload the batch and try again.',
+      );
+    }
+
+    const published = await this.prisma.$transaction(async (tx) => {
+      const out: typeof drafts = [];
+      for (const draft of drafts) {
+        const updated = await tx.document.update({
+          where: { id: draft.id },
+          data: {
+            status: isBlocking(draft.type.signatureMode) ? 'AWAITING_SIGNATURE' : 'ISSUED',
+            issuedAt: new Date(),
+          },
+        });
+        await tx.documentEvent.create({
+          data: {
+            documentId: draft.id,
+            type: 'ISSUED',
+            actorId: data.actor.userId,
+            ...eventContext(data.ctx),
+          },
+        });
+        out.push({ ...draft, ...updated } as (typeof drafts)[number]);
+      }
+      return out;
+    });
+
+    // Notifications AFTER the transaction commits. Emitting inside it would
+    // tell thirty people about documents that a rollback then un-published.
+    for (const doc of published) {
+      this.notifyIssued(
+        doc.id,
+        doc.user,
+        doc.type.label,
+        doc.title,
+        isBlocking(doc.type.signatureMode),
+      );
+    }
+
+    return { published: published.length };
+  }
+
+  /**
+   * Throw a staged row away before anyone has seen it.
+   *
+   * A hard delete, unlike `revoke`: nothing was ever issued, so there is no
+   * record to preserve. The object is left alone because it is
+   * content-addressed and another member's identical file may point at it.
+   */
+  async discardDraft(data: { actor: DocumentActor; documentId: string }) {
+    this.assertCanIssue(data.actor);
+    const draft = await this.prisma.document.findFirst({
+      where: {
+        id: data.documentId,
+        organizationId: data.actor.organizationId,
+        status: 'DRAFT',
+      },
+    });
+    if (!draft) throw new NotFoundException('Staged document not found');
+    await this.prisma.document.delete({ where: { id: draft.id } });
+    return { success: true };
   }
 
   // ══════════════════════════════════════════════════════════════════════════

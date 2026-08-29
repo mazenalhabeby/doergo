@@ -868,7 +868,8 @@
     "sales": "Ventas",
     "crm": "CRM",
     "ledger": "Libro",
-    "documents": "Documentos"
+    "documents": "Documentos",
+    "issueDocuments": "Emitir documentos"
   },
   "dashboard": {
     "admin": {
@@ -7077,6 +7078,42 @@
       "october": "Octubre",
       "november": "Noviembre",
       "december": "Diciembre"
+    },
+    "issue": {
+      "title": "Emitir documentos",
+      "subtitle": "Arrastra aquí una nómina completa. Los nombres de archivo se asocian a cada persona; tú revisas antes de publicar.",
+      "documentType": "Tipo de documento",
+      "choose": "Elige un tipo…",
+      "pickType": "Elige primero un tipo de documento",
+      "matchingAgainst_one": "cotejando con {{count}} persona",
+      "matchingAgainst_other": "cotejando con {{count}} personas",
+      "dropHere": "Suelta los archivos aquí o haz clic",
+      "dropHint": "PDF, PNG o JPEG · hasta 25 MB cada uno",
+      "file": "Archivo",
+      "member": "Persona",
+      "match": "Coincidencia",
+      "period": "Periodo",
+      "pickMember": "Elige una persona…",
+      "confidence": {
+        "exact": "Exacta",
+        "fuzzy": "Probable",
+        "unmatched": "Elige una"
+      },
+      "staged": "Lista",
+      "failed": "Falló",
+      "unresolved_one": "{{count}} archivo sin persona asignada.",
+      "unresolved_other": "{{count}} archivos sin persona asignada.",
+      "unresolvedHint": "No se publica nada hasta resolver todas las filas: una nómina en manos equivocadas no tiene vuelta atrás.",
+      "summary": "{{staged}} de {{total}} subidos",
+      "upload_one": "Subir {{count}} archivo",
+      "upload_other": "Subir {{count}} archivos",
+      "publish_one": "Publicar {{count}} documento",
+      "publish_other": "Publicar {{count}} documentos",
+      "published_one": "{{count}} documento publicado",
+      "published_other": "{{count}} documentos publicados",
+      "uploadFailed": "No se pudo iniciar la subida",
+      "pendingDrafts_one": "{{count}} documento preparado y sin publicar",
+      "pendingDrafts_other": "{{count}} documentos preparados y sin publicar"
     }
   }
 }

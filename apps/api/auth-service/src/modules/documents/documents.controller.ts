@@ -48,6 +48,27 @@ export class DocumentsController {
     return this.documents.revoke(data);
   }
 
+  // ── Payroll day ──────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_match_candidates' })
+  matchCandidates(@Payload() data: any) {
+    return this.documents.listMatchCandidates(data);
+  }
+
+  @MessagePattern({ cmd: 'documents_list_drafts' })
+  listDrafts(@Payload() data: any) {
+    return this.documents.listDrafts(data);
+  }
+
+  @MessagePattern({ cmd: 'documents_publish_batch' })
+  publishBatch(@Payload() data: any) {
+    return this.documents.publishBatch(data);
+  }
+
+  @MessagePattern({ cmd: 'documents_discard_draft' })
+  discardDraft(@Payload() data: any) {
+    return this.documents.discardDraft(data);
+  }
+
   // ── Reading ──────────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_list_for_member' })
   listForMember(@Payload() data: any) {

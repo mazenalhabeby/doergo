@@ -5940,6 +5940,25 @@ export interface DocumentTypeRow {
   position: number;
 }
 
+export interface MatchCandidateRow {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface DraftDocumentRow {
+  id: string;
+  title: string;
+  periodYear: number | null;
+  periodMonth: number | null;
+  sizeBytes: number;
+  mimeType: string;
+  createdAt: string;
+  user: { id: string; firstName: string; lastName: string; email: string };
+  type: { id: string; label: string; signatureMode: string };
+}
+
 export interface DocumentEventRow {
   id: string;
   type: string;
@@ -6033,6 +6052,8 @@ export const documentsApi = {
     periodYear?: number;
     periodMonth?: number;
     expiresOn?: string;
+    /** Stage it: invisible to the member, no notification, until published. */
+    asDraft?: boolean;
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
     if (response.error) throw new Error(response.error);
@@ -6041,6 +6062,39 @@ export const documentsApi = {
 
   revoke: async (id: string) => {
     const response = await api.post<{ success: boolean }>(`/documents/${id}/revoke`, {});
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // ── Payroll day ──────────────────────────────────────────────────────────
+
+  /** The members a batch can be matched against. Matching runs in the browser. */
+  matchCandidates: async () => {
+    const response = await api.get<{ success: boolean; data: MatchCandidateRow[] }>(
+      '/documents/match-candidates',
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  listDrafts: async () => {
+    const response = await api.get<{ success: boolean; data: DraftDocumentRow[] }>('/documents/drafts');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  /** All or nothing — one unresolved row blocks the whole batch. */
+  publishBatch: async (documentIds: string[]) => {
+    const response = await api.post<{ success: boolean; data: { published: number } }>(
+      '/documents/publish',
+      { documentIds },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  discardDraft: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/documents/drafts/${id}`);
     if (response.error) throw new Error(response.error);
     return response.data;
   },

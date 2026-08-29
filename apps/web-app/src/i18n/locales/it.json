@@ -868,7 +868,8 @@
     "sales": "Vendite",
     "crm": "CRM",
     "ledger": "Registro",
-    "documents": "Documenti"
+    "documents": "Documenti",
+    "issueDocuments": "Emetti documenti"
   },
   "dashboard": {
     "admin": {
@@ -7086,6 +7087,42 @@
       "october": "Ottobre",
       "november": "Novembre",
       "december": "Dicembre"
+    },
+    "issue": {
+      "title": "Emetti documenti",
+      "subtitle": "Trascina qui un intero ciclo paghe. I nomi dei file vengono associati alle persone; tu controlli prima della pubblicazione.",
+      "documentType": "Tipo di documento",
+      "choose": "Scegli un tipo…",
+      "pickType": "Scegli prima un tipo di documento",
+      "matchingAgainst_one": "confronto con {{count}} persona",
+      "matchingAgainst_other": "confronto con {{count}} persone",
+      "dropHere": "Trascina qui i file, oppure fai clic",
+      "dropHint": "PDF, PNG o JPEG · fino a 25 MB ciascuno",
+      "file": "File",
+      "member": "Persona",
+      "match": "Corrispondenza",
+      "period": "Periodo",
+      "pickMember": "Scegli una persona…",
+      "confidence": {
+        "exact": "Esatta",
+        "fuzzy": "Probabile",
+        "unmatched": "Da scegliere"
+      },
+      "staged": "Pronto",
+      "failed": "Non riuscito",
+      "unresolved_one": "{{count}} file senza persona.",
+      "unresolved_other": "{{count}} file senza persona.",
+      "unresolvedHint": "Non si pubblica nulla finché ogni riga non è risolta: una busta paga nelle mani sbagliate non si recupera.",
+      "summary": "{{staged}} di {{total}} caricati",
+      "upload_one": "Carica {{count}} file",
+      "upload_other": "Carica {{count}} file",
+      "publish_one": "Pubblica {{count}} documento",
+      "publish_other": "Pubblica {{count}} documenti",
+      "published_one": "{{count}} documento pubblicato",
+      "published_other": "{{count}} documenti pubblicati",
+      "uploadFailed": "Impossibile avviare il caricamento",
+      "pendingDrafts_one": "{{count}} documento preparato e non pubblicato",
+      "pendingDrafts_other": "{{count}} documenti preparati e non pubblicati"
     }
   }
 }

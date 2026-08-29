@@ -868,7 +868,8 @@
     "sales": "Ventes",
     "crm": "CRM",
     "ledger": "Registre",
-    "documents": "Documents"
+    "documents": "Documents",
+    "issueDocuments": "Émettre des documents"
   },
   "dashboard": {
     "admin": {
@@ -7086,6 +7087,42 @@
       "october": "Octobre",
       "november": "Novembre",
       "december": "Décembre"
+    },
+    "issue": {
+      "title": "Émettre des documents",
+      "subtitle": "Déposez une paie entière. Les noms de fichiers sont rapprochés des membres ; vous vérifiez avant toute publication.",
+      "documentType": "Type de document",
+      "choose": "Choisir un type…",
+      "pickType": "Choisissez d’abord un type de document",
+      "matchingAgainst_one": "rapprochement avec {{count}} membre",
+      "matchingAgainst_other": "rapprochement avec {{count}} membres",
+      "dropHere": "Déposez les fichiers ici, ou cliquez",
+      "dropHint": "PDF, PNG ou JPEG · 25 Mo maximum chacun",
+      "file": "Fichier",
+      "member": "Membre",
+      "match": "Correspondance",
+      "period": "Période",
+      "pickMember": "Choisir un membre…",
+      "confidence": {
+        "exact": "Exacte",
+        "fuzzy": "Probable",
+        "unmatched": "À choisir"
+      },
+      "staged": "Prêt",
+      "failed": "Échec",
+      "unresolved_one": "{{count}} fichier sans membre.",
+      "unresolved_other": "{{count}} fichiers sans membre.",
+      "unresolvedHint": "Rien n’est publié tant qu’une ligne reste non résolue — un bulletin de paie entre de mauvaises mains ne se rattrape pas.",
+      "summary": "{{staged}} sur {{total}} envoyés",
+      "upload_one": "Envoyer {{count}} fichier",
+      "upload_other": "Envoyer {{count}} fichiers",
+      "publish_one": "Publier {{count}} document",
+      "publish_other": "Publier {{count}} documents",
+      "published_one": "{{count}} document publié",
+      "published_other": "{{count}} documents publiés",
+      "uploadFailed": "L’envoi n’a pas pu démarrer",
+      "pendingDrafts_one": "{{count}} document préparé et non publié",
+      "pendingDrafts_other": "{{count}} documents préparés et non publiés"
     }
   }
 }

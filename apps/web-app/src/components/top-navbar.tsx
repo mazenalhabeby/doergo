@@ -74,7 +74,7 @@ const NAV_HREFS = [
   "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/settings", "/settings/billing",
-  "/my/attendance", "/my/time-off", "/my/documents",
+  "/my/attendance", "/my/time-off", "/my/documents", "/documents",
 ] as const
 
 function matches(pathname: string, href: string): boolean {
@@ -147,7 +147,7 @@ function usePrefetchRoutes() {
 // TopNavbar
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
-  const { user, logout, hasPlanFeature } = useAuth()
+  const { user, logout, hasPlanFeature, hasPermission } = useAuth()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
@@ -201,6 +201,11 @@ export function TopNavbar() {
     an existing customer until they choose it.
   */
   const showMyDocuments = hasPlanFeature("documents")
+  /*
+    The admin surface. Needs the add-on AND the permission to issue — unlike
+    /my/documents, which is nobody's permission because it is their own file.
+  */
+  const showIssueDocuments = hasPlanFeature("documents") && hasPermission("canIssueDocuments")
 
   // Measured overflow for the navigation row (see hooks/use-overflow-nav).
   // Re-measures whenever the language changes, because that changes every width.
@@ -430,6 +435,15 @@ export function TopNavbar() {
           data-nav-label={t("nav.timeOff")}
           data-nav-active={isActive(pathname, "/my/time-off")} data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.timeOff")}
+          </Link>
+        )}
+        {showIssueDocuments && (
+          <Link href="/documents"
+          data-nav-item
+          data-nav-href="/documents"
+          data-nav-label={t("nav.issueDocuments")}
+          data-nav-active={isActive(pathname, "/documents")} data-tour="nav-issue-documents" className={cn(navItemBase, isActive(pathname, "/documents") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+            {t("nav.issueDocuments")}
           </Link>
         )}
         {showMyDocuments && (

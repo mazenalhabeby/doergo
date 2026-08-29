@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsIn,
@@ -203,6 +204,14 @@ export class ConfirmUploadDto {
   @IsOptional()
   @IsISO8601()
   expiresOn?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Stage instead of publishing. The member sees nothing and no notification is sent until the batch is released.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  asDraft?: boolean;
 }
 
 export class ListDocumentsQueryDto {
@@ -228,4 +237,15 @@ export class ListDocumentsQueryDto {
   @IsString()
   @Length(0, 100)
   search?: string;
+}
+
+export class PublishBatchDto {
+  @ApiProperty({ type: [String], description: 'Every staged document in the batch' })
+  @IsArray()
+  @IsString({ each: true })
+  // A payroll run is tens of files. The cap is a backstop against a malformed
+  // client, not a real limit — and it fails loudly rather than truncating,
+  // because a silently shortened batch leaves payslips unpublished.
+  @ArrayMaxSize(500)
+  documentIds!: string[];
 }

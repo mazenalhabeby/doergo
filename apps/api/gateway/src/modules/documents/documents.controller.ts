@@ -21,6 +21,7 @@ import {
   CreateDocumentTypeDto,
   ListDocumentsQueryDto,
   PresignUploadDto,
+  PublishBatchDto,
   UpdateDocumentTypeDto,
 } from './dto/documents.dto';
 
@@ -120,6 +121,44 @@ export class DocumentsController {
       documentId: id,
       ctx: requestContext(req),
     });
+  }
+
+  // ── Payroll day ──────────────────────────────────────────────────────────
+
+  @Get('match-candidates')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Members a batch can be matched against' })
+  async matchCandidates(@CurrentUser() user: CurrentUserData) {
+    return this.documents.matchCandidates({ actor: documentActor(user) });
+  }
+
+  @Get('drafts')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Documents staged but not yet released' })
+  async listDrafts(@CurrentUser() user: CurrentUserData) {
+    return this.documents.listDrafts({ actor: documentActor(user) });
+  }
+
+  @Post('publish')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Release a staged batch — all or nothing' })
+  async publishBatch(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: PublishBatchDto,
+    @Req() req: any,
+  ) {
+    return this.documents.publishBatch({
+      actor: documentActor(user),
+      documentIds: body.documentIds,
+      ctx: requestContext(req),
+    });
+  }
+
+  @Delete('drafts/:id')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Throw away a staged document' })
+  async discardDraft(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.documents.discardDraft({ actor: documentActor(user), documentId: id });
   }
 
   // ── Reading ──────────────────────────────────────────────────────────────

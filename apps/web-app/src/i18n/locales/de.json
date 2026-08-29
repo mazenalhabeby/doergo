@@ -868,7 +868,8 @@
     "sales": "Vertrieb",
     "crm": "CRM",
     "ledger": "Kassenbuch",
-    "documents": "Dokumente"
+    "documents": "Dokumente",
+    "issueDocuments": "Dokumente ausstellen"
   },
   "dashboard": {
     "admin": {
@@ -7077,6 +7078,42 @@
       "october": "Oktober",
       "november": "November",
       "december": "Dezember"
+    },
+    "issue": {
+      "title": "Dokumente ausstellen",
+      "subtitle": "Ziehen Sie einen Lohnlauf herein. Dateinamen werden Mitarbeitenden zugeordnet; Sie prüfen, bevor etwas freigegeben wird.",
+      "documentType": "Dokumentart",
+      "choose": "Art wählen…",
+      "pickType": "Wählen Sie zuerst eine Dokumentart",
+      "matchingAgainst_one": "Abgleich mit {{count}} Mitarbeitendem",
+      "matchingAgainst_other": "Abgleich mit {{count}} Mitarbeitenden",
+      "dropHere": "Dateien hierher ziehen oder klicken",
+      "dropHint": "PDF, PNG oder JPEG · je bis 25 MB",
+      "file": "Datei",
+      "member": "Mitarbeitende:r",
+      "match": "Zuordnung",
+      "period": "Zeitraum",
+      "pickMember": "Person wählen…",
+      "confidence": {
+        "exact": "Eindeutig",
+        "fuzzy": "Wahrscheinlich",
+        "unmatched": "Bitte wählen"
+      },
+      "staged": "Bereit",
+      "failed": "Fehlgeschlagen",
+      "unresolved_one": "{{count}} Datei ohne Zuordnung.",
+      "unresolved_other": "{{count}} Dateien ohne Zuordnung.",
+      "unresolvedHint": "Nichts wird freigegeben, solange nicht jede Zeile zugeordnet ist — ein Gehaltszettel in falschen Händen lässt sich nicht zurückholen.",
+      "summary": "{{staged}} von {{total}} hochgeladen",
+      "upload_one": "{{count}} Datei hochladen",
+      "upload_other": "{{count}} Dateien hochladen",
+      "publish_one": "{{count}} Dokument freigeben",
+      "publish_other": "{{count}} Dokumente freigeben",
+      "published_one": "{{count}} Dokument freigegeben",
+      "published_other": "{{count}} Dokumente freigegeben",
+      "uploadFailed": "Der Upload konnte nicht gestartet werden",
+      "pendingDrafts_one": "{{count}} Dokument ist vorbereitet und noch nicht freigegeben",
+      "pendingDrafts_other": "{{count}} Dokumente sind vorbereitet und noch nicht freigegeben"
     }
   }
 }

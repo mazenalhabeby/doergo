@@ -25,6 +25,8 @@ export class DocumentsGatewayService extends BaseGatewayService {
   listTypes(data: unknown) { return this.send({ cmd: 'documents_list_types' }, data); }
   list(data: unknown) { return this.send({ cmd: 'documents_list_for_member' }, data); }
   events(data: unknown) { return this.send({ cmd: 'documents_list_events' }, data); }
+  matchCandidates(data: unknown) { return this.send({ cmd: 'documents_match_candidates' }, data); }
+  listDrafts(data: unknown) { return this.send({ cmd: 'documents_list_drafts' }, data); }
 
   // ── Writes ───────────────────────────────────────────────────────────────
   createType(data: unknown) { return this.sendOnce({ cmd: 'documents_create_type' }, data); }
@@ -34,6 +36,8 @@ export class DocumentsGatewayService extends BaseGatewayService {
   confirmUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_confirm_upload' }, data); }
   revoke(data: unknown) { return this.sendOnce({ cmd: 'documents_revoke' }, data); }
   deleteOwn(data: unknown) { return this.sendOnce({ cmd: 'documents_delete_own' }, data); }
+  publishBatch(data: unknown) { return this.sendOnce({ cmd: 'documents_publish_batch' }, data); }
+  discardDraft(data: unknown) { return this.sendOnce({ cmd: 'documents_discard_draft' }, data); }
 
   /*
     Minting a download link is a POST and it WRITES — it records the open on the
