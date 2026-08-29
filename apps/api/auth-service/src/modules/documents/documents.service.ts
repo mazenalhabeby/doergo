@@ -248,20 +248,7 @@ export class DocumentsService {
     this.assertCanIssue(data.actor);
     const store = this.requireStore();
 
-    const extension = ALLOWED_MIME[data.mimeType];
-    if (!extension) {
-      throw new BadRequestException(
-        `${data.mimeType} cannot be filed. Accepted: PDF, PNG, JPEG.`,
-      );
-    }
-    if (!Number.isFinite(data.sizeBytes) || data.sizeBytes <= 0) {
-      throw new BadRequestException('A file size is required');
-    }
-    if (data.sizeBytes > MAX_DOCUMENT_BYTES) {
-      throw new BadRequestException(
-        `That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`,
-      );
-    }
+    const extension = this.assertUploadable(data.mimeType, data.sizeBytes);
 
     await this.assertMemberOfOrg(data.userId, data.actor.organizationId);
     await this.findTypeOr404(data.typeId, data.actor.organizationId);
@@ -309,17 +296,7 @@ export class DocumentsService {
     ctx?: RequestContext;
   }) {
     this.assertCanIssue(data.actor);
-
-    // The staging key came back from the client, so it is untrusted input and
-    // is the one place a caller could try to reach another tenant's objects.
-    // Checked before the store is even required, so a misconfigured server
-    // cannot turn a refusal into a different error.
-    const prefix = `${data.actor.organizationId}/documents/_staging/`;
-    if (!data.stagingKey.startsWith(prefix) || data.stagingKey.includes('..')) {
-      throw new ForbiddenException('That upload does not belong to your organization');
-    }
-
-    const store = this.requireStore();
+    this.assertStagingKey(data.stagingKey, this.sharedStagingPrefix(data.actor.organizationId));
 
     const member = await this.assertMemberOfOrg(data.userId, data.actor.organizationId);
     const type = await this.findTypeOr404(data.typeId, data.actor.organizationId);
@@ -333,25 +310,7 @@ export class DocumentsService {
       throw new BadRequestException(`${type.label} needs an expiry date`);
     }
 
-    const head = await this.withStorage('checking an upload', () => store.head(data.stagingKey));
-    if (!head.exists) {
-      throw new BadRequestException('The upload did not complete — please try again');
-    }
-    if (head.sizeBytes > MAX_DOCUMENT_BYTES) {
-      await store.delete(data.stagingKey);
-      throw new BadRequestException('That file is larger than the limit');
-    }
-
-    const bytes = await this.withStorage('reading an upload', () => store.get(data.stagingKey));
-    const hash = sha256(bytes);
-    const mimeType = head.contentType ?? 'application/pdf';
-    const extension = ALLOWED_MIME[mimeType] ?? 'pdf';
-    const finalKey = documentKey(data.actor.organizationId, hash, extension);
-
-    // Content-addressed, so re-putting identical bytes is a no-op that costs
-    // one round trip. The same policy issued to thirty people is one object.
-    await this.withStorage('filing a document', () => store.put(finalKey, bytes, mimeType));
-    await store.delete(data.stagingKey);
+    const filed = await this.takeStagedObject(data.actor.organizationId, data.stagingKey);
 
     const issuedAt = new Date();
     const document = await this.prisma.$transaction(async (tx) => {
@@ -363,10 +322,10 @@ export class DocumentsService {
           title: data.title.trim() || type.label,
           periodYear: data.periodYear ?? null,
           periodMonth: data.periodMonth ?? null,
-          storageKey: finalKey,
-          sha256: hash,
-          sizeBytes: bytes.length,
-          mimeType,
+          storageKey: filed.key,
+          sha256: filed.hash,
+          sizeBytes: filed.sizeBytes,
+          mimeType: filed.mimeType,
           status: data.asDraft
             ? 'DRAFT'
             : isBlocking(type.signatureMode)
@@ -799,6 +758,279 @@ export class DocumentsService {
   }
 
   /**
+   * The two questions every upload has to answer before a byte moves.
+   *
+   * Shared by the administrator's path and the member's, because a limit that
+   * only one of them honours is not a limit. Returns the extension so the
+   * caller does not look it up a second time.
+   */
+  private assertUploadable(mimeType: string, sizeBytes: number): string {
+    const extension = ALLOWED_MIME[mimeType];
+    if (!extension) {
+      throw new BadRequestException(`${mimeType} cannot be filed. Accepted: PDF, PNG, JPEG.`);
+    }
+    if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+      throw new BadRequestException('A file size is required');
+    }
+    if (sizeBytes > MAX_DOCUMENT_BYTES) {
+      throw new BadRequestException(
+        `That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`,
+      );
+    }
+    return extension;
+  }
+
+  /**
+   * Take a staged object, hash it, and move it to its content-addressed home.
+   *
+   * `expectedPrefix` is the security boundary. The staging key comes back from
+   * the client, so it is untrusted, and it is the one place a caller could try
+   * to name somebody else's object. Administrators are confined to their
+   * organization; a MEMBER is confined further, to their own folder — otherwise
+   * a member who learned a staging key could confirm a colleague's payslip into
+   * their own record.
+   *
+   * The hash is computed HERE, from the bytes as stored, so `sha256` on the row
+   * is something this service calculated rather than something a client claimed.
+   */
+  private async takeStagedObject(
+    organizationId: string,
+    stagingKey: string,
+    expectedPrefix?: string,
+  ): Promise<{ key: string; hash: string; sizeBytes: number; mimeType: string }> {
+    // Checked again here, not only by the caller. This method reads and moves
+    // an object named by untrusted input, so it does not rely on having been
+    // called correctly.
+    this.assertStagingKey(stagingKey, expectedPrefix ?? this.sharedStagingPrefix(organizationId));
+
+    const store = this.requireStore();
+
+    const head = await this.withStorage('checking an upload', () => store.head(stagingKey));
+    if (!head.exists) {
+      throw new BadRequestException('The upload did not complete — please try again');
+    }
+    if (head.sizeBytes > MAX_DOCUMENT_BYTES) {
+      await store.delete(stagingKey);
+      throw new BadRequestException('That file is larger than the limit');
+    }
+
+    const bytes = await this.withStorage('reading an upload', () => store.get(stagingKey));
+    const hash = sha256(bytes);
+    const mimeType = head.contentType ?? 'application/pdf';
+    const extension = ALLOWED_MIME[mimeType] ?? 'pdf';
+    const key = documentKey(organizationId, hash, extension);
+
+    // Content-addressed, so re-putting identical bytes is a no-op that costs
+    // one round trip. The same policy issued to thirty people is one object.
+    await this.withStorage('filing a document', () => store.put(key, bytes, mimeType));
+    await store.delete(stagingKey);
+
+    return { key, hash, sizeBytes: bytes.length, mimeType };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // What the member supplies themselves
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * A member's own staging folder.
+   *
+   * Per-user, not per-organization. The administrator's prefix is shared by
+   * everyone who can issue, which is fine because they may file to anybody;
+   * a member may file only to themselves, so their confirm step must be unable
+   * to name an object anybody else staged.
+   */
+  private ownStagingPrefix(organizationId: string, userId: string): string {
+    return `${organizationId}/documents/_staging/u/${userId}/`;
+  }
+
+  /** Where anyone who may issue stages a file, for anybody in the organization. */
+  private sharedStagingPrefix(organizationId: string): string {
+    return `${organizationId}/documents/_staging/`;
+  }
+
+  /**
+   * The staging key came back from the client, so it is untrusted input, and it
+   * is the one place a caller could try to name somebody else's object.
+   *
+   * Called FIRST by both confirm paths, before the member and the type are
+   * looked up. The ordering is the point: a caller probing keys gets the same
+   * refusal either way, rather than learning from a 404 which member ids and
+   * type ids exist. It also means a misconfigured store cannot turn this
+   * refusal into a different error.
+   */
+  private assertStagingKey(stagingKey: string, prefix: string) {
+    if (!stagingKey.startsWith(prefix) || stagingKey.includes('..')) {
+      throw new ForbiddenException('That upload does not belong to you');
+    }
+  }
+
+  /**
+   * Step one, for the member: a link their own device can PUT the file to.
+   *
+   * NO PERMISSION IS CHECKED, and none ever will be. Supplying your own driving
+   * licence is not an administrative act — it is the only way the organization
+   * can get a document that only you possess. What is checked instead is the
+   * TYPE: a member may upload against a SUPPLIED type and nothing else, so this
+   * can never become a way to file yourself a payslip.
+   */
+  async presignOwnUpload(data: {
+    actor: DocumentActor;
+    typeId: string;
+    mimeType: string;
+    sizeBytes: number;
+  }) {
+    const store = this.requireStore();
+    const extension = this.assertUploadable(data.mimeType, data.sizeBytes);
+    await this.assertMemberSuppliableType(data.typeId, data.actor.organizationId);
+
+    const staging =
+      `${this.ownStagingPrefix(data.actor.organizationId, data.actor.userId)}${cuidish()}.${extension}`;
+    return this.withStorage('preparing an upload', () =>
+      store.presignUpload(staging, data.mimeType, data.sizeBytes),
+    );
+  }
+
+  /**
+   * Step two: file what the member uploaded, as PENDING_VERIFICATION.
+   *
+   * Pending, never issued. A photograph somebody took of a card they say is
+   * theirs is a claim, not a record — and the dispatch gate reads
+   * `status IN ('ISSUED','SIGNED')`, so an unreviewed upload cannot clear a
+   * requirement no matter what expiry date came with it. That is the difference
+   * between tracking certificates and being told you have them.
+   *
+   * The member id is taken from the token and never from the body. There is no
+   * shape of this request that files a document into somebody else's record.
+   */
+  async submitOwnDocument(data: {
+    actor: DocumentActor;
+    stagingKey: string;
+    typeId: string;
+    title?: string;
+    expiresOn?: string | null;
+    ctx?: RequestContext;
+  }) {
+    this.assertStagingKey(
+      data.stagingKey,
+      this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
+    );
+    const type = await this.assertMemberSuppliableType(data.typeId, data.actor.organizationId);
+
+    if (type.hasExpiry && !data.expiresOn) {
+      throw new BadRequestException(`${type.label} needs an expiry date`);
+    }
+    const expiresOn = data.expiresOn ? new Date(data.expiresOn) : null;
+    if (expiresOn && Number.isNaN(expiresOn.getTime())) {
+      throw new BadRequestException('That expiry date could not be read');
+    }
+    /*
+      A date far enough out to be a typo rather than a certificate.
+
+      Deliberately one-sided: an expiry in the PAST is allowed. Somebody
+      uploading a lapsed licence alongside its replacement is doing the right
+      thing, and the compliance board already reads it as expired — refusing it
+      would only mean the office never sees the lapse.
+    */
+    if (expiresOn && expiresOn.getFullYear() > new Date().getFullYear() + 50) {
+      throw new BadRequestException('That expiry date is too far in the future');
+    }
+
+    const member = await this.assertMemberOfOrg(data.actor.userId, data.actor.organizationId);
+
+    const filed = await this.takeStagedObject(
+      data.actor.organizationId,
+      data.stagingKey,
+      this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
+    );
+
+    const issuedAt = new Date();
+    const document = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.document.create({
+        data: {
+          organizationId: data.actor.organizationId,
+          userId: data.actor.userId,
+          typeId: type.id,
+          title: data.title?.trim() || type.label,
+          storageKey: filed.key,
+          sha256: filed.hash,
+          sizeBytes: filed.sizeBytes,
+          mimeType: filed.mimeType,
+          status: 'PENDING_VERIFICATION',
+          // NOT `issuedById`: nobody issued this. The member supplied it, and
+          // the trail below is what says so.
+          issuedAt,
+          expiresOn,
+          retentionUntil: retentionUntil(issuedAt, type.retentionMonths),
+        },
+      });
+      await tx.documentEvent.create({
+        data: {
+          documentId: created.id,
+          type: 'SUBMITTED',
+          actorId: data.actor.userId,
+          ...eventContext(data.ctx),
+        },
+      });
+      return created;
+    });
+
+    this.notifySubmitted(document.id, data.actor.organizationId, member, type.label, document.title);
+    return document;
+  }
+
+  /**
+   * The type must exist, be in use, and be one the member is allowed to supply.
+   *
+   * Direction is the whole rule and it is enforced on the server every time,
+   * not by which types the screen chose to offer.
+   */
+  private async assertMemberSuppliableType(typeId: string, organizationId: string) {
+    const type = await this.findTypeOr404(typeId, organizationId);
+    if (!type.isActive) {
+      throw new BadRequestException('That document type is no longer in use');
+    }
+    if (type.direction !== 'SUPPLIED') {
+      throw new ForbiddenException(
+        `${type.label} is issued by your organization — you cannot upload one yourself`,
+      );
+    }
+    return type;
+  }
+
+  /**
+   * Tell whoever reviews documents that one is waiting.
+   *
+   * Fire-and-forget, like every other notification here: an upload that
+   * succeeded must not be undone because a queue was down. The document is in
+   * the review list either way, which is the durable half.
+   */
+  private notifySubmitted(
+    documentId: string,
+    organizationId: string,
+    member: { id: string; firstName: string; lastName: string; email: string },
+    typeLabel: string,
+    title: string,
+  ) {
+    try {
+      this.notificationClient.emit('document_submitted', {
+        documentId,
+        // The handler fans out to whoever reviews in this organization; the
+        // service does not hold that list and should not learn it.
+        organizationId,
+        memberId: member.id,
+        memberName: `${member.firstName} ${member.lastName}`.trim(),
+        typeLabel,
+        title,
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Could not queue submission notice for document ${documentId}: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  /**
    * Record that the member agreed to sign electronically.
    *
    * Its own act, and its own event, deliberately separate from the signature.
@@ -1208,6 +1440,7 @@ export class DocumentsService {
         issuedAt: true,
         expiresOn: true,
         firstOpenedAt: true,
+        rejectionReason: true,
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
       },
       orderBy: [
@@ -1236,6 +1469,9 @@ export class DocumentsService {
       expiresOn: d.expiresOn,
       unread: d.firstOpenedAt === null,
       needsSignature: d.status === 'AWAITING_SIGNATURE',
+      // Only ever set on something the member supplied. Shown to them verbatim:
+      // "rejected" with no reason is an instruction to upload the same photo.
+      rejectionReason: d.rejectionReason,
       standing: d.type.isCredential ? credentialStanding(d.expiresOn, now) : null,
     }));
   }

@@ -3,9 +3,10 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsDateString,
+  IsISO8601,
   IsIn,
   IsInt,
-  IsISO8601,
   IsNumber,
   IsOptional,
   IsString,
@@ -258,6 +259,49 @@ const SIGN_MODES_TEMPLATE = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as cons
  * is asked for while the template is still half-written, so it must not require
  * the document type or the bindings that saving does.
  */
+/**
+ * A member asking for somewhere to put their own file.
+ *
+ * No `userId`: the member is the token, always. Adding one would create a
+ * shape of this request that files a document into somebody else's record.
+ */
+export class PresignOwnUploadDto {
+  @ApiProperty()
+  @IsString()
+  typeId!: string;
+
+  @ApiProperty({ example: 'image/jpeg' })
+  @IsString()
+  mimeType!: string;
+
+  @ApiProperty({ description: 'Bytes. Checked again against the object on confirm.' })
+  @IsInt()
+  @Min(1)
+  sizeBytes!: number;
+}
+
+/** The member confirming the bytes are up. */
+export class SubmitOwnDocumentDto {
+  @ApiProperty()
+  @IsString()
+  stagingKey!: string;
+
+  @ApiProperty()
+  @IsString()
+  typeId!: string;
+
+  @ApiPropertyOptional({ description: 'Defaults to the type label' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 200)
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'Required when the type expires. ISO date.' })
+  @IsOptional()
+  @IsDateString()
+  expiresOn?: string;
+}
+
 export class PreviewTemplateDto {
   @ApiPropertyOptional({
     description:

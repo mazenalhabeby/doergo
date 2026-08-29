@@ -1740,6 +1740,28 @@
       "openSigned": "Unterschriebenes Dokument öffnen"
     },
     "sectionWaiting": "Wartet auf Sie",
-    "signOnPaper": "Auf Papier unterschreiben"
+    "signOnPaper": "Auf Papier unterschreiben",
+    "supply": {
+      "action": "Dokument hinzufügen",
+      "title": "Eigenes Dokument hinzufügen",
+      "subtitle": "Etwas, das nur Sie haben — Führerschein, Nachweis, Ausweis.",
+      "whatIsIt": "Worum geht es?",
+      "theFile": "Die Datei",
+      "takePhoto": "Foto aufnehmen",
+      "chooseExisting": "Foto auswählen",
+      "expiresOn": "Gültig bis",
+      "pickDate": "Datum wählen",
+      "needDate": "Hier wird ein Ablaufdatum benötigt",
+      "reviewNotice": "Das geht zur Prüfung an Ihre Organisation. Bis zur Freigabe erfüllt es keine Nachweispflicht.",
+      "send": "Zur Prüfung senden",
+      "submitted": "Zur Prüfung gesendet",
+      "tooLarge": "Diese Datei ist größer als 20 MB",
+      "failed": "Der Upload konnte nicht gesendet werden",
+      "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen."
+    },
+    "status": {
+      "pendingVerification": "Wird geprüft",
+      "rejected": "Nicht angenommen"
+    }
   }
 }

@@ -1740,6 +1740,28 @@
       "openSigned": "Abrir el documento firmado"
     },
     "sectionWaiting": "Pendiente de ti",
-    "signOnPaper": "Firmar en papel"
+    "signOnPaper": "Firmar en papel",
+    "supply": {
+      "action": "Añadir documento",
+      "title": "Añade uno de tus documentos",
+      "subtitle": "Algo que solo tienes tú: un carné, un certificado, un DNI.",
+      "whatIsIt": "¿De qué se trata?",
+      "theFile": "El archivo",
+      "takePhoto": "Hacer una foto",
+      "chooseExisting": "Elegir una foto",
+      "expiresOn": "Caduca el",
+      "pickDate": "Elige la fecha",
+      "needDate": "Este necesita una fecha de caducidad",
+      "reviewNotice": "Esto pasa a revisión de tu organización. No cuenta para ningún requisito de certificado hasta que lo aprueben.",
+      "send": "Enviar a revisión",
+      "submitted": "Enviado a revisión",
+      "tooLarge": "Ese archivo supera el límite de 20 MB",
+      "failed": "No se pudo enviar la subida",
+      "nothingToSupply": "Tu organización no te pide ningún documento."
+    },
+    "status": {
+      "pendingVerification": "Pendiente de revisión",
+      "rejected": "No aceptado"
+    }
   }
 }

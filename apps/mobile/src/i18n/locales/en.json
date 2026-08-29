@@ -1744,6 +1744,28 @@
       "openSigned": "Open the signed document"
     },
     "sectionWaiting": "Waiting for you",
-    "signOnPaper": "Sign on paper"
+    "signOnPaper": "Sign on paper",
+    "supply": {
+      "action": "Add a document",
+      "title": "Add one of your documents",
+      "subtitle": "Something only you have — a licence, a certificate, an ID.",
+      "whatIsIt": "What is it?",
+      "theFile": "The file",
+      "takePhoto": "Take a photo",
+      "chooseExisting": "Choose a photo",
+      "expiresOn": "Expires on",
+      "pickDate": "Pick the date",
+      "needDate": "This one needs an expiry date",
+      "reviewNotice": "This goes to your organization to be checked. It does not count towards any certificate requirement until they approve it.",
+      "send": "Send for review",
+      "submitted": "Sent for review",
+      "tooLarge": "That file is larger than the 20 MB limit",
+      "failed": "The upload could not be sent",
+      "nothingToSupply": "Your organization does not ask for any documents from you."
+    },
+    "status": {
+      "pendingVerification": "Awaiting review",
+      "rejected": "Not accepted"
+    }
   }
 }

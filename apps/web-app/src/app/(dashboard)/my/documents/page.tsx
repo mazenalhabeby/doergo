@@ -5,10 +5,11 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Search, Download, Loader2, FileText, Image as ImageIcon,
-  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox, DownloadCloud,
+  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox, DownloadCloud, Upload, Clock, XCircle,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
+import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
@@ -85,6 +86,7 @@ export default function MyDocumentsPage() {
   const [search, setSearch] = useState("")
   const [opening, setOpening] = useState<string | null>(null)
   const [exported, setExported] = useState<{ title: string; url: string }[] | null>(null)
+  const [supplying, setSupplying] = useState(false)
 
   const { data: types = [] } = useQuery<DocumentTypeRow[]>({
     queryKey: ["document-types"],
@@ -181,15 +183,32 @@ export default function MyDocumentsPage() {
             {t("documents.my.subtitle")}
           </p>
         </div>
-        {documents.length > 0 && (
-          <Button variant="outline" size="sm" onClick={() => exportAll.mutate()} disabled={exportAll.isPending}>
-            {exportAll.isPending
-              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              : <DownloadCloud className="mr-2 h-4 w-4" />}
-            {t("documents.export.action")}
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {/* Only when the organization actually asks its members for
+              something. An upload button on an organization that issues
+              everything is an invitation to be refused. */}
+          {types.some((ty) => ty.direction === "SUPPLIED" && ty.isActive) && (
+            <Button size="sm" onClick={() => setSupplying(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              {t("documents.supply.action")}
+            </Button>
+          )}
+          {documents.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => exportAll.mutate()} disabled={exportAll.isPending}>
+              {exportAll.isPending
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <DownloadCloud className="mr-2 h-4 w-4" />}
+              {t("documents.export.action")}
+            </Button>
+          )}
+        </div>
       </header>
+
+      <SupplyDocumentDialog
+        types={types}
+        open={supplying}
+        onClose={() => setSupplying(false)}
+      />
 
       {exported && (
         <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
@@ -365,11 +384,42 @@ export default function MyDocumentsPage() {
                         {t("documents.needsSignature")}
                       </span>
                     )}
-                    {d.standing && <StandingChip standing={d.standing} expiresOn={d.expiresOn} />}
+                    {/*
+                      What the member supplied, and where it got to.
+
+                      Silence here would be the worst outcome of the whole
+                      upload feature: somebody uploads a licence, sees it in
+                      their list, and assumes they are covered for the work —
+                      while the dispatch gate, which reads status, still says
+                      no. The chip is the difference between "sent" and "counts".
+                    */}
+                    {d.status === "PENDING_VERIFICATION" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        <Clock className="h-3 w-3" />
+                        {t("documents.status.pendingVerification")}
+                      </span>
+                    )}
+                    {d.status === "REJECTED" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400">
+                        <XCircle className="h-3 w-3" />
+                        {t("documents.status.rejected")}
+                      </span>
+                    )}
+                    {/* A credential's standing is meaningless until it counts. */}
+                    {d.standing && d.status !== "PENDING_VERIFICATION" && d.status !== "REJECTED" && (
+                      <StandingChip standing={d.standing} expiresOn={d.expiresOn} />
+                    )}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-slate-500 tabular-nums dark:text-slate-400">
                     {d.typeLabel} · {period} · {fileSize(d.sizeBytes)}
                   </p>
+                  {/* The reason, verbatim. "Rejected" on its own is an
+                      instruction to upload the same photograph again. */}
+                  {d.status === "REJECTED" && d.rejectionReason && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                      {d.rejectionReason}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1">

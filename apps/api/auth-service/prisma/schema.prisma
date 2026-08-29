@@ -3799,6 +3799,11 @@ enum SignatureMode {
 
 enum DocumentStatus {
   DRAFT // staged in a batch, invisible to the member
+  /// The member uploaded it themselves and nobody has reviewed it yet. NOT
+  /// accepted by the dispatch gate, which is the whole reason it is a status
+  /// rather than a flag: an unverified licence cannot clear a requirement.
+  PENDING_VERIFICATION
+  REJECTED // a reviewer refused it; `rejectionReason` says why
   ISSUED
   AWAITING_SIGNATURE
   SIGNED // sealed and frozen
@@ -3808,6 +3813,7 @@ enum DocumentStatus {
 }
 
 enum DocumentEventType {
+  SUBMITTED // the member uploaded it
   ISSUED
   DELIVERED
   OPENED
@@ -3817,6 +3823,7 @@ enum DocumentEventType {
   SEALED
   ACKNOWLEDGED
   VERIFIED
+  REJECTED
   REVOKED
   SUPERSEDED
 }
@@ -3946,6 +3953,11 @@ model Document {
   expiresOn    DateTime? @db.Date
   verifiedAt   DateTime?
   verifiedById String?
+
+  /// Why a member-supplied document was refused, in the reviewer's words. On
+  /// the row and not only in the event trail: the member's own list has to show
+  /// it, and "rejected" with no reason means uploading the same photo again.
+  rejectionReason String?
 
   /// Null means keep indefinitely; see DocumentType.retentionMonths.
   retentionUntil DateTime?

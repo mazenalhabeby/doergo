@@ -7432,6 +7432,28 @@
           "description": "Identidad o permiso de trabajo. Lo aporta la persona, no es un certificado."
         }
       }
+    },
+    "supply": {
+      "action": "Añadir documento",
+      "title": "Añade uno de tus documentos",
+      "subtitle": "Algo que solo tienes tú: un carné, un certificado, un DNI.",
+      "whatIsIt": "¿De qué se trata?",
+      "theFile": "El archivo",
+      "chooseFile": "Elige un archivo o haz una foto",
+      "accepted": "PDF, PNG o JPEG, hasta 20 MB",
+      "expiresOn": "Caduca el",
+      "expiresHint": "Tomada del propio documento. Recibirás un aviso antes de que caduque.",
+      "reviewNotice": "Esto pasa a revisión de tu organización. No cuenta para ningún requisito de certificado hasta que lo aprueben.",
+      "send": "Enviar a revisión",
+      "submitted": "Enviado a revisión",
+      "pickFile": "Elige primero un archivo",
+      "tooLarge": "Ese archivo supera el límite de 20 MB",
+      "failed": "No se pudo iniciar la subida",
+      "nothingToSupply": "Tu organización no te pide ningún documento."
+    },
+    "status": {
+      "pendingVerification": "Pendiente de revisión",
+      "rejected": "No aceptado"
     }
   }
 }

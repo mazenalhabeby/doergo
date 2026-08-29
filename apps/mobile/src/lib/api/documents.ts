@@ -4,9 +4,14 @@ import { buildUrlWithQuery } from '@hbcfield/shared/client';
 /**
  * The member's own personnel file.
  *
- * Read-only on mobile by design. Issuing, revoking and template work all live
- * on the web, where the person doing them is sitting at a desk with a payroll
- * export open — putting them on a phone would add surface without adding use.
+ * Read-only on mobile EXCEPT for what the member supplies themselves. Issuing,
+ * revoking and template work live on the web, where the person doing them is at
+ * a desk with a payroll export open; putting those on a phone would add surface
+ * without adding use.
+ *
+ * Supplying is the opposite case. A driving licence is photographed, and the
+ * camera is here — asking somebody to email a photo to the office so it can be
+ * uploaded from a desk is how this data goes stale.
  */
 
 export interface MemberDocument {
@@ -25,6 +30,8 @@ export interface MemberDocument {
   unread: boolean;
   needsSignature: boolean;
   standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
+  /** Why a reviewer refused something the member supplied. */
+  rejectionReason?: string | null;
 }
 
 export interface DocumentType {
@@ -37,6 +44,9 @@ export interface DocumentType {
   signatureMode: 'NONE' | 'ACKNOWLEDGE' | 'IN_APP' | 'WET_INK';
   isCredential: boolean;
   isActive: boolean;
+  description?: string | null;
+  /** A date is demanded at upload time when this is set. */
+  hasExpiry: boolean;
 }
 
 export const documentsApi = {
@@ -54,6 +64,41 @@ export const documentsApi = {
   listTypes: async (): Promise<DocumentType[]> => {
     const result = await fetchWithAuth<any>('/documents/types');
     return Array.isArray(result) ? result : result?.data || [];
+  },
+
+  // ── What the member supplies ─────────────────────────────────────────────
+
+  /** Step 1: somewhere to PUT the photograph. No user id — the member is the token. */
+  ownUploadUrl: async (data: {
+    typeId: string;
+    mimeType: string;
+    sizeBytes: number;
+  }): Promise<{ url: string; key: string }> => {
+    const result = await fetchWithAuth<any>('/documents/mine/upload-url', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return result?.data ?? result;
+  },
+
+  /**
+   * Step 2: file it for review.
+   *
+   * It lands PENDING_VERIFICATION. A photograph of a card somebody says is
+   * theirs is a claim, not a record, and the dispatch gate reads status — so
+   * this cannot clear a certificate requirement until a person approves it.
+   */
+  submitOwn: async (data: {
+    stagingKey: string;
+    typeId: string;
+    title?: string;
+    expiresOn?: string;
+  }): Promise<MemberDocument> => {
+    const result = await fetchWithAuth<any>('/documents/mine', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return result?.data ?? result;
   },
 
   /** Record agreement to sign electronically — its own act, before the drawing. */

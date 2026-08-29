@@ -169,6 +169,24 @@ describe('the service still applies this rule', () => {
     expect(src).toContain('userId: { in: userIds }');
   });
 
+  it('counts only documents a HUMAN put in that state', () => {
+    /*
+      The property that makes member self-upload safe.
+
+      A member can now file their own certificate, and it lands
+      PENDING_VERIFICATION. If this query accepted that status, anybody could
+      clear a gas-work requirement by photographing a bus ticket and typing a
+      date — the gate would be satisfied by the act of claiming.
+
+      REJECTED must be excluded for the same reason, and DRAFT because a staged
+      row is not visible to the member either. So the list is an ALLOW-list of
+      the two states a person can only reach deliberately: ISSUED (an
+      administrator filed or approved it) and SIGNED.
+    */
+    expect(src).toContain("status: { in: ['ISSUED', 'SIGNED'] }");
+    expect(src).not.toContain('PENDING_VERIFICATION');
+  });
+
   it('names the credential in the refusal, not just the person', () => {
     expect(src).toContain('a required certificate is missing or expired');
   });

@@ -7441,6 +7441,28 @@
           "description": "Identità o permesso di lavoro. Fornito dalla persona, non è un attestato."
         }
       }
+    },
+    "supply": {
+      "action": "Aggiungi documento",
+      "title": "Aggiungi un tuo documento",
+      "subtitle": "Qualcosa che hai solo tu: una patente, un attestato, un documento.",
+      "whatIsIt": "Di cosa si tratta?",
+      "theFile": "Il file",
+      "chooseFile": "Scegli un file o scatta una foto",
+      "accepted": "PDF, PNG o JPEG, fino a 20 MB",
+      "expiresOn": "Scade il",
+      "expiresHint": "Presa dal documento stesso. Riceverai un promemoria prima della scadenza.",
+      "reviewNotice": "Questo va in verifica alla tua organizzazione. Finché non lo approvano non soddisfa alcun requisito di attestato.",
+      "send": "Invia per la verifica",
+      "submitted": "Inviato per la verifica",
+      "pickFile": "Scegli prima un file",
+      "tooLarge": "Il file supera il limite di 20 MB",
+      "failed": "Non è stato possibile avviare il caricamento",
+      "nothingToSupply": "La tua organizzazione non ti chiede alcun documento."
+    },
+    "status": {
+      "pendingVerification": "In attesa di verifica",
+      "rejected": "Non accettato"
     }
   }
 }

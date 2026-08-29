@@ -18,7 +18,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { Skeleton, ScreenContainer, ChipRow } from '../../src/components';
+import { Skeleton, ScreenContainer, ChipRow, SupplyDocumentSheet } from '../../src/components';
 
 /*
   The member's own file, on a phone.
@@ -88,6 +88,7 @@ export default function DocumentsScreen() {
   const [activeType, setActiveType] = useState<string | null>(null);
   const [year, setYear] = useState<number | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
+  const [supplying, setSupplying] = useState(false);
 
   const load = useCallback(async (refreshing = false) => {
     if (refreshing) setIsRefreshing(true);
@@ -317,8 +318,29 @@ export default function DocumentsScreen() {
           <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('documents.my.title')}</Text>
-        <View style={s.headerSpacer} />
+        {/* Only when the organization actually asks its members for something.
+            An upload button on an organization that issues everything is an
+            invitation to be refused. */}
+        {types.some((ty) => ty.direction === 'SUPPLIED' && ty.isActive) ? (
+          <TouchableOpacity
+            onPress={() => setSupplying(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('documents.supply.action')}
+            hitSlop={10}
+          >
+            <Ionicons name="add-circle-outline" size={26} color={COLORS.primary} />
+          </TouchableOpacity>
+        ) : (
+          <View style={s.headerSpacer} />
+        )}
       </View>
+
+      <SupplyDocumentSheet
+        types={types}
+        visible={supplying}
+        onClose={() => setSupplying(false)}
+        onSubmitted={() => load(true)}
+      />
 
       <ScreenContainer>
         {/* Anything waiting on the reader goes above the list, not in date order

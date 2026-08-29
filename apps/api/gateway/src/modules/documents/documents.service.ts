@@ -35,6 +35,9 @@ export class DocumentsGatewayService extends BaseGatewayService {
   updateType(data: unknown) { return this.sendOnce({ cmd: 'documents_update_type' }, data); }
   deactivateType(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_type' }, data); }
   presignUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_presign_upload' }, data); }
+  presignOwnUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_presign_own_upload' }, data); }
+  // A retry would file the same photograph twice, under two rows.
+  submitOwnDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_submit_own' }, data); }
   confirmUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_confirm_upload' }, data); }
   revoke(data: unknown) { return this.sendOnce({ cmd: 'documents_revoke' }, data); }
   deleteOwn(data: unknown) { return this.sendOnce({ cmd: 'documents_delete_own' }, data); }

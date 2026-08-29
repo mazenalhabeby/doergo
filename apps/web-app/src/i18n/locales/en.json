@@ -7432,6 +7432,28 @@
           "description": "Identity or right-to-work. Supplied by the member, not a certificate."
         }
       }
+    },
+    "supply": {
+      "action": "Add a document",
+      "title": "Add one of your documents",
+      "subtitle": "Something only you have — a licence, a certificate, an ID.",
+      "whatIsIt": "What is it?",
+      "theFile": "The file",
+      "chooseFile": "Choose a file or take a photo",
+      "accepted": "PDF, PNG or JPEG, up to 20 MB",
+      "expiresOn": "Expires on",
+      "expiresHint": "Taken from the document itself. You will be reminded before it runs out.",
+      "reviewNotice": "This goes to your organization to be checked. It does not count towards any certificate requirement until they approve it.",
+      "send": "Send for review",
+      "submitted": "Sent for review",
+      "pickFile": "Choose a file first",
+      "tooLarge": "That file is larger than the 20 MB limit",
+      "failed": "The upload could not be started",
+      "nothingToSupply": "Your organization does not ask for any documents from you."
+    },
+    "status": {
+      "pendingVerification": "Awaiting review",
+      "rejected": "Not accepted"
     }
   }
 }

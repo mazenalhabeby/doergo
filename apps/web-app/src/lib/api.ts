@@ -5922,6 +5922,8 @@ export interface MemberDocumentRow {
   unread: boolean;
   needsSignature: boolean;
   standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
+  /** Why a reviewer refused something the member supplied. */
+  rejectionReason?: string | null;
 }
 
 export interface DocumentTypeRow {
@@ -6112,6 +6114,31 @@ export const documentsApi = {
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
     return unwrapDocuments<any>(response);
+  },
+
+  // ── What the member supplies themselves ──────────────────────────────────
+  //
+  // No userId on either: the member is the token. The server checks the TYPE
+  // instead — SUPPLIED only — so this can never file somebody a payslip.
+
+  /** Step 1: somewhere to PUT your own file. */
+  ownUploadUrl: async (data: { typeId: string; mimeType: string; sizeBytes: number }) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { url: string; key: string; headers: Record<string, string>; expiresInSeconds: number };
+    }>('/documents/mine/upload-url', data);
+    return unwrapDocuments<{ url: string; key: string }>(response);
+  },
+
+  /** Step 2: file it for review. It lands PENDING_VERIFICATION, never ISSUED. */
+  submitOwn: async (data: {
+    stagingKey: string;
+    typeId: string;
+    title?: string;
+    expiresOn?: string;
+  }) => {
+    const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents/mine', data);
+    return unwrapDocuments<MemberDocumentRow>(response);
   },
 
   revoke: async (id: string) => {

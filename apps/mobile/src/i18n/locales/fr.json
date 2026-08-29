@@ -1740,6 +1740,28 @@
       "openSigned": "Ouvrir le document signé"
     },
     "sectionWaiting": "En attente de vous",
-    "signOnPaper": "Signer sur papier"
+    "signOnPaper": "Signer sur papier",
+    "supply": {
+      "action": "Ajouter un document",
+      "title": "Ajouter un de vos documents",
+      "subtitle": "Quelque chose que vous seul possédez : un permis, une attestation, une pièce d’identité.",
+      "whatIsIt": "De quoi s’agit-il ?",
+      "theFile": "Le fichier",
+      "takePhoto": "Prendre une photo",
+      "chooseExisting": "Choisir une photo",
+      "expiresOn": "Expire le",
+      "pickDate": "Choisir la date",
+      "needDate": "Une date d’expiration est requise ici",
+      "reviewNotice": "Ceci part en vérification chez votre organisation. Tant qu’elle ne l’a pas validé, cela ne satisfait aucune exigence d’attestation.",
+      "send": "Envoyer pour vérification",
+      "submitted": "Envoyé pour vérification",
+      "tooLarge": "Ce fichier dépasse la limite de 20 Mo",
+      "failed": "Le dépôt n’a pas pu être envoyé",
+      "nothingToSupply": "Votre organisation ne vous demande aucun document."
+    },
+    "status": {
+      "pendingVerification": "En attente de vérification",
+      "rejected": "Refusé"
+    }
   }
 }

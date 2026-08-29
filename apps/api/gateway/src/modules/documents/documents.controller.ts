@@ -20,7 +20,9 @@ import {
   ConfirmUploadDto,
   CreateDocumentTypeDto,
   CreateTemplateDto,
+  PresignOwnUploadDto,
   PreviewTemplateDto,
+  SubmitOwnDocumentDto,
   IssueFromTemplateDto,
   ListDocumentsQueryDto,
   PresignUploadDto,
@@ -163,6 +165,36 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Credential validity across the organization' })
   async compliance(@CurrentUser() user: CurrentUserData) {
     return this.documents.compliance({ organizationId: user.organizationId });
+  }
+
+  // ── What the member supplies themselves ──────────────────────────────────
+  //
+  // NO @RequirePermission on either. Uploading your own driving licence is not
+  // an administrative act — it is the only way an organization can hold a
+  // document that only its holder possesses. The service checks the TYPE
+  // instead: SUPPLIED only, so this can never become a way to file yourself a
+  // payslip. Neither route takes a user id; the member is the token.
+
+  @Post('mine/upload-url')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ summary: 'A link to upload one of your own documents to' })
+  async presignOwnUpload(@CurrentUser() user: CurrentUserData, @Body() body: PresignOwnUploadDto) {
+    return this.documents.presignOwnUpload({ actor: documentActor(user), ...body });
+  }
+
+  @Post('mine')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ summary: 'File your uploaded document for review' })
+  async submitOwnDocument(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: SubmitOwnDocumentDto,
+    @Req() req: any,
+  ) {
+    return this.documents.submitOwnDocument({
+      actor: documentActor(user),
+      ...body,
+      ctx: requestContext(req),
+    });
   }
 
   // ── Templates ────────────────────────────────────────────────────────────

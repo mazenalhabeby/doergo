@@ -7432,6 +7432,28 @@
           "description": "Identität oder Arbeitserlaubnis. Vom Teammitglied beigebracht, kein Nachweis."
         }
       }
+    },
+    "supply": {
+      "action": "Dokument hinzufügen",
+      "title": "Eigenes Dokument hinzufügen",
+      "subtitle": "Etwas, das nur Sie haben — Führerschein, Nachweis, Ausweis.",
+      "whatIsIt": "Worum geht es?",
+      "theFile": "Die Datei",
+      "chooseFile": "Datei wählen oder Foto aufnehmen",
+      "accepted": "PDF, PNG oder JPEG, bis 20 MB",
+      "expiresOn": "Gültig bis",
+      "expiresHint": "Vom Dokument selbst übernommen. Sie werden vor Ablauf erinnert.",
+      "reviewNotice": "Das geht zur Prüfung an Ihre Organisation. Bis zur Freigabe erfüllt es keine Nachweispflicht.",
+      "send": "Zur Prüfung senden",
+      "submitted": "Zur Prüfung gesendet",
+      "pickFile": "Bitte zuerst eine Datei wählen",
+      "tooLarge": "Diese Datei ist größer als 20 MB",
+      "failed": "Der Upload konnte nicht gestartet werden",
+      "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen."
+    },
+    "status": {
+      "pendingVerification": "Wird geprüft",
+      "rejected": "Nicht angenommen"
     }
   }
 }
