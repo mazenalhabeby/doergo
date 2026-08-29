@@ -21,6 +21,7 @@ import {
   CreateDocumentTypeDto,
   CreateTemplateDto,
   PresignOwnUploadDto,
+  RejectDocumentDto,
   PreviewTemplateDto,
   SubmitOwnDocumentDto,
   IssueFromTemplateDto,
@@ -165,6 +166,52 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Credential validity across the organization' })
   async compliance(@CurrentUser() user: CurrentUserData) {
     return this.documents.compliance({ organizationId: user.organizationId });
+  }
+
+  // ── Reviewing what members supplied ──────────────────────────────────────
+  //
+  // On `canIssueDocuments`, not a fifth permission key. Deciding that a
+  // certificate is genuine and filing it into somebody's record is the same
+  // authority as filing one yourself — and a permission nobody remembers to
+  // grant means a review queue that silently fills up.
+
+  @Get('awaiting-verification')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Documents members have supplied, waiting to be checked' })
+  async awaitingVerification(@CurrentUser() user: CurrentUserData) {
+    return this.documents.awaitingVerification({ actor: documentActor(user) });
+  }
+
+  @Post(':id/verify')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Accept it — from here it counts' })
+  async verifyDocument(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.documents.verifyDocument({
+      actor: documentActor(user),
+      documentId: id,
+      ctx: requestContext(req),
+    });
+  }
+
+  @Post(':id/reject')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Refuse it, with a reason the member reads' })
+  async rejectDocument(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Body() body: RejectDocumentDto,
+    @Req() req: any,
+  ) {
+    return this.documents.rejectDocument({
+      actor: documentActor(user),
+      documentId: id,
+      reason: body.reason,
+      ctx: requestContext(req),
+    });
   }
 
   // ── What the member supplies themselves ──────────────────────────────────

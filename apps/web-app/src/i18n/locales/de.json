@@ -7454,6 +7454,33 @@
     "status": {
       "pendingVerification": "Wird geprüft",
       "rejected": "Nicht angenommen"
+    },
+    "review": {
+      "title": "Prüfliste",
+      "explainer": "Was Teammitglieder eingereicht haben und noch geprüft werden muss. Mit der Annahme steht die Person wieder für Einsätze zur Verfügung — vorher zählt es nicht.",
+      "empty": "Nichts offen",
+      "emptyHint": "Hochgeladene Dokumente erscheinen hier zur Prüfung.",
+      "blockingNotice_one": "{{count}} Person kann für bestimmte Arbeiten erst eingeteilt werden, wenn Sie die Einreichung annehmen.",
+      "blockingNotice_other": "{{count}} Personen können für bestimmte Arbeiten erst eingeteilt werden, wenn Sie die Einreichungen annehmen.",
+      "blocksWork": "Blockiert Einsätze",
+      "waitingSince": "Gesendet {{date}}",
+      "expires": "Gültig bis {{date}}",
+      "alreadyExpired": "Dieser Nachweis ist bereits abgelaufen. Eine Annahme ermöglicht keine Einteilung.",
+      "view": "Ansehen",
+      "accept": "Annehmen",
+      "accepted": "Angenommen — ab jetzt zählt es",
+      "refuse": "Ablehnen",
+      "refused": "Abgelehnt, das Teammitglied wurde informiert",
+      "refuseTitle": "Einreichung ablehnen",
+      "refuseSubtitle": "{{name}} sieht Ihre Begründung und kann {{type}} erneut einreichen.",
+      "reason": "Warum nicht?",
+      "reasonPlaceholder": "Das liest das Teammitglied",
+      "reasons": {
+        "unreadable": "Das Foto ist zu unscharf",
+        "wrongDocument": "Das ist nicht das angeforderte Dokument",
+        "expired": "Dieser Nachweis ist bereits abgelaufen",
+        "dateMismatch": "Das eingetragene Datum stimmt nicht mit dem Dokument überein"
+      }
     }
   }
 }

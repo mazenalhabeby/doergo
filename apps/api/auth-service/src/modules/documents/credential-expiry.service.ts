@@ -233,7 +233,11 @@ export class CredentialExpiryService {
       where: {
         organizationId: data.organizationId,
         type: { isCredential: true, isActive: true },
-        status: { in: ['ISSUED', 'SIGNED', 'EXPIRED'] },
+        // PENDING_VERIFICATION is here on purpose: a renewal somebody has
+        // already sent in is the single most useful thing to see beside a
+        // certificate that is about to lapse. It is marked as not counting yet,
+        // never shown as valid.
+        status: { in: ['ISSUED', 'SIGNED', 'EXPIRED', 'PENDING_VERIFICATION'] },
       },
       select: {
         id: true,
@@ -255,7 +259,17 @@ export class CredentialExpiryService {
       expiresOn: r.expiresOn,
       member: r.user,
       credential: r.type.label,
-      standing: credentialStanding(r.expiresOn, now),
+      /*
+        Awaiting review is a STANDING of its own, not a flavour of valid.
+
+        A licence sitting in the review queue with a 2030 date would otherwise
+        read as VALID on this board while the dispatch gate — which reads status
+        — still refuses the person. The board exists to answer "can this person
+        work?", so that gap is the one thing it must not have.
+      */
+      awaitingVerification: r.status === 'PENDING_VERIFICATION',
+      standing:
+        r.status === 'PENDING_VERIFICATION' ? 'AWAITING' : credentialStanding(r.expiresOn, now),
       daysLeft: r.expiresOn ? daysUntil(r.expiresOn, now) : null,
       /*
         Whether this actually stops anybody working.
@@ -266,6 +280,7 @@ export class CredentialExpiryService {
       */
       blocksDispatch:
         r.type.requiredForWorkflowIds.length > 0 &&
+        r.status !== 'PENDING_VERIFICATION' &&
         credentialStanding(r.expiresOn, now) === 'EXPIRED',
       gatesTaskTypes: r.type.requiredForWorkflowIds,
     }));

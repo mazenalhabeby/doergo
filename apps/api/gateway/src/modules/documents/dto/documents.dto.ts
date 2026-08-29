@@ -265,6 +265,14 @@ const SIGN_MODES_TEMPLATE = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as cons
  * No `userId`: the member is the token, always. Adding one would create a
  * shape of this request that files a document into somebody else's record.
  */
+/** Refusing a member's upload. The reason is not optional — they read it. */
+export class RejectDocumentDto {
+  @ApiProperty({ example: 'The expiry date on the card does not match the one entered.' })
+  @IsString()
+  @Length(1, 500)
+  reason!: string;
+}
+
 export class PresignOwnUploadDto {
   @ApiProperty()
   @IsString()

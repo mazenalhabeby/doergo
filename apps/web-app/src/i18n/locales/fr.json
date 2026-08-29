@@ -7463,6 +7463,33 @@
     "status": {
       "pendingVerification": "En attente de vérification",
       "rejected": "Refusé"
+    },
+    "review": {
+      "title": "File de vérification",
+      "explainer": "Ce que les membres ont envoyé, en attente de contrôle. Accepter une attestation remet quelqu’un dans le vivier affectable ; avant cela, elle ne compte pas.",
+      "empty": "Rien en attente",
+      "emptyHint": "Les documents déposés par les membres arrivent ici pour contrôle.",
+      "blockingNotice_one": "{{count}} personne ne peut pas être affectée à certains travaux tant que vous n’avez pas accepté son envoi.",
+      "blockingNotice_other": "{{count}} personnes ne peuvent pas être affectées à certains travaux tant que vous n’avez pas accepté leurs envois.",
+      "blocksWork": "Bloque des affectations",
+      "waitingSince": "Envoyé le {{date}}",
+      "expires": "Expire le {{date}}",
+      "alreadyExpired": "Cette attestation est déjà expirée. L’accepter ne permettra pas l’affectation.",
+      "view": "Voir",
+      "accept": "Accepter",
+      "accepted": "Accepté — cela compte à partir de maintenant",
+      "refuse": "Refuser",
+      "refused": "Refusé, la personne a été prévenue",
+      "refuseTitle": "Refuser cet envoi",
+      "refuseSubtitle": "{{name}} verra votre motif et pourra renvoyer un {{type}}.",
+      "reason": "Pourquoi ?",
+      "reasonPlaceholder": "La personne lit ceci",
+      "reasons": {
+        "unreadable": "La photo est trop floue",
+        "wrongDocument": "Ce n’est pas le document demandé",
+        "expired": "Celui-ci est déjà expiré",
+        "dateMismatch": "La date saisie ne correspond pas au document"
+      }
     }
   }
 }

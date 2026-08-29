@@ -7454,6 +7454,33 @@
     "status": {
       "pendingVerification": "Pendiente de revisión",
       "rejected": "No aceptado"
+    },
+    "review": {
+      "title": "Cola de revisión",
+      "explainer": "Lo que han enviado las personas del equipo, pendiente de comprobar. Aceptar un certificado devuelve a alguien a la lista de asignables; hasta entonces no cuenta.",
+      "empty": "Nada pendiente",
+      "emptyHint": "Los documentos que suban aparecerán aquí para comprobarlos.",
+      "blockingNotice_one": "{{count}} persona no puede ser asignada a ciertos trabajos hasta que aceptes lo que ha enviado.",
+      "blockingNotice_other": "{{count}} personas no pueden ser asignadas a ciertos trabajos hasta que aceptes lo que han enviado.",
+      "blocksWork": "Bloquea trabajo",
+      "waitingSince": "Enviado el {{date}}",
+      "expires": "Caduca el {{date}}",
+      "alreadyExpired": "Este certificado ya ha caducado. Aceptarlo no permitirá asignarle trabajo.",
+      "view": "Ver",
+      "accept": "Aceptar",
+      "accepted": "Aceptado: cuenta desde ahora",
+      "refuse": "No aceptar",
+      "refused": "Rechazado, y la persona ha sido avisada",
+      "refuseTitle": "No aceptar esto",
+      "refuseSubtitle": "{{name}} verá tu motivo y podrá enviar otro {{type}}.",
+      "reason": "¿Por qué no?",
+      "reasonPlaceholder": "La persona lee esto",
+      "reasons": {
+        "unreadable": "La foto está demasiado borrosa",
+        "wrongDocument": "Este no es el documento solicitado",
+        "expired": "Este ya ha caducado",
+        "dateMismatch": "La fecha introducida no coincide con el documento"
+      }
     }
   }
 }

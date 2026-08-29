@@ -69,6 +69,16 @@ export class DocumentsController {
   @MessagePattern({ cmd: 'documents_deactivate_template' })
   deactivateTemplate(@Payload() data: any) { return this.documents.deactivateTemplate(data); }
 
+  // ── Reviewing what members supplied ──────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_awaiting_verification' })
+  listAwaitingVerification(@Payload() data: any) { return this.documents.listAwaitingVerification(data); }
+
+  @MessagePattern({ cmd: 'documents_verify' })
+  verifyDocument(@Payload() data: any) { return this.documents.verifyDocument(data); }
+
+  @MessagePattern({ cmd: 'documents_reject' })
+  rejectDocument(@Payload() data: any) { return this.documents.rejectDocument(data); }
+
   // ── What the member supplies ─────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_presign_own_upload' })
   presignOwnUpload(@Payload() data: any) { return this.documents.presignOwnUpload(data); }

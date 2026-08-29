@@ -7463,6 +7463,33 @@
     "status": {
       "pendingVerification": "In attesa di verifica",
       "rejected": "Non accettato"
+    },
+    "review": {
+      "title": "Coda di verifica",
+      "explainer": "Ciò che le persone hanno inviato, in attesa di controllo. Accettare un attestato rimette qualcuno tra gli assegnabili; prima non conta.",
+      "empty": "Nulla in attesa",
+      "emptyHint": "I documenti caricati dalle persone compaiono qui per il controllo.",
+      "blockingNotice_one": "{{count}} persona non può essere assegnata ad alcuni lavori finché non accetti ciò che ha inviato.",
+      "blockingNotice_other": "{{count}} persone non possono essere assegnate ad alcuni lavori finché non accetti ciò che hanno inviato.",
+      "blocksWork": "Blocca il lavoro",
+      "waitingSince": "Inviato il {{date}}",
+      "expires": "Scade il {{date}}",
+      "alreadyExpired": "Questo attestato è già scaduto. Accettarlo non consentirà l’assegnazione.",
+      "view": "Vedi",
+      "accept": "Accetta",
+      "accepted": "Accettato: da ora conta",
+      "refuse": "Non accettare",
+      "refused": "Rifiutato, la persona è stata avvisata",
+      "refuseTitle": "Non accettare questo invio",
+      "refuseSubtitle": "{{name}} vedrà la tua motivazione e potrà inviare un altro {{type}}.",
+      "reason": "Perché no?",
+      "reasonPlaceholder": "La persona legge questo",
+      "reasons": {
+        "unreadable": "La foto è troppo sfocata",
+        "wrongDocument": "Non è il documento richiesto",
+        "expired": "Questo è già scaduto",
+        "dateMismatch": "La data inserita non corrisponde al documento"
+      }
     }
   }
 }

@@ -1030,6 +1030,206 @@ export class DocumentsService {
     }
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // Reviewing what members supplied
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Everything waiting for somebody to look at it.
+   *
+   * The whole queue in one query, oldest first — a person waiting on a licence
+   * being approved is blocked from work, so the oldest is the most urgent. It
+   * carries no URLs: opening the file is a separate, recorded act.
+   */
+  async listAwaitingVerification(data: { actor: DocumentActor }) {
+    this.assertCanIssue(data.actor);
+
+    const rows = await this.prisma.document.findMany({
+      where: {
+        organizationId: data.actor.organizationId,
+        status: 'PENDING_VERIFICATION',
+      },
+      select: {
+        id: true,
+        title: true,
+        issuedAt: true,
+        expiresOn: true,
+        sizeBytes: true,
+        mimeType: true,
+        user: { select: { id: true, firstName: true, lastName: true } },
+        type: {
+          select: { id: true, label: true, isCredential: true, requiredForWorkflowIds: true },
+        },
+      },
+      // Indexed on [organizationId, status].
+      orderBy: { issuedAt: 'asc' },
+      take: 500,
+    });
+
+    const now = new Date();
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      submittedAt: r.issuedAt,
+      expiresOn: r.expiresOn,
+      sizeBytes: r.sizeBytes,
+      mimeType: r.mimeType,
+      member: r.user,
+      typeId: r.type.id,
+      typeLabel: r.type.label,
+      isCredential: r.type.isCredential,
+      /*
+        Whether somebody is WAITING ON THIS to be able to work.
+
+        A licence that gates a task type means this person is out of the pool
+        until it is approved — that is a queue item with a cost attached, and it
+        should not look like a filing task.
+      */
+      blocksWork: r.type.requiredForWorkflowIds.length > 0,
+      // Approving an already-lapsed certificate would put a green tick on
+      // something the gate will still refuse. The reviewer needs to see that.
+      standing: r.type.isCredential ? credentialStanding(r.expiresOn, now) : null,
+    }));
+  }
+
+  /**
+   * Accept it. This is the moment it starts counting.
+   *
+   * The status becomes ISSUED, and that is deliberately the ONLY thing the
+   * dispatch gate reads. `verifiedAt` is recorded as an audit fact rather than
+   * as a second condition, because a gate that had to check both would be one
+   * `AND verifiedAt IS NOT NULL` away from silently failing open — and every
+   * administrator-filed document would need a verification it never had.
+   */
+  async verifyDocument(data: { actor: DocumentActor; documentId: string; ctx?: RequestContext }) {
+    this.assertCanIssue(data.actor);
+    const document = await this.findPendingOr404(data.actor, data.documentId);
+
+    const verifiedAt = new Date();
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.document.update({
+        where: { id: document.id },
+        data: {
+          // A supplied document with a signature mode still has to be signed —
+          // approving it decides only that the file is genuine.
+          status: isBlocking(document.type.signatureMode) ? 'AWAITING_SIGNATURE' : 'ISSUED',
+          verifiedAt,
+          verifiedById: data.actor.userId,
+          // Cleared, so a resubmission that is approved does not keep showing
+          // the reason an earlier one was refused.
+          rejectionReason: null,
+        },
+      });
+      await tx.documentEvent.create({
+        data: {
+          documentId: document.id,
+          type: 'VERIFIED',
+          actorId: data.actor.userId,
+          ...eventContext(data.ctx),
+        },
+      });
+      return row;
+    });
+
+    this.notifyReviewed(document.id, document.user, document.type.label, true, null);
+    return updated;
+  }
+
+  /**
+   * Refuse it, with a reason the member will read.
+   *
+   * The reason is REQUIRED. "Rejected" on its own is an instruction to upload
+   * the same photograph again, and the second attempt fails for the reason
+   * nobody gave — which is how a member ends up unable to work over a blurred
+   * corner.
+   */
+  async rejectDocument(data: {
+    actor: DocumentActor;
+    documentId: string;
+    reason: string;
+    ctx?: RequestContext;
+  }) {
+    this.assertCanIssue(data.actor);
+
+    const reason = data.reason?.trim();
+    if (!reason) {
+      throw new BadRequestException('Say why it was not accepted — the member sees this');
+    }
+
+    const document = await this.findPendingOr404(data.actor, data.documentId);
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.document.update({
+        where: { id: document.id },
+        data: { status: 'REJECTED', rejectionReason: reason },
+      });
+      await tx.documentEvent.create({
+        data: {
+          documentId: document.id,
+          type: 'REJECTED',
+          actorId: data.actor.userId,
+          meta: { reason },
+          ...eventContext(data.ctx),
+        },
+      });
+      return row;
+    });
+
+    this.notifyReviewed(document.id, document.user, document.type.label, false, reason);
+    return updated;
+  }
+
+  /**
+   * A document this caller may review, or a refusal.
+   *
+   * PENDING_VERIFICATION only. Re-approving something already ISSUED would
+   * rewrite `verifiedAt` on a document nobody re-examined, and "rejecting" a
+   * payslip the organization issued is not a review — it is a way to make a
+   * record disappear from the member's list.
+   */
+  private async findPendingOr404(actor: DocumentActor, documentId: string) {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: documentId,
+        organizationId: actor.organizationId,
+        status: 'PENDING_VERIFICATION',
+      },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        type: { select: { label: true, signatureMode: true } },
+      },
+    });
+    if (!document) throw new NotFoundException('No document is waiting for review');
+    return document;
+  }
+
+  /** Tell the member what happened to what they sent. */
+  private notifyReviewed(
+    documentId: string,
+    member: { id: string; firstName: string; lastName: string; email: string },
+    typeLabel: string,
+    accepted: boolean,
+    reason: string | null,
+  ) {
+    try {
+      this.notificationClient.emit('document_reviewed', {
+        documentId,
+        userId: member.id,
+        email: member.email,
+        firstName: member.firstName,
+        typeLabel,
+        accepted,
+        // Carried into the message itself: a refusal the member has to open the
+        // app to understand is a refusal they act on a day later.
+        reason,
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Could not queue review notice for document ${documentId}: ${(err as Error).message}`,
+      );
+    }
+  }
+
   /**
    * Record that the member agreed to sign electronically.
    *
@@ -1472,7 +1672,18 @@ export class DocumentsService {
       // Only ever set on something the member supplied. Shown to them verbatim:
       // "rejected" with no reason is an instruction to upload the same photo.
       rejectionReason: d.rejectionReason,
-      standing: d.type.isCredential ? credentialStanding(d.expiresOn, now) : null,
+      /*
+        No standing until it counts.
+
+        A PENDING_VERIFICATION licence with a 2030 date is not "valid" — the
+        dispatch gate refuses it — and a green tick beside it is the single most
+        misleading thing this list could show, because it says the opposite of
+        what happens when the person is assigned to work.
+      */
+      standing:
+        d.type.isCredential && d.status !== 'PENDING_VERIFICATION' && d.status !== 'REJECTED'
+          ? credentialStanding(d.expiresOn, now)
+          : null,
     }));
   }
 

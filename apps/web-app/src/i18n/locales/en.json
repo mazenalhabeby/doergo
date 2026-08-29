@@ -7454,6 +7454,33 @@
     "status": {
       "pendingVerification": "Awaiting review",
       "rejected": "Not accepted"
+    },
+    "review": {
+      "title": "Review queue",
+      "explainer": "What members have sent in, waiting to be checked. Accepting a certificate puts somebody back into the assignable pool — until then it does not count.",
+      "empty": "Nothing waiting",
+      "emptyHint": "Documents members upload appear here for checking.",
+      "blockingNotice_one": "{{count}} person cannot be assigned to some work until you accept what they sent.",
+      "blockingNotice_other": "{{count}} people cannot be assigned to some work until you accept what they sent.",
+      "blocksWork": "Blocking work",
+      "waitingSince": "Sent {{date}}",
+      "expires": "Expires {{date}}",
+      "alreadyExpired": "This certificate has already expired. Accepting it will not let them be assigned.",
+      "view": "View",
+      "accept": "Accept",
+      "accepted": "Accepted — it counts from now",
+      "refuse": "Not accept",
+      "refused": "Refused, and the member has been told",
+      "refuseTitle": "Not accepting this",
+      "refuseSubtitle": "{{name}} will see your reason and can send a new {{type}}.",
+      "reason": "Why not?",
+      "reasonPlaceholder": "The member reads this",
+      "reasons": {
+        "unreadable": "The photo is too blurred to read",
+        "wrongDocument": "This is not the document that was asked for",
+        "expired": "This one has already expired",
+        "dateMismatch": "The date entered does not match the document"
+      }
     }
   }
 }

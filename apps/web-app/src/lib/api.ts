@@ -5906,6 +5906,22 @@ export const searchApi = {
 // DOCUMENTS API — the personnel file
 // ============================================================================
 
+export interface PendingReviewRow {
+  id: string;
+  title: string;
+  submittedAt: string;
+  expiresOn: string | null;
+  sizeBytes: number;
+  mimeType: string;
+  member: { id: string; firstName: string; lastName: string };
+  typeId: string;
+  typeLabel: string;
+  isCredential: boolean;
+  /** Somebody is out of the assignable pool until this is approved. */
+  blocksWork: boolean;
+  standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
+}
+
 export interface MemberDocumentRow {
   id: string;
   title: string;
@@ -6113,6 +6129,27 @@ export const documentsApi = {
     asDraft?: boolean;
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
+    return unwrapDocuments<any>(response);
+  },
+
+  // ── Reviewing what members supplied ──────────────────────────────────────
+
+  awaitingVerification: async () => {
+    const response = await api.get<{ success: boolean; data: PendingReviewRow[] }>(
+      '/documents/awaiting-verification',
+    );
+    return unwrapDocuments<PendingReviewRow[]>(response) ?? [];
+  },
+
+  /** Accept it. From here it counts — the dispatch gate reads the status. */
+  verify: async (id: string) => {
+    const response = await api.post<{ success: boolean }>(`/documents/${id}/verify`, {});
+    return unwrapDocuments<any>(response);
+  },
+
+  /** Refuse it. The reason is required, because the member reads it. */
+  reject: async (id: string, reason: string) => {
+    const response = await api.post<{ success: boolean }>(`/documents/${id}/reject`, { reason });
     return unwrapDocuments<any>(response);
   },
 
