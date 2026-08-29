@@ -436,7 +436,16 @@ async function main() {
     });
   }
 
-  // Contracts: the first member has signed, the second is waiting.
+  /*
+    Contracts.
+
+    members[0] (the admin) has a signed one; members[1] gets BOTH — a prior-year
+    contract already signed and sealed, and a current one waiting. That is a
+    realistic renewal, and it means ONE account shows every state a document can
+    be in: signed, waiting, read, and a credential at each standing. Without it
+    the only signed contract belongs to the admin, and testing the member
+    experience on a phone shows half the picture.
+  */
   for (const [i, m] of members.slice(0, 2).entries()) {
     const bytes = await makePdf('Employment contract', [
       '§1 Position',
@@ -493,6 +502,65 @@ async function main() {
           },
         });
       }
+    }
+  }
+
+  // members[1]'s previous contract: signed last year, superseded by the one
+  // now waiting. Gives that account a sealed document to open on a phone.
+  if (members[1]) {
+    const m = members[1];
+    const prior = await file({
+      user: m,
+      typeId: contract.id,
+      title: `Employment contract ${thisYear - 1} — ${m.firstName} ${m.lastName}`,
+      status: 'SIGNED',
+      issuedAt: new Date(thisYear - 1, 8, 1),
+      firstOpenedAt: new Date(thisYear - 1, 8, 2),
+      bytes: await makePdf(`Employment contract ${thisYear - 1}`, [
+        '§1 Position',
+        `The employee ${m.firstName} ${m.lastName} is engaged as ${m.position ?? 'Field Technician'}`,
+        `by ${org.name}, Arbeiterheimstraße 32, 4663 Laakirchen, commencing 01.09.${thisYear - 1}.`,
+        '',
+        '§2 Working time',
+        'Regular weekly working time is 38.5 hours, Monday to Friday.',
+        '',
+        `Superseded by the ${thisYear} agreement.`,
+      ], true),
+    });
+
+    const sigPng = Buffer.concat([
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+      Buffer.alloc(256, 0),
+    ]);
+    const sigHash = sha256(sigPng);
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: `${org.id}/signatures/${sigHash.slice(0, 2)}/${sigHash}.png`,
+      Body: sigPng, ContentType: 'image/png',
+    }));
+    await prisma.documentSignature.create({
+      data: {
+        documentId: prior.id, userId: m.id,
+        signatureKey: `${org.id}/signatures/${sigHash.slice(0, 2)}/${sigHash}.png`,
+        signatureSha256: sigHash,
+        consentText: 'I have read this document and agree to sign it electronically.',
+        consentAt: new Date(thisYear - 1, 8, 2), signedAt: new Date(thisYear - 1, 8, 2),
+        hashBefore: prior.sha256, hashAfter: prior.sha256,
+        sealedAt: new Date(thisYear - 1, 8, 2),
+        idempotencyKey: `${SEED}prior_${prior.id}`,
+      },
+    });
+    for (const type of ['DELIVERED', 'OPENED', 'CONSENTED', 'SIGNED', 'SEALED'] as const) {
+      await prisma.documentEvent.create({
+        data: {
+          documentId: prior.id, type, actorId: m.id, at: new Date(thisYear - 1, 8, 2),
+          ip: '84.115.20.11', userAgent: 'HBCField/1.0.2 iOS 18.4', appVersion: '1.0.2',
+          lat: 47.9813, lng: 13.8269,
+        },
+      });
     }
   }
 
