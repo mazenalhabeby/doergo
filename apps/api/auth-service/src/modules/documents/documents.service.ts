@@ -1187,6 +1187,84 @@ export class DocumentsService {
     });
   }
 
+  /**
+   * Everything in a member's file, for them to take away.
+   *
+   * GDPR portability, and cheap to build now because the alternative is
+   * assembling it by hand under a thirty-day deadline. Returns a manifest plus
+   * one short-lived link per document — not the bytes, because a fifty-document
+   * archive assembled in a Node process is exactly the thing the rest of this
+   * feature refuses to do.
+   *
+   * SELF ONLY unless the caller may open other members' documents. A subject
+   * access request is about YOUR data; someone else's export is their file.
+   */
+  async exportForMember(data: {
+    actor: DocumentActor;
+    targetUserId?: string;
+    ctx?: RequestContext;
+  }) {
+    const targetUserId = data.targetUserId ?? data.actor.userId;
+    const isSelf = targetUserId === data.actor.userId;
+    if (!isSelf && !data.actor.canOpenMemberDocuments) {
+      throw new ForbiddenException('You cannot export other members’ documents');
+    }
+    const store = this.requireStore();
+
+    const documents = await this.prisma.document.findMany({
+      where: {
+        organizationId: data.actor.organizationId,
+        userId: targetUserId,
+        status: { not: 'DRAFT' },
+      },
+      include: {
+        type: { select: { key: true, label: true, direction: true } },
+        signature: { select: { signedAt: true, hashAfter: true } },
+      },
+      orderBy: [{ issuedAt: 'asc' }],
+    });
+
+    const files = [];
+    for (const d of documents) {
+      files.push({
+        title: d.title,
+        type: d.type.label,
+        issuedAt: d.issuedAt,
+        periodYear: d.periodYear,
+        periodMonth: d.periodMonth,
+        status: d.status,
+        sizeBytes: d.sizeBytes,
+        // The hash is included so the recipient can verify later that what they
+        // downloaded is what the record says it was.
+        sha256: d.sha256,
+        signedAt: d.signature?.signedAt ?? null,
+        url: await this.withStorage('preparing an export', () =>
+          store.presignDownload(
+            d.storageKey,
+            downloadName(d.title, d.mimeType),
+            // Longer than a single open: a person downloading fifty files needs
+            // more than a minute, and this link was minted for them by name.
+            15 * 60,
+          ),
+        ),
+      });
+    }
+
+    // Recorded like any other read, against every document in the export.
+    if (files.length > 0) {
+      await this.prisma.documentEvent.createMany({
+        data: documents.map((d) => ({
+          documentId: d.id,
+          type: 'DOWNLOADED' as const,
+          actorId: data.actor.userId,
+          ...eventContext(data.ctx),
+        })),
+      });
+    }
+
+    return { exportedAt: new Date(), count: files.length, files };
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   // Withdrawing
   // ══════════════════════════════════════════════════════════════════════════

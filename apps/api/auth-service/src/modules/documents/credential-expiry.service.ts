@@ -47,8 +47,11 @@ export class CredentialExpiryService {
       async () => {
         const marked = await this.markExpired();
         const reminded = await this.sendReminders();
-        if (marked || reminded) {
-          this.logger.log(`Credentials: ${marked} expired, ${reminded} reminder(s) sent`);
+        const pruned = await this.pruneExpiredRetention();
+        if (marked || reminded || pruned) {
+          this.logger.log(
+            `Documents: ${marked} expired, ${reminded} reminder(s), ${pruned} pruned`,
+          );
         }
       },
     );
@@ -160,6 +163,63 @@ export class CredentialExpiryService {
       }
     }
     return sent;
+  }
+
+  /**
+   * Delete what may no longer be kept.
+   *
+   * Retention is a property of the TYPE, never a global setting: Austrian
+   * employee records run about three years past termination, payroll far
+   * longer, and a written reference must be producible for thirty. One rule for
+   * all of them would be wrong for almost all of them — so `retentionUntil` is
+   * computed per document when it is issued, and `null` genuinely means "keep
+   * indefinitely" rather than "nobody decided".
+   *
+   * OPT-IN, like the task-event sweep beside it. Deleting somebody's employment
+   * records is not something that should start happening because a service was
+   * upgraded; an operator sets DOCUMENT_RETENTION_ENABLED when the organization
+   * has decided its policy.
+   *
+   * A SIGNED document is never swept. Whatever the retention rule says, a
+   * contract somebody signed is evidence, and the moment to remove it is a
+   * decision a person makes.
+   */
+  async pruneExpiredRetention(now = new Date()): Promise<number> {
+    if (process.env.DOCUMENT_RETENTION_ENABLED !== 'true') return 0;
+
+    // Capped, and in batches, so no single DELETE holds a long lock — the same
+    // shape as the existing task-event prune.
+    const BATCH = 500;
+    let total = 0;
+
+    for (let i = 0; i < 40; i++) {
+      const due = await this.prisma.document.findMany({
+        where: {
+          retentionUntil: { not: null, lt: now },
+          status: { notIn: ['SIGNED', 'AWAITING_SIGNATURE'] },
+        },
+        select: { id: true },
+        take: BATCH,
+      });
+      if (due.length === 0) break;
+
+      const { count } = await this.prisma.document.deleteMany({
+        where: { id: { in: due.map((d) => d.id) } },
+      });
+      total += count;
+      if (due.length < BATCH) break;
+    }
+
+    /*
+      Objects are deliberately left in place.
+
+      They are content-addressed, so two members issued the same policy share
+      one object — deleting it with the first row would break the second. A
+      sweep that can see the whole picture is the only safe place to collect
+      them, and it is not this one.
+    */
+    if (total > 0) this.logger.log(`Retention: removed ${total} document row(s)`);
+    return total;
   }
 
   /**

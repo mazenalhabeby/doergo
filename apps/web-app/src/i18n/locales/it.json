@@ -7212,6 +7212,13 @@
       "reminderSent_one": "Promemoria inviato · {{count}} giorno",
       "reminderSent_other": "Promemoria inviato · {{count}} giorni",
       "noAction": "Nessuna azione"
+    },
+    "export": {
+      "action": "Esporta il mio fascicolo",
+      "ready_one": "{{count}} documento pronto",
+      "ready_other": "{{count}} documenti pronti",
+      "hint": "Questi link scadono tra 15 minuti. Aprili uno a uno per salvarli.",
+      "nothing": "Non c’è ancora nulla da esportare"
     }
   }
 }

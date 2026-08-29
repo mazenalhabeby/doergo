@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Search, Download, Loader2, FileText, Image as ImageIcon,
-  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox,
+  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox, DownloadCloud,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
@@ -84,6 +84,7 @@ export default function MyDocumentsPage() {
   const [year, setYear] = useState<number | null>(null)
   const [search, setSearch] = useState("")
   const [opening, setOpening] = useState<string | null>(null)
+  const [exported, setExported] = useState<{ title: string; url: string }[] | null>(null)
 
   const { data: types = [] } = useQuery<DocumentTypeRow[]>({
     queryKey: ["document-types"],
@@ -142,6 +143,24 @@ export default function MyDocumentsPage() {
     onError: (e: Error) => notify.error(e.message),
   })
 
+  /*
+    Take the whole file away.
+
+    GDPR portability, and the reason it opens each link rather than zipping:
+    the server never assembles an archive in memory, which is the same rule the
+    rest of this feature follows. A browser will block a burst of automatic
+    downloads, so the links are handed over as a list to click.
+  */
+  const exportAll = useMutation({
+    mutationFn: () => documentsApi.exportMine(),
+    onSuccess: (res) => {
+      if (!res?.count) { notify.error(t("documents.export.nothing")); return }
+      setExported(res.files)
+      notify.success(t("documents.export.ready", { count: res.count }))
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
+
   const remove = useMutation({
     mutationFn: (id: string) => documentsApi.remove(id),
     onSuccess: () => {
@@ -153,14 +172,50 @@ export default function MyDocumentsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {t("documents.my.title")}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t("documents.my.subtitle")}
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            {t("documents.my.title")}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {t("documents.my.subtitle")}
+          </p>
+        </div>
+        {documents.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => exportAll.mutate()} disabled={exportAll.isPending}>
+            {exportAll.isPending
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <DownloadCloud className="mr-2 h-4 w-4" />}
+            {t("documents.export.action")}
+          </Button>
+        )}
       </header>
+
+      {exported && (
+        <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {t("documents.export.ready", { count: exported.length })}
+            </p>
+            <button onClick={() => setExported(null)} className="text-xs text-slate-400 hover:text-slate-700">
+              {t("common.close")}
+            </button>
+          </div>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            {t("documents.export.hint")}
+          </p>
+          <ul className="space-y-1">
+            {exported.map((f, i) => (
+              <li key={i}>
+                <a href={f.url} target="_blank" rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+                  {f.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/*
         Anything needing a signature is lifted above the list.

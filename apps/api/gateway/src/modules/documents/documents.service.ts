@@ -38,6 +38,9 @@ export class DocumentsGatewayService extends BaseGatewayService {
   confirmUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_confirm_upload' }, data); }
   revoke(data: unknown) { return this.sendOnce({ cmd: 'documents_revoke' }, data); }
   deleteOwn(data: unknown) { return this.sendOnce({ cmd: 'documents_delete_own' }, data); }
+  /* A write — it records a DOWNLOADED event per document — and slow enough to
+     need the wider window when a file is large. */
+  export(data: unknown) { return this.sendOnce({ cmd: 'documents_export' }, data, 60000); }
   publishBatch(data: unknown) { return this.sendOnce({ cmd: 'documents_publish_batch' }, data); }
   discardDraft(data: unknown) { return this.sendOnce({ cmd: 'documents_discard_draft' }, data); }
   createTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_create_template' }, data); }

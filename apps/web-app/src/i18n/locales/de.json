@@ -7203,6 +7203,13 @@
       "reminderSent_one": "Erinnerung gesendet · {{count}} Tag",
       "reminderSent_other": "Erinnerung gesendet · {{count}} Tage",
       "noAction": "Kein Handlungsbedarf"
+    },
+    "export": {
+      "action": "Akte exportieren",
+      "ready_one": "{{count}} Dokument bereit",
+      "ready_other": "{{count}} Dokumente bereit",
+      "hint": "Diese Links laufen in 15 Minuten ab. Öffnen Sie jeden, um ihn zu speichern.",
+      "nothing": "Es gibt noch nichts zu exportieren"
     }
   }
 }

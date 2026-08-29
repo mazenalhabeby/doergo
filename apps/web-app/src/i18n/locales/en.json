@@ -7203,6 +7203,13 @@
       "reminderSent_one": "Reminder sent · {{count}} day",
       "reminderSent_other": "Reminder sent · {{count}} days",
       "noAction": "No action"
+    },
+    "export": {
+      "action": "Export my file",
+      "ready_one": "{{count}} document ready",
+      "ready_other": "{{count}} documents ready",
+      "hint": "These links expire in 15 minutes. Open each one to save it.",
+      "nothing": "There is nothing to export yet"
     }
   }
 }

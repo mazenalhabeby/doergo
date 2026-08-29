@@ -6094,6 +6094,28 @@ export const documentsApi = {
     return response.data;
   },
 
+  /**
+   * Everything in your file, as a manifest plus one link each.
+   *
+   * Not an archive: the server never assembles fifty documents in memory. The
+   * browser follows the links, which is what the links are for.
+   */
+  exportMine: async (userId?: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: {
+        exportedAt: string;
+        count: number;
+        files: {
+          title: string; type: string; issuedAt: string; sizeBytes: number;
+          sha256: string; signedAt: string | null; url: string;
+        }[];
+      };
+    }>('/documents/export', userId ? { userId } : {});
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   // ── Credentials ──────────────────────────────────────────────────────────
 
   /** Validity and dates only — never the certificate itself. */

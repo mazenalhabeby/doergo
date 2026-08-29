@@ -7212,6 +7212,13 @@
       "reminderSent_one": "Rappel envoyé · {{count}} jour",
       "reminderSent_other": "Rappel envoyé · {{count}} jours",
       "noAction": "Aucune action"
+    },
+    "export": {
+      "action": "Exporter mon dossier",
+      "ready_one": "{{count}} document prêt",
+      "ready_other": "{{count}} documents prêts",
+      "hint": "Ces liens expirent dans 15 minutes. Ouvrez chacun pour l’enregistrer.",
+      "nothing": "Il n’y a encore rien à exporter"
     }
   }
 }

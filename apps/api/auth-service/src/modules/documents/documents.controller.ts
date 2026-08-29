@@ -119,6 +119,9 @@ export class DocumentsController {
     return this.documents.listEvents(data);
   }
 
+  @MessagePattern({ cmd: 'documents_export' })
+  export(@Payload() data: any) { return this.documents.exportForMember(data); }
+
   @MessagePattern({ cmd: 'documents_delete_own' })
   deleteOwn(@Payload() data: any) {
     return this.documents.deleteOwnSupplied(data);

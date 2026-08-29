@@ -127,6 +127,27 @@ export class DocumentsController {
     });
   }
 
+  /**
+   * Take your whole file away.
+   *
+   * A POST because it records a read against every document in it — and
+   * throttled hard: a legitimate person exports their file once, not hourly.
+   */
+  @Post('export')
+  @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
+  @ApiOperation({ summary: 'Export every document in a member’s file' })
+  async export(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: { userId?: string },
+    @Req() req: any,
+  ) {
+    return this.documents.export({
+      actor: documentActor(user),
+      targetUserId: body?.userId,
+      ctx: requestContext(req),
+    });
+  }
+
   // ── Credentials ──────────────────────────────────────────────────────────
 
   /*
