@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   SectionList,
   RefreshControl,
-  ScrollView,
   ActivityIndicator,
   Linking,
 } from 'react-native';
@@ -19,7 +18,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { Skeleton, ScreenContainer } from '../../src/components';
+import { Skeleton, ScreenContainer, ChipRow } from '../../src/components';
 
 /*
   The member's own file, on a phone.
@@ -333,33 +332,21 @@ export default function DocumentsScreen() {
         )}
 
         {usedTypes.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            /*
-              flexGrow AND flexShrink zero.
-
-              A horizontal ScrollView in a flex column has no intrinsic height,
-              so the FlatList below it took the space and squashed these rows to
-              a few pixels — the chips rendered clipped through their own text.
-            */
-            style={s.chipRow}
-            contentContainerStyle={s.tabs}
-          >
+          <ChipRow>
             <Tab label={t('documents.allTypes')} active={activeType === null} onPress={() => setActiveType(null)} colors={colors} />
             {usedTypes.map((ty) => (
               <Tab key={ty.id} label={ty.label} active={activeType === ty.id} onPress={() => setActiveType(ty.id)} colors={colors} />
             ))}
-          </ScrollView>
+          </ChipRow>
         )}
 
         {years.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={s.tabs}>
+          <ChipRow>
             <Tab label={t('documents.allYears')} active={year === null} onPress={() => setYear(null)} colors={colors} small />
             {years.map((y) => (
               <Tab key={y} label={String(y)} active={year === y} onPress={() => setYear(y)} colors={colors} small />
             ))}
-          </ScrollView>
+          </ChipRow>
         )}
 
         {isLoading ? (
@@ -449,9 +436,7 @@ const s = StyleSheet.create({
   bannerText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   bannerSub: { fontSize: FONT_SIZE.sm, marginTop: 1 },
 
-  // Height is intrinsic to the chips; the row must not be stretched or squeezed.
-  chipRow: { flexGrow: 0, flexShrink: 0 },
-  tabs: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: SPACING.xs, alignItems: 'center' },
+  // Layout and the scroll affordance both live in ChipRow now.
   tab: {
     paddingHorizontal: SPACING.md, paddingVertical: 6,
     borderRadius: RADIUS.full, borderWidth: StyleSheet.hairlineWidth,
