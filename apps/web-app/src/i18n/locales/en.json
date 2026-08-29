@@ -869,7 +869,8 @@
     "crm": "CRM",
     "ledger": "Ledger",
     "documents": "Documents",
-    "issueDocuments": "Issue documents"
+    "issueDocuments": "Issue documents",
+    "myDocuments": "My documents"
   },
   "dashboard": {
     "admin": {

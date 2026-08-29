@@ -99,22 +99,62 @@ describe('documents translations', () => {
   });
 });
 
-describe('the /my/documents nav entry', () => {
+describe('the documents navigation', () => {
   const navbar = fs.readFileSync(
     path.join(process.cwd(), 'src/components/top-navbar.tsx'),
     'utf8',
   );
 
-  it('is registered in NAV_HREFS', () => {
-    // Without this the active-link resolver cannot tell that /my/documents is
-    // more specific than /my, and two items light up at once — a bug this
-    // codebase has already had and fixed once.
-    expect(navbar).toContain('"/my/documents"');
+  it('registers every document route in NAV_HREFS', () => {
+    /*
+      All four, or the active-link resolver cannot tell which is most specific
+      and lights up two items at once — a bug this codebase has already had and
+      fixed once, on /settings vs /settings/billing.
+    */
+    for (const href of [
+      '"/my/documents"',
+      '"/documents"',
+      '"/documents/templates"',
+      '"/documents/compliance"',
+    ]) {
+      expect(navbar).toContain(href);
+    }
   });
 
   it('is gated on the add-on, not on a permission', () => {
-    // Reading your own file is never a permission. The link must appear or not
+    // Reading your own file is never a permission. The entry appears or not
     // purely on whether the organization bought the capability.
     expect(navbar).toContain('hasPlanFeature("documents")');
+  });
+
+  it('gates each admin surface on its own permission', () => {
+    expect(navbar).toContain('hasPermission("canIssueDocuments")');
+    expect(navbar).toContain('hasPermission("canManageDocumentTemplates")');
+    // Credentials ride on canAssignTasks: a dispatcher needs to know WHY
+    // somebody dropped out of the schedule without being able to open a file.
+    expect(navbar).toContain('hasPermission("canAssignTasks")');
+  });
+
+  it('marks the dropdown active from exactly the routes it contains', () => {
+    /*
+      The attendance menu listed a route it did not contain and omitted two it
+      did, so the bar lit up twice on one page and nowhere on two others. Three
+      of these four share a prefix, which makes the same mistake easier here.
+    */
+    const block = navbar.slice(
+      navbar.indexOf('function DocumentsDropdown'),
+      navbar.indexOf('// Time & Attendance Dropdown'),
+    );
+    expect(block).toContain('isDropdownActive(pathname, items.map((i) => i.href))');
+    for (const href of ['/my/documents', '/documents', '/documents/templates', '/documents/compliance']) {
+      expect(block).toContain(`"${href}"`);
+    }
+  });
+
+  it('renders a plain link when only one entry is visible', () => {
+    // An ordinary member sees only their own file. A menu that opens to reveal
+    // one item is a click for nothing.
+    const block = navbar.slice(navbar.indexOf('function DocumentsDropdown'));
+    expect(block).toContain('if (items.length === 1)');
   });
 });

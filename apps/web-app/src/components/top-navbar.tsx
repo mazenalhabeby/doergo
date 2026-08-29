@@ -13,6 +13,7 @@ import {
   BarChart3,
   Shield,
   FileText,
+  ShieldCheck,
   CreditCard,
   MapPin,
   Calendar,
@@ -206,6 +207,13 @@ export function TopNavbar() {
     /my/documents, which is nobody's permission because it is their own file.
   */
   const showIssueDocuments = hasPlanFeature("documents") && hasPermission("canIssueDocuments")
+  const showDocumentTemplates = hasPlanFeature("documents") && hasPermission("canManageDocumentTemplates")
+  /*
+    Credential validity rides on canAssignTasks, not on a document permission:
+    a dispatcher needs to know WHY somebody dropped out of the schedule without
+    being able to open their file.
+  */
+  const showDocumentCompliance = hasPlanFeature("documents") && hasPermission("canAssignTasks")
 
   // Measured overflow for the navigation row (see hooks/use-overflow-nav).
   // Re-measures whenever the language changes, because that changes every width.
@@ -278,6 +286,10 @@ export function TopNavbar() {
         showMyAttendance={showMyAttendance}
         showManage={showManage}
         showCrm={showCrm}
+        showMyDocuments={showMyDocuments}
+        showIssueDocuments={showIssueDocuments}
+        showDocumentTemplates={showDocumentTemplates}
+        showDocumentCompliance={showDocumentCompliance}
       />
 
       {/* Desktop Navigation */}
@@ -437,23 +449,13 @@ export function TopNavbar() {
             {t("nav.timeOff")}
           </Link>
         )}
-        {showIssueDocuments && (
-          <Link href="/documents"
-          data-nav-item
-          data-nav-href="/documents"
-          data-nav-label={t("nav.issueDocuments")}
-          data-nav-active={isActive(pathname, "/documents")} data-tour="nav-issue-documents" className={cn(navItemBase, isActive(pathname, "/documents") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            {t("nav.issueDocuments")}
-          </Link>
-        )}
         {showMyDocuments && (
-          <Link href="/my/documents"
-          data-nav-item
-          data-nav-href="/my/documents"
-          data-nav-label={t("nav.documents")}
-          data-nav-active={isActive(pathname, "/my/documents")} data-tour="nav-my-documents" className={cn(navItemBase, isActive(pathname, "/my/documents") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            {t("nav.documents")}
-          </Link>
+          <DocumentsDropdown
+            pathname={pathname}
+            showIssue={showIssueDocuments}
+            showTemplates={showDocumentTemplates}
+            showCompliance={showDocumentCompliance}
+          />
         )}
         {showMyAttendance && (
           <Link href="/my/attendance"
@@ -545,6 +547,102 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
             {t("nav.sidebar.joinRequests")}
           </Link>
         </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Documents Dropdown (personal file + the admin surfaces)
+// ---------------------------------------------------------------------------
+/**
+ * Everything document-shaped, in one place.
+ *
+ * Templates and Credentials had no navigation at all — reachable only from a
+ * link inside the Issue page, which meant finding them required knowing they
+ * existed. Four related routes across two audiences is exactly what a dropdown
+ * is for.
+ *
+ * With only one item visible — an ordinary member, who sees just their own file
+ * — it renders as a plain link instead. A menu that opens to reveal a single
+ * entry is one more click for nothing.
+ */
+function DocumentsDropdown({
+  pathname,
+  showIssue,
+  showTemplates,
+  showCompliance,
+}: {
+  pathname: string
+  showIssue: boolean
+  showTemplates: boolean
+  showCompliance: boolean
+}) {
+  const { t } = useTranslation()
+
+  /*
+    EXACTLY the routes this menu contains. The attendance menu listed a route it
+    did not contain and omitted two it did, so the bar lit up twice on one page
+    and nowhere on two others — the same mistake is easy to make here, where
+    three of the four share a prefix.
+  */
+  const items = [
+    { href: "/my/documents", label: t("nav.myDocuments"), show: true },
+    { href: "/documents", label: t("nav.issueDocuments"), show: showIssue },
+    { href: "/documents/templates", label: t("documents.templates.title"), show: showTemplates },
+    { href: "/documents/compliance", label: t("documents.compliance.title"), show: showCompliance },
+  ].filter((i) => i.show)
+
+  const active = isDropdownActive(pathname, items.map((i) => i.href))
+
+  // One entry is a link, not a menu.
+  if (items.length === 1) {
+    const only = items[0]!
+    return (
+      <Link
+        href={only.href}
+        data-nav-item
+        data-nav-href={only.href}
+        data-nav-label={only.label}
+        data-nav-active={isActive(pathname, only.href)}
+        data-tour="nav-my-documents"
+        className={cn(navItemBase, active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}
+      >
+        {only.label}
+      </Link>
+    )
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        data-nav-item
+        data-nav-href="/my/documents"
+        data-nav-label={t("nav.documents")}
+        data-nav-active={active}
+        data-tour="nav-documents"
+        className={cn(
+          navItemBase,
+          "cursor-pointer select-none outline-none",
+          active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+        )}
+      >
+        {t("nav.documents")}
+        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">
+        {items.map((item, i) => (
+          <div key={item.href}>
+            {/* The member's own file first, then a rule: below it is everything
+                about OTHER people, which is a different kind of screen. */}
+            {i === 1 && <DropdownMenuSeparator />}
+            <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+              <Link href={item.href} className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          </div>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -648,6 +746,10 @@ function MobileMenu({
   showInvoices,
   showMyTimeOff,
   showMyAttendance,
+  showMyDocuments,
+  showIssueDocuments,
+  showDocumentTemplates,
+  showDocumentCompliance,
   showManage,
   showCrm,
 }: {
@@ -662,6 +764,10 @@ function MobileMenu({
   showMyAttendance: boolean
   showManage: boolean
   showCrm?: boolean
+  showMyDocuments: boolean
+  showIssueDocuments: boolean
+  showDocumentTemplates: boolean
+  showDocumentCompliance: boolean
 }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation()
@@ -840,6 +946,48 @@ function MobileMenu({
             </Link>
           </DropdownMenuItem>
         )}
+        {/*
+          Documents. Flat here rather than a nested menu: this sheet is already a
+          vertical list, and a submenu inside it is one more tap for the same
+          four links.
+        */}
+        {showMyDocuments && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/my/documents" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/my/documents") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <FileText className="h-4 w-4" />
+              {t("nav.myDocuments")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showIssueDocuments && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/documents" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/documents") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <FileText className="h-4 w-4" />
+              {t("nav.issueDocuments")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showDocumentTemplates && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/documents/templates" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/documents/templates") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <FileText className="h-4 w-4" />
+              {t("documents.templates.title")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {showDocumentCompliance && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link href="/documents/compliance" onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/documents/compliance") ? mobileItemActiveStyle : mobileItemInactive)}>
+              <ShieldCheck className="h-4 w-4" />
+              {t("documents.compliance.title")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+
         {/* B2B "Customers" directory retired → a customer is now a Space (kind
             CUSTOMER); client portals are managed per-space (no top-level item). */}
         {showReports && (

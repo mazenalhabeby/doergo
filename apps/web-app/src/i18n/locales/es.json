@@ -869,7 +869,8 @@
     "crm": "CRM",
     "ledger": "Libro",
     "documents": "Documentos",
-    "issueDocuments": "Emitir documentos"
+    "issueDocuments": "Emitir documentos",
+    "myDocuments": "Mis documentos"
   },
   "dashboard": {
     "admin": {

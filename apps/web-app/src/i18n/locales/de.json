@@ -869,7 +869,8 @@
     "crm": "CRM",
     "ledger": "Kassenbuch",
     "documents": "Dokumente",
-    "issueDocuments": "Dokumente ausstellen"
+    "issueDocuments": "Dokumente ausstellen",
+    "myDocuments": "Meine Dokumente"
   },
   "dashboard": {
     "admin": {
