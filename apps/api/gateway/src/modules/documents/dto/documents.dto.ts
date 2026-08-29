@@ -6,6 +6,7 @@ import {
   IsIn,
   IsInt,
   IsISO8601,
+  IsNumber,
   IsOptional,
   IsString,
   Length,
@@ -248,4 +249,92 @@ export class PublishBatchDto {
   // because a silently shortened batch leaves payslips unpublished.
   @ArrayMaxSize(500)
   documentIds!: string[];
+}
+
+const SIGN_MODES_TEMPLATE = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as const;
+
+export class CreateTemplateDto {
+  @ApiProperty()
+  @IsString()
+  typeId!: string;
+
+  @ApiProperty({ example: 'Employment contract — Field Technician' })
+  @IsString()
+  @Length(1, 160)
+  name!: string;
+
+  @ApiProperty({ description: 'Body with {{merge.tokens}}' })
+  @IsString()
+  @Length(1, 200_000)
+  body!: string;
+
+  @ApiPropertyOptional({ description: 'The role this applies to' })
+  @IsOptional()
+  @IsString()
+  appliesToRoleId?: string;
+
+  @ApiPropertyOptional({ description: 'The job title this applies to' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 120)
+  appliesToPosition?: string;
+
+  @ApiPropertyOptional({ enum: SIGN_MODES_TEMPLATE })
+  @IsOptional()
+  @IsIn(SIGN_MODES_TEMPLATE as unknown as string[])
+  signatureMode?: (typeof SIGN_MODES_TEMPLATE)[number];
+
+  @ApiPropertyOptional({ description: 'Days an unsigned contract stays signable' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  offerValidDays?: number;
+}
+
+export class UpdateTemplateDto extends CreateTemplateDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class IssueFromTemplateDto {
+  @ApiProperty()
+  @IsString()
+  userId!: string;
+
+  @ApiPropertyOptional({ description: 'Omit to resolve from the member’s role and job title' })
+  @IsOptional()
+  @IsString()
+  templateId?: string;
+
+  @ApiPropertyOptional({ example: '2026-09-01' })
+  @IsOptional()
+  @IsISO8601()
+  startDate?: string;
+
+  @ApiPropertyOptional({ example: 38.5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(168)
+  weeklyHours?: number;
+}
+
+export class SignDocumentDto {
+  @ApiProperty({ description: 'PNG data URL from the signature pad' })
+  @IsString()
+  // Big enough for a drawn signature, small enough that a payload cannot be a
+  // vector for something else. The service re-checks the decoded bytes.
+  @Length(100, 3_000_000)
+  signatureImage!: string;
+
+  @ApiProperty({
+    description:
+      'A key the client generates once per signing attempt. A retry with the same key returns the existing seal instead of signing twice.',
+  })
+  @IsString()
+  @Length(8, 100)
+  idempotencyKey!: string;
 }

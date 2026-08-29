@@ -1704,6 +1704,37 @@
       "october": "Octubre",
       "november": "Noviembre",
       "december": "Diciembre"
+    },
+    "sign": {
+      "title": "Firmar documento",
+      "stepOf": "Paso {{step}} de {{total}}",
+      "readTitle": "Léelo primero",
+      "readBody": "Abre el documento y léelo. Puedes descargar una copia.",
+      "openDocument": "Abrir documento",
+      "readIt": "Lo he leído",
+      "mustOpen": "Abre el documento para continuar.",
+      "agreeTitle": "Acepta firmar electrónicamente",
+      "consentText": "He leído este documento y acepto firmarlo electrónicamente.",
+      "recordedNotice": "Al firmar se registra lo siguiente:",
+      "records": {
+        "account": "Tu cuenta y que habías iniciado sesión",
+        "device": "Tu dispositivo, versión de la app y dirección IP",
+        "time": "La hora exacta en que aceptaste y firmaste",
+        "hash": "Una huella del documento, para que cualquier cambio posterior se note"
+      },
+      "agreeAndSign": "Aceptar y firmar",
+      "confirmRead": "Confirmo que lo he leído",
+      "signTitle": "Firma con el dedo",
+      "signBody": "Firma dentro del recuadro. Es el mismo panel que usas en los informes de servicio.",
+      "padTitle": "Tu firma",
+      "sealing": "Sellando el documento…",
+      "sealed": "Firmado y sellado",
+      "sealedBody": "Tu contrato ya está en Mis documentos. Nadie puede modificarlo, tampoco nosotros.",
+      "acknowledged": "Registrado",
+      "acknowledgedBody": "Hemos registrado que leíste este documento.",
+      "viewDocuments": "Ver mis documentos",
+      "failed": "No se ha podido completar. Inténtalo de nuevo.",
+      "alreadySigned": "Ya estaba firmado: se conservó tu firma anterior."
     }
   }
 }

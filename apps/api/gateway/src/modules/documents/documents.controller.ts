@@ -19,10 +19,14 @@ import { documentActor, requestContext } from './documents.actor';
 import {
   ConfirmUploadDto,
   CreateDocumentTypeDto,
+  CreateTemplateDto,
+  IssueFromTemplateDto,
   ListDocumentsQueryDto,
   PresignUploadDto,
   PublishBatchDto,
+  SignDocumentDto,
   UpdateDocumentTypeDto,
+  UpdateTemplateDto,
 } from './dto/documents.dto';
 
 /**
@@ -117,6 +121,118 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Withdraw a document (marks it revoked; never deletes)' })
   async revoke(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Req() req: any) {
     return this.documents.revoke({
+      actor: documentActor(user),
+      documentId: id,
+      ctx: requestContext(req),
+    });
+  }
+
+  // ── Templates ────────────────────────────────────────────────────────────
+
+  @Get('templates')
+  @RequirePermission('canManageDocumentTemplates')
+  @ApiOperation({ summary: 'Contract templates' })
+  async listTemplates(
+    @CurrentUser() user: CurrentUserData,
+    @Query('includeInactive') includeInactive?: string,
+  ) {
+    return this.documents.listTemplates({
+      actor: documentActor(user),
+      includeInactive: includeInactive === 'true',
+    });
+  }
+
+  @Post('templates')
+  @RequirePermission('canManageDocumentTemplates')
+  @ApiOperation({ summary: 'Create a contract template' })
+  async createTemplate(@CurrentUser() user: CurrentUserData, @Body() body: CreateTemplateDto) {
+    return this.documents.createTemplate({ actor: documentActor(user), ...body });
+  }
+
+  @Patch('templates/:id')
+  @RequirePermission('canManageDocumentTemplates')
+  @ApiOperation({ summary: 'Edit a template (bumps its version; issued documents are untouched)' })
+  async updateTemplate(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Body() body: UpdateTemplateDto,
+  ) {
+    return this.documents.updateTemplate({ actor: documentActor(user), id, patch: body });
+  }
+
+  @Delete('templates/:id')
+  @RequirePermission('canManageDocumentTemplates')
+  @ApiOperation({ summary: 'Retire a template' })
+  async deactivateTemplate(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.documents.deactivateTemplate({ actor: documentActor(user), id });
+  }
+
+  @Post('issue-contract')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Render and issue a contract to one member' })
+  async issueContract(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: IssueFromTemplateDto,
+    @Req() req: any,
+  ) {
+    return this.documents.issueFromTemplate({
+      actor: documentActor(user),
+      userId: body.userId,
+      templateId: body.templateId,
+      contract: { startDate: body.startDate, weeklyHours: body.weeklyHours },
+      ctx: requestContext(req),
+    });
+  }
+
+  // ── Signing ──────────────────────────────────────────────────────────────
+  /*
+    No @RequirePermission on any of these. You sign YOUR OWN document, and the
+    service scopes every lookup to the authenticated user — there is deliberately
+    no permission anywhere that could grant signing on somebody else's behalf,
+    because that is the one thing a signature cannot survive.
+  */
+
+  @Post(':id/consent')
+  @ApiOperation({ summary: 'Record agreement to sign electronically' })
+  async consent(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Req() req: any) {
+    return this.documents.consent({
+      actor: documentActor(user),
+      documentId: id,
+      ctx: requestContext(req),
+    });
+  }
+
+  @Post(':id/sign')
+  // Tighter than the rest: signing is expensive, and a legitimate person signs
+  // a handful of documents, not a hundred a minute.
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Sign, seal and freeze a document' })
+  async sign(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Body() body: SignDocumentDto,
+    @Req() req: any,
+  ) {
+    return this.documents.sign({
+      actor: documentActor(user),
+      documentId: id,
+      signatureImage: body.signatureImage,
+      idempotencyKey: body.idempotencyKey,
+      // Read from the verified token, never from the body — a client that could
+      // state when it authenticated could state anything.
+      sessionAuthenticatedAt: req.user?.iat ? new Date(req.user.iat * 1000).toISOString() : null,
+      ctx: requestContext(req),
+    });
+  }
+
+  @Post(':id/acknowledge')
+  @ApiOperation({ summary: 'Record "I have read this" — receipt, not agreement' })
+  async acknowledge(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.documents.acknowledge({
       actor: documentActor(user),
       documentId: id,
       ctx: requestContext(req),

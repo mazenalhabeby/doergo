@@ -6,6 +6,7 @@ import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { DocumentsService } from '../documents/documents.service';
 import {
   BCRYPT_COST_FACTOR,
   DEFAULT_PERMISSIONS,
@@ -35,6 +36,9 @@ export class InvitationService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    // A local call, not a message: the contract belongs to the same service and
+    // the same database as the member who just accepted.
+    private readonly documents: DocumentsService,
   ) {}
 
   /**
@@ -652,10 +656,56 @@ export class InvitationService {
 
     this.logger.log(`Invitation accepted: user ${user.id} joined org ${invitation.organizationId} as ${role}`);
 
+    /*
+      Their contract, if the organization has a template for this role.
+
+      AFTER the transaction, and never inside it. Issuing renders a PDF and
+      writes to object storage; doing that with the transaction open would hold
+      a database lock across two network calls — the shape of problem that has
+      already taken this system down once.
+
+      Failing here does not fail the signup. Somebody has joined and can work; a
+      contract that has not appeared yet is a thing an administrator can fix,
+      whereas a signup that rolled back at the last step is not.
+    */
+    void this.issueJoiningContract(user.id, invitation.organizationId, invitation.createdById);
+
     return {
       success: true,
       data: { user },
     };
+  }
+
+  /** Render and issue the contract that applies to a newly joined member. */
+  private async issueJoiningContract(
+    userId: string,
+    organizationId: string,
+    issuedById: string,
+  ): Promise<void> {
+    try {
+      const template = await this.documents.resolveTemplateForMember(organizationId, userId);
+      if (!template) return; // the organization has no contract templates — fine
+
+      await this.documents.issueFromTemplate({
+        actor: {
+          userId: issuedById,
+          organizationId,
+          // The invitation's author is the issuer of record, which is truthful:
+          // they chose the role, and the role chose the template.
+          canViewMemberDocuments: true,
+          canOpenMemberDocuments: false,
+          canIssueDocuments: true,
+          canManageDocumentTemplates: false,
+        },
+        userId,
+        templateId: template.id,
+      });
+      this.logger.log(`Contract issued to ${userId} from template ${template.id}`);
+    } catch (err) {
+      this.logger.error(
+        `Could not issue a joining contract to ${userId}: ${(err as Error).message}`,
+      );
+    }
   }
 
   /**

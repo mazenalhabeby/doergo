@@ -48,6 +48,32 @@ export class DocumentsController {
     return this.documents.revoke(data);
   }
 
+  // ── Templates ────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_list_templates' })
+  listTemplates(@Payload() data: any) { return this.documents.listTemplates(data); }
+
+  @MessagePattern({ cmd: 'documents_create_template' })
+  createTemplate(@Payload() data: any) { return this.documents.createTemplate(data); }
+
+  @MessagePattern({ cmd: 'documents_update_template' })
+  updateTemplate(@Payload() data: any) { return this.documents.updateTemplate(data); }
+
+  @MessagePattern({ cmd: 'documents_deactivate_template' })
+  deactivateTemplate(@Payload() data: any) { return this.documents.deactivateTemplate(data); }
+
+  @MessagePattern({ cmd: 'documents_issue_from_template' })
+  issueFromTemplate(@Payload() data: any) { return this.documents.issueFromTemplate(data); }
+
+  // ── Signing ──────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_consent' })
+  consent(@Payload() data: any) { return this.documents.recordConsent(data); }
+
+  @MessagePattern({ cmd: 'documents_sign' })
+  sign(@Payload() data: any) { return this.documents.signDocument(data); }
+
+  @MessagePattern({ cmd: 'documents_acknowledge' })
+  acknowledge(@Payload() data: any) { return this.documents.acknowledgeDocument(data); }
+
   // ── Payroll day ──────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_match_candidates' })
   matchCandidates(@Payload() data: any) {

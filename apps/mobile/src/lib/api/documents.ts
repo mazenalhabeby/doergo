@@ -33,6 +33,8 @@ export interface DocumentType {
   label: string;
   cadence: 'MONTHLY' | 'ANNUAL' | 'ONE_OFF';
   direction: 'ISSUED' | 'SUPPLIED';
+  /** Decides whether a waiting document asks for a drawing or an acknowledgement. */
+  signatureMode: 'NONE' | 'ACKNOWLEDGE' | 'IN_APP' | 'WET_INK';
   isCredential: boolean;
   isActive: boolean;
 }
@@ -52,6 +54,42 @@ export const documentsApi = {
   listTypes: async (): Promise<DocumentType[]> => {
     const result = await fetchWithAuth<any>('/documents/types');
     return Array.isArray(result) ? result : result?.data || [];
+  },
+
+  /** Record agreement to sign electronically — its own act, before the drawing. */
+  consent: async (id: string): Promise<{ consentText: string; consentAt: string }> => {
+    const result = await fetchWithAuth<any>(`/documents/${id}/consent`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    return result?.data ?? result;
+  },
+
+  /**
+   * Sign, seal and freeze.
+   *
+   * `idempotencyKey` is generated ONCE per attempt and reused on every retry:
+   * a phone in a plant room drops connections, and a retry must return the
+   * existing seal rather than sign a second time.
+   */
+  sign: async (
+    id: string,
+    body: { signatureImage: string; idempotencyKey: string },
+  ): Promise<{ documentId: string; alreadySigned: boolean }> => {
+    const result = await fetchWithAuth<any>(`/documents/${id}/sign`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return result?.data ?? result;
+  },
+
+  /** "I have read this" — receipt, not agreement. */
+  acknowledge: async (id: string): Promise<{ success: boolean }> => {
+    const result = await fetchWithAuth<any>(`/documents/${id}/acknowledge`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    return result?.data ?? result;
   },
 
   /*

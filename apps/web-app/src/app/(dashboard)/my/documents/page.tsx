@@ -7,6 +7,7 @@ import {
   Search, Download, Loader2, FileText, Image as ImageIcon,
   ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox,
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -77,6 +78,7 @@ function StandingChip({ standing, expiresOn }: { standing: string; expiresOn: st
 export default function MyDocumentsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const [activeType, setActiveType] = useState<string | null>(null)
   const [year, setYear] = useState<number | null>(null)
@@ -308,6 +310,16 @@ export default function MyDocumentsPage() {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1">
+                  {/*
+                    A document waiting on the member goes to the signing flow,
+                    not to a PDF viewer — opening it in a new tab and leaving
+                    them to find the way back is how a request gets forgotten.
+                  */}
+                  {d.needsSignature ? (
+                    <Button size="sm" onClick={() => router.push(`/my/documents/${d.id}/sign`)}>
+                      {t("documents.signAction")}
+                    </Button>
+                  ) : (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -321,6 +333,7 @@ export default function MyDocumentsPage() {
                       <Download className="h-4 w-4" />
                     )}
                   </Button>
+                  )}
                   {/*
                     Only ever offered for what the member supplied. The server
                     refuses anything ISSUED regardless of what the UI shows —

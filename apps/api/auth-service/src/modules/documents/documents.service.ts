@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
@@ -14,14 +15,19 @@ import {
   retentionUntil,
   memberMayDelete,
   isBlocking,
+  canSignInApp,
   credentialStanding,
+  renderTemplate,
+  missingRequired,
+  unknownTokens,
   type DocumentCadence,
   type DocumentDirection,
   type SignatureMode,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
-import { ObjectStore, documentKey, sha256 } from '@hbcfield/shared/storage';
+import { ObjectStore, documentKey, signatureKey, sha256 } from '@hbcfield/shared/storage';
+import { renderContractPdf, sealSignedPdf } from './contract-pdf';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OBJECT_STORE } from './object-store.provider';
 
@@ -93,6 +99,26 @@ export class DocumentsService {
       throw new BadRequestException('Document storage is not configured on this server');
     }
     return this.store;
+  }
+
+  /**
+   * Run a storage call and translate any failure into something a person can act on.
+   *
+   * The SDK's own messages are about buckets and regions — "The specified
+   * bucket does not exist" told a payroll administrator nothing and, reaching a
+   * toast verbatim, is exactly the class of leak this codebase already fixed
+   * once for Prisma errors. The real message is logged; the caller gets a
+   * sentence about their document.
+   */
+  private async withStorage<T>(what: string, fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      this.logger.error(`Storage failed while ${what}: ${(err as Error).message}`);
+      throw new ServiceUnavailableException(
+        'Document storage is unavailable right now. Nothing was changed — please try again.',
+      );
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -241,7 +267,9 @@ export class DocumentsService {
     // exist. `confirmUpload` reads them back, hashes, and moves the object to
     // its content-addressed home.
     const staging = `${data.actor.organizationId}/documents/_staging/${cuidish()}.${extension}`;
-    return store.presignUpload(staging, data.mimeType, data.sizeBytes);
+    return this.withStorage('preparing an upload', () =>
+      store.presignUpload(staging, data.mimeType, data.sizeBytes),
+    );
   }
 
   /**
@@ -302,7 +330,7 @@ export class DocumentsService {
       throw new BadRequestException(`${type.label} needs an expiry date`);
     }
 
-    const head = await store.head(data.stagingKey);
+    const head = await this.withStorage('checking an upload', () => store.head(data.stagingKey));
     if (!head.exists) {
       throw new BadRequestException('The upload did not complete — please try again');
     }
@@ -311,7 +339,7 @@ export class DocumentsService {
       throw new BadRequestException('That file is larger than the limit');
     }
 
-    const bytes = await store.get(data.stagingKey);
+    const bytes = await this.withStorage('reading an upload', () => store.get(data.stagingKey));
     const hash = sha256(bytes);
     const mimeType = head.contentType ?? 'application/pdf';
     const extension = ALLOWED_MIME[mimeType] ?? 'pdf';
@@ -319,7 +347,7 @@ export class DocumentsService {
 
     // Content-addressed, so re-putting identical bytes is a no-op that costs
     // one round trip. The same policy issued to thirty people is one object.
-    await store.put(finalKey, bytes, mimeType);
+    await this.withStorage('filing a document', () => store.put(finalKey, bytes, mimeType));
     await store.delete(data.stagingKey);
 
     const issuedAt = new Date();
@@ -374,6 +402,488 @@ export class DocumentsService {
       this.notifyIssued(document.id, member, type.label, document.title, isBlocking(type.signatureMode));
     }
     return document;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Contract templates
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async listTemplates(data: { actor: DocumentActor; includeInactive?: boolean }) {
+    this.assertCanManageTypes(data.actor);
+    return this.prisma.documentTemplate.findMany({
+      where: {
+        organizationId: data.actor.organizationId,
+        ...(data.includeInactive ? {} : { isActive: true }),
+      },
+      include: {
+        type: { select: { id: true, label: true } },
+        appliesToRole: { select: { id: true, name: true, slug: true } },
+      },
+      orderBy: [{ name: 'asc' }],
+    });
+  }
+
+  async createTemplate(data: {
+    actor: DocumentActor;
+    typeId: string;
+    name: string;
+    body: string;
+    appliesToRoleId?: string | null;
+    appliesToPosition?: string | null;
+    signatureMode?: SignatureMode;
+    offerValidDays?: number | null;
+  }) {
+    this.assertCanManageTypes(data.actor);
+    await this.findTypeOr404(data.typeId, data.actor.organizationId);
+    this.assertTemplateBodyIsUsable(data.body);
+
+    return this.prisma.documentTemplate.create({
+      data: {
+        organizationId: data.actor.organizationId,
+        typeId: data.typeId,
+        name: data.name.trim(),
+        body: data.body,
+        appliesToRoleId: data.appliesToRoleId || null,
+        appliesToPosition: data.appliesToPosition?.trim() || null,
+        signatureMode: data.signatureMode ?? 'IN_APP',
+        offerValidDays: data.offerValidDays ?? 14,
+      },
+    });
+  }
+
+  async updateTemplate(data: {
+    actor: DocumentActor;
+    id: string;
+    patch: Partial<{
+      name: string;
+      body: string;
+      appliesToRoleId: string | null;
+      appliesToPosition: string | null;
+      signatureMode: SignatureMode;
+      offerValidDays: number | null;
+      isActive: boolean;
+    }>;
+  }) {
+    this.assertCanManageTypes(data.actor);
+    const existing = await this.prisma.documentTemplate.findFirst({
+      where: { id: data.id, organizationId: data.actor.organizationId },
+    });
+    if (!existing) throw new NotFoundException('Template not found');
+
+    if (data.patch.body !== undefined) this.assertTemplateBodyIsUsable(data.patch.body);
+
+    /*
+      Editing bumps the version, and documents already issued are untouched.
+
+      A contract is rendered ONCE and frozen; the version is what lets somebody
+      later ask which wording a particular person actually signed. Re-rendering
+      an issued document from an edited template would change its bytes and
+      break the hash that proves it has not been altered.
+    */
+    return this.prisma.documentTemplate.update({
+      where: { id: existing.id },
+      data: {
+        ...data.patch,
+        ...(data.patch.body !== undefined ? { version: existing.version + 1 } : {}),
+      },
+    });
+  }
+
+  async deactivateTemplate(data: { actor: DocumentActor; id: string }) {
+    this.assertCanManageTypes(data.actor);
+    const existing = await this.prisma.documentTemplate.findFirst({
+      where: { id: data.id, organizationId: data.actor.organizationId },
+    });
+    if (!existing) throw new NotFoundException('Template not found');
+    return this.prisma.documentTemplate.update({
+      where: { id: existing.id },
+      data: { isActive: false },
+    });
+  }
+
+  /**
+   * The template that applies to a role and a job title.
+   *
+   * Most specific wins: role AND position, then role alone, then position
+   * alone, then the organization default. A template bound to nothing is the
+   * fallback, so an organization can start with one contract and get more
+   * precise later without re-pointing anything.
+   */
+  async resolveTemplate(data: {
+    organizationId: string;
+    roleId?: string | null;
+    position?: string | null;
+  }) {
+    const candidates = await this.prisma.documentTemplate.findMany({
+      where: { organizationId: data.organizationId, isActive: true },
+      include: { type: { select: { id: true, label: true, retentionMonths: true } } },
+    });
+    if (candidates.length === 0) return null;
+
+    const position = data.position?.trim().toLowerCase() || null;
+    const score = (t: (typeof candidates)[number]): number => {
+      const roleMatches = !!t.appliesToRoleId && t.appliesToRoleId === data.roleId;
+      const posMatches =
+        !!t.appliesToPosition && !!position && t.appliesToPosition.trim().toLowerCase() === position;
+
+      // A template naming a role or a position that does NOT match is not a
+      // fallback — it is a template for somebody else.
+      if (t.appliesToRoleId && !roleMatches) return -1;
+      if (t.appliesToPosition && !posMatches) return -1;
+
+      if (roleMatches && posMatches) return 3;
+      if (roleMatches) return 2;
+      if (posMatches) return 1;
+      return 0; // binds to nothing: the organization default
+    };
+
+    const best = candidates
+      .map((t) => ({ t, s: score(t) }))
+      .filter((x) => x.s >= 0)
+      .sort((a, b) => b.s - a.s)[0];
+
+    return best?.t ?? null;
+  }
+
+  /**
+   * The template that applies to an existing member, resolved from their record.
+   *
+   * A thin wrapper over `resolveTemplate` so the invitation flow does not have
+   * to know that the answer depends on `memberRoleId` and `position` — if that
+   * ever changes, it changes here.
+   */
+  async resolveTemplateForMember(organizationId: string, userId: string) {
+    const member = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId },
+      select: { memberRoleId: true, position: true },
+    });
+    if (!member) return null;
+    return this.resolveTemplate({
+      organizationId,
+      roleId: member.memberRoleId,
+      position: member.position,
+    });
+  }
+
+  /**
+   * Render a contract for one member and issue it.
+   *
+   * RENDER ONCE, HASH, FREEZE. The PDF is produced here, hashed, and stored;
+   * it is never regenerated. Re-rendering on view would let a later template
+   * edit silently produce a different file, and the hash recorded against the
+   * document — the thing that proves it has not been altered — would stop
+   * matching for reasons nobody could explain.
+   */
+  async issueFromTemplate(data: {
+    actor: DocumentActor;
+    userId: string;
+    templateId?: string;
+    /** Terms that are not on the member record. */
+    contract?: { startDate?: string; weeklyHours?: number | string };
+    ctx?: RequestContext;
+  }) {
+    this.assertCanIssue(data.actor);
+    const store = this.requireStore();
+
+    const member = await this.prisma.user.findFirst({
+      where: { id: data.userId, organizationId: data.actor.organizationId },
+      select: {
+        id: true, firstName: true, lastName: true, email: true,
+        position: true, specialty: true, memberRoleId: true,
+        employmentStartDate: true,
+        organization: {
+          select: {
+            name: true, addressLine1: true, city: true, postalCode: true,
+            country: true, email: true, phone: true,
+          },
+        },
+      },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const template = data.templateId
+      ? await this.prisma.documentTemplate.findFirst({
+          where: {
+            id: data.templateId,
+            organizationId: data.actor.organizationId,
+            isActive: true,
+          },
+          include: { type: { select: { id: true, label: true, retentionMonths: true } } },
+        })
+      : await this.resolveTemplate({
+          organizationId: data.actor.organizationId,
+          roleId: member.memberRoleId,
+          position: member.position,
+        });
+
+    if (!template) {
+      throw new BadRequestException(
+        'No contract template applies to this member. Create one under Document templates.',
+      );
+    }
+
+    const issuedAt = new Date();
+    const values = contractValues(member, data.contract, issuedAt);
+
+    const missing = missingRequired(values);
+    if (missing.length > 0) {
+      // Refusing beats issuing a contract with a blank where a start date
+      // belongs — a document that looks complete and is not.
+      throw new BadRequestException(
+        `This contract cannot be issued yet — missing: ${missing.join(', ')}`,
+      );
+    }
+
+    const { text, missing: unfilled } = renderTemplate(template.body, values);
+    if (unfilled.length > 0) {
+      throw new BadRequestException(`Template fields have no value: ${unfilled.join(', ')}`);
+    }
+
+    const title = `${template.type.label} — ${member.firstName} ${member.lastName}`.trim();
+    const pdf = await renderContractPdf({
+      title: template.type.label,
+      body: text,
+      issuedAt,
+      organizationName: member.organization?.name ?? '',
+      memberName: `${member.firstName} ${member.lastName}`.trim(),
+    });
+
+    const hash = sha256(pdf);
+    const key = documentKey(data.actor.organizationId, hash, 'pdf');
+    await this.withStorage('storing a contract', () => store.put(key, pdf, 'application/pdf'));
+
+    const document = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.document.create({
+        data: {
+          organizationId: data.actor.organizationId,
+          userId: member.id,
+          typeId: template.typeId,
+          templateId: template.id,
+          title,
+          storageKey: key,
+          sha256: hash,
+          sizeBytes: pdf.length,
+          mimeType: 'application/pdf',
+          status: isBlocking(template.signatureMode) ? 'AWAITING_SIGNATURE' : 'ISSUED',
+          issuedById: data.actor.userId,
+          issuedAt,
+          retentionUntil: retentionUntil(issuedAt, template.type.retentionMonths),
+        },
+      });
+      await tx.documentEvent.create({
+        data: {
+          documentId: created.id,
+          type: 'ISSUED',
+          actorId: data.actor.userId,
+          meta: { templateId: template.id, templateVersion: template.version },
+          ...eventContext(data.ctx),
+        },
+      });
+      return created;
+    });
+
+    this.notifyIssued(
+      document.id,
+      member,
+      template.type.label,
+      title,
+      isBlocking(template.signatureMode),
+    );
+    return document;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Signing
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Record that the member agreed to sign electronically.
+   *
+   * Its own act, and its own event, deliberately separate from the signature.
+   * eIDAS treats consent to the electronic form as a distinct thing from the
+   * signature itself, and a trail that conflates them cannot show that the
+   * signer was told what they were doing before they did it.
+   */
+  async recordConsent(data: { actor: DocumentActor; documentId: string; ctx?: RequestContext }) {
+    const document = await this.findSignableOr404(data.actor, data.documentId);
+    await this.prisma.documentEvent.create({
+      data: {
+        documentId: document.id,
+        type: 'CONSENTED',
+        actorId: data.actor.userId,
+        meta: { text: CONSENT_TEXT },
+        ...eventContext(data.ctx),
+      },
+    });
+    return { consentText: CONSENT_TEXT, consentAt: new Date() };
+  }
+
+  /**
+   * Sign a document, seal it, and freeze it.
+   *
+   * Idempotent by key: a dropped connection on a phone in a plant room must
+   * return the existing seal, never sign a second time. Everything after the
+   * signature is made runs in one transaction.
+   */
+  async signDocument(data: {
+    actor: DocumentActor;
+    documentId: string;
+    /** PNG data URL from the signature pad. */
+    signatureImage: string;
+    idempotencyKey: string;
+    sessionAuthenticatedAt?: string | null;
+    ctx?: RequestContext;
+  }) {
+    if (!data.idempotencyKey || data.idempotencyKey.length < 8) {
+      throw new BadRequestException('A signing request needs an idempotency key');
+    }
+
+    // Answered before anything else: this is the retry path, and it must be
+    // cheap and side-effect free.
+    const existing = await this.prisma.documentSignature.findUnique({
+      where: { idempotencyKey: data.idempotencyKey },
+      include: { document: { select: { id: true, organizationId: true, status: true } } },
+    });
+    if (existing) {
+      if (existing.document.organizationId !== data.actor.organizationId) {
+        throw new ForbiddenException('That signature does not belong to your organization');
+      }
+      return { documentId: existing.documentId, alreadySigned: true, sealedAt: existing.sealedAt };
+    }
+
+    const store = this.requireStore();
+    const document = await this.findSignableOr404(data.actor, data.documentId);
+
+    if (!canSignInApp(document.type.signatureMode)) {
+      // WET_INK exists for contract types the law excludes from electronic
+      // form. Refusing is the whole point: producing something that looks
+      // signed and is not would be worse than not offering it.
+      throw new BadRequestException(
+        document.type.signatureMode === 'WET_INK'
+          ? 'This document must be signed on paper.'
+          : 'This document does not take a signature.',
+      );
+    }
+
+    const png = decodeSignaturePng(data.signatureImage);
+
+    // The document as the signer read it. Fetched and hashed here rather than
+    // trusting the stored value, so an object swapped underneath us is caught
+    // BEFORE a signature is attached to it.
+    const originalBytes = await this.withStorage('reading the document to sign', () =>
+      store.get(document.storageKey),
+    );
+    const hashBefore = sha256(originalBytes);
+    if (hashBefore !== document.sha256) {
+      throw new BadRequestException(
+        'This document has changed since it was issued and cannot be signed. Please contact your administrator.',
+      );
+    }
+
+    const signatureHash = sha256(png);
+    const sigKey = signatureKey(data.actor.organizationId, signatureHash);
+    await this.withStorage('storing the signature', () => store.put(sigKey, png, 'image/png'));
+
+    const consentAt = new Date();
+    const signedAt = new Date();
+
+    const sealed = await sealSignedPdf(originalBytes, {
+      documentTitle: document.title,
+      signerName: `${document.user.firstName} ${document.user.lastName}`.trim(),
+      signerEmail: document.user.email,
+      organizationName: document.organization?.name ?? '',
+      consentText: CONSENT_TEXT,
+      consentAt,
+      signedAt,
+      hashBefore,
+      sessionAuthenticatedAt: data.sessionAuthenticatedAt
+        ? new Date(data.sessionAuthenticatedAt)
+        : null,
+      ip: data.ctx?.ip ?? null,
+      userAgent: data.ctx?.userAgent ?? null,
+      appVersion: data.ctx?.appVersion ?? null,
+      lat: data.ctx?.lat ?? null,
+      lng: data.ctx?.lng ?? null,
+      signatureImage: png,
+      signatureSha256: signatureHash,
+    });
+
+    const hashAfter = sha256(sealed);
+    const sealedKey = documentKey(data.actor.organizationId, hashAfter, 'pdf');
+    await this.withStorage('sealing the document', () => store.put(sealedKey, sealed, 'application/pdf'));
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.document.update({
+        where: { id: document.id },
+        data: {
+          storageKey: sealedKey,
+          sha256: hashAfter,
+          sizeBytes: sealed.length,
+          status: 'SIGNED',
+        },
+      });
+      await tx.documentSignature.create({
+        data: {
+          documentId: document.id,
+          userId: data.actor.userId,
+          signatureKey: sigKey,
+          signatureSha256: signatureHash,
+          consentText: CONSENT_TEXT,
+          consentAt,
+          signedAt,
+          hashBefore,
+          hashAfter,
+          sealedAt: new Date(),
+          idempotencyKey: data.idempotencyKey,
+        },
+      });
+      for (const type of ['SIGNED', 'SEALED'] as const) {
+        await tx.documentEvent.create({
+          data: {
+            documentId: document.id,
+            type,
+            actorId: data.actor.userId,
+            ...eventContext(data.ctx),
+          },
+        });
+      }
+    });
+
+    // The original object is deliberately left in place. It is what the signer
+    // read, it is content-addressed so nothing else can claim its key, and the
+    // certificate page cites its hash — deleting it would remove the only copy
+    // the before-hash describes.
+    return { documentId: document.id, alreadySigned: false, sealedAt: new Date() };
+  }
+
+  /**
+   * "I have read this" — an attestation of receipt, not of agreement.
+   *
+   * Weaker than a signature and honest about being weaker: no drawing, no seal,
+   * no certificate. It exists because a safety policy needs proof somebody saw
+   * it, and asking for a signature on one devalues the signatures that matter.
+   */
+  async acknowledgeDocument(data: {
+    actor: DocumentActor;
+    documentId: string;
+    ctx?: RequestContext;
+  }) {
+    const document = await this.findSignableOr404(data.actor, data.documentId);
+    if (document.type.signatureMode !== 'ACKNOWLEDGE') {
+      throw new BadRequestException('This document needs a signature, not an acknowledgement.');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.document.update({ where: { id: document.id }, data: { status: 'ISSUED' } });
+      await tx.documentEvent.create({
+        data: {
+          documentId: document.id,
+          type: 'ACKNOWLEDGED',
+          actorId: data.actor.userId,
+          ...eventContext(data.ctx),
+        },
+      });
+    });
+    return { success: true };
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -629,7 +1139,9 @@ export class DocumentsService {
     }
 
     const store = this.requireStore();
-    const url = await store.presignDownload(document.storageKey, downloadName(document.title, document.mimeType));
+    const url = await this.withStorage('preparing a download', () =>
+      store.presignDownload(document.storageKey, downloadName(document.title, document.mimeType)),
+    );
 
     await this.prisma.$transaction(async (tx) => {
       // First open only. Overwriting it on every read would lose the one fact
@@ -763,6 +1275,57 @@ export class DocumentsService {
     }
   }
 
+  /**
+   * A document this caller may sign, or a refusal.
+   *
+   * SELF ONLY, and not negotiable. No permission grants the right to sign on
+   * somebody else's behalf — that is the one thing a signature cannot survive,
+   * and there is deliberately no flag anywhere that could be set to allow it.
+   */
+  private async findSignableOr404(actor: DocumentActor, documentId: string) {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: documentId,
+        organizationId: actor.organizationId,
+        // Scoped to the caller in the WHERE clause, so an id belonging to a
+        // colleague is not found rather than found-and-refused.
+        userId: actor.userId,
+      },
+      include: {
+        type: { select: { label: true, signatureMode: true } },
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        organization: { select: { name: true } },
+      },
+    });
+    if (!document) throw new NotFoundException('Document not found');
+
+    if (document.status === 'SIGNED') {
+      throw new BadRequestException('This document has already been signed.');
+    }
+    if (document.status !== 'AWAITING_SIGNATURE') {
+      throw new BadRequestException('This document is not waiting for a signature.');
+    }
+    return document;
+  }
+
+  /**
+   * Reject a template body that could not produce a usable contract.
+   *
+   * Checked when the template is SAVED, not when it is issued: an administrator
+   * writing it can fix a typo immediately, whereas the same error surfacing
+   * during an onboarding batch blocks somebody's first day.
+   */
+  private assertTemplateBodyIsUsable(body: string) {
+    if (!body.trim()) throw new BadRequestException('A template needs a body');
+
+    const unknown = unknownTokens(body);
+    if (unknown.length > 0) {
+      throw new BadRequestException(
+        `This template refers to fields that do not exist: ${unknown.join(', ')}`,
+      );
+    }
+  }
+
   private async findTypeOr404(id: string, organizationId: string) {
     const type = await this.prisma.documentType.findFirst({
       where: { id, organizationId },
@@ -820,6 +1383,94 @@ export class DocumentsService {
 }
 
 // ── Small helpers ───────────────────────────────────────────────────────────
+
+/**
+ * The consent a member gives before signing.
+ *
+ * A single constant, stored verbatim on every signature and printed on the
+ * certificate page. If the wording ever changes, past signatures keep the words
+ * that were actually shown — which is the only version worth having on a record.
+ */
+export const CONSENT_TEXT =
+  'I have read this document and agree to sign it electronically.';
+
+/** Merge-field values for one member. */
+function contractValues(
+  member: {
+    firstName: string; lastName: string; email: string;
+    position: string | null; specialty: string | null;
+    employmentStartDate: Date | null;
+    organization: {
+      name: string; addressLine1: string | null; city: string | null;
+      postalCode: string | null; country: string | null;
+      email: string | null; phone: string | null;
+    } | null;
+  },
+  contract: { startDate?: string; weeklyHours?: number | string } | undefined,
+  issuedAt: Date,
+): Record<string, string | number | null> {
+  const org = member.organization;
+  const address = [org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(' ')]
+    .filter(Boolean)
+    .join(', ');
+
+  const startDate =
+    contract?.startDate ?? (member.employmentStartDate ? isoDate(member.employmentStartDate) : null);
+
+  return {
+    'member.fullName': `${member.firstName} ${member.lastName}`.trim(),
+    'member.firstName': member.firstName,
+    'member.lastName': member.lastName,
+    'member.email': member.email,
+    'member.jobTitle': member.position,
+    'member.specialty': member.specialty,
+    'org.legalName': org?.name ?? null,
+    'org.address': address || null,
+    'org.country': org?.country ?? null,
+    'org.email': org?.email ?? null,
+    'org.phone': org?.phone ?? null,
+    // Space fields resolve to null for now — a member belongs to spaces, not to
+    // one space, and picking arbitrarily would put the wrong site on a contract.
+    'space.name': null,
+    'space.address': null,
+    'contract.startDate': startDate,
+    'contract.weeklyHours': contract?.weeklyHours ?? null,
+    'contract.issuedOn': isoDate(issuedAt),
+  };
+}
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Turn the signature pad's output into PNG bytes.
+ *
+ * The pad hands back a data URL. It is decoded and checked here rather than
+ * stored as-is, because a base64 string in a database column is the mistake
+ * three other signature fields in this schema already make — and because the
+ * bytes have to be real for the seal to embed them.
+ */
+function decodeSignaturePng(dataUrl: string): Buffer {
+  const match = /^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/.exec(dataUrl.trim());
+  if (!match?.[1]) {
+    throw new BadRequestException('The signature could not be read. Please sign again.');
+  }
+  const png = Buffer.from(match[1].replace(/\s/g, ''), 'base64');
+
+  // A PNG starts with a fixed eight-byte signature. Checking it stops anything
+  // that is not an image from being embedded in a legal document.
+  const MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (png.length < 100 || !png.subarray(0, 8).equals(MAGIC)) {
+    throw new BadRequestException('The signature could not be read. Please sign again.');
+  }
+  // A drawn signature is a few tens of kilobytes. Anything far larger is not one.
+  if (png.length > 2 * 1024 * 1024) {
+    throw new BadRequestException('That signature image is too large.');
+  }
+  return png;
+}
+
 
 /** Machine keys are lowercase, underscore-separated, and stable. */
 function normaliseKey(raw: string): string {

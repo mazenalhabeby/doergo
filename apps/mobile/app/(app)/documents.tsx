@@ -107,6 +107,19 @@ export default function DocumentsScreen() {
   const awaiting = useMemo(() => documents.filter((d) => d.needsSignature), [documents]);
 
   const open = useCallback(async (doc: MemberDocument) => {
+    /*
+      A document waiting on the member goes to the signing flow, not to a
+      viewer. Opening it in a PDF reader and leaving them to find the way back
+      is how a signature request gets forgotten.
+    */
+    if (doc.needsSignature) {
+      const type = types.find((ty) => ty.id === doc.typeId);
+      router.push({
+        pathname: '/sign-document',
+        params: { id: doc.id, title: doc.title, mode: (type as any)?.signatureMode ?? 'IN_APP' },
+      } as any);
+      return;
+    }
     setOpening(doc.id);
     try {
       const res = await documentsApi.downloadUrl(doc.id);
@@ -120,7 +133,7 @@ export default function DocumentsScreen() {
     } finally {
       setOpening(null);
     }
-  }, [load, t, toast, ]);
+  }, [load, t, toast, types, router]);
 
   /*
     Soft background from the THEME (it inverts in dark mode), hue from the fixed

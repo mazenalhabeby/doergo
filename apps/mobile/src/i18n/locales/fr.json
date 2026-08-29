@@ -1704,6 +1704,37 @@
       "october": "Octobre",
       "november": "Novembre",
       "december": "Décembre"
+    },
+    "sign": {
+      "title": "Signer le document",
+      "stepOf": "Étape {{step}} sur {{total}}",
+      "readTitle": "Lisez-le d’abord",
+      "readBody": "Ouvrez le document et lisez-le. Vous pouvez en télécharger une copie.",
+      "openDocument": "Ouvrir le document",
+      "readIt": "Je l’ai lu",
+      "mustOpen": "Ouvrez le document pour continuer.",
+      "agreeTitle": "Accepter la signature électronique",
+      "consentText": "J’ai lu ce document et j’accepte de le signer électroniquement.",
+      "recordedNotice": "Au moment de signer, ceci est enregistré :",
+      "records": {
+        "account": "Votre compte, et le fait que vous étiez connecté",
+        "device": "Votre appareil, la version de l’app et l’adresse IP",
+        "time": "L’heure exacte de votre accord et de votre signature",
+        "hash": "Une empreinte du document : toute modification ultérieure se voit"
+      },
+      "agreeAndSign": "Accepter et signer",
+      "confirmRead": "Confirmer que je l’ai lu",
+      "signTitle": "Signez avec le doigt",
+      "signBody": "Signez dans le cadre. C’est le même pavé que pour les rapports d’intervention.",
+      "padTitle": "Votre signature",
+      "sealing": "Scellement du document…",
+      "sealed": "Signé et scellé",
+      "sealedBody": "Votre contrat est dans Mes documents. Il ne peut plus être modifié — par personne, nous compris.",
+      "acknowledged": "Enregistré",
+      "acknowledgedBody": "Nous avons enregistré que vous avez lu ce document.",
+      "viewDocuments": "Voir mes documents",
+      "failed": "Cela n’a pas abouti. Veuillez réessayer.",
+      "alreadySigned": "Déjà signé — votre signature précédente a été conservée."
     }
   }
 }

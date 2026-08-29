@@ -5959,6 +5959,21 @@ export interface DraftDocumentRow {
   type: { id: string; label: string; signatureMode: string };
 }
 
+export interface ContractTemplateRow {
+  id: string;
+  name: string;
+  body: string;
+  typeId: string;
+  type: { id: string; label: string };
+  appliesToRoleId: string | null;
+  appliesToRole: { id: string; name: string; slug: string } | null;
+  appliesToPosition: string | null;
+  signatureMode: 'NONE' | 'ACKNOWLEDGE' | 'IN_APP' | 'WET_INK';
+  offerValidDays: number | null;
+  version: number;
+  isActive: boolean;
+}
+
 export interface DocumentEventRow {
   id: string;
   type: string;
@@ -6064,6 +6079,79 @@ export const documentsApi = {
     const response = await api.post<{ success: boolean }>(`/documents/${id}/revoke`, {});
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  // ── Signing ──────────────────────────────────────────────────────────────
+
+  /** Record agreement to sign electronically. Its own act, before the drawing. */
+  consent: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { consentText: string; consentAt: string } }>(
+      `/documents/${id}/consent`, {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /**
+   * Sign, seal and freeze.
+   *
+   * The idempotency key is made ONCE per attempt and reused on every retry, so
+   * a dropped connection returns the existing seal instead of signing twice.
+   */
+  sign: async (id: string, body: { signatureImage: string; idempotencyKey: string }) => {
+    const response = await api.post<{ success: boolean; data: { documentId: string; alreadySigned: boolean } }>(
+      `/documents/${id}/sign`, body,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /** "I have read this" — receipt, not agreement. */
+  acknowledge: async (id: string) => {
+    const response = await api.post<{ success: boolean }>(`/documents/${id}/acknowledge`, {});
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // ── Templates ────────────────────────────────────────────────────────────
+
+  listTemplates: async (includeInactive = false) => {
+    const response = await api.get<{ success: boolean; data: ContractTemplateRow[] }>(
+      buildUrlWithQuery('/documents/templates', { includeInactive: includeInactive || undefined }),
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  createTemplate: async (data: {
+    typeId: string; name: string; body: string;
+    appliesToRoleId?: string; appliesToPosition?: string;
+    signatureMode?: string; offerValidDays?: number;
+  }) => {
+    const response = await api.post<{ success: boolean; data: ContractTemplateRow }>('/documents/templates', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateTemplate: async (id: string, data: Record<string, unknown>) => {
+    const response = await api.patch<{ success: boolean; data: ContractTemplateRow }>(`/documents/templates/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  deactivateTemplate: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/documents/templates/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  /** Render and issue a contract to one member. */
+  issueContract: async (data: {
+    userId: string; templateId?: string; startDate?: string; weeklyHours?: number;
+  }) => {
+    const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents/issue-contract', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
   },
 
   // ── Payroll day ──────────────────────────────────────────────────────────

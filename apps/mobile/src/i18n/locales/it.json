@@ -1704,6 +1704,37 @@
       "october": "Ottobre",
       "november": "Novembre",
       "december": "Dicembre"
+    },
+    "sign": {
+      "title": "Firma documento",
+      "stepOf": "Passo {{step}} di {{total}}",
+      "readTitle": "Leggilo prima",
+      "readBody": "Apri il documento e leggilo. Puoi scaricarne una copia.",
+      "openDocument": "Apri documento",
+      "readIt": "L’ho letto",
+      "mustOpen": "Apri il documento per continuare.",
+      "agreeTitle": "Accetta la firma elettronica",
+      "consentText": "Ho letto questo documento e accetto di firmarlo elettronicamente.",
+      "recordedNotice": "Al momento della firma viene registrato:",
+      "records": {
+        "account": "Il tuo account e il fatto che avevi effettuato l’accesso",
+        "device": "Il tuo dispositivo, la versione dell’app e l’indirizzo IP",
+        "time": "L’ora esatta dell’accettazione e della firma",
+        "hash": "Un’impronta del documento: ogni modifica successiva si vede"
+      },
+      "agreeAndSign": "Accetta e firma",
+      "confirmRead": "Confermo di averlo letto",
+      "signTitle": "Firma con il dito",
+      "signBody": "Firma nel riquadro. È lo stesso pad che usi nei rapporti di servizio.",
+      "padTitle": "La tua firma",
+      "sealing": "Sigillatura del documento…",
+      "sealed": "Firmato e sigillato",
+      "sealedBody": "Il tuo contratto è in I miei documenti. Non può essere modificato da nessuno, noi compresi.",
+      "acknowledged": "Registrato",
+      "acknowledgedBody": "Abbiamo registrato che hai letto questo documento.",
+      "viewDocuments": "Vedi i miei documenti",
+      "failed": "Non è andata a buon fine. Riprova.",
+      "alreadySigned": "Già firmato: la tua firma precedente è stata mantenuta."
     }
   }
 }

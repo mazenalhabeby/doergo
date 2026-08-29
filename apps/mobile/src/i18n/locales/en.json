@@ -1708,6 +1708,37 @@
       "october": "October",
       "november": "November",
       "december": "December"
+    },
+    "sign": {
+      "title": "Sign document",
+      "stepOf": "Step {{step}} of {{total}}",
+      "readTitle": "Read it first",
+      "readBody": "Open the document and read it. You can download a copy to keep.",
+      "openDocument": "Open document",
+      "readIt": "I have read it",
+      "mustOpen": "Open the document to continue.",
+      "agreeTitle": "Agree to sign electronically",
+      "consentText": "I have read this document and agree to sign it electronically.",
+      "recordedNotice": "When you sign, this is recorded:",
+      "records": {
+        "account": "Your account, and that you were signed in",
+        "device": "Your device, app version and IP address",
+        "time": "The exact time you agreed and signed",
+        "hash": "A fingerprint of the document, so any later change shows"
+      },
+      "agreeAndSign": "Agree and sign",
+      "confirmRead": "Confirm I have read it",
+      "signTitle": "Sign with your finger",
+      "signBody": "Sign inside the box. This is the same pad you use on service reports.",
+      "padTitle": "Your signature",
+      "sealing": "Sealing the document…",
+      "sealed": "Signed & sealed",
+      "sealedBody": "Your contract is now in My documents. It cannot be changed — by anyone, including us.",
+      "acknowledged": "Recorded",
+      "acknowledgedBody": "We have recorded that you read this document.",
+      "viewDocuments": "View my documents",
+      "failed": "That did not go through. Please try again.",
+      "alreadySigned": "Already signed — your earlier signature was kept."
     }
   }
 }

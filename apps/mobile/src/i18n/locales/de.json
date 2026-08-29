@@ -1704,6 +1704,37 @@
       "october": "Oktober",
       "november": "November",
       "december": "Dezember"
+    },
+    "sign": {
+      "title": "Dokument unterschreiben",
+      "stepOf": "Schritt {{step}} von {{total}}",
+      "readTitle": "Zuerst lesen",
+      "readBody": "Öffnen Sie das Dokument und lesen Sie es. Sie können eine Kopie herunterladen.",
+      "openDocument": "Dokument öffnen",
+      "readIt": "Ich habe es gelesen",
+      "mustOpen": "Öffnen Sie das Dokument, um fortzufahren.",
+      "agreeTitle": "Elektronischer Unterschrift zustimmen",
+      "consentText": "Ich habe dieses Dokument gelesen und stimme zu, es elektronisch zu unterschreiben.",
+      "recordedNotice": "Beim Unterschreiben wird Folgendes festgehalten:",
+      "records": {
+        "account": "Ihr Konto und dass Sie angemeldet waren",
+        "device": "Ihr Gerät, App-Version und IP-Adresse",
+        "time": "Der genaue Zeitpunkt von Zustimmung und Unterschrift",
+        "hash": "Ein Fingerabdruck des Dokuments — jede spätere Änderung wird sichtbar"
+      },
+      "agreeAndSign": "Zustimmen und unterschreiben",
+      "confirmRead": "Gelesen bestätigen",
+      "signTitle": "Mit dem Finger unterschreiben",
+      "signBody": "Unterschreiben Sie im Feld. Es ist dasselbe Feld wie bei Serviceberichten.",
+      "padTitle": "Ihre Unterschrift",
+      "sealing": "Dokument wird versiegelt…",
+      "sealed": "Unterschrieben & versiegelt",
+      "sealedBody": "Ihr Vertrag liegt jetzt unter Meine Dokumente. Er kann von niemandem mehr geändert werden — auch nicht von uns.",
+      "acknowledged": "Festgehalten",
+      "acknowledgedBody": "Wir haben festgehalten, dass Sie dieses Dokument gelesen haben.",
+      "viewDocuments": "Meine Dokumente ansehen",
+      "failed": "Das hat nicht geklappt. Bitte erneut versuchen.",
+      "alreadySigned": "Bereits unterschrieben — Ihre frühere Unterschrift bleibt erhalten."
     }
   }
 }
