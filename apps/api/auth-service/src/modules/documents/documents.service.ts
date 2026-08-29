@@ -26,6 +26,9 @@ import {
   scoreTemplateBinding,
   MERGE_FIELDS,
   documentTypeKey,
+  Role,
+  buildResolvedAccess,
+  accessAllows,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -975,7 +978,13 @@ export class DocumentsService {
       return created;
     });
 
-    this.notifySubmitted(document.id, data.actor.organizationId, member, type.label, document.title);
+    await this.notifySubmitted(
+      document.id,
+      data.actor.organizationId,
+      member,
+      type.label,
+      document.title,
+    );
     return document;
   }
 
@@ -1005,7 +1014,7 @@ export class DocumentsService {
    * succeeded must not be undone because a queue was down. The document is in
    * the review list either way, which is the durable half.
    */
-  private notifySubmitted(
+  private async notifySubmitted(
     documentId: string,
     organizationId: string,
     member: { id: string; firstName: string; lastName: string; email: string },
@@ -1013,15 +1022,63 @@ export class DocumentsService {
     title: string,
   ) {
     try {
+      /*
+        The recipients are resolved HERE, not in the notification service.
+
+        Same shape as the credential reminders: the producer owns the database
+        and the permission model, so the handler stays a delivery mechanism
+        rather than growing a second copy of "who is allowed to review".
+      */
+      const candidates = await this.prisma.user.findMany({
+        where: {
+          organizationId,
+          isActive: true,
+          // Narrowed in SQL to the people who could plausibly hold it — the
+          // owner, or anybody with a member role at all — so the resolve below
+          // runs over a handful of rows rather than the whole company.
+          OR: [{ role: Role.ADMIN }, { memberRoleId: { not: null } }],
+        },
+        select: {
+          id: true,
+          role: true,
+          canCreateTasks: true,
+          canViewAllTasks: true,
+          canAssignTasks: true,
+          canManageUsers: true,
+          canViewReports: true,
+          memberRole: { select: { permissions: true } },
+        },
+      });
+
+      /*
+        `canIssueDocuments` is NOT a column.
+
+        It lives in the unified access model — a member role's permissions JSON,
+        merged over the legacy user flags — so it cannot be filtered in SQL, and
+        an approximation like `canManageUsers: true` would silently miss anybody
+        granted the document permission on its own. Resolved with the same
+        helper the request path uses, so this list and the guard agree.
+      */
+      const reviewers = candidates.filter((u) =>
+        accessAllows(
+          buildResolvedAccess({
+            userFlags: u,
+            memberRolePermissions: u.memberRole?.permissions,
+          }),
+          'canIssueDocuments',
+        ),
+      );
+
       this.notificationClient.emit('document_submitted', {
         documentId,
-        // The handler fans out to whoever reviews in this organization; the
-        // service does not hold that list and should not learn it.
         organizationId,
         memberId: member.id,
         memberName: `${member.firstName} ${member.lastName}`.trim(),
         typeLabel,
         title,
+        // Deduplicated by the handler; a reviewer uploading their own
+        // certificate should not be told about it.
+        recipientIds: reviewers.map((r) => r.id),
       });
     } catch (err) {
       this.logger.warn(

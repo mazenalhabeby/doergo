@@ -29,7 +29,7 @@ describe('DocumentsService — what the member supplies', () => {
     documentType: { findFirst: jest.fn() },
     document: { create: jest.fn(), findFirst: jest.fn() },
     documentEvent: { create: jest.fn() },
-    user: { findFirst: jest.fn() },
+    user: { findFirst: jest.fn(), findMany: jest.fn() },
     $transaction: jest.fn(),
   };
 
@@ -85,6 +85,13 @@ describe('DocumentsService — what the member supplies', () => {
     service = module.get(DocumentsService);
 
     prisma.user.findFirst.mockResolvedValue(MEMBER);
+    prisma.user.findMany.mockResolvedValue([
+      // The built-in Admin role carries the document permissions in its
+      // permissions JSON — the `role` column grants nothing by itself.
+      { id: 'admin1', role: 'ADMIN', memberRole: { permissions: { canIssueDocuments: true } } },
+      { id: 'manager1', role: 'MANAGER', memberRole: { permissions: { canManageUsers: true } } },
+      { id: 'nobody', role: 'EMPLOYEE', memberRole: { permissions: {} } },
+    ]);
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         document: { create: prisma.document.create },
@@ -338,6 +345,29 @@ describe('DocumentsService — what the member supplies', () => {
       const [event, payload] = notifications.emit.mock.calls[0];
       expect(event).toBe('document_submitted');
       expect(payload).toMatchObject({ organizationId: 'org1', memberId: 'member1', memberName: 'Lisa Adler' });
+    });
+
+    it('resolves WHO reviews here, rather than leaving it to the notifier', async () => {
+      /*
+        `canIssueDocuments` is not a column — it lives in the unified access
+        model — so it cannot be filtered in SQL, and an approximation would
+        silently miss anybody granted the document permission on its own. The
+        producer owns the permission model; the notification service stays a
+        delivery mechanism.
+      */
+      prisma.documentType.findFirst.mockResolvedValue(LICENCE);
+      await submit();
+      const [, payload] = notifications.emit.mock.calls[0];
+      /*
+        Only the role that actually carries `canIssueDocuments`.
+
+        A manager with `canManageUsers` is NOT included, and that is the point:
+        the four document permissions were deliberately shipped with no bridge
+        from the broad flags, so that managing members did not silently become
+        the ability to read colleagues' payslips. A recipient list built from
+        `canManageUsers` would reintroduce exactly that assumption.
+      */
+      expect(payload.recipientIds).toEqual(['admin1']);
     });
 
     it('does not lose the upload when the notification queue is down', async () => {

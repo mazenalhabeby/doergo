@@ -127,4 +127,110 @@ export class DocumentNotificationHandler {
       this.logger.error(`Could not push document ${data.documentId} to ${data.userId}: ${error}`);
     }
   }
+
+  /**
+   * A member has sent something in for review.
+   *
+   * To the reviewers, not to the member — they know; they just did it. The
+   * point of the message is that somebody is now WAITING, and for a certificate
+   * that gates work they are waiting to be allowed to work at all.
+   *
+   * Recipients are resolved by the producer, which owns the permission model.
+   * This handler stays a delivery mechanism rather than growing a second copy
+   * of "who is allowed to review".
+   */
+  @EventPattern('document_submitted')
+  async handleSubmitted(
+    @Payload()
+    data: {
+      documentId: string;
+      organizationId: string;
+      memberId: string;
+      memberName: string;
+      typeLabel: string;
+      title: string;
+      recipientIds?: string[];
+    },
+  ) {
+    this.logger.log(`Document submitted: ${data.typeLabel} by ${data.memberName}`);
+
+    const payload = {
+      documentId: data.documentId,
+      memberId: data.memberId,
+      memberName: data.memberName,
+      typeLabel: data.typeLabel,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Deduplicated, and never back to the person who uploaded it: a reviewer
+    // filing their own certificate should not be told about their own act.
+    for (const id of new Set((data.recipientIds ?? []).filter((r) => r && r !== data.memberId))) {
+      this.websocketGateway.emitToUser(id, 'document_submitted', payload);
+      await this.pushSafely(
+        id,
+        'A document needs checking',
+        `${data.memberName} sent in a ${data.typeLabel}`,
+        'document_submitted',
+        data.documentId,
+      );
+    }
+  }
+
+  /**
+   * Their upload was accepted, or it was not.
+   *
+   * The reason travels IN the message when it was refused. A refusal that only
+   * says "not accepted" sends somebody back to upload the same photograph, and
+   * one they have to open the app to understand is one they act on a day later.
+   */
+  @EventPattern('document_reviewed')
+  async handleReviewed(
+    @Payload()
+    data: {
+      documentId: string;
+      userId: string;
+      firstName?: string;
+      typeLabel: string;
+      accepted: boolean;
+      reason?: string | null;
+    },
+  ) {
+    this.logger.log(
+      `Document reviewed: ${data.typeLabel} → ${data.accepted ? 'accepted' : 'refused'}`,
+    );
+
+    const payload = {
+      documentId: data.documentId,
+      typeLabel: data.typeLabel,
+      accepted: data.accepted,
+      reason: data.reason ?? null,
+      timestamp: new Date().toISOString(),
+    };
+    this.websocketGateway.emitToUser(data.userId, 'document_reviewed', payload);
+
+    await this.pushSafely(
+      data.userId,
+      data.accepted ? `${data.typeLabel} accepted` : `${data.typeLabel} not accepted`,
+      data.accepted
+        ? 'It is on your file and counts from now'
+        : data.reason || 'Open the app to see why and send a new one',
+      'document_reviewed',
+      data.documentId,
+    );
+  }
+
+  /** Push, swallowing failure — a delivery problem must not undo a decision. */
+  private async pushSafely(
+    userId: string,
+    title: string,
+    body: string,
+    type: string,
+    documentId: string,
+  ) {
+    try {
+      await this.pushService.sendToUser(userId, title, body, { type, documentId });
+    } catch (error) {
+      this.logger.error(`Could not push ${type} for ${documentId} to ${userId}: ${error}`);
+    }
+  }
 }
