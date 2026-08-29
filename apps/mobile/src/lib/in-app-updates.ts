@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import * as InAppUpdates from 'expo-in-app-updates';
 
 /**
  * Play In-App Updates — Android only.
@@ -14,7 +13,55 @@ import * as InAppUpdates from 'expo-in-app-updates';
  * iOS has no equivalent API — Apple provides nothing — so every function here
  * is a no-op there and the App Store link remains the only route.
  */
-export const IN_APP_UPDATES_SUPPORTED = Platform.OS === 'android';
+/*
+  The native module is loaded LAZILY, and never at import time.
+
+  `import * as InAppUpdates from 'expo-in-app-updates'` calls
+  requireNativeModule('ExpoInAppUpdates') while the module is being evaluated.
+  In Expo Go — and in any dev build made before the package was added — that
+  native module does not exist, so the import THREW during startup and took the
+  whole app down: this file is reached from _layout.tsx, so nothing rendered at
+  all. Every function below already guarded on the platform; the import ran
+  before any of them could.
+
+  Resolving it on demand means an app without the native module simply behaves
+  as though there is no store update available, which is exactly what the
+  fallbacks were written for.
+*/
+type InAppUpdatesModule = {
+  checkForUpdate: () => Promise<{
+    updateAvailable?: boolean;
+    storeVersion?: string;
+    flexibleAllowed?: boolean;
+    immediateAllowed?: boolean;
+  }>;
+  startUpdate: (immediate: boolean) => Promise<boolean>;
+  addUpdateListener: (event: string, cb: () => void) => () => void;
+};
+
+let cached: InAppUpdatesModule | null | undefined;
+
+/** The module, or null when this binary has no such native module. */
+function nativeModule(): InAppUpdatesModule | null {
+  if (cached !== undefined) return cached;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    cached = require('expo-in-app-updates') as InAppUpdatesModule;
+  } catch {
+    // Expo Go, iOS, or a build predating the package. Not an error — the
+    // caller falls back to the server's own version check.
+    cached = null;
+  }
+  return cached;
+}
+
+/**
+ * Whether Play's in-app update flow can be used at all.
+ *
+ * Android AND the native module actually present. Checking the platform alone
+ * is what made every call site believe it was available in Expo Go.
+ */
+export const IN_APP_UPDATES_SUPPORTED = Platform.OS === 'android' && nativeModule() !== null;
 
 export interface StoreUpdateState {
   /** Play has a newer build than the one running. */
@@ -39,9 +86,10 @@ const NONE: StoreUpdateState = {
  * back to the server's own version check, which still works.
  */
 export async function checkStore(): Promise<StoreUpdateState> {
-  if (!IN_APP_UPDATES_SUPPORTED) return NONE;
+  const mod = nativeModule();
+  if (!IN_APP_UPDATES_SUPPORTED || !mod) return NONE;
   try {
-    const r = await InAppUpdates.checkForUpdate();
+    const r = await mod.checkForUpdate();
     return {
       available: !!r?.updateAvailable,
       storeVersion: r?.storeVersion ?? null,
@@ -64,9 +112,10 @@ export async function checkStore(): Promise<StoreUpdateState> {
  * opening the store rather than leaving a button that appears to do nothing.
  */
 export async function startStoreUpdate(immediate = false): Promise<boolean> {
-  if (!IN_APP_UPDATES_SUPPORTED) return false;
+  const mod = nativeModule();
+  if (!IN_APP_UPDATES_SUPPORTED || !mod) return false;
   try {
-    return await InAppUpdates.startUpdate(immediate);
+    return await mod.startUpdate(immediate);
   } catch {
     return false;
   }
@@ -78,9 +127,10 @@ export async function startStoreUpdate(immediate = false): Promise<boolean> {
  * common way this feature quietly does nothing.
  */
 export function onDownloaded(cb: () => void): () => void {
-  if (!IN_APP_UPDATES_SUPPORTED) return () => {};
+  const mod = nativeModule();
+  if (!IN_APP_UPDATES_SUPPORTED || !mod) return () => {};
   try {
-    return InAppUpdates.addUpdateListener('updateDownloaded', cb);
+    return mod.addUpdateListener('updateDownloaded', cb);
   } catch {
     return () => {};
   }
