@@ -5998,31 +5998,50 @@ export interface DocumentEventRow {
   appVersion: string | null;
 }
 
+/**
+ * Unwrap a documents response.
+ *
+ * These routes return the payload BARE — `[…]` or `{…}` — not wrapped in
+ * `{ success, data }` like most of this file. Reading `response.data.data` gave
+ * `undefined`, `|| []` turned that into an empty list, and every document
+ * screen rendered "Nothing here yet" against a database with 184 documents in
+ * it. Nothing errored; the data was simply thrown away on arrival.
+ *
+ * One helper rather than the same guard at twenty call sites: whichever shape
+ * arrives, the caller gets the payload.
+ */
+function unwrapDocuments<T>(response: { data?: unknown; error?: string }): T | undefined {
+  if (response.error) throw new Error(response.error);
+  const body = response.data as any;
+  if (body === null || body === undefined) return undefined;
+  // A wrapped payload carries `data`; a bare array or object is itself.
+  if (!Array.isArray(body) && typeof body === 'object' && 'data' in body) {
+    return body.data as T;
+  }
+  return body as T;
+}
+
 export const documentsApi = {
   listTypes: async (includeInactive = false) => {
     const response = await api.get<{ success: boolean; data: DocumentTypeRow[] }>(
       buildUrlWithQuery('/documents/types', { includeInactive: includeInactive || undefined }),
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   createType: async (data: Partial<DocumentTypeRow> & { key: string; label: string }) => {
     const response = await api.post<{ success: boolean; data: DocumentTypeRow }>('/documents/types', data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   updateType: async (id: string, data: Partial<DocumentTypeRow>) => {
     const response = await api.patch<{ success: boolean; data: DocumentTypeRow }>(`/documents/types/${id}`, data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   deactivateType: async (id: string) => {
     const response = await api.delete<{ success: boolean }>(`/documents/types/${id}`);
-    if (response.error) throw new Error(response.error);
-    return response.data;
+    return unwrapDocuments<any>(response);
   },
 
   /** Omit `userId` for your own file. */
@@ -6035,8 +6054,7 @@ export const documentsApi = {
         search: params?.search,
       }),
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   /*
@@ -6051,14 +6069,12 @@ export const documentsApi = {
       `/documents/${id}/download-url`,
       {},
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   events: async (id: string) => {
     const response = await api.get<{ success: boolean; data: DocumentEventRow[] }>(`/documents/${id}/events`);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   /** Step 1 of issuing: a link the browser PUTs the file to directly. */
@@ -6067,8 +6083,7 @@ export const documentsApi = {
       success: boolean;
       data: { url: string; key: string; headers: Record<string, string>; expiresInSeconds: number };
     }>('/documents/upload-url', data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   /** Step 2: the server reads the bytes back, hashes them, and files the row. */
@@ -6084,14 +6099,12 @@ export const documentsApi = {
     asDraft?: boolean;
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   revoke: async (id: string) => {
     const response = await api.post<{ success: boolean }>(`/documents/${id}/revoke`, {});
-    if (response.error) throw new Error(response.error);
-    return response.data;
+    return unwrapDocuments<any>(response);
   },
 
   /**
@@ -6112,8 +6125,7 @@ export const documentsApi = {
         }[];
       };
     }>('/documents/export', userId ? { userId } : {});
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   // ── Credentials ──────────────────────────────────────────────────────────
@@ -6121,8 +6133,7 @@ export const documentsApi = {
   /** Validity and dates only — never the certificate itself. */
   compliance: async () => {
     const response = await api.get<{ success: boolean; data: ComplianceRow[] }>('/documents/compliance');
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   // ── Signing ──────────────────────────────────────────────────────────────
@@ -6132,8 +6143,7 @@ export const documentsApi = {
     const response = await api.post<{ success: boolean; data: { consentText: string; consentAt: string } }>(
       `/documents/${id}/consent`, {},
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   /**
@@ -6146,15 +6156,13 @@ export const documentsApi = {
     const response = await api.post<{ success: boolean; data: { documentId: string; alreadySigned: boolean } }>(
       `/documents/${id}/sign`, body,
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   /** "I have read this" — receipt, not agreement. */
   acknowledge: async (id: string) => {
     const response = await api.post<{ success: boolean }>(`/documents/${id}/acknowledge`, {});
-    if (response.error) throw new Error(response.error);
-    return response.data;
+    return unwrapDocuments<any>(response);
   },
 
   // ── Templates ────────────────────────────────────────────────────────────
@@ -6163,8 +6171,7 @@ export const documentsApi = {
     const response = await api.get<{ success: boolean; data: ContractTemplateRow[] }>(
       buildUrlWithQuery('/documents/templates', { includeInactive: includeInactive || undefined }),
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   createTemplate: async (data: {
@@ -6173,20 +6180,17 @@ export const documentsApi = {
     signatureMode?: string; offerValidDays?: number;
   }) => {
     const response = await api.post<{ success: boolean; data: ContractTemplateRow }>('/documents/templates', data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   updateTemplate: async (id: string, data: Record<string, unknown>) => {
     const response = await api.patch<{ success: boolean; data: ContractTemplateRow }>(`/documents/templates/${id}`, data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   deactivateTemplate: async (id: string) => {
     const response = await api.delete<{ success: boolean }>(`/documents/templates/${id}`);
-    if (response.error) throw new Error(response.error);
-    return response.data;
+    return unwrapDocuments<any>(response);
   },
 
   /** Render and issue a contract to one member. */
@@ -6194,8 +6198,7 @@ export const documentsApi = {
     userId: string; templateId?: string; startDate?: string; weeklyHours?: number;
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents/issue-contract', data);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   // ── Payroll day ──────────────────────────────────────────────────────────
@@ -6205,14 +6208,12 @@ export const documentsApi = {
     const response = await api.get<{ success: boolean; data: MatchCandidateRow[] }>(
       '/documents/match-candidates',
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   listDrafts: async () => {
     const response = await api.get<{ success: boolean; data: DraftDocumentRow[] }>('/documents/drafts');
-    if (response.error) throw new Error(response.error);
-    return response.data?.data || [];
+    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   /** All or nothing — one unresolved row blocks the whole batch. */
@@ -6221,20 +6222,17 @@ export const documentsApi = {
       '/documents/publish',
       { documentIds },
     );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
+    return unwrapDocuments<any>(response);
   },
 
   discardDraft: async (id: string) => {
     const response = await api.delete<{ success: boolean }>(`/documents/drafts/${id}`);
-    if (response.error) throw new Error(response.error);
-    return response.data;
+    return unwrapDocuments<any>(response);
   },
 
   /** Only ever your own, and only what you supplied. */
   remove: async (id: string) => {
     const response = await api.delete<{ success: boolean }>(`/documents/${id}`);
-    if (response.error) throw new Error(response.error);
-    return response.data;
+    return unwrapDocuments<any>(response);
   },
 };
