@@ -7192,6 +7192,26 @@
         "wet_ink": "Firma su carta",
         "none": "Nessuna firma"
       }
+    },
+    "compliance": {
+      "title": "Conformità dei certificati",
+      "subtitle": "Chi è uscito dalla pianificazione e chi sta per uscirne.",
+      "expiringSoon": "Scade entro 60 gg",
+      "blocked": "Bloccato",
+      "empty": "Nessun certificato monitorato",
+      "emptyHint": "Segna un tipo di documento come certificato per monitorarne la scadenza.",
+      "noneInFilter": "Nessun risultato per questo filtro",
+      "columns": {
+        "member": "Persona",
+        "credential": "Certificato",
+        "expires": "Scade",
+        "effect": "Effetto attuale"
+      },
+      "removedFromDispatch": "Fuori dalla pianificazione",
+      "expiredNoGate": "Scaduto · non blocca nulla",
+      "reminderSent_one": "Promemoria inviato · {{count}} giorno",
+      "reminderSent_other": "Promemoria inviato · {{count}} giorni",
+      "noAction": "Nessuna azione"
     }
   }
 }

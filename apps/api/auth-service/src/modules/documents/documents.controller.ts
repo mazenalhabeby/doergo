@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DocumentsService } from './documents.service';
+import { CredentialExpiryService } from './credential-expiry.service';
 
 /**
  * Transport only. Every method forwards to the service, which is where the
@@ -9,7 +10,10 @@ import { DocumentsService } from './documents.service';
  */
 @Controller()
 export class DocumentsController {
-  constructor(private readonly documents: DocumentsService) {}
+  constructor(
+    private readonly documents: DocumentsService,
+    private readonly credentials: CredentialExpiryService,
+  ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_list_types' })
@@ -47,6 +51,10 @@ export class DocumentsController {
   revoke(@Payload() data: any) {
     return this.documents.revoke(data);
   }
+
+  // ── Credentials ──────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_compliance' })
+  compliance(@Payload() data: any) { return this.credentials.listCompliance(data); }
 
   // ── Templates ────────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_list_templates' })

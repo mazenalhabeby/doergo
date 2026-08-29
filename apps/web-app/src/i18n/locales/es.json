@@ -7183,6 +7183,26 @@
         "wet_ink": "Firma en papel",
         "none": "Sin firma"
       }
+    },
+    "compliance": {
+      "title": "Cumplimiento de certificados",
+      "subtitle": "Quién ha salido de la planificación y quién está a punto.",
+      "expiringSoon": "Caduca en 60 d",
+      "blocked": "Bloqueado",
+      "empty": "No hay certificados registrados",
+      "emptyHint": "Marca un tipo de documento como certificado para seguir su caducidad.",
+      "noneInFilter": "Nada coincide con ese filtro",
+      "columns": {
+        "member": "Persona",
+        "credential": "Certificado",
+        "expires": "Caduca",
+        "effect": "Efecto actual"
+      },
+      "removedFromDispatch": "Fuera de la planificación",
+      "expiredNoGate": "Caducado · no bloquea nada",
+      "reminderSent_one": "Aviso enviado · {{count}} día",
+      "reminderSent_other": "Aviso enviado · {{count}} días",
+      "noAction": "Sin acción"
     }
   }
 }

@@ -7183,6 +7183,26 @@
         "wet_ink": "Wet ink",
         "none": "No signature"
       }
+    },
+    "compliance": {
+      "title": "Credential compliance",
+      "subtitle": "Who has dropped out of the schedule, and who is about to.",
+      "expiringSoon": "Expiring 60d",
+      "blocked": "Blocked",
+      "empty": "No credentials tracked",
+      "emptyHint": "Mark a document type as a credential to start tracking expiry.",
+      "noneInFilter": "Nothing matches that filter",
+      "columns": {
+        "member": "Member",
+        "credential": "Credential",
+        "expires": "Expires",
+        "effect": "Effect right now"
+      },
+      "removedFromDispatch": "Removed from dispatch",
+      "expiredNoGate": "Expired · blocks nothing",
+      "reminderSent_one": "Reminder sent · {{count}} day",
+      "reminderSent_other": "Reminder sent · {{count}} days",
+      "noAction": "No action"
     }
   }
 }

@@ -5959,6 +5959,19 @@ export interface DraftDocumentRow {
   type: { id: string; label: string; signatureMode: string };
 }
 
+export interface ComplianceRow {
+  id: string;
+  title: string;
+  expiresOn: string | null;
+  member: { id: string; firstName: string; lastName: string };
+  credential: string;
+  standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING';
+  daysLeft: number | null;
+  /** True only when a LAPSED credential actually gates a task type. */
+  blocksDispatch: boolean;
+  gatesTaskTypes: string[];
+}
+
 export interface ContractTemplateRow {
   id: string;
   name: string;
@@ -6079,6 +6092,15 @@ export const documentsApi = {
     const response = await api.post<{ success: boolean }>(`/documents/${id}/revoke`, {});
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  // ── Credentials ──────────────────────────────────────────────────────────
+
+  /** Validity and dates only — never the certificate itself. */
+  compliance: async () => {
+    const response = await api.get<{ success: boolean; data: ComplianceRow[] }>('/documents/compliance');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
   },
 
   // ── Signing ──────────────────────────────────────────────────────────────

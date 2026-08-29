@@ -7192,6 +7192,26 @@
         "wet_ink": "Signature papier",
         "none": "Sans signature"
       }
+    },
+    "compliance": {
+      "title": "Conformité des certificats",
+      "subtitle": "Qui est sorti du planning, et qui va suivre.",
+      "expiringSoon": "Expire sous 60 j",
+      "blocked": "Bloqué",
+      "empty": "Aucun certificat suivi",
+      "emptyHint": "Marquez un type de document comme certificat pour suivre son expiration.",
+      "noneInFilter": "Rien ne correspond à ce filtre",
+      "columns": {
+        "member": "Membre",
+        "credential": "Certificat",
+        "expires": "Expire",
+        "effect": "Effet actuel"
+      },
+      "removedFromDispatch": "Retiré du planning",
+      "expiredNoGate": "Expiré · ne bloque rien",
+      "reminderSent_one": "Rappel envoyé · {{count}} jour",
+      "reminderSent_other": "Rappel envoyé · {{count}} jours",
+      "noAction": "Aucune action"
     }
   }
 }

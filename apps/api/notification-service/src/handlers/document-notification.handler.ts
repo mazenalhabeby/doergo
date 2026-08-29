@@ -24,6 +24,64 @@ export class DocumentNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
+  /**
+   * A credential is about to lapse.
+   *
+   * Sent to the member AND to whoever can assign work. Telling only the member
+   * is how a certificate lapses anyway: they are on site, while the person who
+   * needed to know was planning next month.
+   */
+  @EventPattern('credential_expiring')
+  async handleExpiring(
+    @Payload()
+    data: {
+      documentId: string;
+      organizationId: string;
+      userId: string;
+      userName: string;
+      credential: string;
+      daysLeft: number;
+      expiresOn: string;
+      /** Resolved by the producer; falls back to the member alone. */
+      recipientIds?: string[];
+    },
+  ) {
+    this.logger.log(
+      `Credential expiring: ${data.credential} for ${data.userName} in ${data.daysLeft}d`,
+    );
+
+    const body = `${data.credential} expires on ${data.expiresOn}`;
+    const payload = { ...data, timestamp: new Date().toISOString() };
+
+    // The member first: it is their certificate to renew.
+    this.websocketGateway.emitToUser(data.userId, 'credential_expiring', payload);
+    await this.push(data.userId, `Your ${data.credential} expires soon`, body, data.documentId);
+
+    // Then whoever schedules them. Deduplicated, in case they are the same
+    // person — a manager warned twice about their own certificate.
+    for (const id of new Set((data.recipientIds ?? []).filter((r) => r && r !== data.userId))) {
+      this.websocketGateway.emitToUser(id, 'credential_expiring', payload);
+      await this.push(
+        id,
+        `${data.userName}: ${data.credential} expires soon`,
+        `${body}. They will drop out of scheduling for jobs that need it.`,
+        data.documentId,
+      );
+    }
+  }
+
+  /** Push, and never let a failure escape — the sweep must finish. */
+  private async push(userId: string, title: string, body: string, documentId: string) {
+    try {
+      await this.pushService.sendToUser(userId, title, body, {
+        type: 'credential_expiring',
+        documentId,
+      });
+    } catch (error) {
+      this.logger.error(`Could not push to ${userId}: ${error}`);
+    }
+  }
+
   @EventPattern('document_issued')
   async handleIssued(
     @Payload()

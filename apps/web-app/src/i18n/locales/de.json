@@ -7183,6 +7183,26 @@
         "wet_ink": "Papierunterschrift",
         "none": "Keine Unterschrift"
       }
+    },
+    "compliance": {
+      "title": "Nachweise",
+      "subtitle": "Wer aus der Planung gefallen ist — und wer als Nächstes.",
+      "expiringSoon": "Läuft in 60 T ab",
+      "blocked": "Gesperrt",
+      "empty": "Keine Nachweise erfasst",
+      "emptyHint": "Markieren Sie eine Dokumentart als Nachweis, um Ablaufdaten zu verfolgen.",
+      "noneInFilter": "Nichts passt zu diesem Filter",
+      "columns": {
+        "member": "Mitarbeitende:r",
+        "credential": "Nachweis",
+        "expires": "Läuft ab",
+        "effect": "Aktuelle Auswirkung"
+      },
+      "removedFromDispatch": "Aus der Planung entfernt",
+      "expiredNoGate": "Abgelaufen · sperrt nichts",
+      "reminderSent_one": "Erinnerung gesendet · {{count}} Tag",
+      "reminderSent_other": "Erinnerung gesendet · {{count}} Tage",
+      "noAction": "Kein Handlungsbedarf"
     }
   }
 }

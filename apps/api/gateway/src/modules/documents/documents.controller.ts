@@ -127,6 +127,22 @@ export class DocumentsController {
     });
   }
 
+  // ── Credentials ──────────────────────────────────────────────────────────
+
+  /*
+    Deliberately gated on canAssignTasks, not on a document permission.
+
+    A dispatcher needs to know WHY somebody dropped out of the assignable pool.
+    This returns validity and dates — never the certificate itself, which stays
+    behind canOpenMemberDocuments.
+  */
+  @Get('compliance')
+  @RequirePermission('canAssignTasks')
+  @ApiOperation({ summary: 'Credential validity across the organization' })
+  async compliance(@CurrentUser() user: CurrentUserData) {
+    return this.documents.compliance({ organizationId: user.organizationId });
+  }
+
   // ── Templates ────────────────────────────────────────────────────────────
 
   @Get('templates')

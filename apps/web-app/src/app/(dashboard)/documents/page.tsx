@@ -192,6 +192,12 @@ export default function IssueDocumentsPage() {
           >
             {t("documents.templates.title")}
           </a>
+          <a
+            href="/documents/compliance"
+            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            {t("documents.compliance.title")}
+          </a>
         </div>
         {existingDrafts.length > 0 && rows.length === 0 && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">

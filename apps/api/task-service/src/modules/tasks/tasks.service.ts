@@ -30,6 +30,8 @@ import {
   isWithinTaskBoundary,
   mayChangeStatus,
   canReceiveTasks,
+  credentialStanding,
+  credentialBlocks,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -85,7 +87,11 @@ export class TasksService {
 
     // One lookup for the primary assignee and the list together — a task must
     // not be created already assigned to someone who cannot see it.
-    await this.assertAssigneesCanReceiveTasks([data.assignedToId, ...assigneeIds]);
+    await this.assertAssigneesCanReceiveTasks(
+      [data.assignedToId, ...assigneeIds],
+      (data as any).workflowId,
+      data.organizationId,
+    );
 
     // SPACE-scoped users MUST provide a spaceId
     if (data.taskCreationScope === 'SPACE' && !data.spaceId) {
@@ -675,6 +681,13 @@ export class TasksService {
           `${worker.firstName} ${worker.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
         );
       }
+      // Qualified for the task type this triage is about to create.
+      await this.assertAssigneesAreQualified(
+        [worker.id],
+        [worker],
+        effWorkflowId,
+        data.organizationId,
+      );
       assignedToId = worker.id;
       workerName = `${worker.firstName} ${worker.lastName}`;
     }
@@ -1171,7 +1184,30 @@ export class TasksService {
    * admins and for anyone with no profile stored, so this only refuses a member
    * whose profile explicitly leaves Tasks out.
    */
-  private async assertAssigneesCanReceiveTasks(ids: (string | null | undefined)[]) {
+  /**
+   * Everyone about to receive this task must be able to, and be qualified for it.
+   *
+   * Two checks, and they answer different questions:
+   *
+   *   ACCESS  — does their profile include Tasks at all? Unchanged behaviour.
+   *   QUALIFIED — for a task type that requires a credential, do they hold a
+   *               valid one? An expired gas certificate must take somebody out
+   *               of the pool on the day it expires, without a dispatcher
+   *               having to remember.
+   *
+   * The second costs ONE indexed probe when an organization gates nothing —
+   * which is every organization until an administrator marks a document type as
+   * required for a task type. It is not free, and a cache that made it free
+   * would fail OPEN for its lifetime: an expired credential still accepted for
+   * a minute after somebody made it mandatory. One index probe on a path a
+   * dispatcher hits a few hundred times a day is the better trade.
+   */
+  private async assertAssigneesCanReceiveTasks(
+    ids: (string | null | undefined)[],
+    /** The task's type. Absent means nothing can be required, so nothing is checked. */
+    workflowId?: string | null,
+    organizationId?: string | null,
+  ) {
     const unique = [...new Set(ids.filter((id): id is string => !!id))];
     if (unique.length === 0) return;
     const users = await this.prisma.user.findMany({
@@ -1183,6 +1219,80 @@ export class TasksService {
       const names = blocked.map((u) => `${u.firstName} ${u.lastName}`.trim()).join(', ');
       throw new BadRequestException(
         `${names} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
+      );
+    }
+
+    await this.assertAssigneesAreQualified(unique, users, workflowId, organizationId);
+  }
+
+  /**
+   * Refuse an assignment to somebody whose required credential is missing or expired.
+   *
+   * MISSING is as disqualifying as EXPIRED, deliberately. "You must hold a gas
+   * certificate to do gas work" does not become untrue because nobody ever
+   * uploaded one — and a gate that let an absent credential through would be
+   * satisfied by never providing it.
+   *
+   * EXPIRING is not blocked. Losing a technician a month early causes exactly
+   * the scramble this exists to prevent; that case is a reminder, not a refusal.
+   */
+  private async assertAssigneesAreQualified(
+    userIds: string[],
+    users: { id: string; firstName: string; lastName: string }[],
+    workflowId?: string | null,
+    organizationId?: string | null,
+  ) {
+    if (!workflowId || !organizationId) return;
+
+    // The short-circuit. Indexed on [organizationId, isCredential]; an
+    // organization that gates nothing gets an empty result and returns here,
+    // before the second query is ever built.
+    const gatingTypes = await this.prisma.documentType.findMany({
+      where: {
+        organizationId,
+        isCredential: true,
+        isActive: true,
+        requiredForWorkflowIds: { has: workflowId },
+      },
+      select: { id: true, label: true },
+    });
+    if (gatingTypes.length === 0) return;
+
+    // What these people actually hold. One query for everyone, never one each.
+    const held = await this.prisma.document.findMany({
+      where: {
+        organizationId,
+        userId: { in: userIds },
+        typeId: { in: gatingTypes.map((t) => t.id) },
+        status: { in: ['ISSUED', 'SIGNED'] },
+      },
+      select: { userId: true, typeId: true, expiresOn: true },
+    });
+
+    const now = new Date();
+    const valid = new Set<string>();
+    for (const doc of held) {
+      // A credential with no expiry does not lapse; one past its date does.
+      if (!credentialBlocks(credentialStanding(doc.expiresOn, now))) {
+        valid.add(`${doc.userId}:${doc.typeId}`);
+      }
+    }
+
+    const problems: string[] = [];
+    for (const user of users) {
+      const missing = gatingTypes.filter((t) => !valid.has(`${user.id}:${t.id}`));
+      if (missing.length > 0) {
+        problems.push(
+          `${`${user.firstName} ${user.lastName}`.trim()} (${missing.map((t) => t.label).join(', ')})`,
+        );
+      }
+    }
+
+    if (problems.length > 0) {
+      // Names the person AND the credential, because "cannot be assigned" on
+      // its own sends a dispatcher hunting through settings.
+      throw new BadRequestException(
+        `Cannot assign — a required certificate is missing or expired: ${problems.join('; ')}`,
       );
     }
   }
@@ -1243,6 +1353,15 @@ export class TasksService {
         `${worker.firstName} ${worker.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
       );
     }
+
+    // …and qualified for THIS task type. Costs one indexed probe that returns
+    // nothing unless the organization has made a certificate mandatory.
+    await this.assertAssigneesAreQualified(
+      [worker.id],
+      [worker],
+      task.workflowId,
+      task.organizationId,
+    );
 
     const previousAssignee = task.assignedToId;
     const isReassign = previousAssignee && previousAssignee !== data.workerId;
@@ -1877,6 +1996,19 @@ export class TasksService {
         `${user.firstName} ${user.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
       );
     }
+
+    // A second person added to a task is doing the same work as the first, so
+    // the same certificate applies.
+    const assigneeTask = await this.prisma.task.findFirst({
+      where: { id: data.taskId, organizationId: data.organizationId },
+      select: { workflowId: true, organizationId: true },
+    });
+    await this.assertAssigneesAreQualified(
+      [user.id],
+      [user],
+      assigneeTask?.workflowId,
+      assigneeTask?.organizationId,
+    );
 
     const role = (data.role as any) || 'MEMBER';
 

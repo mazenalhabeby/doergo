@@ -74,7 +74,7 @@ const NAV_HREFS = [
   "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/settings", "/settings/billing",
-  "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/templates",
+  "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/templates", "/documents/compliance",
 ] as const
 
 function matches(pathname: string, href: string): boolean {
