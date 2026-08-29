@@ -837,12 +837,32 @@ export class DocumentsService {
           idempotencyKey: data.idempotencyKey,
         },
       });
-      for (const type of ['SIGNED', 'SEALED'] as const) {
+      /*
+        CONSENTED is written here too, if it is not already on the trail.
+
+        `recordConsent` writes it when the client walks the flow properly, and
+        both clients do. But a complete legal record must not depend on a client
+        having made an extra call: the consent text and time are stored on the
+        signature either way, so a trail missing the entry would contradict the
+        certificate page printed from the same row.
+
+        Idempotent by construction — a client that DID call consent leaves one
+        entry, not two.
+      */
+      const alreadyConsented = await tx.documentEvent.count({
+        where: { documentId: document.id, type: 'CONSENTED' },
+      });
+      const types = alreadyConsented > 0
+        ? (['SIGNED', 'SEALED'] as const)
+        : (['CONSENTED', 'SIGNED', 'SEALED'] as const);
+
+      for (const type of types) {
         await tx.documentEvent.create({
           data: {
             documentId: document.id,
             type,
             actorId: data.actor.userId,
+            ...(type === 'CONSENTED' ? { meta: { text: CONSENT_TEXT } } : {}),
             ...eventContext(data.ctx),
           },
         });

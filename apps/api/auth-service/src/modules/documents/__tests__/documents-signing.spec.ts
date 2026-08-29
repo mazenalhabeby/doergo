@@ -34,7 +34,7 @@ describe('DocumentsService — signing', () => {
   const prisma: Record<string, any> = {
     document: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
     documentSignature: { findUnique: jest.fn(), create: jest.fn() },
-    documentEvent: { create: jest.fn() },
+    documentEvent: { create: jest.fn(), count: jest.fn() },
     documentTemplate: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
     documentType: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
@@ -294,10 +294,31 @@ describe('DocumentsService — signing', () => {
   // ── The trail ─────────────────────────────────────────────────────────────
 
   describe('the evidence trail', () => {
-    it('writes SIGNED and SEALED in the same transaction as the update', async () => {
+    it('writes the trail in the same transaction as the update', async () => {
       prisma.document.findFirst.mockResolvedValue(awaitingDoc());
+      prisma.documentEvent.count.mockResolvedValue(0);
       await sign();
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      const types = prisma.documentEvent.create.mock.calls.map((c: any[]) => c[0].data.type);
+      expect(types).toEqual(['CONSENTED', 'SIGNED', 'SEALED']);
+    });
+
+    it('adds CONSENTED itself when the client skipped that call', async () => {
+      // Both clients walk the flow properly — but a complete legal record must
+      // not depend on a client having made an extra request.
+      prisma.document.findFirst.mockResolvedValue(awaitingDoc());
+      prisma.documentEvent.count.mockResolvedValue(0);
+      await sign();
+      const consent = prisma.documentEvent.create.mock.calls
+        .map((c: any[]) => c[0].data)
+        .find((d: any) => d.type === 'CONSENTED');
+      expect(consent.meta).toEqual({ text: CONSENT_TEXT });
+    });
+
+    it('does NOT duplicate CONSENTED when the client already recorded it', async () => {
+      prisma.document.findFirst.mockResolvedValue(awaitingDoc());
+      prisma.documentEvent.count.mockResolvedValue(1);
+      await sign();
       const types = prisma.documentEvent.create.mock.calls.map((c: any[]) => c[0].data.type);
       expect(types).toEqual(['SIGNED', 'SEALED']);
     });
