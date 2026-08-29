@@ -258,6 +258,11 @@ export default function AppLayout() {
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />
+        {/* Both screens draw their own header. Without registering them here
+            they inherit the stack's default one and show TWO — the native
+            "(tabs) documents" bar sitting above "My documents". */}
+        <Stack.Screen name="documents" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-document" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/notifications"
           options={{

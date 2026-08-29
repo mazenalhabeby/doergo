@@ -237,6 +237,14 @@ export default function DocumentsScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            /*
+              flexGrow AND flexShrink zero.
+
+              A horizontal ScrollView in a flex column has no intrinsic height,
+              so the FlatList below it took the space and squashed these rows to
+              a few pixels — the chips rendered clipped through their own text.
+            */
+            style={s.chipRow}
             contentContainerStyle={s.tabs}
           >
             <Tab label={t('documents.allTypes')} active={activeType === null} onPress={() => setActiveType(null)} colors={colors} />
@@ -247,7 +255,7 @@ export default function DocumentsScreen() {
         )}
 
         {years.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={s.tabs}>
             <Tab label={t('documents.allYears')} active={year === null} onPress={() => setYear(null)} colors={colors} small />
             {years.map((y) => (
               <Tab key={y} label={String(y)} active={year === y} onPress={() => setYear(y)} colors={colors} small />
@@ -330,7 +338,9 @@ const s = StyleSheet.create({
   },
   bannerText: { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
 
-  tabs: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: SPACING.xs },
+  // Height is intrinsic to the chips; the row must not be stretched or squeezed.
+  chipRow: { flexGrow: 0, flexShrink: 0 },
+  tabs: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: SPACING.xs, alignItems: 'center' },
   tab: {
     paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
     borderRadius: RADIUS.full, borderWidth: StyleSheet.hairlineWidth,
