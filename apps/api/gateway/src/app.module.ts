@@ -46,6 +46,7 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
 import { RecurringTasksModule } from './modules/recurring-tasks/recurring-tasks.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { SpaceSharingModule } from './modules/space-sharing/space-sharing.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthCacheModule } from './common/cache/auth-cache.module';
@@ -159,6 +160,7 @@ import { StorageModule } from './common/storage/storage.module';
     CustomFieldsModule,
     RecurringTasksModule,
     InvoicesModule,
+    DocumentsModule,
     SpaceSharingModule,
     GeoModule,
     RoutesModule,

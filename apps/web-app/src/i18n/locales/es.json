@@ -867,7 +867,8 @@
     "customerPortal": "Portales de clientes",
     "sales": "Ventas",
     "crm": "CRM",
-    "ledger": "Libro"
+    "ledger": "Libro",
+    "documents": "Documentos"
   },
   "dashboard": {
     "admin": {
@@ -7036,5 +7037,46 @@
         "a": "Sí: a las organizaciones con acuerdo negociado les facturamos fuera de la app y no se cobra ninguna tarjeta. Escríbenos y lo preparamos."
       }
     ]
+  },
+  "documents": {
+    "my": {
+      "title": "Mis documentos",
+      "subtitle": "Nóminas, contratos y certificados emitidos a tu nombre.",
+      "awaiting_one": "{{count}} documento necesita tu firma",
+      "awaiting_other": "{{count}} documentos necesitan tu firma",
+      "empty": "Aún no hay nada",
+      "emptyHint": "Los documentos que emita tu empresa aparecerán aquí."
+    },
+    "searchPlaceholder": "Buscar documentos",
+    "year": "Año",
+    "allYears": "Todos los años",
+    "allTypes": "Todos",
+    "new": "Nuevo",
+    "needsSignature": "Falta la firma",
+    "open": "Abrir",
+    "removed": "Documento eliminado",
+    "noMatches": "Ningún documento coincide",
+    "noMatchesHint": "Prueba otra búsqueda u otro año.",
+    "standing": {
+      "valid": "Vigente",
+      "expiring": "Caduca pronto",
+      "expired": "Caducado",
+      "inDays_one": "queda {{count}} día",
+      "inDays_other": "quedan {{count}} días"
+    },
+    "months": {
+      "january": "Enero",
+      "february": "Febrero",
+      "march": "Marzo",
+      "april": "Abril",
+      "may": "Mayo",
+      "june": "Junio",
+      "july": "Julio",
+      "august": "Agosto",
+      "september": "Septiembre",
+      "october": "Octubre",
+      "november": "Noviembre",
+      "december": "Diciembre"
+    }
   }
 }

@@ -844,7 +844,8 @@
       "away": "Absent",
       "auto": "Auto",
       "failed": "Impossible de mettre à jour le statut"
-    }
+    },
+    "documents": "Documents"
   },
   "manage": {
     "timeOff": {
@@ -1669,5 +1670,40 @@
     "subtitleInApp": "S’installe en arrière-plan",
     "readyTitle": "Mise à jour prête à installer",
     "readySubtitle": "Redémarrez pour terminer"
+  },
+  "documents": {
+    "my": {
+      "title": "Mes documents",
+      "empty": "Rien pour l’instant",
+      "emptyHint": "Les documents émis par votre employeur apparaîtront ici.",
+      "awaiting_one": "{{count}} document attend votre signature",
+      "awaiting_other": "{{count}} documents attendent votre signature"
+    },
+    "allTypes": "Tous",
+    "allYears": "Toutes les années",
+    "needsSignature": "Signature requise",
+    "noMatches": "Aucun document ne correspond",
+    "noMatchesHint": "Essayez un autre type ou une autre année.",
+    "loadFailed": "Impossible de charger vos documents",
+    "openFailed": "Impossible d’ouvrir ce document",
+    "standing": {
+      "valid": "Valide",
+      "expiring": "Expire bientôt",
+      "expired": "Expiré"
+    },
+    "months": {
+      "january": "Janvier",
+      "february": "Février",
+      "march": "Mars",
+      "april": "Avril",
+      "may": "Mai",
+      "june": "Juin",
+      "july": "Juillet",
+      "august": "Août",
+      "september": "Septembre",
+      "october": "Octobre",
+      "november": "Novembre",
+      "december": "Décembre"
+    }
   }
 }

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
-import { hasFeatureModule, orgHasAddOn, isAddOn } from '@hbcfield/shared/client';
+import { hasFeatureModule, orgHasAddOn, isAddOn, isAdmin } from '@hbcfield/shared/client';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -358,8 +358,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check if user has a specific permission
   const hasPermission = useCallback((perm: string) => {
     if (!user) return false;
-    // Satisfied by EITHER a direct user flag or the unified org access (a
-    // superset of the flags — never narrower).
+    /*
+      An ADMIN holds everything, exactly as PermissionsGuard decides it.
+
+      Not a shortcut — a correction. A built-in role's `permissions` JSON is a
+      SNAPSHOT written when the row was seeded, and it never gains keys added
+      to the catalogue afterwards: the seeded `admin` role in this database
+      carries nine of them. The server copes because PermissionsGuard returns
+      true for isAdmin() without consulting the snapshot; without the same rule
+      here, the UI hides controls from an admin that the API would happily
+      accept, and it reads as a broken screen rather than a permission.
+
+      This can never widen real access. The server is the authority and refuses
+      independently; this only decides what is worth rendering.
+    */
+    if (isAdmin(user)) return true;
+    // Otherwise: satisfied by EITHER a direct user flag or the unified org
+    // access (a superset of the flags — never narrower).
     // The permission flags are named columns on the user; indexing by a
     // runtime string needs the record view of it, not a hole in the type.
     if ((user as unknown as Record<string, unknown>)[perm] === true) return true;

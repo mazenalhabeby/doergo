@@ -46,6 +46,11 @@ export * from './access/task-access';
 // merge fields. Pure data + pure functions, so both entries carry it.
 export * from './documents';
 
+// Role helpers (isAdmin, hasRole, …). The PURE module, not `guards/index`,
+// which re-exports NestJS guard classes. The client needs isAdmin so its
+// permission gate can agree with PermissionsGuard rather than approximate it.
+export * from './guards/role-helpers';
+
 export * from './access/cross-org-chat';
 export * from './access/legacy-flag-migration';
 export * from './access/workflow-modules';

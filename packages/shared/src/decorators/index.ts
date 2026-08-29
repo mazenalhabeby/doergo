@@ -80,6 +80,12 @@ export interface CurrentUserData {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  // Personnel file. Projected from the resolved access set by
+  // orgPermissionFields(), which is what PermissionsGuard reads as a flat field.
+  canViewMemberDocuments?: boolean;
+  canOpenMemberDocuments?: boolean;
+  canIssueDocuments?: boolean;
+  canManageDocumentTemplates?: boolean;
   // Worker configuration
   position?: string | null;
   scheduleType?: string | null;
@@ -160,7 +166,9 @@ export type PermissionField =
   | 'canManageWorkspaces' | 'canManageRota'
   | 'canManagePortals' | 'canManageTaskTypes' | 'canViewTracking'
   | 'canReconcileAttendance' | 'canViewSpaceAttendance' | 'canApproveOvertime'
-  | 'crmEditInfo' | 'crmManageClients';
+  | 'crmEditInfo' | 'crmManageClients'
+  | 'canViewMemberDocuments' | 'canOpenMemberDocuments'
+  | 'canIssueDocuments' | 'canManageDocumentTemplates';
 
 /**
  * Decorator to specify required permissions for a route.

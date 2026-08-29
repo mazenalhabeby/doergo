@@ -867,7 +867,8 @@
     "customerPortal": "Clients Portals",
     "sales": "Sales",
     "crm": "CRM",
-    "ledger": "Ledger"
+    "ledger": "Ledger",
+    "documents": "Documents"
   },
   "dashboard": {
     "admin": {
@@ -7036,5 +7037,46 @@
         "a": "Yes — for organisations on a negotiated agreement we bill outside the app and nothing is charged to a card. Write to us and we will set it up."
       }
     ]
+  },
+  "documents": {
+    "my": {
+      "title": "My documents",
+      "subtitle": "Payslips, contracts and certificates issued to you.",
+      "awaiting_one": "{{count}} document needs your signature",
+      "awaiting_other": "{{count}} documents need your signature",
+      "empty": "Nothing here yet",
+      "emptyHint": "Documents your employer issues will appear here."
+    },
+    "searchPlaceholder": "Search documents",
+    "year": "Year",
+    "allYears": "All years",
+    "allTypes": "All",
+    "new": "New",
+    "needsSignature": "Signature needed",
+    "open": "Open",
+    "removed": "Document removed",
+    "noMatches": "No documents match",
+    "noMatchesHint": "Try a different search or year.",
+    "standing": {
+      "valid": "Valid",
+      "expiring": "Expires soon",
+      "expired": "Expired",
+      "inDays_one": "{{count}} day left",
+      "inDays_other": "{{count}} days left"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
   }
 }

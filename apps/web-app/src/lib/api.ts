@@ -5901,3 +5901,154 @@ export const searchApi = {
 };
 
 
+
+// ============================================================================
+// DOCUMENTS API — the personnel file
+// ============================================================================
+
+export interface MemberDocumentRow {
+  id: string;
+  title: string;
+  typeId: string;
+  typeKey: string;
+  typeLabel: string;
+  periodYear: number | null;
+  periodMonth: number | null;
+  status: string;
+  sizeBytes: number;
+  mimeType: string;
+  issuedAt: string;
+  expiresOn: string | null;
+  unread: boolean;
+  needsSignature: boolean;
+  standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
+}
+
+export interface DocumentTypeRow {
+  id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  cadence: 'MONTHLY' | 'ANNUAL' | 'ONE_OFF';
+  direction: 'ISSUED' | 'SUPPLIED';
+  retentionMonths: number | null;
+  signatureMode: 'NONE' | 'ACKNOWLEDGE' | 'IN_APP' | 'WET_INK';
+  isCredential: boolean;
+  hasExpiry: boolean;
+  requiredForWorkflowIds: string[];
+  isActive: boolean;
+  position: number;
+}
+
+export interface DocumentEventRow {
+  id: string;
+  type: string;
+  at: string;
+  actorId: string | null;
+  actor: { id: string; firstName: string; lastName: string } | null;
+  ip: string | null;
+  userAgent: string | null;
+  appVersion: string | null;
+}
+
+export const documentsApi = {
+  listTypes: async (includeInactive = false) => {
+    const response = await api.get<{ success: boolean; data: DocumentTypeRow[] }>(
+      buildUrlWithQuery('/documents/types', { includeInactive: includeInactive || undefined }),
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  createType: async (data: Partial<DocumentTypeRow> & { key: string; label: string }) => {
+    const response = await api.post<{ success: boolean; data: DocumentTypeRow }>('/documents/types', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  updateType: async (id: string, data: Partial<DocumentTypeRow>) => {
+    const response = await api.patch<{ success: boolean; data: DocumentTypeRow }>(`/documents/types/${id}`, data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  deactivateType: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/documents/types/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  /** Omit `userId` for your own file. */
+  list: async (params?: { userId?: string; typeId?: string; year?: number; search?: string }) => {
+    const response = await api.get<{ success: boolean; data: MemberDocumentRow[] }>(
+      buildUrlWithQuery('/documents', {
+        userId: params?.userId,
+        typeId: params?.typeId,
+        year: params?.year,
+        search: params?.search,
+      }),
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  /*
+    A POST, not a GET, and never called from a list.
+
+    Minting the link IS the "opened" event on the evidence trail. A GET would be
+    prefetched by browsers and scanned by link checkers, and the record of who
+    read their contract would fill up with robots.
+  */
+  downloadUrl: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { url: string; fileName: string } }>(
+      `/documents/${id}/download-url`,
+      {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  events: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: DocumentEventRow[] }>(`/documents/${id}/events`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  /** Step 1 of issuing: a link the browser PUTs the file to directly. */
+  uploadUrl: async (data: { userId: string; typeId: string; mimeType: string; sizeBytes: number }) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { url: string; key: string; headers: Record<string, string>; expiresInSeconds: number };
+    }>('/documents/upload-url', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /** Step 2: the server reads the bytes back, hashes them, and files the row. */
+  confirm: async (data: {
+    stagingKey: string;
+    userId: string;
+    typeId: string;
+    title: string;
+    periodYear?: number;
+    periodMonth?: number;
+    expiresOn?: string;
+  }) => {
+    const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  revoke: async (id: string) => {
+    const response = await api.post<{ success: boolean }>(`/documents/${id}/revoke`, {});
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  /** Only ever your own, and only what you supplied. */
+  remove: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/documents/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+};

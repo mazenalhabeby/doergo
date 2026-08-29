@@ -6,6 +6,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { InvitationModule } from './modules/invitations/invitation.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { InvoiceModule } from './modules/invoices/invoice.module';
@@ -82,6 +83,7 @@ import { PortalModule } from './modules/portal/portal.module';
     AuthModule,
     UsersModule,
     InvitationModule,
+    DocumentsModule,
     OnboardingModule,
     AuditLogModule,
     InvoiceModule,

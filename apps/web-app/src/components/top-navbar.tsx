@@ -74,7 +74,7 @@ const NAV_HREFS = [
   "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/settings", "/settings/billing",
-  "/my/attendance", "/my/time-off",
+  "/my/attendance", "/my/time-off", "/my/documents",
 ] as const
 
 function matches(pathname: string, href: string): boolean {
@@ -147,7 +147,7 @@ function usePrefetchRoutes() {
 // TopNavbar
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPlanFeature } = useAuth()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
@@ -192,6 +192,15 @@ export function TopNavbar() {
   // (My Attendance hides only when the management Attendance view is present, to
   // avoid two "Attendance" links.)
   const showMyTimeOff = hasAccessModule(user, "time_off")
+  /*
+    Personal documents.
+
+    Gated on the ADD-ON alone, not on a permission: reading your own file is
+    never a permission. An organization that has not bought Member Documents
+    sees no link at all, which is why nothing about this feature is visible to
+    an existing customer until they choose it.
+  */
+  const showMyDocuments = hasPlanFeature("documents")
 
   // Measured overflow for the navigation row (see hooks/use-overflow-nav).
   // Re-measures whenever the language changes, because that changes every width.
@@ -421,6 +430,15 @@ export function TopNavbar() {
           data-nav-label={t("nav.timeOff")}
           data-nav-active={isActive(pathname, "/my/time-off")} data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
             {t("nav.timeOff")}
+          </Link>
+        )}
+        {showMyDocuments && (
+          <Link href="/my/documents"
+          data-nav-item
+          data-nav-href="/my/documents"
+          data-nav-label={t("nav.documents")}
+          data-nav-active={isActive(pathname, "/my/documents")} data-tour="nav-my-documents" className={cn(navItemBase, isActive(pathname, "/my/documents") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
+            {t("nav.documents")}
           </Link>
         )}
         {showMyAttendance && (

@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
+import { orgHasAddOn } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
@@ -318,6 +319,24 @@ export default function ProfileScreen() {
             onPress={() => router.push('/chat' as Href)}
             themeColors={colors}
           />
+          {/*
+            Personal documents. Gated on the ADD-ON only — reading your own file
+            is never a permission — so an organization that has not bought
+            Member Documents sees no entry, and nothing changes for them.
+          */}
+          {orgHasAddOn(user?.orgAddOns ?? null, 'documents') && (
+            <>
+              <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+              <MenuItem
+                icon="document-text-outline"
+                iconColor={COLORS.primary}
+                iconBg={colors.primaryLight}
+                label={t('profile.documents')}
+                onPress={() => router.push('/documents' as Href)}
+                themeColors={colors}
+              />
+            </>
+          )}
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
           <MenuItem
             icon="notifications-outline"

@@ -867,7 +867,8 @@
     "customerPortal": "Portali clienti",
     "sales": "Vendite",
     "crm": "CRM",
-    "ledger": "Registro"
+    "ledger": "Registro",
+    "documents": "Documenti"
   },
   "dashboard": {
     "admin": {
@@ -7045,5 +7046,46 @@
         "a": "Sì — per le organizzazioni con accordo negoziato fatturiamo fuori dall'app e non viene addebitata alcuna carta. Scrivici e lo prepariamo."
       }
     ]
+  },
+  "documents": {
+    "my": {
+      "title": "I miei documenti",
+      "subtitle": "Buste paga, contratti e certificati intestati a te.",
+      "awaiting_one": "{{count}} documento richiede la tua firma",
+      "awaiting_other": "{{count}} documenti richiedono la tua firma",
+      "empty": "Ancora nulla",
+      "emptyHint": "I documenti emessi dalla tua azienda compariranno qui."
+    },
+    "searchPlaceholder": "Cerca documenti",
+    "year": "Anno",
+    "allYears": "Tutti gli anni",
+    "allTypes": "Tutti",
+    "new": "Nuovo",
+    "needsSignature": "Firma necessaria",
+    "open": "Apri",
+    "removed": "Documento rimosso",
+    "noMatches": "Nessun documento corrisponde",
+    "noMatchesHint": "Prova un’altra ricerca o un altro anno.",
+    "standing": {
+      "valid": "Valido",
+      "expiring": "In scadenza",
+      "expired": "Scaduto",
+      "inDays_one": "{{count}} giorno rimasto",
+      "inDays_other": "{{count}} giorni rimasti"
+    },
+    "months": {
+      "january": "Gennaio",
+      "february": "Febbraio",
+      "march": "Marzo",
+      "april": "Aprile",
+      "may": "Maggio",
+      "june": "Giugno",
+      "july": "Luglio",
+      "august": "Agosto",
+      "september": "Settembre",
+      "october": "Ottobre",
+      "november": "Novembre",
+      "december": "Dicembre"
+    }
   }
 }

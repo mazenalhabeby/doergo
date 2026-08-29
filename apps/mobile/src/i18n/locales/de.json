@@ -844,7 +844,8 @@
       "away": "Abwesend",
       "auto": "Auto",
       "failed": "Status konnte nicht aktualisiert werden"
-    }
+    },
+    "documents": "Dokumente"
   },
   "manage": {
     "timeOff": {
@@ -1669,5 +1670,40 @@
     "subtitleInApp": "Wird im Hintergrund installiert",
     "readyTitle": "Update bereit zur Installation",
     "readySubtitle": "Zum Abschließen neu starten"
+  },
+  "documents": {
+    "my": {
+      "title": "Meine Dokumente",
+      "empty": "Noch nichts vorhanden",
+      "emptyHint": "Dokumente Ihres Arbeitgebers erscheinen hier.",
+      "awaiting_one": "{{count}} Dokument benötigt Ihre Unterschrift",
+      "awaiting_other": "{{count}} Dokumente benötigen Ihre Unterschrift"
+    },
+    "allTypes": "Alle",
+    "allYears": "Alle Jahre",
+    "needsSignature": "Unterschrift nötig",
+    "noMatches": "Keine passenden Dokumente",
+    "noMatchesHint": "Versuchen Sie eine andere Art oder ein anderes Jahr.",
+    "loadFailed": "Dokumente konnten nicht geladen werden",
+    "openFailed": "Dokument konnte nicht geöffnet werden",
+    "standing": {
+      "valid": "Gültig",
+      "expiring": "Läuft bald ab",
+      "expired": "Abgelaufen"
+    },
+    "months": {
+      "january": "Jänner",
+      "february": "Februar",
+      "march": "März",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Dezember"
+    }
   }
 }

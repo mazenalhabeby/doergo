@@ -844,7 +844,8 @@
       "away": "Ausente",
       "auto": "Auto",
       "failed": "No se pudo actualizar el estado"
-    }
+    },
+    "documents": "Documentos"
   },
   "manage": {
     "timeOff": {
@@ -1669,5 +1670,40 @@
     "subtitleInApp": "Se instala en segundo plano",
     "readyTitle": "Actualización lista para instalar",
     "readySubtitle": "Reinicie para terminar"
+  },
+  "documents": {
+    "my": {
+      "title": "Mis documentos",
+      "empty": "Aún no hay nada",
+      "emptyHint": "Los documentos que emita tu empresa aparecerán aquí.",
+      "awaiting_one": "{{count}} documento necesita tu firma",
+      "awaiting_other": "{{count}} documentos necesitan tu firma"
+    },
+    "allTypes": "Todos",
+    "allYears": "Todos los años",
+    "needsSignature": "Falta la firma",
+    "noMatches": "Ningún documento coincide",
+    "noMatchesHint": "Prueba otro tipo u otro año.",
+    "loadFailed": "No se pudieron cargar tus documentos",
+    "openFailed": "No se pudo abrir el documento",
+    "standing": {
+      "valid": "Vigente",
+      "expiring": "Caduca pronto",
+      "expired": "Caducado"
+    },
+    "months": {
+      "january": "Enero",
+      "february": "Febrero",
+      "march": "Marzo",
+      "april": "Abril",
+      "may": "Mayo",
+      "june": "Junio",
+      "july": "Julio",
+      "august": "Agosto",
+      "september": "Septiembre",
+      "october": "Octubre",
+      "november": "Noviembre",
+      "december": "Diciembre"
+    }
   }
 }

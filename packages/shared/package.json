@@ -71,6 +71,46 @@
       "require": "./dist/storage/index.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "client": [
+        "./dist/client.d.ts"
+      ],
+      "types": [
+        "./dist/types/index.d.ts"
+      ],
+      "constants": [
+        "./dist/constants/index.d.ts"
+      ],
+      "design": [
+        "./dist/design/index.d.ts"
+      ],
+      "design/tailwind-preset": [
+        "./dist/design/tailwind-preset.d.ts"
+      ],
+      "prisma": [
+        "./dist/prisma/index.d.ts"
+      ],
+      "microservices": [
+        "./dist/microservices/index.d.ts"
+      ],
+      "api": [
+        "./dist/api/index.d.ts"
+      ],
+      "components": [
+        "./dist/components/index.d.ts"
+      ],
+      "utils": [
+        "./dist/utils/index.d.ts"
+      ],
+      "documents": [
+        "./dist/documents/index.d.ts"
+      ],
+      "storage": [
+        "./dist/storage/index.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

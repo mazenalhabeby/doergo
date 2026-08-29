@@ -867,7 +867,8 @@
     "customerPortal": "Portails clients",
     "sales": "Ventes",
     "crm": "CRM",
-    "ledger": "Registre"
+    "ledger": "Registre",
+    "documents": "Documents"
   },
   "dashboard": {
     "admin": {
@@ -7045,5 +7046,46 @@
         "a": "Oui — pour les organisations sous accord négocié, nous facturons en dehors de l'application et aucune carte n'est débitée. Écrivez-nous et nous mettons cela en place."
       }
     ]
+  },
+  "documents": {
+    "my": {
+      "title": "Mes documents",
+      "subtitle": "Bulletins de paie, contrats et certificats établis à votre nom.",
+      "awaiting_one": "{{count}} document attend votre signature",
+      "awaiting_other": "{{count}} documents attendent votre signature",
+      "empty": "Rien pour l’instant",
+      "emptyHint": "Les documents émis par votre employeur apparaîtront ici."
+    },
+    "searchPlaceholder": "Rechercher des documents",
+    "year": "Année",
+    "allYears": "Toutes les années",
+    "allTypes": "Tous",
+    "new": "Nouveau",
+    "needsSignature": "Signature requise",
+    "open": "Ouvrir",
+    "removed": "Document supprimé",
+    "noMatches": "Aucun document ne correspond",
+    "noMatchesHint": "Essayez une autre recherche ou une autre année.",
+    "standing": {
+      "valid": "Valide",
+      "expiring": "Expire bientôt",
+      "expired": "Expiré",
+      "inDays_one": "{{count}} jour restant",
+      "inDays_other": "{{count}} jours restants"
+    },
+    "months": {
+      "january": "Janvier",
+      "february": "Février",
+      "march": "Mars",
+      "april": "Avril",
+      "may": "Mai",
+      "june": "Juin",
+      "july": "Juillet",
+      "august": "Août",
+      "september": "Septembre",
+      "october": "Octobre",
+      "november": "Novembre",
+      "december": "Décembre"
+    }
   }
 }

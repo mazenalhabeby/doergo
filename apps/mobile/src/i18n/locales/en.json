@@ -844,7 +844,8 @@
       "away": "Away",
       "auto": "Auto",
       "failed": "Could not update status"
-    }
+    },
+    "documents": "Documents"
   },
   "manage": {
     "timeOff": {
@@ -1673,5 +1674,40 @@
     "subtitleInApp": "Installs in the background",
     "readyTitle": "Update ready to install",
     "readySubtitle": "Restart to finish"
+  },
+  "documents": {
+    "my": {
+      "title": "My documents",
+      "empty": "Nothing here yet",
+      "emptyHint": "Documents your employer issues will appear here.",
+      "awaiting_one": "{{count}} document needs your signature",
+      "awaiting_other": "{{count}} documents need your signature"
+    },
+    "allTypes": "All",
+    "allYears": "All years",
+    "needsSignature": "Signature needed",
+    "noMatches": "No documents match",
+    "noMatchesHint": "Try another type or year.",
+    "loadFailed": "Could not load your documents",
+    "openFailed": "Could not open that document",
+    "standing": {
+      "valid": "Valid",
+      "expiring": "Expires soon",
+      "expired": "Expired"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
   }
 }

@@ -867,7 +867,8 @@
     "customerPortal": "Kundenportale",
     "sales": "Vertrieb",
     "crm": "CRM",
-    "ledger": "Kassenbuch"
+    "ledger": "Kassenbuch",
+    "documents": "Dokumente"
   },
   "dashboard": {
     "admin": {
@@ -7036,5 +7037,46 @@
         "a": "Ja — Organisationen mit individueller Vereinbarung rechnen wir außerhalb der App ab, es wird keine Karte belastet. Schreiben Sie uns, wir richten das ein."
       }
     ]
+  },
+  "documents": {
+    "my": {
+      "title": "Meine Dokumente",
+      "subtitle": "Gehaltszettel, Verträge und Nachweise, die für Sie ausgestellt wurden.",
+      "awaiting_one": "{{count}} Dokument benötigt Ihre Unterschrift",
+      "awaiting_other": "{{count}} Dokumente benötigen Ihre Unterschrift",
+      "empty": "Noch nichts vorhanden",
+      "emptyHint": "Dokumente Ihres Arbeitgebers erscheinen hier."
+    },
+    "searchPlaceholder": "Dokumente durchsuchen",
+    "year": "Jahr",
+    "allYears": "Alle Jahre",
+    "allTypes": "Alle",
+    "new": "Neu",
+    "needsSignature": "Unterschrift nötig",
+    "open": "Öffnen",
+    "removed": "Dokument entfernt",
+    "noMatches": "Keine passenden Dokumente",
+    "noMatchesHint": "Versuchen Sie eine andere Suche oder ein anderes Jahr.",
+    "standing": {
+      "valid": "Gültig",
+      "expiring": "Läuft bald ab",
+      "expired": "Abgelaufen",
+      "inDays_one": "noch {{count}} Tag",
+      "inDays_other": "noch {{count}} Tage"
+    },
+    "months": {
+      "january": "Jänner",
+      "february": "Februar",
+      "march": "März",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Dezember"
+    }
   }
 }

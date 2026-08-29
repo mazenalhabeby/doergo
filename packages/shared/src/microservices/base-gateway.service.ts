@@ -40,7 +40,10 @@ export abstract class BaseGatewayService {
   }
 
   /**
-   * Send a message to the microservice and wait for response
+   * Send a message to the microservice and wait for a response.
+   *
+   * RETRIES transient transport failures, so it is for READS. For anything that
+   * writes, use `sendOnce` — see the note there.
    */
   protected async send<T>(pattern: { cmd: string }, data: unknown): Promise<T> {
     try {
@@ -86,5 +89,54 @@ export abstract class BaseGatewayService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  /**
+   * Send a message ONCE. Same status mapping as `send`, no retry.
+   *
+   * A retry is only safe when replaying the call is harmless. It is not for a
+   * write: a timeout means "no answer arrived", never "nothing happened", so
+   * retrying an issue-document or create-invoice call can produce two of them —
+   * and the second one is invisible until somebody notices a duplicate.
+   *
+   * The timeout is longer than a read's because a write may legitimately do
+   * more work (hash a file, write in a transaction) before it answers.
+   */
+  protected async sendOnce<T>(
+    pattern: { cmd: string },
+    data: unknown,
+    timeoutMs = 30000,
+  ): Promise<T> {
+    try {
+      return await firstValueFrom(
+        this.client.send<T>(pattern, data).pipe(
+          timeout(timeoutMs),
+          catchError((err: Error) => {
+            this.logger.error(`Service error: ${err.message}`);
+            throw err;
+          }),
+        ),
+      );
+    } catch (err) {
+      throw this.toHttpException(err as ServiceError);
+    }
+  }
+
+  /**
+   * A service error, as the HTTP status it actually was.
+   *
+   * A NestJS HttpException serialized over RPC exposes its code as `statusCode`
+   * (or nested under `response`), never as `status` alone — so all three forms
+   * are checked. Miss one and every 404 and 403 arrives at the client as a 500,
+   * which is how a "not found" becomes an incident.
+   */
+  protected toHttpException(error: ServiceError): HttpException {
+    if (error?.name === 'TimeoutError') {
+      return new HttpException('Service timeout', HttpStatus.REQUEST_TIMEOUT);
+    }
+    const status = error?.status ?? error?.statusCode ?? error?.response?.statusCode;
+    const message = error?.response?.message ?? error?.message;
+    if (status && message) return new HttpException(message, status);
+    return new HttpException(error?.message || 'Service error', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
