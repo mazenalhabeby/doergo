@@ -11,5 +11,6 @@ export * from './styles';
 
 // Utilities
 export * from './utils';
+export * from './document-icons';
 
 // API (separate import to avoid circular dependencies)

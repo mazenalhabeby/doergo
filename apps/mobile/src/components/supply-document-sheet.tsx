@@ -11,6 +11,7 @@ import { File as FsFile } from 'expo-file-system';
 import { documentsApi, type DocumentType } from '../lib/api/documents';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
+import { documentTypeIcon } from '../lib/document-icons';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { PressableScale } from './pressable-scale';
@@ -279,8 +280,18 @@ export function SupplyDocumentSheet({
           </Text>
         ) : (
           <>
-            {/* What it is */}
-            <Text style={[s.label, { color: colors.textPrimary }]}>{t('documents.supply.whatIsIt')}</Text>
+            {/*
+              What it is.
+
+              Every row the SAME HEIGHT, whether or not the type carries a
+              description. A list where one option is twice as tall as its
+              neighbours because somebody wrote two sentences about it reads as
+              an accident, and the tall one draws the eye for no reason that has
+              anything to do with what it is.
+            */}
+            <Text style={[s.eyebrow, { color: colors.textMuted }]}>
+              {t('documents.supply.whatIsIt')}
+            </Text>
             <View style={s.typeList}>
               {suppliable.map((ty) => {
                 const on = ty.id === type?.id;
@@ -288,40 +299,68 @@ export function SupplyDocumentSheet({
                   <PressableScale
                     key={ty.id}
                     onPress={() => setTypeId(ty.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: on }}
                     style={[
                       s.typeRow,
-                      { borderColor: on ? COLORS.primary : colors.border,
-                        backgroundColor: on ? `${COLORS.primary}14` : 'transparent' },
+                      on
+                        ? [s.typeRowOn, { backgroundColor: COLORS.primary }]
+                        : { backgroundColor: colors.surfaceRaised },
                     ]}
                   >
-                    <Ionicons
-                      name={on ? 'radio-button-on' : 'radio-button-off'}
-                      size={18}
-                      color={on ? COLORS.primary : colors.textSecondary}
-                    />
+                    {/* The glyph does the identifying at a glance; the radio
+                        only ever repeated what the fill already says. */}
+                    <View
+                      style={[
+                        s.typeIcon,
+                        { backgroundColor: on ? 'rgba(255,255,255,0.18)' : colors.surface },
+                      ]}
+                    >
+                      <Ionicons
+                        name={documentTypeIcon(ty.key)}
+                        size={19}
+                        color={on ? COLORS.white : colors.textSecondary}
+                      />
+                    </View>
                     <View style={s.typeText}>
-                      <Text style={[s.typeLabel, { color: colors.textPrimary }]}>{ty.label}</Text>
+                      <Text
+                        style={[s.typeLabel, { color: on ? COLORS.white : colors.textPrimary }]}
+                        numberOfLines={1}
+                      >
+                        {ty.label}
+                      </Text>
                       {!!ty.description && (
-                        <Text style={[s.typeHint, { color: colors.textSecondary }]} numberOfLines={2}>
+                        <Text
+                          style={[
+                            s.typeHint,
+                            { color: on ? 'rgba(255,255,255,0.75)' : colors.textMuted },
+                          ]}
+                          numberOfLines={1}
+                        >
                           {ty.description}
                         </Text>
                       )}
                     </View>
+                    {on && <Ionicons name="checkmark-circle" size={20} color={COLORS.white} />}
                   </PressableScale>
                 );
               })}
             </View>
 
             {/* The photo */}
-            <Text style={[s.label, { color: colors.textPrimary }]}>{t('documents.supply.theFile')}</Text>
+            <Text style={[s.eyebrow, { color: colors.textMuted }]}>
+              {t('documents.supply.theFile')}
+            </Text>
             {photo ? (
-              <View style={[s.picked, { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}14` }]}>
-                <Ionicons name="document-attach-outline" size={20} color={COLORS.primary} />
+              <View style={[s.picked, { backgroundColor: colors.surfaceRaised }]}>
+                <View style={[s.pickedIcon, { backgroundColor: COLORS.primary }]}>
+                  <Ionicons name="checkmark" size={18} color={COLORS.white} />
+                </View>
                 <Text style={[s.pickedName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {photo.fileName}
                 </Text>
                 <Pressable onPress={() => setPhoto(null)} hitSlop={10}>
-                  <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                  <Ionicons name="close-circle" size={22} color={colors.textMuted} />
                 </Pressable>
               </View>
             ) : (
@@ -334,19 +373,23 @@ export function SupplyDocumentSheet({
                   against a bad image. Choosing an existing photo stays — some
                   people are handed a scan by email — but it is the quieter of
                   the two.
+
+                  Quieter as a FILLED button, not a dashed one. A dashed outline
+                  is the convention for a drop target on a desktop; on a phone
+                  it just reads as something unfinished.
                 */}
                 <PressableScale
                   onPress={() => setScanning(true)}
-                  style={[s.scanButton, { backgroundColor: COLORS.primary }]}
+                  style={[s.scanButton, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }]}
                 >
-                  <Ionicons name="scan-outline" size={22} color="#fff" />
+                  <Ionicons name="scan-outline" size={22} color={COLORS.white} />
                   <Text style={s.scanText}>{t('documents.supply.scan')}</Text>
                 </PressableScale>
                 <PressableScale
                   onPress={pickExisting}
-                  style={[s.pickButton, { borderColor: colors.border }]}
+                  style={[s.pickButton, { backgroundColor: colors.surfaceRaised }]}
                 >
-                  <Ionicons name="images-outline" size={20} color={colors.textSecondary} />
+                  <Ionicons name="images-outline" size={18} color={colors.textSecondary} />
                   <Text style={[s.pickText, { color: colors.textSecondary }]}>
                     {t('documents.supply.chooseExisting')}
                   </Text>
@@ -357,23 +400,32 @@ export function SupplyDocumentSheet({
             {/* Its expiry, asked for where it belongs */}
             {needsDate && (
               <>
-                <Text style={[s.label, { color: colors.textPrimary }]}>{t('documents.supply.expiresOn')}</Text>
+                <Text style={[s.eyebrow, { color: colors.textMuted }]}>
+                  {t('documents.supply.expiresOn')}
+                </Text>
                 <PressableScale
                   onPress={() => setShowDate(true)}
-                  style={[s.dateButton, { borderColor: expiresOn ? COLORS.primary : colors.border }]}
+                  style={[s.dateButton, { backgroundColor: colors.surfaceRaised }]}
                 >
                   <Ionicons
                     name={reading ? 'hourglass-outline' : 'calendar-outline'}
                     size={18}
-                    color={colors.textSecondary}
+                    color={expiresOn ? COLORS.primary : colors.textMuted}
                   />
-                  <Text style={[s.dateText, { color: expiresOn ? colors.textPrimary : colors.textSecondary }]}>
+                  <Text
+                    style={[
+                      s.dateText,
+                      { color: expiresOn ? colors.textPrimary : colors.textMuted },
+                      expiresOn && s.dateTextSet,
+                    ]}
+                  >
                     {reading
                       ? t('documents.supply.reading')
                       : expiresOn
                         ? expiresOn.toLocaleDateString()
                         : t('documents.supply.pickDate')}
                   </Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                 </PressableScale>
 
                 {/*
@@ -413,9 +465,15 @@ export function SupplyDocumentSheet({
 
             {/* What happens next. Somebody who believes an upload covers them
                 for the work finds out on site that it does not. */}
-            <View style={[s.notice, { backgroundColor: `${COLORS.warning}18`, borderColor: `${COLORS.warning}55` }]}>
-              <Ionicons name="information-circle-outline" size={18} color={COLORS.warning} />
-              <Text style={[s.noticeText, { color: colors.textPrimary }]}>
+            {/*
+              Quiet. A yellow-bordered panel is what a warning looks like, and
+              this is not one — the submission worked, it simply is not a
+              certificate yet. Shouting it made the calmest sentence on the
+              screen the loudest thing on it.
+            */}
+            <View style={s.notice}>
+              <Ionicons name="information-circle" size={16} color={colors.textMuted} />
+              <Text style={[s.noticeText, { color: colors.textMuted }]}>
                 {t('documents.supply.reviewNotice')}
               </Text>
             </View>
@@ -435,14 +493,26 @@ export function SupplyDocumentSheet({
           <PressableScale
             onPress={submit}
             disabled={!photo || busy}
+            /*
+              A dimmed version of the live colour is the worst disabled state
+              there is: it still reads as the button, just badly rendered, so
+              people tap it and conclude the app is broken. Off means a
+              different surface entirely.
+            */
             style={[
               s.submit,
-              { backgroundColor: COLORS.primary, opacity: !photo || busy ? 0.5 : 1 },
+              !photo || busy
+                ? { backgroundColor: colors.surfaceRaised }
+                : [s.submitOn, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }],
             ]}
           >
             {busy
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={s.submitText}>{t('documents.supply.send')}</Text>}
+              ? <ActivityIndicator color={colors.textMuted} />
+              : (
+                <Text style={[s.submitText, { color: photo ? COLORS.white : colors.textMuted }]}>
+                  {t('documents.supply.send')}
+                </Text>
+              )}
           </PressableScale>
         )}
       </SheetPanel>
@@ -496,47 +566,89 @@ function toIsoDate(d: Date): string {
 
 const s = StyleSheet.create({
   scroll: { flexShrink: 1 },
-  body: { gap: SPACING.sm, paddingBottom: SPACING.md },
-  subtitle: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.sm },
-  empty: { fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.xl },
-  label: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, marginTop: SPACING.sm },
-  typeList: { gap: SPACING.xs },
-  typeRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm,
+  body: { paddingBottom: SPACING.md },
+  subtitle: { fontSize: FONT_SIZE.base, lineHeight: 20, marginTop: SPACING.xs, marginBottom: SPACING.sm },
+  empty: { fontSize: FONT_SIZE.base, textAlign: 'center', paddingVertical: SPACING.xl },
+
+  /* Small, spaced, muted — a section marker rather than a heading competing
+     with the sheet's own title for the top of the visual hierarchy. */
+  eyebrow: {
+    fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold,
+    textTransform: 'uppercase', letterSpacing: 0.8,
+    marginTop: SPACING.lg, marginBottom: SPACING.sm,
   },
-  typeText: { flex: 1 },
-  typeLabel: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },
-  typeHint: { fontSize: FONT_SIZE.xs, marginTop: 2 },
+
+  typeList: { gap: SPACING.xs },
+  /* Fixed, so a described type and a bare one are the same size. */
+  typeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    height: 62, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md,
+  },
+  typeRowOn: {
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  typeIcon: {
+    width: 38, height: 38, borderRadius: RADIUS.md,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  typeText: { flex: 1, gap: 1 },
+  typeLabel: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2 },
+  typeHint: { fontSize: FONT_SIZE.sm },
+
   scanButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    minHeight: 52, borderRadius: RADIUS.md,
+    height: 54, borderRadius: RADIUS.lg,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  scanText: { color: '#fff', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
+  scanText: {
+    color: COLORS.white, fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2,
+  },
   pickButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs,
-    borderWidth: 1, borderStyle: 'dashed', borderRadius: RADIUS.md, paddingVertical: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
+    height: 46, borderRadius: RADIUS.lg, marginTop: SPACING.sm,
   },
-  pickText: { fontSize: FONT_SIZE.sm },
+  pickText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium },
+
   picked: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    height: 62, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md,
   },
-  pickedName: { flex: 1, fontSize: FONT_SIZE.sm },
+  pickedIcon: {
+    width: 30, height: 30, borderRadius: RADIUS.full,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pickedName: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium },
+
   dateButton: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    height: 54, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md,
   },
-  dateText: { fontSize: FONT_SIZE.md },
-  dateNote: { fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
+  dateText: { flex: 1, fontSize: FONT_SIZE.lg },
+  dateTextSet: { fontWeight: FONT_WEIGHT.semibold },
+  dateNote: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginLeft: SPACING.xs },
+
   notice: {
     flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start',
-    borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.sm,
+    marginTop: SPACING.lg, paddingHorizontal: SPACING.xs,
   },
-  noticeText: { flex: 1, fontSize: FONT_SIZE.sm, lineHeight: 20 },
+  noticeText: { flex: 1, fontSize: FONT_SIZE.sm, lineHeight: 18 },
+
   submit: {
     alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center',
-    minHeight: 52, borderRadius: RADIUS.md, marginTop: SPACING.sm,
+    height: 54, borderRadius: RADIUS.lg, marginTop: SPACING.md,
   },
-  submitText: { color: '#fff', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
+  submitOn: {
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  submitText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2 },
 });
