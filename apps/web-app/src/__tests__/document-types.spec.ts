@@ -208,6 +208,30 @@ describe('typeConsequences', () => {
     expect(typeConsequences({ ...base, signatureMode: 'WET_INK' })).toContain('onPaper');
   });
 
+  it('says how it will be SCANNED, so a wrong frame is visible', () => {
+    /*
+      The gap this closes. A type created before shapes existed quietly says
+      CARD, and nothing on screen revealed that a passport was being framed as a
+      driving licence — which makes the machine-readable zone smaller in the
+      photograph and the read worse. A setting nobody can see is a setting
+      nobody corrects.
+    */
+    const passport = typeConsequences({ ...base, direction: 'SUPPLIED', scanShape: 'PASSPORT' });
+    expect(passport).toContain('shape.PASSPORT');
+    expect(passport).not.toContain('bothSides');
+
+    const card = typeConsequences({ ...base, direction: 'SUPPLIED', scanShape: 'CARD', twoSided: true });
+    expect(card).toContain('shape.CARD');
+    expect(card).toContain('bothSides');
+  });
+
+  it('says nothing about scanning for something the company issues', () => {
+    // A payslip is never scanned by anybody, so a frame is meaningless on it.
+    const issued = typeConsequences({ ...base, direction: 'ISSUED', scanShape: 'PAGE', twoSided: true });
+    expect(issued.some((c) => c.startsWith('shape.'))).toBe(false);
+    expect(issued).not.toContain('bothSides');
+  });
+
   it('says a credential is tracked, and separately that it gates work', () => {
     /*
       The distinction the compliance board rests on. A lapsed certificate that
@@ -246,11 +270,16 @@ describe('the document-types screen is translated', () => {
     // The row renders these by key. A missing one prints the raw key path into
     // the middle of a sentence.
     const copy = load(locale).documents.types.consequences;
+    // Resolved the way i18next resolves them: a dot is a nesting separator, not
+    // part of the key. `shape.CARD` lives at consequences.shape.CARD.
+    const at = (k: string) => k.split('.').reduce((o: any, part) => o?.[part], copy);
+
     for (const key of [
       'youIssue', 'memberUploads', 'perPeriod', 'mustSign', 'mustAcknowledge',
       'onPaper', 'expiresTracked', 'credentialNoExpiry', 'gatesWork',
+      'shape.CARD', 'shape.PASSPORT', 'shape.PAGE', 'bothSides',
     ]) {
-      expect(typeof copy[key]).toBe('string');
+      expect(typeof at(key)).toBe('string');
     }
   });
 

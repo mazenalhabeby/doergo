@@ -308,6 +308,23 @@ async function main() {
   const licence = await type({
     key: 'demo_driving_licence', label: 'Driving licence', cadence: 'ONE_OFF',
     direction: 'SUPPLIED', signatureMode: 'NONE', isCredential: true, hasExpiry: true, position: 4,
+    // A card, photographed on both sides: the categories and the
+    // machine-readable data are on the back.
+    scanShape: 'CARD', twoSided: true,
+  });
+
+  /*
+    A passport, because it is the document the scanning path is really for.
+
+    Its data page is ID-3 — 125 x 88 mm, not the 85.6 x 54 of a card — and
+    everything is on that one page. Seeding it as a card would have the scanner
+    draw the wrong frame, which makes the machine-readable zone smaller in the
+    photograph and the read worse.
+  */
+  await type({
+    key: 'demo_passport', label: 'Passport', cadence: 'ONE_OFF',
+    direction: 'SUPPLIED', signatureMode: 'NONE', isCredential: true, hasExpiry: true, position: 6,
+    scanShape: 'PASSPORT', twoSided: false,
   });
   /*
     This one GATES a task type, which is the whole point of the feature: an
@@ -326,6 +343,8 @@ async function main() {
     key: 'demo_gas_safe', label: 'Gas Safe certificate', cadence: 'ONE_OFF',
     direction: 'SUPPLIED', signatureMode: 'NONE', isCredential: true, hasExpiry: true, position: 5,
     requiredForWorkflowIds: gatedWorkflow ? [gatedWorkflow.id] : [],
+    // A sheet of A4, not a card, and nothing on the reverse.
+    scanShape: 'PAGE', twoSided: false,
   });
   if (gatedWorkflow) {
     console.log(`  Gas Safe gates the "${gatedWorkflow.name}" task type`);

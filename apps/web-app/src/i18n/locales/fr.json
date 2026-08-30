@@ -7393,7 +7393,13 @@
         "onPaper": "Signé sur papier",
         "expiresTracked": "Expiration suivie",
         "credentialNoExpiry": "Attestation, sans expiration",
-        "gatesWork": "Exigé pour"
+        "gatesWork": "Exigé pour",
+        "bothSides": "les deux faces",
+        "shape": {
+          "CARD": "format carte",
+          "PASSPORT": "page de passeport",
+          "PAGE": "page A4"
+        }
       },
       "starters": {
         "payslip": {

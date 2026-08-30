@@ -7393,7 +7393,13 @@
         "onPaper": "Firmato su carta",
         "expiresTracked": "Scadenza monitorata",
         "credentialNoExpiry": "Attestato, senza scadenza",
-        "gatesWork": "Richiesto per"
+        "gatesWork": "Richiesto per",
+        "bothSides": "entrambi i lati",
+        "shape": {
+          "CARD": "formato tessera",
+          "PASSPORT": "pagina del passaporto",
+          "PAGE": "pagina A4"
+        }
       },
       "starters": {
         "payslip": {

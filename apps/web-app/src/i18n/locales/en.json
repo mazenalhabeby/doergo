@@ -7384,7 +7384,13 @@
         "onPaper": "Signed on paper",
         "expiresTracked": "Expiry tracked",
         "credentialNoExpiry": "Certificate, no expiry",
-        "gatesWork": "Required for"
+        "gatesWork": "Required for",
+        "bothSides": "both sides",
+        "shape": {
+          "CARD": "card-sized",
+          "PASSPORT": "passport page",
+          "PAGE": "A4 page"
+        }
       },
       "starters": {
         "payslip": {

@@ -7384,7 +7384,13 @@
         "onPaper": "Se firma en papel",
         "expiresTracked": "Caducidad controlada",
         "credentialNoExpiry": "Certificado, sin caducidad",
-        "gatesWork": "Exigido para"
+        "gatesWork": "Exigido para",
+        "bothSides": "ambas caras",
+        "shape": {
+          "CARD": "tamaño tarjeta",
+          "PASSPORT": "página de pasaporte",
+          "PAGE": "página A4"
+        }
       },
       "starters": {
         "payslip": {

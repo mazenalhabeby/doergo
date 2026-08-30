@@ -276,9 +276,24 @@ export function typeConsequences(type: {
   hasExpiry: boolean;
   signatureMode: SignatureMode;
   requiredForWorkflowIds?: string[];
+  scanShape?: ScanShape;
+  twoSided?: boolean;
 }): string[] {
   const out: string[] = [];
   out.push(type.direction === 'SUPPLIED' ? 'memberUploads' : 'youIssue');
+
+  /*
+    How it will be scanned, said out loud on the row.
+
+    A type created before shapes existed — or by hand — quietly says CARD, and
+    nothing on screen revealed that a passport was being framed as a driving
+    licence. A setting nobody can see is a setting nobody corrects, and this one
+    decides how well the document can be read.
+  */
+  if (type.direction === 'SUPPLIED') {
+    out.push(`shape.${type.scanShape ?? 'CARD'}`);
+    if (type.twoSided) out.push('bothSides');
+  }
   if (type.cadence !== 'ONE_OFF') out.push('perPeriod');
   if (type.signatureMode === 'IN_APP') out.push('mustSign');
   if (type.signatureMode === 'ACKNOWLEDGE') out.push('mustAcknowledge');
