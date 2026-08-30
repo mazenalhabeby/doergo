@@ -214,10 +214,10 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "tasks": "Attività",
-    "createTask": "Crea attività",
+    "createTask": "Crea",
     "manage": "Gestisci",
     "attendance": "Presenze",
-    "timeOff": "Ferie e permessi",
+    "timeOff": "Ferie",
     "team": "Team",
     "profile": "Profilo"
   },

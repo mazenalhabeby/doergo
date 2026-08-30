@@ -28,6 +28,7 @@
     "build:api": "pnpm --filter \"@hbcfield/*-service\" --filter @hbcfield/api-gateway run --parallel build",
     "build:web": "pnpm --filter \"@hbcfield/web-*\" run --parallel build",
     "lint": "pnpm run --parallel lint",
+    "i18n:check": "node tools/i18n/check-slot-widths.mjs",
     "test": "pnpm run --parallel test",
     "db:generate": "pnpm --filter @hbcfield/auth-service prisma:generate",
     "db:migrate": "pnpm --filter @hbcfield/auth-service prisma:migrate",
