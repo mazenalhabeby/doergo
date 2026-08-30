@@ -7483,7 +7483,11 @@
       "pickFile": "Bitte zuerst eine Datei wählen",
       "tooLarge": "Diese Datei ist größer als 20 MB",
       "failed": "Der Upload konnte nicht gestartet werden",
-      "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen."
+      "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen.",
+      "reading": "Dokument wird gelesen…",
+      "dateFromDocument": "Aus dem Dokument gelesen — bitte prüfen",
+      "dateGuessed": "Aus dem Text im Dokument übernommen. Bitte prüfen.",
+      "dateNotFound": "Nichts Lesbares gefunden — bitte das Datum vom Dokument eintragen."
     },
     "status": {
       "pendingVerification": "Wird geprüft",

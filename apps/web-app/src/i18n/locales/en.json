@@ -7483,7 +7483,11 @@
       "pickFile": "Choose a file first",
       "tooLarge": "That file is larger than the 20 MB limit",
       "failed": "The upload could not be started",
-      "nothingToSupply": "Your organization does not ask for any documents from you."
+      "nothingToSupply": "Your organization does not ask for any documents from you.",
+      "reading": "Reading the document…",
+      "dateFromDocument": "Read from the document — check it matches",
+      "dateGuessed": "Taken from the text on the document. Please check it.",
+      "dateNotFound": "Nothing readable found — please enter the date from the document."
     },
     "status": {
       "pendingVerification": "Awaiting review",

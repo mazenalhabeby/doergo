@@ -67,6 +67,18 @@ export function SupplyDocumentDialog({
   const [file, setFile] = useState<File | null>(null)
   const [expiresOn, setExpiresOn] = useState("")
   const [progress, setProgress] = useState(0)
+  /*
+    Where the date came from.
+
+    The web dialog was doing what the phone used to: demand a typed expiry, send
+    the document, and let the server quietly overrule it with whatever it read.
+    Busywork followed by a silent override — and the fix belongs on both
+    surfaces, or a member gets a different product depending on where they open
+    it.
+  */
+  const [staged, setStaged] = useState<string | null>(null)
+  const [dateSource, setDateSource] = useState<"MRZ" | "TEXT" | "NOTHING" | null>(null)
+  const [reading, setReading] = useState(false)
 
   /*
     DERIVED, not initialised from state.
@@ -79,25 +91,66 @@ export function SupplyDocumentDialog({
   */
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0]
 
+  /**
+   * Upload it and ask what is on it, before anything is filed.
+   *
+   * The upload has to happen either way, so doing it while the dialog is still
+   * open costs nothing and fills the date in for them.
+   */
+  const chooseFile = async (picked: File | null) => {
+    setFile(picked)
+    setStaged(null)
+    setDateSource(null)
+    if (!picked || !type) return
+    if (picked.size > MAX_BYTES) {
+      notify.error(t("documents.supply.tooLarge"))
+      setFile(null)
+      return
+    }
+
+    setReading(true)
+    try {
+      const presigned = await documentsApi.ownUploadUrl({
+        typeId: type.id,
+        mimeType: picked.type || "application/pdf",
+        sizeBytes: picked.size,
+      })
+      if (!presigned) throw new Error(t("documents.supply.failed"))
+      await uploadToS3(presigned.url, picked, setProgress)
+      setStaged(presigned.key)
+
+      const read = await documentsApi.readOwnUpload(presigned.key)
+      setDateSource(read?.source ?? "NOTHING")
+      if (read?.expiresOn) setExpiresOn(read.expiresOn)
+    } catch {
+      // A failed read is not a failed upload: they can still type the date.
+      setDateSource("NOTHING")
+    } finally {
+      setReading(false)
+      setProgress(0)
+    }
+  }
+
   const submit = useMutation({
     mutationFn: async () => {
       if (!file || !type) throw new Error(t("documents.supply.pickFile"))
-
-      // Checked here as well as on the server: a 20 MB photo that fails after
-      // uploading is a minute of somebody's time for nothing.
       if (file.size > MAX_BYTES) throw new Error(t("documents.supply.tooLarge"))
 
-      const presigned = await documentsApi.ownUploadUrl({
-        typeId: type.id,
-        mimeType: file.type || "application/pdf",
-        sizeBytes: file.size,
-      })
-      if (!presigned) throw new Error(t("documents.supply.failed"))
-
-      await uploadToS3(presigned.url, file, setProgress)
+      // Already uploaded while they were confirming the date.
+      let key = staged
+      if (!key) {
+        const presigned = await documentsApi.ownUploadUrl({
+          typeId: type.id,
+          mimeType: file.type || "application/pdf",
+          sizeBytes: file.size,
+        })
+        if (!presigned) throw new Error(t("documents.supply.failed"))
+        await uploadToS3(presigned.url, file, setProgress)
+        key = presigned.key
+      }
 
       return documentsApi.submitOwn({
-        stagingKey: presigned.key,
+        stagingKey: key,
         typeId: type.id,
         title: file.name.replace(/\.[^.]+$/, ""),
         expiresOn: type.hasExpiry ? expiresOn : undefined,
@@ -118,6 +171,8 @@ export function SupplyDocumentDialog({
   const reset = () => {
     setFile(null)
     setExpiresOn("")
+    setStaged(null)
+    setDateSource(null)
     setProgress(0)
   }
 
@@ -173,7 +228,7 @@ export function SupplyDocumentDialog({
                 type="file"
                 accept={ACCEPT}
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => void chooseFile(e.target.files?.[0] ?? null)}
               />
               <button
                 onClick={() => inputRef.current?.click()}
@@ -207,10 +262,27 @@ export function SupplyDocumentDialog({
                 <Input
                   type="date"
                   value={expiresOn}
-                  onChange={(e) => setExpiresOn(e.target.value)}
+                  onChange={(e) => { setExpiresOn(e.target.value); setDateSource(null) }}
                 />
-                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                  {t("documents.supply.expiresHint")}
+                {/*
+                  Where the date came from, in the member's words. A date the
+                  app filled in is a claim the app is making, and somebody about
+                  to confirm it deserves to know whether it was READ from a
+                  machine-readable zone or GUESSED from printed text.
+                */}
+                <span className={cn(
+                  "mt-1 block text-xs",
+                  dateSource === "MRZ" ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400",
+                )}>
+                  {reading
+                    ? t("documents.supply.reading")
+                    : dateSource === "MRZ"
+                      ? t("documents.supply.dateFromDocument")
+                      : dateSource === "TEXT"
+                        ? t("documents.supply.dateGuessed")
+                        : dateSource === "NOTHING"
+                          ? t("documents.supply.dateNotFound")
+                          : t("documents.supply.expiresHint")}
                 </span>
               </label>
             )}

@@ -7492,7 +7492,11 @@
       "pickFile": "Scegli prima un file",
       "tooLarge": "Il file supera il limite di 20 MB",
       "failed": "Non è stato possibile avviare il caricamento",
-      "nothingToSupply": "La tua organizzazione non ti chiede alcun documento."
+      "nothingToSupply": "La tua organizzazione non ti chiede alcun documento.",
+      "reading": "Lettura del documento…",
+      "dateFromDocument": "Letta dal documento: controllala",
+      "dateGuessed": "Presa dal testo del documento. Controllala.",
+      "dateNotFound": "Non è stato letto nulla: inserisci la data riportata sul documento."
     },
     "status": {
       "pendingVerification": "In attesa di verifica",

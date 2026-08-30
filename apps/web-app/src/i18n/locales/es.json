@@ -7483,7 +7483,11 @@
       "pickFile": "Elige primero un archivo",
       "tooLarge": "Ese archivo supera el límite de 20 MB",
       "failed": "No se pudo iniciar la subida",
-      "nothingToSupply": "Tu organización no te pide ningún documento."
+      "nothingToSupply": "Tu organización no te pide ningún documento.",
+      "reading": "Leyendo el documento…",
+      "dateFromDocument": "Leída del documento: compruébala",
+      "dateGuessed": "Tomada del texto del documento. Por favor, compruébala.",
+      "dateNotFound": "No se encontró nada legible: introduce la fecha del documento."
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",

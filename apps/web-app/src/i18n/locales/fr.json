@@ -7492,7 +7492,11 @@
       "pickFile": "Choisissez d’abord un fichier",
       "tooLarge": "Ce fichier dépasse la limite de 20 Mo",
       "failed": "Le dépôt n’a pas pu démarrer",
-      "nothingToSupply": "Votre organisation ne vous demande aucun document."
+      "nothingToSupply": "Votre organisation ne vous demande aucun document.",
+      "reading": "Lecture du document…",
+      "dateFromDocument": "Lue sur le document — vérifiez-la",
+      "dateGuessed": "Reprise du texte du document. Merci de vérifier.",
+      "dateNotFound": "Rien de lisible trouvé — saisissez la date figurant sur le document."
     },
     "status": {
       "pendingVerification": "En attente de vérification",

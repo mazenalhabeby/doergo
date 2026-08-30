@@ -7,6 +7,7 @@ export * from './starter-templates';
 export * from './starter-types';
 export * from './requirements';
 export * from './mrz';
+export * from './aamva';
 export * from './scan-checks';
 export * from './dates-from-text';
 export * from './frame-crop';

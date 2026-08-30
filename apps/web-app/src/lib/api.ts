@@ -6197,6 +6197,30 @@ export const documentsApi = {
     return unwrapDocuments<{ url: string; key: string }>(response);
   },
 
+  /**
+   * Between the two: what is actually on the picture.
+   *
+   * Files nothing. The member sees what was read and confirms it, instead of
+   * typing a date the server was going to overrule anyway.
+   */
+  readOwnUpload: async (stagingKey: string) => {
+    const response = await api.post<{
+      success: boolean;
+      data: {
+        source: 'MRZ' | 'TEXT' | 'NOTHING';
+        expiresOn: string | null;
+        fields: { holderName: string | null; documentNumber: string | null } | null;
+        verdict: 'CONSISTENT' | 'UNVERIFIED' | 'SUSPECT' | null;
+      };
+    }>('/documents/mine/read', { stagingKey });
+    return unwrapDocuments<{
+      source: 'MRZ' | 'TEXT' | 'NOTHING';
+      expiresOn: string | null;
+      fields: { holderName: string | null; documentNumber: string | null } | null;
+      verdict: 'CONSISTENT' | 'UNVERIFIED' | 'SUSPECT' | null;
+    }>(response);
+  },
+
   /** Step 2: file it for review. It lands PENDING_VERIFICATION, never ISSUED. */
   submitOwn: async (data: {
     stagingKey: string;
