@@ -8,6 +8,9 @@ import {
   ArrowLeft, Check, X, Eye, Loader2, Inbox, AlertTriangle, ShieldAlert, Clock,
 } from "lucide-react"
 import { documentsApi, type PendingReviewRow } from "@/lib/api"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
@@ -243,25 +246,21 @@ function RejectDialog({
   const SUGGESTIONS = ["unreadable", "wrongDocument", "expired", "dateMismatch"] as const
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={() => !pending && onCancel()}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          {t("documents.review.refuseTitle")}
-        </h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t("documents.review.refuseSubtitle", {
-            name: row.member.firstName,
-            type: row.typeLabel,
-          })}
-        </p>
+    // The app's own Dialog, like every task dialog — not a second hand-rolled
+    // overlay with its own idea of how a modal opens.
+    <Dialog open onOpenChange={(next) => { if (!next && !pending) onCancel() }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("documents.review.refuseTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("documents.review.refuseSubtitle", {
+              name: row.member.firstName,
+              type: row.typeLabel,
+            })}
+          </DialogDescription>
+        </DialogHeader>
 
-        <label className="mt-4 block">
+        <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             {t("documents.review.reason")}
           </span>
@@ -287,7 +286,7 @@ function RejectDialog({
           ))}
         </div>
 
-        <div className="mt-5 flex justify-end gap-2">
+        <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={pending}>
             {t("common.cancel")}
           </Button>
@@ -299,8 +298,8 @@ function RejectDialog({
             {pending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
             {t("documents.review.refuse")}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

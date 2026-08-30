@@ -3,8 +3,11 @@
 import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Upload, Loader2, FileText, X, AlertTriangle } from "lucide-react"
+import { Upload, Loader2, FileText, AlertTriangle } from "lucide-react"
 import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
@@ -31,6 +34,12 @@ import { cn } from "@/lib/utils"
   3. IT SAYS WHAT HAPPENS NEXT. The upload goes into a queue for review, and a
      screen that just says "uploaded" would leave somebody believing they were
      already covered for the work.
+
+  The shell is the app's own `Dialog`, the one every task dialog uses. This
+  opened as a hand-rolled `fixed inset-0` div, which meant it alone missed the
+  shared open animation, the focus trap, Escape-to-close and the width every
+  other dialog agreed on — a modal that feels different is a modal somebody
+  notices for the wrong reason.
 */
 
 const ACCEPT = "application/pdf,image/png,image/jpeg"
@@ -54,12 +63,21 @@ export function SupplyDocumentDialog({
     [types],
   )
 
-  const [typeId, setTypeId] = useState(suppliable[0]?.id ?? "")
+  const [typeId, setTypeId] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [expiresOn, setExpiresOn] = useState("")
   const [progress, setProgress] = useState(0)
 
-  const type = suppliable.find((ty) => ty.id === typeId)
+  /*
+    DERIVED, not initialised from state.
+
+    `useState(suppliable[0]?.id)` ran on the first render, when the types had
+    not arrived yet, so the id stayed "". The select then displayed the first
+    option — browsers show option one when `value` matches nothing — while the
+    component believed no type was chosen: the form looked filled in and Send
+    stayed disabled, with nothing on screen to explain why.
+  */
+  const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0]
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -103,36 +121,21 @@ export function SupplyDocumentDialog({
     setProgress(0)
   }
 
-  if (!open) return null
-
   const needsDate = !!type?.hasExpiry
   const canSubmit = !!file && !!type && (!needsDate || !!expiresOn) && !submit.isPending
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-      onClick={() => !submit.isPending && onClose()}
+    <Dialog
+      open={open}
+      // An upload in flight is not interrupted by a stray click on the overlay
+      // or by Escape: the bytes are already moving and the row is half-made.
+      onOpenChange={(next) => { if (!next && !submit.isPending) onClose() }}
     >
-      <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl dark:bg-slate-900 sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-1 flex items-start justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            {t("documents.supply.title")}
-          </h2>
-          <button
-            onClick={onClose}
-            disabled={submit.isPending}
-            className="text-slate-400 hover:text-slate-700 disabled:opacity-50 dark:hover:text-slate-200"
-            aria-label={t("common.close")}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
-          {t("documents.supply.subtitle")}
-        </p>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("documents.supply.title")}</DialogTitle>
+          <DialogDescription>{t("documents.supply.subtitle")}</DialogDescription>
+        </DialogHeader>
 
         {suppliable.length === 0 ? (
           <p className="py-8 text-center text-sm text-slate-400">
@@ -145,7 +148,7 @@ export function SupplyDocumentDialog({
                 {t("documents.supply.whatIsIt")}
               </span>
               <select
-                value={typeId}
+                value={type?.id ?? ""}
                 onChange={(e) => setTypeId(e.target.value)}
                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
               >
@@ -241,7 +244,7 @@ export function SupplyDocumentDialog({
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
