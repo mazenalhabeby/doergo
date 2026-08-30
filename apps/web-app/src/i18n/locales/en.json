@@ -7427,9 +7427,13 @@
           "label": "Training record",
           "description": "Machine tickets, site inductions, anything with a renewal date."
         },
-        "id_document": {
-          "label": "ID document",
-          "description": "Identity or right-to-work. Supplied by the member, not a certificate."
+        "passport": {
+          "label": "Passport",
+          "description": "Identity and right to work. Expires, and the expiry is worth knowing before a trip."
+        },
+        "id_card": {
+          "label": "ID card",
+          "description": "A national identity card. Identity and right to work, and it expires."
         }
       },
       "stepRequired": "Do you require it?",
@@ -7437,7 +7441,9 @@
       "isRequiredHint": "It appears on their own documents screen as outstanding until they send one, and the office can see who has not.",
       "requiredFromWho": "Required from",
       "everyone": "Everyone",
-      "requiredNote": "Nobody is chased for a document that does not apply to them."
+      "requiredNote": "Nobody is chased for a document that does not apply to them.",
+      "twoSided": "It has two sides",
+      "twoSidedHint": "The scanner asks for the back as well. ID cards and driving licences carry the machine-readable data on the back; a passport carries it on the photo page."
     },
     "supply": {
       "action": "Add a document",

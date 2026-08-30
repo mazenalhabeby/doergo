@@ -96,6 +96,11 @@ export class CreateDocumentTypeDto {
   @IsString({ each: true })
   requiredFromRoleIds?: string[];
 
+  @ApiPropertyOptional({ description: 'The scanner asks for the back as well' })
+  @IsOptional()
+  @IsBoolean()
+  twoSided?: boolean;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
@@ -158,6 +163,11 @@ export class UpdateDocumentTypeDto {
   @IsArray()
   @IsString({ each: true })
   requiredFromRoleIds?: string[];
+
+  @ApiPropertyOptional({ description: 'The scanner asks for the back as well' })
+  @IsOptional()
+  @IsBoolean()
+  twoSided?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()

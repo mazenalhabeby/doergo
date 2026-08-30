@@ -5972,6 +5972,8 @@ export interface DocumentTypeRow {
   requiredFromAll: boolean;
   /** Only members holding one of these roles must. */
   requiredFromRoleIds: string[];
+  /** The scanner asks for the back as well — ID cards and licences, not passports. */
+  twoSided: boolean;
   isActive: boolean;
   position: number;
 }

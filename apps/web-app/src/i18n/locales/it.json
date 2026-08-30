@@ -7436,9 +7436,13 @@
           "label": "Attestato di formazione",
           "description": "Patentini macchine, formazioni di cantiere, tutto ciò che si rinnova."
         },
-        "id_document": {
-          "label": "Documento d’identità",
-          "description": "Identità o permesso di lavoro. Fornito dalla persona, non è un attestato."
+        "passport": {
+          "label": "Passaporto",
+          "description": "Identità e diritto al lavoro. Scade, ed è bene saperlo prima di un viaggio."
+        },
+        "id_card": {
+          "label": "Carta d’identità",
+          "description": "Documento nazionale d’identità. Identità e diritto al lavoro, con scadenza."
         }
       },
       "stepRequired": "È obbligatorio?",
@@ -7446,7 +7450,9 @@
       "isRequiredHint": "Compare come in sospeso nella loro schermata documenti finché non lo inviano, e l’ufficio vede chi non ce l’ha.",
       "requiredFromWho": "Richiesto a",
       "everyone": "Tutti",
-      "requiredNote": "Nessuno viene sollecitato per un documento che non lo riguarda."
+      "requiredNote": "Nessuno viene sollecitato per un documento che non lo riguarda.",
+      "twoSided": "Ha due lati",
+      "twoSidedHint": "Lo scanner chiede anche il retro. Carte d’identità e patenti hanno i dati a lettura ottica sul retro; il passaporto li ha sulla pagina con la foto."
     },
     "supply": {
       "action": "Aggiungi documento",

@@ -263,6 +263,7 @@ const BLANK: StarterDocumentType = {
   signatureMode: "NONE",
   isCredential: false,
   hasExpiry: false,
+  twoSided: false,
   retentionMonths: null,
 }
 
@@ -351,6 +352,7 @@ function TypeEditor({
   const [gates, setGates] = useState<string[]>(type?.requiredForWorkflowIds ?? [])
   const [requiredFromAll, setRequiredFromAll] = useState(type?.requiredFromAll ?? false)
   const [requiredFromRoleIds, setRequiredFromRoleIds] = useState<string[]>(type?.requiredFromRoleIds ?? [])
+  const [twoSided, setTwoSided] = useState(type?.twoSided ?? starter?.twoSided ?? false)
   const [retentionMonths, setRetentionMonths] = useState<number | null>(
     type?.retentionMonths ?? starter?.retentionMonths ?? null,
   )
@@ -369,6 +371,7 @@ function TypeEditor({
           isCredential, hasExpiry,
           requiredForWorkflowIds: isCredential ? gates : [],
           ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
+          twoSided: direction === "SUPPLIED" && twoSided,
           retentionMonths,
         })
       }
@@ -385,6 +388,7 @@ function TypeEditor({
         isCredential, hasExpiry,
         requiredForWorkflowIds: isCredential ? gates : [],
         ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
+        twoSided: direction === "SUPPLIED" && twoSided,
         retentionMonths,
       })
     },
@@ -446,6 +450,21 @@ function TypeEditor({
             ))}
           </div>
           {!isNew && <Locked>{t("documents.types.directionLocked")}</Locked>}
+
+          {/* Which sides to photograph. A property of the document itself:
+              European ID cards and licences carry the machine-readable zone on
+              the back, a passport carries it on the photo page, and a paper
+              certificate has nothing on its reverse. */}
+          {direction === "SUPPLIED" && (
+            <div className="mt-3">
+              <Toggle
+                checked={twoSided}
+                onChange={setTwoSided}
+                title={t("documents.types.twoSided")}
+                hint={t("documents.types.twoSidedHint")}
+              />
+            </div>
+          )}
         </Step>
 
         <Step n={3} title={t("documents.types.step3")}>

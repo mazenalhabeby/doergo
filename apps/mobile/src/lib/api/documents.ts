@@ -47,6 +47,8 @@ export interface DocumentType {
   description?: string | null;
   /** A date is demanded at upload time when this is set. */
   hasExpiry: boolean;
+  /** The scanner asks for the back as well — ID cards and licences, not passports. */
+  twoSided: boolean;
 }
 
 export const documentsApi = {

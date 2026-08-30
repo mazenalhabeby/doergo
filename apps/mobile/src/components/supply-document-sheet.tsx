@@ -324,14 +324,17 @@ export function SupplyDocumentSheet({
       </SheetPanel>
 
       {/*
-        Two sides for a certificate: European ID cards and driving licences
-        carry the machine-readable zone and the categories on the BACK, so a
-        front-only scan of one is a picture of a photograph.
+        Which sides comes from the TYPE, not from what the document proves.
+
+        It used to ask for both whenever the type was a credential, which is
+        wrong in both directions: a gas certificate is a credential with nothing
+        on its back, and a passport carries its zone on the photo page — so it
+        asked people to turn a passport over and photograph the cover.
       */}
       <DocumentScanner
         visible={scanning}
         title={type?.label ?? t('documents.supply.title')}
-        twoSided={!!type?.isCredential}
+        twoSided={!!type?.twoSided}
         onCancel={() => setScanning(false)}
         onDone={(result) => {
           setScanning(false);

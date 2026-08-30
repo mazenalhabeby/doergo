@@ -261,6 +261,31 @@ describe('DocumentsService — who can reach whose documents', () => {
   // ── Type management ───────────────────────────────────────────────────────
 
   describe('document types', () => {
+    it('stores which sides of the document to scan', async () => {
+      /*
+        A passport is scanned on one side and an ID card on two, and the
+        difference is a property of the DOCUMENT rather than of what it proves.
+        Before this existed the scanner guessed from `isCredential`, which asked
+        people to photograph the blank cover of a passport and skipped the back
+        of a licence — where the categories and the machine-readable zone are.
+      */
+      prisma.documentType.create.mockImplementation(({ data }: any) => ({ id: 't1', ...data }));
+
+      await service.createType({
+        actor: actor({ canManageDocumentTemplates: true }),
+        key: 'id_card', label: 'ID card', direction: 'SUPPLIED', twoSided: true,
+      });
+      expect(prisma.documentType.create.mock.calls[0][0].data.twoSided).toBe(true);
+
+      await service.createType({
+        actor: actor({ canManageDocumentTemplates: true }),
+        key: 'passport', label: 'Passport', direction: 'SUPPLIED',
+      });
+      // Defaults to one side: most documents are, and a stray extra step is a
+      // step somebody abandons the upload on.
+      expect(prisma.documentType.create.mock.calls[1][0].data.twoSided).toBe(false);
+    });
+
     it('refuses to create a type without canManageDocumentTemplates', async () => {
       await expect(
         service.createType({ actor: actor({ canIssueDocuments: true }), key: 'payslip', label: 'Payslip' }),

@@ -7436,9 +7436,13 @@
           "label": "Attestation de formation",
           "description": "CACES, accueils chantier, tout ce qui se renouvelle."
         },
-        "id_document": {
-          "label": "Pièce d’identité",
-          "description": "Identité ou droit de travailler. Fournie par le membre, pas une attestation."
+        "passport": {
+          "label": "Passeport",
+          "description": "Identité et droit de travailler. Il expire, et mieux vaut le savoir avant un déplacement."
+        },
+        "id_card": {
+          "label": "Carte d’identité",
+          "description": "Carte nationale d’identité. Identité et droit de travailler, avec une date d’expiration."
         }
       },
       "stepRequired": "Est-ce exigé ?",
@@ -7446,7 +7450,9 @@
       "isRequiredHint": "Il apparaît comme en attente sur leur écran de documents jusqu’à l’envoi, et le bureau voit qui ne l’a pas.",
       "requiredFromWho": "Exigé de",
       "everyone": "Tout le monde",
-      "requiredNote": "Personne n’est relancé pour un document qui ne le concerne pas."
+      "requiredNote": "Personne n’est relancé pour un document qui ne le concerne pas.",
+      "twoSided": "Il a deux faces",
+      "twoSidedHint": "Le scanner demande aussi le verso. Les cartes d’identité et les permis portent les données au dos ; un passeport les porte sur la page photo."
     },
     "supply": {
       "action": "Ajouter un document",

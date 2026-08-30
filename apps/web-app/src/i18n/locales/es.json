@@ -7427,9 +7427,13 @@
           "label": "Registro de formación",
           "description": "Carnés de máquina, formaciones de obra, todo lo que se renueva."
         },
-        "id_document": {
-          "label": "Documento de identidad",
-          "description": "Identidad o permiso de trabajo. Lo aporta la persona, no es un certificado."
+        "passport": {
+          "label": "Pasaporte",
+          "description": "Identidad y permiso de trabajo. Caduca, y conviene saberlo antes de un viaje."
+        },
+        "id_card": {
+          "label": "DNI",
+          "description": "Documento nacional de identidad. Identidad y permiso de trabajo, y caduca."
         }
       },
       "stepRequired": "¿Lo exiges?",
@@ -7437,7 +7441,9 @@
       "isRequiredHint": "Aparece como pendiente en su pantalla de documentos hasta que lo envían, y la oficina ve quién no lo tiene.",
       "requiredFromWho": "Se exige a",
       "everyone": "Todos",
-      "requiredNote": "A nadie se le reclama un documento que no le corresponde."
+      "requiredNote": "A nadie se le reclama un documento que no le corresponde.",
+      "twoSided": "Tiene dos caras",
+      "twoSidedHint": "El escáner pide también el reverso. Los DNI y los carnés de conducir llevan los datos de lectura mecánica detrás; el pasaporte los lleva en la página de la foto."
     },
     "supply": {
       "action": "Añadir documento",

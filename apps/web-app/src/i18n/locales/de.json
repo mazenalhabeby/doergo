@@ -7427,9 +7427,13 @@
           "label": "Schulungsnachweis",
           "description": "Maschinenscheine, Unterweisungen, alles mit Auffrischungsdatum."
         },
-        "id_document": {
-          "label": "Ausweisdokument",
-          "description": "Identität oder Arbeitserlaubnis. Vom Teammitglied beigebracht, kein Nachweis."
+        "passport": {
+          "label": "Reisepass",
+          "description": "Identität und Arbeitsberechtigung. Läuft ab — und das sollte man vor einer Reise wissen."
+        },
+        "id_card": {
+          "label": "Personalausweis",
+          "description": "Amtlicher Lichtbildausweis. Identität und Arbeitsberechtigung, mit Ablaufdatum."
         }
       },
       "stepRequired": "Wird es verlangt?",
@@ -7437,7 +7441,9 @@
       "isRequiredHint": "Es erscheint in ihrer Dokumentenübersicht als offen, bis sie es einreichen — und das Büro sieht, wer es noch nicht hat.",
       "requiredFromWho": "Verlangt von",
       "everyone": "Allen",
-      "requiredNote": "Niemand wird an ein Dokument erinnert, das ihn nicht betrifft."
+      "requiredNote": "Niemand wird an ein Dokument erinnert, das ihn nicht betrifft.",
+      "twoSided": "Es hat zwei Seiten",
+      "twoSidedHint": "Der Scanner fragt auch die Rückseite ab. Ausweise und Führerscheine tragen die maschinenlesbaren Daten hinten; ein Reisepass hat sie auf der Fotoseite."
     },
     "supply": {
       "action": "Dokument hinzufügen",

@@ -25,6 +25,15 @@ export interface StarterDocumentType {
   signatureMode: SignatureMode;
   isCredential: boolean;
   hasExpiry: boolean;
+  /**
+   * Whether the scanner asks for the back as well.
+   *
+   * A property of the DOCUMENT, not of what it proves. A European ID card or
+   * driving licence carries the machine-readable zone and the categories on the
+   * back; a passport carries them on the photo page, so asking somebody to turn
+   * one over produces a picture of a blank cover.
+   */
+  twoSided: boolean;
   /** Months to keep after issue; null = indefinitely. */
   retentionMonths: number | null;
 }
@@ -42,6 +51,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: false,
     hasExpiry: false,
+    twoSided: false,
     retentionMonths: YEARS(7),
   },
   {
@@ -53,6 +63,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'IN_APP',
     isCredential: false,
     hasExpiry: false,
+    twoSided: false,
     retentionMonths: YEARS(30),
   },
   {
@@ -64,6 +75,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: false,
     hasExpiry: false,
+    twoSided: false,
     retentionMonths: YEARS(7),
   },
   {
@@ -75,6 +87,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: false,
     hasExpiry: false,
+    twoSided: false,
     retentionMonths: YEARS(30),
   },
   {
@@ -86,6 +99,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'ACKNOWLEDGE',
     isCredential: false,
     hasExpiry: false,
+    twoSided: false,
     retentionMonths: YEARS(3),
   },
   {
@@ -97,6 +111,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'ACKNOWLEDGE',
     isCredential: false,
     hasExpiry: false,
+    twoSided: false,
     retentionMonths: YEARS(7),
   },
 
@@ -110,6 +125,8 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: true,
     hasExpiry: true,
+    // The categories are on the back, and so is the zone.
+    twoSided: true,
     retentionMonths: YEARS(3),
   },
   {
@@ -121,6 +138,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: true,
     hasExpiry: true,
+    twoSided: false,
     retentionMonths: YEARS(5),
   },
   {
@@ -132,6 +150,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: true,
     hasExpiry: true,
+    twoSided: false,
     retentionMonths: YEARS(3),
   },
   {
@@ -143,17 +162,36 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     signatureMode: 'NONE',
     isCredential: true,
     hasExpiry: true,
+    twoSided: false,
     retentionMonths: YEARS(3),
   },
   {
-    key: 'id_document',
-    label: 'ID document',
-    description: 'Identity or right-to-work. Supplied by the member, not a certificate.',
+    key: 'passport',
+    label: 'Passport',
+    description: 'Identity and right to work. Expires, and the expiry is worth knowing before a trip.',
     cadence: 'ONE_OFF',
     direction: 'SUPPLIED',
     signatureMode: 'NONE',
-    isCredential: false,
-    hasExpiry: false,
+    // Tracked for its expiry, which is what `isCredential` actually turns on.
+    // It gates no work by default: holding a passport is not a qualification.
+    isCredential: true,
+    hasExpiry: true,
+    // ONE side. Everything is on the photo page — the zone, the name, the
+    // expiry — and the back of a passport is a cover.
+    twoSided: false,
+    retentionMonths: YEARS(3),
+  },
+  {
+    key: 'id_card',
+    label: 'ID card',
+    description: 'A national identity card. Identity and right to work, and it expires.',
+    cadence: 'ONE_OFF',
+    direction: 'SUPPLIED',
+    signatureMode: 'NONE',
+    isCredential: true,
+    hasExpiry: true,
+    // The zone is on the back of every European ID card.
+    twoSided: true,
     retentionMonths: YEARS(3),
   },
 ];

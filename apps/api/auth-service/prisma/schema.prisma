@@ -3863,6 +3863,12 @@ model DocumentType {
   requiredFromAll     Boolean  @default(false)
   requiredFromRoleIds String[] @default([])
 
+  /// Whether the scanner asks for the back as well. A property of the DOCUMENT,
+  /// not of what it proves: European ID cards and driving licences carry the
+  /// machine-readable zone on the back, passports carry it on the photo page,
+  /// and a paper certificate has nothing on its reverse at all.
+  twoSided Boolean @default(false)
+
   isActive  Boolean  @default(true)
   position  Int      @default(0)
   createdAt DateTime @default(now())

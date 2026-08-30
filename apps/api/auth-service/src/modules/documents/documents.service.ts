@@ -159,6 +159,7 @@ export class DocumentsService {
     requiredForWorkflowIds?: string[];
     requiredFromAll?: boolean;
     requiredFromRoleIds?: string[];
+    twoSided?: boolean;
     position?: number;
   }) {
     this.assertCanManageTypes(data.actor);
@@ -187,6 +188,7 @@ export class DocumentsService {
           // it", and upgrading must not put a red flag on every member.
           requiredFromAll: data.requiredFromAll ?? false,
           requiredFromRoleIds: data.requiredFromRoleIds ?? [],
+          twoSided: data.twoSided ?? false,
           position: data.position ?? 0,
         },
       });
@@ -211,6 +213,7 @@ export class DocumentsService {
       requiredForWorkflowIds: string[];
       requiredFromAll: boolean;
       requiredFromRoleIds: string[];
+      twoSided: boolean;
       isActive: boolean;
       position: number;
     }>;

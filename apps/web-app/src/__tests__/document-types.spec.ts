@@ -88,6 +88,40 @@ describe('the starter document types', () => {
     );
   });
 
+  it('offers a passport AND an ID card, which are not the same document', () => {
+    /*
+      Both are identity, both expire, and they are scanned completely
+      differently — which is the reason they are separate starters rather than
+      one vague "ID document". A passport keeps everything on the photo page; an
+      ID card keeps the machine-readable zone on the back.
+    */
+    const passport = starterDocumentType('passport')!;
+    const idCard = starterDocumentType('id_card')!;
+
+    expect(passport.twoSided).toBe(false);
+    expect(idCard.twoSided).toBe(true);
+    // Both tracked for expiry: a lapsed passport is a right-to-work problem,
+    // not a filing detail.
+    expect([passport.hasExpiry, idCard.hasExpiry]).toEqual([true, true]);
+    expect([passport.isCredential, idCard.isCredential]).toEqual([true, true]);
+  });
+
+  it('asks for the back of exactly the card-shaped documents', () => {
+    /*
+      The bug this pins: the scanner derived "two sides" from `isCredential`,
+      which is wrong in BOTH directions — a gas certificate is a credential with
+      a blank back, and a passport is one whose data is all on the front. It
+      asked people to photograph the cover of a passport.
+    */
+    const twoSided = STARTER_DOCUMENT_TYPES.filter((t) => t.twoSided).map((t) => t.key);
+    expect(twoSided.sort()).toEqual(['driving_licence', 'id_card']);
+
+    // And nothing the company ISSUES is ever scanned at all.
+    for (const t of STARTER_DOCUMENT_TYPES.filter((x) => x.direction === 'ISSUED')) {
+      expect({ key: t.key, twoSided: t.twoSided }).toEqual({ key: t.key, twoSided: false });
+    }
+  });
+
   it('finds nothing for an unknown key', () => {
     expect(starterDocumentType('not_a_type')).toBeNull();
   });
