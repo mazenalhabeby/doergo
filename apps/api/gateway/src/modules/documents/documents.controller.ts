@@ -21,6 +21,7 @@ import {
   CreateDocumentTypeDto,
   CreateTemplateDto,
   PresignOwnUploadDto,
+  ReadOwnUploadDto,
   RejectDocumentDto,
   PreviewTemplateDto,
   SubmitOwnDocumentDto,
@@ -240,6 +241,15 @@ export class DocumentsController {
   @ApiOperation({ summary: 'A link to upload one of your own documents to' })
   async presignOwnUpload(@CurrentUser() user: CurrentUserData, @Body() body: PresignOwnUploadDto) {
     return this.documents.presignOwnUpload({ actor: documentActor(user), ...body });
+  }
+
+  @Post('mine/read')
+  // OCR is real CPU work. A person scanning a document does one read per
+  // attempt; this bound is for something that is not a person.
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ summary: 'What is on the document you just uploaded — files nothing' })
+  async readOwnUpload(@CurrentUser() user: CurrentUserData, @Body() body: ReadOwnUploadDto) {
+    return this.documents.readOwnUpload({ actor: documentActor(user), ...body });
   }
 
   @Post('mine')

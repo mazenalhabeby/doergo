@@ -1758,7 +1758,11 @@
       "tooLarge": "Ese archivo supera el límite de 20 MB",
       "failed": "No se pudo enviar la subida",
       "nothingToSupply": "Tu organización no te pide ningún documento.",
-      "scan": "Escanear el documento"
+      "scan": "Escanear el documento",
+      "reading": "Leyendo el documento…",
+      "dateFromDocument": "Leída del documento: compruébala",
+      "dateGuessed": "Tomada del texto del documento. Por favor, compruébala.",
+      "dateNotFound": "No se pudo leer nada aquí: introduce la fecha que figura en el documento."
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",

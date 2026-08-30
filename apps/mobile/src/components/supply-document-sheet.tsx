@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView,
 } from 'react-native';
@@ -67,6 +67,19 @@ export function SupplyDocumentSheet({
   // Exactly as a barcode encoded it, when the document carried one. Parsed and
   // CHECKED on the server — a client's own reading of it is not evidence.
   const [scanned, setScanned] = useState<ScannedDocument | null>(null);
+  /*
+    Where the date came from.
+
+    The flow used to demand a typed expiry and then quietly overrule it with
+    whatever the server read — busywork followed by a silent override. Now the
+    document is read first and the field is filled in, so the member confirms
+    rather than types, and the label says whether the app KNOWS the date (a
+    machine-readable zone, proved by a check digit) or merely GUESSED it from
+    printed text.
+  */
+  const [dateSource, setDateSource] = useState<'MRZ' | 'TEXT' | 'NOTHING' | null>(null);
+  const [reading, setReading] = useState(false);
+  const [staged, setStaged] = useState<{ key: string } | null>(null);
 
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
   const needsDate = !!type?.hasExpiry;
@@ -75,6 +88,8 @@ export function SupplyDocumentSheet({
     setPhoto(null);
     setScanned(null);
     setExpiresOn(null);
+    setDateSource(null);
+    setStaged(null);
     setBusy(false);
   };
 
@@ -86,8 +101,8 @@ export function SupplyDocumentSheet({
    * and it is the one that produces a straight, complete image.
    */
   const pickExisting = async () => {
-    const picked = await pickFromGallery();
-    const first = Array.isArray(picked) ? picked[0] : picked;
+    const fromGallery = await pickFromGallery();
+    const first = Array.isArray(fromGallery) ? fromGallery[0] : fromGallery;
     if (!first) return;
 
     /*
@@ -111,10 +126,44 @@ export function SupplyDocumentSheet({
       toast.error(t('documents.supply.tooLarge'));
       return;
     }
-    setPhoto({ ...first, fileSize: size });
+    const picked = { ...first, fileSize: size };
+    setPhoto(picked);
     // A gallery photo carries no barcode read, so any earlier scan is stale.
     setScanned(null);
+    if (type) void uploadAndRead(picked, type);
   };
+
+  /**
+   * Upload it and ask what is on it, before anything is filed.
+   *
+   * The upload has to happen either way, so doing it now costs nothing extra
+   * and buys the member a filled-in form.
+   */
+  const uploadAndRead = useCallback(
+    async (picked: { uri: string; mimeType: string; fileSize: number }, forType: DocumentType) => {
+      setReading(true);
+      try {
+        const presigned = await documentsApi.ownUploadUrl({
+          typeId: forType.id,
+          mimeType: picked.mimeType || 'image/jpeg',
+          sizeBytes: picked.fileSize,
+        });
+        await uploadToPresignedUrl(presigned.url, picked.uri, picked.mimeType || 'image/jpeg');
+        setStaged({ key: presigned.key });
+
+        const read = await documentsApi.readOwnUpload(presigned.key);
+        setDateSource(read.source);
+        if (read.expiresOn) setExpiresOn(new Date(read.expiresOn));
+      } catch {
+        // A failed read is not a failed upload attempt: the member can still
+        // type the date and send it. Silence beats an error about OCR.
+        setDateSource('NOTHING');
+      } finally {
+        setReading(false);
+      }
+    },
+    [],
+  );
 
   const submit = async () => {
     if (!type || !photo) return;
@@ -124,14 +173,19 @@ export function SupplyDocumentSheet({
     }
     setBusy(true);
     try {
-      const presigned = await documentsApi.ownUploadUrl({
-        typeId: type.id,
-        mimeType: photo.mimeType || 'image/jpeg',
-        sizeBytes: photo.fileSize,
-      });
-      await uploadToPresignedUrl(presigned.url, photo.uri, photo.mimeType || 'image/jpeg');
+      // Already uploaded while the member was confirming the date.
+      const key = staged?.key ?? (await (async () => {
+        const p = await documentsApi.ownUploadUrl({
+          typeId: type.id,
+          mimeType: photo.mimeType || 'image/jpeg',
+          sizeBytes: photo.fileSize,
+        });
+        await uploadToPresignedUrl(p.url, photo.uri, photo.mimeType || 'image/jpeg');
+        return p.key;
+      })());
+
       await documentsApi.submitOwn({
-        stagingKey: presigned.key,
+        stagingKey: key,
         typeId: type.id,
         title: type.label,
         // Date only. A timestamp would put an expiry a few hours either side of
@@ -271,11 +325,44 @@ export function SupplyDocumentSheet({
                   onPress={() => setShowDate(true)}
                   style={[s.dateButton, { borderColor: expiresOn ? COLORS.primary : colors.border }]}
                 >
-                  <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
+                  <Ionicons
+                    name={reading ? 'hourglass-outline' : 'calendar-outline'}
+                    size={18}
+                    color={colors.textSecondary}
+                  />
                   <Text style={[s.dateText, { color: expiresOn ? colors.textPrimary : colors.textSecondary }]}>
-                    {expiresOn ? expiresOn.toLocaleDateString() : t('documents.supply.pickDate')}
+                    {reading
+                      ? t('documents.supply.reading')
+                      : expiresOn
+                        ? expiresOn.toLocaleDateString()
+                        : t('documents.supply.pickDate')}
                   </Text>
                 </PressableScale>
+
+                {/*
+                  Where the date came from, in the member's words.
+
+                  A date the app filled in is a claim the app is making, and
+                  somebody about to confirm it deserves to know whether it was
+                  READ from a machine-readable zone — proved by a check digit —
+                  or GUESSED from printed text, which a driving licence is,
+                  because a European licence has no zone at all.
+                */}
+                {!reading && dateSource === 'MRZ' && expiresOn && (
+                  <Text style={[s.dateNote, { color: COLORS.primary }]}>
+                    {t('documents.supply.dateFromDocument')}
+                  </Text>
+                )}
+                {!reading && dateSource === 'TEXT' && expiresOn && (
+                  <Text style={[s.dateNote, { color: colors.textSecondary }]}>
+                    {t('documents.supply.dateGuessed')}
+                  </Text>
+                )}
+                {!reading && dateSource === 'NOTHING' && (
+                  <Text style={[s.dateNote, { color: colors.textSecondary }]}>
+                    {t('documents.supply.dateNotFound')}
+                  </Text>
+                )}
                 <DatePickerModal
                   visible={showDate}
                   selectedDate={expiresOn}
@@ -340,12 +427,15 @@ export function SupplyDocumentSheet({
         onDone={(result) => {
           setScanning(false);
           setScanned(result);
-          setPhoto({
+          const picked = {
             uri: result.uri,
             fileName: result.fileName,
             mimeType: result.mimeType,
             fileSize: result.fileSize,
-          });
+          };
+          setPhoto(picked);
+          // Read it now, while they are still looking at the sheet.
+          if (type) void uploadAndRead(picked, type);
         }}
       />
     </BlurSheet>
@@ -401,6 +491,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md,
   },
   dateText: { fontSize: FONT_SIZE.md },
+  dateNote: { fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
   notice: {
     flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start',
     borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.sm,

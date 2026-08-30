@@ -86,6 +86,26 @@ export const documentsApi = {
   },
 
   /**
+   * Between the two: what is actually on the picture.
+   *
+   * Files nothing. The member sees what was read and confirms it, instead of
+   * typing a date the server was going to overrule anyway.
+   */
+  readOwnUpload: async (stagingKey: string): Promise<{
+    /** MRZ = proved by a check digit. TEXT = a guess off printed text. */
+    source: 'MRZ' | 'TEXT' | 'NOTHING';
+    expiresOn: string | null;
+    fields: { holderName: string | null; documentNumber: string | null } | null;
+    verdict: 'CONSISTENT' | 'UNVERIFIED' | 'SUSPECT' | null;
+  }> => {
+    const result = await fetchWithAuth<any>('/documents/mine/read', {
+      method: 'POST',
+      body: JSON.stringify({ stagingKey }),
+    });
+    return result?.data ?? result;
+  },
+
+  /**
    * Step 2: file it for review.
    *
    * It lands PENDING_VERIFICATION. A photograph of a card somebody says is

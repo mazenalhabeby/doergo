@@ -1758,7 +1758,11 @@
       "tooLarge": "Diese Datei ist größer als 20 MB",
       "failed": "Der Upload konnte nicht gesendet werden",
       "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen.",
-      "scan": "Dokument scannen"
+      "scan": "Dokument scannen",
+      "reading": "Dokument wird gelesen…",
+      "dateFromDocument": "Aus dem Dokument gelesen — bitte prüfen",
+      "dateGuessed": "Aus dem Text im Dokument übernommen. Bitte prüfen.",
+      "dateNotFound": "Hier war nichts lesbar — bitte das Datum vom Dokument eintragen."
     },
     "status": {
       "pendingVerification": "Wird geprüft",

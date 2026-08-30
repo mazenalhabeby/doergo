@@ -86,6 +86,9 @@ export class DocumentsController {
   @MessagePattern({ cmd: 'documents_presign_own_upload' })
   presignOwnUpload(@Payload() data: any) { return this.documents.presignOwnUpload(data); }
 
+  @MessagePattern({ cmd: 'documents_read_own_upload' })
+  readOwnUpload(@Payload() data: any) { return this.documents.readOwnUpload(data); }
+
   @MessagePattern({ cmd: 'documents_submit_own' })
   submitOwnDocument(@Payload() data: any) { return this.documents.submitOwnDocument(data); }
 

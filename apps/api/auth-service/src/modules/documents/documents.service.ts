@@ -31,6 +31,7 @@ import {
   accessAllows,
   requirementStatuses,
   checkScan,
+  suggestExpiry,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -1107,6 +1108,77 @@ export class DocumentsService {
     }
 
     return checkScan({ mrzText, member, alreadyFiledBy });
+  }
+
+  /**
+   * Read a staged upload and say what is on it — WITHOUT filing anything.
+   *
+   * This exists because the flow was backwards. The member typed an expiry
+   * date, sent the document, and the server then read the real one and quietly
+   * used it instead: busywork followed by a silent override, which is the worst
+   * of both. Reading first turns it into what every identity flow does — the
+   * machine reads, the person confirms.
+   *
+   * The distinction in the answer is the important part. An expiry from a
+   * machine-readable zone is a FACT the document proves about itself, with a
+   * check digit behind it. An expiry scraped from printed text is a SUGGESTION,
+   * because a European driving licence has no zone at all and nothing about
+   * that reading is provable. The caller is told which it got.
+   *
+   * The staged object is left where it is: the member may still change their
+   * mind, and `submitOwnDocument` is what consumes it.
+   */
+  async readOwnUpload(data: { actor: DocumentActor; stagingKey: string }) {
+    this.assertStagingKey(
+      data.stagingKey,
+      this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
+    );
+    const store = this.requireStore();
+
+    const head = await this.withStorage('checking an upload', () => store.head(data.stagingKey));
+    if (!head.exists) {
+      throw new BadRequestException('The upload did not complete — please try again');
+    }
+
+    const bytes = await this.withStorage('reading an upload', () => store.get(data.stagingKey));
+    const text = await this.ocr.read(bytes, head.contentType ?? 'image/jpeg');
+
+    if (!text) {
+      return { source: 'NOTHING' as const, expiresOn: null, fields: null, verdict: null };
+    }
+
+    const member = await this.assertMemberOfOrg(data.actor.userId, data.actor.organizationId);
+    const scan = checkScan({ mrzText: text, member });
+
+    if (scan.raw) {
+      /*
+        A zone was read. The expiry is only offered when the arithmetic agrees:
+        a failed check digit means the read is wrong OR the document is, and
+        pre-filling a field from either would be putting a wrong date in front
+        of somebody with the app's authority behind it.
+      */
+      return {
+        source: 'MRZ' as const,
+        expiresOn: scan.raw.allChecksPassed ? scan.extracted.dateOfExpiry : null,
+        fields: {
+          holderName: scan.extracted.holderName,
+          documentNumber: scan.extracted.documentNumber,
+          dateOfBirth: scan.extracted.dateOfBirth,
+          issuingState: scan.extracted.issuingState,
+        },
+        verdict: scan.verdict,
+      };
+    }
+
+    // No zone: a licence or a certificate. The best that can be done is the
+    // latest date printed on it, clearly labelled as a guess.
+    const guess = suggestExpiry(text);
+    return {
+      source: guess ? ('TEXT' as const) : ('NOTHING' as const),
+      expiresOn: guess?.iso ?? null,
+      fields: null,
+      verdict: null,
+    };
   }
 
   /**

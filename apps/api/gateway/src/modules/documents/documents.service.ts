@@ -38,6 +38,9 @@ export class DocumentsGatewayService extends BaseGatewayService {
   deactivateType(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_type' }, data); }
   presignUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_presign_upload' }, data); }
   presignOwnUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_presign_own_upload' }, data); }
+  // Reads and returns; files nothing. `send`, because a retry costs a second
+  // read and nothing else — and OCR is slower than a database lookup.
+  readOwnUpload(data: unknown) { return this.send({ cmd: 'documents_read_own_upload' }, data); }
   // Writes: a retry after a timeout must not re-run a decision somebody made once.
   verifyDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_verify' }, data); }
   rejectDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_reject' }, data); }

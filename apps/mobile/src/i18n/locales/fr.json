@@ -1758,7 +1758,11 @@
       "tooLarge": "Ce fichier dépasse la limite de 20 Mo",
       "failed": "Le dépôt n’a pas pu être envoyé",
       "nothingToSupply": "Votre organisation ne vous demande aucun document.",
-      "scan": "Scanner le document"
+      "scan": "Scanner le document",
+      "reading": "Lecture du document…",
+      "dateFromDocument": "Lue sur le document — vérifiez-la",
+      "dateGuessed": "Reprise du texte du document. Merci de vérifier.",
+      "dateNotFound": "Rien de lisible ici — saisissez la date figurant sur le document."
     },
     "status": {
       "pendingVerification": "En attente de vérification",

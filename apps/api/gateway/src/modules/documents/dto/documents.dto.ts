@@ -332,6 +332,13 @@ export class PresignOwnUploadDto {
 }
 
 /** The member confirming the bytes are up. */
+/** Ask what is on a document that has been uploaded but not yet filed. */
+export class ReadOwnUploadDto {
+  @ApiProperty()
+  @IsString()
+  stagingKey!: string;
+}
+
 export class SubmitOwnDocumentDto {
   @ApiProperty()
   @IsString()

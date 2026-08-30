@@ -8,3 +8,4 @@ export * from './starter-types';
 export * from './requirements';
 export * from './mrz';
 export * from './scan-checks';
+export * from './dates-from-text';
