@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { PressableScale } from './pressable-scale';
@@ -77,7 +77,8 @@ export function DocumentFilterBar({
   return (
     <>
       <View style={s.bar}>
-        <Pill
+        <FilterPill
+          icon="pricetag-outline"
           label={typeLabel}
           active={!!filters.typeId}
           onPress={() => setPicking('type')}
@@ -86,7 +87,8 @@ export function DocumentFilterBar({
         />
 
         {years.length > 1 && (
-          <Pill
+          <FilterPill
+            icon="calendar-outline"
             label={filters.year !== null ? String(filters.year) : t('documents.filter.anyYear')}
             active={filters.year !== null}
             onPress={() => setPicking('year')}
@@ -98,25 +100,21 @@ export function DocumentFilterBar({
         {/*
           Not a picker: it has two states, and anything with two states that
           hides one of them behind a sheet is a menu pretending to be a switch.
+
+          Same pill, different tone — so the row reads as one family rather than
+          a switch that wandered in from another screen.
         */}
         {awaitingCount > 0 && (
-          <PressableScale
+          <FilterPill
+            icon="create-outline"
+            label={String(awaitingCount)}
+            badge
+            tone={COLORS.warning}
+            onTone={COLORS.slate900}
+            active={filters.needsSignature}
             onPress={() => onChange({ ...filters, needsSignature: !filters.needsSignature })}
-            style={[
-              s.pill,
-              {
-                borderColor: filters.needsSignature ? COLORS.warning : colors.border,
-                backgroundColor: filters.needsSignature ? colors.warningLight : 'transparent',
-              },
-            ]}
-          >
-            <Ionicons
-              name="create-outline"
-              size={14}
-              color={filters.needsSignature ? COLORS.warning : colors.textSecondary}
-            />
-            <Text style={[s.pillText, { color: colors.textPrimary }]}>{awaitingCount}</Text>
-          </PressableScale>
+            colors={colors}
+          />
         )}
       </View>
 
@@ -146,42 +144,75 @@ export function DocumentFilterBar({
   );
 }
 
-function Pill({
+/**
+ * The pill, in every position it appears in.
+ *
+ * Filled rather than outlined, and SOLID when it is on. A hairline outline that
+ * gains a faint tint when selected asks somebody to compare two pale things to
+ * find out what is applied; a chip that fills with its own colour states it from
+ * across the room. The shadow takes the pill's colour with it, which is what
+ * separates a considered control from a rectangle with a border.
+ *
+ * One component for all three — the year, the type and the signature toggle —
+ * because three near-identical pills maintained separately end up three
+ * different heights, and mismatched heights in one row is the detail that makes
+ * an interface look cheap.
+ */
+function FilterPill({
+  icon,
   label,
   active,
   onPress,
   onClear,
   colors,
+  tone = COLORS.primary,
+  onTone = COLORS.white,
+  badge = false,
 }: {
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   active: boolean;
   onPress: () => void;
   onClear?: () => void;
-  colors: { border: string; textPrimary: string; textSecondary: string };
+  colors: { border: string; textPrimary: string; textSecondary: string; surfaceRaised: string };
+  /** The colour this pill takes when it is on. */
+  tone?: string;
+  /** What stays legible on top of that colour — never assumed to be white. */
+  onTone?: string;
+  /** Render the label as a counter rather than a name. */
+  badge?: boolean;
 }) {
+  const ink = active ? onTone : colors.textPrimary;
+  const showClear = active && !!onClear;
+
   return (
     <View
       style={[
         s.pill,
-        { borderColor: active ? COLORS.primary : colors.border },
-        active && { backgroundColor: `${COLORS.primary}14` },
+        active
+          ? [s.pillOn, { backgroundColor: tone, shadowColor: tone }]
+          : [s.pillOff, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }],
+        showClear && s.pillWithClear,
       ]}
     >
-      <PressableScale onPress={onPress} style={s.pillTap}>
+      <PressableScale onPress={onPress} style={s.pillTap} accessibilityRole="button">
+        <Ionicons name={icon} size={15} color={active ? onTone : colors.textSecondary} />
         <Text
-          style={[s.pillText, { color: active ? COLORS.primary : colors.textPrimary }]}
+          style={[s.pillText, badge && s.pillCount, { color: ink }]}
           numberOfLines={1}
         >
           {label}
         </Text>
-        <Ionicons name="chevron-down" size={14} color={active ? COLORS.primary : colors.textSecondary} />
+        {!badge && !showClear && (
+          <Ionicons name="chevron-down" size={13} color={active ? onTone : colors.textSecondary} />
+        )}
       </PressableScale>
 
       {/* Clearing one facet without opening it: the thing a single "Filter"
           button could never offer, because it had nothing to clear from. */}
-      {onClear && (
-        <PressableScale onPress={onClear} hitSlop={8} style={s.pillClear}>
-          <Ionicons name="close" size={14} color={COLORS.primary} />
+      {showClear && (
+        <PressableScale onPress={onClear} hitSlop={10} style={s.pillClear} accessibilityRole="button">
+          <Ionicons name="close" size={13} color={onTone} />
         </PressableScale>
       )}
     </View>
@@ -230,21 +261,31 @@ function PickerSheet({
     return (
       <PressableScale
         onPress={() => onSelect(id)}
+        accessibilityRole="radio"
+        accessibilityState={{ selected: isSelected }}
         style={[
           s.row,
-          { borderColor: isSelected ? COLORS.primary : colors.border },
-          isSelected && { backgroundColor: `${COLORS.primary}14` },
+          isSelected
+            ? { backgroundColor: COLORS.primary }
+            : { backgroundColor: colors.surfaceRaised },
         ]}
       >
         <Ionicons
-          name={isSelected ? 'radio-button-on' : 'radio-button-off'}
-          size={18}
-          color={isSelected ? COLORS.primary : colors.textSecondary}
+          name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+          size={20}
+          color={isSelected ? COLORS.white : colors.textMuted}
         />
-        <Text style={[s.rowLabel, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
+        <Text
+          style={[s.rowLabel, { color: isSelected ? COLORS.white : colors.textPrimary }]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
         {/* The count is why this is a list and not a strip of chips: a chip
             cannot say how much is behind it, so every tap was a guess. */}
-        <Text style={[s.count, { color: colors.textMuted }]}>{count}</Text>
+        <Text style={[s.count, { color: isSelected ? COLORS.white : colors.textMuted }]}>
+          {count}
+        </Text>
       </PressableScale>
     );
   };
@@ -279,30 +320,58 @@ function PickerSheet({
 
 const s = StyleSheet.create({
   bar: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    paddingHorizontal: SPACING.md, paddingTop: SPACING.sm, paddingBottom: SPACING.xs,
   },
+
+  /* A fixed height, not padding that happens to add up. A counter pill and a
+     word pill sit in the same row, and a two-pixel difference between them is
+     exactly what reads as unfinished. */
   pill: {
     flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderRadius: RADIUS.full,
-    paddingLeft: SPACING.md, paddingRight: SPACING.sm, flexShrink: 1,
+    height: 38, borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md, flexShrink: 1,
   },
-  pillTap: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: SPACING.xs, flexShrink: 1 },
-  pillText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, flexShrink: 1 },
-  pillClear: { paddingLeft: SPACING.xs, paddingVertical: SPACING.xs },
+  pillWithClear: { paddingRight: SPACING.xs },
+  pillOff: {
+    borderWidth: StyleSheet.hairlineWidth,
+    ...SHADOWS.sm,
+  },
+  /* The shadow takes the pill's own colour — a grey shadow under a coloured
+     chip looks printed on, a tinted one looks lit. */
+  pillOn: {
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.32,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  pillTap: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs + 2,
+    height: '100%', flexShrink: 1,
+  },
+  pillText: {
+    fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold,
+    letterSpacing: -0.1, flexShrink: 1,
+  },
+  pillCount: { fontVariant: ['tabular-nums'], minWidth: 10, textAlign: 'center' },
+  pillClear: { paddingHorizontal: SPACING.xs, height: '100%', justifyContent: 'center' },
 
   search: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
-    borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm, marginTop: SPACING.sm,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm, marginTop: SPACING.sm,
   },
-  searchInput: { flex: 1, paddingVertical: SPACING.sm, fontSize: FONT_SIZE.md },
+  searchInput: { flex: 1, paddingVertical: SPACING.sm, fontSize: FONT_SIZE.base },
 
   body: { gap: SPACING.xs, paddingVertical: SPACING.sm },
+  /* The rows speak the same language as the pills: filled at rest, solid when
+     chosen, so moving between the two does not feel like two designs. */
   row: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    borderWidth: 1, borderRadius: RADIUS.md,
-    paddingVertical: SPACING.xs + 2, paddingHorizontal: SPACING.md,
+    minHeight: 48, borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
   },
-  rowLabel: { flex: 1, fontSize: FONT_SIZE.md },
-  count: { fontSize: FONT_SIZE.sm, fontVariant: ['tabular-nums'] },
+  rowLabel: { flex: 1, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.medium },
+  count: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, fontVariant: ['tabular-nums'] },
 });

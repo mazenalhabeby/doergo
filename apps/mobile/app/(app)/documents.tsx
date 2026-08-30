@@ -515,7 +515,7 @@ export default function DocumentsScreen() {
           DOING rather than hiding it behind a button labelled "Filter".
         */}
         <View style={s.controls}>
-          <View style={[s.search, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          <View style={[s.search, { borderColor: colors.border, backgroundColor: colors.surfaceRaised }]}>
             <Ionicons name="search" size={16} color={colors.textMuted} />
             <TextInput
               value={query}
@@ -617,12 +617,13 @@ const s = StyleSheet.create({
   blockPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
   blockPillText: { color: '#fff', fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
 
-  controls: { paddingHorizontal: SPACING.md, paddingTop: SPACING.md, gap: SPACING.sm },
+  controls: { paddingHorizontal: SPACING.md, paddingTop: SPACING.md },
   search: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
-    borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    height: 42, borderRadius: RADIUS.full,
+    borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: SPACING.md,
   },
-  searchInput: { flex: 1, paddingVertical: SPACING.sm, fontSize: FONT_SIZE.md },
+  searchInput: { flex: 1, height: '100%', fontSize: FONT_SIZE.base },
   searchClear: { padding: 2 },
 
   banner: {
