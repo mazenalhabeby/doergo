@@ -71,10 +71,18 @@ async function renderDocument(mrz: string, opts: { width?: number } = {}): Promi
 }
 
 describe('MrzOcrService', () => {
+  /*
+    The production bound is twelve seconds, which is right for a container doing
+    one thing and wrong for a laptop running eight jest workers — under that
+    load the read is abandoned and looks exactly like an unreadable document,
+    which made this suite pass alone and fail in the full run.
+  */
+  process.env.MRZ_OCR_TIMEOUT_MS = '90000';
+
   const ocr = new MrzOcrService();
 
   // The WASM engine takes a moment to start, and each read is real work.
-  jest.setTimeout(120_000);
+  jest.setTimeout(180_000);
 
   afterAll(async () => {
     await ocr.onModuleDestroy();

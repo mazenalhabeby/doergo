@@ -52,8 +52,18 @@ const MRZ_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<';
  * Bounded because this runs inside the member's upload request. An OCR that
  * takes twenty seconds has already failed as a product even if it eventually
  * returns the right answer — and the document files either way, without a scan.
+ *
+ * Read per call rather than at import, and overridable, because the right bound
+ * depends on the box: a machine running eight jest workers that all want the
+ * CPU needs longer than a container doing one thing, and a timeout that trips
+ * under load looks exactly like an unreadable document.
  */
-const OCR_TIMEOUT_MS = 12_000;
+const DEFAULT_OCR_TIMEOUT_MS = 12_000;
+
+function ocrTimeoutMs(): number {
+  const configured = Number(process.env.MRZ_OCR_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_OCR_TIMEOUT_MS;
+}
 
 /** Below this, a photo has no chance of a clean read and should not be tried. */
 const MIN_USABLE_WIDTH = 600;
@@ -110,7 +120,7 @@ export class MrzOcrService implements OnModuleDestroy {
     if (!mimeType.startsWith('image/')) return null;
 
     try {
-      return await this.withTimeout(this.attempt(image), OCR_TIMEOUT_MS);
+      return await this.withTimeout(this.attempt(image), ocrTimeoutMs());
     } catch (err) {
       this.logger.warn(`MRZ read failed: ${(err as Error).message}`);
       return null;

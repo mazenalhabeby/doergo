@@ -91,7 +91,11 @@ export const documentsApi = {
    * Files nothing. The member sees what was read and confirms it, instead of
    * typing a date the server was going to overrule anyway.
    */
-  readOwnUpload: async (stagingKey: string, crop?: Rect | null): Promise<{
+  readOwnUpload: async (
+    stagingKey: string,
+    crop?: Rect | null,
+    back?: { stagingKey: string; crop?: Rect | null } | null,
+  ): Promise<{
     /** MRZ = proved by a check digit. TEXT = a guess off printed text. */
     source: 'MRZ' | 'TEXT' | 'NOTHING';
     expiresOn: string | null;
@@ -100,7 +104,12 @@ export const documentsApi = {
   }> => {
     const result = await fetchWithAuth<any>('/documents/mine/read', {
       method: 'POST',
-      body: JSON.stringify({ stagingKey, crop }),
+      body: JSON.stringify({
+        stagingKey,
+        crop,
+        backStagingKey: back?.stagingKey,
+        backCrop: back?.crop,
+      }),
     });
     return result?.data ?? result;
   },
@@ -121,6 +130,9 @@ export const documentsApi = {
     mrzText?: string;
     /** The scanner's frame, so the FILED document is the document. */
     crop?: Rect | null;
+    /** The reverse of a card, filed as part of the same document. */
+    backStagingKey?: string | null;
+    backCrop?: Rect | null;
   }): Promise<MemberDocument> => {
     const result = await fetchWithAuth<any>('/documents/mine', {
       method: 'POST',

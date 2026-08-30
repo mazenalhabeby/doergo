@@ -80,7 +80,11 @@ export function SupplyDocumentSheet({
   */
   const [dateSource, setDateSource] = useState<'MRZ' | 'TEXT' | 'NOTHING' | null>(null);
   const [reading, setReading] = useState(false);
-  const [staged, setStaged] = useState<{ key: string; crop: Rect | null } | null>(null);
+  const [staged, setStaged] = useState<{
+    key: string;
+    crop: Rect | null;
+    back?: { key: string; crop: Rect | null } | null;
+  } | null>(null);
 
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
   const needsDate = !!type?.hasExpiry;
@@ -145,18 +149,41 @@ export function SupplyDocumentSheet({
       picked: { uri: string; mimeType: string; fileSize: number },
       forType: DocumentType,
       crop?: Rect | null,
+      back?: { uri: string; fileSize: number; crop?: Rect } | null,
     ) => {
       setReading(true);
       try {
-        const presigned = await documentsApi.ownUploadUrl({
-          typeId: forType.id,
-          mimeType: picked.mimeType || 'image/jpeg',
-          sizeBytes: picked.fileSize,
-        });
-        await uploadToPresignedUrl(presigned.url, picked.uri, picked.mimeType || 'image/jpeg');
-        setStaged({ key: presigned.key, crop: crop ?? null });
+        const put = async (uri: string, sizeBytes: number) => {
+          const p = await documentsApi.ownUploadUrl({
+            typeId: forType.id,
+            mimeType: 'image/jpeg',
+            sizeBytes,
+          });
+          await uploadToPresignedUrl(p.url, uri, 'image/jpeg');
+          return p.key;
+        };
 
-        const read = await documentsApi.readOwnUpload(presigned.key, crop);
+        const presigned = { key: await put(picked.uri, picked.fileSize) };
+        /*
+          Both sides go up.
+
+          The back was being captured and thrown away, which for a card is the
+          half that can be read at all — the categories and the machine-readable
+          zone are there, and the front has neither.
+        */
+        const backKey = back ? await put(back.uri, back.fileSize) : null;
+
+        setStaged({
+          key: presigned.key,
+          crop: crop ?? null,
+          back: backKey ? { key: backKey, crop: back?.crop ?? null } : null,
+        });
+
+        const read = await documentsApi.readOwnUpload(
+          presigned.key,
+          crop,
+          backKey ? { stagingKey: backKey, crop: back?.crop ?? null } : null,
+        );
         setDateSource(read.source);
         if (read.expiresOn) setExpiresOn(new Date(read.expiresOn));
       } catch {
@@ -202,6 +229,8 @@ export function SupplyDocumentSheet({
         // The frame, so what is FILED is the document rather than the table it
         // was lying on.
         crop: staged?.crop ?? scanned?.crop ?? null,
+        backStagingKey: staged?.back?.key ?? null,
+        backCrop: staged?.back?.crop ?? null,
       });
       toast.success(t('documents.supply.submitted'));
       reset();
@@ -443,7 +472,7 @@ export function SupplyDocumentSheet({
           };
           setPhoto(picked);
           // Read it now, while they are still looking at the sheet.
-          if (type) void uploadAndRead(picked, type, result.crop);
+          if (type) void uploadAndRead(picked, type, result.crop, result.back);
         }}
       />
     </BlurSheet>

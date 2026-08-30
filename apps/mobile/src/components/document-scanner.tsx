@@ -53,8 +53,14 @@ export interface ScannedDocument {
   fileName: string;
   mimeType: string;
   fileSize: number;
-  /** The back of a two-sided card, when one was taken. */
-  backUri?: string;
+  /**
+   * The back of a two-sided card, with ITS own frame.
+   *
+   * A European ID card and a driving licence carry the categories and the
+   * machine-readable zone here, so this is not a second opinion on the front —
+   * for a card it is the half that can actually be read.
+   */
+  back?: { uri: string; fileSize: number; crop?: Rect };
   /** Exactly as the barcode encoded it. Parsed and CHECKED on the server. */
   barcodeData?: string;
   barcodeType?: string;
@@ -206,7 +212,9 @@ export function DocumentScanner({
       fileName: `document_${Date.now()}.jpg`,
       mimeType: 'image/jpeg',
       fileSize: first.size,
-      backUri: twoSided ? preview.uri : undefined,
+      back: twoSided
+        ? { uri: preview.uri, fileSize: preview.size, crop: preview.crop }
+        : undefined,
       barcodeData: barcode.current?.data,
       barcodeType: barcode.current?.type,
       crop: first.crop,

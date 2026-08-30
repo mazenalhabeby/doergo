@@ -824,6 +824,7 @@ export class DocumentsService {
     stagingKey: string,
     expectedPrefix?: string,
     crop?: Rect | null,
+    back?: { key: string; crop: Rect | null } | null,
   ): Promise<{ key: string; hash: string; sizeBytes: number; mimeType: string; bytes: Buffer }> {
     // Checked again here, not only by the caller. This method reads and moves
     // an object named by untrusted input, so it does not rely on having been
@@ -843,13 +844,34 @@ export class DocumentsService {
 
     const staged = await this.withStorage('reading an upload', () => store.get(stagingKey));
     /*
-      Cropped BEFORE it is hashed, because the hash has to describe the bytes
-      that are stored. Hashing the original and storing the crop would make the
+      Cropped and joined BEFORE it is hashed, because the hash has to describe
+      the bytes that are stored. Hashing one side and storing two would make the
       integrity check fail against the document's own file for ever.
     */
-    const bytes = await this.applyCrop(staged, crop);
+    const cropped = await this.applyCrop(staged, crop);
+
+    let bytes = cropped;
+    let mimeType = head.contentType ?? 'application/pdf';
+    if (back) {
+      // The reverse comes from the client too, so it gets the same check.
+      this.assertStagingKey(back.key, expectedPrefix ?? this.sharedStagingPrefix(organizationId));
+      const backHead = await this.withStorage('checking an upload', () => store.head(back.key));
+      if (backHead.exists) {
+        const backRaw = await this.withStorage('reading an upload', () => store.get(back.key));
+        bytes = await this.composeSides(cropped, await this.applyCrop(backRaw, back.crop));
+        // The composite is written as JPEG whatever the two sides arrived as.
+        if (bytes !== cropped) mimeType = 'image/jpeg';
+      }
+      // Removed either way: a staged object nobody claimed is litter, and a
+      // failure to tidy up must not lose a document that is otherwise filed.
+      try {
+        await store.delete(back.key);
+      } catch {
+        /* left for the retention sweep */
+      }
+    }
+
     const hash = sha256(bytes);
-    const mimeType = head.contentType ?? 'application/pdf';
     const extension = ALLOWED_MIME[mimeType] ?? 'pdf';
     const key = documentKey(organizationId, hash, extension);
 
@@ -952,6 +974,9 @@ export class DocumentsService {
     mrzText?: string | null;
     /** The scanner's frame, as fractions of the photograph. */
     crop?: Rect | null;
+    /** The reverse of a two-sided card, filed as part of the same document. */
+    backStagingKey?: string | null;
+    backCrop?: Rect | null;
     ctx?: RequestContext;
   }) {
     this.assertStagingKey(
@@ -993,6 +1018,9 @@ export class DocumentsService {
       data.stagingKey,
       this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
       data.crop,
+      data.backStagingKey
+        ? { key: data.backStagingKey, crop: data.backCrop ?? null }
+        : null,
     );
 
     /*
@@ -1156,6 +1184,76 @@ export class DocumentsService {
   }
 
   /**
+   * Two sides of one card, as one image.
+   *
+   * A European ID card or driving licence carries the categories and the
+   * machine-readable zone on the BACK, so the scanner asks for both — and the
+   * back was then thrown away, which meant the reader searched a front that has
+   * no zone on it at all. That is the whole of "it reads nothing" for a card.
+   *
+   * Stacked into a single file rather than stored as two, because a document is
+   * one thing: one row, one hash, one retention date, and a reviewer who sees
+   * both sides without hunting for a second attachment. The reader gets both
+   * too, and the zone lands in the lower part of the composite exactly where
+   * the band search looks.
+   */
+  private async composeSides(front: Buffer, back: Buffer | null): Promise<Buffer> {
+    if (!back) return front;
+    try {
+      const sharp = (await import('sharp')).default;
+
+      // A common width, so neither side is stretched and the seam is straight.
+      const [f, b] = await Promise.all([
+        sharp(front).rotate().toBuffer(),
+        sharp(back).rotate().toBuffer(),
+      ]);
+      const [fm, bm] = await Promise.all([sharp(f).metadata(), sharp(b).metadata()]);
+      if (!fm.width || !fm.height || !bm.width || !bm.height) return front;
+
+      const width = Math.max(fm.width, bm.width);
+      const [fr, br] = await Promise.all([
+        sharp(f).resize({ width }).toBuffer(),
+        sharp(b).resize({ width }).toBuffer(),
+      ]);
+      const [frm, brm] = await Promise.all([sharp(fr).metadata(), sharp(br).metadata()]);
+
+      const gap = Math.round(width * 0.02);
+      const height = (frm.height ?? 0) + gap + (brm.height ?? 0);
+
+      return await sharp({
+        create: { width, height, channels: 3, background: '#ffffff' },
+      })
+        .composite([
+          { input: fr, top: 0, left: 0 },
+          { input: br, top: (frm.height ?? 0) + gap, left: 0 },
+        ])
+        .jpeg({ quality: 90 })
+        .toBuffer();
+    } catch (err) {
+      // Never fatal: one side filed beats a failed upload.
+      this.logger.warn(`Could not join the two sides: ${(err as Error).message}`);
+      return front;
+    }
+  }
+
+  /** Fetch a staged object and cut it down to the frame, without consuming it. */
+  private async peekStaged(
+    organizationId: string,
+    stagingKey: string,
+    userId: string,
+    crop?: Rect | null,
+  ): Promise<Buffer> {
+    this.assertStagingKey(stagingKey, this.ownStagingPrefix(organizationId, userId));
+    const store = this.requireStore();
+    const head = await this.withStorage('checking an upload', () => store.head(stagingKey));
+    if (!head.exists) {
+      throw new BadRequestException('The upload did not complete — please try again');
+    }
+    const raw = await this.withStorage('reading an upload', () => store.get(stagingKey));
+    return this.applyCrop(raw, crop);
+  }
+
+  /**
    * Read a staged upload and say what is on it — WITHOUT filing anything.
    *
    * This exists because the flow was backwards. The member typed an expiry
@@ -1173,23 +1271,26 @@ export class DocumentsService {
    * The staged object is left where it is: the member may still change their
    * mind, and `submitOwnDocument` is what consumes it.
    */
-  async readOwnUpload(data: { actor: DocumentActor; stagingKey: string; crop?: Rect | null }) {
-    this.assertStagingKey(
-      data.stagingKey,
-      this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
-    );
-    const store = this.requireStore();
+  async readOwnUpload(data: {
+    actor: DocumentActor;
+    stagingKey: string;
+    crop?: Rect | null;
+    /** The reverse, for a card that carries its zone there. */
+    backStagingKey?: string | null;
+    backCrop?: Rect | null;
+  }) {
+    const { organizationId, userId } = data.actor;
 
-    const head = await this.withStorage('checking an upload', () => store.head(data.stagingKey));
-    if (!head.exists) {
-      throw new BadRequestException('The upload did not complete — please try again');
-    }
-
-    const raw = await this.withStorage('reading an upload', () => store.get(data.stagingKey));
     // The frame, not the room: an uncropped photo puts the zone somewhere the
     // band search will never look.
-    const bytes = await this.applyCrop(raw, data.crop);
-    const text = await this.ocr.read(bytes, head.contentType ?? 'image/jpeg');
+    const front = await this.peekStaged(organizationId, data.stagingKey, userId, data.crop);
+    const back = data.backStagingKey
+      ? await this.peekStaged(organizationId, data.backStagingKey, userId, data.backCrop)
+      : null;
+
+    // Read the two sides together. On an ID card the zone is only on the back.
+    const bytes = await this.composeSides(front, back);
+    const text = await this.ocr.read(bytes, 'image/jpeg');
 
     if (!text) {
       return { source: 'NOTHING' as const, expiresOn: null, fields: null, verdict: null };

@@ -360,6 +360,17 @@ export class ReadOwnUploadDto {
   @ValidateNested()
   @Type(() => ScanCropDto)
   crop?: ScanCropDto;
+
+  @ApiPropertyOptional({ description: 'The reverse of a card — where its zone is' })
+  @IsOptional()
+  @IsString()
+  backStagingKey?: string;
+
+  @ApiPropertyOptional({ type: ScanCropDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ScanCropDto)
+  backCrop?: ScanCropDto;
 }
 
 export class SubmitOwnDocumentDto {
@@ -400,6 +411,17 @@ export class SubmitOwnDocumentDto {
   @ValidateNested()
   @Type(() => ScanCropDto)
   crop?: ScanCropDto;
+
+  @ApiPropertyOptional({ description: 'The reverse of a card, filed as one document with the front' })
+  @IsOptional()
+  @IsString()
+  backStagingKey?: string;
+
+  @ApiPropertyOptional({ type: ScanCropDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ScanCropDto)
+  backCrop?: ScanCropDto;
 }
 
 export class PreviewTemplateDto {

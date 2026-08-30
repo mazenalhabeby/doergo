@@ -309,6 +309,55 @@ describe('DocumentsService — what the member supplies', () => {
       expect(created.storageKey).toContain(created.sha256);
     });
 
+    it('FILES THE BACK TOO, as one document', async () => {
+      /*
+        The back was captured and thrown away. For a European ID card or driving
+        licence that is the half that can be read at all — the categories and
+        the machine-readable zone are on the reverse and the front has neither —
+        so the reader searched a side with no zone on it and found nothing.
+
+        Both sides become ONE file: one row, one hash, one retention date, and a
+        reviewer who sees the whole card without hunting for an attachment.
+      */
+      prisma.documentType.findFirst.mockResolvedValue(LICENCE);
+      const BACK_KEY = 'org1/documents/_staging/u/member1/back.jpg';
+
+      await submit({ backStagingKey: BACK_KEY, backCrop: { left: 0.1, top: 0.1, width: 0.8, height: 0.5 } });
+
+      // Both were fetched, and neither is left behind in staging.
+      expect(store.get).toHaveBeenCalledWith(OWN_KEY);
+      expect(store.get).toHaveBeenCalledWith(BACK_KEY);
+      expect(store.delete).toHaveBeenCalledWith(OWN_KEY);
+      expect(store.delete).toHaveBeenCalledWith(BACK_KEY);
+
+      // One document, not two.
+      expect(prisma.document.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('checks the BACK key against the member’s own folder as well', async () => {
+      // It arrives from the client exactly as the front does, so it cannot be
+      // trusted any further than the front is.
+      prisma.documentType.findFirst.mockResolvedValue(LICENCE);
+      await expect(
+        submit({ backStagingKey: 'org1/documents/_staging/u/member2/back.jpg' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.document.create).not.toHaveBeenCalled();
+    });
+
+    it('still files the front when the back never arrived', async () => {
+      // A capture interrupted between the two sides must not lose the first.
+      prisma.documentType.findFirst.mockResolvedValue(LICENCE);
+      store.head.mockImplementation(async (key: string) =>
+        key.endsWith('back.jpg')
+          ? { exists: false }
+          : { exists: true, sizeBytes: BYTES.length, contentType: 'image/jpeg' },
+      );
+      await expect(
+        submit({ backStagingKey: 'org1/documents/_staging/u/member1/back.jpg' }),
+      ).resolves.toBeTruthy();
+      expect(prisma.document.create).toHaveBeenCalledTimes(1);
+    });
+
     it('removes the staged object once it is filed', async () => {
       prisma.documentType.findFirst.mockResolvedValue(LICENCE);
       await submit();
