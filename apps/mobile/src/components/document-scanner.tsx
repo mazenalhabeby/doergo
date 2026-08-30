@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { PressableScale } from './pressable-scale';
+import { scanAspect, type ScanShape } from '@hbcfield/shared/client';
 
 /**
  * Scanning a document, rather than photographing one.
@@ -19,10 +20,12 @@ import { PressableScale } from './pressable-scale';
  * every downstream check is then working against a bad image. Every serious
  * identity flow uses a guided capture instead, and the guidance is the product:
  *
- *   A FRAME THE DOCUMENT FITS. ID-1 is 85.6 × 54 mm on every driving licence,
- *   ID card and residence permit in Europe, so the cut-out is that exact ratio.
- *   Somebody filling a frame holds the phone square to the card without being
- *   told to.
+ *   A FRAME THE DOCUMENT FITS — the RIGHT frame. ID-1 (85.6 × 54) for a card,
+ *   ID-3 (125 × 88) for a passport page, A4 upright for a paper certificate.
+ *   This is not decoration: a document held to fit the wrong frame sits further
+ *   from the lens, and how many pixels the machine-readable zone occupies is
+ *   what decides whether it can be read at all. A passport squeezed into a card
+ *   frame is a smaller zone and a worse read.
  *
  *   ONE INSTRUCTION AT A TIME, in the same place. "Fit the front of the card in
  *   the frame" — then, for a two-sided document, "now turn it over". A list of
@@ -41,9 +44,6 @@ import { PressableScale } from './pressable-scale';
  * silence — it would move the blame for an unreadable photo onto the app's own
  * reassurance.
  */
-
-/** ID-1, the card format the whole of Europe issues. */
-const CARD_RATIO = 85.6 / 54;
 
 /** Barcodes that carry document data. Not QR: nothing prints one on a licence. */
 const DOCUMENT_BARCODES = ['pdf417', 'datamatrix'] as const;
@@ -65,12 +65,15 @@ export function DocumentScanner({
   title,
   /** Ask for the reverse as well — ID cards carry the zone on the back. */
   twoSided = false,
+  /** The document's real shape. A passport page is not the shape of a card. */
+  shape = 'CARD',
   onCancel,
   onDone,
 }: {
   visible: boolean;
   title: string;
   twoSided?: boolean;
+  shape?: ScanShape;
   onCancel: () => void;
   onDone: (result: ScannedDocument) => void;
 }) {
@@ -217,7 +220,7 @@ export function DocumentScanner({
               onBarcodeScanned={onBarcode}
             />
 
-            <Frame />
+            <Frame shape={shape} />
 
             <View style={[s.top, { paddingTop: insets.top + SPACING.sm }]}>
               <Pressable onPress={onCancel} hitSlop={12} accessibilityRole="button">
@@ -268,10 +271,22 @@ export function DocumentScanner({
  * overlay with a hole, which React Native cannot express without masking. The
  * corner brackets are what a person actually aims with.
  */
-function Frame() {
+function Frame({ shape }: { shape: ScanShape }) {
   const { width, height } = Dimensions.get('window');
-  const frameWidth = width * 0.88;
-  const frameHeight = frameWidth / CARD_RATIO;
+  const aspect = scanAspect(shape);
+
+  /*
+    Fit by whichever dimension runs out first.
+
+    A4 upright is TALLER than it is wide, so sizing from the width alone would
+    push the frame off both ends of the screen and leave somebody aiming at a
+    rectangle they cannot see.
+  */
+  const maxWidth = width * 0.88;
+  const maxHeight = height * 0.62;
+  const frameWidth = Math.min(maxWidth, maxHeight * aspect);
+  const frameHeight = frameWidth / aspect;
+
   const top = (height - frameHeight) / 2 - height * 0.04;
   const left = (width - frameWidth) / 2;
 

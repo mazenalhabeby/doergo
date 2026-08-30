@@ -49,6 +49,8 @@ export interface DocumentType {
   hasExpiry: boolean;
   /** The scanner asks for the back as well — ID cards and licences, not passports. */
   twoSided: boolean;
+  /** CARD, PASSPORT or PAGE — the frame the scanner draws. */
+  scanShape: 'CARD' | 'PASSPORT' | 'PAGE';
 }
 
 export const documentsApi = {

@@ -15,6 +15,32 @@
 
 import type { DocumentCadence, DocumentDirection, SignatureMode } from './types';
 
+/**
+ * The shapes a scanner frame can take, in the documents' real dimensions.
+ *
+ * One source, because the frame is not decoration: a document held to fit the
+ * wrong frame sits further from the lens, and how many pixels the
+ * machine-readable zone occupies is what decides whether the OCR can read it.
+ * A passport squeezed into a card frame is a smaller zone and a worse read.
+ */
+export const SCAN_SHAPES = {
+  /** ID-1 — driving licences, ID cards, most plastic. */
+  CARD: { widthMm: 85.6, heightMm: 54 },
+  /** ID-3 — the data page of a passport. */
+  PASSPORT: { widthMm: 125, heightMm: 88 },
+  /** A4, upright — paper certificates and training records. */
+  PAGE: { widthMm: 210, heightMm: 297 },
+} as const;
+
+export type ScanShape = keyof typeof SCAN_SHAPES;
+
+/** Width ÷ height. Below 1 the frame is taller than it is wide. */
+export function scanAspect(shape: ScanShape): number {
+  const s = SCAN_SHAPES[shape] ?? SCAN_SHAPES.CARD;
+  return s.widthMm / s.heightMm;
+}
+
+
 export interface StarterDocumentType {
   key: string;
   /** English SOURCE for the picker; the UI translates by key. */
@@ -34,6 +60,8 @@ export interface StarterDocumentType {
    * one over produces a picture of a blank cover.
    */
   twoSided: boolean;
+  /** The frame the scanner draws. A passport is not the shape of a card. */
+  scanShape: ScanShape;
   /** Months to keep after issue; null = indefinitely. */
   retentionMonths: number | null;
 }
@@ -52,6 +80,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: false,
     hasExpiry: false,
     twoSided: false,
+    scanShape: 'CARD',
     retentionMonths: YEARS(7),
   },
   {
@@ -64,6 +93,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: false,
     hasExpiry: false,
     twoSided: false,
+    scanShape: 'CARD',
     retentionMonths: YEARS(30),
   },
   {
@@ -76,6 +106,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: false,
     hasExpiry: false,
     twoSided: false,
+    scanShape: 'CARD',
     retentionMonths: YEARS(7),
   },
   {
@@ -88,6 +119,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: false,
     hasExpiry: false,
     twoSided: false,
+    scanShape: 'CARD',
     retentionMonths: YEARS(30),
   },
   {
@@ -100,6 +132,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: false,
     hasExpiry: false,
     twoSided: false,
+    scanShape: 'CARD',
     retentionMonths: YEARS(3),
   },
   {
@@ -112,6 +145,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: false,
     hasExpiry: false,
     twoSided: false,
+    scanShape: 'CARD',
     retentionMonths: YEARS(7),
   },
 
@@ -127,6 +161,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     hasExpiry: true,
     // The categories are on the back, and so is the zone.
     twoSided: true,
+    scanShape: 'CARD',
     retentionMonths: YEARS(3),
   },
   {
@@ -139,6 +174,8 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: true,
     hasExpiry: true,
     twoSided: false,
+    // Paper, not plastic: these arrive as an A4 certificate.
+    scanShape: 'PAGE',
     retentionMonths: YEARS(5),
   },
   {
@@ -151,6 +188,8 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: true,
     hasExpiry: true,
     twoSided: false,
+    // Paper, not plastic: these arrive as an A4 certificate.
+    scanShape: 'PAGE',
     retentionMonths: YEARS(3),
   },
   {
@@ -163,6 +202,8 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     isCredential: true,
     hasExpiry: true,
     twoSided: false,
+    // Paper, not plastic: these arrive as an A4 certificate.
+    scanShape: 'PAGE',
     retentionMonths: YEARS(3),
   },
   {
@@ -179,6 +220,8 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     // ONE side. Everything is on the photo page — the zone, the name, the
     // expiry — and the back of a passport is a cover.
     twoSided: false,
+    // ID-3, not ID-1: a passport page is half as long again as a card.
+    scanShape: 'PASSPORT',
     retentionMonths: YEARS(3),
   },
   {
@@ -192,6 +235,7 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     hasExpiry: true,
     // The zone is on the back of every European ID card.
     twoSided: true,
+    scanShape: 'CARD',
     retentionMonths: YEARS(3),
   },
 ];
@@ -243,3 +287,4 @@ export function typeConsequences(type: {
   if (type.isCredential && (type.requiredForWorkflowIds?.length ?? 0) > 0) out.push('gatesWork');
   return out;
 }
+

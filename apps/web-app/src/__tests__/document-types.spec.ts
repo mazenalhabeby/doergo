@@ -5,6 +5,7 @@ import {
   starterDocumentType,
   documentTypeKey,
   typeConsequences,
+  scanAspect,
 } from '@hbcfield/shared/client';
 
 /**
@@ -120,6 +121,31 @@ describe('the starter document types', () => {
     for (const t of STARTER_DOCUMENT_TYPES.filter((x) => x.direction === 'ISSUED')) {
       expect({ key: t.key, twoSided: t.twoSided }).toEqual({ key: t.key, twoSided: false });
     }
+  });
+
+  it('draws the right frame for each kind of document', () => {
+    /*
+      A passport data page is ID-3, 125 × 88 mm; a card is ID-1, 85.6 × 54. The
+      ratios are 1.42 and 1.59 — far enough apart that a passport in a card
+      frame is either clipped or held further away, and holding it further away
+      shrinks the machine-readable zone, which is the one thing the OCR needs.
+      The frame is part of the accuracy of the feature, not its decoration.
+    */
+    expect(starterDocumentType('passport')!.scanShape).toBe('PASSPORT');
+    expect(starterDocumentType('id_card')!.scanShape).toBe('CARD');
+    expect(starterDocumentType('driving_licence')!.scanShape).toBe('CARD');
+    // Trade and first-aid certificates arrive as A4 paper, not plastic.
+    expect(starterDocumentType('trade_certificate')!.scanShape).toBe('PAGE');
+    expect(starterDocumentType('first_aid')!.scanShape).toBe('PAGE');
+  });
+
+  it('describes each shape by its real dimensions', () => {
+    // One source for the ratios, because the mobile frame and any future web
+    // scanner have to agree about what a passport is.
+    expect(scanAspect('CARD')).toBeCloseTo(85.6 / 54, 3);
+    expect(scanAspect('PASSPORT')).toBeCloseTo(125 / 88, 3);
+    // Upright: taller than it is wide, which the frame has to size around.
+    expect(scanAspect('PAGE')).toBeLessThan(1);
   });
 
   it('finds nothing for an unknown key', () => {

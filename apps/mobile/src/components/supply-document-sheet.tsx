@@ -335,6 +335,7 @@ export function SupplyDocumentSheet({
         visible={scanning}
         title={type?.label ?? t('documents.supply.title')}
         twoSided={!!type?.twoSided}
+        shape={type?.scanShape ?? 'CARD'}
         onCancel={() => setScanning(false)}
         onDone={(result) => {
           setScanning(false);

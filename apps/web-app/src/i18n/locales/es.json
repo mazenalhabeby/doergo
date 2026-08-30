@@ -7443,7 +7443,23 @@
       "everyone": "Todos",
       "requiredNote": "A nadie se le reclama un documento que no le corresponde.",
       "twoSided": "Tiene dos caras",
-      "twoSidedHint": "El escáner pide también el reverso. Los DNI y los carnés de conducir llevan los datos de lectura mecánica detrás; el pasaporte los lleva en la página de la foto."
+      "twoSidedHint": "El escáner pide también el reverso. Los DNI y los carnés de conducir llevan los datos de lectura mecánica detrás; el pasaporte los lleva en la página de la foto.",
+      "scanShape": "¿Qué forma tiene?",
+      "scanShapeHint": "El escáner dibuja este marco. Si no encaja, el documento se sostiene más lejos y el texto sale más pequeño.",
+      "shapes": {
+        "CARD": {
+          "name": "Una tarjeta",
+          "hint": "Carné de conducir, DNI — 85,6 × 54 mm"
+        },
+        "PASSPORT": {
+          "name": "Un pasaporte",
+          "hint": "La página de la foto — 125 × 88 mm"
+        },
+        "PAGE": {
+          "name": "Una hoja de papel",
+          "hint": "Certificado A4, vertical"
+        }
+      }
     },
     "supply": {
       "action": "Añadir documento",

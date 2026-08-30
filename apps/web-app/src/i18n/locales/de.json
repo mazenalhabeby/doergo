@@ -7443,7 +7443,23 @@
       "everyone": "Allen",
       "requiredNote": "Niemand wird an ein Dokument erinnert, das ihn nicht betrifft.",
       "twoSided": "Es hat zwei Seiten",
-      "twoSidedHint": "Der Scanner fragt auch die Rückseite ab. Ausweise und Führerscheine tragen die maschinenlesbaren Daten hinten; ein Reisepass hat sie auf der Fotoseite."
+      "twoSidedHint": "Der Scanner fragt auch die Rückseite ab. Ausweise und Führerscheine tragen die maschinenlesbaren Daten hinten; ein Reisepass hat sie auf der Fotoseite.",
+      "scanShape": "Welche Form hat es?",
+      "scanShapeHint": "Diesen Rahmen zeichnet der Scanner. Passt das Dokument nicht, hält man es weiter weg — und die Schrift wird kleiner.",
+      "shapes": {
+        "CARD": {
+          "name": "Eine Karte",
+          "hint": "Führerschein, Ausweis — 85,6 × 54 mm"
+        },
+        "PASSPORT": {
+          "name": "Ein Reisepass",
+          "hint": "Die Fotoseite — 125 × 88 mm"
+        },
+        "PAGE": {
+          "name": "Ein Blatt Papier",
+          "hint": "A4-Zeugnis, hochkant"
+        }
+      }
     },
     "supply": {
       "action": "Dokument hinzufügen",

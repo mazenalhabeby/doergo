@@ -7452,7 +7452,23 @@
       "everyone": "Tutti",
       "requiredNote": "Nessuno viene sollecitato per un documento che non lo riguarda.",
       "twoSided": "Ha due lati",
-      "twoSidedHint": "Lo scanner chiede anche il retro. Carte d’identità e patenti hanno i dati a lettura ottica sul retro; il passaporto li ha sulla pagina con la foto."
+      "twoSidedHint": "Lo scanner chiede anche il retro. Carte d’identità e patenti hanno i dati a lettura ottica sul retro; il passaporto li ha sulla pagina con la foto.",
+      "scanShape": "Che forma ha?",
+      "scanShapeHint": "Lo scanner disegna questa cornice. Se il documento non ci sta, lo si tiene più lontano e il testo diventa più piccolo.",
+      "shapes": {
+        "CARD": {
+          "name": "Una tessera",
+          "hint": "Patente, carta d’identità — 85,6 × 54 mm"
+        },
+        "PASSPORT": {
+          "name": "Un passaporto",
+          "hint": "La pagina con la foto — 125 × 88 mm"
+        },
+        "PAGE": {
+          "name": "Un foglio",
+          "hint": "Attestato A4, verticale"
+        }
+      }
     },
     "supply": {
       "action": "Aggiungi documento",

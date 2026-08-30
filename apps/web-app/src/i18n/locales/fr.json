@@ -7452,7 +7452,23 @@
       "everyone": "Tout le monde",
       "requiredNote": "Personne n’est relancé pour un document qui ne le concerne pas.",
       "twoSided": "Il a deux faces",
-      "twoSidedHint": "Le scanner demande aussi le verso. Les cartes d’identité et les permis portent les données au dos ; un passeport les porte sur la page photo."
+      "twoSidedHint": "Le scanner demande aussi le verso. Les cartes d’identité et les permis portent les données au dos ; un passeport les porte sur la page photo.",
+      "scanShape": "Quelle forme a-t-il ?",
+      "scanShapeHint": "Le scanner dessine ce cadre. Un document qui n’y entre pas est tenu plus loin, et le texte devient plus petit.",
+      "shapes": {
+        "CARD": {
+          "name": "Une carte",
+          "hint": "Permis, carte d’identité — 85,6 × 54 mm"
+        },
+        "PASSPORT": {
+          "name": "Un passeport",
+          "hint": "La page photo — 125 × 88 mm"
+        },
+        "PAGE": {
+          "name": "Une feuille",
+          "hint": "Attestation A4, à la verticale"
+        }
+      }
     },
     "supply": {
       "action": "Ajouter un document",

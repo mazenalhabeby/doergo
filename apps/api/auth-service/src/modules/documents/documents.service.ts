@@ -160,6 +160,7 @@ export class DocumentsService {
     requiredFromAll?: boolean;
     requiredFromRoleIds?: string[];
     twoSided?: boolean;
+    scanShape?: string;
     position?: number;
   }) {
     this.assertCanManageTypes(data.actor);
@@ -189,6 +190,7 @@ export class DocumentsService {
           requiredFromAll: data.requiredFromAll ?? false,
           requiredFromRoleIds: data.requiredFromRoleIds ?? [],
           twoSided: data.twoSided ?? false,
+          scanShape: data.scanShape ?? 'CARD',
           position: data.position ?? 0,
         },
       });
@@ -214,6 +216,7 @@ export class DocumentsService {
       requiredFromAll: boolean;
       requiredFromRoleIds: string[];
       twoSided: boolean;
+      scanShape: string;
       isActive: boolean;
       position: number;
     }>;

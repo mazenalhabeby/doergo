@@ -17,6 +17,7 @@ import {
 
 const CADENCES = ['MONTHLY', 'ANNUAL', 'ONE_OFF'] as const;
 const DIRECTIONS = ['ISSUED', 'SUPPLIED'] as const;
+const SCAN_SHAPES = ['CARD', 'PASSPORT', 'PAGE'] as const;
 const SIGNATURE_MODES = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as const;
 
 /**
@@ -101,6 +102,11 @@ export class CreateDocumentTypeDto {
   @IsBoolean()
   twoSided?: boolean;
 
+  @ApiPropertyOptional({ enum: SCAN_SHAPES, description: 'The frame the scanner draws' })
+  @IsOptional()
+  @IsIn(SCAN_SHAPES as unknown as string[])
+  scanShape?: (typeof SCAN_SHAPES)[number];
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
@@ -168,6 +174,11 @@ export class UpdateDocumentTypeDto {
   @IsOptional()
   @IsBoolean()
   twoSided?: boolean;
+
+  @ApiPropertyOptional({ enum: SCAN_SHAPES, description: 'The frame the scanner draws' })
+  @IsOptional()
+  @IsIn(SCAN_SHAPES as unknown as string[])
+  scanShape?: (typeof SCAN_SHAPES)[number];
 
   @ApiPropertyOptional()
   @IsOptional()

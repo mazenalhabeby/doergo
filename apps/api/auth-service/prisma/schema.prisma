@@ -3869,6 +3869,12 @@ model DocumentType {
   /// and a paper certificate has nothing on its reverse at all.
   twoSided Boolean @default(false)
 
+  /// The frame the scanner draws: CARD (ID-1), PASSPORT (ID-3) or PAGE (A4).
+  /// Not decoration — a document held to fit the wrong frame sits further from
+  /// the lens, and the pixel size of the machine-readable zone is what decides
+  /// whether it can be read at all.
+  scanShape String @default("CARD")
+
   isActive  Boolean  @default(true)
   position  Int      @default(0)
   createdAt DateTime @default(now())

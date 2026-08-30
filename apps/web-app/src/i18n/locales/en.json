@@ -7443,7 +7443,23 @@
       "everyone": "Everyone",
       "requiredNote": "Nobody is chased for a document that does not apply to them.",
       "twoSided": "It has two sides",
-      "twoSidedHint": "The scanner asks for the back as well. ID cards and driving licences carry the machine-readable data on the back; a passport carries it on the photo page."
+      "twoSidedHint": "The scanner asks for the back as well. ID cards and driving licences carry the machine-readable data on the back; a passport carries it on the photo page.",
+      "scanShape": "What shape is it?",
+      "scanShapeHint": "The scanner draws this frame. A document held to fit the wrong one sits further from the lens, and the writing comes out smaller.",
+      "shapes": {
+        "CARD": {
+          "name": "A card",
+          "hint": "Driving licence, ID card — 85.6 × 54 mm"
+        },
+        "PASSPORT": {
+          "name": "A passport",
+          "hint": "The photo page — 125 × 88 mm"
+        },
+        "PAGE": {
+          "name": "A sheet of paper",
+          "hint": "A4 certificate, upright"
+        }
+      }
     },
     "supply": {
       "action": "Add a document",

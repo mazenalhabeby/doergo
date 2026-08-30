@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2,
-  CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2,
+  CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2, CreditCard,
 } from "lucide-react"
 import {
   documentsApi, workflowsApi, organizationsApi,
@@ -264,6 +264,7 @@ const BLANK: StarterDocumentType = {
   isCredential: false,
   hasExpiry: false,
   twoSided: false,
+  scanShape: "CARD",
   retentionMonths: null,
 }
 
@@ -353,6 +354,7 @@ function TypeEditor({
   const [requiredFromAll, setRequiredFromAll] = useState(type?.requiredFromAll ?? false)
   const [requiredFromRoleIds, setRequiredFromRoleIds] = useState<string[]>(type?.requiredFromRoleIds ?? [])
   const [twoSided, setTwoSided] = useState(type?.twoSided ?? starter?.twoSided ?? false)
+  const [scanShape, setScanShape] = useState(type?.scanShape ?? starter?.scanShape ?? "CARD")
   const [retentionMonths, setRetentionMonths] = useState<number | null>(
     type?.retentionMonths ?? starter?.retentionMonths ?? null,
   )
@@ -372,6 +374,7 @@ function TypeEditor({
           requiredForWorkflowIds: isCredential ? gates : [],
           ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
           twoSided: direction === "SUPPLIED" && twoSided,
+          scanShape,
           retentionMonths,
         })
       }
@@ -389,6 +392,7 @@ function TypeEditor({
         requiredForWorkflowIds: isCredential ? gates : [],
         ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
         twoSided: direction === "SUPPLIED" && twoSided,
+        scanShape,
         retentionMonths,
       })
     },
@@ -456,7 +460,34 @@ function TypeEditor({
               the back, a passport carries it on the photo page, and a paper
               certificate has nothing on its reverse. */}
           {direction === "SUPPLIED" && (
-            <div className="mt-3">
+            <div className="mt-3 space-y-3">
+              {/*
+                The frame the scanner draws. Not decoration: a document held to
+                fit the wrong frame sits further from the lens, and how many
+                pixels the machine-readable zone occupies is what decides
+                whether it can be read at all.
+              */}
+              <div>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t("documents.types.scanShape")}
+                </p>
+                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                  {t("documents.types.scanShapeHint")}
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {(["CARD", "PASSPORT", "PAGE"] as const).map((sh) => (
+                    <Choice
+                      key={sh}
+                      selected={scanShape === sh}
+                      onClick={() => setScanShape(sh)}
+                      Icon={sh === "PAGE" ? FileText : CreditCard}
+                      title={t(`documents.types.shapes.${sh}.name`)}
+                      hint={t(`documents.types.shapes.${sh}.hint`)}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <Toggle
                 checked={twoSided}
                 onChange={setTwoSided}
