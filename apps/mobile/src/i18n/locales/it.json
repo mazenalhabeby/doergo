@@ -1757,11 +1757,27 @@
       "submitted": "Inviato per la verifica",
       "tooLarge": "Il file supera il limite di 20 MB",
       "failed": "Non è stato possibile inviare il caricamento",
-      "nothingToSupply": "La tua organizzazione non ti chiede alcun documento."
+      "nothingToSupply": "La tua organizzazione non ti chiede alcun documento.",
+      "scan": "Scansiona il documento"
     },
     "status": {
       "pendingVerification": "In attesa di verifica",
       "rejected": "Non accettato"
+    },
+    "scanner": {
+      "fit": "Inquadra il documento nella cornice",
+      "fitFront": "Inquadra il FRONTE nella cornice",
+      "fitBack": "Ora giralo e inquadra il retro",
+      "autoHint": "La foto parte da sola appena il codice è leggibile",
+      "capture": "Scatta la foto",
+      "retake": "Rifai",
+      "use": "Usa questa",
+      "next": "Avanti",
+      "readable": "Si legge tutto bene?",
+      "frontReadable": "Il fronte si legge bene?",
+      "cameraNeeded": "Per scansionare serve la fotocamera",
+      "cameraWhy": "Nella cornice l’immagine viene dritta e completa; una foto dalla galleria di solito no.",
+      "allowCamera": "Consenti la fotocamera"
     }
   }
 }

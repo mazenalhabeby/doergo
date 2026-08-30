@@ -1757,11 +1757,27 @@
       "submitted": "Envoyé pour vérification",
       "tooLarge": "Ce fichier dépasse la limite de 20 Mo",
       "failed": "Le dépôt n’a pas pu être envoyé",
-      "nothingToSupply": "Votre organisation ne vous demande aucun document."
+      "nothingToSupply": "Votre organisation ne vous demande aucun document.",
+      "scan": "Scanner le document"
     },
     "status": {
       "pendingVerification": "En attente de vérification",
       "rejected": "Refusé"
+    },
+    "scanner": {
+      "fit": "Placez le document dans le cadre",
+      "fitFront": "Placez le RECTO dans le cadre",
+      "fitBack": "Retournez-le et placez le verso",
+      "autoHint": "La photo se déclenche seule dès que le code est lisible",
+      "capture": "Prendre la photo",
+      "retake": "Reprendre",
+      "use": "Utiliser",
+      "next": "Suivant",
+      "readable": "Tout est-il lisible ?",
+      "frontReadable": "Le recto est-il lisible ?",
+      "cameraNeeded": "La caméra est nécessaire pour scanner",
+      "cameraWhy": "Dans le cadre, l’image est droite et complète — une photo de la galerie l’est rarement.",
+      "allowCamera": "Autoriser la caméra"
     }
   }
 }

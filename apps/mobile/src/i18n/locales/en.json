@@ -1761,11 +1761,27 @@
       "submitted": "Sent for review",
       "tooLarge": "That file is larger than the 20 MB limit",
       "failed": "The upload could not be sent",
-      "nothingToSupply": "Your organization does not ask for any documents from you."
+      "nothingToSupply": "Your organization does not ask for any documents from you.",
+      "scan": "Scan the document"
     },
     "status": {
       "pendingVerification": "Awaiting review",
       "rejected": "Not accepted"
+    },
+    "scanner": {
+      "fit": "Fit the document inside the frame",
+      "fitFront": "Fit the FRONT of the card in the frame",
+      "fitBack": "Now turn it over and fit the back",
+      "autoHint": "It takes the picture by itself if it can read the code",
+      "capture": "Take the picture",
+      "retake": "Retake",
+      "use": "Use this",
+      "next": "Next",
+      "readable": "Is everything on it readable?",
+      "frontReadable": "Is the front readable?",
+      "cameraNeeded": "The camera is needed to scan",
+      "cameraWhy": "Scanning inside a frame gives a straight, complete picture — a photo from the gallery usually does not.",
+      "allowCamera": "Allow the camera"
     }
   }
 }

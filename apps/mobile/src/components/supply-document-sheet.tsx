@@ -18,6 +18,7 @@ import { PressableScale } from './pressable-scale';
 // would be a NATIVE dependency, and a native dependency means a fresh build
 // rather than an over-the-air update — a heavy price for one date field.
 import { DatePickerModal } from './date-picker-modal';
+import { DocumentScanner, type ScannedDocument } from './document-scanner';
 
 /**
  * The member supplying a document from their phone.
@@ -50,7 +51,7 @@ export function SupplyDocumentSheet({
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
-  const { takePhoto, pickFromGallery } = useImagePicker();
+  const { pickFromGallery } = useImagePicker();
 
   const suppliable = useMemo(
     () => types.filter((ty) => ty.direction === 'SUPPLIED' && ty.isActive),
@@ -61,19 +62,31 @@ export function SupplyDocumentSheet({
   const [photo, setPhoto] = useState<{ uri: string; mimeType: string; fileSize: number; fileName: string } | null>(null);
   const [expiresOn, setExpiresOn] = useState<Date | null>(null);
   const [showDate, setShowDate] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Exactly as a barcode encoded it, when the document carried one. Parsed and
+  // CHECKED on the server — a client's own reading of it is not evidence.
+  const [scanned, setScanned] = useState<ScannedDocument | null>(null);
 
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
   const needsDate = !!type?.hasExpiry;
 
   const reset = () => {
     setPhoto(null);
+    setScanned(null);
     setExpiresOn(null);
     setBusy(false);
   };
 
-  const take = async (from: 'camera' | 'gallery') => {
-    const picked = from === 'camera' ? await takePhoto() : await pickFromGallery();
+  /**
+   * A photo the member already has.
+   *
+   * The quieter of the two routes: somebody handed a scan by email should not
+   * have to photograph their screen. Scanning is what the button above does,
+   * and it is the one that produces a straight, complete image.
+   */
+  const pickExisting = async () => {
+    const picked = await pickFromGallery();
     const first = Array.isArray(picked) ? picked[0] : picked;
     if (!first) return;
 
@@ -99,6 +112,8 @@ export function SupplyDocumentSheet({
       return;
     }
     setPhoto({ ...first, fileSize: size });
+    // A gallery photo carries no barcode read, so any earlier scan is stale.
+    setScanned(null);
   };
 
   const submit = async () => {
@@ -122,6 +137,9 @@ export function SupplyDocumentSheet({
         // Date only. A timestamp would put an expiry a few hours either side of
         // midnight into the wrong day depending on where the phone is.
         expiresOn: needsDate && expiresOn ? toIsoDate(expiresOn) : undefined,
+        // Raw, unparsed. The server recomputes the check digits, so a client
+        // that invented a zone gets a SUSPECT verdict rather than a pass.
+        mrzText: scanned?.barcodeData,
       });
       toast.success(t('documents.supply.submitted'));
       reset();
@@ -216,26 +234,33 @@ export function SupplyDocumentSheet({
                 </Pressable>
               </View>
             ) : (
-              <View style={s.pickRow}>
+              <>
+                {/*
+                  Scanning is the primary way in, and looks like it.
+
+                  The OS picker produces a card on a table at an angle with a
+                  thumb across a corner, and every check downstream then works
+                  against a bad image. Choosing an existing photo stays — some
+                  people are handed a scan by email — but it is the quieter of
+                  the two.
+                */}
                 <PressableScale
-                  onPress={() => take('camera')}
-                  style={[s.pickButton, { borderColor: colors.border }]}
+                  onPress={() => setScanning(true)}
+                  style={[s.scanButton, { backgroundColor: COLORS.primary }]}
                 >
-                  <Ionicons name="camera-outline" size={22} color={COLORS.primary} />
-                  <Text style={[s.pickText, { color: colors.textPrimary }]}>
-                    {t('documents.supply.takePhoto')}
-                  </Text>
+                  <Ionicons name="scan-outline" size={22} color="#fff" />
+                  <Text style={s.scanText}>{t('documents.supply.scan')}</Text>
                 </PressableScale>
                 <PressableScale
-                  onPress={() => take('gallery')}
+                  onPress={pickExisting}
                   style={[s.pickButton, { borderColor: colors.border }]}
                 >
-                  <Ionicons name="images-outline" size={22} color={COLORS.primary} />
-                  <Text style={[s.pickText, { color: colors.textPrimary }]}>
+                  <Ionicons name="images-outline" size={20} color={colors.textSecondary} />
+                  <Text style={[s.pickText, { color: colors.textSecondary }]}>
                     {t('documents.supply.chooseExisting')}
                   </Text>
                 </PressableScale>
-              </View>
+              </>
             )}
 
             {/* Its expiry, asked for where it belongs */}
@@ -297,6 +322,28 @@ export function SupplyDocumentSheet({
           </PressableScale>
         )}
       </SheetPanel>
+
+      {/*
+        Two sides for a certificate: European ID cards and driving licences
+        carry the machine-readable zone and the categories on the BACK, so a
+        front-only scan of one is a picture of a photograph.
+      */}
+      <DocumentScanner
+        visible={scanning}
+        title={type?.label ?? t('documents.supply.title')}
+        twoSided={!!type?.isCredential}
+        onCancel={() => setScanning(false)}
+        onDone={(result) => {
+          setScanning(false);
+          setScanned(result);
+          setPhoto({
+            uri: result.uri,
+            fileName: result.fileName,
+            mimeType: result.mimeType,
+            fileSize: result.fileSize,
+          });
+        }}
+      />
     </BlurSheet>
   );
 }
@@ -330,10 +377,14 @@ const s = StyleSheet.create({
   typeText: { flex: 1 },
   typeLabel: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },
   typeHint: { fontSize: FONT_SIZE.xs, marginTop: 2 },
-  pickRow: { flexDirection: 'row', gap: SPACING.sm },
+  scanButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
+    minHeight: 52, borderRadius: RADIUS.md,
+  },
+  scanText: { color: '#fff', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
   pickButton: {
-    flex: 1, alignItems: 'center', gap: SPACING.xs,
-    borderWidth: 1, borderStyle: 'dashed', borderRadius: RADIUS.md, paddingVertical: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs,
+    borderWidth: 1, borderStyle: 'dashed', borderRadius: RADIUS.md, paddingVertical: SPACING.sm,
   },
   pickText: { fontSize: FONT_SIZE.sm },
   picked: {

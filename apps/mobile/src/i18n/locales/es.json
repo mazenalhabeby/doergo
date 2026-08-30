@@ -1757,11 +1757,27 @@
       "submitted": "Enviado a revisión",
       "tooLarge": "Ese archivo supera el límite de 20 MB",
       "failed": "No se pudo enviar la subida",
-      "nothingToSupply": "Tu organización no te pide ningún documento."
+      "nothingToSupply": "Tu organización no te pide ningún documento.",
+      "scan": "Escanear el documento"
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",
       "rejected": "No aceptado"
+    },
+    "scanner": {
+      "fit": "Encaja el documento en el marco",
+      "fitFront": "Encaja el ANVERSO en el marco",
+      "fitBack": "Ahora dale la vuelta y encaja el reverso",
+      "autoHint": "La foto se toma sola en cuanto se puede leer el código",
+      "capture": "Hacer la foto",
+      "retake": "Repetir",
+      "use": "Usar esta",
+      "next": "Siguiente",
+      "readable": "¿Se lee todo bien?",
+      "frontReadable": "¿Se lee bien el anverso?",
+      "cameraNeeded": "Se necesita la cámara para escanear",
+      "cameraWhy": "Escanear dentro del marco da una imagen recta y completa; una foto de la galería normalmente no.",
+      "allowCamera": "Permitir la cámara"
     }
   }
 }

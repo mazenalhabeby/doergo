@@ -93,6 +93,8 @@ export const documentsApi = {
     typeId: string;
     title?: string;
     expiresOn?: string;
+    /** Whatever a scanner read, raw. Checked on the server, never here. */
+    mrzText?: string;
   }): Promise<MemberDocument> => {
     const result = await fetchWithAuth<any>('/documents/mine', {
       method: 'POST',

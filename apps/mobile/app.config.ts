@@ -67,9 +67,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSLocationAlwaysAndWhenInUseUsageDescription:
           'HBCField uses your location in the background to record your route to an assigned job site while you are on the way, and to verify you remain at your work site while clocked in. Background location stops automatically when you arrive or clock out.',
         NSCameraUsageDescription:
-          'HBCField needs camera access to take photos for task documentation',
+          'HBCField uses the camera to photograph work for task and service reports, and to scan documents you provide to your employer, such as a licence or certificate.',
         NSPhotoLibraryUsageDescription:
-          'HBCField needs photo library access to attach images to tasks and service reports',
+          'HBCField uses your photo library to attach images to tasks and service reports, and to submit a document you already have as a photo or scan.',
         UIBackgroundModes: ['remote-notification', 'location'],
         ITSAppUsesNonExemptEncryption: false,
         // iPhone: portrait only (phone-first UI). iPad: all orientations.

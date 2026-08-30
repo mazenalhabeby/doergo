@@ -1757,11 +1757,27 @@
       "submitted": "Zur Prüfung gesendet",
       "tooLarge": "Diese Datei ist größer als 20 MB",
       "failed": "Der Upload konnte nicht gesendet werden",
-      "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen."
+      "nothingToSupply": "Ihre Organisation verlangt keine Dokumente von Ihnen.",
+      "scan": "Dokument scannen"
     },
     "status": {
       "pendingVerification": "Wird geprüft",
       "rejected": "Nicht angenommen"
+    },
+    "scanner": {
+      "fit": "Dokument in den Rahmen legen",
+      "fitFront": "VORDERSEITE in den Rahmen legen",
+      "fitBack": "Jetzt umdrehen und die Rückseite einpassen",
+      "autoHint": "Das Foto wird automatisch ausgelöst, sobald der Code lesbar ist",
+      "capture": "Foto aufnehmen",
+      "retake": "Neu aufnehmen",
+      "use": "Verwenden",
+      "next": "Weiter",
+      "readable": "Ist alles gut lesbar?",
+      "frontReadable": "Ist die Vorderseite lesbar?",
+      "cameraNeeded": "Zum Scannen wird die Kamera benötigt",
+      "cameraWhy": "Im Rahmen aufgenommen wird das Bild gerade und vollständig — ein Foto aus der Galerie meist nicht.",
+      "allowCamera": "Kamera erlauben"
     }
   }
 }
