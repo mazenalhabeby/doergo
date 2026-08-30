@@ -1681,7 +1681,8 @@
       "empty": "Nothing here yet",
       "emptyHint": "Documents your employer issues will appear here.",
       "awaiting_one": "{{count}} document needs your signature",
-      "awaiting_other": "{{count}} documents need your signature"
+      "awaiting_other": "{{count}} documents need your signature",
+      "awaitingHint": "Tap to see them all"
     },
     "allTypes": "All",
     "allYears": "All years",
@@ -1786,6 +1787,28 @@
       "cameraNeeded": "The camera is needed to scan",
       "cameraWhy": "Scanning inside a frame gives a straight, complete picture — a photo from the gallery usually does not.",
       "allowCamera": "Allow the camera"
+    },
+    "filter": {
+      "title": "Show",
+      "type": "Document type",
+      "year": "Year",
+      "needsYou": "Waiting for you",
+      "needsSignature": "Needs your signature",
+      "several": "{{count}} filters",
+      "showing_one": "{{count}} document",
+      "showing_other": "{{count}} documents"
+    },
+    "required": {
+      "title": "Still needed from you",
+      "blocksWork": "Blocks work",
+      "state": {
+        "MISSING": "not sent yet",
+        "REJECTED": "was not accepted — send another",
+        "EXPIRED": "has expired — send a new one",
+        "AWAITING_REVIEW": "waiting to be checked",
+        "MET": "on file",
+        "EXPIRING": "expires soon"
+      }
     }
   }
 }

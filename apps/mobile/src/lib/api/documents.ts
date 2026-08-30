@@ -70,6 +70,24 @@ export const documentsApi = {
     return Array.isArray(result) ? result : result?.data || [];
   },
 
+  /**
+   * What the organization still expects FROM the member.
+   *
+   * The list says what somebody HAS. This says what they have not — a different
+   * question, and the one nobody could answer on a phone: the screen showed a
+   * tidy file and never mentioned the licence that was never sent.
+   */
+  requirements: async (): Promise<{
+    typeId: string;
+    label: string;
+    state: 'MISSING' | 'AWAITING_REVIEW' | 'REJECTED' | 'MET' | 'EXPIRING' | 'EXPIRED';
+    expiresOn: string | null;
+    blocksWork: boolean;
+  }[]> => {
+    const result = await fetchWithAuth<any>('/documents/requirements');
+    return Array.isArray(result) ? result : result?.data || [];
+  },
+
   // ── What the member supplies ─────────────────────────────────────────────
 
   /** Step 1: somewhere to PUT the photograph. No user id — the member is the token. */

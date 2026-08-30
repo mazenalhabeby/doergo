@@ -1677,7 +1677,8 @@
       "empty": "Rien pour l’instant",
       "emptyHint": "Les documents émis par votre employeur apparaîtront ici.",
       "awaiting_one": "{{count}} document attend votre signature",
-      "awaiting_other": "{{count}} documents attendent votre signature"
+      "awaiting_other": "{{count}} documents attendent votre signature",
+      "awaitingHint": "Touchez pour tous les voir"
     },
     "allTypes": "Tous",
     "allYears": "Toutes les années",
@@ -1782,6 +1783,28 @@
       "cameraNeeded": "La caméra est nécessaire pour scanner",
       "cameraWhy": "Dans le cadre, l’image est droite et complète — une photo de la galerie l’est rarement.",
       "allowCamera": "Autoriser la caméra"
+    },
+    "filter": {
+      "title": "Afficher",
+      "type": "Type de document",
+      "year": "Année",
+      "needsYou": "En attente de vous",
+      "needsSignature": "Votre signature manque",
+      "several": "{{count}} filtres",
+      "showing_one": "{{count}} document",
+      "showing_other": "{{count}} documents"
+    },
+    "required": {
+      "title": "Encore attendu de vous",
+      "blocksWork": "Bloque des affectations",
+      "state": {
+        "MISSING": "pas encore envoyé",
+        "REJECTED": "refusé — envoyez-en un autre",
+        "EXPIRED": "expiré — envoyez-en un nouveau",
+        "AWAITING_REVIEW": "en attente de vérification",
+        "MET": "au dossier",
+        "EXPIRING": "expire bientôt"
+      }
     }
   }
 }

@@ -1677,7 +1677,8 @@
       "empty": "Ancora nulla",
       "emptyHint": "I documenti emessi dalla tua azienda compariranno qui.",
       "awaiting_one": "{{count}} documento richiede la tua firma",
-      "awaiting_other": "{{count}} documenti richiedono la tua firma"
+      "awaiting_other": "{{count}} documenti richiedono la tua firma",
+      "awaitingHint": "Tocca per vederli tutti"
     },
     "allTypes": "Tutti",
     "allYears": "Tutti gli anni",
@@ -1782,6 +1783,28 @@
       "cameraNeeded": "Per scansionare serve la fotocamera",
       "cameraWhy": "Nella cornice l’immagine viene dritta e completa; una foto dalla galleria di solito no.",
       "allowCamera": "Consenti la fotocamera"
+    },
+    "filter": {
+      "title": "Mostra",
+      "type": "Tipo di documento",
+      "year": "Anno",
+      "needsYou": "In attesa di te",
+      "needsSignature": "Manca la tua firma",
+      "several": "{{count}} filtri",
+      "showing_one": "{{count}} documento",
+      "showing_other": "{{count}} documenti"
+    },
+    "required": {
+      "title": "Ancora richiesto a te",
+      "blocksWork": "Blocca il lavoro",
+      "state": {
+        "MISSING": "non ancora inviato",
+        "REJECTED": "non accettato: inviane un altro",
+        "EXPIRED": "scaduto: inviane uno nuovo",
+        "AWAITING_REVIEW": "in attesa di verifica",
+        "MET": "agli atti",
+        "EXPIRING": "scade a breve"
+      }
     }
   }
 }

@@ -1677,7 +1677,8 @@
       "empty": "Noch nichts vorhanden",
       "emptyHint": "Dokumente Ihres Arbeitgebers erscheinen hier.",
       "awaiting_one": "{{count}} Dokument benötigt Ihre Unterschrift",
-      "awaiting_other": "{{count}} Dokumente benötigen Ihre Unterschrift"
+      "awaiting_other": "{{count}} Dokumente benötigen Ihre Unterschrift",
+      "awaitingHint": "Tippen, um alle zu sehen"
     },
     "allTypes": "Alle",
     "allYears": "Alle Jahre",
@@ -1782,6 +1783,28 @@
       "cameraNeeded": "Zum Scannen wird die Kamera benötigt",
       "cameraWhy": "Im Rahmen aufgenommen wird das Bild gerade und vollständig — ein Foto aus der Galerie meist nicht.",
       "allowCamera": "Kamera erlauben"
+    },
+    "filter": {
+      "title": "Anzeigen",
+      "type": "Dokumentart",
+      "year": "Jahr",
+      "needsYou": "Wartet auf Sie",
+      "needsSignature": "Ihre Unterschrift fehlt",
+      "several": "{{count}} Filter",
+      "showing_one": "{{count}} Dokument",
+      "showing_other": "{{count}} Dokumente"
+    },
+    "required": {
+      "title": "Noch von Ihnen benötigt",
+      "blocksWork": "Blockiert Einsätze",
+      "state": {
+        "MISSING": "noch nicht eingereicht",
+        "REJECTED": "wurde nicht angenommen — bitte neu einreichen",
+        "EXPIRED": "ist abgelaufen — bitte neu einreichen",
+        "AWAITING_REVIEW": "wird geprüft",
+        "MET": "liegt vor",
+        "EXPIRING": "läuft bald ab"
+      }
     }
   }
 }

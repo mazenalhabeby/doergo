@@ -18,7 +18,11 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { Skeleton, ScreenContainer, ChipRow, SupplyDocumentSheet } from '../../src/components';
+import {
+  Skeleton, ScreenContainer, SupplyDocumentSheet, DocumentFilterSheet, PressableScale,
+} from '../../src/components';
+import type { DocumentFilters } from '../../src/components/document-filter-sheet';
+import { waitingOnMember } from '@hbcfield/shared/client';
 
 /*
   The member's own file, on a phone.
@@ -85,8 +89,14 @@ export default function DocumentsScreen() {
   const [types, setTypes] = useState<DocumentType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeType, setActiveType] = useState<string | null>(null);
-  const [year, setYear] = useState<number | null>(null);
+  const [filters, setFilters] = useState<DocumentFilters>({
+    typeId: null,
+    year: null,
+    needsSignature: false,
+  });
+  const [filterOpen, setFilterOpen] = useState(false);
+  type Requirement = Awaited<ReturnType<typeof documentsApi.requirements>>[number];
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [opening, setOpening] = useState<string | null>(null);
   const [supplying, setSupplying] = useState(false);
 
@@ -95,9 +105,16 @@ export default function DocumentsScreen() {
     try {
       // Both in one round trip. On a van's connection two sequential requests
       // is a visibly slower screen.
-      const [docs, tys] = await Promise.all([documentsApi.list(), documentsApi.listTypes()]);
+      const [docs, tys, reqs] = await Promise.all([
+        documentsApi.list(),
+        documentsApi.listTypes(),
+        // What is still expected from them — a different question from what
+        // they have, and the one this screen never asked.
+        documentsApi.requirements().catch(() => []),
+      ]);
       setDocuments(docs);
       setTypes(tys);
+      setRequirements(reqs);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('documents.loadFailed'));
     } finally {
@@ -110,14 +127,55 @@ export default function DocumentsScreen() {
 
   /* Filtered on the device: a personnel file is tens of rows, so switching a
      tab should be instant rather than a spinner. */
+  const matches = useCallback(
+    (d: MemberDocument, f: DocumentFilters) => {
+      if (f.typeId && d.typeId !== f.typeId) return false;
+      if (f.year !== null && (d.periodYear ?? new Date(d.issuedAt).getFullYear()) !== f.year) return false;
+      if (f.needsSignature && !d.needsSignature) return false;
+      return true;
+    },
+    [],
+  );
+
   const visible = useMemo(
-    () =>
-      documents.filter((d) => {
-        if (activeType && d.typeId !== activeType) return false;
-        if (year !== null && (d.periodYear ?? new Date(d.issuedAt).getFullYear()) !== year) return false;
-        return true;
-      }),
-    [documents, activeType, year],
+    () => documents.filter((d) => matches(d, filters)),
+    [documents, filters, matches],
+  );
+
+  /*
+    How many a choice would leave, without applying it.
+
+    The filter list shows a count beside every option, which is the whole reason
+    it is a list rather than a strip of chips: a chip cannot say how much is
+    behind it, so every tap was a guess and half of them landed on nothing.
+  */
+  const countFor = useCallback(
+    (patch: Partial<DocumentFilters>) =>
+      documents.filter((d) => matches(d, { ...filters, ...patch })).length,
+    [documents, filters, matches],
+  );
+
+  const activeFilterCount =
+    (filters.typeId ? 1 : 0) + (filters.year !== null ? 1 : 0) + (filters.needsSignature ? 1 : 0);
+
+  /**
+   * What the button says.
+   *
+   * The current filter, in words, rather than a generic "Filter" — a control
+   * that does not state its own state makes somebody open it to find out.
+   */
+  const filterLabel = useMemo(() => {
+    if (activeFilterCount === 0) return t('documents.allTypes');
+    if (activeFilterCount > 1) return t('documents.filter.several', { count: activeFilterCount });
+    if (filters.needsSignature) return t('documents.filter.needsSignature');
+    if (filters.year !== null) return String(filters.year);
+    return types.find((ty) => ty.id === filters.typeId)?.label ?? t('documents.allTypes');
+  }, [activeFilterCount, filters, types, t]);
+
+  /** What is still expected FROM them, and is their move rather than the office's. */
+  const outstanding = useMemo(
+    () => requirements.filter((r) => waitingOnMember(r)),
+    [requirements],
   );
 
   /*
@@ -342,13 +400,74 @@ export default function DocumentsScreen() {
         onSubmitted={() => load(true)}
       />
 
+      <DocumentFilterSheet
+        visible={filterOpen}
+        filters={filters}
+        // Only types with something behind them: an option that leads to an
+        // empty screen is worse than no option.
+        types={usedTypes.map((ty) => ({ id: ty.id, label: ty.label }))}
+        years={years}
+        countFor={countFor}
+        awaitingCount={awaiting.length}
+        onChange={setFilters}
+        onClose={() => setFilterOpen(false)}
+      />
+
       <ScreenContainer>
+        {/*
+          What is still expected FROM the member.
+
+          The screen only ever showed what somebody HAS, so a licence that was
+          never sent was invisible — a tidy file and a missing document look
+          identical when the list is built from documents. Only the items whose
+          next move is theirs appear: chasing somebody for a licence they sent
+          yesterday is how a product teaches people to ignore it.
+        */}
+        {outstanding.length > 0 && (
+          <View style={[s.needed, { borderColor: COLORS.warning, backgroundColor: colors.warningLight }]}>
+            <Text style={[s.neededTitle, { color: colors.textPrimary }]}>
+              {t('documents.required.title')}
+            </Text>
+            {outstanding.map((r) => (
+              <PressableScale
+                key={r.typeId}
+                onPress={() => setSupplying(true)}
+                style={s.neededRow}
+                accessibilityRole="button"
+              >
+                <Ionicons name="add-circle-outline" size={18} color={COLORS.warning} />
+                <View style={s.neededBody}>
+                  <Text style={[s.neededLabel, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {r.label}
+                  </Text>
+                  <Text style={[s.neededState, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {t(`documents.required.state.${r.state}`)}
+                  </Text>
+                </View>
+                {r.blocksWork && (
+                  <View style={[s.blockPill, { backgroundColor: COLORS.warning }]}>
+                    <Text style={s.blockPillText}>{t('documents.required.blocksWork')}</Text>
+                  </View>
+                )}
+              </PressableScale>
+            ))}
+          </View>
+        )}
+
         {/* Anything waiting on the reader goes above the list, not in date order
             among twelve payslips where it gets missed. */}
         {awaiting.length > 0 && (
           <TouchableOpacity
             style={[s.banner, { backgroundColor: colors.warningLight, borderColor: COLORS.warning }]}
-            onPress={() => open(awaiting[0]!)}
+            /*
+              Shows ALL of them, not the first one.
+
+              Tapping "4 documents need your signature" opened a single
+              document, which is the one thing the sentence does not say. It
+              filters the list to those four instead, so the count in the banner
+              and what appears underneath are the same set.
+            */
+            onPress={() => setFilters((f) => ({ ...f, needsSignature: true, typeId: null, year: null }))}
             activeOpacity={0.8}
             accessibilityRole="button"
           >
@@ -360,31 +479,52 @@ export default function DocumentsScreen() {
                 {t('documents.my.awaiting', { count: awaiting.length })}
               </Text>
               <Text style={[s.bannerSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                {awaiting[0]!.title}
+                {t('documents.my.awaitingHint')}
               </Text>
             </View>
-            {/* Tappable, because a notice you cannot act on is just decoration. */}
             <Ionicons name="chevron-forward" size={18} color={COLORS.warning} />
           </TouchableOpacity>
         )}
 
-        {usedTypes.length > 0 && (
-          <ChipRow>
-            <Tab label={t('documents.allTypes')} active={activeType === null} onPress={() => setActiveType(null)} colors={colors} />
-            {usedTypes.map((ty) => (
-              <Tab key={ty.id} label={ty.label} active={activeType === ty.id} onPress={() => setActiveType(ty.id)} colors={colors} />
-            ))}
-          </ChipRow>
-        )}
+        {/*
+          One control instead of two strips that scrolled sideways.
 
-        {years.length > 1 && (
-          <ChipRow>
-            <Tab label={t('documents.allYears')} active={year === null} onPress={() => setYear(null)} colors={colors} small />
-            {years.map((y) => (
-              <Tab key={y} label={String(y)} active={year === y} onPress={() => setYear(y)} colors={colors} small />
-            ))}
-          </ChipRow>
-        )}
+          The strips kept raising the question a control should never raise — is
+          there more of this? — and a clipped chip at the screen edge reads as a
+          layout bug as often as it reads as "keep going". A button that states
+          the current filter, and a list behind it where everything is visible
+          with its count, answers it by not asking.
+        */}
+        <View style={s.filterBar}>
+          <PressableScale
+            onPress={() => setFilterOpen(true)}
+            style={[s.filterButton, { borderColor: activeFilterCount > 0 ? COLORS.primary : colors.border }]}
+          >
+            <Ionicons
+              name="funnel-outline"
+              size={16}
+              color={activeFilterCount > 0 ? COLORS.primary : colors.textSecondary}
+            />
+            <Text style={[s.filterText, { color: colors.textPrimary }]} numberOfLines={1}>
+              {filterLabel}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+          </PressableScale>
+
+          {activeFilterCount > 0 && (
+            <PressableScale
+              onPress={() => setFilters({ typeId: null, year: null, needsSignature: false })}
+              style={s.clearButton}
+              accessibilityRole="button"
+            >
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </PressableScale>
+          )}
+
+          <Text style={[s.resultCount, { color: colors.textMuted }]}>
+            {t('documents.filter.showing', { count: visible.length })}
+          </Text>
+        </View>
 
         {isLoading ? (
           <View style={s.list}>
@@ -426,32 +566,6 @@ export default function DocumentsScreen() {
   );
 }
 
-function Tab({
-  label, active, onPress, colors, small,
-}: {
-  label: string; active: boolean; onPress: () => void; colors: any; small?: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
-      style={[
-        s.tab,
-        small && s.tabSmall,
-        {
-          backgroundColor: active ? COLORS.primary : 'transparent',
-          borderColor: active ? COLORS.primary : colors.border,
-        },
-      ]}
-    >
-      <Text style={[s.tabText, { color: active ? '#FFFFFF' : colors.textMuted }]} numberOfLines={1}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
 const s = StyleSheet.create({
   screen: { flex: 1 },
   header: {
@@ -463,6 +577,31 @@ const s = StyleSheet.create({
   headerSpacer: { width: 26 },
 
   // The one thing on this screen asking something of the reader.
+  needed: {
+    borderWidth: 1, borderRadius: RADIUS.lg, padding: SPACING.md,
+    marginHorizontal: SPACING.md, marginTop: SPACING.md, gap: SPACING.xs,
+  },
+  neededTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs },
+  neededRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.xs },
+  neededBody: { flex: 1, minWidth: 0 },
+  neededLabel: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },
+  neededState: { fontSize: FONT_SIZE.sm },
+  blockPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
+  blockPillText: { color: '#fff', fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
+
+  filterBar: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+  },
+  filterButton: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
+    borderWidth: 1, borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, maxWidth: '62%',
+  },
+  filterText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, flexShrink: 1 },
+  clearButton: { padding: 2 },
+  resultCount: { marginLeft: 'auto', fontSize: FONT_SIZE.sm },
+
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
     marginHorizontal: SPACING.md, marginTop: SPACING.md,
@@ -473,7 +612,6 @@ const s = StyleSheet.create({
   bannerText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   bannerSub: { fontSize: FONT_SIZE.sm, marginTop: 1 },
 
-  // Layout and the scroll affordance both live in ChipRow now.
   tab: {
     paddingHorizontal: SPACING.md, paddingVertical: 6,
     borderRadius: RADIUS.full, borderWidth: StyleSheet.hairlineWidth,
