@@ -431,7 +431,7 @@ export default function DocumentsScreen() {
         onClose={() => setSupplying(false)}
         /* The badge and the home card read a cached count — supplying
            something here is exactly when it stops being true. */
-        onSubmitted={() => { void load(true); void refreshRequirements(); }}
+        onSubmitted={() => { void load(true); void refreshRequirements({ force: true }); }}
       />
 
       <ScreenContainer>

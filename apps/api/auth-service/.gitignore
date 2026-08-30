@@ -1,1 +1,6 @@
 tessdata/*.traineddata
+
+# A 5 MB language model that nothing reads: the container builds its own copy
+# into tessdata/ (see Dockerfile), and local dev looks there too. Kept on disk,
+# out of the history.
+eng.traineddata

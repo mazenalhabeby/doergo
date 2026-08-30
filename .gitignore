@@ -91,3 +91,6 @@ infra/docker/.env.production
 docs/dashboard-spaces-backup/
 emails/
 apps/api/gateway/uploads/
+
+# Build output of tools/blog-mcp — 6 MB, rebuildable from the source beside it.
+tools/blog-mcp.zip
