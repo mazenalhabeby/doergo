@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
 import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
@@ -579,6 +580,14 @@ function DocumentsDropdown({
   showCompliance: boolean
 }) {
   const { t } = useTranslation()
+  /*
+    The permanently-visible half of the reminder.
+
+    A dot on the way in, not a banner on every page: it costs no layout, needs
+    no dismissing, and is still legible in three weeks, by which time a banner
+    on every screen has become furniture people read straight past.
+  */
+  const { count: outstanding, blocksWork } = useMyDocumentRequirements()
 
   /*
     EXACTLY the routes this menu contains. The attendance menu listed a route it
@@ -611,6 +620,7 @@ function DocumentsDropdown({
         className={cn(navItemBase, active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}
       >
         {only.label}
+        {outstanding > 0 && <NavCountDot count={outstanding} urgent={blocksWork} />}
       </Link>
     )
   }
@@ -630,6 +640,7 @@ function DocumentsDropdown({
         )}
       >
         {t("nav.documents")}
+        {outstanding > 0 && <NavCountDot count={outstanding} urgent={blocksWork} />}
         <ChevronDown className="h-3.5 w-3.5 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">
@@ -641,12 +652,37 @@ function DocumentsDropdown({
             <DropdownMenuItem asChild className="rounded-md cursor-pointer">
               <Link href={item.href} className="flex items-center gap-2 px-2 py-1.5 text-sm">
                 {item.label}
+                {item.href === "/my/documents" && outstanding > 0 && (
+                  <NavCountDot count={outstanding} urgent={blocksWork} />
+                )}
               </Link>
             </DropdownMenuItem>
           </div>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/**
+ * A count on a navigation item.
+ *
+ * Small enough to sit inside a nav row without changing its height, which is
+ * the whole point — the signal is permanent, so it must cost nothing. Tabular
+ * figures so a 1 and a 2 are the same width and the bar does not twitch when
+ * somebody supplies one of two documents.
+ */
+function NavCountDot({ count, urgent }: { count: number; urgent: boolean }) {
+  return (
+    <span
+      className={cn(
+        "ml-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1",
+        "text-[10px] font-semibold tabular-nums text-white",
+        urgent ? "bg-red-600" : "bg-amber-500",
+      )}
+    >
+      {count}
+    </span>
   )
 }
 

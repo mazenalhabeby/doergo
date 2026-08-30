@@ -7560,6 +7560,13 @@
         "issuerKnown": "Le code pays d’émission n’existe pas",
         "notAlreadyFiled": "Le même document est déjà au dossier de"
       }
+    },
+    "reminder": {
+      "needed_one": "{{count}} document à envoyer",
+      "needed_other": "{{count}} documents à envoyer",
+      "expiring_one": "{{count}} document expire bientôt",
+      "expiring_other": "{{count}} documents expirent bientôt",
+      "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
     }
   }
 }

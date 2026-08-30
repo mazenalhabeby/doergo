@@ -7551,6 +7551,13 @@
         "issuerKnown": "The issuing country code is not a real one",
         "notAlreadyFiled": "The same document is already on file for"
       }
+    },
+    "reminder": {
+      "needed_one": "{{count}} document to upload",
+      "needed_other": "{{count}} documents to upload",
+      "expiring_one": "{{count}} document expires soon",
+      "expiring_other": "{{count}} documents expire soon",
+      "blocking": "You cannot be given work until this is supplied and approved."
     }
   }
 }

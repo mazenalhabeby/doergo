@@ -43,6 +43,7 @@ import { buildWorkspaceBoxes } from "../_lib/build-workspace-boxes"
 import { useDashboardData } from "../_lib/use-dashboard-data"
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
+import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -493,6 +494,13 @@ export function ClientDashboard() {
             )}
             <ActivityPanelToggle />
           </div>
+        </div>
+
+        {/* Outstanding personal documents — once, here, and a count on the nav
+            item. See the component for why it is not on every page. Renders
+            nothing when there is none, which is the normal case. */}
+        <div className="max-w-[1440px] mx-auto px-6 pt-4">
+          <DocumentsReminderBanner />
         </div>
 
         {/* Workspace Grid — contained. While the welcome guide runs on an empty

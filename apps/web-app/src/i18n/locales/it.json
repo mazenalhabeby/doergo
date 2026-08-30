@@ -7560,6 +7560,13 @@
         "issuerKnown": "Il codice del paese emittente non esiste",
         "notAlreadyFiled": "Lo stesso documento risulta già a nome di"
       }
+    },
+    "reminder": {
+      "needed_one": "{{count}} documento da caricare",
+      "needed_other": "{{count}} documenti da caricare",
+      "expiring_one": "{{count}} documento scade a breve",
+      "expiring_other": "{{count}} documenti scadono a breve",
+      "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
     }
   }
 }
