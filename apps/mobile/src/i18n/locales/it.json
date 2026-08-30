@@ -1792,7 +1792,9 @@
       "needsSignature": "Manca la tua firma",
       "several": "{{count}} filtri",
       "showing_one": "{{count}} documento",
-      "showing_other": "{{count}} documenti"
+      "showing_other": "{{count}} documenti",
+      "searchTypes": "Cerca tipi di documento",
+      "noMatch": "Nessuna corrispondenza"
     },
     "required": {
       "title": "Ancora richiesto a te",

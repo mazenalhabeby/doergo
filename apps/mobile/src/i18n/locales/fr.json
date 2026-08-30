@@ -1792,7 +1792,9 @@
       "needsSignature": "Votre signature manque",
       "several": "{{count}} filtres",
       "showing_one": "{{count}} document",
-      "showing_other": "{{count}} documents"
+      "showing_other": "{{count}} documents",
+      "searchTypes": "Rechercher un type de document",
+      "noMatch": "Aucune correspondance"
     },
     "required": {
       "title": "Encore attendu de vous",

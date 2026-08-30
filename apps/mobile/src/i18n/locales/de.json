@@ -1792,7 +1792,9 @@
       "needsSignature": "Ihre Unterschrift fehlt",
       "several": "{{count}} Filter",
       "showing_one": "{{count}} Dokument",
-      "showing_other": "{{count}} Dokumente"
+      "showing_other": "{{count}} Dokumente",
+      "searchTypes": "Dokumentarten suchen",
+      "noMatch": "Dazu passt nichts"
     },
     "required": {
       "title": "Noch von Ihnen benötigt",

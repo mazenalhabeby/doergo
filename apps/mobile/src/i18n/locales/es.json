@@ -1792,7 +1792,9 @@
       "needsSignature": "Falta tu firma",
       "several": "{{count}} filtros",
       "showing_one": "{{count}} documento",
-      "showing_other": "{{count}} documentos"
+      "showing_other": "{{count}} documentos",
+      "searchTypes": "Buscar tipos de documento",
+      "noMatch": "No hay coincidencias"
     },
     "required": {
       "title": "Aún pendiente de ti",

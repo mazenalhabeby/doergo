@@ -1796,7 +1796,9 @@
       "needsSignature": "Needs your signature",
       "several": "{{count}} filters",
       "showing_one": "{{count}} document",
-      "showing_other": "{{count}} documents"
+      "showing_other": "{{count}} documents",
+      "searchTypes": "Search document types",
+      "noMatch": "Nothing matches that"
     },
     "required": {
       "title": "Still needed from you",
