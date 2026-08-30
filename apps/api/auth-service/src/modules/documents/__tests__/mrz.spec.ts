@@ -1,4 +1,5 @@
 import {
+  repairMrzLine,
   parseMrz,
   mrzCheckDigit,
   mrzDate,
@@ -241,5 +242,58 @@ describe('parseMrz — what it is not', () => {
     // A bad OCR read must produce a failure, never an exception, because it
     // arrives from a phone camera in a plant room.
     expect(() => parseMrz(TD3.replace('ERIKSSON', 'ERIK$SON'), NOW)).not.toThrow();
+  });
+});
+
+describe('repairMrzLine — the characters OCR confuses', () => {
+  /*
+    A zone is not free text: every position has a type. An engine returning a Q
+    where only a digit may appear has made a mistake the standard itself can
+    correct — and real reads produce exactly this, 0/Q/O and 1/I and 5/S.
+
+    The property that makes it SAFE is that it can only ever swap a character
+    for one of the same shape in a position whose type is fixed. A forger who
+    changed one digit to another digit is untouched, and a repair that guesses
+    wrong still fails the check digit.
+  */
+  it('turns a letter back into the digit the format demands', () => {
+    // The exact misread the pipeline produced: the personal-number check digit
+    // came back as Q, which broke the composite over the whole line.
+    const line = 'P1234567<1AUT8503150M3106305<<<<<<<<<<<<<<Q4';
+    expect(repairMrzLine(line, 'TD3', 2)).toBe('P1234567<1AUT8503150M3106305<<<<<<<<<<<<<<04');
+  });
+
+  it('turns a digit back into the letter the format demands', () => {
+    // Nationality is three letters; a 0 there is an O.
+    const line = 'P1234567<1AUT8503150M3106305<<<<<<<<<<<<<<04'.replace('AUT', '4UT');
+    expect(repairMrzLine(line, 'TD3', 2).slice(10, 13)).toBe('AUT');
+  });
+
+  it('leaves a correct line exactly as it was', () => {
+    const line = 'L898902C36UTO7408122F1204159ZE184226B<<<<<10';
+    expect(repairMrzLine(line, 'TD3', 2)).toBe(line);
+  });
+
+  it('cannot launder a forgery — a digit swapped for a digit is untouched', () => {
+    /*
+      The safety property. Repair only crosses the letter/digit boundary in
+      positions whose type is fixed, so an altered date stays altered and still
+      fails its check digit.
+    */
+    const forged = 'L898902C36UTO7408122F3204159ZE184226B<<<<<10';
+    expect(repairMrzLine(forged, 'TD3', 2)).toBe(forged);
+    expect(parseMrz(TD3.split('\n')[0] + '\n' + forged, NOW)!.allChecksPassed).toBe(false);
+  });
+
+  it('does nothing to a line of the wrong length', () => {
+    expect(repairMrzLine('TOO SHORT', 'TD3', 2)).toBe('TOO SHORT');
+  });
+
+  it('repairs inside parseMrz, so a real read passes its checks', () => {
+    const misread = 'P1234567<1AUT8503150M3106305<<<<<<<<<<<<<<Q4';
+    const line1 = 'P<AUTMUSTERMANN<<MAX'.padEnd(44, '<');
+    const r = parseMrz(`${line1}\n${misread}`, NOW)!;
+    expect(r.allChecksPassed).toBe(true);
+    expect(r.surname).toBe('MUSTERMANN');
   });
 });

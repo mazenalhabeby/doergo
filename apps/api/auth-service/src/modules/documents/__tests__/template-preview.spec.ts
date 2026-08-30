@@ -4,6 +4,7 @@ import { PDFDocument } from 'pdf-lib';
 import { inflateSync } from 'node:zlib';
 import { SERVICE_NAMES, MERGE_FIELDS } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { OBJECT_STORE } from '../object-store.provider';
 
@@ -109,6 +110,9 @@ describe('DocumentsService — previewing a template', () => {
     const module = await Test.createTestingModule({
       providers: [
         DocumentsService,
+        // Stubbed: every test here is about who may file what, not about
+        // reading pixels — and a real WASM engine per suite would add minutes.
+        { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
         { provide: OBJECT_STORE, useValue: store },
@@ -205,6 +209,9 @@ describe('DocumentsService — previewing a template', () => {
     const module = await Test.createTestingModule({
       providers: [
         DocumentsService,
+        // Stubbed: every test here is about who may file what, not about
+        // reading pixels — and a real WASM engine per suite would add minutes.
+        { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
         { provide: OBJECT_STORE, useValue: null },

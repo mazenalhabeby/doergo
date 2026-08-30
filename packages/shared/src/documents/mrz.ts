@@ -173,6 +173,66 @@ export function mrzLines(raw: string): string[] {
     .filter((l) => /^[A-Z0-9<]+$/.test(l) && (l.length === 30 || l.length === 36 || l.length === 44));
 }
 
+
+/**
+ * Positional repair: fix the characters OCR confuses, where the format forbids
+ * the one it chose.
+ *
+ * A zone is not free text. Every position has a type — the expiry is six digits,
+ * the nationality three letters — and an engine that returns a Q where only a
+ * digit may appear has made a mistake the standard itself can correct. Real
+ * reads produce exactly this: 0/Q/O, 1/I, 5/S, 8/B.
+ *
+ * This CANNOT launder a forgery, which is the property that makes it safe. It
+ * only ever swaps a character for one of the same shape in a position whose
+ * type is fixed, so a forger who changed one digit to another digit is
+ * untouched — and if a repair guesses wrong, the check digit still fails. It
+ * turns "photograph it again" into a correct read, and nothing else.
+ */
+const TO_DIGIT: Record<string, string> = {
+  O: '0', Q: '0', D: '0', U: '0',
+  I: '1', L: '1', T: '7',
+  Z: '2', S: '5', B: '8', G: '6', A: '4',
+};
+const TO_ALPHA: Record<string, string> = {
+  '0': 'O', '1': 'I', '2': 'Z', '5': 'S', '8': 'B', '6': 'G', '4': 'A',
+};
+
+type Slot = 'n' | 'a' | 'x';
+
+/** The type of every position, by format and line. */
+const LAYOUT: Record<string, Slot[]> = {
+  // Passports.
+  'TD3:1': slots('aa', 'aaa', 'x'.repeat(39)),
+  'TD3:2': slots('xxxxxxxxx', 'n', 'aaa', 'nnnnnn', 'n', 'a', 'nnnnnn', 'n', 'x'.repeat(14), 'n', 'n'),
+  // ID cards.
+  'TD1:1': slots('aa', 'aaa', 'xxxxxxxxx', 'n', 'x'.repeat(15)),
+  'TD1:2': slots('nnnnnn', 'n', 'a', 'nnnnnn', 'n', 'aaa', 'x'.repeat(11), 'n'),
+  'TD1:3': slots('x'.repeat(30)),
+  'TD2:1': slots('aa', 'aaa', 'x'.repeat(31)),
+  'TD2:2': slots('xxxxxxxxx', 'n', 'aaa', 'nnnnnn', 'n', 'a', 'nnnnnn', 'n', 'x'.repeat(7), 'n'),
+};
+
+function slots(...parts: string[]): Slot[] {
+  return parts.join('').split('') as Slot[];
+}
+
+/** One line, repaired against the layout its format gives it. */
+export function repairMrzLine(line: string, format: MrzFormat, lineNumber: 1 | 2 | 3): string {
+  const layout = LAYOUT[`${format}:${lineNumber}`];
+  if (!layout || layout.length !== line.length) return line;
+
+  return line
+    .split('')
+    .map((c, i) => {
+      const slot = layout[i];
+      if (slot === 'n' && !/[0-9]/.test(c)) return TO_DIGIT[c] ?? c;
+      if (slot === 'a' && !/[A-Z<]/.test(c)) return TO_ALPHA[c] ?? c;
+      return c;
+    })
+    .join('');
+}
+
 /**
  * Parse and check a zone.
  *
@@ -183,14 +243,17 @@ export function mrzLines(raw: string): string[] {
 export function parseMrz(raw: string, now: Date = new Date()): MrzResult | null {
   const lines = mrzLines(raw);
 
+  const repair = (fmt: MrzFormat, take: number) =>
+    lines.slice(0, take).map((l, i) => repairMrzLine(l, fmt, (i + 1) as 1 | 2 | 3));
+
   if (lines.length >= 3 && lines.every((l) => l.length === 30)) {
-    return parseTd1(lines.slice(0, 3) as [string, string, string], now);
+    return parseTd1(repair('TD1', 3) as [string, string, string], now);
   }
   if (lines.length >= 2 && lines[0]!.length === 44 && lines[1]!.length === 44) {
-    return parseTd3(lines.slice(0, 2) as [string, string], now);
+    return parseTd3(repair('TD3', 2) as [string, string], now);
   }
   if (lines.length >= 2 && lines[0]!.length === 36 && lines[1]!.length === 36) {
-    return parseTd2(lines.slice(0, 2) as [string, string], now);
+    return parseTd2(repair('TD2', 2) as [string, string], now);
   }
   return null;
 }

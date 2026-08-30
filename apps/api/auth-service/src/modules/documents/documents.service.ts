@@ -35,6 +35,7 @@ import {
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
 import { ObjectStore, documentKey, signatureKey, sha256 } from '@hbcfield/shared/storage';
+import { MrzOcrService } from './mrz-ocr.service';
 import { renderContractPdf, sealSignedPdf } from './contract-pdf';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OBJECT_STORE } from './object-store.provider';
@@ -93,6 +94,7 @@ export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    private readonly ocr: MrzOcrService,
     // Injected, not constructed here — see object-store.provider.ts. Null when
     // no credentials are configured; every path that needs it says so plainly.
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
@@ -811,7 +813,7 @@ export class DocumentsService {
     organizationId: string,
     stagingKey: string,
     expectedPrefix?: string,
-  ): Promise<{ key: string; hash: string; sizeBytes: number; mimeType: string }> {
+  ): Promise<{ key: string; hash: string; sizeBytes: number; mimeType: string; bytes: Buffer }> {
     // Checked again here, not only by the caller. This method reads and moves
     // an object named by untrusted input, so it does not rely on having been
     // called correctly.
@@ -839,7 +841,10 @@ export class DocumentsService {
     await this.withStorage('filing a document', () => store.put(key, bytes, mimeType));
     await store.delete(stagingKey);
 
-    return { key, hash, sizeBytes: bytes.length, mimeType };
+    // The bytes come back with the metadata: the OCR needs them, and fetching
+    // the object a second time would double the storage round trips on every
+    // upload for no gain.
+    return { key, hash, sizeBytes: bytes.length, mimeType, bytes };
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -964,13 +969,27 @@ export class DocumentsService {
     });
     if (!member) throw new NotFoundException('Member not found');
 
-    const scan = await this.checkSubmittedScan(data.mrzText, member, data.actor.organizationId);
-
     const filed = await this.takeStagedObject(
       data.actor.organizationId,
       data.stagingKey,
       this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
     );
+
+    /*
+      Read the zone off the picture when the phone did not already have one.
+
+      A barcode read on the device is exact and free, so it wins. Everything
+      else — every passport, every European ID card — has no barcode and a zone
+      the camera cannot decode, so it is read here.
+
+      The scan NEVER decides whether the upload succeeds. An unreadable photo,
+      a slow OCR, a document with no zone at all: each files the document with
+      no verdict, exactly as a gas certificate does.
+    */
+    const mrzText =
+      data.mrzText?.trim() || (await this.ocr.read(filed.bytes, filed.mimeType));
+
+    const scan = await this.checkSubmittedScan(mrzText, member, data.actor.organizationId);
 
     const issuedAt = new Date();
     /*

@@ -6,6 +6,7 @@ import {
   resolveAudiences,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService } from '../documents.service';
 import { OBJECT_STORE } from '../object-store.provider';
 
@@ -137,6 +138,9 @@ describe('the server resolves the same way the screen predicts', () => {
     const mod = await Test.createTestingModule({
       providers: [
         DocumentsService,
+        // Stubbed: every test here is about who may file what, not about
+        // reading pixels — and a real WASM engine per suite would add minutes.
+        { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
         { provide: PrismaService, useValue: prisma },
         { provide: OBJECT_STORE, useValue: {} },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },

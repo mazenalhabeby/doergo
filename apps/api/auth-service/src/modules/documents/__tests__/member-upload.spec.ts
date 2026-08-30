@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { OBJECT_STORE } from '../object-store.provider';
 
@@ -77,6 +78,9 @@ describe('DocumentsService — what the member supplies', () => {
     const module = await Test.createTestingModule({
       providers: [
         DocumentsService,
+        // Stubbed: every test here is about who may file what, not about
+        // reading pixels — and a real WASM engine per suite would add minutes.
+        { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notifications },
         { provide: OBJECT_STORE, useValue: store },

@@ -8,6 +8,19 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/auth-service/package.json ./apps/api/auth-service/
 RUN pnpm install --frozen-lockfile --prod=false
 
+# The OCR language model, fetched at BUILD time.
+#
+# Left to itself tesseract.js downloads it from a public CDN on first use, which
+# would make a member's document upload depend on somebody else's uptime, add
+# seconds to the first request after every deploy, and fail outright on a box
+# with no egress. It is 4 MB and static — there is no reason for it to arrive
+# over the internet while somebody is waiting.
+FROM base AS tessdata
+RUN apk add --no-cache curl && \
+    mkdir -p /tessdata && \
+    curl -fsSL -o /tessdata/eng.traineddata \
+      https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/eng.traineddata
+
 FROM deps AS build
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/ ./apps/api/auth-service/
@@ -28,6 +41,8 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /prod ./apps/api/auth-service
 COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
+# Beside the app, where MrzOcrService looks by default (TESSDATA_PATH overrides).
+COPY --from=tessdata /tessdata ./apps/api/auth-service/tessdata
 COPY infra/docker/scripts/auth-entrypoint.sh /app/auth-entrypoint.sh
 RUN chmod +x /app/auth-entrypoint.sh
 # Run as the built-in non-root `node` user (audit). /app chown'd so the entrypoint
