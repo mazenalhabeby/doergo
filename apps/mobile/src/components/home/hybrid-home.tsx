@@ -28,6 +28,7 @@ import { WeekCalendar } from '../week-calendar';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from './home-styles';
+import { DocumentsReminderCard } from '../documents-reminder-card';
 
 export function HybridHome() {
   const { user } = useAuth();
@@ -166,6 +167,11 @@ export function HybridHome() {
         </Text>
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
       </TourTarget>
+
+      {/* Outstanding personal documents, once, at the top — see the component
+          for why it is not on every screen. Renders nothing when there are
+          none, which is the normal case. */}
+      <DocumentsReminderCard />
 
       {/* Out-of-ring banner (needs reason / pending / approved countdown) */}
       <OutOfRingHomeBanner

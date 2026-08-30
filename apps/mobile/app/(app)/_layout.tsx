@@ -11,6 +11,7 @@ import {
 } from '../../src/hooks/usePushNotifications';
 import { SocketProvider, useSocketContext } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
+import { DocumentRequirementsProvider } from '../../src/contexts/document-requirements-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { useAuth } from '../../src/contexts/auth-context';
 import { activeChat } from '../../src/lib/active-chat';
@@ -223,6 +224,7 @@ export default function AppLayout() {
     <SocketProvider>
     <GlobalChatNotifier />
     <LocationTrackingProvider>
+      <DocumentRequirementsProvider>
       <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <TourProvider>
       <Stack
@@ -310,6 +312,7 @@ export default function AppLayout() {
       <SubscriptionGate />
       </TourProvider>
       </View>
+      </DocumentRequirementsProvider>
     </LocationTrackingProvider>
     </SocketProvider>
   );

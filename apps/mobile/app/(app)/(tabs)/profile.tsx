@@ -21,6 +21,7 @@ import { orgHasAddOn } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
+import { useDocumentRequirements } from '../../../src/contexts/document-requirements-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { useImagePicker } from '../../../src/hooks/useImagePicker';
@@ -69,6 +70,9 @@ export default function ProfileScreen() {
   const { unregisterPushToken } = usePushNotifications();
   const { pickFromGallery, takePhoto } = useImagePicker();
   const insets = useSafeAreaInsets();
+  // Already loaded for the home card — this reads the same fetch, not a second one.
+  const { actionable: outstandingDocsList, blocksWork: docsBlockWork } = useDocumentRequirements();
+  const outstandingDocs = outstandingDocsList.length;
 
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [savingPresence, setSavingPresence] = useState(false);
@@ -333,6 +337,19 @@ export default function ProfileScreen() {
                 iconBg={colors.primaryLight}
                 label={t('profile.documents')}
                 onPress={() => router.push('/documents' as Href)}
+                /*
+                  A count, not a banner. This is the permanently-visible half of
+                  the reminder: it costs no layout, needs no dismissing, and is
+                  still there in three weeks when a banner would have become
+                  furniture nobody reads.
+                */
+                trailing={
+                  outstandingDocs > 0 ? (
+                    <View style={[styles.menuBadge, { backgroundColor: docsBlockWork ? COLORS.error : COLORS.warning }]}>
+                      <Text style={styles.menuBadgeText}>{outstandingDocs}</Text>
+                    </View>
+                  ) : undefined
+                }
                 themeColors={colors}
               />
             </>
@@ -703,6 +720,14 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: StyleSheet.hairlineWidth,
     marginLeft: 36 + SPACING.lg + SPACING.md, // icon width + padding + gap
+  },
+  menuBadge: {
+    minWidth: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6,
+  },
+  menuBadgeText: {
+    color: COLORS.white, fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold, fontVariant: ['tabular-nums'],
   },
   menuTrailingRow: {
     flexDirection: 'row',

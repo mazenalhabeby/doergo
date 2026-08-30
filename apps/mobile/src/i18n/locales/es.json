@@ -1803,6 +1803,13 @@
       "anyType": "Todos los tipos",
       "anyYear": "Todos los años",
       "searchTypes": "Buscar tipos"
+    },
+    "reminder": {
+      "needed_one": "{{count}} documento por subir",
+      "needed_other": "{{count}} documentos por subir",
+      "expiring_one": "{{count}} documento caduca pronto",
+      "expiring_other": "{{count}} documentos caducan pronto",
+      "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
     }
   }
 }

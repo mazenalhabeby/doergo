@@ -54,6 +54,7 @@ import {
   STATUS_ACTION,
   ACTIVE_TASK_PRIORITY,
 } from './workspace/helpers';
+import { DocumentsReminderCard } from '../documents-reminder-card';
 
 // Dynamic grid — every card is half-width and dropped into the shorter of two
 // columns (masonry). Columns stay balanced, cards are filled to their width,
@@ -617,6 +618,11 @@ export function AdminDashboard() {
             {t('home.admin.welcomeBack', { name: user?.firstName })}
           </Text>
         </TourTarget>
+
+      {/* Outstanding personal documents, once, at the top — see the component
+          for why it is not on every screen. Renders nothing when there are
+          none, which is the normal case. */}
+      <DocumentsReminderCard />
 
         {/* Clock in/out — the same self-contained shift widget members use, for a
             working admin/owner (gated on the clock module). */}

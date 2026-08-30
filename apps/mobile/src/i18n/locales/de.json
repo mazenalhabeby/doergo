@@ -1803,6 +1803,13 @@
       "anyType": "Alle Arten",
       "anyYear": "Alle Jahre",
       "searchTypes": "Arten durchsuchen"
+    },
+    "reminder": {
+      "needed_one": "{{count}} Dokument hochzuladen",
+      "needed_other": "{{count}} Dokumente hochzuladen",
+      "expiring_one": "{{count}} Dokument läuft bald ab",
+      "expiring_other": "{{count}} Dokumente laufen bald ab",
+      "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
     }
   }
 }

@@ -25,6 +25,7 @@ import {
 } from '../../src/components';
 import type { DocumentFilters } from '../../src/components/document-filter-bar';
 import { waitingOnMember } from '@hbcfield/shared/client';
+import { useDocumentRequirements } from '../../src/contexts/document-requirements-context';
 
 /*
   The member's own file, on a phone.
@@ -85,6 +86,7 @@ export default function DocumentsScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const toast = useToast();
+  const { refresh: refreshRequirements } = useDocumentRequirements();
   const { t } = useTranslation();
 
   const [documents, setDocuments] = useState<MemberDocument[]>([]);
@@ -427,7 +429,9 @@ export default function DocumentsScreen() {
         types={types}
         visible={supplying}
         onClose={() => setSupplying(false)}
-        onSubmitted={() => load(true)}
+        /* The badge and the home card read a cached count — supplying
+           something here is exactly when it stops being true. */
+        onSubmitted={() => { void load(true); void refreshRequirements(); }}
       />
 
       <ScreenContainer>
