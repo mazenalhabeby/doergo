@@ -8,11 +8,17 @@ import { summarisePending } from "@hbcfield/shared/client"
 /**
  * What the signed-in person still has to do about their own documents.
  *
- * Both kinds in ONE request: types the organization asks them to supply, and
- * documents already issued to them that are waiting for a signature. Those live
- * in different tables with different lifecycles, and a reminder that knows about
- * only one of them is worse than none, because it reads as a complete statement
- * of what is left.
+ * UPLOADS ONLY on the web, deliberately.
+ *
+ * The endpoint returns both kinds — types to supply, and documents already
+ * issued that are waiting for a signature — and the mobile reminder shows both.
+ * The web summary counts only the uploads: signing here has its own route and
+ * its own place on the personnel-file page, and a nudge duplicating a thing the
+ * screen already presents is a nudge people learn to skip past.
+ *
+ * `toSign` is still returned raw, unsummarised, for anything that wants it.
+ * Feeding it to the summary is a ONE-WORD change, which is the point of keeping
+ * the rule shared rather than writing a second, web-only one.
  *
  * Gated on the add-on before the query is enabled, so an organization that has
  * not bought Member Documents issues no request at all — a reminder for a
@@ -38,10 +44,10 @@ export function useMyDocumentRequirements() {
   const toSign = data?.toSign ?? []
   const expiring = data?.expiring ?? []
 
-  // The same pure rule the mobile card uses, so the two can never quote
-  // different numbers for the same person.
+  // The same pure rule the mobile card uses — fed a different set, not a
+  // different rule, so the phrasing and the counting stay in one place.
   return {
-    ...summarisePending({ toUpload, toSign, expiring }),
+    ...summarisePending({ toUpload, toSign: [], expiring }),
     toUpload,
     toSign,
     expiring,
