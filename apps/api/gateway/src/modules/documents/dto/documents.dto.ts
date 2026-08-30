@@ -13,7 +13,9 @@ import {
   Length,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 const CADENCES = ['MONTHLY', 'ANNUAL', 'ONE_OFF'] as const;
 const DIRECTIONS = ['ISSUED', 'SUPPLIED'] as const;
@@ -332,11 +334,32 @@ export class PresignOwnUploadDto {
 }
 
 /** The member confirming the bytes are up. */
+
+/**
+ * The scanner's frame, as fractions of the photograph (0–1).
+ *
+ * Fractions rather than pixels: the phone knows where the frame was relative to
+ * the picture it took, and the server should not have to be told the picture's
+ * dimensions to believe it.
+ */
+export class ScanCropDto {
+  @ApiProperty() @IsNumber() @Min(0) @Max(1) left!: number;
+  @ApiProperty() @IsNumber() @Min(0) @Max(1) top!: number;
+  @ApiProperty() @IsNumber() @Min(0) @Max(1) width!: number;
+  @ApiProperty() @IsNumber() @Min(0) @Max(1) height!: number;
+}
+
 /** Ask what is on a document that has been uploaded but not yet filed. */
 export class ReadOwnUploadDto {
   @ApiProperty()
   @IsString()
   stagingKey!: string;
+
+  @ApiPropertyOptional({ type: ScanCropDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ScanCropDto)
+  crop?: ScanCropDto;
 }
 
 export class SubmitOwnDocumentDto {
@@ -371,6 +394,12 @@ export class SubmitOwnDocumentDto {
   @IsString()
   @Length(0, 2000)
   mrzText?: string;
+
+  @ApiPropertyOptional({ type: ScanCropDto, description: 'Crop to what was inside the frame' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ScanCropDto)
+  crop?: ScanCropDto;
 }
 
 export class PreviewTemplateDto {

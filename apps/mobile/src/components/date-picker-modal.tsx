@@ -7,6 +7,7 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,6 +81,15 @@ export function DatePickerModal({
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(selectedDate?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth() ?? today.getMonth());
+  /*
+    Three panes, not one.
+
+    A month grid with only arrows is fine for "next Tuesday" and useless for a
+    passport that expires in 2035 — that is over a hundred taps, one month at a
+    time. Tapping the title opens years, choosing a year opens months, and
+    choosing a month returns to the days. Two taps instead of a hundred.
+  */
+  const [pane, setPane] = useState<'days' | 'months' | 'years'>('days');
 
   const grid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
 
@@ -130,14 +140,75 @@ export function DatePickerModal({
             <TouchableOpacity onPress={goToPrevMonth} style={styles.navBtn} activeOpacity={0.6}>
               <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
-            <Text style={[styles.monthLabel, { color: colors.textPrimary }]}>
-              {MONTH_NAMES[viewMonth]} {viewYear}
-            </Text>
+            <TouchableOpacity
+              onPress={() => setPane((p) => (p === 'days' ? 'years' : 'days'))}
+              style={styles.monthLabelBtn}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.monthLabel, { color: colors.textPrimary }]}>
+                {MONTH_NAMES[viewMonth]} {viewYear}
+              </Text>
+              <Ionicons
+                name={pane === 'days' ? 'chevron-down' : 'chevron-up'}
+                size={16}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
             <TouchableOpacity onPress={goToNextMonth} style={styles.navBtn} activeOpacity={0.6}>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
+          {pane === 'years' && (
+            <ScrollView style={styles.pane} contentContainerStyle={styles.paneGrid}>
+              {/*
+                A window around today, not every year there has ever been. These
+                documents expire within a working lifetime, and a list that
+                starts at 1900 is a list nobody can scroll.
+              */}
+              {Array.from({ length: 41 }, (_, i) => today.getFullYear() - 10 + i).map((y) => (
+                <TouchableOpacity
+                  key={y}
+                  onPress={() => { setViewYear(y); setPane('months'); }}
+                  style={[
+                    styles.paneCell,
+                    y === viewYear && { backgroundColor: COLORS.primary },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.paneText,
+                    { color: y === viewYear ? '#fff' : colors.textPrimary },
+                  ]}>{y}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {pane === 'months' && (
+            <View style={styles.paneGrid}>
+              {MONTH_NAMES.map((name, i) => (
+                <TouchableOpacity
+                  key={name}
+                  onPress={() => { setViewMonth(i); setPane('days'); }}
+                  style={[
+                    styles.paneCell,
+                    i === viewMonth && { backgroundColor: COLORS.primary },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.paneText,
+                    { color: i === viewMonth ? '#fff' : colors.textPrimary },
+                  ]} numberOfLines={1}>{name.slice(0, 3)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {pane === 'days' && (
+          <>
           {/* Day Headers */}
           <View style={styles.dayHeaderRow}>
             {DAY_HEADERS.map((d, i) => (
@@ -188,6 +259,8 @@ export function DatePickerModal({
               })}
             </View>
           ))}
+          </>
+          )}
 
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
@@ -256,6 +329,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  monthLabelBtn: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  pane: { maxHeight: DAY_SIZE * 5 },
+  paneGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+    paddingVertical: SPACING.sm, gap: SPACING.xs,
+  },
+  paneCell: {
+    width: DAY_SIZE * 1.6, paddingVertical: SPACING.sm,
+    alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md,
+  },
+  paneText: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },
   monthLabel: {
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.semibold,

@@ -19,6 +19,7 @@ import { PressableScale } from './pressable-scale';
 // rather than an over-the-air update — a heavy price for one date field.
 import { DatePickerModal } from './date-picker-modal';
 import { DocumentScanner, type ScannedDocument } from './document-scanner';
+import type { Rect } from '@hbcfield/shared/client';
 
 /**
  * The member supplying a document from their phone.
@@ -79,7 +80,7 @@ export function SupplyDocumentSheet({
   */
   const [dateSource, setDateSource] = useState<'MRZ' | 'TEXT' | 'NOTHING' | null>(null);
   const [reading, setReading] = useState(false);
-  const [staged, setStaged] = useState<{ key: string } | null>(null);
+  const [staged, setStaged] = useState<{ key: string; crop: Rect | null } | null>(null);
 
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
   const needsDate = !!type?.hasExpiry;
@@ -140,7 +141,11 @@ export function SupplyDocumentSheet({
    * and buys the member a filled-in form.
    */
   const uploadAndRead = useCallback(
-    async (picked: { uri: string; mimeType: string; fileSize: number }, forType: DocumentType) => {
+    async (
+      picked: { uri: string; mimeType: string; fileSize: number },
+      forType: DocumentType,
+      crop?: Rect | null,
+    ) => {
       setReading(true);
       try {
         const presigned = await documentsApi.ownUploadUrl({
@@ -149,9 +154,9 @@ export function SupplyDocumentSheet({
           sizeBytes: picked.fileSize,
         });
         await uploadToPresignedUrl(presigned.url, picked.uri, picked.mimeType || 'image/jpeg');
-        setStaged({ key: presigned.key });
+        setStaged({ key: presigned.key, crop: crop ?? null });
 
-        const read = await documentsApi.readOwnUpload(presigned.key);
+        const read = await documentsApi.readOwnUpload(presigned.key, crop);
         setDateSource(read.source);
         if (read.expiresOn) setExpiresOn(new Date(read.expiresOn));
       } catch {
@@ -194,6 +199,9 @@ export function SupplyDocumentSheet({
         // Raw, unparsed. The server recomputes the check digits, so a client
         // that invented a zone gets a SUSPECT verdict rather than a pass.
         mrzText: scanned?.barcodeData,
+        // The frame, so what is FILED is the document rather than the table it
+        // was lying on.
+        crop: staged?.crop ?? scanned?.crop ?? null,
       });
       toast.success(t('documents.supply.submitted'));
       reset();
@@ -435,7 +443,7 @@ export function SupplyDocumentSheet({
           };
           setPhoto(picked);
           // Read it now, while they are still looking at the sheet.
-          if (type) void uploadAndRead(picked, type);
+          if (type) void uploadAndRead(picked, type, result.crop);
         }}
       />
     </BlurSheet>

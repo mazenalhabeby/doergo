@@ -32,6 +32,9 @@ import {
   requirementStatuses,
   checkScan,
   suggestExpiry,
+  type Rect,
+  rectToPixels,
+  isUsefulCrop,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -820,6 +823,7 @@ export class DocumentsService {
     organizationId: string,
     stagingKey: string,
     expectedPrefix?: string,
+    crop?: Rect | null,
   ): Promise<{ key: string; hash: string; sizeBytes: number; mimeType: string; bytes: Buffer }> {
     // Checked again here, not only by the caller. This method reads and moves
     // an object named by untrusted input, so it does not rely on having been
@@ -837,7 +841,13 @@ export class DocumentsService {
       throw new BadRequestException('That file is larger than the limit');
     }
 
-    const bytes = await this.withStorage('reading an upload', () => store.get(stagingKey));
+    const staged = await this.withStorage('reading an upload', () => store.get(stagingKey));
+    /*
+      Cropped BEFORE it is hashed, because the hash has to describe the bytes
+      that are stored. Hashing the original and storing the crop would make the
+      integrity check fail against the document's own file for ever.
+    */
+    const bytes = await this.applyCrop(staged, crop);
     const hash = sha256(bytes);
     const mimeType = head.contentType ?? 'application/pdf';
     const extension = ALLOWED_MIME[mimeType] ?? 'pdf';
@@ -940,6 +950,8 @@ export class DocumentsService {
      * text. Optional: most documents here have no zone at all.
      */
     mrzText?: string | null;
+    /** The scanner's frame, as fractions of the photograph. */
+    crop?: Rect | null;
     ctx?: RequestContext;
   }) {
     this.assertStagingKey(
@@ -980,6 +992,7 @@ export class DocumentsService {
       data.actor.organizationId,
       data.stagingKey,
       this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
+      data.crop,
     );
 
     /*
@@ -1111,6 +1124,38 @@ export class DocumentsService {
   }
 
   /**
+   * Cut the photograph down to what was inside the scanner's frame.
+   *
+   * Without this the frame is decoration: the camera captures the whole sensor,
+   * so a reviewer opens a picture of a kitchen worktop with a passport in the
+   * middle of it, and the OCR — which looks for a machine-readable zone in the
+   * lower part of the IMAGE — searches the lower part of the worktop.
+   *
+   * Never fatal. A crop that cannot be applied leaves the original, which is
+   * exactly what was filed before this existed.
+   */
+  private async applyCrop(bytes: Buffer, crop?: Rect | null): Promise<Buffer> {
+    if (!crop || !isUsefulCrop(crop)) return bytes;
+    try {
+      const sharp = (await import('sharp')).default;
+      // `rotate()` first: the crop was computed against what the PHONE showed,
+      // which already has the EXIF orientation applied, and extracting from the
+      // unrotated buffer would cut a sideways rectangle out of the middle.
+      const upright = await sharp(bytes).rotate().toBuffer();
+      const meta = await sharp(upright).metadata();
+      if (!meta.width || !meta.height) return bytes;
+
+      const px = rectToPixels(crop, { width: meta.width, height: meta.height });
+      if (px.width < 8 || px.height < 8) return bytes;
+
+      return await sharp(upright).extract(px).toBuffer();
+    } catch (err) {
+      this.logger.warn(`Could not crop to the scanner frame: ${(err as Error).message}`);
+      return bytes;
+    }
+  }
+
+  /**
    * Read a staged upload and say what is on it — WITHOUT filing anything.
    *
    * This exists because the flow was backwards. The member typed an expiry
@@ -1128,7 +1173,7 @@ export class DocumentsService {
    * The staged object is left where it is: the member may still change their
    * mind, and `submitOwnDocument` is what consumes it.
    */
-  async readOwnUpload(data: { actor: DocumentActor; stagingKey: string }) {
+  async readOwnUpload(data: { actor: DocumentActor; stagingKey: string; crop?: Rect | null }) {
     this.assertStagingKey(
       data.stagingKey,
       this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
@@ -1140,7 +1185,10 @@ export class DocumentsService {
       throw new BadRequestException('The upload did not complete — please try again');
     }
 
-    const bytes = await this.withStorage('reading an upload', () => store.get(data.stagingKey));
+    const raw = await this.withStorage('reading an upload', () => store.get(data.stagingKey));
+    // The frame, not the room: an uncropped photo puts the zone somewhere the
+    // band search will never look.
+    const bytes = await this.applyCrop(raw, data.crop);
     const text = await this.ocr.read(bytes, head.contentType ?? 'image/jpeg');
 
     if (!text) {

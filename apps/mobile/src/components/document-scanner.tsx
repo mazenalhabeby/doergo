@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { PressableScale } from './pressable-scale';
-import { scanAspect, type ScanShape } from '@hbcfield/shared/client';
+import { scanAspect, frameToImageCrop, type ScanShape, type Rect } from '@hbcfield/shared/client';
 
 /**
  * Scanning a document, rather than photographing one.
@@ -58,6 +58,37 @@ export interface ScannedDocument {
   /** Exactly as the barcode encoded it. Parsed and CHECKED on the server. */
   barcodeData?: string;
   barcodeType?: string;
+  /**
+   * The frame, as fractions of the photograph.
+   *
+   * The camera captures the whole sensor, so without this the frame is only a
+   * suggestion to the person holding the phone: what gets filed is a document
+   * somewhere on a table, and the reader looks for a machine-readable zone in
+   * the lower part of the TABLE.
+   */
+  crop?: Rect;
+}
+
+/**
+ * The frame's geometry, in screen points.
+ *
+ * Computed here rather than inside `Frame` because two things need it and they
+ * must agree exactly: the overlay that is drawn, and the crop that is applied
+ * to what the camera captured. A frame drawn from one calculation and cropped
+ * from another is a crop of the wrong rectangle.
+ */
+function frameRect(shape: ScanShape, screen: { width: number; height: number }): Rect {
+  const aspect = scanAspect(shape);
+  // Fit by whichever dimension runs out first: A4 upright is TALLER than it is
+  // wide, and sizing from the width alone would push it off both ends.
+  const width = Math.min(screen.width * 0.88, screen.height * 0.62 * aspect);
+  const height = width / aspect;
+  return {
+    left: (screen.width - width) / 2,
+    top: (screen.height - height) / 2 - screen.height * 0.04,
+    width,
+    height,
+  };
 }
 
 export function DocumentScanner({
@@ -84,8 +115,8 @@ export function DocumentScanner({
   const camera = useRef<CameraView>(null);
 
   const [side, setSide] = useState<'front' | 'back'>('front');
-  const [front, setFront] = useState<{ uri: string; size: number } | null>(null);
-  const [preview, setPreview] = useState<{ uri: string; size: number } | null>(null);
+  const [front, setFront] = useState<{ uri: string; size: number; crop?: Rect } | null>(null);
+  const [preview, setPreview] = useState<{ uri: string; size: number; crop?: Rect } | null>(null);
   const [busy, setBusy] = useState(false);
   const [torch, setTorch] = useState(false);
 
@@ -121,7 +152,26 @@ export function DocumentScanner({
     setBusy(true);
     try {
       const shot = await camera.current.takePictureAsync({ quality: 0.8, skipProcessing: false });
-      if (shot?.uri) setPreview({ uri: shot.uri, size: measure(shot.uri) });
+      if (shot?.uri) {
+        /*
+          Where the frame was, in the picture that was just taken.
+
+          Computed now because it needs the photograph's real dimensions, and
+          the preview is a COVER fit — the sensor is 4:3, the screen is not, so
+          what the person saw was a centre crop and the frame's share of the
+          screen is not its share of the image.
+        */
+        const screen = Dimensions.get('window');
+        setPreview({
+          uri: shot.uri,
+          size: measure(shot.uri),
+          crop: frameToImageCrop({
+            frame: frameRect(shape, screen),
+            screen,
+            image: { width: shot.width, height: shot.height },
+          }),
+        });
+      }
     } finally {
       setBusy(false);
       capturing.current = false;
@@ -156,6 +206,7 @@ export function DocumentScanner({
       backUri: twoSided ? preview.uri : undefined,
       barcodeData: barcode.current?.data,
       barcodeType: barcode.current?.type,
+      crop: first.crop,
     });
   };
 
@@ -273,22 +324,9 @@ export function DocumentScanner({
  */
 function Frame({ shape }: { shape: ScanShape }) {
   const { width, height } = Dimensions.get('window');
-  const aspect = scanAspect(shape);
-
-  /*
-    Fit by whichever dimension runs out first.
-
-    A4 upright is TALLER than it is wide, so sizing from the width alone would
-    push the frame off both ends of the screen and leave somebody aiming at a
-    rectangle they cannot see.
-  */
-  const maxWidth = width * 0.88;
-  const maxHeight = height * 0.62;
-  const frameWidth = Math.min(maxWidth, maxHeight * aspect);
-  const frameHeight = frameWidth / aspect;
-
-  const top = (height - frameHeight) / 2 - height * 0.04;
-  const left = (width - frameWidth) / 2;
+  // The SAME calculation the crop uses. Two of them would drift.
+  const { left, top, width: frameWidth, height: frameHeight } =
+    frameRect(shape, { width, height });
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
