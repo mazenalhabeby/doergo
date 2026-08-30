@@ -1784,18 +1784,6 @@
       "cameraWhy": "Dans le cadre, l’image est droite et complète — une photo de la galerie l’est rarement.",
       "allowCamera": "Autoriser la caméra"
     },
-    "filter": {
-      "title": "Afficher",
-      "type": "Type de document",
-      "year": "Année",
-      "needsYou": "En attente de vous",
-      "needsSignature": "Votre signature manque",
-      "several": "{{count}} filtres",
-      "showing_one": "{{count}} document",
-      "showing_other": "{{count}} documents",
-      "searchTypes": "Rechercher un type de document",
-      "noMatch": "Aucune correspondance"
-    },
     "required": {
       "title": "Encore attendu de vous",
       "blocksWork": "Bloque des affectations",
@@ -1807,6 +1795,11 @@
         "MET": "au dossier",
         "EXPIRING": "expire bientôt"
       }
+    },
+    "searchPlaceholder": "Rechercher dans vos documents",
+    "groupBy": {
+      "year": "Par année",
+      "type": "Par type"
     }
   }
 }

@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   SectionList,
+  TextInput,
+  Platform,
   RefreshControl,
   ActivityIndicator,
   Linking,
@@ -19,9 +21,8 @@ import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  Skeleton, ScreenContainer, SupplyDocumentSheet, DocumentFilterSheet, PressableScale,
+  Skeleton, ScreenContainer, SupplyDocumentSheet, PressableScale,
 } from '../../src/components';
-import type { DocumentFilters } from '../../src/components/document-filter-sheet';
 import { waitingOnMember } from '@hbcfield/shared/client';
 
 /*
@@ -89,12 +90,19 @@ export default function DocumentsScreen() {
   const [types, setTypes] = useState<DocumentType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [filters, setFilters] = useState<DocumentFilters>({
-    typeId: null,
-    year: null,
-    needsSignature: false,
-  });
-  const [filterOpen, setFilterOpen] = useState(false);
+  /*
+    Search and grouping, not a filter sheet.
+
+    Three versions in, the filter itself was the wrong idea: a modal with panes
+    and counts is a search UI, borrowed for somebody browsing their own thirty
+    documents. What that person actually does is either look for one thing they
+    can name, or scan for a kind of thing — so the screen offers exactly those
+    two, both visible without a tap, and neither of which cares whether the
+    organization has ten document types or a hundred.
+  */
+  const [query, setQuery] = useState('');
+  const [groupBy, setGroupBy] = useState<'year' | 'type'>('year');
+  const [onlyWaiting, setOnlyWaiting] = useState(false);
   type Requirement = Awaited<ReturnType<typeof documentsApi.requirements>>[number];
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [opening, setOpening] = useState<string | null>(null);
@@ -127,50 +135,27 @@ export default function DocumentsScreen() {
 
   /* Filtered on the device: a personnel file is tens of rows, so switching a
      tab should be instant rather than a spinner. */
-  const matches = useCallback(
-    (d: MemberDocument, f: DocumentFilters) => {
-      if (f.typeId && d.typeId !== f.typeId) return false;
-      if (f.year !== null && (d.periodYear ?? new Date(d.issuedAt).getFullYear()) !== f.year) return false;
-      if (f.needsSignature && !d.needsSignature) return false;
-      return true;
-    },
-    [],
-  );
-
-  const visible = useMemo(
-    () => documents.filter((d) => matches(d, filters)),
-    [documents, filters, matches],
-  );
-
   /*
-    How many a choice would leave, without applying it.
+    One box across everything a person might remember.
 
-    The filter list shows a count beside every option, which is the whole reason
-    it is a list rather than a strip of chips: a chip cannot say how much is
-    behind it, so every tap was a guess and half of them landed on nothing.
+    They do not think "type equals payslip, year equals 2025" — they think
+    "payslip", or "2025", or "gas". Matching the title, the type and the year
+    with the same words means the thing they half-remember finds it, whichever
+    of the three it was.
   */
-  const countFor = useCallback(
-    (patch: Partial<DocumentFilters>) =>
-      documents.filter((d) => matches(d, { ...filters, ...patch })).length,
-    [documents, filters, matches],
-  );
-
-  const activeFilterCount =
-    (filters.typeId ? 1 : 0) + (filters.year !== null ? 1 : 0) + (filters.needsSignature ? 1 : 0);
-
-  /**
-   * What the button says.
-   *
-   * The current filter, in words, rather than a generic "Filter" — a control
-   * that does not state its own state makes somebody open it to find out.
-   */
-  const filterLabel = useMemo(() => {
-    if (activeFilterCount === 0) return t('documents.allTypes');
-    if (activeFilterCount > 1) return t('documents.filter.several', { count: activeFilterCount });
-    if (filters.needsSignature) return t('documents.filter.needsSignature');
-    if (filters.year !== null) return String(filters.year);
-    return types.find((ty) => ty.id === filters.typeId)?.label ?? t('documents.allTypes');
-  }, [activeFilterCount, filters, types, t]);
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return documents.filter((d) => {
+      if (onlyWaiting && !d.needsSignature) return false;
+      if (!q) return true;
+      const year = String(d.periodYear ?? new Date(d.issuedAt).getFullYear());
+      return (
+        d.title.toLowerCase().includes(q) ||
+        d.typeLabel.toLowerCase().includes(q) ||
+        year.includes(q)
+      );
+    });
+  }, [documents, query, onlyWaiting]);
 
   /** What is still expected FROM them, and is their move rather than the office's. */
   const outstanding = useMemo(
@@ -193,34 +178,46 @@ export default function DocumentsScreen() {
     const waiting = visible.filter((d) => d.needsSignature);
     const rest = visible.filter((d) => !d.needsSignature);
 
-    const byYear = new Map<number, MemberDocument[]>();
+    /*
+      Grouped by year or by type, and by nothing else.
+
+      Grouping is what a filter was really being asked to do: "show me my
+      payslips" is a way of saying "put the payslips together". Doing it as
+      grouping rather than filtering keeps everything else on screen — so the
+      answer to "how many payslips" and "what else is there" is the same
+      scroll, and nothing is hidden behind a control somebody has to remember
+      to clear.
+    */
+    const buckets = new Map<string, MemberDocument[]>();
     for (const d of rest) {
-      const y = d.periodYear ?? new Date(d.issuedAt).getFullYear();
-      if (!byYear.has(y)) byYear.set(y, []);
-      byYear.get(y)!.push(d);
+      const key =
+        groupBy === 'type'
+          ? d.typeLabel
+          : String(d.periodYear ?? new Date(d.issuedAt).getFullYear());
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key)!.push(d);
     }
 
-    const out: { title: string; key: string; data: MemberDocument[] }[] = [];
+    const keys = [...buckets.keys()].sort((a, b) =>
+      // Years: newest first. Types: alphabetical, because there is no natural
+      // order and a stable one is easier to scan twice.
+      groupBy === 'year' ? Number(b) - Number(a) : a.localeCompare(b),
+    );
+
+    const out: { title: string; key: string; count: number; data: MemberDocument[] }[] = [];
     if (waiting.length > 0) {
-      out.push({ title: t('documents.sectionWaiting'), key: 'waiting', data: waiting });
+      out.push({
+        title: t('documents.sectionWaiting'),
+        key: 'waiting',
+        count: waiting.length,
+        data: waiting,
+      });
     }
-    for (const y of [...byYear.keys()].sort((a, b) => b - a)) {
-      out.push({ title: String(y), key: String(y), data: byYear.get(y)! });
+    for (const k of keys) {
+      out.push({ title: k, key: k, count: buckets.get(k)!.length, data: buckets.get(k)! });
     }
     return out;
-  }, [visible, t]);
-
-  const years = useMemo(() => {
-    const set = new Set<number>();
-    for (const d of documents) set.add(d.periodYear ?? new Date(d.issuedAt).getFullYear());
-    return [...set].sort((a, b) => b - a);
-  }, [documents]);
-
-  /** Only tabs with something behind them — an empty tab is a dead end. */
-  const usedTypes = useMemo(() => {
-    const ids = new Set(documents.map((d) => d.typeId));
-    return types.filter((ty) => ids.has(ty.id));
-  }, [types, documents]);
+  }, [visible, groupBy, t]);
 
   const awaiting = useMemo(() => documents.filter((d) => d.needsSignature), [documents]);
 
@@ -400,19 +397,6 @@ export default function DocumentsScreen() {
         onSubmitted={() => load(true)}
       />
 
-      <DocumentFilterSheet
-        visible={filterOpen}
-        filters={filters}
-        // Only types with something behind them: an option that leads to an
-        // empty screen is worse than no option.
-        types={usedTypes.map((ty) => ({ id: ty.id, label: ty.label }))}
-        years={years}
-        countFor={countFor}
-        awaitingCount={awaiting.length}
-        onChange={setFilters}
-        onClose={() => setFilterOpen(false)}
-      />
-
       <ScreenContainer>
         {/*
           What is still expected FROM the member.
@@ -467,7 +451,7 @@ export default function DocumentsScreen() {
               filters the list to those four instead, so the count in the banner
               and what appears underneath are the same set.
             */
-            onPress={() => setFilters((f) => ({ ...f, needsSignature: true, typeId: null, year: null }))}
+            onPress={() => { setOnlyWaiting(true); setQuery(''); }}
             activeOpacity={0.8}
             accessibilityRole="button"
           >
@@ -487,43 +471,78 @@ export default function DocumentsScreen() {
         )}
 
         {/*
-          One control instead of two strips that scrolled sideways.
+          One box, and a grouping switch. No modal at all.
 
-          The strips kept raising the question a control should never raise — is
-          there more of this? — and a clipped chip at the screen edge reads as a
-          layout bug as often as it reads as "keep going". A button that states
-          the current filter, and a list behind it where everything is visible
-          with its count, answers it by not asking.
+          Somebody browsing their own file is doing one of two things: looking
+          for a thing they can name, or scanning for a kind of thing. Search
+          answers the first without caring how many document types exist, and
+          grouping answers the second WITHOUT HIDING ANYTHING — which a filter
+          could not, and which is why a filter always needed clearing again.
         */}
-        <View style={s.filterBar}>
-          <PressableScale
-            onPress={() => setFilterOpen(true)}
-            style={[s.filterButton, { borderColor: activeFilterCount > 0 ? COLORS.primary : colors.border }]}
-          >
-            <Ionicons
-              name="funnel-outline"
-              size={16}
-              color={activeFilterCount > 0 ? COLORS.primary : colors.textSecondary}
+        <View style={s.controls}>
+          <View style={[s.search, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+            <Ionicons name="search" size={16} color={colors.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('documents.searchPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              style={[s.searchInput, { color: colors.textPrimary }]}
+              autoCorrect={false}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
             />
-            <Text style={[s.filterText, { color: colors.textPrimary }]} numberOfLines={1}>
-              {filterLabel}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
-          </PressableScale>
+            {query.length > 0 && Platform.OS !== 'ios' && (
+              <PressableScale onPress={() => setQuery('')} style={s.searchClear}>
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+              </PressableScale>
+            )}
+          </View>
 
-          {activeFilterCount > 0 && (
-            <PressableScale
-              onPress={() => setFilters({ typeId: null, year: null, needsSignature: false })}
-              style={s.clearButton}
-              accessibilityRole="button"
-            >
-              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-            </PressableScale>
-          )}
+          <View style={s.controlRow}>
+            {/* Two options. A switch, not a menu — anything with two states
+                that hides one of them is a menu pretending to be a switch. */}
+            <View style={[s.segmented, { backgroundColor: colors.surfaceRaised }]}>
+              {(['year', 'type'] as const).map((g) => (
+                <PressableScale
+                  key={g}
+                  onPress={() => setGroupBy(g)}
+                  style={[s.segment, groupBy === g && { backgroundColor: COLORS.primary }]}
+                >
+                  <Text
+                    style={[
+                      s.segmentText,
+                      { color: groupBy === g ? '#fff' : colors.textSecondary },
+                    ]}
+                  >
+                    {t(`documents.groupBy.${g}`)}
+                  </Text>
+                </PressableScale>
+              ))}
+            </View>
 
-          <Text style={[s.resultCount, { color: colors.textMuted }]}>
-            {t('documents.filter.showing', { count: visible.length })}
-          </Text>
+            {awaiting.length > 0 && (
+              <PressableScale
+                onPress={() => setOnlyWaiting((v) => !v)}
+                style={[
+                  s.waitingToggle,
+                  {
+                    borderColor: onlyWaiting ? COLORS.warning : colors.border,
+                    backgroundColor: onlyWaiting ? colors.warningLight : 'transparent',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={14}
+                  color={onlyWaiting ? COLORS.warning : colors.textSecondary}
+                />
+                <Text style={[s.waitingToggleText, { color: colors.textPrimary }]}>
+                  {awaiting.length}
+                </Text>
+              </PressableScale>
+            )}
+          </View>
         </View>
 
         {isLoading ? (
@@ -540,7 +559,17 @@ export default function DocumentsScreen() {
             stickySectionHeadersEnabled
             renderSectionHeader={({ section }) => (
               <View style={[s.sectionHeader, { backgroundColor: colors.background }]}>
-                <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{section.title}</Text>
+                <View style={s.sectionTitleRow}>
+                  <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{section.title}</Text>
+                  {/*
+                    The count moves here, where it belongs.
+
+                    It was the one genuinely useful thing about the filter sheet
+                    — how much is behind each choice — and a sticky section
+                    header carries it without anybody opening anything.
+                  */}
+                  <Text style={[s.sectionCount, { color: colors.textMuted }]}>{section.count}</Text>
+                </View>
                 <View style={[s.sectionRule, { backgroundColor: colors.border }]} />
               </View>
             )}
@@ -589,18 +618,27 @@ const s = StyleSheet.create({
   blockPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
   blockPillText: { color: '#fff', fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
 
-  filterBar: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
-  },
-  filterButton: {
+  controls: { paddingHorizontal: SPACING.md, paddingTop: SPACING.md, gap: SPACING.sm },
+  search: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
-    borderWidth: 1, borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, maxWidth: '62%',
+    borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm,
   },
-  filterText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, flexShrink: 1 },
-  clearButton: { padding: 2 },
-  resultCount: { marginLeft: 'auto', fontSize: FONT_SIZE.sm },
+  searchInput: { flex: 1, paddingVertical: SPACING.sm, fontSize: FONT_SIZE.md },
+  searchClear: { padding: 2 },
+
+  controlRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  segmented: { flexDirection: 'row', gap: 2, padding: 3, borderRadius: RADIUS.full, flex: 1 },
+  segment: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingVertical: SPACING.xs, borderRadius: RADIUS.full,
+  },
+  segmentText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
+  waitingToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderWidth: 1, borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs,
+  },
+  waitingToggleText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
 
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
@@ -623,6 +661,8 @@ const s = StyleSheet.create({
 
   // Sticky, so the year is always visible while scrolling twenty payslips.
   sectionHeader: { paddingTop: SPACING.md, paddingBottom: SPACING.xs, gap: SPACING.xs },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionCount: { fontSize: FONT_SIZE.xs, fontVariant: ['tabular-nums'] },
   sectionTitle: {
     fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold,
     letterSpacing: 1.1, textTransform: 'uppercase',

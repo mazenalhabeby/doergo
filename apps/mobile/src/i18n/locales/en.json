@@ -1788,18 +1788,6 @@
       "cameraWhy": "Scanning inside a frame gives a straight, complete picture — a photo from the gallery usually does not.",
       "allowCamera": "Allow the camera"
     },
-    "filter": {
-      "title": "Show",
-      "type": "Document type",
-      "year": "Year",
-      "needsYou": "Waiting for you",
-      "needsSignature": "Needs your signature",
-      "several": "{{count}} filters",
-      "showing_one": "{{count}} document",
-      "showing_other": "{{count}} documents",
-      "searchTypes": "Search document types",
-      "noMatch": "Nothing matches that"
-    },
     "required": {
       "title": "Still needed from you",
       "blocksWork": "Blocks work",
@@ -1811,6 +1799,11 @@
         "MET": "on file",
         "EXPIRING": "expires soon"
       }
+    },
+    "searchPlaceholder": "Search your documents",
+    "groupBy": {
+      "year": "By year",
+      "type": "By type"
     }
   }
 }

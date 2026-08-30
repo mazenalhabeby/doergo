@@ -1784,18 +1784,6 @@
       "cameraWhy": "Im Rahmen aufgenommen wird das Bild gerade und vollständig — ein Foto aus der Galerie meist nicht.",
       "allowCamera": "Kamera erlauben"
     },
-    "filter": {
-      "title": "Anzeigen",
-      "type": "Dokumentart",
-      "year": "Jahr",
-      "needsYou": "Wartet auf Sie",
-      "needsSignature": "Ihre Unterschrift fehlt",
-      "several": "{{count}} Filter",
-      "showing_one": "{{count}} Dokument",
-      "showing_other": "{{count}} Dokumente",
-      "searchTypes": "Dokumentarten suchen",
-      "noMatch": "Dazu passt nichts"
-    },
     "required": {
       "title": "Noch von Ihnen benötigt",
       "blocksWork": "Blockiert Einsätze",
@@ -1807,6 +1795,11 @@
         "MET": "liegt vor",
         "EXPIRING": "läuft bald ab"
       }
+    },
+    "searchPlaceholder": "Dokumente durchsuchen",
+    "groupBy": {
+      "year": "Nach Jahr",
+      "type": "Nach Art"
     }
   }
 }

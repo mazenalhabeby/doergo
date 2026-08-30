@@ -12,7 +12,6 @@ export type { PressableScaleProps } from './pressable-scale';
 export { BlurSheet } from './blur-sheet';
 export { SheetPanel } from './sheet-panel';
 export { DocumentScanner } from './document-scanner';
-export { DocumentFilterSheet } from './document-filter-sheet';
 export { SupplyDocumentSheet } from './supply-document-sheet';
 export { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from './onboarding-icons';
 export { TechnicianPicker } from './technician-picker';

@@ -1784,18 +1784,6 @@
       "cameraWhy": "Escanear dentro del marco da una imagen recta y completa; una foto de la galería normalmente no.",
       "allowCamera": "Permitir la cámara"
     },
-    "filter": {
-      "title": "Mostrar",
-      "type": "Tipo de documento",
-      "year": "Año",
-      "needsYou": "Pendiente de ti",
-      "needsSignature": "Falta tu firma",
-      "several": "{{count}} filtros",
-      "showing_one": "{{count}} documento",
-      "showing_other": "{{count}} documentos",
-      "searchTypes": "Buscar tipos de documento",
-      "noMatch": "No hay coincidencias"
-    },
     "required": {
       "title": "Aún pendiente de ti",
       "blocksWork": "Bloquea trabajo",
@@ -1807,6 +1795,11 @@
         "MET": "en tu expediente",
         "EXPIRING": "caduca pronto"
       }
+    },
+    "searchPlaceholder": "Busca en tus documentos",
+    "groupBy": {
+      "year": "Por año",
+      "type": "Por tipo"
     }
   }
 }
