@@ -1797,9 +1797,12 @@
       }
     },
     "searchPlaceholder": "Busca en tus documentos",
-    "groupBy": {
-      "year": "Por año",
-      "type": "Por tipo"
+    "filter": {
+      "type": "Tipo de documento",
+      "year": "Año",
+      "anyType": "Todos los tipos",
+      "anyYear": "Todos los años",
+      "searchTypes": "Buscar tipos"
     }
   }
 }

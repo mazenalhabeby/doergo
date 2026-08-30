@@ -1797,9 +1797,12 @@
       }
     },
     "searchPlaceholder": "Dokumente durchsuchen",
-    "groupBy": {
-      "year": "Nach Jahr",
-      "type": "Nach Art"
+    "filter": {
+      "type": "Dokumentart",
+      "year": "Jahr",
+      "anyType": "Alle Arten",
+      "anyYear": "Alle Jahre",
+      "searchTypes": "Arten durchsuchen"
     }
   }
 }

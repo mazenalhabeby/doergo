@@ -21,8 +21,9 @@ import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  Skeleton, ScreenContainer, SupplyDocumentSheet, PressableScale,
+  Skeleton, ScreenContainer, SupplyDocumentSheet, PressableScale, DocumentFilterBar,
 } from '../../src/components';
+import type { DocumentFilters } from '../../src/components/document-filter-bar';
 import { waitingOnMember } from '@hbcfield/shared/client';
 
 /*
@@ -101,8 +102,11 @@ export default function DocumentsScreen() {
     organization has ten document types or a hundred.
   */
   const [query, setQuery] = useState('');
-  const [groupBy, setGroupBy] = useState<'year' | 'type'>('year');
-  const [onlyWaiting, setOnlyWaiting] = useState(false);
+  const [filters, setFilters] = useState<DocumentFilters>({
+    typeId: null,
+    year: null,
+    needsSignature: false,
+  });
   type Requirement = Awaited<ReturnType<typeof documentsApi.requirements>>[number];
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [opening, setOpening] = useState<string | null>(null);
@@ -143,19 +147,46 @@ export default function DocumentsScreen() {
     with the same words means the thing they half-remember finds it, whichever
     of the three it was.
   */
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return documents.filter((d) => {
-      if (onlyWaiting && !d.needsSignature) return false;
+  const matches = useCallback(
+    (d: MemberDocument, f: DocumentFilters, q: string) => {
+      if (f.typeId && d.typeId !== f.typeId) return false;
+      if (f.year !== null && (d.periodYear ?? new Date(d.issuedAt).getFullYear()) !== f.year) return false;
+      if (f.needsSignature && !d.needsSignature) return false;
       if (!q) return true;
+      /*
+        Search sits ALONGSIDE the filters rather than replacing them.
+
+        They answer different questions: search is "I know what I am looking
+        for", a filter is "show me this kind". One box matches the title, the
+        type and the year, because nobody remembers which of the three the word
+        they half-recall belongs to.
+      */
       const year = String(d.periodYear ?? new Date(d.issuedAt).getFullYear());
       return (
         d.title.toLowerCase().includes(q) ||
         d.typeLabel.toLowerCase().includes(q) ||
         year.includes(q)
       );
-    });
-  }, [documents, query, onlyWaiting]);
+    },
+    [],
+  );
+
+  const visible = useMemo(
+    () => documents.filter((d) => matches(d, filters, query.trim().toLowerCase())),
+    [documents, filters, query, matches],
+  );
+
+  /*
+    How many a choice would leave, without applying it.
+
+    Every option in a picker states its count, which turns a tap from a guess
+    into a decision — and stops anybody landing on an empty screen.
+  */
+  const countFor = useCallback(
+    (patch: Partial<DocumentFilters>) =>
+      documents.filter((d) => matches(d, { ...filters, ...patch }, query.trim().toLowerCase())).length,
+    [documents, filters, query, matches],
+  );
 
   /** What is still expected FROM them, and is their move rather than the office's. */
   const outstanding = useMemo(
@@ -174,35 +205,23 @@ export default function DocumentsScreen() {
     the only part of this screen that is asking something of the person reading
     it — and in date order it sits among the payslips and gets missed.
   */
+  /*
+    Grouped by year, newest first, with anything waiting lifted to the top.
+
+    A year header turns scrolling into navigation, and the sticky header means
+    you always know where you are. The count sits in the header because it is
+    useful there whether or not a filter is on.
+  */
   const sections = useMemo(() => {
     const waiting = visible.filter((d) => d.needsSignature);
     const rest = visible.filter((d) => !d.needsSignature);
 
-    /*
-      Grouped by year or by type, and by nothing else.
-
-      Grouping is what a filter was really being asked to do: "show me my
-      payslips" is a way of saying "put the payslips together". Doing it as
-      grouping rather than filtering keeps everything else on screen — so the
-      answer to "how many payslips" and "what else is there" is the same
-      scroll, and nothing is hidden behind a control somebody has to remember
-      to clear.
-    */
-    const buckets = new Map<string, MemberDocument[]>();
+    const byYear = new Map<number, MemberDocument[]>();
     for (const d of rest) {
-      const key =
-        groupBy === 'type'
-          ? d.typeLabel
-          : String(d.periodYear ?? new Date(d.issuedAt).getFullYear());
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key)!.push(d);
+      const y = d.periodYear ?? new Date(d.issuedAt).getFullYear();
+      if (!byYear.has(y)) byYear.set(y, []);
+      byYear.get(y)!.push(d);
     }
-
-    const keys = [...buckets.keys()].sort((a, b) =>
-      // Years: newest first. Types: alphabetical, because there is no natural
-      // order and a stable one is easier to scan twice.
-      groupBy === 'year' ? Number(b) - Number(a) : a.localeCompare(b),
-    );
 
     const out: { title: string; key: string; count: number; data: MemberDocument[] }[] = [];
     if (waiting.length > 0) {
@@ -213,11 +232,25 @@ export default function DocumentsScreen() {
         data: waiting,
       });
     }
-    for (const k of keys) {
-      out.push({ title: k, key: k, count: buckets.get(k)!.length, data: buckets.get(k)! });
+    for (const y of [...byYear.keys()].sort((a, b) => b - a)) {
+      const data = byYear.get(y)!;
+      out.push({ title: String(y), key: String(y), count: data.length, data });
     }
     return out;
-  }, [visible, groupBy, t]);
+  }, [visible, t]);
+
+  /** The years that actually have documents — never a range with gaps in it. */
+  const years = useMemo(() => {
+    const set = new Set<number>();
+    for (const d of documents) set.add(d.periodYear ?? new Date(d.issuedAt).getFullYear());
+    return [...set].sort((a, b) => b - a);
+  }, [documents]);
+
+  /** Only types with something behind them: an option leading nowhere is noise. */
+  const usedTypes = useMemo(() => {
+    const ids = new Set(documents.map((d) => d.typeId));
+    return types.filter((ty) => ids.has(ty.id));
+  }, [types, documents]);
 
   const awaiting = useMemo(() => documents.filter((d) => d.needsSignature), [documents]);
 
@@ -451,7 +484,10 @@ export default function DocumentsScreen() {
               filters the list to those four instead, so the count in the banner
               and what appears underneath are the same set.
             */
-            onPress={() => { setOnlyWaiting(true); setQuery(''); }}
+            onPress={() => {
+              setQuery('');
+              setFilters({ typeId: null, year: null, needsSignature: true });
+            }}
             activeOpacity={0.8}
             accessibilityRole="button"
           >
@@ -471,13 +507,12 @@ export default function DocumentsScreen() {
         )}
 
         {/*
-          One box, and a grouping switch. No modal at all.
+          Search, then the filters.
 
-          Somebody browsing their own file is doing one of two things: looking
-          for a thing they can name, or scanning for a kind of thing. Search
-          answers the first without caring how many document types exist, and
-          grouping answers the second WITHOUT HIDING ANYTHING — which a filter
-          could not, and which is why a filter always needed clearing again.
+          Somebody in their own file is doing one of two things: looking for a
+          thing they can name, or narrowing to a kind of thing. The box answers
+          the first, the pills answer the second, and the pills SAY WHAT THEY ARE
+          DOING rather than hiding it behind a button labelled "Filter".
         */}
         <View style={s.controls}>
           <View style={[s.search, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -498,52 +533,16 @@ export default function DocumentsScreen() {
               </PressableScale>
             )}
           </View>
-
-          <View style={s.controlRow}>
-            {/* Two options. A switch, not a menu — anything with two states
-                that hides one of them is a menu pretending to be a switch. */}
-            <View style={[s.segmented, { backgroundColor: colors.surfaceRaised }]}>
-              {(['year', 'type'] as const).map((g) => (
-                <PressableScale
-                  key={g}
-                  onPress={() => setGroupBy(g)}
-                  style={[s.segment, groupBy === g && { backgroundColor: COLORS.primary }]}
-                >
-                  <Text
-                    style={[
-                      s.segmentText,
-                      { color: groupBy === g ? '#fff' : colors.textSecondary },
-                    ]}
-                  >
-                    {t(`documents.groupBy.${g}`)}
-                  </Text>
-                </PressableScale>
-              ))}
-            </View>
-
-            {awaiting.length > 0 && (
-              <PressableScale
-                onPress={() => setOnlyWaiting((v) => !v)}
-                style={[
-                  s.waitingToggle,
-                  {
-                    borderColor: onlyWaiting ? COLORS.warning : colors.border,
-                    backgroundColor: onlyWaiting ? colors.warningLight : 'transparent',
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="create-outline"
-                  size={14}
-                  color={onlyWaiting ? COLORS.warning : colors.textSecondary}
-                />
-                <Text style={[s.waitingToggleText, { color: colors.textPrimary }]}>
-                  {awaiting.length}
-                </Text>
-              </PressableScale>
-            )}
-          </View>
         </View>
+
+        <DocumentFilterBar
+          filters={filters}
+          types={usedTypes.map((ty) => ({ id: ty.id, label: ty.label }))}
+          years={years}
+          countFor={countFor}
+          awaitingCount={awaiting.length}
+          onChange={setFilters}
+        />
 
         {isLoading ? (
           <View style={s.list}>
@@ -625,20 +624,6 @@ const s = StyleSheet.create({
   },
   searchInput: { flex: 1, paddingVertical: SPACING.sm, fontSize: FONT_SIZE.md },
   searchClear: { padding: 2 },
-
-  controlRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  segmented: { flexDirection: 'row', gap: 2, padding: 3, borderRadius: RADIUS.full, flex: 1 },
-  segment: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: SPACING.xs, borderRadius: RADIUS.full,
-  },
-  segmentText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
-  waitingToggle: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderWidth: 1, borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs,
-  },
-  waitingToggleText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
 
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
