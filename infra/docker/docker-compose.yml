@@ -174,6 +174,20 @@ services:
       - APP_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
       # Direct (non-pooled) connection used ONLY for `prisma migrate deploy` at startup.
       - DIRECT_DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-hbcfield}?schema=public
+      # Object storage. The personnel file lives in auth-service, so THIS service
+      # presigns document uploads and downloads — task-service having these is not
+      # enough. Without them objectStoreConfigFromEnv() returns null, the provider
+      # hands the module a null store, and every upload, download and signature
+      # 500s at runtime while the container starts perfectly happily.
+      #
+      # Compose here uses explicit `environment:`, never `env_file`, so a variable
+      # present in .env.production still reaches nothing unless it is named below.
+      # That is exactly how the Stripe keys were missed once already.
+      - S3_ENDPOINT=${S3_ENDPOINT:-}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-}
+      - S3_BUCKET=${S3_BUCKET:-hbcfield}
+      - S3_REGION=${S3_REGION:-eu-central-1}
     depends_on:
       postgres:
         condition: service_healthy
