@@ -7499,6 +7499,26 @@
         "MET": "on file",
         "EXPIRING": "expires soon"
       }
+    },
+    "scan": {
+      "verdict": {
+        "CONSISTENT": "Nothing wrong found",
+        "UNVERIFIED": "Could not be fully checked",
+        "SUSPECT": "Something does not add up"
+      },
+      "readFrom": "read from the {{format}} zone",
+      "passedCount_one": "{{count}} check passed",
+      "passedCount_other": "{{count}} checks passed",
+      "limit": "These checks read the document against itself and against our records. They cannot confirm it was ever issued — that needs the issuing authority.",
+      "checks": {
+        "mrzReadable": "No machine-readable zone was read",
+        "checkDigits": "The document’s own check digits do not match — a field may have been altered",
+        "notExpired": "This document has expired",
+        "nameMatchesMember": "The name on the document is not this member’s",
+        "dateOfBirthPlausible": "The date of birth does not look right",
+        "issuerKnown": "The issuing country code is not a real one",
+        "notAlreadyFiled": "The same document is already on file for"
+      }
     }
   }
 }

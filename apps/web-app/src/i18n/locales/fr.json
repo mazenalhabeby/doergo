@@ -7508,6 +7508,26 @@
         "MET": "au dossier",
         "EXPIRING": "expire bientôt"
       }
+    },
+    "scan": {
+      "verdict": {
+        "CONSISTENT": "Rien d’anormal détecté",
+        "UNVERIFIED": "Vérification incomplète",
+        "SUSPECT": "Quelque chose ne concorde pas"
+      },
+      "readFrom": "lu dans la zone {{format}}",
+      "passedCount_one": "{{count}} contrôle réussi",
+      "passedCount_other": "{{count}} contrôles réussis",
+      "limit": "Ces contrôles comparent le document à lui-même et à nos données. Ils ne peuvent pas confirmer qu’il a été émis : seule l’autorité émettrice le peut.",
+      "checks": {
+        "mrzReadable": "Aucune zone de lecture automatique n’a été lue",
+        "checkDigits": "Les clés de contrôle du document ne correspondent pas — un champ a pu être modifié",
+        "notExpired": "Ce document est expiré",
+        "nameMatchesMember": "Le nom du document n’est pas celui de cette personne",
+        "dateOfBirthPlausible": "La date de naissance semble incorrecte",
+        "issuerKnown": "Le code pays d’émission n’existe pas",
+        "notAlreadyFiled": "Le même document est déjà au dossier de"
+      }
     }
   }
 }

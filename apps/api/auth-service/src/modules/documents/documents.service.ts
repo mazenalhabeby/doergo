@@ -30,6 +30,7 @@ import {
   buildResolvedAccess,
   accessAllows,
   requirementStatuses,
+  checkScan,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -922,6 +923,11 @@ export class DocumentsService {
     typeId: string;
     title?: string;
     expiresOn?: string | null;
+    /**
+     * Whatever a scanner read off the document — the machine-readable zone as
+     * text. Optional: most documents here have no zone at all.
+     */
+    mrzText?: string | null;
     ctx?: RequestContext;
   }) {
     this.assertStagingKey(
@@ -949,7 +955,16 @@ export class DocumentsService {
       throw new BadRequestException('That expiry date is too far in the future');
     }
 
-    const member = await this.assertMemberOfOrg(data.actor.userId, data.actor.organizationId);
+    const member = await this.prisma.user.findFirst({
+      where: { id: data.actor.userId, organizationId: data.actor.organizationId },
+      // No dateOfBirth: the User model does not hold one. `checkScan` then
+      // only asks whether the date on the document is plausible for a working
+      // person, which is the honest limit of what can be compared.
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const scan = await this.checkSubmittedScan(data.mrzText, member, data.actor.organizationId);
 
     const filed = await this.takeStagedObject(
       data.actor.organizationId,
@@ -958,6 +973,19 @@ export class DocumentsService {
     );
 
     const issuedAt = new Date();
+    /*
+      A date READ off the document beats one typed into a form.
+
+      The typed date was the weakest link in the chain: nothing checked it, so a
+      mistyped year sat on the compliance board as fact. When the zone carries
+      an expiry and its check digit agrees, that is the date — and a member who
+      typed a different one has just told us something a reviewer should see.
+    */
+    const scannedExpiry =
+      scan?.verdict !== 'SUSPECT' && scan?.extracted.dateOfExpiry
+        ? new Date(scan.extracted.dateOfExpiry)
+        : null;
+
     const document = await this.prisma.$transaction(async (tx) => {
       const created = await tx.document.create({
         data: {
@@ -970,10 +998,22 @@ export class DocumentsService {
           sizeBytes: filed.sizeBytes,
           mimeType: filed.mimeType,
           status: 'PENDING_VERIFICATION',
+          ...(scan
+            ? {
+                scanFormat: scan.format,
+                scanVerdict: scan.verdict,
+                scanData: scan.extracted as object,
+                scanChecks: scan.checks as unknown as object,
+                holderName: scan.extracted.holderName,
+                documentNumber: scan.extracted.documentNumber,
+                dateOfBirth: scan.extracted.dateOfBirth ? new Date(scan.extracted.dateOfBirth) : null,
+                issuingState: scan.extracted.issuingState,
+              }
+            : {}),
           // NOT `issuedById`: nobody issued this. The member supplied it, and
           // the trail below is what says so.
           issuedAt,
-          expiresOn,
+          expiresOn: scannedExpiry ?? expiresOn,
           retentionUntil: retentionUntil(issuedAt, type.retentionMonths),
         },
       });
@@ -981,6 +1021,7 @@ export class DocumentsService {
         data: {
           documentId: created.id,
           type: 'SUBMITTED',
+          meta: scan ? { scanVerdict: scan.verdict, scanFormat: scan.format } : undefined,
           actorId: data.actor.userId,
           ...eventContext(data.ctx),
         },
@@ -996,6 +1037,51 @@ export class DocumentsService {
       document.title,
     );
     return document;
+  }
+
+  /**
+   * Run the offline checks over whatever the scanner read.
+   *
+   * The one question this cannot answer alone is "has anybody else already
+   * filed this exact document" — a database question — so it is resolved here
+   * and handed to the pure checker.
+   */
+  private async checkSubmittedScan(
+    mrzText: string | null | undefined,
+    member: { id: string; firstName: string; lastName: string },
+    organizationId: string,
+  ) {
+    if (!mrzText?.trim()) return null;
+
+    // Parse first, so the duplicate lookup has a number to look for.
+    const provisional = checkScan({ mrzText, member });
+    const documentNumber = provisional.extracted.documentNumber;
+
+    let alreadyFiledBy: string | null = null;
+    if (documentNumber) {
+      /*
+        The same document number under two names.
+
+        Indexed on [organizationId, documentNumber]. Scoped to the organization
+        deliberately: whether a licence appears in ANOTHER company's records is
+        not this customer's business, and answering across tenants would leak
+        one customer's workforce to another.
+      */
+      const other = await this.prisma.document.findFirst({
+        where: {
+          organizationId,
+          documentNumber,
+          userId: { not: member.id },
+          status: { in: ['ISSUED', 'SIGNED', 'PENDING_VERIFICATION'] },
+        },
+        select: { user: { select: { firstName: true, lastName: true } } },
+      });
+      if (other) {
+        alreadyFiledBy = `${other.user.firstName} ${other.user.lastName}`.trim();
+      }
+    }
+
+    return checkScan({ mrzText, member, alreadyFiledBy });
   }
 
   /**
@@ -1164,6 +1250,11 @@ export class DocumentsService {
         expiresOn: true,
         sizeBytes: true,
         mimeType: true,
+        scanFormat: true,
+        scanVerdict: true,
+        scanChecks: true,
+        holderName: true,
+        documentNumber: true,
         user: { select: { id: true, firstName: true, lastName: true } },
         type: {
           select: { id: true, label: true, isCredential: true, requiredForWorkflowIds: true },
@@ -1194,6 +1285,19 @@ export class DocumentsService {
         should not look like a filing task.
       */
       blocksWork: r.type.requiredForWorkflowIds.length > 0,
+      /*
+        What the machine made of it, if it was scanned.
+
+        First thing in the row, because it changes what the reviewer is doing:
+        CONSISTENT means "confirm this looks like the person"; SUSPECT means
+        "here is a specific thing that is wrong". Without it they are squinting
+        at a photograph for a changed digit.
+      */
+      scanFormat: r.scanFormat,
+      scanVerdict: r.scanVerdict,
+      scanChecks: r.scanChecks,
+      holderName: r.holderName,
+      documentNumber: r.documentNumber,
       // Approving an already-lapsed certificate would put a green tick on
       // something the gate will still refuse. The reviewer needs to see that.
       standing: r.type.isCredential ? credentialStanding(r.expiresOn, now) : null,

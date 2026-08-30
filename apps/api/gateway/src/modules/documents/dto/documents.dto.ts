@@ -330,6 +330,19 @@ export class SubmitOwnDocumentDto {
   @IsOptional()
   @IsDateString()
   expiresOn?: string;
+
+  /**
+   * What a scanner read off the document — the machine-readable zone as text.
+   *
+   * Checked server-side and never trusted: the check digits are recomputed
+   * here, so a client that sent an invented zone gets a SUSPECT verdict rather
+   * than a pass. Long enough for three lines and whatever surrounds them.
+   */
+  @ApiPropertyOptional({ description: "The document's machine-readable zone, as scanned" })
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  mrzText?: string;
 }
 
 export class PreviewTemplateDto {

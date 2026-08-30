@@ -7508,6 +7508,26 @@
         "MET": "agli atti",
         "EXPIRING": "scade a breve"
       }
+    },
+    "scan": {
+      "verdict": {
+        "CONSISTENT": "Nulla di anomalo",
+        "UNVERIFIED": "Non è stato possibile verificare tutto",
+        "SUSPECT": "Qualcosa non torna"
+      },
+      "readFrom": "letto dalla zona {{format}}",
+      "passedCount_one": "{{count}} controllo superato",
+      "passedCount_other": "{{count}} controlli superati",
+      "limit": "Questi controlli confrontano il documento con sé stesso e con i nostri dati. Non possono confermare che sia mai stato emesso: può farlo solo l’autorità emittente.",
+      "checks": {
+        "mrzReadable": "Nessuna zona a lettura ottica letta",
+        "checkDigits": "Le cifre di controllo del documento non corrispondono: un campo potrebbe essere stato alterato",
+        "notExpired": "Questo documento è scaduto",
+        "nameMatchesMember": "Il nome sul documento non è di questa persona",
+        "dateOfBirthPlausible": "La data di nascita non sembra corretta",
+        "issuerKnown": "Il codice del paese emittente non esiste",
+        "notAlreadyFiled": "Lo stesso documento risulta già a nome di"
+      }
     }
   }
 }

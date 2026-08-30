@@ -7499,6 +7499,26 @@
         "MET": "en tu expediente",
         "EXPIRING": "caduca pronto"
       }
+    },
+    "scan": {
+      "verdict": {
+        "CONSISTENT": "No se encontró nada anómalo",
+        "UNVERIFIED": "No se pudo comprobar del todo",
+        "SUSPECT": "Algo no cuadra"
+      },
+      "readFrom": "leído de la zona {{format}}",
+      "passedCount_one": "{{count}} comprobación superada",
+      "passedCount_other": "{{count}} comprobaciones superadas",
+      "limit": "Estas comprobaciones contrastan el documento consigo mismo y con nuestros datos. No pueden confirmar que llegara a emitirse: eso solo lo puede hacer la autoridad emisora.",
+      "checks": {
+        "mrzReadable": "No se leyó ninguna zona de lectura mecánica",
+        "checkDigits": "Los dígitos de control del documento no coinciden: puede haberse alterado un campo",
+        "notExpired": "Este documento ha caducado",
+        "nameMatchesMember": "El nombre del documento no es el de esta persona",
+        "dateOfBirthPlausible": "La fecha de nacimiento no parece correcta",
+        "issuerKnown": "El código de país emisor no existe",
+        "notAlreadyFiled": "El mismo documento ya consta a nombre de"
+      }
     }
   }
 }

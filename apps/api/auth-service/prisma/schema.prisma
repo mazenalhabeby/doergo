@@ -3965,6 +3965,22 @@ model Document {
   /// it, and "rejected" with no reason means uploading the same photo again.
   rejectionReason String?
 
+  /// What was READ off the document, when it was scanned rather than typed.
+  ///
+  /// `scanVerdict` is the summary a reviewer sees first; `scanChecks` is what
+  /// it is made of. The four extracted columns are here rather than only inside
+  /// `scanData` because they are QUERIED — the document number to find the same
+  /// document filed twice, the name and date of birth to compare against the
+  /// member record.
+  scanFormat     String?
+  scanVerdict    String?
+  scanData       Json?
+  scanChecks     Json?
+  holderName     String?
+  documentNumber String?
+  dateOfBirth    DateTime? @db.Date
+  issuingState   String?
+
   /// Null means keep indefinitely; see DocumentType.retentionMonths.
   retentionUntil DateTime?
 
@@ -3983,6 +3999,8 @@ model Document {
   @@index([userId, typeId, periodYear])
   // The admin's list and the batch view.
   @@index([organizationId, status])
+  // "Has this exact document already been filed here, by anybody?"
+  @@index([organizationId, documentNumber])
   // The compliance board: what expires soon, org-wide.
   @@index([organizationId, expiresOn])
   // Dedup: the same bytes issued to thirty people are one object, but each

@@ -7499,6 +7499,26 @@
         "MET": "liegt vor",
         "EXPIRING": "läuft bald ab"
       }
+    },
+    "scan": {
+      "verdict": {
+        "CONSISTENT": "Nichts Auffälliges gefunden",
+        "UNVERIFIED": "Konnte nicht vollständig geprüft werden",
+        "SUSPECT": "Etwas passt nicht zusammen"
+      },
+      "readFrom": "aus der {{format}}-Zone gelesen",
+      "passedCount_one": "{{count}} Prüfung bestanden",
+      "passedCount_other": "{{count}} Prüfungen bestanden",
+      "limit": "Diese Prüfungen vergleichen das Dokument mit sich selbst und mit unseren Daten. Ob es je ausgestellt wurde, kann nur die ausstellende Behörde bestätigen.",
+      "checks": {
+        "mrzReadable": "Es wurde keine maschinenlesbare Zone gelesen",
+        "checkDigits": "Die Prüfziffern des Dokuments stimmen nicht — ein Feld wurde möglicherweise verändert",
+        "notExpired": "Dieses Dokument ist abgelaufen",
+        "nameMatchesMember": "Der Name im Dokument gehört nicht zu dieser Person",
+        "dateOfBirthPlausible": "Das Geburtsdatum wirkt nicht stimmig",
+        "issuerKnown": "Der Ländercode der Ausstellung existiert nicht",
+        "notAlreadyFiled": "Dasselbe Dokument liegt bereits vor für"
+      }
     }
   }
 }

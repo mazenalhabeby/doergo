@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
-  ArrowLeft, Check, X, Eye, Loader2, Inbox, AlertTriangle, ShieldAlert, Clock,
+  ArrowLeft, Check, X, Eye, Loader2, Inbox, AlertTriangle, ShieldAlert, ShieldCheck,
+  ShieldQuestion, Clock,
 } from "lucide-react"
 import { documentsApi, type PendingReviewRow } from "@/lib/api"
 import {
@@ -164,6 +165,16 @@ export default function ReviewQueuePage() {
                     )}
                   </p>
 
+                  {/*
+                    What the machine made of it, before anything else.
+
+                    It changes what the reviewer is doing. CONSISTENT means
+                    "confirm this looks like the person"; SUSPECT means "here is
+                    a specific thing that is wrong". Without it they are
+                    squinting at a photograph hoping to notice a changed digit.
+                  */}
+                  {r.scanVerdict && <ScanVerdict row={r} />}
+
                   {/* Approving a certificate that has ALREADY lapsed would put a
                       tick on something the dispatch gate still refuses. */}
                   {r.standing === "EXPIRED" && (
@@ -220,6 +231,87 @@ export default function ReviewQueuePage() {
           onConfirm={(reason) => reject.mutate({ id: rejecting.id, reason })}
         />
       )}
+    </div>
+  )
+}
+
+
+/**
+ * The offline checks, as a reviewer needs them.
+ *
+ * Three words, never a score. A number invites somebody to set a threshold and
+ * stop reading the reasons — and the reasons are the useful part, because "the
+ * name does not match" and "this expired in 2012" are completely different
+ * conversations.
+ *
+ * The failures are listed; the passes are counted. A reviewer needs to know
+ * what is WRONG, and a list of seven green ticks buries the one red one.
+ */
+function ScanVerdict({ row }: { row: PendingReviewRow }) {
+  const { t } = useTranslation()
+  const checks = row.scanChecks ?? []
+  const problems = checks.filter((c) => c.outcome === "FAIL" || c.outcome === "WARN")
+  const passed = checks.filter((c) => c.outcome === "PASS").length
+
+  const tone =
+    row.scanVerdict === "SUSPECT"
+      ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40"
+      : row.scanVerdict === "CONSISTENT"
+        ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30"
+        : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50"
+
+  const Icon = row.scanVerdict === "SUSPECT" ? ShieldAlert : row.scanVerdict === "CONSISTENT" ? ShieldCheck : ShieldQuestion
+
+  return (
+    <div className={cn("mt-2 rounded-lg border p-2.5", tone)}>
+      <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+        <Icon className={cn(
+          "h-4 w-4",
+          row.scanVerdict === "SUSPECT" ? "text-red-600"
+            : row.scanVerdict === "CONSISTENT" ? "text-green-600" : "text-slate-400",
+        )} />
+        {t(`documents.scan.verdict.${row.scanVerdict}`)}
+        {row.scanFormat && (
+          <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+            {t("documents.scan.readFrom", { format: row.scanFormat })}
+          </span>
+        )}
+      </p>
+
+      {/* What the document says it is. The reviewer compares this with the
+          picture, which is the one thing a machine cannot do for them. */}
+      {(row.holderName || row.documentNumber) && (
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+          {[row.holderName, row.documentNumber].filter(Boolean).join(" · ")}
+        </p>
+      )}
+
+      {problems.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5">
+          {problems.map((c) => (
+            <li key={c.id} className={cn(
+              "text-sm",
+              c.outcome === "FAIL" ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400",
+            )}>
+              {t(`documents.scan.checks.${c.id}`)}
+              {c.detail && <span className="text-slate-500 dark:text-slate-400"> — {c.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {passed > 0 && (
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {t("documents.scan.passedCount", { count: passed })}
+        </p>
+      )}
+
+      {/* The limit, said out loud on the screen where somebody decides.
+          "Consistent" is not "genuine", and a reviewer who reads it as genuine
+          has been misled by us rather than by the member. */}
+      <p className="mt-1 text-xs leading-relaxed text-slate-400">
+        {t("documents.scan.limit")}
+      </p>
     </div>
   )
 }

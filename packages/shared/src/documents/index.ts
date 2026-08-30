@@ -7,3 +7,4 @@ export * from './starter-templates';
 export * from './starter-types';
 export * from './requirements';
 export * from './mrz';
+export * from './scan-checks';

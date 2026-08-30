@@ -5928,6 +5928,12 @@ export interface PendingReviewRow {
   /** Somebody is out of the assignable pool until this is approved. */
   blocksWork: boolean;
   standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
+  /** Present only when the document was scanned rather than photographed. */
+  scanFormat: string | null;
+  scanVerdict: 'CONSISTENT' | 'UNVERIFIED' | 'SUSPECT' | null;
+  scanChecks: { id: string; outcome: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail?: string }[] | null;
+  holderName: string | null;
+  documentNumber: string | null;
 }
 
 export interface MemberDocumentRow {
