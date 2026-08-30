@@ -115,8 +115,9 @@ export function DocumentScanner({
   const camera = useRef<CameraView>(null);
 
   const [side, setSide] = useState<'front' | 'back'>('front');
-  const [front, setFront] = useState<{ uri: string; size: number; crop?: Rect } | null>(null);
-  const [preview, setPreview] = useState<{ uri: string; size: number; crop?: Rect } | null>(null);
+  type Shot = { uri: string; size: number; crop?: Rect; width: number; height: number };
+  const [front, setFront] = useState<Shot | null>(null);
+  const [preview, setPreview] = useState<Shot | null>(null);
   const [busy, setBusy] = useState(false);
   const [torch, setTorch] = useState(false);
 
@@ -165,6 +166,8 @@ export function DocumentScanner({
         setPreview({
           uri: shot.uri,
           size: measure(shot.uri),
+          width: shot.width,
+          height: shot.height,
           crop: frameToImageCrop({
             frame: frameRect(shape, screen),
             screen,
@@ -241,7 +244,17 @@ export function DocumentScanner({
         {preview ? (
           // ── What was captured, before it is used ──────────────────────────
           <>
-            <Image source={{ uri: preview.uri }} style={s.fill} resizeMode="contain" />
+            {/*
+              The CROP, not the photograph.
+
+              What gets filed is the rectangle inside the frame — the camera
+              captured a hand and a car seat around it — so asking "is
+              everything readable?" over the whole picture asks about an image
+              nobody will ever look at. Clipped with layout rather than a real
+              crop, because cropping on the device would mean a native module
+              and no more over-the-air updates; the server does the actual cut.
+            */}
+            <CropPreview shot={preview} />
             <View style={[s.previewBar, { paddingBottom: insets.bottom + SPACING.lg }]}>
               <Text style={s.previewAsk}>
                 {t(twoSided && side === 'front' ? 'documents.scanner.frontReadable' : 'documents.scanner.readable')}
@@ -315,6 +328,50 @@ export function DocumentScanner({
   );
 }
 
+
+/**
+ * The framed rectangle of a photograph, without touching the pixels.
+ *
+ * An oversized image inside a clipped box, offset so the crop is what shows.
+ * It costs nothing, needs no native module, and — the reason it matters — it
+ * is computed from THE SAME rectangle the server will cut, so if the mapping is
+ * wrong the person sees it is wrong before they send it.
+ */
+function CropPreview({ shot }: { shot: { uri: string; crop?: Rect; width: number; height: number } }) {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const crop = shot.crop;
+
+  if (!crop || !shot.width || !shot.height) {
+    return <Image source={{ uri: shot.uri }} style={s.fill} resizeMode="contain" />;
+  }
+
+  const cropRatio = (crop.width * shot.width) / (crop.height * shot.height);
+  // Fit the crop into the space above the buttons, by whichever side binds.
+  const available = { width: screenWidth, height: screenHeight * 0.62 };
+  const boxWidth = Math.min(available.width, available.height * cropRatio);
+  const boxHeight = boxWidth / cropRatio;
+
+  const fullWidth = boxWidth / crop.width;
+  const fullHeight = fullWidth * (shot.height / shot.width);
+
+  return (
+    <View style={s.cropStage}>
+      <View style={[s.cropBox, { width: boxWidth, height: boxHeight }]}>
+        <Image
+          source={{ uri: shot.uri }}
+          style={{
+            position: 'absolute',
+            width: fullWidth,
+            height: fullHeight,
+            left: -crop.left * fullWidth,
+            top: -crop.top * fullHeight,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
 /**
  * The cut-out.
  *
@@ -347,6 +404,8 @@ function Frame({ shape }: { shape: ScanShape }) {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000' },
+  cropStage: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  cropBox: { overflow: 'hidden', borderRadius: RADIUS.md, backgroundColor: '#111' },
   fill: { ...StyleSheet.absoluteFillObject },
 
   dim: { position: 'absolute', backgroundColor: 'rgba(0,0,0,0.6)' },
