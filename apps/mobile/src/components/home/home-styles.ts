@@ -84,6 +84,48 @@ export const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
+
+  /*
+    The home screen's action row: a tinted icon tile, a title and one line under
+    it, a chevron.
+
+    Here rather than in the component that happened to need it first, because
+    there are now two of them stacked — Clock In and the documents reminder —
+    and two cards a few pixels apart in padding, radius, icon size or background
+    is the single most obvious way for a screen to look unfinished. Sharing the
+    shell makes them impossible to drift apart.
+
+    Colour is the caller's: the surface comes in as `colors.card`, and the tone
+    lives in the icon tile, which is the ONLY thing that should differ between
+    an ordinary action and an urgent one.
+  */
+  actionCard: {
+    marginHorizontal: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  actionCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionCardText: {
+    flex: 1,
+  },
+  actionCardTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  actionCardSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    marginTop: 2,
+  },
 });
 
 // Re-export constants for convenience

@@ -4,7 +4,8 @@ import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useDocumentRequirements } from '../contexts/document-requirements-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
+import { COLORS, SPACING } from '../lib/constants';
+import { styles as homeStyles } from './home/home-styles';
 import { PressableScale } from './pressable-scale';
 
 /**
@@ -54,44 +55,44 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
     <PressableScale
       onPress={() => router.push('/documents' as Href)}
       accessibilityRole="button"
-      style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, style]}
+      /*
+        The home screen's own action-card shell, not a shape of its own.
+
+        It sits directly above Clock In, and a card a few pixels off in padding,
+        radius or icon size is the most obvious way for a screen to look
+        unfinished — which is exactly how the first version looked. The tone
+        lives in the ICON TILE, the one thing that is allowed to differ between
+        an ordinary action and an urgent one; the coloured rail down the edge
+        that used to carry it appeared nowhere else on the screen and read as a
+        stray mark rather than a signal.
+      */
+      style={[homeStyles.actionCard, s.spacing, { backgroundColor: colors.card }, style]}
     >
-      {/* A colour-bearing rail rather than a tinted card: the tone is
-          unmistakable and the text still sits on the normal surface, where it
-          keeps normal contrast in both themes. */}
-      <View style={[s.rail, { backgroundColor: tone }]} />
-      <View style={[s.icon, { backgroundColor: `${tone}1F` }]}>
+      <View style={[homeStyles.actionCardIcon, { backgroundColor: `${tone}1F` }]}>
         <Ionicons
           name={blocksWork ? 'alert-circle' : urgent ? 'document-attach' : 'time-outline'}
-          size={20}
+          size={26}
           color={tone}
         />
       </View>
-      <View style={s.text}>
-        <Text style={[s.title, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
-        <Text style={[s.body, { color: colors.textSecondary }]} numberOfLines={2}>{body}</Text>
+      <View style={homeStyles.actionCardText}>
+        <Text style={[homeStyles.actionCardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text
+          style={[homeStyles.actionCardSubtitle, { color: blocksWork ? tone : colors.textMuted }]}
+          numberOfLines={2}
+        >
+          {body}
+        </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
     </PressableScale>
   );
 }
 
 const s = StyleSheet.create({
-  card: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: SPACING.md, paddingRight: SPACING.md, paddingLeft: SPACING.lg,
-    overflow: 'hidden',
-    // The gutter every home section uses. Overridable by `style` for anywhere
-    // else, but a caller should not have to restate the page's own margin.
-    marginHorizontal: SPACING.lg, marginTop: SPACING.sm,
-  },
-  rail: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
-  icon: {
-    width: 40, height: 40, borderRadius: RADIUS.md,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  text: { flex: 1, gap: 2 },
-  title: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2 },
-  body: { fontSize: FONT_SIZE.sm, lineHeight: 17 },
+  // Whatever follows on the home screen is another card of the same shape, and
+  // the greeting above already supplies its own bottom padding.
+  spacing: { marginBottom: SPACING.md },
 });

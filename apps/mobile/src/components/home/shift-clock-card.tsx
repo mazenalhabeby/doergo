@@ -26,7 +26,7 @@ import { useClockIn } from '../../hooks/useClockIn';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
+import { styles as homeStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 
 /**
  * Self-contained "shift clock" widget — the member clock-in/clock-out card plus
@@ -205,23 +205,23 @@ export function ShiftClockCard({
         </View>
       ) : (
         <TouchableOpacity
-          style={[cStyles.clockInCard, { backgroundColor: colors.card }, style]}
+          style={[homeStyles.actionCard, { backgroundColor: colors.card }, style]}
           onPress={clockIn.openClockInModal}
           disabled={isClockLoading || clockIn.isBusy}
           activeOpacity={0.8}
         >
-          <View style={cStyles.clockInIconBox}>
+          <View style={[homeStyles.actionCardIcon, cStyles.clockInIconTint]}>
             {isClockLoading || clockIn.isBusy ? (
               <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
               <Ionicons name="finger-print" size={28} color={COLORS.primary} />
             )}
           </View>
-          <View style={cStyles.clockInTextBox}>
-            <Text style={[cStyles.clockInTitle, { color: colors.textPrimary }]}>
+          <View style={homeStyles.actionCardText}>
+            <Text style={[homeStyles.actionCardTitle, { color: colors.textPrimary }]}>
               {t('home.fullTime.clockIn')}
             </Text>
-            <Text style={[cStyles.clockInSubtitle, { color: colors.textMuted }]}>
+            <Text style={[homeStyles.actionCardSubtitle, { color: colors.textMuted }]}>
               {t('home.hybrid.tapToStartShift')}
             </Text>
           </View>
@@ -350,32 +350,5 @@ const cStyles = StyleSheet.create({
   },
 
   // Clock In Card (when clocked out)
-  clockInCard: {
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    ...SHADOWS.sm,
-  },
-  clockInIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  clockInTextBox: {
-    flex: 1,
-  },
-  clockInTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  clockInSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    marginTop: 2,
-  },
+  clockInIconTint: { backgroundColor: 'rgba(37, 99, 235, 0.1)' },
 });
