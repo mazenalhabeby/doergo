@@ -144,13 +144,25 @@ export function SupplyDocumentSheet({
         title={t('documents.supply.title')}
         onClose={onClose}
         closeDisabled={busy}
-        maxHeight="90%"
+        maxHeightFraction={0.9}
       >
         <Text style={[s.subtitle, { color: colors.textSecondary }]}>
           {t('documents.supply.subtitle')}
         </Text>
 
-        <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
+        {/*
+          `flexShrink` is what makes this scroll.
+
+          Inside a height-capped panel a ScrollView with no shrink lays out at
+          its full content height, and the panel simply clips whatever does not
+          fit — so the tail of the form was cut off and unreachable rather than
+          scrollable.
+        */}
+        <ScrollView
+          style={s.scroll}
+          contentContainerStyle={s.body}
+          keyboardShouldPersistTaps="handled"
+        >
 
         {suppliable.length === 0 ? (
           <Text style={[s.empty, { color: colors.textSecondary }]}>
@@ -259,21 +271,31 @@ export function SupplyDocumentSheet({
               </Text>
             </View>
 
-            <PressableScale
-              onPress={submit}
-              disabled={!photo || busy}
-              style={[
-                s.submit,
-                { backgroundColor: COLORS.primary, opacity: !photo || busy ? 0.5 : 1 },
-              ]}
-            >
-              {busy
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={s.submitText}>{t('documents.supply.send')}</Text>}
-            </PressableScale>
           </>
         )}
         </ScrollView>
+
+        {/*
+          Pinned under the scroll area, not inside it.
+
+          The one control the sheet exists for should not require scrolling to
+          reach — on a short phone the form is taller than the sheet, and an
+          action that scrolls out of view reads as an action that is missing.
+        */}
+        {suppliable.length > 0 && (
+          <PressableScale
+            onPress={submit}
+            disabled={!photo || busy}
+            style={[
+              s.submit,
+              { backgroundColor: COLORS.primary, opacity: !photo || busy ? 0.5 : 1 },
+            ]}
+          >
+            {busy
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={s.submitText}>{t('documents.supply.send')}</Text>}
+          </PressableScale>
+        )}
       </SheetPanel>
     </BlurSheet>
   );
@@ -295,6 +317,7 @@ function toIsoDate(d: Date): string {
 }
 
 const s = StyleSheet.create({
+  scroll: { flexShrink: 1 },
   body: { gap: SPACING.sm, paddingBottom: SPACING.md },
   subtitle: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.sm },
   empty: { fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.xl },

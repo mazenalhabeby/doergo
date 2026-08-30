@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, useWindowDimensions,
+  type StyleProp, type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +27,7 @@ export function SheetPanel({
   title,
   onClose,
   closeDisabled = false,
-  maxHeight = '85%',
+  maxHeightFraction = 0.85,
   style,
   children,
 }: {
@@ -32,13 +35,22 @@ export function SheetPanel({
   onClose: () => void;
   /** While work is in flight — the cross greys out rather than disappearing. */
   closeDisabled?: boolean;
-  maxHeight?: ViewStyle['maxHeight'];
+  /**
+   * A share of the screen, NOT a percentage string.
+   *
+   * `maxHeight: '85%'` resolves against the parent's height, and the parent
+   * here is an auto-height flex child inside BlurSheet — so the cap silently
+   * did nothing and a tall sheet ran off the bottom of the screen with its
+   * action button clipped. Resolved against the window instead.
+   */
+  maxHeightFraction?: number;
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
 
   return (
     <View
@@ -48,7 +60,7 @@ export function SheetPanel({
           backgroundColor: colors.card,
           // The home indicator sits over anything drawn to the bottom edge.
           paddingBottom: insets.bottom + SPACING.md,
-          maxHeight,
+          maxHeight: Math.round(height * maxHeightFraction),
         },
         style,
       ]}
