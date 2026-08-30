@@ -5,10 +5,11 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Search, Download, Loader2, FileText, Image as ImageIcon,
-  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox, DownloadCloud, Upload, Clock, XCircle,
+  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox, DownloadCloud, Upload, Clock, XCircle, AlertTriangle,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
+import { documentsApi, type MemberDocumentRow, type DocumentTypeRow, type RequirementRow } from "@/lib/api"
+import { waitingOnMember } from "@hbcfield/shared/client"
 import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -96,6 +97,11 @@ export default function MyDocumentsPage() {
   const { data: documents = [], isLoading } = useQuery<MemberDocumentRow[]>({
     queryKey: ["my-documents"],
     queryFn: () => documentsApi.list(),
+  })
+
+  const { data: requirements = [] } = useQuery<RequirementRow[]>({
+    queryKey: ["my-document-requirements"],
+    queryFn: () => documentsApi.requirements(),
   })
 
   /*
@@ -203,6 +209,43 @@ export default function MyDocumentsPage() {
           )}
         </div>
       </header>
+
+      {/*
+        What the organization is still waiting for FROM YOU.
+
+        Deliberately only the ones where the next move is theirs. A licence
+        already sent and sitting in the review queue is not something to chase
+        somebody about — "send us your licence", under a licence they sent
+        yesterday, is the fastest way to teach a person that this screen is
+        wrong and can be ignored.
+      */}
+      {requirements.filter(waitingOnMember).length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            {t("documents.required.title")}
+          </p>
+          <ul className="space-y-1.5">
+            {requirements.filter(waitingOnMember).map((r) => (
+              <li key={r.typeId} className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-slate-800 dark:text-slate-200">{r.label}</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {t(`documents.required.state.${r.state}`)}
+                </span>
+                {r.blocksWork && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                    {t("documents.required.blocksWork")}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <Button size="sm" className="mt-3" onClick={() => setSupplying(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            {t("documents.supply.action")}
+          </Button>
+        </div>
+      )}
 
       <SupplyDocumentDialog
         types={types}

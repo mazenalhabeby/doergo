@@ -7431,7 +7431,13 @@
           "label": "Ausweisdokument",
           "description": "Identität oder Arbeitserlaubnis. Vom Teammitglied beigebracht, kein Nachweis."
         }
-      }
+      },
+      "stepRequired": "Wird es verlangt?",
+      "isRequired": "Teammitglieder müssen das einreichen",
+      "isRequiredHint": "Es erscheint in ihrer Dokumentenübersicht als offen, bis sie es einreichen — und das Büro sieht, wer es noch nicht hat.",
+      "requiredFromWho": "Verlangt von",
+      "everyone": "Allen",
+      "requiredNote": "Niemand wird an ein Dokument erinnert, das ihn nicht betrifft."
     },
     "supply": {
       "action": "Dokument hinzufügen",
@@ -7480,6 +7486,18 @@
         "wrongDocument": "Das ist nicht das angeforderte Dokument",
         "expired": "Dieser Nachweis ist bereits abgelaufen",
         "dateMismatch": "Das eingetragene Datum stimmt nicht mit dem Dokument überein"
+      }
+    },
+    "required": {
+      "title": "Noch von Ihnen benötigt",
+      "blocksWork": "Blockiert Ihre Einsätze",
+      "state": {
+        "MISSING": "noch nicht eingereicht",
+        "REJECTED": "wurde nicht angenommen — bitte neu einreichen",
+        "EXPIRED": "ist abgelaufen — bitte neu einreichen",
+        "AWAITING_REVIEW": "wird geprüft",
+        "MET": "liegt vor",
+        "EXPIRING": "läuft bald ab"
       }
     }
   }

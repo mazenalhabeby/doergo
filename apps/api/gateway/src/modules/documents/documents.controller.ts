@@ -168,6 +168,19 @@ export class DocumentsController {
     return this.documents.compliance({ organizationId: user.organizationId });
   }
 
+  /**
+   * What you still owe the organization.
+   *
+   * No permission for your own — like the document list itself, it is your
+   * data. `userId` reads somebody else's and needs the grant that lets you see
+   * their documents exist at all.
+   */
+  @Get('requirements')
+  @ApiOperation({ summary: 'Documents the organization expects from a member' })
+  async requirements(@CurrentUser() user: CurrentUserData, @Query('userId') userId?: string) {
+    return this.documents.requirements({ actor: documentActor(user), targetUserId: userId });
+  }
+
   // ── Reviewing what members supplied ──────────────────────────────────────
   //
   // On `canIssueDocuments`, not a fifth permission key. Deciding that a

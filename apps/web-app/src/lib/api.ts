@@ -5906,6 +5906,14 @@ export const searchApi = {
 // DOCUMENTS API — the personnel file
 // ============================================================================
 
+export interface RequirementRow {
+  typeId: string;
+  label: string;
+  state: 'MISSING' | 'AWAITING_REVIEW' | 'REJECTED' | 'MET' | 'EXPIRING' | 'EXPIRED';
+  expiresOn: string | null;
+  blocksWork: boolean;
+}
+
 export interface PendingReviewRow {
   id: string;
   title: string;
@@ -5954,6 +5962,10 @@ export interface DocumentTypeRow {
   isCredential: boolean;
   hasExpiry: boolean;
   requiredForWorkflowIds: string[];
+  /** Every member must provide one. */
+  requiredFromAll: boolean;
+  /** Only members holding one of these roles must. */
+  requiredFromRoleIds: string[];
   isActive: boolean;
   position: number;
 }
@@ -6130,6 +6142,14 @@ export const documentsApi = {
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
     return unwrapDocuments<any>(response);
+  },
+
+  /** What the organization still expects from you (or, with an id, from them). */
+  requirements: async (userId?: string) => {
+    const response = await api.get<{ success: boolean; data: RequirementRow[] }>(
+      buildUrlWithQuery('/documents/requirements', { userId }),
+    );
+    return unwrapDocuments<RequirementRow[]>(response) ?? [];
   },
 
   // ── Reviewing what members supplied ──────────────────────────────────────

@@ -3857,6 +3857,12 @@ model DocumentType {
   hasExpiry              Boolean  @default(false)
   requiredForWorkflowIds String[] @default([])
 
+  /// Whether members are EXPECTED to provide one, as opposed to merely allowed
+  /// to. A board built from documents cannot show the technician who uploaded
+  /// nothing; the expectation has to be a record before the absence can be.
+  requiredFromAll     Boolean  @default(false)
+  requiredFromRoleIds String[] @default([])
+
   isActive  Boolean  @default(true)
   position  Int      @default(0)
   createdAt DateTime @default(now())

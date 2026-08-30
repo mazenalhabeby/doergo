@@ -85,6 +85,17 @@ export class CreateDocumentTypeDto {
   @IsString({ each: true })
   requiredForWorkflowIds?: string[];
 
+  @ApiPropertyOptional({ description: 'Every member must provide one' })
+  @IsOptional()
+  @IsBoolean()
+  requiredFromAll?: boolean;
+
+  @ApiPropertyOptional({ type: [String], description: 'Only members with these roles must provide one' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requiredFromRoleIds?: string[];
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
@@ -136,6 +147,17 @@ export class UpdateDocumentTypeDto {
   @IsArray()
   @IsString({ each: true })
   requiredForWorkflowIds?: string[];
+
+  @ApiPropertyOptional({ description: 'Every member must provide one' })
+  @IsOptional()
+  @IsBoolean()
+  requiredFromAll?: boolean;
+
+  @ApiPropertyOptional({ type: [String], description: 'Only members with these roles must provide one' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requiredFromRoleIds?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()

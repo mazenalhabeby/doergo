@@ -69,6 +69,9 @@ export class DocumentsController {
   @MessagePattern({ cmd: 'documents_deactivate_template' })
   deactivateTemplate(@Payload() data: any) { return this.documents.deactivateTemplate(data); }
 
+  @MessagePattern({ cmd: 'documents_list_requirements' })
+  listRequirements(@Payload() data: any) { return this.documents.listRequirements(data); }
+
   // ── Reviewing what members supplied ──────────────────────────────────────
   @MessagePattern({ cmd: 'documents_awaiting_verification' })
   listAwaitingVerification(@Payload() data: any) { return this.documents.listAwaitingVerification(data); }

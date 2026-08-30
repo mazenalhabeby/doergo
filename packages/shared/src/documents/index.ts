@@ -5,3 +5,4 @@ export * from './batch-matching';
 export * from './contract-layout';
 export * from './starter-templates';
 export * from './starter-types';
+export * from './requirements';

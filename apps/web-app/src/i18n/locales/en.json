@@ -7431,7 +7431,13 @@
           "label": "ID document",
           "description": "Identity or right-to-work. Supplied by the member, not a certificate."
         }
-      }
+      },
+      "stepRequired": "Do you require it?",
+      "isRequired": "Members must provide this",
+      "isRequiredHint": "It appears on their own documents screen as outstanding until they send one, and the office can see who has not.",
+      "requiredFromWho": "Required from",
+      "everyone": "Everyone",
+      "requiredNote": "Nobody is chased for a document that does not apply to them."
     },
     "supply": {
       "action": "Add a document",
@@ -7480,6 +7486,18 @@
         "wrongDocument": "This is not the document that was asked for",
         "expired": "This one has already expired",
         "dateMismatch": "The date entered does not match the document"
+      }
+    },
+    "required": {
+      "title": "Still needed from you",
+      "blocksWork": "Blocking your work",
+      "state": {
+        "MISSING": "not sent yet",
+        "REJECTED": "was not accepted — send another",
+        "EXPIRED": "has expired — send a new one",
+        "AWAITING_REVIEW": "waiting to be checked",
+        "MET": "on file",
+        "EXPIRING": "expires soon"
       }
     }
   }

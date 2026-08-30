@@ -29,6 +29,7 @@ import {
   Role,
   buildResolvedAccess,
   accessAllows,
+  requirementStatuses,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -153,6 +154,8 @@ export class DocumentsService {
     isCredential?: boolean;
     hasExpiry?: boolean;
     requiredForWorkflowIds?: string[];
+    requiredFromAll?: boolean;
+    requiredFromRoleIds?: string[];
     position?: number;
   }) {
     this.assertCanManageTypes(data.actor);
@@ -176,6 +179,11 @@ export class DocumentsService {
           // do not lapse — so this is not forced, only defaulted.
           hasExpiry: data.hasExpiry ?? (data.isCredential ?? false),
           requiredForWorkflowIds: data.requiredForWorkflowIds ?? [],
+          // Nothing is expected of anybody unless it is said explicitly. Every
+          // SUPPLIED type that exists today means "we accept this if you send
+          // it", and upgrading must not put a red flag on every member.
+          requiredFromAll: data.requiredFromAll ?? false,
+          requiredFromRoleIds: data.requiredFromRoleIds ?? [],
           position: data.position ?? 0,
         },
       });
@@ -198,6 +206,8 @@ export class DocumentsService {
       isCredential: boolean;
       hasExpiry: boolean;
       requiredForWorkflowIds: string[];
+      requiredFromAll: boolean;
+      requiredFromRoleIds: string[];
       isActive: boolean;
       position: number;
     }>;
@@ -1090,6 +1100,47 @@ export class DocumentsService {
   // ══════════════════════════════════════════════════════════════════════════
   // Reviewing what members supplied
   // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * What a member still owes the organization, and whose turn it is.
+   *
+   * A separate call rather than a field on the document list, because it is a
+   * different question: the list says what somebody HAS, this says what they
+   * have not. The compliance board could only ever show the first, which is why
+   * the technician who uploaded nothing was invisible on it.
+   *
+   * Reading your own is free, like the list itself. Reading somebody else's
+   * needs the same grant that lets you see their documents exist.
+   */
+  async listRequirements(data: { actor: DocumentActor; targetUserId?: string }) {
+    const targetUserId = data.targetUserId ?? data.actor.userId;
+    const isSelf = targetUserId === data.actor.userId;
+
+    if (!isSelf && !data.actor.canViewMemberDocuments) {
+      throw new ForbiddenException('You cannot see other members’ documents');
+    }
+
+    const member = await this.prisma.user.findFirst({
+      where: { id: targetUserId, organizationId: data.actor.organizationId },
+      select: { id: true, memberRoleId: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const [types, held] = await Promise.all([
+      this.prisma.documentType.findMany({
+        where: { organizationId: data.actor.organizationId, isActive: true, direction: 'SUPPLIED' },
+      }),
+      this.prisma.document.findMany({
+        where: { organizationId: data.actor.organizationId, userId: targetUserId },
+        select: { typeId: true, status: true, expiresOn: true },
+      }),
+    ]);
+
+    // The rule itself is shared and pure — the member's screen, this endpoint
+    // and the compliance board all read the same one, so they cannot disagree
+    // about whether somebody is covered.
+    return requirementStatuses(member, types, held);
+  }
 
   /**
    * Everything waiting for somebody to look at it.

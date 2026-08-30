@@ -7431,7 +7431,13 @@
           "label": "Documento de identidad",
           "description": "Identidad o permiso de trabajo. Lo aporta la persona, no es un certificado."
         }
-      }
+      },
+      "stepRequired": "¿Lo exiges?",
+      "isRequired": "Las personas deben aportarlo",
+      "isRequiredHint": "Aparece como pendiente en su pantalla de documentos hasta que lo envían, y la oficina ve quién no lo tiene.",
+      "requiredFromWho": "Se exige a",
+      "everyone": "Todos",
+      "requiredNote": "A nadie se le reclama un documento que no le corresponde."
     },
     "supply": {
       "action": "Añadir documento",
@@ -7480,6 +7486,18 @@
         "wrongDocument": "Este no es el documento solicitado",
         "expired": "Este ya ha caducado",
         "dateMismatch": "La fecha introducida no coincide con el documento"
+      }
+    },
+    "required": {
+      "title": "Aún pendiente de ti",
+      "blocksWork": "Bloquea tu trabajo",
+      "state": {
+        "MISSING": "sin enviar",
+        "REJECTED": "no se aceptó: envía otro",
+        "EXPIRED": "ha caducado: envía uno nuevo",
+        "AWAITING_REVIEW": "pendiente de revisión",
+        "MET": "en tu expediente",
+        "EXPIRING": "caduca pronto"
       }
     }
   }

@@ -9,7 +9,7 @@ import {
   CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2,
 } from "lucide-react"
 import {
-  documentsApi, workflowsApi,
+  documentsApi, workflowsApi, organizationsApi,
   type DocumentTypeRow,
 } from "@/lib/api"
 import {
@@ -72,6 +72,13 @@ export default function DocumentTypesPage() {
     queryFn: () => workflowsApi.list(),
   })
 
+  // Member roles, for "who do we require this from" — the same list the
+  // contract templates bind against.
+  const { data: roles = [] } = useQuery({
+    queryKey: ["org-roles"],
+    queryFn: () => organizationsApi.getRoles("org"),
+  })
+
   const active = useMemo(() => types.filter((ty) => ty.isActive), [types])
   const retired = useMemo(() => types.filter((ty) => !ty.isActive), [types])
 
@@ -98,6 +105,7 @@ export default function DocumentTypesPage() {
         starter={starter}
         existingKeys={taken}
         workflows={workflows}
+        roles={roles}
         onClose={() => { setEditing(null); setStarter(null) }}
       />
     )
@@ -230,6 +238,21 @@ export default function DocumentTypesPage() {
   )
 }
 
+/**
+ * Requirement fields, and only for a type that can carry them.
+ *
+ * An ISSUED type always sends false/[]: switching a type from supplied to
+ * issued is impossible after creation, but a draft can be switched before
+ * saving, and half-set state left behind would require a payslip from everyone.
+ */
+function requirementPayload(direction: string, all: boolean, roleIds: string[]) {
+  if (direction !== "SUPPLIED") return { requiredFromAll: false, requiredFromRoleIds: [] }
+  return {
+    requiredFromAll: all && roleIds.length === 0,
+    requiredFromRoleIds: all ? [] : roleIds,
+  }
+}
+
 /** The empty starter. Not in the shared list — it is a UI affordance, not a type. */
 const BLANK: StarterDocumentType = {
   key: "",
@@ -295,12 +318,13 @@ function TypeRow({
 // ───────────────────────────────────────────────────────────────────────────
 
 function TypeEditor({
-  type, starter, existingKeys, workflows, onClose,
+  type, starter, existingKeys, workflows, roles, onClose,
 }: {
   type: DocumentTypeRow | null
   starter: StarterDocumentType | null
   existingKeys: Set<string>
   workflows: { id: string; name: string }[]
+  roles: { id: string; name: string }[]
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -325,6 +349,8 @@ function TypeEditor({
   const [isCredential, setIsCredential] = useState(type?.isCredential ?? starter?.isCredential ?? false)
   const [hasExpiry, setHasExpiry] = useState(type?.hasExpiry ?? starter?.hasExpiry ?? false)
   const [gates, setGates] = useState<string[]>(type?.requiredForWorkflowIds ?? [])
+  const [requiredFromAll, setRequiredFromAll] = useState(type?.requiredFromAll ?? false)
+  const [requiredFromRoleIds, setRequiredFromRoleIds] = useState<string[]>(type?.requiredFromRoleIds ?? [])
   const [retentionMonths, setRetentionMonths] = useState<number | null>(
     type?.retentionMonths ?? starter?.retentionMonths ?? null,
   )
@@ -342,6 +368,7 @@ function TypeEditor({
           cadence, direction, signatureMode,
           isCredential, hasExpiry,
           requiredForWorkflowIds: isCredential ? gates : [],
+          ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
           retentionMonths,
         })
       }
@@ -357,6 +384,7 @@ function TypeEditor({
         label, description, signatureMode,
         isCredential, hasExpiry,
         requiredForWorkflowIds: isCredential ? gates : [],
+        ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
         retentionMonths,
       })
     },
@@ -503,6 +531,72 @@ function TypeEditor({
           )}
         </Step>
 
+        {/*
+          Only for what the member provides. "Do we require this from people?"
+          is unanswerable about a payslip — the company issues those, and asking
+          an employee to produce one is not a requirement, it is a category
+          error. The server refuses it too.
+        */}
+        {direction === "SUPPLIED" && (
+          <Step n={5} title={t("documents.types.stepRequired")}>
+            <Toggle
+              checked={requiredFromAll || requiredFromRoleIds.length > 0}
+              onChange={(v) => {
+                setRequiredFromAll(v)
+                if (!v) setRequiredFromRoleIds([])
+              }}
+              title={t("documents.types.isRequired")}
+              hint={t("documents.types.isRequiredHint")}
+            />
+
+            {(requiredFromAll || requiredFromRoleIds.length > 0) && (
+              <div className="mt-3 space-y-2 border-l-2 border-blue-300 pl-4 dark:border-blue-800">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t("documents.types.requiredFromWho")}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => { setRequiredFromAll(true); setRequiredFromRoleIds([]) }}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                      requiredFromAll
+                        ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                        : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+                    )}
+                  >
+                    {t("documents.types.everyone")}
+                  </button>
+                  {roles.map((r) => {
+                    const on = !requiredFromAll && requiredFromRoleIds.includes(r.id)
+                    return (
+                      <button
+                        key={r.id}
+                        onClick={() => {
+                          setRequiredFromAll(false)
+                          setRequiredFromRoleIds((ids) =>
+                            ids.includes(r.id) ? ids.filter((x) => x !== r.id) : [...ids, r.id],
+                          )
+                        }}
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                          on
+                            ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                            : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+                        )}
+                      >
+                        {r.name}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("documents.types.requiredNote")}
+                </p>
+              </div>
+            )}
+          </Step>
+        )}
+
         {direction === "ISSUED" && (
           <Step n={5} title={t("documents.types.step5")}>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -520,7 +614,7 @@ function TypeEditor({
           </Step>
         )}
 
-        <Step n={direction === "ISSUED" ? 6 : 5} title={t("documents.types.step6")}>
+        <Step n={6} title={t("documents.types.step6")}>
           <div className="flex flex-wrap gap-1.5">
             {RETENTION_YEARS.map((y) => (
               <button

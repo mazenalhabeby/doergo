@@ -7440,7 +7440,13 @@
           "label": "Documento d’identità",
           "description": "Identità o permesso di lavoro. Fornito dalla persona, non è un attestato."
         }
-      }
+      },
+      "stepRequired": "È obbligatorio?",
+      "isRequired": "Le persone devono fornirlo",
+      "isRequiredHint": "Compare come in sospeso nella loro schermata documenti finché non lo inviano, e l’ufficio vede chi non ce l’ha.",
+      "requiredFromWho": "Richiesto a",
+      "everyone": "Tutti",
+      "requiredNote": "Nessuno viene sollecitato per un documento che non lo riguarda."
     },
     "supply": {
       "action": "Aggiungi documento",
@@ -7489,6 +7495,18 @@
         "wrongDocument": "Non è il documento richiesto",
         "expired": "Questo è già scaduto",
         "dateMismatch": "La data inserita non corrisponde al documento"
+      }
+    },
+    "required": {
+      "title": "Ancora richiesto a te",
+      "blocksWork": "Blocca il tuo lavoro",
+      "state": {
+        "MISSING": "non ancora inviato",
+        "REJECTED": "non accettato: inviane un altro",
+        "EXPIRED": "scaduto: inviane uno nuovo",
+        "AWAITING_REVIEW": "in attesa di verifica",
+        "MET": "agli atti",
+        "EXPIRING": "scade a breve"
       }
     }
   }

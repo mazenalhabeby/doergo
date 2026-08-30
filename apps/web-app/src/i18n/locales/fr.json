@@ -7440,7 +7440,13 @@
           "label": "Pièce d’identité",
           "description": "Identité ou droit de travailler. Fournie par le membre, pas une attestation."
         }
-      }
+      },
+      "stepRequired": "Est-ce exigé ?",
+      "isRequired": "Les membres doivent le fournir",
+      "isRequiredHint": "Il apparaît comme en attente sur leur écran de documents jusqu’à l’envoi, et le bureau voit qui ne l’a pas.",
+      "requiredFromWho": "Exigé de",
+      "everyone": "Tout le monde",
+      "requiredNote": "Personne n’est relancé pour un document qui ne le concerne pas."
     },
     "supply": {
       "action": "Ajouter un document",
@@ -7489,6 +7495,18 @@
         "wrongDocument": "Ce n’est pas le document demandé",
         "expired": "Celui-ci est déjà expiré",
         "dateMismatch": "La date saisie ne correspond pas au document"
+      }
+    },
+    "required": {
+      "title": "Encore attendu de vous",
+      "blocksWork": "Bloque vos affectations",
+      "state": {
+        "MISSING": "pas encore envoyé",
+        "REJECTED": "refusé — envoyez-en un autre",
+        "EXPIRED": "expiré — envoyez-en un nouveau",
+        "AWAITING_REVIEW": "en attente de vérification",
+        "MET": "au dossier",
+        "EXPIRING": "expire bientôt"
       }
     }
   }
