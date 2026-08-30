@@ -1624,7 +1624,49 @@
   },
   "issues": {
     "myIssues": "Meine Meldungen",
-    "report": "Problem melden"
+    "report": "Problem melden",
+    "title": "Meldungen",
+    "reportHint": "Blockiert durch etwas, das Sie nicht lösen können?",
+    "myIssuesHint": "Eine Meldung öffnen, um zu lesen oder zu antworten",
+    "none": "Noch keine Meldungen.",
+    "reportIntro": "Sie kommen nicht weiter? Melden Sie es — Ihre zuständige Person wird sofort benachrichtigt.",
+    "titlePlaceholder": "Worum geht es? (kurzer Titel)",
+    "descriptionPlaceholder": "Beschreiben Sie, was passiert (optional)",
+    "camera": "Kamera",
+    "photo": "Foto",
+    "submit": "Problem melden",
+    "notFound": "Meldung nicht gefunden.",
+    "dispatchedTo": "Zugewiesen an {{name}}",
+    "acknowledge": "Bestätigen",
+    "resolve": "Erledigen",
+    "reasonOptional": "Grund (optional)",
+    "notePlaceholder": "Notiz hinzufügen …",
+    "messagePlaceholder": "Nachricht zu dieser Meldung …",
+    "closedNote": "Diese Meldung ist {{status}}.",
+    "updates_one": "{{count}} Aktualisierung",
+    "updates_other": "{{count}} Aktualisierungen",
+    "severity": {
+      "LOW": "Niedrig",
+      "MEDIUM": "Mittel",
+      "HIGH": "Hoch",
+      "URGENT": "Dringend"
+    },
+    "status": {
+      "OPEN": "Offen",
+      "ACKNOWLEDGED": "Bestätigt",
+      "IN_PROGRESS": "In Arbeit",
+      "RESOLVED": "Erledigt",
+      "CLOSED": "Geschlossen",
+      "CANCELED": "Abgebrochen"
+    },
+    "resolveReasons": {
+      "fixedOnSite": "Vor Ort behoben",
+      "partsUnavailable": "Teile nicht verfügbar",
+      "needsSpecialist": "Fachkraft nötig",
+      "customerUnavailable": "Kunde nicht erreichbar",
+      "duplicate": "Duplikat",
+      "notAnIssue": "Kein Problem"
+    }
   },
   "route": {
     "distance": "Entfernung",

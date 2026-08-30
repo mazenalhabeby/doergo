@@ -902,8 +902,8 @@ export default function AttendanceScreen() {
                   <Ionicons name="warning-outline" size={20} color="#ef4444" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>Report an issue</Text>
-                  <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>Blocked by something you can't fix?</Text>
+                  <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>{t('issues.report')}</Text>
+                  <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>{t('issues.reportHint')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </PressableScale>
@@ -913,8 +913,8 @@ export default function AttendanceScreen() {
                 <Ionicons name="chatbubbles-outline" size={20} color={COLORS.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>My issues</Text>
-                <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>Open a reported issue to read or reply</Text>
+                <Text style={[styles.cardActionTitle, { color: colors.textPrimary }]}>{t('issues.myIssues')}</Text>
+                <Text style={[styles.cardActionSub, { color: colors.textMuted }]}>{t('issues.myIssuesHint')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
             </PressableScale>

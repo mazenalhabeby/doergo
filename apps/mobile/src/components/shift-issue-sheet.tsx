@@ -4,6 +4,7 @@ import {
   Modal, ScrollView, Image, Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { useSocketContext } from '../contexts/socket-context';
@@ -27,23 +28,34 @@ async function uploadPhotos(issueId: string, photos: PickedImage[]): Promise<any
   return out;
 }
 
-const SEVERITIES: { key: string; label: string; color: string }[] = [
-  { key: 'LOW', label: 'Low', color: '#64748b' },
-  { key: 'MEDIUM', label: 'Medium', color: '#2563eb' },
-  { key: 'HIGH', label: 'High', color: '#ea580c' },
-  { key: 'URGENT', label: 'Urgent', color: '#dc2626' },
+/*
+  Keys and colours only.
+
+  These used to carry English labels, which is how a module constant becomes an
+  untranslatable string: nothing in the component looks wrong, the text simply
+  arrives already in one language. The label is looked up where it is rendered,
+  which is the only place a translation function exists.
+*/
+const SEVERITIES: { key: string; color: string }[] = [
+  { key: 'LOW', color: '#64748b' },
+  { key: 'MEDIUM', color: '#2563eb' },
+  { key: 'HIGH', color: '#ea580c' },
+  { key: 'URGENT', color: '#dc2626' },
 ];
-const RESOLVE_REASONS = ['Fixed on site', 'Parts not available', 'Needs a specialist', 'Customer unavailable', 'Duplicate', 'Not an issue'];
+const RESOLVE_REASON_KEYS = [
+  'fixedOnSite', 'partsUnavailable', 'needsSpecialist', 'customerUnavailable', 'duplicate', 'notAnIssue',
+] as const;
 const fmt = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 const fmtDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const sevColor = (k?: string) => SEVERITIES.find((s) => s.key === k)?.color ?? '#64748b';
-const STATUS_LABEL: Record<string, string> = { OPEN: 'Open', ACKNOWLEDGED: 'Acknowledged', IN_PROGRESS: 'In progress', RESOLVED: 'Resolved', CLOSED: 'Closed', CANCELED: 'Canceled' };
+
 
 /** List of the member's issues (managers see the org's) — tap one to open its thread. */
 export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
   visible: boolean; onClose: () => void; onOpen: (id: string) => void; onReport?: () => void;
 }) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { subscribe } = useSocketContext();
   const [issues, setIssues] = useState<ShiftIssue[]>([]);
@@ -63,13 +75,13 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
 
   return (
     <BlurSheet visible={visible} onClose={onClose} avoidKeyboard={false}>
-        <SheetPanel title="Issues" onClose={onClose}>
+        <SheetPanel title={t('issues.title')} onClose={onClose}>
 
           <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
             {loading && issues.length === 0 ? (
               <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={colors.textSecondary} />
             ) : issues.length === 0 ? (
-              <Text style={[styles.hint, { color: colors.textMuted, textAlign: 'center', paddingVertical: SPACING.lg }]}>No issues yet.</Text>
+              <Text style={[styles.hint, { color: colors.textMuted, textAlign: 'center', paddingVertical: SPACING.lg }]}>{t('issues.none')}</Text>
             ) : issues.map((i) => (
               <TouchableOpacity key={i.id} activeOpacity={0.7} onPress={() => { onOpen(i.id); }}
                 style={[styles.listRow, { borderColor: colors.border }]}>
@@ -77,7 +89,7 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: FONT_SIZE.base, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>{i.title}</Text>
                   <Text style={{ fontSize: FONT_SIZE.xs, color: colors.textMuted, marginTop: 1 }}>
-                    {STATUS_LABEL[i.status] ?? i.status} · {fmtDay(i.createdAt)}{i.eventCount ? ` · ${i.eventCount} updates` : ''}
+                    {t(`issues.status.${i.status}`, i.status)} · {fmtDay(i.createdAt)}{i.eventCount ? ` · ${t('issues.updates', { count: i.eventCount })}` : ''}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -88,7 +100,7 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
           {onReport && (
             <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#dc2626', marginTop: SPACING.md }]} onPress={onReport}>
               <Ionicons name="warning-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.primaryBtnText}>Report an issue</Text>
+              <Text style={styles.primaryBtnText}>{t('issues.report')}</Text>
             </TouchableOpacity>
           )}
         </SheetPanel>
@@ -101,6 +113,7 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
   visible: boolean; onClose: () => void; timeEntryId?: string; spaceId?: string; onCreated: (id: string) => void;
 }) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { pickFromGallery, takePhoto } = useImagePicker();
   const [title, setTitle] = useState('');
@@ -134,25 +147,25 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
     <BlurSheet visible={visible} onClose={onClose}>
         <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md }]}>
           <View style={styles.handle} />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Report an issue</Text>
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>Hit a blocker you can't fix? Report it — your responsible person is notified right away.</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('issues.report')}</Text>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>{t('issues.reportIntro')}</Text>
 
           <TextInput
             style={[styles.input, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
-            placeholder="What's the problem? (short title)" placeholderTextColor={colors.textMuted}
+            placeholder={t('issues.titlePlaceholder')} placeholderTextColor={colors.textMuted}
             value={title} onChangeText={setTitle} maxLength={200}
           />
           <View style={styles.sevRow}>
             {SEVERITIES.map((s) => (
               <TouchableOpacity key={s.key} onPress={() => setSeverity(s.key)}
                 style={[styles.sevChip, { borderColor: severity === s.key ? s.color : colors.border, backgroundColor: severity === s.key ? `${s.color}22` : 'transparent' }]}>
-                <Text style={{ color: severity === s.key ? s.color : colors.textSecondary, fontWeight: '600', fontSize: FONT_SIZE.sm }}>{s.label}</Text>
+                <Text style={{ color: severity === s.key ? s.color : colors.textSecondary, fontWeight: '600', fontSize: FONT_SIZE.sm }}>{t(`issues.severity.${s.key}`)}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <TextInput
             style={[styles.input, { height: 90, textAlignVertical: 'top', backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
-            placeholder="Describe what's happening (optional)" placeholderTextColor={colors.textMuted}
+            placeholder={t('issues.descriptionPlaceholder')} placeholderTextColor={colors.textMuted}
             value={description} onChangeText={setDescription} multiline maxLength={2000}
           />
 
@@ -170,15 +183,15 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
           )}
           <View style={{ flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md }}>
             <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.border }]} onPress={addCamera} disabled={picked.length >= 5}>
-              <Ionicons name="camera-outline" size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm }}>Camera</Text>
+              <Ionicons name="camera-outline" size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm }}>{t('issues.camera')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.border }]} onPress={addGallery} disabled={picked.length >= 5}>
-              <Ionicons name="images-outline" size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm }}>Photo</Text>
+              <Ionicons name="images-outline" size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, fontSize: FONT_SIZE.sm }}>{t('issues.photo')}</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={[styles.primaryBtn, (!title.trim() || busy) && { opacity: 0.5 }]} onPress={submit} disabled={!title.trim() || busy}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Report issue</Text>}
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>{t('issues.submit')}</Text>}
           </TouchableOpacity>
         </View>
     </BlurSheet>
@@ -190,6 +203,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   visible: boolean; onClose: () => void; issueId: string | null; canManage?: boolean; currentUserId?: string;
 }) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { subscribe } = useSocketContext();
   const { pickFromGallery, takePhoto } = useImagePicker();
@@ -246,19 +260,19 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
           {loading && !issue ? (
             <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={colors.textSecondary} />
           ) : !issue ? (
-            <Text style={[styles.hint, { color: colors.textMuted, textAlign: 'center' }]}>Issue not found.</Text>
+            <Text style={[styles.hint, { color: colors.textMuted, textAlign: 'center' }]}>{t('issues.notFound')}</Text>
           ) : (
             <>
               <View style={styles.headerRow}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                     <View style={{ backgroundColor: `${sev?.color}22`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
-                      <Text style={{ color: sev?.color, fontSize: FONT_SIZE.xs, fontWeight: '700' }}>{sev?.label}</Text>
+                      <Text style={{ color: sev?.color, fontSize: FONT_SIZE.xs, fontWeight: '700' }}>{sev ? t(`issues.severity.${sev.key}`) : ''}</Text>
                     </View>
-                    <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: '600' }}>{issue.status.replace('_', ' ')}</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: '600' }}>{t(`issues.status.${issue.status}`, issue.status)}</Text>
                   </View>
                   <Text style={[styles.title, { color: colors.textPrimary, fontSize: FONT_SIZE.lg }]} numberOfLines={2}>{issue.title}</Text>
-                  {!!issue.assigneeName && <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }}>Dispatched to {issue.assigneeName}</Text>}
+                  {!!issue.assigneeName && <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }}>{t('issues.dispatchedTo', { name: issue.assigneeName })}</Text>}
                 </View>
                 <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <Ionicons name="close" size={24} color={colors.textSecondary} />
@@ -269,38 +283,51 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
                 <View style={styles.actionRow}>
                   {issue.status === 'OPEN' && (
                     <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={() => act(() => shiftIssuesApi.acknowledge(issue.id))}>
-                      <Ionicons name="checkmark" size={15} color={COLORS.primary} /><Text style={[styles.actionText, { color: colors.textPrimary }]}>Acknowledge</Text>
+                      <Ionicons name="checkmark" size={15} color={COLORS.primary} /><Text style={[styles.actionText, { color: colors.textPrimary }]}>{t('issues.acknowledge')}</Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={() => setResolveOpen((v) => !v)}>
-                    <Ionicons name="checkmark-done" size={15} color={COLORS.success} /><Text style={[styles.actionText, { color: colors.textPrimary }]}>Resolve</Text>
+                    <Ionicons name="checkmark-done" size={15} color={COLORS.success} /><Text style={[styles.actionText, { color: colors.textPrimary }]}>{t('issues.resolve')}</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
               {canManage && !closed && resolveOpen && (
                 <View style={[styles.resolvePanel, { borderColor: colors.border, backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc' }]}>
-                  <Text style={{ fontSize: FONT_SIZE.xs, fontWeight: '600', color: colors.textMuted, marginBottom: 6 }}>Reason (optional)</Text>
+                  <Text style={{ fontSize: FONT_SIZE.xs, fontWeight: '600', color: colors.textMuted, marginBottom: 6 }}>{t('issues.reasonOptional')}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                    {RESOLVE_REASONS.map((r) => (
-                      <TouchableOpacity key={r} onPress={() => setReason(r)}
-                        style={{ borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, borderColor: reason === r ? COLORS.primary : colors.border, backgroundColor: reason === r ? `${COLORS.primary}18` : 'transparent' }}>
-                        <Text style={{ fontSize: FONT_SIZE.xs, color: reason === r ? COLORS.primary : colors.textSecondary }}>{r}</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {RESOLVE_REASON_KEYS.map((k) => {
+                      /*
+                        The chip contributes the TRANSLATED words, not the key.
+
+                        Whatever ends up in `reason` is sent verbatim and read by
+                        a colleague — the free-text box beside these chips puts
+                        human words there, so a chip must too. Storing
+                        'partsUnavailable' would put an identifier in front of
+                        somebody expecting a sentence.
+                      */
+                      const label = t(`issues.resolveReasons.${k}`);
+                      const on = reason === label;
+                      return (
+                        <TouchableOpacity key={k} onPress={() => setReason(label)}
+                          style={{ borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? `${COLORS.primary}18` : 'transparent' }}>
+                          <Text style={{ fontSize: FONT_SIZE.xs, color: on ? COLORS.primary : colors.textSecondary }}>{label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                   <TextInput
                     style={{ borderWidth: 1, borderColor: colors.border, borderRadius: RADIUS.md, padding: SPACING.sm, fontSize: FONT_SIZE.sm, color: colors.textPrimary, minHeight: 40 }}
-                    placeholder="Add a note / excuse…" placeholderTextColor={colors.textMuted}
+                    placeholder={t('issues.notePlaceholder')} placeholderTextColor={colors.textMuted}
                     value={reason} onChangeText={setReason} multiline
                   />
                   <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm, marginTop: 8 }}>
                     <TouchableOpacity onPress={() => { setResolveOpen(false); setReason(''); }} style={{ paddingVertical: 6, paddingHorizontal: 12 }}>
-                      <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm }}>Cancel</Text>
+                      <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm }}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => { const r = reason.trim(); setResolveOpen(false); setReason(''); act(() => shiftIssuesApi.setStatus(issue.id, 'RESOLVED', r || undefined)); }}
                       style={{ backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: 6, paddingHorizontal: 14 }}>
-                      <Text style={{ color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '600' }}>Resolve</Text>
+                      <Text style={{ color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '600' }}>{t('issues.resolve')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -333,7 +360,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
                     </TouchableOpacity>
                     <TextInput
                       style={[styles.msgInput, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
-                      placeholder="Message on this issue…" placeholderTextColor={colors.textMuted}
+                      placeholder={t('issues.messagePlaceholder')} placeholderTextColor={colors.textMuted}
                       value={draft} onChangeText={setDraft} multiline maxLength={2000}
                     />
                     <TouchableOpacity style={[styles.sendBtn, (!draft.trim() && picked.length === 0) || busy ? { opacity: 0.5 } : null]} onPress={send} disabled={(!draft.trim() && picked.length === 0) || busy}>
@@ -342,7 +369,7 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
                   </View>
                 </>
               ) : (
-                <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.md }}>This issue is {issue.status.toLowerCase()}.</Text>
+                <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.md }}>{t('issues.closedNote', { status: t(`issues.status.${issue.status}`, issue.status).toLowerCase() })}</Text>
               )}
             </>
           )}

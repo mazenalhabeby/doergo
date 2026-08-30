@@ -1624,7 +1624,49 @@
   },
   "issues": {
     "myIssues": "Mis incidencias",
-    "report": "Reportar una incidencia"
+    "report": "Reportar una incidencia",
+    "title": "Incidencias",
+    "reportHint": "¿Bloqueado por algo que no puedes resolver?",
+    "myIssuesHint": "Abre una incidencia para leer o responder",
+    "none": "Todavía no hay incidencias.",
+    "reportIntro": "¿Te has topado con un bloqueo que no puedes resolver? Repórtalo: tu responsable recibe el aviso al instante.",
+    "titlePlaceholder": "¿Cuál es el problema? (título breve)",
+    "descriptionPlaceholder": "Describe qué está pasando (opcional)",
+    "camera": "Cámara",
+    "photo": "Foto",
+    "submit": "Reportar incidencia",
+    "notFound": "Incidencia no encontrada.",
+    "dispatchedTo": "Asignada a {{name}}",
+    "acknowledge": "Confirmar",
+    "resolve": "Resolver",
+    "reasonOptional": "Motivo (opcional)",
+    "notePlaceholder": "Añade una nota…",
+    "messagePlaceholder": "Mensaje sobre esta incidencia…",
+    "closedNote": "Esta incidencia está {{status}}.",
+    "updates_one": "{{count}} actualización",
+    "updates_other": "{{count}} actualizaciones",
+    "severity": {
+      "LOW": "Baja",
+      "MEDIUM": "Media",
+      "HIGH": "Alta",
+      "URGENT": "Urgente"
+    },
+    "status": {
+      "OPEN": "Abierta",
+      "ACKNOWLEDGED": "Confirmada",
+      "IN_PROGRESS": "En curso",
+      "RESOLVED": "Resuelta",
+      "CLOSED": "Cerrada",
+      "CANCELED": "Cancelada"
+    },
+    "resolveReasons": {
+      "fixedOnSite": "Resuelto in situ",
+      "partsUnavailable": "Sin repuestos",
+      "needsSpecialist": "Requiere especialista",
+      "customerUnavailable": "Cliente no disponible",
+      "duplicate": "Duplicada",
+      "notAnIssue": "No es una incidencia"
+    }
   },
   "route": {
     "distance": "Distancia",

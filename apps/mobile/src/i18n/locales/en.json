@@ -1646,7 +1646,49 @@
   },
   "issues": {
     "myIssues": "My issues",
-    "report": "Report an issue"
+    "report": "Report an issue",
+    "title": "Issues",
+    "reportHint": "Blocked by something you can't fix?",
+    "myIssuesHint": "Open a reported issue to read or reply",
+    "none": "No issues yet.",
+    "reportIntro": "Hit a blocker you can't fix? Report it — your responsible person is notified right away.",
+    "titlePlaceholder": "What's the problem? (short title)",
+    "descriptionPlaceholder": "Describe what's happening (optional)",
+    "camera": "Camera",
+    "photo": "Photo",
+    "submit": "Report issue",
+    "notFound": "Issue not found.",
+    "dispatchedTo": "Dispatched to {{name}}",
+    "acknowledge": "Acknowledge",
+    "resolve": "Resolve",
+    "reasonOptional": "Reason (optional)",
+    "notePlaceholder": "Add a note / excuse…",
+    "messagePlaceholder": "Message on this issue…",
+    "closedNote": "This issue is {{status}}.",
+    "updates_one": "{{count}} update",
+    "updates_other": "{{count}} updates",
+    "severity": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    },
+    "status": {
+      "OPEN": "Open",
+      "ACKNOWLEDGED": "Acknowledged",
+      "IN_PROGRESS": "In progress",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed",
+      "CANCELED": "Canceled"
+    },
+    "resolveReasons": {
+      "fixedOnSite": "Fixed on site",
+      "partsUnavailable": "Parts not available",
+      "needsSpecialist": "Needs a specialist",
+      "customerUnavailable": "Customer unavailable",
+      "duplicate": "Duplicate",
+      "notAnIssue": "Not an issue"
+    }
   },
   "worklog": {
     "button": "Activity",

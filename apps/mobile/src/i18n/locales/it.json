@@ -1624,7 +1624,49 @@
   },
   "issues": {
     "myIssues": "Le mie segnalazioni",
-    "report": "Segnala un problema"
+    "report": "Segnala un problema",
+    "title": "Segnalazioni",
+    "reportHint": "Bloccato da qualcosa che non puoi risolvere?",
+    "myIssuesHint": "Apri una segnalazione per leggere o rispondere",
+    "none": "Ancora nessuna segnalazione.",
+    "reportIntro": "Hai trovato un blocco che non puoi risolvere? Segnalalo — il tuo responsabile viene avvisato subito.",
+    "titlePlaceholder": "Qual è il problema? (titolo breve)",
+    "descriptionPlaceholder": "Descrivi cosa sta succedendo (facoltativo)",
+    "camera": "Fotocamera",
+    "photo": "Foto",
+    "submit": "Segnala",
+    "notFound": "Segnalazione non trovata.",
+    "dispatchedTo": "Assegnata a {{name}}",
+    "acknowledge": "Conferma",
+    "resolve": "Risolvi",
+    "reasonOptional": "Motivo (facoltativo)",
+    "notePlaceholder": "Aggiungi una nota…",
+    "messagePlaceholder": "Messaggio su questa segnalazione…",
+    "closedNote": "Questa segnalazione è {{status}}.",
+    "updates_one": "{{count}} aggiornamento",
+    "updates_other": "{{count}} aggiornamenti",
+    "severity": {
+      "LOW": "Bassa",
+      "MEDIUM": "Media",
+      "HIGH": "Alta",
+      "URGENT": "Urgente"
+    },
+    "status": {
+      "OPEN": "Aperta",
+      "ACKNOWLEDGED": "Confermata",
+      "IN_PROGRESS": "In corso",
+      "RESOLVED": "Risolta",
+      "CLOSED": "Chiusa",
+      "CANCELED": "Annullata"
+    },
+    "resolveReasons": {
+      "fixedOnSite": "Risolto sul posto",
+      "partsUnavailable": "Ricambi non disponibili",
+      "needsSpecialist": "Serve uno specialista",
+      "customerUnavailable": "Cliente non disponibile",
+      "duplicate": "Duplicato",
+      "notAnIssue": "Non è un problema"
+    }
   },
   "route": {
     "distance": "Distanza",

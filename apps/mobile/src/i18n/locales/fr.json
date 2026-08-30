@@ -1624,7 +1624,49 @@
   },
   "issues": {
     "myIssues": "Mes signalements",
-    "report": "Signaler un problème"
+    "report": "Signaler un problème",
+    "title": "Signalements",
+    "reportHint": "Bloqué par quelque chose que vous ne pouvez pas résoudre ?",
+    "myIssuesHint": "Ouvrir un signalement pour lire ou répondre",
+    "none": "Aucun signalement pour l'instant.",
+    "reportIntro": "Un blocage que vous ne pouvez pas lever ? Signalez-le — votre responsable est prévenu immédiatement.",
+    "titlePlaceholder": "Quel est le problème ? (titre court)",
+    "descriptionPlaceholder": "Décrivez ce qui se passe (facultatif)",
+    "camera": "Appareil photo",
+    "photo": "Photo",
+    "submit": "Signaler",
+    "notFound": "Signalement introuvable.",
+    "dispatchedTo": "Affecté à {{name}}",
+    "acknowledge": "Accuser réception",
+    "resolve": "Résoudre",
+    "reasonOptional": "Motif (facultatif)",
+    "notePlaceholder": "Ajouter une note…",
+    "messagePlaceholder": "Message sur ce signalement…",
+    "closedNote": "Ce signalement est {{status}}.",
+    "updates_one": "{{count}} mise à jour",
+    "updates_other": "{{count}} mises à jour",
+    "severity": {
+      "LOW": "Faible",
+      "MEDIUM": "Moyenne",
+      "HIGH": "Élevée",
+      "URGENT": "Urgente"
+    },
+    "status": {
+      "OPEN": "Ouvert",
+      "ACKNOWLEDGED": "Pris en compte",
+      "IN_PROGRESS": "En cours",
+      "RESOLVED": "Résolu",
+      "CLOSED": "Clôturé",
+      "CANCELED": "Annulé"
+    },
+    "resolveReasons": {
+      "fixedOnSite": "Résolu sur place",
+      "partsUnavailable": "Pièces indisponibles",
+      "needsSpecialist": "Spécialiste requis",
+      "customerUnavailable": "Client indisponible",
+      "duplicate": "Doublon",
+      "notAnIssue": "Pas un problème"
+    }
   },
   "route": {
     "distance": "Distance",

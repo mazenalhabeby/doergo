@@ -548,28 +548,28 @@ export default function TimeOffScreen() {
               <Ionicons name="checkmark-done" size={18} color={COLORS.primary} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.primary }]}>{stats.daysUsed}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.daysUsed')}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]} numberOfLines={2}>{t('timeOff.stats.daysUsed')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.successLight }]}>
               <Ionicons name="sunny" size={18} color={COLORS.success} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.success }]}>{stats.upcoming}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.upcoming')}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]} numberOfLines={2}>{t('timeOff.stats.upcoming')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.amberLight }]}>
               <Ionicons name="hourglass" size={18} color={COLORS.amber} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.amber }]}>{stats.pending}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.pending')}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]} numberOfLines={2}>{t('timeOff.stats.pending')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <View style={[styles.statIconWrap, { backgroundColor: colors.errorLight }]}>
               <Ionicons name="ban" size={18} color={COLORS.error} />
             </View>
             <Text style={[styles.statNumber, { color: COLORS.error }]}>{stats.rejected}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('timeOff.stats.rejected')}</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]} numberOfLines={2}>{t('timeOff.stats.rejected')}</Text>
           </View>
         </TourTarget>
 
@@ -974,16 +974,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   // Stats
+  /*
+    Four tiles across, sized for the LONGEST language rather than the shortest.
+
+    German broke "Ausstehend" across two lines mid-word, which is what React
+    Native does when a single word is wider than its box — there is no
+    hyphenation to fall back on, so it simply cuts. English never showed it:
+    "Pending" is three characters shorter and the tiles were built around it.
+
+    A tighter gap and tighter padding buy roughly 11pt of text width per tile,
+    which is what a ten-character word needs at this size — and ten characters
+    covers the longest label in all five languages ("Ausstehend", "Pendientes",
+    "Rechazadas") with room to spare on a 375pt phone.
+  */
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
-    gap: SPACING.sm,
+    gap: SPACING.xs,
   },
   statCard: {
     flex: 1,
     borderRadius: RADIUS.md,
-    padding: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.md,
     alignItems: 'center',
     ...SHADOWS.sm,
   },
@@ -1001,7 +1015,16 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: FONT_SIZE.xs,
+    lineHeight: 14,
     marginTop: 2,
+    textAlign: 'center',
+    /*
+      Two lines' worth, always. A one-word label next to a two-word one left the
+      tiles with their text sitting at different heights — the row read as four
+      cards that had been laid out separately, which in a language where two of
+      the four wrap is most of them.
+    */
+    height: 30,
   },
 
   // Info banner
