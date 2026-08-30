@@ -9,6 +9,7 @@ import { useTheme } from '../contexts/theme-context';
 import { useSocketContext } from '../contexts/socket-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
 import { BlurSheet } from './blur-sheet';
+import { SheetPanel } from './sheet-panel';
 import { shiftIssuesApi, type ShiftIssue, type ShiftIssueEvent } from '../lib/api/shift-issues';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
@@ -62,14 +63,7 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
 
   return (
     <BlurSheet visible={visible} onClose={onClose} avoidKeyboard={false}>
-        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md, maxHeight: '85%' }]}>
-          <View style={styles.handle} />
-          <View style={styles.headerRow}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>Issues</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+        <SheetPanel title="Issues" onClose={onClose}>
 
           <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
             {loading && issues.length === 0 ? (
@@ -97,8 +91,8 @@ export function ShiftIssueListSheet({ visible, onClose, onOpen, onReport }: {
               <Text style={styles.primaryBtnText}>Report an issue</Text>
             </TouchableOpacity>
           )}
-        </View>
-    </BlurSheet>
+        </SheetPanel>
+      </BlurSheet>
   );
 }
 

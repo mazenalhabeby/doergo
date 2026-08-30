@@ -12,6 +12,7 @@ import { documentsApi, type DocumentType } from '../lib/api/documents';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { BlurSheet } from './blur-sheet';
+import { SheetPanel } from './sheet-panel';
 import { PressableScale } from './pressable-scale';
 // The app's own calendar, in plain JS. `@react-native-community/datetimepicker`
 // would be a NATIVE dependency, and a native dependency means a fresh build
@@ -134,11 +135,22 @@ export function SupplyDocumentSheet({
 
   return (
     <BlurSheet visible={visible} onClose={busy ? () => {} : onClose}>
-      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
-        <Text style={[s.title, { color: colors.textPrimary }]}>{t('documents.supply.title')}</Text>
+      {/*
+        The shared surface. Passing a bare ScrollView to BlurSheet left the
+        content floating over the blurred page with no panel behind it — the
+        screen it had covered showed through the text.
+      */}
+      <SheetPanel
+        title={t('documents.supply.title')}
+        onClose={onClose}
+        closeDisabled={busy}
+        maxHeight="90%"
+      >
         <Text style={[s.subtitle, { color: colors.textSecondary }]}>
           {t('documents.supply.subtitle')}
         </Text>
+
+        <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
 
         {suppliable.length === 0 ? (
           <Text style={[s.empty, { color: colors.textSecondary }]}>
@@ -261,7 +273,8 @@ export function SupplyDocumentSheet({
             </PressableScale>
           </>
         )}
-      </ScrollView>
+        </ScrollView>
+      </SheetPanel>
     </BlurSheet>
   );
 }
@@ -282,9 +295,8 @@ function toIsoDate(d: Date): string {
 }
 
 const s = StyleSheet.create({
-  body: { padding: SPACING.lg, gap: SPACING.sm, paddingBottom: SPACING.xl },
-  title: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
-  subtitle: { fontSize: FONT_SIZE.sm, marginBottom: SPACING.sm },
+  body: { gap: SPACING.sm, paddingBottom: SPACING.md },
+  subtitle: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.sm },
   empty: { fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.xl },
   label: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, marginTop: SPACING.sm },
   typeList: { gap: SPACING.xs },

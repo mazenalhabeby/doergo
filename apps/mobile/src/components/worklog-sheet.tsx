@@ -19,6 +19,7 @@ import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { BlurSheet } from './blur-sheet';
+import { SheetPanel } from './sheet-panel';
 import { worklogApi, type WorkLogNote } from '../lib/api/worklog';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 
@@ -222,14 +223,7 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
   return (
     <>
     <BlurSheet visible={visible} onClose={onClose}>
-        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.md }]}>
-          <View style={[styles.handle, { backgroundColor: isDark ? '#4b5563' : '#d1d5db' }]} />
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+        <SheetPanel title={title} onClose={onClose}>
           <Text style={[styles.hint, { color: colors.textSecondary }]}>{editable ? hint : 'This session is closed — activity is read-only.'}</Text>
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -348,8 +342,8 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
           </View>
           </>
           )}
-        </View>
-    </BlurSheet>
+        </SheetPanel>
+      </BlurSheet>
 
       {/* Full-screen image preview */}
       <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
@@ -366,10 +360,6 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.xl, maxHeight: '85%' },
-  handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: SPACING.md },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold },
   hint: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.md },
   list: { maxHeight: 320 },
   empty: { fontSize: FONT_SIZE.base, textAlign: 'center', marginVertical: SPACING.lg },
