@@ -72,6 +72,9 @@ export class DocumentsController {
   @MessagePattern({ cmd: 'documents_list_requirements' })
   listRequirements(@Payload() data: any) { return this.documents.listRequirements(data); }
 
+  @MessagePattern({ cmd: 'documents_pending_for_member' })
+  pendingForMember(@Payload() data: any) { return this.documents.pendingForMember(data); }
+
   // ── Reviewing what members supplied ──────────────────────────────────────
   @MessagePattern({ cmd: 'documents_awaiting_verification' })
   listAwaitingVerification(@Payload() data: any) { return this.documents.listAwaitingVerification(data); }

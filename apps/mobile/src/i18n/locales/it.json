@@ -1805,10 +1805,16 @@
       "searchTypes": "Cerca tipi"
     },
     "reminder": {
+      "needYou_one": "{{count}} documento ti attende",
+      "needYou_other": "{{count}} documenti ti attendono",
       "needed_one": "{{count}} documento da caricare",
       "needed_other": "{{count}} documenti da caricare",
+      "toSign_one": "{{count}} documento da firmare",
+      "toSign_other": "{{count}} documenti da firmare",
       "expiring_one": "{{count}} documento scade a breve",
       "expiring_other": "{{count}} documenti scadono a breve",
+      "partUpload": "{{count}} da caricare",
+      "partSign": "{{count}} da firmare",
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
     }
   }

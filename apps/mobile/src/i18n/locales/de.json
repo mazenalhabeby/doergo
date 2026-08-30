@@ -1805,10 +1805,16 @@
       "searchTypes": "Arten durchsuchen"
     },
     "reminder": {
+      "needYou_one": "{{count}} Dokument braucht Sie",
+      "needYou_other": "{{count}} Dokumente brauchen Sie",
       "needed_one": "{{count}} Dokument hochzuladen",
       "needed_other": "{{count}} Dokumente hochzuladen",
+      "toSign_one": "{{count}} Dokument zu unterschreiben",
+      "toSign_other": "{{count}} Dokumente zu unterschreiben",
       "expiring_one": "{{count}} Dokument läuft bald ab",
       "expiring_other": "{{count}} Dokumente laufen bald ab",
+      "partUpload": "{{count}} hochladen",
+      "partSign": "{{count}} unterschreiben",
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
     }
   }

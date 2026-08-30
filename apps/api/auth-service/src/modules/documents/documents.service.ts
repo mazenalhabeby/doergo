@@ -30,6 +30,7 @@ import {
   buildResolvedAccess,
   accessAllows,
   requirementStatuses,
+  waitingOnMember,
   checkScan,
   suggestExpiry,
   type Rect,
@@ -1472,6 +1473,55 @@ export class DocumentsService {
     // and the compliance board all read the same one, so they cannot disagree
     // about whether somebody is covered.
     return requirementStatuses(member, types, held);
+  }
+
+  /**
+   * Everything personally outstanding, in one answer.
+   *
+   * The member's own obligations come in two kinds that live in different
+   * places — types the organization asks them to SUPPLY, and documents already
+   * issued to them that are AWAITING SIGNATURE — and a reminder that only knows
+   * about one of them is worse than no reminder, because it reads as a complete
+   * statement of what is left.
+   *
+   * Self only: there is no `targetUserId`. This is the summary behind a badge on
+   * somebody's own screen, and an endpoint that will happily summarise a
+   * colleague's obligations is an endpoint that leaks who is behind on what.
+   *
+   * The SAME TWO QUERIES `listRequirements` already makes, so a screen showing
+   * both kinds costs exactly what showing one kind cost — `held` is every
+   * document the member has, and the ones awaiting a signature were always in
+   * it, merely thrown away.
+   */
+  async pendingForMember(data: { actor: DocumentActor }) {
+    const member = await this.prisma.user.findFirst({
+      where: { id: data.actor.userId, organizationId: data.actor.organizationId },
+      select: { id: true, memberRoleId: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const [types, held] = await Promise.all([
+      this.prisma.documentType.findMany({
+        where: { organizationId: data.actor.organizationId, isActive: true, direction: 'SUPPLIED' },
+      }),
+      this.prisma.document.findMany({
+        where: { organizationId: data.actor.organizationId, userId: data.actor.userId },
+        select: { id: true, title: true, typeId: true, status: true, expiresOn: true },
+        orderBy: { issuedAt: 'desc' },
+      }),
+    ]);
+
+    const statuses = requirementStatuses(member, types, held);
+
+    return {
+      // Both filtered with the shared rules, so this agrees with the member's
+      // own documents screen rather than offering a second opinion.
+      toUpload: statuses.filter((r) => waitingOnMember(r)),
+      expiring: statuses.filter((r) => r.state === 'EXPIRING'),
+      toSign: held
+        .filter((d) => d.status === 'AWAITING_SIGNATURE')
+        .map((d) => ({ id: d.id, title: d.title })),
+    };
   }
 
   /**

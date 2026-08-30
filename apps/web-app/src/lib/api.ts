@@ -5914,6 +5914,13 @@ export interface RequirementRow {
   blocksWork: boolean;
 }
 
+/** What the signed-in member still has to do, of either kind. */
+export interface PendingDocumentsSummary {
+  toUpload: RequirementRow[]
+  expiring: RequirementRow[]
+  toSign: { id: string; title: string }[]
+}
+
 export interface PendingReviewRow {
   id: string;
   title: string;
@@ -6160,6 +6167,24 @@ export const documentsApi = {
       buildUrlWithQuery('/documents/requirements', { userId }),
     );
     return unwrapDocuments<RequirementRow[]>(response) ?? [];
+  },
+
+  /**
+   * Everything personally outstanding, in one request.
+   *
+   * Separate from `requirements` because a reminder needs BOTH kinds — types to
+   * supply and documents awaiting a signature — and two requests for one badge
+   * is how a reminder ends up removed again for being slow. Self only: it takes
+   * no userId, because a summary endpoint that accepts somebody else's is a
+   * convenient way to find out who is behind on what.
+   */
+  pending: async () => {
+    const response = await api.get<{ success: boolean; data: PendingDocumentsSummary }>(
+      '/documents/pending',
+    );
+    return (
+      unwrapDocuments<PendingDocumentsSummary>(response) ?? { toUpload: [], expiring: [], toSign: [] }
+    );
   },
 
   // ── Reviewing what members supplied ──────────────────────────────────────

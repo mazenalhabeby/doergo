@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { AlertCircle, ChevronRight, Clock, FileUp } from "lucide-react"
+import { AlertCircle, ChevronRight, Clock, FileUp, PenLine } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
@@ -23,13 +23,26 @@ import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
  */
 export function DocumentsReminderBanner({ className }: { className?: string }) {
   const { t } = useTranslation()
-  const { actionable, expiringSoon, blocksWork, count } = useMyDocumentRequirements()
+  const p = useMyDocumentRequirements()
 
-  if (actionable.length === 0 && expiringSoon.length === 0) return null
+  if (p.empty) return null
 
-  const urgent = actionable.length > 0
-  const showing = urgent ? actionable : expiringSoon
-  const Icon = blocksWork ? AlertCircle : urgent ? FileUp : Clock
+  const Icon = p.blocksWork ? AlertCircle
+    : p.titleKey === "toSign" ? PenLine
+    : p.titleKey === "expiring" ? Clock
+    : FileUp
+
+  const body = p.blocksWork
+    ? t("documents.reminder.blocking")
+    : p.mixed
+      // Both kinds: what they are in for, not six names in a one-line space.
+      ? [
+          t("documents.reminder.partUpload", { count: p.uploadCount }),
+          t("documents.reminder.partSign", { count: p.signCount }),
+        ].join(" · ")
+      // One kind: name them. A bare count makes somebody open the screen just
+      // to find out which, a click the sentence could have saved.
+      : p.names.join(" · ")
 
   return (
     <Link
@@ -39,17 +52,17 @@ export function DocumentsReminderBanner({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* The tone lives in the icon, not in the whole card. A full-bleed amber
+      {/* The tone lives in the icon, not the whole card. A full-bleed amber
           panel on a dashboard is the visual weight of an outage notice, and
           this is a piece of admin. */}
       <span
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-md",
-          blocksWork
+          p.blocksWork
             ? "bg-red-500/10 text-red-600 dark:text-red-400"
-            : urgent
-              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-              : "bg-primary/10 text-primary",
+            : p.titleKey === "expiring"
+              ? "bg-primary/10 text-primary"
+              : "bg-amber-500/10 text-amber-600 dark:text-amber-400",
         )}
       >
         <Icon className="h-[18px] w-[18px]" />
@@ -57,21 +70,15 @@ export function DocumentsReminderBanner({ className }: { className?: string }) {
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-foreground">
-          {urgent
-            ? t("documents.reminder.needed", { count })
-            : t("documents.reminder.expiring", { count: expiringSoon.length })}
+          {t(`documents.reminder.${p.titleKey}`, { count: p.count })}
         </p>
-        {/* Names them. "2 documents" makes somebody open the screen to find out
-            which — a click the sentence could have saved them. */}
         <p
           className={cn(
             "truncate text-xs",
-            blocksWork ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
+            p.blocksWork ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
           )}
         >
-          {blocksWork
-            ? t("documents.reminder.blocking")
-            : showing.map((r) => r.label).join(" · ")}
+          {body}
         </p>
       </div>
 

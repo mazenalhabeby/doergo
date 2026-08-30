@@ -7553,10 +7553,16 @@
       }
     },
     "reminder": {
+      "needYou_one": "{{count}} documento te necesita",
+      "needYou_other": "{{count}} documentos te necesitan",
       "needed_one": "{{count}} documento por subir",
       "needed_other": "{{count}} documentos por subir",
+      "toSign_one": "{{count}} documento por firmar",
+      "toSign_other": "{{count}} documentos por firmar",
       "expiring_one": "{{count}} documento caduca pronto",
       "expiring_other": "{{count}} documentos caducan pronto",
+      "partUpload": "{{count}} por subir",
+      "partSign": "{{count}} por firmar",
       "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
     }
   }

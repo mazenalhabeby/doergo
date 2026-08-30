@@ -71,8 +71,7 @@ export default function ProfileScreen() {
   const { pickFromGallery, takePhoto } = useImagePicker();
   const insets = useSafeAreaInsets();
   // Already loaded for the home card — this reads the same fetch, not a second one.
-  const { actionable: outstandingDocsList, blocksWork: docsBlockWork } = useDocumentRequirements();
-  const outstandingDocs = outstandingDocsList.length;
+  const { total: outstandingDocs, blocksWork: docsBlockWork } = useDocumentRequirements();
 
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [savingPresence, setSavingPresence] = useState(false);

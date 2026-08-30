@@ -4,6 +4,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useDocumentRequirements } from '../contexts/document-requirements-context';
+import { summarisePending } from '@hbcfield/shared/client';
 import { COLORS, SPACING } from '../lib/constants';
 import { styles as homeStyles } from './home/home-styles';
 import { PressableScale } from './pressable-scale';
@@ -33,23 +34,43 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
-  const { actionable, expiringSoon, blocksWork } = useDocumentRequirements();
+  const { toUpload, toSign, expiringSoon } = useDocumentRequirements();
 
-  if (actionable.length === 0 && expiringSoon.length === 0) return null;
+  /*
+    ONE card whatever is outstanding.
 
-  const showing = actionable.length > 0 ? actionable : expiringSoon;
-  const urgent = actionable.length > 0;
-  const tone = blocksWork ? COLORS.error : urgent ? COLORS.warning : COLORS.primary;
+    A member can owe two different things at once — a document to supply and one
+    already issued to them waiting for a signature — and the obvious build is a
+    card for each, which doubles the space a piece of admin takes on a home
+    screen that has a shift and a day's work to show. The line changes instead
+    of multiplying.
 
-  const title = urgent
-    ? t('documents.reminder.needed', { count: actionable.length })
-    : t('documents.reminder.expiring', { count: expiringSoon.length });
+    The rule is shared with the web so the two can never quote different
+    numbers for the same person.
+  */
+  const p = summarisePending({ toUpload, toSign, expiring: expiringSoon });
+  if (p.empty) return null;
 
-  const body = blocksWork
+  const tone = p.blocksWork ? COLORS.error
+    : p.titleKey === 'expiring' ? COLORS.primary
+    : COLORS.warning;
+
+  const icon = p.blocksWork ? 'alert-circle'
+    : p.titleKey === 'toSign' ? 'create'
+    : p.titleKey === 'expiring' ? 'time-outline'
+    : 'document-attach';
+
+  const body = p.blocksWork
     ? t('documents.reminder.blocking')
-    // Names them. "2 documents" makes somebody open the screen to find out
-    // which — a round trip the sentence could have saved them.
-    : showing.map((r) => r.label).join(' · ');
+    : p.mixed
+      // Both kinds: what they are in for, not six names in a two-line space.
+      ? [
+          t('documents.reminder.partUpload', { count: p.uploadCount }),
+          t('documents.reminder.partSign', { count: p.signCount }),
+        ].join(' · ')
+      // One kind: name them. A bare count makes somebody open the screen just
+      // to find out which, a round trip the sentence could have saved.
+      : p.names.join(' · ');
 
   return (
     <PressableScale
@@ -60,28 +81,21 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
 
         It sits directly above Clock In, and a card a few pixels off in padding,
         radius or icon size is the most obvious way for a screen to look
-        unfinished — which is exactly how the first version looked. The tone
-        lives in the ICON TILE, the one thing that is allowed to differ between
-        an ordinary action and an urgent one; the coloured rail down the edge
-        that used to carry it appeared nowhere else on the screen and read as a
-        stray mark rather than a signal.
+        unfinished. The tone lives in the ICON TILE, the one thing allowed to
+        differ between an ordinary action and an urgent one.
       */
       style={[homeStyles.actionCard, s.spacing, { backgroundColor: colors.card }, style]}
     >
       <View style={[homeStyles.actionCardIcon, { backgroundColor: `${tone}1F` }]}>
-        <Ionicons
-          name={blocksWork ? 'alert-circle' : urgent ? 'document-attach' : 'time-outline'}
-          size={26}
-          color={tone}
-        />
+        <Ionicons name={icon} size={26} color={tone} />
       </View>
       <View style={homeStyles.actionCardText}>
         <Text style={[homeStyles.actionCardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-          {title}
+          {t(`documents.reminder.${p.titleKey}`, { count: p.count })}
         </Text>
         <Text
-          style={[homeStyles.actionCardSubtitle, { color: blocksWork ? tone : colors.textMuted }]}
-          numberOfLines={2}
+          style={[homeStyles.actionCardSubtitle, { color: p.blocksWork ? tone : colors.textMuted }]}
+          numberOfLines={1}
         >
           {body}
         </Text>

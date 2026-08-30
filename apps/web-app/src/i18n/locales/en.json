@@ -7553,10 +7553,16 @@
       }
     },
     "reminder": {
+      "needYou_one": "{{count}} document needs you",
+      "needYou_other": "{{count}} documents need you",
       "needed_one": "{{count}} document to upload",
       "needed_other": "{{count}} documents to upload",
+      "toSign_one": "{{count}} document to sign",
+      "toSign_other": "{{count}} documents to sign",
       "expiring_one": "{{count}} document expires soon",
       "expiring_other": "{{count}} documents expire soon",
+      "partUpload": "{{count}} to upload",
+      "partSign": "{{count}} to sign",
       "blocking": "You cannot be given work until this is supplied and approved."
     }
   }

@@ -31,6 +31,7 @@ export class DocumentsGatewayService extends BaseGatewayService {
   compliance(data: unknown) { return this.send({ cmd: 'documents_compliance' }, data); }
   awaitingVerification(data: unknown) { return this.send({ cmd: 'documents_awaiting_verification' }, data); }
   requirements(data: unknown) { return this.send({ cmd: 'documents_list_requirements' }, data); }
+  pending(data: unknown) { return this.send({ cmd: 'documents_pending_for_member' }, data); }
 
   // ── Writes ───────────────────────────────────────────────────────────────
   createType(data: unknown) { return this.sendOnce({ cmd: 'documents_create_type' }, data); }

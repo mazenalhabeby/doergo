@@ -4,7 +4,7 @@ import {
 import { AppState } from 'react-native';
 import { useAuth } from './auth-context';
 import { documentsApi } from '../lib/api/documents';
-import { orgHasAddOn, waitingOnMember } from '@hbcfield/shared/client';
+import { orgHasAddOn } from '@hbcfield/shared/client';
 
 /**
  * What the member still owes the organization, fetched ONCE.
@@ -26,18 +26,24 @@ import { orgHasAddOn, waitingOnMember } from '@hbcfield/shared/client';
  */
 
 interface DocumentRequirementsValue {
-  /** Requirements the member themselves has to act on. Never what the org owes. */
-  actionable: { typeId: string; label: string; blocksWork: boolean }[];
+  /** Types the member has to supply. Never what the org owes them. */
+  toUpload: { typeId: string; label: string; blocksWork: boolean }[];
+  /** Already issued to them, waiting on a signature. The other half. */
+  toSign: { id: string; title: string }[];
   /** Held, valid, but running out — worth a mention, not a demand. */
   expiringSoon: { typeId: string; label: string; expiresOn: string | null }[];
+  /** Everything waiting on the member, of either kind. */
+  total: number;
   /** At least one outstanding requirement stops the member being given work. */
   blocksWork: boolean;
   refresh: () => Promise<void>;
 }
 
 const EMPTY: DocumentRequirementsValue = {
-  actionable: [],
+  toUpload: [],
+  toSign: [],
   expiringSoon: [],
+  total: 0,
   blocksWork: false,
   refresh: async () => {},
 };
@@ -48,7 +54,8 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
   const { user } = useAuth();
   const enabled = orgHasAddOn(user?.orgAddOns ?? null, 'documents') && !!user;
 
-  const [actionable, setActionable] = useState<DocumentRequirementsValue['actionable']>([]);
+  const [toUpload, setToUpload] = useState<DocumentRequirementsValue['toUpload']>([]);
+  const [toSign, setToSign] = useState<DocumentRequirementsValue['toSign']>([]);
   const [expiringSoon, setExpiringSoon] = useState<DocumentRequirementsValue['expiringSoon']>([]);
   // A refresh already in flight, so a foreground event during the first load
   // does not fire a second identical request.
@@ -56,7 +63,8 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
 
   const refresh = useCallback(async () => {
     if (!enabled) {
-      setActionable([]);
+      setToUpload([]);
+      setToSign([]);
       setExpiringSoon([]);
       return;
     }
@@ -64,17 +72,13 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
 
     const run = (async () => {
       try {
-        const rows = await documentsApi.requirements();
-        setActionable(
-          rows
-            .filter((r) => waitingOnMember(r))
-            .map((r) => ({ typeId: r.typeId, label: r.label, blocksWork: r.blocksWork })),
-        );
-        setExpiringSoon(
-          rows
-            .filter((r) => r.state === 'EXPIRING')
-            .map((r) => ({ typeId: r.typeId, label: r.label, expiresOn: r.expiresOn })),
-        );
+        // One request, both kinds. The server applies the same shared rules the
+        // member's own documents screen does, so the badge and the screen can
+        // never disagree about what is left.
+        const pending = await documentsApi.pending();
+        setToUpload(pending.toUpload);
+        setToSign(pending.toSign);
+        setExpiringSoon(pending.expiring);
       } catch {
         /*
           Silent on purpose. This is a reminder, not a screen somebody asked
@@ -102,11 +106,13 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
   }, [enabled, refresh]);
 
   const value = useMemo<DocumentRequirementsValue>(() => ({
-    actionable,
+    toUpload,
+    toSign,
     expiringSoon,
-    blocksWork: actionable.some((r) => r.blocksWork),
+    total: toUpload.length + toSign.length,
+    blocksWork: toUpload.some((r) => r.blocksWork),
     refresh,
-  }), [actionable, expiringSoon, refresh]);
+  }), [toUpload, toSign, expiringSoon, refresh]);
 
   return (
     <DocumentRequirementsContext.Provider value={value}>

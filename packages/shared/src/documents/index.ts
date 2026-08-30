@@ -6,6 +6,7 @@ export * from './contract-layout';
 export * from './starter-templates';
 export * from './starter-types';
 export * from './requirements';
+export * from './pending-summary';
 export * from './mrz';
 export * from './aamva';
 export * from './scan-checks';

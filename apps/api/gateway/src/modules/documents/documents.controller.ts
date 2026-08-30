@@ -182,6 +182,20 @@ export class DocumentsController {
     return this.documents.requirements({ actor: documentActor(user), targetUserId: userId });
   }
 
+  /**
+   * Everything personally outstanding, for a badge.
+   *
+   * Deliberately separate from `requirements`, and deliberately without a
+   * `userId`. It answers "what is left for ME", which is the only question a
+   * reminder should be able to ask — a summary endpoint that accepts somebody
+   * else's id is a convenient way to find out who is behind on what.
+   */
+  @Get('pending')
+  @ApiOperation({ summary: 'What the signed-in member still has to upload or sign' })
+  async pending(@CurrentUser() user: CurrentUserData) {
+    return this.documents.pending({ actor: documentActor(user) });
+  }
+
   // ── Reviewing what members supplied ──────────────────────────────────────
   //
   // On `canIssueDocuments`, not a fifth permission key. Deciding that a

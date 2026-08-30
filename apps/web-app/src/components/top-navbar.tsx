@@ -587,7 +587,10 @@ function DocumentsDropdown({
     no dismissing, and is still legible in three weeks, by which time a banner
     on every screen has become furniture people read straight past.
   */
-  const { count: outstanding, blocksWork } = useMyDocumentRequirements()
+  // actionCount, not count: a certificate expiring in three weeks is not
+  // something anybody is late for, and a badge that lights up for it teaches
+  // people to ignore the badge.
+  const { actionCount: outstanding, blocksWork } = useMyDocumentRequirements()
 
   /*
     EXACTLY the routes this menu contains. The attendance menu listed a route it

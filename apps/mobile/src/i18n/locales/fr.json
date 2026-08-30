@@ -1805,10 +1805,16 @@
       "searchTypes": "Rechercher un type"
     },
     "reminder": {
+      "needYou_one": "{{count}} document vous attend",
+      "needYou_other": "{{count}} documents vous attendent",
       "needed_one": "{{count}} document à envoyer",
       "needed_other": "{{count}} documents à envoyer",
+      "toSign_one": "{{count}} document à signer",
+      "toSign_other": "{{count}} documents à signer",
       "expiring_one": "{{count}} document expire bientôt",
       "expiring_other": "{{count}} documents expirent bientôt",
+      "partUpload": "{{count}} à envoyer",
+      "partSign": "{{count}} à signer",
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
     }
   }

@@ -88,6 +88,27 @@ export const documentsApi = {
     return Array.isArray(result) ? result : result?.data || [];
   },
 
+  /**
+   * Everything personally outstanding, in one request.
+   *
+   * Separate from `requirements` because the reminder needs BOTH kinds — types
+   * to supply and documents awaiting a signature — and two requests for one
+   * badge is how a reminder ends up being removed again for being slow.
+   */
+  pending: async (): Promise<{
+    toUpload: { typeId: string; label: string; blocksWork: boolean }[];
+    expiring: { typeId: string; label: string; expiresOn: string | null }[];
+    toSign: { id: string; title: string }[];
+  }> => {
+    const result = await fetchWithAuth<any>('/documents/pending');
+    const data = result?.data ?? result ?? {};
+    return {
+      toUpload: data.toUpload ?? [],
+      expiring: data.expiring ?? [],
+      toSign: data.toSign ?? [],
+    };
+  },
+
   // ── What the member supplies ─────────────────────────────────────────────
 
   /** Step 1: somewhere to PUT the photograph. No user id — the member is the token. */
