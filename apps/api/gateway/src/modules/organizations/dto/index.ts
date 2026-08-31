@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, IsEmail, Min, Max } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, IsEmail, IsNotEmpty, Min, Max } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /**
@@ -342,4 +342,11 @@ export class UpdateMemberDto {
   @IsOptional()
   @IsBoolean()
   allowRemote?: boolean;
+}
+
+/** Who the organization is being handed to. */
+export class TransferOwnershipDto {
+  @IsString()
+  @IsNotEmpty()
+  newOwnerId!: string;
 }

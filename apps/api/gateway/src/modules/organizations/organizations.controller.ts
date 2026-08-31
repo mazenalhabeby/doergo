@@ -22,7 +22,7 @@ import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto } from './dto';
+import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto, TransferOwnershipDto } from './dto';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -230,6 +230,31 @@ export class OrganizationsController {
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'update_access_role' }, { ...body, roleId, organizationId: user.organizationId, requesterId: user.id }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
+  /**
+   * Hand the organization to another member.
+   *
+   * Guarded by the SERVICE on ownership, not by a permission here: only the
+   * current owner may transfer, and no permission grants that. An admin who
+   * could take ownership could then remove the founder, which is the exact
+   * outcome the protection exists to prevent.
+   */
+  @Post('transfer-ownership')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: 'Transfer organization ownership to another member' })
+  async transferOwnership(@Body() dto: TransferOwnershipDto, @CurrentUser() user: CurrentUserData) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'transfer_ownership' }, {
+        organizationId: user.organizationId,
+        requesterId: user.id,
+        newOwnerId: dto.newOwnerId,
+      }),
     );
     if (result && result.success === false) {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);

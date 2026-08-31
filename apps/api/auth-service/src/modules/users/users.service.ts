@@ -1087,6 +1087,100 @@ export class UsersService {
   /**
    * Remove a member from the organization
    */
+  /**
+   * Refuse an action that would leave the organization without its owner.
+   *
+   * One query, and only when the action is actually one of the dangerous ones —
+   * an ordinary profile edit never reaches it. `ownerId` is a unique column on
+   * the organization, so this is a primary-key lookup returning one short row.
+   */
+  private async assertNotOwner(organizationId: string, memberId: string, verb: string) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { ownerId: true },
+    });
+    if (org?.ownerId && org.ownerId === memberId) {
+      throw new BadRequestException(
+        `The organization owner cannot be ${verb}. Transfer ownership to another admin first.`,
+      );
+    }
+  }
+
+  /**
+   * Hand the organization to somebody else.
+   *
+   * The only way an owner stops being the owner, which is what makes "the owner
+   * cannot be removed" a rule rather than a trap.
+   *
+   * ONLY THE OWNER MAY DO THIS. Not any admin — otherwise the protection is
+   * theatre: an admin who cannot delete the founder could simply take ownership
+   * from them and then delete them. Ownership is the one thing in the product
+   * that is not delegable by holding a permission.
+   *
+   * The new owner is made an ADMIN in the same transaction, because an owner who
+   * cannot administer the organization is the lockout this whole feature exists
+   * to prevent. The previous owner stays an admin — losing ownership is not a
+   * demotion, and stripping their access as a side effect of a handover is the
+   * kind of surprise that makes people avoid the button.
+   */
+  async transferOwnership(data: { organizationId: string; requesterId: string; newOwnerId: string }) {
+    const refuse = (statusCode: number, message: string) => ({ success: false as const, statusCode, message });
+
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { ownerId: true },
+    });
+    if (!org) return refuse(HttpStatus.NOT_FOUND, 'Organization not found');
+
+    /*
+      An organization with no owner recorded yet — possible only for one created
+      before ownership existed and never backfilled — is claimable by an admin, so
+      it cannot become permanently ownerless. Once owned, only the owner moves it.
+    */
+    if (org.ownerId && org.ownerId !== data.requesterId) {
+      return refuse(HttpStatus.FORBIDDEN, 'Only the organization owner can transfer ownership.');
+    }
+    if (org.ownerId === data.newOwnerId) {
+      return refuse(HttpStatus.BAD_REQUEST, 'That member already owns this organization.');
+    }
+
+    const target = await this.prisma.user.findFirst({
+      where: { id: data.newOwnerId, organizationId: data.organizationId, isActive: true },
+      select: { id: true, role: true, firstName: true, lastName: true },
+    });
+    // Scoped to the organization: an id from another tenant must read as "not a
+    // member here", never as a transfer.
+    if (!target) return refuse(HttpStatus.NOT_FOUND, 'That member is not part of this organization.');
+
+    if (!org.ownerId) {
+      const requester = await this.prisma.user.findFirst({
+        where: { id: data.requesterId, organizationId: data.organizationId, role: Role.ADMIN, isActive: true },
+        select: { id: true },
+      });
+      if (!requester) return refuse(HttpStatus.FORBIDDEN, 'Only an admin can claim an unowned organization.');
+    }
+
+    /*
+      Both writes or neither. An owner recorded against somebody who is not an
+      admin is exactly the broken state this guards against, and a half-applied
+      transfer is how you get there.
+    */
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: target.id }, data: { role: Role.ADMIN } }),
+      this.prisma.organization.update({ where: { id: data.organizationId }, data: { ownerId: target.id } }),
+    ]);
+
+    this.logger.warn(
+      `[OWNERSHIP] org ${data.organizationId} transferred to ${target.id} by ${data.requesterId}`,
+    );
+
+    return {
+      success: true,
+      data: { ownerId: target.id, ownerName: `${target.firstName} ${target.lastName}`.trim() },
+      message: 'Ownership transferred',
+    };
+  }
+
   async removeMember(dto: RemoveMemberDto) {
     const { memberId, organizationId, requesterId } = dto;
 
@@ -1103,6 +1197,21 @@ export class UsersService {
     if (!member) {
       throw new NotFoundException('Member not found');
     }
+
+    /*
+      The owner cannot be removed.
+
+      Before this, any admin could delete any other admin — the founder of the
+      organization included, by whoever they had invited that morning. The
+      last-admin check below was the only floor, and it only fires when a single
+      admin is left; with two admins each could delete the other.
+
+      Ownership has to move first. That is not an obstacle for its own sake: it
+      forces the question "who owns this organization now?" to be answered
+      deliberately, by the one person entitled to answer it, instead of being
+      settled by whoever clicked first.
+    */
+    await this.assertNotOwner(organizationId, memberId, 'removed');
 
     // Privilege ceiling (audit M-B2). updateMemberProfile already refuses to let a
     // non-admin holding canManageUsers touch an ADMIN; removal is the same act with a
@@ -1321,6 +1430,17 @@ export class UsersService {
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {
+      /*
+        The owner is an admin, always.
+
+        Demoting them would leave the organization owned by somebody who cannot
+        administer it — the same lockout as an emptied role, reached by a
+        different door. Transfer ownership first, then demote.
+      */
+      if (dto.role !== Role.ADMIN) {
+        await this.assertNotOwner(organizationId, memberId, 'demoted');
+      }
+
       /*
         The value has to BE a role.
 

@@ -29,6 +29,12 @@ describe('UsersService members audit (M-B1, M-B2)', () => {
       count: jest.fn(),
     },
     accessRole: { findFirst: jest.fn() },
+    /*
+      Removal now asks who owns the organization before anything else — the owner
+      cannot be removed, and ownership has to move first. These tests are about a
+      different guard, so the org reports no owner and leaves them unaffected.
+    */
+    organization: { findUnique: jest.fn().mockResolvedValue({ ownerId: null }) },
     // The removal history probe counts across 14 tables before deciding hard vs
     // soft delete; each must exist on the mock or the probe throws before we get
     // to assert anything.

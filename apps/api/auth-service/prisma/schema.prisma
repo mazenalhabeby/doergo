@@ -466,6 +466,16 @@ model Organization {
   shiftAssignments ShiftAssignment[]
 
   // Organization delegation relationships
+  /// Who owns this organization — normally whoever created it.
+  ///
+  /// On the organization rather than as a flag on the user: an org has exactly
+  /// ONE owner, and a unique column holding one id IS that invariant. A boolean
+  /// on users can drift into two owners or none, which no application code can
+  /// make impossible. Nullable so the column can exist before it is filled, and
+  /// so an owner's row disappearing leaves the organization standing.
+  ownerId        String?              @unique
+  owner          User?                @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
   grantedAccess  OrganizationAccess[] @relation("Grantor") // Access this org has granted to others
   receivedAccess OrganizationAccess[] @relation("Grantee") // Access this org has received from others
 
@@ -729,6 +739,8 @@ model User {
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
+  /// The organization this user owns, if any. Back-reference for ownerId above.
+  ownedOrganization Organization? @relation("OrganizationOwner")
 
   // Customer portal: for role=CUSTOMER, the Customer they log in as + optional
   // default unit. Null for staff (ADMIN/EMPLOYEE). See [[customer-portal]].

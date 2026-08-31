@@ -496,7 +496,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           // isActive so a deactivated role stops granting (M1). Space grants are
           // filtered to their effective window so expired/future grants don't
@@ -706,6 +706,9 @@ export class AuthService {
             role: normalizeRole(user.role),
             organizationId: user.organizationId,
             organizationName: user.organization?.name || null,
+            // Owner of this organization? Read here so the client never asks:
+            // it labels the owner and hides actions that would be refused.
+            isOwner: !!user.organization?.ownerId && user.organization.ownerId === user.id,
             organizationTimezone: user.organization?.timezone || null,
             orgUsesExternalWorkers: user.organization?.usesExternalWorkers ?? false,
             onboardingCompleted: user.onboardingCompleted,
@@ -797,7 +800,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true } },
+              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
             },
           },
         },
@@ -1313,7 +1316,7 @@ export class AuthService {
           // can scope to it the way they already scope to a unit. Without this
           // req.user.assetId is undefined and the binding does nothing.
           assetId: true,
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
@@ -1439,6 +1442,9 @@ export class AuthService {
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.
           role: normalizeRole(userData.role),
           organizationName: organization?.name || null,
+          // Must match the login path exactly — see orgAddOns for what happens
+          // when one context builder knows something the other does not.
+          isOwner: !!organization?.ownerId && organization.ownerId === user.id,
           // Org timezone — the default display zone for all times on the client
           // (attendance times override per-entry with the location's timezone).
           organizationTimezone: organization?.timezone || null,

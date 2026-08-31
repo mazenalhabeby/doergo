@@ -171,6 +171,9 @@ export class UsersController {
     return this.usersService.updateAccessRole(data);
   }
 
+  @MessagePattern({ cmd: 'transfer_ownership' })
+  transferOwnership(@Payload() data: any) { return this.usersService.transferOwnership(data); }
+
   @MessagePattern({ cmd: 'delete_access_role' })
   async deleteAccessRole(@Payload() data: { organizationId: string; requesterId?: string; roleId: string }) {
     return this.usersService.deleteAccessRole(data);
