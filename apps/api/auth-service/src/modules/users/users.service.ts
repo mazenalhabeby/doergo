@@ -1300,6 +1300,21 @@ export class UsersService {
 
     // Role/permission fields — only if role is provided
     if (dto.role !== undefined) {
+      /*
+        The value has to BE a role.
+
+        `Role` is ADMIN | EMPLOYEE | CUSTOMER — MANAGER was retired in July, when
+        managing became the canViewAllTasks / canAssignTasks flags rather than a
+        role of its own. Anything else fell straight through to Prisma, which
+        rejected the enum, and an unrecognised database error is reported as a
+        500: the caller was told the server broke when they had simply named a
+        role that does not exist.
+      */
+      if (!Object.values(Role).includes(dto.role as Role)) {
+        throw new BadRequestException(
+          `Unknown role "${dto.role}". Valid roles are ${Object.values(Role).join(', ')}.`,
+        );
+      }
       // Self-role change already blocked by the privilege self-mutation guard above.
 
       // If demoting from ADMIN, check there's at least one other active ADMIN
