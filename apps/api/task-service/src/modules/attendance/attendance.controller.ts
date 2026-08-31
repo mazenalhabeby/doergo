@@ -246,6 +246,11 @@ export class AttendanceController {
     return this.breakService.addBreakForMember(data);
   }
 
+  @MessagePattern({ cmd: 'delete_break' })
+  async deleteBreak(@Payload() data: { breakId: string; organizationId: string; editorId: string }) {
+    return this.breakService.deleteBreak(data);
+  }
+
   @MessagePattern({ cmd: 'end_break_manually' })
   async endBreakManually(
     @Payload()

@@ -518,6 +518,28 @@ export class AttendanceController {
     return result;
   }
 
+  /**
+   * Remove a break from a shift.
+   *
+   * Same grant as adding one — correcting somebody else's attendance is one
+   * capability, not several. Deleting recomputes the shift's break total and
+   * returns an approved entry to PENDING, because its paid hours change.
+   */
+  @Delete('breaks/:id')
+  @RequirePermission('canReconcileAttendance')
+  @ApiOperation({ summary: 'Remove a break from a shift (reconciliation)' })
+  async deleteBreak(@Param('id') breakId: string, @Request() req: any) {
+    const result: any = await this.attendanceService.deleteBreak({
+      breakId,
+      organizationId: req.user.organizationId,
+      editorId: req.user.id,
+    });
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
   @Post('breaks/:id/end')
   @RequirePermission('canReconcileAttendance')
   @ApiOperation({ summary: 'End a break manually (manager action)' })

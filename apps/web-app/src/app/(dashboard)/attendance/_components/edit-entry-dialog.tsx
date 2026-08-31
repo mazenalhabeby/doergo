@@ -76,6 +76,14 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
     So the form queues, and one Save applies the edits first and then the breaks,
     in that order, against times the server has already accepted.
   */
+  /*
+    Breaks marked for removal, held until Save like the additions are.
+
+    Mixing an immediate delete with a queued add is the inconsistency that made
+    this dialog confusing in the first place — one button commits everything or
+    the buttons stop meaning anything.
+  */
+  const [removingBreaks, setRemovingBreaks] = useState<string[]>([])
   const [pendingBreaks, setPendingBreaks] = useState<
     { type: "SHORT" | "LUNCH" | "OTHER"; startedAt: string; endedAt: string; reason: string; label: string }[]
   >([])
@@ -132,6 +140,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       setReason("")
       setConfirmDelete(false)
       setPendingBreaks([])
+      setRemovingBreaks([])
       setAddingBreak(false)
     }
     setOpen(next)
@@ -152,7 +161,17 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       // Sequentially, not in parallel: each is checked for overlap against the
       // ones already recorded, and two arriving at once can both pass a check
       // neither would pass afterwards.
-      // The queue, plus a completed form the person never pressed "Add to list"
+      /*
+        Removals BEFORE additions.
+
+        Correcting a break is remove-then-add, and the new one usually occupies
+        the slot the old one held. Adding first would collide with a break that
+        is about to disappear.
+      */
+      for (const id of removingBreaks) {
+        await attendanceApi.removeBreak(id)
+      }
+      // The queue, plus a completed form the person never pressed "Add another"
       // on — see `typedBreak`.
       for (const b of [...pendingBreaks, ...(typedBreak ? [typedBreak] : [])]) {
         await attendanceApi.addBreak(entry.id, {
@@ -167,6 +186,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       queryClient.invalidateQueries({ queryKey: ["breaks"] })
       notify.success(t("attendance.editEntry.success"))
       setPendingBreaks([])
+      setRemovingBreaks([])
       setOpen(false)
     },
     onError: (err: Error) => {
@@ -272,7 +292,9 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                     shows and the one that comes off the hours. */}
                 <span className="text-xs font-normal text-muted-foreground">
                   {formatDurationMinutes(
-                    existingBreaks.reduce((sum, b) => sum + (b.durationMinutes ?? 0), 0) +
+                    existingBreaks
+                      .filter((b) => !removingBreaks.includes(b.id))
+                      .reduce((sum, b) => sum + (b.durationMinutes ?? 0), 0) +
                       [...pendingBreaks, ...(typedBreak ? [typedBreak] : [])].reduce(
                         (sum, b) =>
                           sum + Math.round((new Date(b.endedAt).getTime() - new Date(b.startedAt).getTime()) / 60000),
@@ -296,22 +318,46 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
             */}
             {(existingBreaks.length > 0 || pendingBreaks.length > 0) && (
               <ul className="divide-y divide-border border-t border-border">
-                {existingBreaks.map((b) => (
-                  <li key={b.id} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
-                    <span className="text-foreground">
-                      {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)}
-                      {" · "}
-                      {formatDurationMinutes(b.durationMinutes ?? 0)}
-                    </span>
-                    <span className="truncate text-muted-foreground" title={b.reason || undefined}>
-                      {b.addedBy
-                        ? t("attendance.breaks.addedBy", "Added by {{name}}", {
-                            name: `${b.addedBy.firstName} ${b.addedBy.lastName}`.trim(),
-                          })
-                        : t("attendance.addBreak.byMember", "Recorded by the member")}
-                    </span>
-                  </li>
-                ))}
+                {existingBreaks.map((b) => {
+                  const marked = removingBreaks.includes(b.id)
+                  return (
+                    <li
+                      key={b.id}
+                      className={cn(
+                        "flex items-center justify-between gap-2 px-3 py-2 text-xs",
+                        marked && "opacity-50",
+                      )}
+                    >
+                      <span className={cn("text-foreground", marked && "line-through")}>
+                        {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)}
+                        {" · "}
+                        {formatDurationMinutes(b.durationMinutes ?? 0)}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-muted-foreground" title={b.reason || undefined}>
+                          {b.addedBy
+                            ? t("attendance.breaks.addedBy", "Added by {{name}}", {
+                                name: `${b.addedBy.firstName} ${b.addedBy.lastName}`.trim(),
+                              })
+                            : t("attendance.addBreak.byMember", "Recorded by the member")}
+                        </span>
+                        {/* Marked, not deleted — Save commits it, so a mis-click
+                            is undone by clicking again or by cancelling. */}
+                        <button
+                          type="button"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() =>
+                            setRemovingBreaks((cur) =>
+                              marked ? cur.filter((id) => id !== b.id) : [...cur, b.id],
+                            )
+                          }
+                        >
+                          {marked ? t("common.undo", "Undo") : t("common.remove", "Remove")}
+                        </button>
+                      </span>
+                    </li>
+                  )
+                })}
                 {pendingBreaks.map((b, i) => (
                   <li key={`pending-${i}`} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
                     <span className="text-foreground">

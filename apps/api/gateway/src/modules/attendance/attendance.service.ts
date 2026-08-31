@@ -233,6 +233,11 @@ export class AttendanceService extends BaseGatewayService {
     return this.sendOnce({ cmd: 'add_break_for_member' }, data);
   }
 
+  /** Remove a break. `sendOnce` — a retried delete must not race a re-add. */
+  async deleteBreak(data: { breakId: string; organizationId: string; editorId: string }) {
+    return this.sendOnce({ cmd: 'delete_break' }, data);
+  }
+
   async endBreakManually(data: {
     breakId: string;
     adminId: string;

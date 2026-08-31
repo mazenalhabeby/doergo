@@ -662,7 +662,8 @@
     "approve": "Approve",
     "backToHome": "Back to home",
     "reject": "Reject",
-    "clear": "Clear"
+    "clear": "Clear",
+    "undo": "Undo"
   },
   "auth": {
     "login": {

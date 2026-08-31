@@ -662,7 +662,8 @@
     "approve": "Approva",
     "backToHome": "Torna alla home",
     "reject": "Rifiuta",
-    "clear": "Cancella"
+    "clear": "Cancella",
+    "undo": "Annulla"
   },
   "auth": {
     "login": {

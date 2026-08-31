@@ -2480,6 +2480,17 @@ export const attendanceApi = {
   },
 
   /**
+   * Remove a break from a shift.
+   *
+   * Also how an edit is performed — remove and re-add — rather than a second
+   * endpoint repeating the same window and overlap validation.
+   */
+  removeBreak: async (breakId: string) => {
+    const response = await api.delete<{ success: boolean }>(`/attendance/breaks/${breakId}`);
+    if (response.error) throw new Error(response.error);
+  },
+
+  /**
    * Add a break to a member's shift.
    *
    * Breaks are self-service — this is the correction path for a shift where that

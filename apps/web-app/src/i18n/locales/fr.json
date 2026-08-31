@@ -662,7 +662,8 @@
     "approve": "Approuver",
     "backToHome": "Retour à l’accueil",
     "reject": "Refuser",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "undo": "Annuler"
   },
   "auth": {
     "login": {

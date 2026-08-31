@@ -212,6 +212,66 @@ export class BreakService {
     return { success: true, data: created, message: 'Break added' };
   }
 
+  /**
+   * Remove a break from a shift.
+   *
+   * Needed the moment breaks can be added by hand: a mistyped one would
+   * otherwise be permanent, and "delete and re-add" is how an edit is performed
+   * without a second endpoint carrying the same validation.
+   *
+   * A member's OWN break can be removed too, not only a manually added one — a
+   * phone that recorded a break twice is exactly the kind of thing this exists to
+   * correct. It is deliberate rather than incidental: the audit interceptor
+   * records who called this and when, which is the trail once the row is gone.
+   *
+   * Same grant as adding, and the same two consequences: the entry's break total
+   * is recomputed from the rows that remain, and an approved entry returns to
+   * PENDING because its paid hours just changed.
+   */
+  async deleteBreak(data: { breakId: string; organizationId: string; editorId: string }) {
+    const refuse = (statusCode: number, message: string) => ({ success: false as const, statusCode, message });
+
+    // Org-scoped through the entry: a break id from another tenant reads as "not
+    // found", never as a deletion.
+    const br = await this.prisma.break.findFirst({
+      where: { id: data.breakId, timeEntry: { organizationId: data.organizationId } },
+      include: { timeEntry: { select: { id: true, approvalStatus: true } } },
+    });
+    if (!br) return refuse(HttpStatus.NOT_FOUND, 'Break not found.');
+
+    if (!br.endedAt) {
+      // An open break is the member's current state, not a record of the past.
+      // Ending it is a different action with a different endpoint.
+      return refuse(HttpStatus.CONFLICT, 'That break is still running. End it first.');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.break.delete({ where: { id: br.id } });
+
+      // Recomputed from what is left, never decremented — the same reason the
+      // add path recomputes: a running total drifts the moment anything changes.
+      const remaining = await tx.break.findMany({
+        where: { timeEntryId: br.timeEntryId, endedAt: { not: null } },
+        select: { durationMinutes: true },
+      });
+      await tx.timeEntry.update({
+        where: { id: br.timeEntryId },
+        data: {
+          breakMinutes: remaining.reduce((sum, b) => sum + (b.durationMinutes || 0), 0),
+          ...(br.timeEntry.approvalStatus === ApprovalStatus.APPROVED
+            ? { approvalStatus: ApprovalStatus.PENDING, approvedById: null, approvedAt: null }
+            : {}),
+        },
+      });
+    });
+
+    this.logger.warn(
+      `[ATTENDANCE] break ${br.id} removed from entry ${br.timeEntryId} by ${data.editorId} (${br.durationMinutes ?? 0}m)`,
+    );
+
+    return { success: true, data: { id: br.id }, message: 'Break removed' };
+  }
+
   async endBreak(data: {
     userId: string;
     organizationId: string;
