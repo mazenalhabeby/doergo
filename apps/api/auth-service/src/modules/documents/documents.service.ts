@@ -1973,7 +1973,19 @@ export class DocumentsService {
   async listMatchCandidates(data: { actor: DocumentActor }) {
     this.assertCanIssue(data.actor);
     return this.prisma.user.findMany({
-      where: { organizationId: data.actor.organizationId, isActive: true },
+      /*
+        Staff only. Portal customers carry a customerId and belong to Clients
+        Portals, not to a payroll run — they appeared in this picker beside real
+        members, which invites issuing somebody's payslip to a customer of the
+        business. `listOrgMembers` has carried this filter all along; this query
+        was written without it.
+      */
+      where: {
+        organizationId: data.actor.organizationId,
+        isActive: true,
+        customerId: null,
+        role: { not: Role.CUSTOMER },
+      },
       select: {
         id: true, firstName: true, lastName: true, email: true,
         // Role and job title, so the template editor can answer "who would
