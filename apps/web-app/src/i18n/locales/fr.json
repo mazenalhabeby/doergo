@@ -7603,5 +7603,8 @@
       "partSign": "{{count}} à signer",
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
     }
+  },
+  "serverErrors": {
+    "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée."
   }
 }

@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { invalidateTimeOff } from "@/lib/query-keys"
+import { serverErrorMessage } from "@/lib/server-error"
 
 const REASON_PRESETS = ["vacation", "sick", "personal", "holiday", "unpaid"] as const
 
@@ -62,7 +63,10 @@ export function AddDayOffDialog() {
       resetAndClose()
     },
     onError: (err: Error) => {
-      notify.error(err.message || t("attendance.addDayOff.error"))
+      // Translated when the refusal carries a code — the overlap one names the
+      // conflicting dates and their status. Falls back to the server's English
+      // for every refusal that does not have one yet.
+      notify.error(serverErrorMessage(err, t) || t("attendance.addDayOff.error"))
     },
   })
 

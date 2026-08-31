@@ -12,6 +12,10 @@ interface ErrorResponse {
   statusCode: number;
   message: string | string[];
   error: string;
+  /** Stable identifier for this refusal, so a client can translate it. */
+  code?: string;
+  /** Values to interpolate into the translated sentence. */
+  params?: Record<string, unknown>;
   timestamp: string;
   path: string;
 }
@@ -29,7 +33,12 @@ interface ErrorResponse {
  *
  * The status survives the hop; nothing was missing but the reading of it.
  */
-function rpcError(exception: unknown): { statusCode: number; message: string | string[] } | null {
+function rpcError(exception: unknown): {
+  statusCode: number;
+  message: string | string[];
+  code?: string;
+  params?: Record<string, unknown>;
+} | null {
   if (!exception || typeof exception !== 'object' || exception instanceof Error) return null;
   const e = exception as Record<string, unknown>;
 
@@ -50,7 +59,16 @@ function rpcError(exception: unknown): { statusCode: number; message: string | s
   if (raw >= 500) return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Internal server error' };
 
   const message = typeof e.message === 'string' || Array.isArray(e.message) ? (e.message as string | string[]) : 'Request failed';
-  return { statusCode: raw, message };
+  /*
+    A machine-readable code, when the service sent one.
+
+    The English `message` is the fallback; the code is what lets a client render
+    the refusal in the reader's own language. Carried only for 4xx — a 5xx keeps
+    its generic line, so this cannot become a channel for internal detail.
+  */
+  const code = typeof e.code === 'string' ? e.code : undefined;
+  const params = e.params && typeof e.params === 'object' ? (e.params as Record<string, unknown>) : undefined;
+  return { statusCode: raw, message, ...(code ? { code } : {}), ...(params ? { params } : {}) };
 }
 
 @Catch()
@@ -66,6 +84,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let message: string | string[] = 'Internal server error';
     let error = 'Internal Server Error';
     const rpc = rpcError(exception);
+    // Set by whichever branch below recognises them; omitted from the response
+    // when absent, so an untouched error looks exactly as it did before.
+    let code: string | undefined;
+    let params: Record<string, unknown> | undefined;
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
@@ -77,6 +99,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const responseObj = exceptionResponse as Record<string, unknown>;
         message = (responseObj.message as string | string[]) || message;
         error = (responseObj.error as string) || this.getErrorNameFromStatus(statusCode);
+        if (typeof responseObj.code === 'string') code = responseObj.code;
+        if (responseObj.params && typeof responseObj.params === 'object') {
+          params = responseObj.params as Record<string, unknown>;
+        }
       }
 
       error = this.getErrorNameFromStatus(statusCode);
@@ -84,6 +110,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       // A refusal a service already decided on, with the status it chose.
       statusCode = rpc.statusCode;
       message = rpc.message;
+      code = rpc.code;
+      params = rpc.params;
       error = this.getErrorNameFromStatus(statusCode);
     } else if (exception instanceof Error) {
       // Log unexpected errors with stack trace
@@ -104,6 +132,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode,
       message,
       error,
+      ...(code ? { code } : {}),
+      ...(params ? { params } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,
     };

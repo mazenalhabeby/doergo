@@ -7594,5 +7594,8 @@
       "partSign": "{{count}} unterschreiben",
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
     }
+  },
+  "serverErrors": {
+    "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag."
   }
 }

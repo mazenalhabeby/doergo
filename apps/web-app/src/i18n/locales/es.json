@@ -7594,5 +7594,8 @@
       "partSign": "{{count}} por firmar",
       "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
     }
+  },
+  "serverErrors": {
+    "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada."
   }
 }

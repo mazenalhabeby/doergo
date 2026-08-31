@@ -516,7 +516,18 @@ export class TechniciansService {
       throw new BadRequestException('Start date must be before or equal to end date');
     }
 
-    // Block overlapping the same employee's existing time off.
+    /*
+      Block overlapping the same employee's existing time off.
+
+      Two entries covering one day are two answers to "was this person off", and
+      everything downstream — absence, payroll, the roster — would pick one of
+      them arbitrarily.
+
+      The refusal NAMES the entry it collided with. "This overlaps an existing
+      entry" tells somebody they are wrong and then makes them go and find out
+      how; the dates and the status are what they need to decide whether to move
+      their range, edit the other one, or stop.
+    */
     const overlap = await this.prisma.timeOff.findFirst({
       where: {
         technicianId: data.technicianId,
@@ -524,10 +535,31 @@ export class TechniciansService {
         startDate: { lte: end },
         endDate: { gte: start },
       },
-      select: { id: true },
+      select: { id: true, startDate: true, endDate: true, status: true },
+      orderBy: { startDate: 'asc' },
     });
     if (overlap) {
-      throw new BadRequestException('This overlaps an existing time-off entry for the employee');
+      const day = (d: Date) => d.toISOString().slice(0, 10);
+      /*
+        Thrown with an object payload, not a string.
+
+        `code` and `params` let the client render this in the reader's own
+        language — the dialog around it is translated and this sentence was not,
+        which is how a German screen answers in English. `message` stays as the
+        fallback for any client that does not know the code, so nothing regresses
+        while translations are added.
+      */
+      throw new BadRequestException({
+        code: 'TIMEOFF_OVERLAP',
+        params: {
+          from: day(overlap.startDate),
+          to: day(overlap.endDate),
+          status: overlap.status,
+        },
+        message:
+          `This overlaps time off already recorded for this employee ` +
+          `(${day(overlap.startDate)} to ${day(overlap.endDate)}, ${overlap.status.toLowerCase()}).`,
+      });
     }
 
     const timeOff = await this.prisma.timeOff.create({

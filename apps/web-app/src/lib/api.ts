@@ -8,6 +8,7 @@
  * - Proactive refresh before token expiry
  */
 
+import { apiError } from './server-error';
 import {
   TimeEntryStatus,
   BreakType,
@@ -77,6 +78,16 @@ interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   status: number;
+  /**
+   * A stable identifier for a refusal, when the server sent one.
+   *
+   * The server's `error` text is English and always will be — it is written
+   * where no locale is known. A code plus its params lets the client say the
+   * same thing in the reader's language, and falls back to the English text
+   * for every refusal that does not have one yet.
+   */
+  errorCode?: string;
+  errorParams?: Record<string, unknown>;
 }
 
 interface AuthTokens {
@@ -254,6 +265,11 @@ async function apiRequest<T>(
       return {
         status: response.status,
         error: data?.message || 'Request failed',
+        // A server refusal can carry a stable code and values to interpolate, so
+        // the client can say it in the reader's language. Absent on most errors;
+        // `error` remains the fallback and nothing depends on these being here.
+        errorCode: typeof data?.code === 'string' ? data.code : undefined,
+        errorParams: data?.params && typeof data.params === 'object' ? data.params : undefined,
       };
     }
 
@@ -3070,8 +3086,11 @@ export const employeesApi = {
       data: TimeOffRequest;
     }>('/employees/time-off/manual', data);
 
+    // `apiError` rather than `new Error`: this endpoint's overlap refusal carries
+    // a code and the conflicting dates, so the dialog can say it in the reader's
+    // language instead of showing the server's English.
     if (response.error) {
-      throw new Error(response.error);
+      throw apiError(response);
     }
 
     return response.data?.data;

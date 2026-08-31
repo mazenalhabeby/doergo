@@ -7594,5 +7594,8 @@
       "partSign": "{{count}} to sign",
       "blocking": "You cannot be given work until this is supplied and approved."
     }
+  },
+  "serverErrors": {
+    "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry."
   }
 }
