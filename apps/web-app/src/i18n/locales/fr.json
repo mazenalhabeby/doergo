@@ -6914,6 +6914,7 @@
     "priced": "{{feature}} coûte {{price}} par mois",
     "unavailable": "{{feature}} ne fait pas partie de votre abonnement",
     "adminHint": "Ajoutez-le dans Facturation, il est disponible immédiatement.",
+    "moduleHint": "Activez-le pour cet espace dans son onglet Modules.",
     "memberHint": "Demandez à un administrateur de l’organisation de l’ajouter.",
     "cta": "Ajouter {{feature}}"
   },

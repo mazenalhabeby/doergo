@@ -6905,6 +6905,7 @@
     "priced": "{{feature}} kostet {{price}} pro Monat",
     "unavailable": "{{feature}} gehört nicht zu Ihrem Abonnement",
     "adminHint": "In der Abrechnung hinzufügen — sofort verfügbar.",
+    "moduleHint": "Schalten Sie es für diesen Bereich im Tab „Module\" ein.",
     "memberHint": "Bitten Sie einen Organisations-Admin, es hinzuzufügen.",
     "cta": "{{feature}} hinzufügen"
   },

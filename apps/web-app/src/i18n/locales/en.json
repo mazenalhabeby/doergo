@@ -6905,6 +6905,7 @@
     "priced": "{{feature}} is {{price}} a month",
     "unavailable": "{{feature}} is not part of your subscription",
     "adminHint": "Add it in Billing and it is available straight away.",
+    "moduleHint": "Switch it on for this space in its Modules tab.",
     "memberHint": "Ask an organization admin to add it.",
     "cta": "Add {{feature}}"
   },

@@ -6905,6 +6905,7 @@
     "priced": "{{feature}} cuesta {{price}} al mes",
     "unavailable": "{{feature}} no forma parte de tu suscripción",
     "adminHint": "Añádelo en Facturación y estará disponible al instante.",
+    "moduleHint": "Actívalo para este espacio en su pestaña Módulos.",
     "memberHint": "Pide a un administrador de la organización que lo añada.",
     "cta": "Añadir {{feature}}"
   },

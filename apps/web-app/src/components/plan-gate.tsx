@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Lock, ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth-context';
-import { addOnDef, formatCents } from '@hbcfield/shared/client';
+import { addOnDef, formatCents, isAddOn } from '@hbcfield/shared/client';
 import { planFeatureLabel } from '@/lib/plan-features';
 
 /**
@@ -17,11 +17,40 @@ import { planFeatureLabel } from '@/lib/plan-features';
  *
  * Purely a UX layer — PlanGuard enforces the same rule with a 402, so this can
  * never be the only line of defence.
+ *
+ * TWO KINDS OF THING can be gated, and they are bought in different places.
+ * An ADD-ON is org-wide and lives in Billing. A MODULE is switched on per space,
+ * and switching it on IS the purchase.
+ *
+ * `hasPlanFeature` answers only the first — it opens with `if (!isAddOn(...))
+ * return false`, so asking it about a module always said no. `crm` is a module,
+ * which is how a space with CRM switched on rendered its Customers tab and then
+ * told the admin inside it that CRM was "not part of your subscription". Both
+ * statements came from the same page.
+ *
+ * So a module is checked against the SPACE's own list, passed in by the caller
+ * that already has it. With no list to check, the gate stands aside and lets the
+ * request go: ModuleGuard answers it with a 402 for real, and a UX layer
+ * guessing "no" is exactly what produced the contradiction.
  */
-export function PlanGate({ feature, children }: { feature: string; children: React.ReactNode }) {
+export function PlanGate({
+  feature,
+  modules,
+  children,
+}: {
+  feature: string;
+  /** The space's enabled modules, when the feature is a per-space module. */
+  modules?: string[] | null;
+  children: React.ReactNode;
+}) {
   const { t } = useTranslation();
   const { hasPlanFeature, user } = useAuth();
-  if (hasPlanFeature(feature)) return <>{children}</>;
+
+  const isModule = !isAddOn(feature);
+  const allowed = isModule
+    ? (modules ? modules.includes(feature) : true)
+    : hasPlanFeature(feature);
+  if (allowed) return <>{children}</>;
 
   const def = addOnDef(feature);
   const label = planFeatureLabel(feature);
@@ -41,11 +70,13 @@ export function PlanGate({ feature, children }: { feature: string; children: Rea
           : t('planGate.unavailable', '{{feature}} is not part of your subscription', { feature: label })}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        {isAdmin
-          ? t('planGate.adminHint', 'Add it in Billing and it is available straight away.')
-          : t('planGate.memberHint', 'Ask an organization admin to add it.')}
+        {isModule
+          ? t('planGate.moduleHint', 'Switch it on for this space in its Modules tab.')
+          : isAdmin
+            ? t('planGate.adminHint', 'Add it in Billing and it is available straight away.')
+            : t('planGate.memberHint', 'Ask an organization admin to add it.')}
       </p>
-      {isAdmin && (
+      {isAdmin && !isModule && (
         <Link
           href="/settings/billing"
           className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

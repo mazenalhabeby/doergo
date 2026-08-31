@@ -243,7 +243,7 @@ export default function SpaceSettingsPage() {
               </TabsContent>
               {space?.enabledModules?.includes("crm") && (
                 <TabsContent value="customers" className="mt-0">
-                  <PlanGate feature="crm">
+                  <PlanGate feature="crm" modules={space?.enabledModules}>
                     <CustomersTab space={space} />
                   </PlanGate>
                 </TabsContent>
@@ -255,7 +255,7 @@ export default function SpaceSettingsPage() {
               )}
               {space?.enabledModules?.includes("b2c_portal") && (
                 <TabsContent value="portal" className="mt-0">
-                  <PlanGate feature="crm">
+                  <PlanGate feature="crm" modules={space?.enabledModules}>
                     <PortalTab spaceId={spaceId} hasApartments onOpenModules={() => openTab("modules")} />
                   </PlanGate>
                 </TabsContent>
