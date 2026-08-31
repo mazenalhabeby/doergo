@@ -861,8 +861,29 @@ export class UsersService {
     // re-roling a customer into a staff account (which breaks their portal login).
     const where: any = { organizationId, customerId: null };
 
+    /*
+      One filter, two kinds of thing.
+
+      The screen's Role column shows a member's ASSIGNED ROLE where they have one
+      ("Manager", "Sales") and falls back to the account type otherwise. The
+      filter beside it only ever offered the account types, so a role an
+      organization created could be visible in every row and selectable in none.
+
+      An access-role id is a cuid; the account types are a closed set of
+      upper-case words. Matching the words first means a role can never be
+      mistaken for a type, whatever it is called — and anything else is treated
+      as a role id, which simply matches nobody if it is nonsense.
+    */
     if (role) {
-      where.role = role;
+      if (role === 'ADMIN' || role === 'EMPLOYEE' || role === 'CUSTOMER') {
+        where.role = role;
+      } else if (role === 'none') {
+        // "No role" is a real thing to look for: these members hold no org-wide
+        // permissions at all, which the Employee badge hides rather than shows.
+        where.memberRoleId = null;
+      } else {
+        where.memberRoleId = role;
+      }
     }
 
     /*

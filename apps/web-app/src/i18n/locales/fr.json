@@ -2094,7 +2094,8 @@
       "technician": "Employé",
       "manager": "Responsable",
       "employee": "Employé",
-      "customer": "Client"
+      "customer": "Client",
+      "none": "Aucun rôle"
     },
     "platforms": {
       "web": "Web",

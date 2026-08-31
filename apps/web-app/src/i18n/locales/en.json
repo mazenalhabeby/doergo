@@ -2100,7 +2100,8 @@
       "technician": "Employee",
       "manager": "Manager",
       "employee": "Employee",
-      "customer": "Customer"
+      "customer": "Customer",
+      "none": "No role"
     },
     "platforms": {
       "web": "Web",

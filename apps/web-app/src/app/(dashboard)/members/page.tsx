@@ -55,6 +55,7 @@ import { cn } from "@/lib/utils"
 import { roleBadge, ROLE_COLOR_FALLBACK } from "@/lib/role-badge"
 import {
   organizationsApi,
+  type AccessRole,
   invitationsApi,
   locationsApi,
   type OrgMember,
@@ -458,6 +459,23 @@ export default function MembersPage() {
     return () => clearTimeout(t)
   }, [search])
   const [roleFilter, setRoleFilter] = useState("all")
+
+  /*
+    The org's own roles, for the filter beside the list.
+
+    The Role column shows a member's ASSIGNED ROLE where they have one and falls
+    back to the account type otherwise, but the filter offered only the two
+    account types — hardcoded — so a role an organization created was visible in
+    every row and selectable in none.
+
+    Same query key as the Roles dialog, so opening that dialog after filtering
+    costs nothing.
+  */
+  const { data: orgRoles = [] } = useQuery<AccessRole[]>({
+    queryKey: ["orgAccessRoles"],
+    queryFn: () => organizationsApi.getRoles("org"),
+    staleTime: 5 * 60 * 1000,
+  })
   const [page, setPage] = useState(1)
 
   // Dialogs
@@ -723,8 +741,17 @@ export default function MembersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.allRoles")}</SelectItem>
+                {/* Account types first: they are what the badge falls back to. */}
                 <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
                 <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
+                {/* Then the roles this organization actually has. */}
+                {orgRoles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+                {/* And the state the Employee badge hides: no role at all. */}
+                <SelectItem value="none">{t("members.roles.none", "No role")}</SelectItem>
               </SelectContent>
             </Select>
 
