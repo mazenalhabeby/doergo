@@ -1694,6 +1694,50 @@ export class UsersService {
       where: { id: data.roleId, organizationId: data.organizationId },
     });
     if (!role) throw new NotFoundException('Role not found');
+
+    /*
+      You cannot narrow a role you yourself hold.
+
+      This happened in production on 2026-08-31. An admin tried to delete two
+      leftover roles, was refused because a member still held one, and emptied
+      the permissions instead — a reasonable workaround: if it cannot be removed,
+      at least let it grant nothing. The member holding it was them. Their own
+      access came from that role, so the whole administration navigation vanished
+      and only a direct database write brought it back.
+
+      `updateMemberProfile` already refuses to let anybody change their OWN role,
+      for exactly this reason. Editing the role they hold is the same act through
+      a different door, and it was not guarded.
+
+      Deliberately narrow: only a REMOVAL is refused, and only for a permission
+      the editor currently holds. Renaming, recolouring and ADDING permissions to
+      your own role all stay allowed — the danger is losing access you are relying
+      on this second, not editing the role at all.
+
+      Admins are exempt because they no longer resolve their access from a role
+      (see buildResolvedAccess) — for them this is no longer a way to lose
+      anything, and refusing would block a legitimate tidy-up.
+    */
+    if (data.permissions !== undefined && data.requesterId) {
+      const requester = await this.prisma.user.findFirst({
+        where: { id: data.requesterId, organizationId: data.organizationId },
+        select: { role: true, memberRoleId: true },
+      });
+      if (requester && requester.role !== Role.ADMIN && requester.memberRoleId === role.id) {
+        const before = permissionsFromOrgRole(role.permissions);
+        const after = this.sanitizeRolePermissions(data.permissions);
+        const losing = PERMISSION_KEYS.filter((k) => before[k] === true && after[k] !== true);
+        if (losing.length > 0) {
+          return {
+            success: false as const,
+            statusCode: HttpStatus.CONFLICT,
+            message:
+              `You hold this role, so removing ${losing.length === 1 ? 'that permission' : 'those permissions'} would take away your own access. ` +
+              `Ask an admin, or move yourself to another role first.`,
+          };
+        }
+      }
+    }
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) {
       const name = data.name.trim();
