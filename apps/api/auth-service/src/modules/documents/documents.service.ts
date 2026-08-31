@@ -44,6 +44,7 @@ import { MrzOcrService } from './mrz-ocr.service';
 import { renderContractPdf, sealSignedPdf } from './contract-pdf';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OBJECT_STORE } from './object-store.provider';
+import { openUntrustedImage } from './image-input';
 
 /**
  * The personnel file.
@@ -1170,7 +1171,10 @@ export class DocumentsService {
       // `rotate()` first: the crop was computed against what the PHONE showed,
       // which already has the EXIF orientation applied, and extracting from the
       // unrotated buffer would cut a sideways rectangle out of the middle.
-      const upright = await sharp(bytes).rotate().toBuffer();
+      //
+      // The member's bytes go through the bounded opener; everything after is
+      // our own output, whose dimensions we already know.
+      const upright = await (await openUntrustedImage(bytes)).rotate().toBuffer();
       const meta = await sharp(upright).metadata();
       if (!meta.width || !meta.height) return bytes;
 
@@ -1204,9 +1208,10 @@ export class DocumentsService {
       const sharp = (await import('sharp')).default;
 
       // A common width, so neither side is stretched and the seam is straight.
+      // Both sides are the member's, so both go through the bounded opener.
       const [f, b] = await Promise.all([
-        sharp(front).rotate().toBuffer(),
-        sharp(back).rotate().toBuffer(),
+        (await openUntrustedImage(front)).rotate().toBuffer(),
+        (await openUntrustedImage(back)).rotate().toBuffer(),
       ]);
       const [fm, bm] = await Promise.all([sharp(f).metadata(), sharp(b).metadata()]);
       if (!fm.width || !fm.height || !bm.width || !bm.height) return front;

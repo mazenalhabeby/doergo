@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { mrzLines } from '@hbcfield/shared';
+import { openUntrustedImage } from './image-input';
 
 /**
  * Reading the machine-readable zone off a photograph, on our own servers.
@@ -136,8 +137,7 @@ export class MrzOcrService implements OnModuleDestroy {
    * full frame rather than reporting no zone.
    */
   private async attempt(image: Buffer): Promise<string | null> {
-    const sharp = (await import('sharp')).default;
-    const meta = await sharp(image).metadata();
+    const meta = await (await openUntrustedImage(image)).metadata();
     if (!meta.width || meta.width < MIN_USABLE_WIDTH) return null;
 
     const band = await this.prepare(image, true);
@@ -157,11 +157,10 @@ export class MrzOcrService implements OnModuleDestroy {
    * single characters.
    */
   private async prepare(image: Buffer, cropToBand: boolean): Promise<Buffer> {
-    const sharp = (await import('sharp')).default;
-    let pipeline = sharp(image).rotate().grayscale();
+    let pipeline = (await openUntrustedImage(image)).rotate().grayscale();
 
     if (cropToBand) {
-      const meta = await sharp(image).rotate().metadata();
+      const meta = await (await openUntrustedImage(image)).rotate().metadata();
       const width = meta.width ?? 0;
       const height = meta.height ?? 0;
       if (width && height) {
@@ -182,7 +181,7 @@ export class MrzOcrService implements OnModuleDestroy {
       photos routinely give half that, so doubling is the floor; the cap keeps a
       12-megapixel photo from turning into a 100-megapixel one.
     */
-    const source = await sharp(image).rotate().metadata();
+    const source = await (await openUntrustedImage(image)).rotate().metadata();
     const target = Math.min(Math.max((source.width ?? 1000) * 2, 2000), 4000);
 
     return pipeline
