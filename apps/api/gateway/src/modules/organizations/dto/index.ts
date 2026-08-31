@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, IsEmail, IsNotEmpty, Min, Max } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, IsEmail, IsNotEmpty, Min, Max, MaxLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /**
@@ -30,9 +30,27 @@ export class ListMembersQueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ enum: ['ADMIN', 'EMPLOYEE'], description: 'Filter by role' })
+  /*
+    Account type, access-role id, or the absence of one.
+
+    NOT an enum. The filter offers three different kinds of thing — the account
+    types ADMIN/EMPLOYEE/CUSTOMER, the ids of roles the organization created,
+    and `none` for members holding no role at all — and an enum of the two
+    account types rejected the other two with a 400 before the service ever saw
+    them. Every custom role in the dropdown was unselectable for that reason.
+
+    The service is the authority on what a value means: it matches the account
+    types first, treats `none` as `memberRoleId: null`, and otherwise reads the
+    value as a role id, which matches nobody if it is nonsense. Prisma
+    parameterises it, so an unrecognised string is a miss, not a risk. Bounded
+    only in length, because the set of valid values is data, not a constant.
+  */
+  @ApiPropertyOptional({
+    description: 'ADMIN | EMPLOYEE | CUSTOMER, an access-role id, or "none" for members with no role',
+  })
   @IsOptional()
-  @IsEnum(['ADMIN', 'EMPLOYEE'])
+  @IsString()
+  @MaxLength(64)
   role?: string;
 
   @ApiPropertyOptional({ description: 'Only admins and managers (by role), for leadership pickers' })
