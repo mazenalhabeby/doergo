@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { Role, permissionsExceed } from '@hbcfield/shared';
@@ -167,9 +167,24 @@ describe('UsersService access ceiling (C1)', () => {
     it('blocks a non-admin from deleting a role beyond their ceiling', async () => {
       prisma.accessRole.findFirst.mockResolvedValueOnce({ id: 'r1', isSystem: false, permissions: { canManageUsers: true } });
       prisma.user.findFirst.mockResolvedValueOnce({ role: Role.EMPLOYEE, canViewAllTasks: true, memberRole: null });
-      await expect(
-        service.deleteAccessRole({ organizationId: 'org-1', requesterId: 'req-1', roleId: 'r1' }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      /*
+        The refusal is RETURNED now, not thrown — see delete-role-refusals.spec.
+        A throw inside a @MessagePattern handler loses its status crossing Redis
+        and reaches the caller as an unexplained 500.
+
+        The security property this test exists for is unchanged, and is asserted
+        the same way it always was: the delete does not happen. The status is
+        checked too, so "refused" cannot quietly degrade into "succeeded with a
+        message nobody reads".
+      */
+      const result: any = await service.deleteAccessRole({
+        organizationId: 'org-1',
+        requesterId: 'req-1',
+        roleId: 'r1',
+      });
+      expect(result.success).toBe(false);
+      expect(result.statusCode).toBe(HttpStatus.FORBIDDEN);
       expect(prisma.accessRole.delete).not.toHaveBeenCalled();
     });
   });

@@ -5,6 +5,7 @@ import {
   ConflictException,
   BadRequestException,
   ForbiddenException,
+  HttpStatus,
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -1520,24 +1521,45 @@ export class UsersService {
     return { success: true, data: updated, message: 'Role updated' };
   }
 
-  /** Delete a custom role. System roles are protected; in-use roles are blocked. */
+  /**
+   * Delete a custom role. System roles are protected; in-use roles are blocked.
+   *
+   * Refusals are RETURNED, not thrown.
+   *
+   * A `BadRequestException` raised inside a @MessagePattern handler does not
+   * survive the trip to the gateway: Nest serialises it across Redis as
+   * `{ status: 'error', message }`, the HTTP status is gone, and what arrives is
+   * no longer an HttpException — so the gateway's filter falls through to its
+   * default and answers **500 Internal server error**. The caller then sees a
+   * crash where the server actually made a correct, explainable decision.
+   *
+   * The gateway already reads this shape (`if (result.success === false) throw
+   * new HttpException(...)`), so returning is the convention here; throwing was
+   * the anomaly. Every refusal below carries the status the caller should see.
+   */
   async deleteAccessRole(data: { organizationId: string; requesterId?: string; roleId: string }) {
+    const refuse = (statusCode: number, message: string) => ({ success: false as const, statusCode, message });
+
     const role = await this.prisma.accessRole.findFirst({
       where: { id: data.roleId, organizationId: data.organizationId },
     });
-    if (!role) throw new NotFoundException('Role not found');
-    if (role.isSystem) throw new BadRequestException('Built-in roles cannot be deleted');
+    if (!role) return refuse(HttpStatus.NOT_FOUND, 'Role not found');
+    if (role.isSystem) return refuse(HttpStatus.BAD_REQUEST, 'Built-in roles cannot be deleted');
     // Ceiling guard (S4): a non-admin may only delete a role whose permissions are
     // within their own — consistent with create/update authoring.
     if (data.requesterId) {
       const { isAdmin, perms } = await this.resolveRequesterOrgPerms(data.requesterId, data.organizationId);
       if (!isAdmin && permissionsExceed(perms, permissionsFromOrgRole(role.permissions))) {
-        throw new ForbiddenException('You cannot delete a role with permissions beyond your own');
+        return refuse(HttpStatus.FORBIDDEN, 'You cannot delete a role with permissions beyond your own');
       }
     }
     const inUse = await this.prisma.user.count({ where: { memberRoleId: role.id } });
     if (inUse > 0) {
-      throw new BadRequestException(`This role is assigned to ${inUse} member(s). Reassign them first.`);
+      // The sentence somebody can act on: it says how many, and what to do.
+      return refuse(
+        HttpStatus.CONFLICT,
+        `This role is still assigned to ${inUse} member${inUse === 1 ? '' : 's'}. Move them to another role first, then delete it.`,
+      );
     }
     await this.prisma.accessRole.delete({ where: { id: role.id } });
     return { success: true, data: { id: role.id }, message: 'Role deleted' };
