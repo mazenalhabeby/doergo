@@ -3262,7 +3262,8 @@
       "breaks": "Breaks",
       "queue": "Add another",
       "pending": "on save",
-      "byMember": "Recorded by the member"
+      "byMember": "Recorded by the member",
+      "editedReason": "Corrected"
     }
   },
   "auditLog": {

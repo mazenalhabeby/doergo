@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Pencil, Loader2, Trash2, Coffee } from "lucide-react"
+import { Pencil, Loader2, Trash2, Coffee, UtensilsCrossed, Pause, Plus } from "lucide-react"
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -324,54 +324,116 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                     <li
                       key={b.id}
                       className={cn(
-                        "flex items-center justify-between gap-2 px-3 py-2 text-xs",
-                        marked && "opacity-50",
+                        "group flex items-center gap-3 px-3 py-2.5",
+                        marked && "opacity-45",
                       )}
                     >
-                      <span className={cn("text-foreground", marked && "line-through")}>
-                        {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)}
-                        {" · "}
-                        {formatDurationMinutes(b.durationMinutes ?? 0)}
+                      <span
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-full",
+                          b.type === "LUNCH"
+                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                            : b.type === "SHORT"
+                              ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                              : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {b.type === "LUNCH" ? (
+                          <UtensilsCrossed className="size-3.5" />
+                        ) : b.type === "SHORT" ? (
+                          <Coffee className="size-3.5" />
+                        ) : (
+                          <Pause className="size-3.5" />
+                        )}
                       </span>
-                      <span className="flex items-center gap-2">
-                        <span className="truncate text-muted-foreground" title={b.reason || undefined}>
+
+                      <span className="min-w-0 flex-1">
+                        <span className={cn("block text-xs font-medium text-foreground", marked && "line-through")}>
+                          {utcToZonedInput(b.startedAt, tz).slice(11)}
+                          {b.endedAt ? `–${utcToZonedInput(b.endedAt, tz).slice(11)}` : ""}
+                          <span className="ml-1.5 font-normal text-muted-foreground">
+                            {formatDurationMinutes(b.durationMinutes ?? 0)}
+                          </span>
+                        </span>
+                        <span className="block truncate text-[11px] text-muted-foreground" title={b.reason || undefined}>
                           {b.addedBy
                             ? t("attendance.breaks.addedBy", "Added by {{name}}", {
                                 name: `${b.addedBy.firstName} ${b.addedBy.lastName}`.trim(),
                               })
                             : t("attendance.addBreak.byMember", "Recorded by the member")}
+                          {b.reason ? ` · ${b.reason}` : ""}
                         </span>
-                        {/* Marked, not deleted — Save commits it, so a mis-click
-                            is undone by clicking again or by cancelling. */}
+                      </span>
+
+                      {marked ? (
                         <button
                           type="button"
-                          className="shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() =>
-                            setRemovingBreaks((cur) =>
-                              marked ? cur.filter((id) => id !== b.id) : [...cur, b.id],
-                            )
-                          }
+                          className="shrink-0 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                          onClick={() => setRemovingBreaks((cur) => cur.filter((id) => id !== b.id))}
                         >
-                          {marked ? t("common.undo", "Undo") : t("common.remove", "Remove")}
+                          {t("common.undo", "Undo")}
                         </button>
-                      </span>
+                      ) : (
+                        <span className="flex shrink-0 items-center gap-0.5">
+                          {/*
+                            Edit is remove-and-re-add, done for you.
+
+                            It loads this break into the form and marks the old
+                            one for removal, so Save writes the corrected one —
+                            no second endpoint repeating the window and overlap
+                            checks, and nobody retypes a reason to change a time.
+                          */}
+                          <button
+                            type="button"
+                            title={t("common.edit", "Edit")}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() => {
+                              setBreakStart(utcToZonedInput(b.startedAt, tz))
+                              setBreakEnd(b.endedAt ? utcToZonedInput(b.endedAt, tz) : "")
+                              setBreakType((b.type as "SHORT" | "LUNCH" | "OTHER") ?? "SHORT")
+                              setBreakReason(b.reason || t("attendance.addBreak.editedReason", "Corrected"))
+                              setRemovingBreaks((cur) => (cur.includes(b.id) ? cur : [...cur, b.id]))
+                              setAddingBreak(true)
+                            }}
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title={t("common.remove", "Remove")}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setRemovingBreaks((cur) => [...cur, b.id])}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </span>
+                      )}
                     </li>
                   )
                 })}
                 {pendingBreaks.map((b, i) => (
-                  <li key={`pending-${i}`} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
-                    <span className="text-foreground">
-                      {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)} · {b.label}
-                      <span className="ml-1.5 text-amber-600 dark:text-amber-400">
-                        {t("attendance.addBreak.pending", "on save")}
+                  <li key={`pending-${i}`} className="flex items-center gap-3 px-3 py-2.5">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400">
+                      <Plus className="size-3.5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-medium text-foreground">
+                        {b.label}
+                        <span className="ml-1.5 font-normal text-amber-600 dark:text-amber-400">
+                          {t("attendance.addBreak.pending", "on save")}
+                        </span>
+                      </span>
+                      <span className="block truncate text-[11px] text-muted-foreground">
+                        {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)} · {b.reason}
                       </span>
                     </span>
                     <button
                       type="button"
-                      className="text-muted-foreground hover:text-destructive"
+                      title={t("common.remove", "Remove")}
+                      className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => setPendingBreaks((cur) => cur.filter((_, j) => j !== i))}
                     >
-                      {t("common.remove", "Remove")}
+                      <Trash2 className="size-3.5" />
                     </button>
                   </li>
                 ))}

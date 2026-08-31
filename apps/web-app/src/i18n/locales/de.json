@@ -3262,7 +3262,8 @@
       "breaks": "Pausen",
       "queue": "Weitere hinzufügen",
       "pending": "beim Speichern",
-      "byMember": "Vom Mitarbeiter erfasst"
+      "byMember": "Vom Mitarbeiter erfasst",
+      "editedReason": "Korrigiert"
     }
   },
   "auditLog": {

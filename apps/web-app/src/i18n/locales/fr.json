@@ -3262,7 +3262,8 @@
       "breaks": "Pauses",
       "queue": "En ajouter une autre",
       "pending": "à l’enregistrement",
-      "byMember": "Enregistrée par le membre"
+      "byMember": "Enregistrée par le membre",
+      "editedReason": "Corrigée"
     }
   },
   "auditLog": {
