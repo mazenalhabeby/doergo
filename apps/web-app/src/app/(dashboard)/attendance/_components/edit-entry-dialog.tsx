@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil, Loader2, Trash2, Coffee } from "lucide-react"
@@ -80,6 +80,32 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
     { type: "SHORT" | "LUNCH" | "OTHER"; startedAt: string; endedAt: string; reason: string; label: string }[]
   >([])
 
+  /**
+   * The break currently typed into the form, if it is complete.
+   *
+   * "Add to list" exists for entering SEVERAL breaks, but filling the form and
+   * pressing Save is what somebody adding ONE will do — and losing it there,
+   * silently, because of an extra click they had no reason to expect, is the
+   * worst possible outcome for a form about somebody's paid hours.
+   *
+   * So a completed form counts: towards the total shown in the header, and in
+   * what Save writes. Filling it in IS the intent; the extra button is a
+   * convenience for the second one, not a toll on the first.
+   */
+  const typedBreak = useMemo(() => {
+    if (!breakStart || !breakEnd || breakReason.trim().length < 3) return null
+    const startedAt = zonedInputToUtc(breakStart, tz)
+    const endedAt = zonedInputToUtc(breakEnd, tz)
+    if (new Date(endedAt) <= new Date(startedAt)) return null
+    return {
+      type: breakType,
+      startedAt,
+      endedAt,
+      reason: breakReason.trim(),
+      label: `${breakStart.slice(11)}–${breakEnd.slice(11)}`,
+    }
+  }, [breakStart, breakEnd, breakType, breakReason, tz])
+
   /** The breaks already recorded on this shift — so the dialog shows what exists. */
   const { data: existingBreaks = [] } = useQuery({
     queryKey: ["entry-breaks", entry.id],
@@ -126,7 +152,9 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       // Sequentially, not in parallel: each is checked for overlap against the
       // ones already recorded, and two arriving at once can both pass a check
       // neither would pass afterwards.
-      for (const b of pendingBreaks) {
+      // The queue, plus a completed form the person never pressed "Add to list"
+      // on — see `typedBreak`.
+      for (const b of [...pendingBreaks, ...(typedBreak ? [typedBreak] : [])]) {
         await attendanceApi.addBreak(entry.id, {
           type: b.type, startedAt: b.startedAt, endedAt: b.endedAt, reason: b.reason,
         })
@@ -245,7 +273,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                 <span className="text-xs font-normal text-muted-foreground">
                   {formatDurationMinutes(
                     existingBreaks.reduce((sum, b) => sum + (b.durationMinutes ?? 0), 0) +
-                      pendingBreaks.reduce(
+                      [...pendingBreaks, ...(typedBreak ? [typedBreak] : [])].reduce(
                         (sum, b) =>
                           sum + Math.round((new Date(b.endedAt).getTime() - new Date(b.startedAt).getTime()) / 60000),
                         0,
@@ -387,7 +415,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                     setBreakStart(""); setBreakEnd(""); setBreakReason("")
                   }}
                 >
-                  {t("attendance.addBreak.queue", "Add to list")}
+                  {t("attendance.addBreak.queue", "Add another")}
                 </Button>
               </div>
             )}
