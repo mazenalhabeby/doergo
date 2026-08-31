@@ -2261,6 +2261,15 @@
       "title": "Impossibile caricare i membri",
       "description": "Si è verificato un errore durante il caricamento dei membri della sua organizzazione. I suoi dati sono al sicuro: è un problema di caricamento, non un team vuoto.",
       "retry": "Riprova"
+    },
+    "owner": {
+      "label": "Proprietario",
+      "cantRemove": "Trasferisci la proprietà prima di rimuovere il proprietario",
+      "transfer": "Trasferisci proprietà",
+      "transferDesc": "{{name}} diventa proprietario e amministratore. Tu resti amministratore.",
+      "transferConfirm": "Trasferisci",
+      "transferred": "Proprietà trasferita",
+      "pick": "Scegli il nuovo proprietario"
     }
   },
   "invitations": {

@@ -2261,6 +2261,15 @@
       "title": "No se pudieron cargar los miembros",
       "description": "Algo falló al cargar los miembros de su organización. Sus datos están a salvo: es un problema de carga, no un equipo vacío.",
       "retry": "Reintentar"
+    },
+    "owner": {
+      "label": "Propietario",
+      "cantRemove": "Transfiere la propiedad antes de eliminar al propietario",
+      "transfer": "Transferir propiedad",
+      "transferDesc": "{{name}} pasa a ser propietario y administrador. Tú sigues siendo administrador.",
+      "transferConfirm": "Transferir",
+      "transferred": "Propiedad transferida",
+      "pick": "Elige al nuevo propietario"
     }
   },
   "invitations": {

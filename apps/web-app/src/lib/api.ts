@@ -3470,6 +3470,8 @@ export interface OrgMember {
   lastName: string;
   role: string;
   isActive: boolean;
+  /** Owns the organization. Cannot be removed or demoted until ownership moves. */
+  isOwner?: boolean;
   avatarUrl?: string | null;
   createdAt: string;
   // Mobile Access Profile (JSON, e.g. { modules: ["tasks","clock"] }). Used to
@@ -3598,6 +3600,17 @@ export const organizationsApi = {
     const response = await api.patch<{ success: boolean; data: AccessRole }>(`/organizations/roles/${id}`, input);
     if (response.error) throw new Error(response.error);
     return response.data!.data;
+  },
+
+  /**
+   * Hand the organization to another member.
+   *
+   * Owner-only, enforced by the server: no permission grants this, because an
+   * admin who could take ownership could then remove the founder.
+   */
+  transferOwnership: async (newOwnerId: string): Promise<void> => {
+    const response = await api.post<{ success: boolean }>("/organizations/transfer-ownership", { newOwnerId });
+    if (response.error) throw new Error(response.error);
   },
 
   deleteRole: async (id: string): Promise<void> => {

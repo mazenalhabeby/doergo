@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Search,
   MoreHorizontal,
+  Crown,
   Pencil,
   UserMinus,
   UserPlus,
@@ -240,6 +241,9 @@ interface MemberRowProps {
   onSelect: (id: string, checked: boolean) => void
   onEdit: (member: OrgMember) => void
   onRemove: (member: OrgMember) => void
+  onTransfer: (member: OrgMember) => void
+  /** The viewer owns this organization — the only person who may hand it over. */
+  canTransferOwnership: boolean
   onNavigate: (id: string) => void
 }
 
@@ -248,6 +252,23 @@ const TABLE_GRID =
   "grid grid-cols-[28px_44px_minmax(0,1.5fr)_minmax(0,1fr)_110px_110px_minmax(0,1.3fr)_40px] items-center gap-4 px-5"
 
 // \u2500\u2500 Row sub-pieces (reused by the desktop table row AND the mobile card) \u2500\u2500\u2500\u2500\u2500\u2500
+
+/**
+ * The person who owns the organization.
+ *
+ * Separate from the role badge because it is a different fact: role says what
+ * somebody can do, ownership says whose organization it is. An owner is always
+ * an admin, so folding it into the role badge would hide one behind the other.
+ */
+function OwnerBadge() {
+  const { t } = useTranslation()
+  return (
+    <Badge variant="outline" className="text-xs font-medium border gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
+      <Crown className="h-3 w-3" />
+      {t("members.owner.label", "Owner")}
+    </Badge>
+  )
+}
 
 function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
@@ -312,6 +333,8 @@ function RowActions({
   member,
   onEdit,
   onRemove,
+  onTransfer,
+  canTransferOwnership,
   alwaysVisible,
 }: {
   show: boolean
@@ -319,6 +342,9 @@ function RowActions({
   member: OrgMember
   onEdit: (m: OrgMember) => void
   onRemove: (m: OrgMember) => void
+  onTransfer: (m: OrgMember) => void
+  /** The viewer owns this organization — the only person who may hand it over. */
+  canTransferOwnership: boolean
   alwaysVisible?: boolean
 }) {
   const { t } = useTranslation()
@@ -343,7 +369,29 @@ function RowActions({
         {!isSelf && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => onRemove(member)}>
+            {/*
+              Handing the organization over. Shown only to the owner, and only on
+              somebody else's row: it is the one action in the product that no
+              permission grants, because an admin who could take ownership could
+              then remove the founder.
+            */}
+            {canTransferOwnership && !member.isOwner && (
+              <DropdownMenuItem onClick={() => onTransfer(member)}>
+                <Crown className="h-4 w-4 mr-2" />
+                {t("members.owner.transfer", "Transfer ownership")}
+              </DropdownMenuItem>
+            )}
+            {/*
+              The owner cannot be removed — the server refuses until ownership
+              moves. Saying so here beats offering the action and reporting the
+              refusal afterwards, which is how somebody concludes it is broken.
+            */}
+            <DropdownMenuItem
+              className="text-red-600 focus:text-red-600"
+              disabled={member.isOwner === true}
+              title={member.isOwner ? t("members.owner.cantRemove", "Transfer ownership before removing the owner") : undefined}
+              onClick={() => onRemove(member)}
+            >
               <UserMinus className="h-4 w-4 mr-2" />
               {t("members.actions.remove")}
             </DropdownMenuItem>
@@ -365,6 +413,8 @@ const MemberRow = memo(function MemberRow({
   onSelect,
   onEdit,
   onRemove,
+  onTransfer,
+  canTransferOwnership,
   onNavigate,
 }: MemberRowProps) {
   const { t } = useTranslation()
@@ -409,10 +459,13 @@ const MemberRow = memo(function MemberRow({
         <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/40")}>
           {member.position || "\u2014"}
         </span>
-        <div><RoleBadge member={member} /></div>
+        <div className="flex items-center gap-1.5">
+          <RoleBadge member={member} />
+          {member.isOwner && <OwnerBadge />}
+        </div>
         <div><ScheduleBadge member={member} /></div>
         <div className="min-w-0"><SpacesCell spaceNames={spaceNames} /></div>
-        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} />
+        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} onTransfer={onTransfer} canTransferOwnership={canTransferOwnership} />
       </div>
 
       {/* \u2500\u2500 Mobile: stacked card \u2500\u2500 */}
@@ -429,12 +482,13 @@ const MemberRow = memo(function MemberRow({
           <p className="text-sm text-muted-foreground truncate">{member.email}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
             <RoleBadge member={member} />
+            {member.isOwner && <OwnerBadge />}
             {member.position && <span className="text-xs text-muted-foreground">{member.position}</span>}
             {hasSchedule && <ScheduleBadge member={member} />}
             {spaceNames.length > 0 && <SpacesCell spaceNames={spaceNames} />}
           </div>
         </div>
-        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} alwaysVisible />
+        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} onTransfer={onTransfer} canTransferOwnership={canTransferOwnership} alwaysVisible />
       </div>
     </div>
   )
@@ -448,7 +502,7 @@ export default function MembersPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const isAdmin = user?.role === "ADMIN"
 
   const [search, setSearch] = useState("")
@@ -481,6 +535,7 @@ export default function MembersPage() {
   // Dialogs
   const [editTarget, setEditTarget] = useState<OrgMember | null>(null)
   const [removeTarget, setRemoveTarget] = useState<OrgMember | null>(null)
+  const [transferTarget, setTransferTarget] = useState<OrgMember | null>(null)
   const [bulkAccessIds, setBulkAccessIds] = useState<string[] | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [rolesOpen, setRolesOpen] = useState(false)
@@ -589,6 +644,24 @@ export default function MembersPage() {
     },
     [queryClient],
   )
+
+  /**
+   * Handing the organization to somebody else.
+   *
+   * No optimistic update: this changes who the VIEWER is as much as who the
+   * target is — they stop being the owner — so the session and the list are both
+   * refetched from the server rather than guessed at locally.
+   */
+  const transferMutation = useMutation({
+    mutationFn: (memberId: string) => organizationsApi.transferOwnership(memberId),
+    onSuccess: async () => {
+      setTransferTarget(null)
+      notify.success(t("members.owner.transferred", "Ownership transferred"))
+      await refreshUser()
+      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+    },
+    onError: (error: Error) => notify.error(error.message),
+  })
 
   const removeMutation = useMutation({
     mutationFn: (memberId: string) => organizationsApi.removeMember(memberId),
@@ -863,6 +936,8 @@ export default function MembersPage() {
                     onSelect={handleSelectMember}
                     onEdit={setEditTarget}
                     onRemove={setRemoveTarget}
+                    onTransfer={setTransferTarget}
+                    canTransferOwnership={!!user?.isOwner}
                     onNavigate={(id) => router.push(`/members/${id}`)}
                   />
                 ))}
@@ -1006,6 +1081,37 @@ export default function MembersPage() {
       {/* ── Invite Dialog (shared component) ─────────────────────────── */}
       <CreateInvitationDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <ManageRolesDialog open={rolesOpen} onOpenChange={setRolesOpen} />
+
+      {/* ── Transfer Ownership Confirmation ────────────────────────────
+          Irreversible without the new owner's cooperation: once it lands, only
+          THEY can transfer it back. So the dialog states plainly what changes
+          and what does not — you keep admin, you stop being the owner. */}
+      <AlertDialog
+        open={!!transferTarget}
+        onOpenChange={(open) => !open && setTransferTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("members.owner.transfer", "Transfer ownership")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {transferTarget &&
+                t("members.owner.transferDesc", "{{name}} becomes the owner and an admin. You stay an admin.", {
+                  name: `${transferTarget.firstName} ${transferTarget.lastName}`,
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg"
+              onClick={() => transferTarget && transferMutation.mutate(transferTarget.id)}
+              disabled={transferMutation.isPending}
+            >
+              {t("members.owner.transferConfirm", "Transfer")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Remove Confirmation ────────────────────────────────────────── */}
       <AlertDialog

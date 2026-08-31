@@ -2261,6 +2261,15 @@
       "title": "Could not load members",
       "description": "Something went wrong while loading your organization’s members. Your data is safe — this is a loading problem, not a missing team.",
       "retry": "Try again"
+    },
+    "owner": {
+      "label": "Owner",
+      "cantRemove": "Transfer ownership before removing the owner",
+      "transfer": "Transfer ownership",
+      "transferDesc": "{{name}} becomes the owner and an admin. You stay an admin.",
+      "transferConfirm": "Transfer",
+      "transferred": "Ownership transferred",
+      "pick": "Choose the new owner"
     }
   },
   "invitations": {

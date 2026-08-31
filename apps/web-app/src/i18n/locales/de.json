@@ -2261,6 +2261,15 @@
       "title": "Mitglieder konnten nicht geladen werden",
       "description": "Beim Laden der Mitglieder Ihrer Organisation ist etwas schiefgelaufen. Ihre Daten sind sicher — es handelt sich um ein Ladeproblem, nicht um ein fehlendes Team.",
       "retry": "Erneut versuchen"
+    },
+    "owner": {
+      "label": "Eigentümer",
+      "cantRemove": "Übertragen Sie die Eigentümerschaft, bevor Sie den Eigentümer entfernen",
+      "transfer": "Eigentümerschaft übertragen",
+      "transferDesc": "{{name}} wird Eigentümer und Admin. Sie bleiben Admin.",
+      "transferConfirm": "Übertragen",
+      "transferred": "Eigentümerschaft übertragen",
+      "pick": "Neuen Eigentümer wählen"
     }
   },
   "invitations": {

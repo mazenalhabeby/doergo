@@ -961,9 +961,22 @@ export class UsersService {
       take: limit,
     });
 
+    /*
+      Who owns this organization, once per page rather than once per row.
+
+      One primary-key lookup on a column that is unique, against a row already in
+      cache on any warm instance. Flagging the rows here means the screen can
+      label the owner and grey out the actions that would be refused, instead of
+      offering them and reporting the refusal afterwards.
+    */
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { ownerId: true },
+    });
+
     return {
       success: true,
-      data: members,
+      data: members.map((m: any) => ({ ...m, isOwner: !!org?.ownerId && m.id === org.ownerId })),
       meta: {
         page,
         limit,

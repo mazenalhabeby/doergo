@@ -2261,6 +2261,15 @@
       "title": "Impossible de charger les membres",
       "description": "Une erreur est survenue lors du chargement des membres de votre organisation. Vos données sont intactes — il s’agit d’un problème de chargement, pas d’une équipe vide.",
       "retry": "Réessayer"
+    },
+    "owner": {
+      "label": "Propriétaire",
+      "cantRemove": "Transférez la propriété avant de retirer le propriétaire",
+      "transfer": "Transférer la propriété",
+      "transferDesc": "{{name}} devient propriétaire et administrateur. Vous restez administrateur.",
+      "transferConfirm": "Transférer",
+      "transferred": "Propriété transférée",
+      "pick": "Choisir le nouveau propriétaire"
     }
   },
   "invitations": {

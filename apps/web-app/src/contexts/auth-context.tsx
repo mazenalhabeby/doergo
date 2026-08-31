@@ -23,6 +23,8 @@ export interface User {
   lastName: string;
   organizationId?: string;
   organizationName?: string;
+  /** Owns this organization. Cannot be removed or demoted until ownership moves. */
+  isOwner?: boolean;
   /** IANA timezone of the org — the default display zone for all times on the
    *  client (attendance times override per-entry with the location's zone). */
   organizationTimezone?: string | null;
