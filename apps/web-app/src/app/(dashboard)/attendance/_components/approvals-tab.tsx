@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { toDate, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { useTimeFormat } from "@/hooks"
+import { workedMinutes } from "@hbcfield/shared/client"
 
 interface ApprovalsTabProps {
   loading: boolean
@@ -101,7 +102,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                 <TableCell>
                   <ClockCell at={entry.clockOutAt} tz={entry.timezone ?? entry.location?.timezone} hour12={hour12} locale={locale} />
                 </TableCell>
-                <TableCell className="font-medium tabular-nums">{formatDurationMinutes(entry.totalMinutes)}</TableCell>
+                <TableCell className="font-medium tabular-nums">{formatDurationMinutes(workedMinutes(entry))}</TableCell>
                 <TableCell>
                   <ApprovalCell entry={entry} />
                 </TableCell>

@@ -33,6 +33,7 @@ import { countryFromTz } from '@hbcfield/shared/client';
 import { TourTarget } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
+import { workedMinutes } from '@hbcfield/shared/client';
 
 export function FullTimeHome() {
   const { user } = useAuth();
@@ -283,7 +284,7 @@ export function FullTimeHome() {
                     {formatTime(entry.clockInAt, (entry.timezone ?? entry.location?.timezone))} - {entry.clockOutAt ? formatTime(entry.clockOutAt, (entry.timezone ?? entry.location?.timezone)) : t('common.active')}
                   </Text>
                   {entry.totalMinutes != null && entry.totalMinutes > 0 && (
-                    <Text style={ftStyles.historyDuration}>{formatDuration(entry.totalMinutes)}</Text>
+                    <Text style={ftStyles.historyDuration}>{formatDuration(workedMinutes(entry))}</Text>
                   )}
                 </View>
               </View>

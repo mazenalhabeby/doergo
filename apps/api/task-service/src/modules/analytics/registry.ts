@@ -49,8 +49,22 @@ export const DATASETS: Record<string, Dataset> = {
       status: { label: 'Status', sql: 'te.status', type: 'string' },
     },
     measures: {
-      hours: { label: 'Hours worked', agg: 'sum', sql: `COALESCE(te."totalMinutes", 0) / 60.0`, format: 'hours' },
-      overtimeHours: { label: 'Overtime hours', agg: 'sum', sql: `CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN COALESCE(te."totalMinutes", 0) / 60.0 ELSE 0 END`, format: 'hours' },
+      /*
+        Hours WORKED — gross clock time minus breaks.
+
+        `totalMinutes` is clock-in to clock-out with breaks included; this metric
+        summed it directly, so a 13h05m shift with an hour's break was reported as
+        13.1 hours worked instead of 12.1. It is the number people are paid
+        against, which is why it is the one that had to be wrong quietly.
+
+        GREATEST(...,0) because a break longer than its shift is a data error, and
+        a negative contribution would net silently against other people's hours in
+        the same sum — a wrong total that looks plausible is worse than one row
+        that looks absurd.
+      */
+      hours: { label: 'Hours worked', agg: 'sum', sql: `GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."breakMinutes", 0), 0) / 60.0`, format: 'hours' },
+      // Overtime is worked time too, so it nets the same way.
+      overtimeHours: { label: 'Overtime hours', agg: 'sum', sql: `CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."breakMinutes", 0), 0) / 60.0 ELSE 0 END`, format: 'hours' },
       breakHours: { label: 'Break hours', agg: 'sum', sql: `te."breakMinutes" / 60.0`, format: 'hours' },
       shifts: { label: 'Shifts', agg: 'count', sql: 'te.id', format: 'number' },
       technicians: { label: 'People', agg: 'countDistinct', sql: 'te."userId"', format: 'number' },

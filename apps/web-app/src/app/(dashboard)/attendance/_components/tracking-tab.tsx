@@ -18,6 +18,7 @@ import { EditEntryDialog } from "./edit-entry-dialog"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { OutOfRingPanel } from "./out-of-ring-panel"
 import { useTimeFormat } from "@/hooks"
+import { workedMinutes } from "@hbcfield/shared/client"
 
 // Approved time-off shown inline as a "day off" row in the tracking table.
 export type DayOffRow = {
@@ -519,7 +520,7 @@ export function TrackingTab({
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-foreground">
-                          {formatDurationMinutes(entry.totalMinutes)}
+                          {formatDurationMinutes(workedMinutes(entry))}
                         </span>
                       </TableCell>
                       <TableCell>

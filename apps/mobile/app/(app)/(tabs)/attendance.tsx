@@ -58,6 +58,7 @@ import {
   formatDurationMinutes as formatDuration,
 } from '../../../src/lib/utils';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
+import { workedMinutes } from '@hbcfield/shared/client';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
@@ -1096,7 +1097,7 @@ export default function AttendanceScreen() {
                     <View style={styles.historyTimeItem}>
                       <Text style={[styles.historyTimeLabel, { color: colors.textMuted }]}>{t('attendance.history.total')}</Text>
                       <Text style={[styles.historyTimeValue, { color: COLORS.primary }]}>
-                        {formatDuration(entry.totalMinutes)}
+                        {formatDuration(workedMinutes(entry))}
                       </Text>
                     </View>
                   )}

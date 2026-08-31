@@ -3257,7 +3257,11 @@
       "reason": "Motivo",
       "reasonPlaceholder": "p. ej. el móvil se apagó antes de comer",
       "submit": "Añadir pausa",
-      "added": "Pausa añadida"
+      "added": "Pausa añadida",
+      "breaks": "Pausas",
+      "queue": "Añadir a la lista",
+      "pending": "al guardar",
+      "byMember": "Registrada por el empleado"
     }
   },
   "auditLog": {

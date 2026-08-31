@@ -3257,7 +3257,11 @@
       "reason": "Grund",
       "reasonPlaceholder": "z. B. Handy war vor der Mittagspause leer",
       "submit": "Pause hinzufügen",
-      "added": "Pause hinzugefügt"
+      "added": "Pause hinzugefügt",
+      "breaks": "Pausen",
+      "queue": "Zur Liste hinzufügen",
+      "pending": "beim Speichern",
+      "byMember": "Vom Mitarbeiter erfasst"
     }
   },
   "auditLog": {

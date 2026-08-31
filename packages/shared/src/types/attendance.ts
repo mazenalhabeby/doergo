@@ -414,3 +414,29 @@ export function mayClockInRemotely(
   if (!user) return false;
   return user.allowRemote === true || user.role === 'ADMIN';
 }
+
+/**
+ * The hours a shift is actually worth — clock time minus breaks.
+ *
+ * `TimeEntry.totalMinutes` is GROSS: clock-in to clock-out, breaks included. The
+ * services store it that way on purpose, with a comment saying breaks are
+ * "netted out downstream" — and nothing downstream did. Every screen showed the
+ * gross figure under a heading that reads as hours worked, and the reports metric
+ * labelled "Hours worked" summed it directly, so a shift of 13h05m with an hour's
+ * break was reported as 13.1 hours worked rather than 12.1.
+ *
+ * Gross is the right thing to STORE: it is the measured fact, and breaks change
+ * afterwards — one gets added, corrected, or removed, and a pre-subtracted total
+ * would have to be recomputed every time or quietly drift. Netting belongs at the
+ * point of reading, which is here.
+ *
+ * Floored at zero: a break longer than the shift is a data error, and a negative
+ * number of hours worked helps nobody diagnose it.
+ */
+export function workedMinutes(
+  entry: { totalMinutes?: number | null; breakMinutes?: number | null } | null | undefined,
+): number {
+  const gross = entry?.totalMinutes ?? 0;
+  const breaks = entry?.breakMinutes ?? 0;
+  return Math.max(0, gross - breaks);
+}

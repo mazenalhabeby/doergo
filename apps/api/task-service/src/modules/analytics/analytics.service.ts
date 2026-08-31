@@ -100,7 +100,13 @@ export class AnalyticsService {
         trim(to_char(d.day, 'Dy')) AS "day",
         to_char((e.clock_in AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(e.tz, 'UTC'), 'HH24:MI') AS "clockIn",
         to_char((e.clock_out AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(e.tz, 'UTC'), 'HH24:MI') AS "clockOut",
-        ROUND(COALESCE(e.minutes, 0) / 60.0, 2) AS "hours",
+        -- Hours WORKED: gross clock time minus breaks. The minutes column is
+        -- clock-in to clock-out with breaks included, so this reported a 13h05m
+        -- shift with an hour's break as 13.1 hours worked instead of 12.1 - and
+        -- the break was shown in its own column beside it, so the two together
+        -- implied 14h on site. GREATEST guards a break longer than its shift,
+        -- which is a data error and must not net against other rows.
+        ROUND(GREATEST(COALESCE(e.minutes, 0) - COALESCE(e.break_minutes, 0), 0) / 60.0, 2) AS "hours",
         ROUND(COALESCE(e.break_minutes, 0) / 60.0, 2) AS "break",
         ROUND(COALESCE(e.ot_minutes, 0) / 60.0, 2) AS "overtime",
         COALESCE(j.n, 0) AS "jobs",

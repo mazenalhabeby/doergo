@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil, Loader2, Trash2, Coffee } from "lucide-react"
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { cn, utcToZonedInput, zonedInputToUtc } from "@/lib/utils"
+import { cn, utcToZonedInput, zonedInputToUtc, formatDurationMinutes } from "@/lib/utils"
 
 // Smart quick-pick reasons for editing an entry — click to fill the field
 // (click again to clear); the admin can still type a custom reason. i18n keys
@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { TimezoneCombobox } from "@/components/timezone-combobox"
+
 import {
   Dialog,
   DialogContent,
@@ -63,26 +64,27 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
   const [breakEnd, setBreakEnd] = useState("")
   const [breakType, setBreakType] = useState<"SHORT" | "LUNCH" | "OTHER">("SHORT")
   const [breakReason, setBreakReason] = useState("")
+  /*
+    Breaks wait for Save; they are not written the moment you add one.
 
-  /**
-   * Adding a break to this shift.
-   *
-   * The server refuses anything outside the shift or overlapping another break,
-   * and its message says which — so failures are surfaced verbatim rather than
-   * second-guessed here. Adding one can also knock the entry out of approval, so
-   * the whole attendance view is refetched rather than patched locally.
-   */
-  const addBreak = useMutation({
-    mutationFn: (input: { type: string; startedAt: string; endedAt: string; reason: string }) =>
-      attendanceApi.addBreak(entry.id, input),
-    onSuccess: () => {
-      notify.success(t("attendance.addBreak.added", "Break added"))
-      setAddingBreak(false)
-      setBreakStart(""); setBreakEnd(""); setBreakReason("")
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
-      queryClient.invalidateQueries({ queryKey: ["breaks"] })
-    },
-    onError: (e: Error) => notify.error(e.message),
+    Two reasons, both learned the hard way. The server validates a break against
+    the shift's CURRENT times, so adding one while the clock times are still
+    unsaved is checked against the old shift and refused — you had to save the
+    times, reopen, then add the break. And a dialog with its own Save inside
+    another Save asks somebody to guess which button commits what.
+
+    So the form queues, and one Save applies the edits first and then the breaks,
+    in that order, against times the server has already accepted.
+  */
+  const [pendingBreaks, setPendingBreaks] = useState<
+    { type: "SHORT" | "LUNCH" | "OTHER"; startedAt: string; endedAt: string; reason: string; label: string }[]
+  >([])
+
+  /** The breaks already recorded on this shift — so the dialog shows what exists. */
+  const { data: existingBreaks = [] } = useQuery({
+    queryKey: ["entry-breaks", entry.id],
+    queryFn: () => attendanceApi.entryBreaks(entry.id),
+    enabled: open,
   })
 
   // Changing the zone keeps the real instant fixed and re-renders the wall clock
@@ -103,23 +105,40 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       setNotes(entry.notes ?? "")
       setReason("")
       setConfirmDelete(false)
+      setPendingBreaks([])
+      setAddingBreak(false)
     }
     setOpen(next)
   }
 
   const mutation = useMutation({
-    mutationFn: () =>
-      attendanceApi.editEntry(entry.id, {
+    mutationFn: async () => {
+      // Times first. A queued break is validated against the shift, so it has to
+      // be checked against the times the server has just accepted — not the ones
+      // it held when the dialog opened.
+      await attendanceApi.editEntry(entry.id, {
         clockInAt: clockIn ? zonedInputToUtc(clockIn, tz) : undefined,
         clockOutAt: clockOut ? zonedInputToUtc(clockOut, tz) : undefined,
         notes: notes.trim() || undefined,
         timezone: tz || undefined,
         reason: reason.trim(),
-      }),
+      })
+      // Sequentially, not in parallel: each is checked for overlap against the
+      // ones already recorded, and two arriving at once can both pass a check
+      // neither would pass afterwards.
+      for (const b of pendingBreaks) {
+        await attendanceApi.addBreak(entry.id, {
+          type: b.type, startedAt: b.startedAt, endedAt: b.endedAt, reason: b.reason,
+        })
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      queryClient.invalidateQueries({ queryKey: ["entry-breaks", entry.id] })
+      queryClient.invalidateQueries({ queryKey: ["breaks"] })
       notify.success(t("attendance.editEntry.success"))
+      setPendingBreaks([])
       setOpen(false)
     },
     onError: (err: Error) => {
@@ -220,12 +239,70 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
             >
               <span className="flex items-center gap-2">
                 <Coffee className="size-4 text-muted-foreground" />
-                {t("attendance.addBreak.title", "Add a break")}
+                {t("attendance.addBreak.breaks", "Breaks")}
+                {/* The total, because that is the number the row in the table
+                    shows and the one that comes off the hours. */}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {formatDurationMinutes(
+                    existingBreaks.reduce((sum, b) => sum + (b.durationMinutes ?? 0), 0) +
+                      pendingBreaks.reduce(
+                        (sum, b) =>
+                          sum + Math.round((new Date(b.endedAt).getTime() - new Date(b.startedAt).getTime()) / 60000),
+                        0,
+                      ),
+                  )}
+                </span>
               </span>
               <span className="text-xs text-muted-foreground">
                 {addingBreak ? t("common.cancel") : t("common.add", "Add")}
               </span>
             </button>
+
+            {/*
+              What this shift already has, and what is waiting for Save.
+
+              The panel used to show nothing but an empty form, so a shift with
+              breaks looked like a shift without any — and a break you had just
+              added disappeared from view the moment it was written. A member can
+              take several in a day; they belong in a list.
+            */}
+            {(existingBreaks.length > 0 || pendingBreaks.length > 0) && (
+              <ul className="divide-y divide-border border-t border-border">
+                {existingBreaks.map((b) => (
+                  <li key={b.id} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
+                    <span className="text-foreground">
+                      {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)}
+                      {" · "}
+                      {formatDurationMinutes(b.durationMinutes ?? 0)}
+                    </span>
+                    <span className="truncate text-muted-foreground" title={b.reason || undefined}>
+                      {b.addedBy
+                        ? t("attendance.breaks.addedBy", "Added by {{name}}", {
+                            name: `${b.addedBy.firstName} ${b.addedBy.lastName}`.trim(),
+                          })
+                        : t("attendance.addBreak.byMember", "Recorded by the member")}
+                    </span>
+                  </li>
+                ))}
+                {pendingBreaks.map((b, i) => (
+                  <li key={`pending-${i}`} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
+                    <span className="text-foreground">
+                      {t(`attendance.breaks.typeBreak.${b.type.toLowerCase()}`, b.type)} · {b.label}
+                      <span className="ml-1.5 text-amber-600 dark:text-amber-400">
+                        {t("attendance.addBreak.pending", "on save")}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => setPendingBreaks((cur) => cur.filter((_, j) => j !== i))}
+                    >
+                      {t("common.remove", "Remove")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {addingBreak && (
               <div className="space-y-3 border-t border-border p-3">
@@ -291,18 +368,26 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!breakStart || !breakEnd || breakReason.trim().length < 3 || addBreak.isPending}
-                  onClick={() =>
-                    addBreak.mutate({
-                      type: breakType,
-                      // Converted with the SAME zone the clock fields use.
-                      startedAt: zonedInputToUtc(breakStart, tz),
-                      endedAt: zonedInputToUtc(breakEnd, tz),
-                      reason: breakReason.trim(),
-                    })
-                  }
+                  variant="outline"
+                  disabled={!breakStart || !breakEnd || breakReason.trim().length < 3}
+                  onClick={() => {
+                    // Queued, not sent. Save applies it after the time edits, so
+                    // it is validated against the shift the server ends up with.
+                    setPendingBreaks((cur) => [
+                      ...cur,
+                      {
+                        type: breakType,
+                        // Converted with the SAME zone the clock fields use.
+                        startedAt: zonedInputToUtc(breakStart, tz),
+                        endedAt: zonedInputToUtc(breakEnd, tz),
+                        reason: breakReason.trim(),
+                        label: `${breakStart.slice(11)}–${breakEnd.slice(11)}`,
+                      },
+                    ])
+                    setBreakStart(""); setBreakEnd(""); setBreakReason("")
+                  }}
                 >
-                  {t("attendance.addBreak.submit", "Add break")}
+                  {t("attendance.addBreak.queue", "Add to list")}
                 </Button>
               </div>
             )}

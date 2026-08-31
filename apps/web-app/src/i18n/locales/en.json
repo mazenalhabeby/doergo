@@ -3257,7 +3257,11 @@
       "reason": "Why",
       "reasonPlaceholder": "e.g. phone died before lunch",
       "submit": "Add break",
-      "added": "Break added"
+      "added": "Break added",
+      "breaks": "Breaks",
+      "queue": "Add to list",
+      "pending": "on save",
+      "byMember": "Recorded by the member"
     }
   },
   "auditLog": {

@@ -2462,6 +2462,18 @@ export const attendanceApi = {
     };
   },
 
+  /** The breaks recorded on one shift, member-taken and manually added alike. */
+  entryBreaks: async (entryId: string) => {
+    const response = await api.get<{ success: boolean; data: unknown }>(`/attendance/entries/${entryId}/breaks`);
+    if (response.error) throw new Error(response.error);
+    const body = response.data as { data?: unknown } | undefined;
+    return (Array.isArray(body?.data) ? body.data : Array.isArray(response.data) ? response.data : []) as Array<{
+      id: string; type: string; startedAt: string; endedAt: string | null;
+      durationMinutes: number | null; reason?: string | null;
+      addedBy?: { firstName: string; lastName: string } | null;
+    }>;
+  },
+
   /**
    * Add a break to a member's shift.
    *

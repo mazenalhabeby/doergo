@@ -3257,7 +3257,11 @@
       "reason": "Motif",
       "reasonPlaceholder": "ex. téléphone déchargé avant le déjeuner",
       "submit": "Ajouter la pause",
-      "added": "Pause ajoutée"
+      "added": "Pause ajoutée",
+      "breaks": "Pauses",
+      "queue": "Ajouter à la liste",
+      "pending": "à l’enregistrement",
+      "byMember": "Enregistrée par le membre"
     }
   },
   "auditLog": {
