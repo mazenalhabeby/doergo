@@ -2270,7 +2270,8 @@
       "transferDesc": "{{name}} becomes the owner and an admin. You stay an admin.",
       "transferConfirm": "Transfer",
       "transferred": "Ownership transferred",
-      "pick": "Choose the new owner"
+      "pick": "Choose the new owner",
+      "title": "Owns this organization"
     }
   },
   "invitations": {

@@ -21,6 +21,9 @@ import { normalizeRole, Role } from "@hbcfield/shared/client"
 export interface RoleBadge {
   /** Tailwind classes for an outline badge (bg + text + border), both themes. */
   className: string
+  /** The dot inside the badge — same treatment a named AccessRole gets, so the
+   *  column reads as one system rather than two. */
+  dotClassName: string
   /** Tailwind gradient stops, for avatar rings and headers. */
   gradient: string
   /** i18n key — never render the enum itself. */
@@ -31,18 +34,21 @@ const BADGES: Record<Role, RoleBadge> = {
   [Role.ADMIN]: {
     className:
       "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50",
+    dotClassName: "bg-blue-500",
     gradient: "from-blue-500 to-blue-600",
     labelKey: "members.roles.admin",
   },
   [Role.EMPLOYEE]: {
     className:
       "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
+    dotClassName: "bg-emerald-500",
     gradient: "from-emerald-500 to-emerald-600",
     labelKey: "members.roles.employee",
   },
   [Role.CUSTOMER]: {
     className:
       "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
+    dotClassName: "bg-amber-500",
     gradient: "from-amber-500 to-amber-600",
     labelKey: "members.roles.customer",
   },

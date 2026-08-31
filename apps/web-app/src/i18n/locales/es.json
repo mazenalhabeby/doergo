@@ -2270,7 +2270,8 @@
       "transferDesc": "{{name}} pasa a ser propietario y administrador. Tú sigues siendo administrador.",
       "transferConfirm": "Transferir",
       "transferred": "Propiedad transferida",
-      "pick": "Elige al nuevo propietario"
+      "pick": "Elige al nuevo propietario",
+      "title": "Propietario de esta organización"
     }
   },
   "invitations": {

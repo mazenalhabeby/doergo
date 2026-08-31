@@ -260,13 +260,29 @@ const TABLE_GRID =
  * somebody can do, ownership says whose organization it is. An owner is always
  * an admin, so folding it into the role badge would hide one behind the other.
  */
+/**
+ * The person who owns the organization.
+ *
+ * A crown beside the role, not a second pill next to it. Ownership QUALIFIES a
+ * role — an owner is always an admin — so giving it an equal-weight chip made
+ * one cell read as two competing facts, and its amber outline collided with the
+ * amber Flexible pill in the very next column.
+ *
+ * Icon-only because the word adds nothing a crown does not: it appears on
+ * exactly one row in the organization, right after the word Admin, and carries
+ * its name in the tooltip and for screen readers.
+ */
 function OwnerBadge() {
   const { t } = useTranslation()
+  const label = t("members.owner.label", "Owner")
   return (
-    <Badge variant="outline" className="text-xs font-medium border gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
-      <Crown className="h-3 w-3" />
-      {t("members.owner.label", "Owner")}
-    </Badge>
+    <span
+      title={t("members.owner.title", "Owns this organization")}
+      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400"
+    >
+      <Crown className="size-3" aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </span>
   )
 }
 
@@ -288,8 +304,21 @@ function RoleBadge({ member }: { member: OrgMember }) {
       )
     }
   }
+  /*
+    The same shape as a named role: a coloured dot, then the name.
+
+    The column mixed two treatments — account types as solid tinted chips,
+    named roles as an outline with a dot — so one list looked like two systems.
+    They are the same kind of fact and now read the same way; the colour still
+    tells them apart.
+  */
   const conf = roleBadge(member.role)
-  return <Badge variant="outline" className={cn("text-xs font-medium border", conf.className)}>{t(conf.labelKey)}</Badge>
+  return (
+    <Badge variant="outline" className={cn("gap-1.5 border text-xs font-medium", conf.className)}>
+      <span className={cn("size-1.5 shrink-0 rounded-full", conf.dotClassName)} />
+      {t(conf.labelKey)}
+    </Badge>
+  )
 }
 
 function ScheduleBadge({ member }: { member: OrgMember }) {
