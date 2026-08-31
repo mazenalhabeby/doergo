@@ -260,32 +260,6 @@ const TABLE_GRID =
  * somebody can do, ownership says whose organization it is. An owner is always
  * an admin, so folding it into the role badge would hide one behind the other.
  */
-/**
- * The person who owns the organization.
- *
- * A crown beside the role, not a second pill next to it. Ownership QUALIFIES a
- * role — an owner is always an admin — so giving it an equal-weight chip made
- * one cell read as two competing facts, and its amber outline collided with the
- * amber Flexible pill in the very next column.
- *
- * Icon-only because the word adds nothing a crown does not: it appears on
- * exactly one row in the organization, right after the word Admin, and carries
- * its name in the tooltip and for screen readers.
- */
-function OwnerBadge() {
-  const { t } = useTranslation()
-  const label = t("members.owner.label", "Owner")
-  return (
-    <span
-      title={t("members.owner.title", "Owns this organization")}
-      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400"
-    >
-      <Crown className="size-3" aria-hidden="true" />
-      <span className="sr-only">{label}</span>
-    </span>
-  )
-}
-
 function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
   // Admin (system tier) always shows as Admin, even if it also carries a role row.
@@ -305,18 +279,39 @@ function RoleBadge({ member }: { member: OrgMember }) {
     }
   }
   /*
-    The same shape as a named role: a coloured dot, then the name.
+    One chip, carrying both facts.
 
-    The column mixed two treatments — account types as solid tinted chips,
-    named roles as an outline with a dot — so one list looked like two systems.
-    They are the same kind of fact and now read the same way; the colour still
-    tells them apart.
+    An owner is always an admin, so a separate Owner pill said the same thing
+    twice and competed with the role for the same cell. The owner's badge IS the
+    admin badge, in gold, with a crown standing where the dot stands on every
+    other role — the frame and the icon say "owner" without a second element or a
+    second word.
+
+    Everything else keeps the coloured dot. The column mixed two treatments before
+    — account types as solid tinted chips, named roles as an outline with a dot —
+    so one list looked like two systems; they read the same way now, with colour
+    telling them apart.
   */
   const conf = roleBadge(member.role)
+  const owner = member.isOwner === true
   return (
-    <Badge variant="outline" className={cn("gap-1.5 border text-xs font-medium", conf.className)}>
-      <span className={cn("size-1.5 shrink-0 rounded-full", conf.dotClassName)} />
+    <Badge
+      variant="outline"
+      title={owner ? t("members.owner.title", "Owns this organization") : undefined}
+      className={cn(
+        "gap-1.5 border text-xs font-medium",
+        owner
+          ? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+          : conf.className,
+      )}
+    >
+      {owner ? (
+        <Crown className="size-3 shrink-0" aria-hidden="true" />
+      ) : (
+        <span className={cn("size-1.5 shrink-0 rounded-full", conf.dotClassName)} />
+      )}
       {t(conf.labelKey)}
+      {owner && <span className="sr-only"> · {t("members.owner.label", "Owner")}</span>}
     </Badge>
   )
 }
@@ -488,10 +483,7 @@ const MemberRow = memo(function MemberRow({
         <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/40")}>
           {member.position || "\u2014"}
         </span>
-        <div className="flex items-center gap-1.5">
-          <RoleBadge member={member} />
-          {member.isOwner && <OwnerBadge />}
-        </div>
+        <div><RoleBadge member={member} /></div>
         <div><ScheduleBadge member={member} /></div>
         <div className="min-w-0"><SpacesCell spaceNames={spaceNames} /></div>
         <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} onTransfer={onTransfer} canTransferOwnership={canTransferOwnership} />
@@ -511,7 +503,6 @@ const MemberRow = memo(function MemberRow({
           <p className="text-sm text-muted-foreground truncate">{member.email}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
             <RoleBadge member={member} />
-            {member.isOwner && <OwnerBadge />}
             {member.position && <span className="text-xs text-muted-foreground">{member.position}</span>}
             {hasSchedule && <ScheduleBadge member={member} />}
             {spaceNames.length > 0 && <SpacesCell spaceNames={spaceNames} />}
