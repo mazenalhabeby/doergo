@@ -3246,6 +3246,17 @@
       "reopen": "Rouvrir",
       "subtitle": "Créneaux planifiés sans pointage — la personne a été relancée, puis l’alerte a été remontée. Excusez (p. ex. absence approuvée) ou rouvrez.",
       "title": "Absences"
+    },
+    "addBreak": {
+      "title": "Ajouter une pause",
+      "hint": "Les pauses sont normalement enregistrées par le membre. Celle ajoutée ici porte votre nom et le motif.",
+      "start": "Début de la pause",
+      "end": "Fin de la pause",
+      "type": "Type",
+      "reason": "Motif",
+      "reasonPlaceholder": "ex. téléphone déchargé avant le déjeuner",
+      "submit": "Ajouter la pause",
+      "added": "Pause ajoutée"
     }
   },
   "auditLog": {

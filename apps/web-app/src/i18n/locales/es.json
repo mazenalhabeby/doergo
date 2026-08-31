@@ -3246,6 +3246,17 @@
       "reopen": "Reabrir",
       "subtitle": "Turnos programados sin fichaje: se avisó a la persona y luego se escaló. Justifica (p. ej. ausencia aprobada) o reabre.",
       "title": "Ausencias"
+    },
+    "addBreak": {
+      "title": "Añadir una pausa",
+      "hint": "Las pausas normalmente las registra el miembro. Una añadida aquí queda marcada con tu nombre y el motivo.",
+      "start": "Inicio de la pausa",
+      "end": "Fin de la pausa",
+      "type": "Tipo",
+      "reason": "Motivo",
+      "reasonPlaceholder": "p. ej. el móvil se apagó antes de comer",
+      "submit": "Añadir pausa",
+      "added": "Pausa añadida"
     }
   },
   "auditLog": {

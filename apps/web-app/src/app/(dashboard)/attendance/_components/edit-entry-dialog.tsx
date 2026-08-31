@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Pencil, Loader2, Trash2 } from "lucide-react"
+import { Pencil, Loader2, Trash2, Coffee } from "lucide-react"
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -58,6 +58,32 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
   const [notes, setNotes] = useState(entry.notes ?? "")
   const [reason, setReason] = useState("")
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [addingBreak, setAddingBreak] = useState(false)
+  const [breakStart, setBreakStart] = useState("")
+  const [breakEnd, setBreakEnd] = useState("")
+  const [breakType, setBreakType] = useState<"SHORT" | "LUNCH" | "OTHER">("SHORT")
+  const [breakReason, setBreakReason] = useState("")
+
+  /**
+   * Adding a break to this shift.
+   *
+   * The server refuses anything outside the shift or overlapping another break,
+   * and its message says which — so failures are surfaced verbatim rather than
+   * second-guessed here. Adding one can also knock the entry out of approval, so
+   * the whole attendance view is refetched rather than patched locally.
+   */
+  const addBreak = useMutation({
+    mutationFn: (input: { type: string; startedAt: string; endedAt: string; reason: string }) =>
+      attendanceApi.addBreak(entry.id, input),
+    onSuccess: () => {
+      notify.success(t("attendance.addBreak.added", "Break added"))
+      setAddingBreak(false)
+      setBreakStart(""); setBreakEnd(""); setBreakReason("")
+      queryClient.invalidateQueries({ queryKey: ["attendance"] })
+      queryClient.invalidateQueries({ queryKey: ["breaks"] })
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
 
   // Changing the zone keeps the real instant fixed and re-renders the wall clock
   // (e.g. 23:44 Berlin → 17:44 New York). So correcting a mis-zoned old row just
@@ -173,6 +199,113 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                 "Times above are shown in this zone. Change it to correct a mis-zoned entry — the clock reading is kept.",
               )}
             </p>
+          </div>
+
+          {/*
+            Adding a break to this shift.
+
+            Here rather than on its own screen because the shift is already in
+            front of you, in ITS timezone — the same `tz` the clock times use, so
+            a break entered as 12:00 means noon where the member worked, not noon
+            where the person correcting it happens to be sitting.
+
+            Collapsed by default: correcting a break is the exception, and a form
+            that is always open reads as something you are expected to fill in.
+          */}
+          <div className="rounded-lg border border-border">
+            <button
+              type="button"
+              onClick={() => setAddingBreak((v) => !v)}
+              className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-foreground"
+            >
+              <span className="flex items-center gap-2">
+                <Coffee className="size-4 text-muted-foreground" />
+                {t("attendance.addBreak.title", "Add a break")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {addingBreak ? t("common.cancel") : t("common.add", "Add")}
+              </span>
+            </button>
+
+            {addingBreak && (
+              <div className="space-y-3 border-t border-border p-3">
+                <p className="text-[11px] text-muted-foreground">
+                  {t(
+                    "attendance.addBreak.hint",
+                    "Breaks are normally recorded by the member. One added here is marked with your name and the reason.",
+                  )}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t("attendance.addBreak.start", "Break start")}</Label>
+                    <Input
+                      type="datetime-local"
+                      value={breakStart}
+                      min={clockIn || undefined}
+                      max={clockOut || undefined}
+                      onChange={(e) => setBreakStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("attendance.addBreak.end", "Break end")}</Label>
+                    <Input
+                      type="datetime-local"
+                      value={breakEnd}
+                      min={breakStart || clockIn || undefined}
+                      max={clockOut || undefined}
+                      onChange={(e) => setBreakEnd(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("attendance.addBreak.type", "Type")}</Label>
+                  <div className="flex gap-1.5">
+                    {(["SHORT", "LUNCH", "OTHER"] as const).map((bt) => (
+                      <button
+                        key={bt}
+                        type="button"
+                        aria-pressed={breakType === bt}
+                        onClick={() => setBreakType(bt)}
+                        className={cn(
+                          "rounded-md border px-2.5 py-1 text-xs",
+                          breakType === bt
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {t(`attendance.breaks.typeBreak.${bt.toLowerCase()}`, bt)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>
+                    {t("attendance.addBreak.reason", "Why")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    value={breakReason}
+                    onChange={(e) => setBreakReason(e.target.value)}
+                    placeholder={t("attendance.addBreak.reasonPlaceholder", "e.g. phone died before lunch")}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!breakStart || !breakEnd || breakReason.trim().length < 3 || addBreak.isPending}
+                  onClick={() =>
+                    addBreak.mutate({
+                      type: breakType,
+                      // Converted with the SAME zone the clock fields use.
+                      startedAt: zonedInputToUtc(breakStart, tz),
+                      endedAt: zonedInputToUtc(breakEnd, tz),
+                      reason: breakReason.trim(),
+                    })
+                  }
+                >
+                  {t("attendance.addBreak.submit", "Add break")}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

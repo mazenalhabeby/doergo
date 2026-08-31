@@ -3246,6 +3246,17 @@
       "change": "Änderung",
       "viewAll": "Für vollständigen Verlauf klicken →",
       "timezone": "Zeitzone"
+    },
+    "addBreak": {
+      "title": "Pause hinzufügen",
+      "hint": "Pausen erfasst normalerweise das Mitglied selbst. Eine hier hinzugefügte wird mit Ihrem Namen und dem Grund gekennzeichnet.",
+      "start": "Pausenbeginn",
+      "end": "Pausenende",
+      "type": "Art",
+      "reason": "Grund",
+      "reasonPlaceholder": "z. B. Handy war vor der Mittagspause leer",
+      "submit": "Pause hinzufügen",
+      "added": "Pause hinzugefügt"
     }
   },
   "auditLog": {

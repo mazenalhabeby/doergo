@@ -3246,6 +3246,17 @@
       "reopen": "Riapri",
       "subtitle": "Turni pianificati senza timbratura: la persona è stata sollecitata e poi segnalata. Giustifica (es. assenza approvata) o riapri.",
       "title": "Assenze"
+    },
+    "addBreak": {
+      "title": "Aggiungi una pausa",
+      "hint": "Le pause le registra normalmente il membro. Quella aggiunta qui riporta il tuo nome e il motivo.",
+      "start": "Inizio pausa",
+      "end": "Fine pausa",
+      "type": "Tipo",
+      "reason": "Motivo",
+      "reasonPlaceholder": "es. telefono scarico prima di pranzo",
+      "submit": "Aggiungi pausa",
+      "added": "Pausa aggiunta"
     }
   },
   "auditLog": {

@@ -3246,6 +3246,17 @@
       "change": "Change",
       "viewAll": "Click to view full history →",
       "timezone": "Timezone"
+    },
+    "addBreak": {
+      "title": "Add a break",
+      "hint": "Breaks are normally recorded by the member. One added here is marked with your name and the reason.",
+      "start": "Break start",
+      "end": "Break end",
+      "type": "Type",
+      "reason": "Why",
+      "reasonPlaceholder": "e.g. phone died before lunch",
+      "submit": "Add break",
+      "added": "Break added"
     }
   },
   "auditLog": {

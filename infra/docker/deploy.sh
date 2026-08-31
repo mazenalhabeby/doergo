@@ -115,12 +115,39 @@ if [ "$DO_BUILD" = 1 ]; then
   step "Building images ONE AT A TIME"
   # Building everything in one command has OOM-killed this box. The web build is
   # the heavy one, so it goes first and alone.
+  #
+  # The service list is read ONCE, not re-queried per service. `compose config
+  # --services | grep -q` in a loop is a pipeline whose exit status decides
+  # whether a service is built, and on 2026-08-31 it silently skipped
+  # auth-service: no "building auth-service…" line appeared, the image stayed at
+  # its previous build, and the migrate step below then ran from that stale image
+  # and reported "No pending migrations to apply" for a migration that was sitting
+  # right there in the working tree. The deploy finished green with the database
+  # a version behind.
+  SERVICES="$(compose config --services)"
   for svc in web-app api-gateway auth-service task-service notification-service tracking-service admin-app; do
-    compose config --services | grep -qx "$svc" || continue
+    printf '%s\n' "$SERVICES" | grep -qx "$svc" || { echo "  (no $svc service — skipping)"; continue; }
     echo "  building $svc…"
     compose build "$svc" || die "build failed for $svc"
   done
 fi
+
+# ── The image must carry the migrations the tree has ────────────────────────
+#
+# Checked BEFORE migrate runs, because `prisma migrate deploy` reports success
+# for a stale image — it can only apply what it was built with, so a missing
+# migration looks exactly like no pending migration. Comparing counts turns that
+# silence into a failure, and it is the difference between a deploy that is wrong
+# and a deploy that says so.
+step "Checking the built image carries every migration"
+TREE_MIGRATIONS="$(ls -1 "$ROOT_DIR/apps/api/auth-service/prisma/migrations" | grep -c '^[0-9]' || true)"
+IMAGE_MIGRATIONS="$(compose run --rm --entrypoint sh auth-service -c \
+  "ls -1 /app/apps/api/auth-service/prisma/migrations | grep -c '^[0-9]'" 2>/dev/null | tr -d '\r' | tail -1)"
+echo "  working tree: $TREE_MIGRATIONS   image: ${IMAGE_MIGRATIONS:-?}"
+[ -n "$IMAGE_MIGRATIONS" ] || die "could not read the migrations in the auth-service image"
+[ "$TREE_MIGRATIONS" = "$IMAGE_MIGRATIONS" ] || die \
+  "the auth-service image has $IMAGE_MIGRATIONS migrations but the tree has $TREE_MIGRATIONS — it was not rebuilt. Run: docker compose --env-file $ENV_FILE build auth-service"
+
 
 # ── Migrate ─────────────────────────────────────────────────────────────────
 step "Applying database migrations"

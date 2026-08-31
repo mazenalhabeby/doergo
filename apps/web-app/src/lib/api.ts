@@ -2446,6 +2446,25 @@ export const attendanceApi = {
     };
   },
 
+  /**
+   * Add a break to a member's shift.
+   *
+   * Breaks are self-service — this is the correction path for a shift where that
+   * did not happen. The row records who added it and why, so it is never mistaken
+   * for the member's own account of their day. Requires canReconcileAttendance.
+   */
+  addBreak: async (
+    entryId: string,
+    input: { type?: string; startedAt: string; endedAt: string; reason: string },
+  ) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(
+      `/attendance/entries/${entryId}/breaks`,
+      input,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
   // Admin: correct a time entry (clock-in/out and/or notes). A reason is
   // required and the original values are preserved for audit server-side.
   editEntry: async (
