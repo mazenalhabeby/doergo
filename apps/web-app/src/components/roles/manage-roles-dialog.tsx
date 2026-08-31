@@ -84,6 +84,7 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
                   const summary = grants.length
                     ? t("roles.permissionCount", "{{count}} permissions", { count: grants.length })
                     : t("roles.noPermissions", "No permissions")
+                  const held = role.memberCount ?? 0
                   return (
                     <div key={role.id} className="flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border p-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -99,8 +100,22 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
                               </Badge>
                             )}
                           </div>
+                          {/*
+                            Who holds it, beside what it grants.
+
+                            The list said "13 permissions" and nothing about
+                            people, so a role nobody held looked exactly like one
+                            half the company held — and the difference only
+                            surfaced as a refusal after pressing Delete.
+                          */}
                           <p className="text-xs text-muted-foreground mt-0.5 truncate" title={grants.map((p) => p.label).join(" · ")}>
                             {summary}
+                            <span aria-hidden="true"> · </span>
+                            <span className={held > 0 ? "text-foreground/70" : undefined}>
+                              {held > 0
+                                ? t("roles.memberCount", "{{count}} members", { count: held })
+                                : t("roles.noMembers", "No members")}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -108,11 +123,20 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(role)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {/*
+                          A role in use cannot be deleted — the server refuses,
+                          correctly. Saying so before the click beats saying it
+                          after: the button carries the reason as its tooltip
+                          instead of offering an action that always fails.
+                        */}
                         {!role.isSystem && (
                           <Button
                             variant="ghost" size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                            disabled={deleteMutation.isPending}
+                            disabled={deleteMutation.isPending || held > 0}
+                            title={held > 0
+                              ? t("roles.deleteBlocked", "Move its {{count}} members to another role first", { count: held })
+                              : t("roles.delete", "Delete role")}
                             onClick={() => deleteMutation.mutate(role.id)}
                           >
                             <Trash2 className="h-4 w-4" />

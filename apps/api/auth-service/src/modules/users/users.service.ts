@@ -1408,12 +1408,39 @@ export class UsersService {
       });
     }
     const scopes = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
-    const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes as any } },
-      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-      select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
-    });
-    return { success: true, data: roles };
+    const [roles, holders] = await Promise.all([
+      this.prisma.accessRole.findMany({
+        where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes as any } },
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
+      }),
+      /*
+        How many people hold each role, in ONE query.
+
+        The screen listed "13 permissions" and never said who had them, so a role
+        looked equally deletable whether nobody held it or half the company did —
+        and the refusal only arrived after clicking Delete.
+
+        A groupBy rather than a count per role: this list is short today, but a
+        count inside the map is an N+1 that grows with exactly the thing an
+        organization adds more of over time.
+
+        Active members only. Somebody deactivated is not occupying a role in any
+        sense the reader cares about, and counting them would explain a delete
+        refusal by pointing at people who are no longer there.
+      */
+      this.prisma.user.groupBy({
+        by: ['memberRoleId'],
+        where: { organizationId: data.organizationId, isActive: true, memberRoleId: { not: null } },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const held = new Map(holders.map((h) => [h.memberRoleId as string, h._count._all]));
+    return {
+      success: true,
+      data: roles.map((r) => ({ ...r, memberCount: held.get(r.id) ?? 0 })),
+    };
   }
 
   /** Whitelist an incoming permissions object to the known keys (fail-closed). */

@@ -3509,6 +3509,8 @@ export interface AccessRole {
   scope: string;
   isSystem: boolean;
   permissions?: Record<string, boolean>;
+  /** Active members holding this role. Absent on older servers — treat as 0. */
+  memberCount?: number;
 }
 
 export interface UpdateMemberInput {

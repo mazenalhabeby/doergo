@@ -5532,7 +5532,13 @@
       "attendance": "Anwesenheit",
       "crm": "CRM / Kunden"
     },
-    "permissionCount": "{{count}} Berechtigungen"
+    "permissionCount": "{{count}} Berechtigungen",
+    "memberCount_one": "{{count}} Mitglied",
+    "memberCount_other": "{{count}} Mitglieder",
+    "noMembers": "Keine Mitglieder",
+    "delete": "Rolle löschen",
+    "deleteBlocked_one": "Weisen Sie das {{count}} Mitglied zuerst einer anderen Rolle zu",
+    "deleteBlocked_other": "Weisen Sie die {{count}} Mitglieder zuerst einer anderen Rolle zu"
   },
   "support": {
     "title": "Support",

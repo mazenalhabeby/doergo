@@ -5532,7 +5532,13 @@
       "attendance": "Attendance",
       "crm": "CRM / Clients"
     },
-    "permissionCount": "{{count}} permissions"
+    "permissionCount": "{{count}} permissions",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "noMembers": "No members",
+    "delete": "Delete role",
+    "deleteBlocked_one": "Move its {{count}} member to another role first",
+    "deleteBlocked_other": "Move its {{count}} members to another role first"
   },
   "support": {
     "title": "Support",

@@ -5541,7 +5541,13 @@
       "attendance": "Présence",
       "crm": "CRM / Clients"
     },
-    "permissionCount": "{{count}} permissions"
+    "permissionCount": "{{count}} permissions",
+    "memberCount_one": "{{count}} membre",
+    "memberCount_other": "{{count}} membres",
+    "noMembers": "Aucun membre",
+    "delete": "Supprimer le rôle",
+    "deleteBlocked_one": "Réaffectez d'abord son {{count}} membre à un autre rôle",
+    "deleteBlocked_other": "Réaffectez d'abord ses {{count}} membres à un autre rôle"
   },
   "support": {
     "title": "Support",
