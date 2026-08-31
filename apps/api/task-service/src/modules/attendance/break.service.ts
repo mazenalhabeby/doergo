@@ -360,6 +360,10 @@ export class BreakService {
 
     const breaks = await this.prisma.break.findMany({
       where: { timeEntryId: data.timeEntryId },
+      // Who entered it, when it was not the member — the same distinction the
+      // history and active listings carry. Without it this endpoint could not
+      // tell a manually-added break from one somebody took.
+      include: { addedBy: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { startedAt: 'asc' },
     });
 

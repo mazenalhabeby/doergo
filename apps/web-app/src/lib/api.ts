@@ -2462,16 +2462,21 @@ export const attendanceApi = {
     };
   },
 
-  /** The breaks recorded on one shift, member-taken and manually added alike. */
+  /**
+   * The breaks recorded on one shift, member-taken and manually added alike.
+   *
+   * The endpoint answers `{ data: { breaks, totalBreakMinutes, breakCount } }` —
+   * an OBJECT under `data`, not an array. Reading it as an array and defaulting
+   * to `[]` made the dialog report a shift with breaks as a shift with none, and
+   * silently: a defensive fallback that hides a shape mismatch is worse than the
+   * crash it prevents, because nothing ever says the guess was wrong.
+   */
   entryBreaks: async (entryId: string) => {
-    const response = await api.get<{ success: boolean; data: unknown }>(`/attendance/entries/${entryId}/breaks`);
+    const response = await api.get<{ success: boolean; data: { breaks?: EntryBreak[] } }>(
+      `/attendance/entries/${entryId}/breaks`,
+    );
     if (response.error) throw new Error(response.error);
-    const body = response.data as { data?: unknown } | undefined;
-    return (Array.isArray(body?.data) ? body.data : Array.isArray(response.data) ? response.data : []) as Array<{
-      id: string; type: string; startedAt: string; endedAt: string | null;
-      durationMinutes: number | null; reason?: string | null;
-      addedBy?: { firstName: string; lastName: string } | null;
-    }>;
+    return response.data?.data?.breaks ?? [];
   },
 
   /**
@@ -3553,6 +3558,17 @@ export interface OrgMember {
 }
 
 /** An org-assignable role (Admin, Manager, or a custom role). */
+/** One break on a shift. `addedBy` is null when the member recorded it themselves. */
+export interface EntryBreak {
+  id: string;
+  type: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationMinutes: number | null;
+  reason?: string | null;
+  addedBy?: { id: string; firstName: string; lastName: string } | null;
+}
+
 export interface AccessRole {
   id: string;
   name: string;
