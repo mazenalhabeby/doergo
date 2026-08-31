@@ -64,8 +64,22 @@ export class AttachmentsService {
 
     // The confirmed URL must be the presigned object for THIS task — never an
     // arbitrary client-supplied URL (would be stored-XSS/phishing in the gallery).
-    const expectedPrefix = `${this.s3Endpoint}/${this.s3Bucket}/attachments/${data.taskId}/`;
-    if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(expectedPrefix)) {
+    /*
+      The confirmed URL must be the presigned object for THIS task — never an
+      arbitrary client-supplied URL, which would be stored-XSS in the gallery.
+
+      Both layouts are accepted: the org-prefixed one every new presign produces,
+      and the legacy one, because an upload presigned minutes before a deploy is
+      confirmed minutes after it. Both still pin the URL to this task and this
+      bucket, which is the whole point of the check — the prefix is narrower now,
+      not looser.
+    */
+    const base = `${this.s3Endpoint}/${this.s3Bucket}/`;
+    const accepted = [
+      `${base}${data.organizationId}/attachments/${data.taskId}/`,
+      `${base}attachments/${data.taskId}/`,
+    ];
+    if (typeof data.fileUrl !== 'string' || !accepted.some((p) => data.fileUrl.startsWith(p))) {
       throw new BadRequestException('Invalid file URL');
     }
     if (typeof data.fileSize !== 'number' || data.fileSize <= 0 || data.fileSize > MAX_FILE_SIZE) {
@@ -220,7 +234,23 @@ export class AttachmentsService {
 
     // Sanitize filename: remove path separators and special chars
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileKey = `attachments/${data.taskId}/${Date.now()}-${safeName}`;
+    /*
+      Organization first, like everything else in this bucket.
+
+      Documents, signatures, shift-issue photos and worklog photos all begin with
+      the organization id, which is what makes "delete a tenant" or "export one
+      customer" a prefix operation rather than a scan of the whole bucket. Task
+      attachments predate the shared ObjectStore and were the one thing filed
+      outside that scheme — nothing leaked, because access is checked in the API
+      rather than by prefix, but a per-tenant sweep would silently miss them.
+
+      Only NEW uploads move. Objects already stored keep their old keys, and the
+      database holds the full URL for each one, so reads and deletes of anything
+      uploaded before today are unaffected. There is no migration to run and
+      nothing to backfill — the two layouts simply coexist, which is the cheapest
+      correct answer for a change whose whole benefit is future sweeps.
+    */
+    const fileKey = `${data.organizationId}/attachments/${data.taskId}/${Date.now()}-${safeName}`;
     const expiresIn = 3600; // 1 hour
 
     const command = new PutObjectCommand({
