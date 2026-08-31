@@ -661,6 +661,8 @@ export class AuthService {
         vanish on their very next request.
       */
       const loginAccess = buildResolvedAccess({
+        // An admin holds everything by being one — see buildResolvedAccess.
+        isAdmin: user.role === Role.ADMIN,
         userFlags: ignoreLegacyFlags()
           ? undefined
           : {
@@ -1383,6 +1385,10 @@ export class AuthService {
       // Resolve the member's access ONCE here (server-side, from their own
       // roles/assignments + any cross-org shares). Cached with the validated user.
       const access = buildResolvedAccess({
+        // An admin holds everything by being one — see buildResolvedAccess. This
+        // must match the login path exactly or a session's permissions change
+        // between signing in and the next request.
+        isAdmin: user.role === Role.ADMIN,
         /*
           The per-member permission columns, on their way out.
 

@@ -1405,6 +1405,10 @@ export class DocumentsService {
       const reviewers = candidates.filter((u) =>
         accessAllows(
           buildResolvedAccess({
+            // Same rule as the request path: an admin holds every permission by
+            // being an admin, so an admin is always a valid reviewer even when
+            // their assigned role does not list the document keys.
+            isAdmin: u.role === 'ADMIN',
             userFlags: u,
             memberRolePermissions: u.memberRole?.permissions,
           }),

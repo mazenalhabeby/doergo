@@ -425,11 +425,32 @@ export function buildResolvedAccess(input: {
   memberRolePermissions?: unknown; // unified AccessRole.permissions (org-scoped)
   spaces?: { spaceId: string; permissions?: unknown }[]; // unified space grants
   sharedSpaces?: SharedSpaceGrant[]; // cross-org shares received by this user's org (ACTIVE only)
+  /**
+   * The account is an ADMIN — the organization's owner tier.
+   *
+   * Admins hold every org-wide permission BY BEING ADMINS, not by holding a role
+   * that happens to list them. The product already says so out loud on the
+   * member's Access tab: "Admins have every permission and module across the
+   * whole organization."
+   *
+   * The resolver did not implement it. With ACCESS_IGNORE_LEGACY_FLAGS on, an
+   * admin's permissions came from their assigned role alone — so saving that role
+   * with an empty permission set reduced the organization's owner to nobody, in
+   * their own organization, with no way back through the product. That happened
+   * in production: an admin's role was saved as `{}` and the entire admin
+   * navigation vanished; only a direct database update restored it.
+   *
+   * A tier that the UI describes as absolute must be absolute in the resolver, or
+   * it is a promise the code does not keep.
+   */
+  isAdmin?: boolean;
 }): ResolvedAccess {
-  const org = mergePermissions(
-    input.userFlags ? permissionsFromUserFlags(input.userFlags) : undefined,
-    permissionsFromOrgRole(input.memberRolePermissions),
-  );
+  const org = input.isAdmin
+    ? Object.fromEntries(PERMISSION_KEYS.map((k) => [k, true]))
+    : mergePermissions(
+        input.userFlags ? permissionsFromUserFlags(input.userFlags) : undefined,
+        permissionsFromOrgRole(input.memberRolePermissions),
+      );
   const perSpace: Record<string, PermissionSet> = {};
   for (const s of input.spaces ?? []) {
     if (!s?.spaceId) continue;
