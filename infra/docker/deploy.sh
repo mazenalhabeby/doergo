@@ -183,7 +183,47 @@ compose run --rm --entrypoint sh auth-service -c '
 
 # ── Start ───────────────────────────────────────────────────────────────────
 step "Starting services"
+#
+# ONE `up -d`, and nothing else touching these containers while it runs.
+#
+# Recreating a container is not atomic: compose renames the old one to
+# <hash>_<name>, starts the replacement, then removes the old. A second `up -d`
+# arriving inside that window sees the temporary name still held and fails with
+# "container name is already in use" — a real error describing a state that no
+# longer exists a second later. It happened on 2026-08-31 and cost more time in
+# diagnosis than it ever could in damage.
+#
+# So the deploy owns the recreate. If a service needs restarting outside a
+# deploy, wait for this to finish first rather than racing it — the lock below
+# makes that difficult to get wrong by accident.
+# The lock is released on EXIT — every exit, including a failure, a Ctrl-C, or
+# this shell being killed. A lock that outlives the process it was protecting
+# blocks every future deploy with a message about a deploy that is not running,
+# which is a worse problem than the race it prevents. It also records the pid, so
+# a genuinely concurrent run can say WHO holds it rather than just refusing.
+LOCK_DIR="${TMPDIR:-/tmp}/hbcfield-deploy.lock"
+if mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo $$ > "$LOCK_DIR/pid"
+  trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
+else
+  HOLDER="$(cat "$LOCK_DIR/pid" 2>/dev/null || echo unknown)"
+  if [ "$HOLDER" != unknown ] && kill -0 "$HOLDER" 2>/dev/null; then
+    die "deploy $HOLDER is already recreating containers. Wait for it to finish."
+  fi
+  # The holder is gone: the lock is stale, so take it rather than making a human
+  # delete a directory to unblock a deploy.
+  echo "  (clearing a stale lock left by pid $HOLDER)"
+  rm -rf "$LOCK_DIR"; mkdir "$LOCK_DIR"; echo $$ > "$LOCK_DIR/pid"
+  trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
+fi
+
 compose up -d
+
+# Compose returns as soon as it has ISSUED the starts; a container mid-recreate
+# still holds its temporary name for a moment after that. Settle before the
+# verify step reads the container list, so a deploy is never reported on a state
+# that is still moving.
+sleep 3
 
 # ── Verify ──────────────────────────────────────────────────────────────────
 step "Verifying"
