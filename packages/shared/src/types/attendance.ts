@@ -380,3 +380,27 @@ export function getTimeEntryStatusLabel(status: TimeEntryStatus): string {
   };
   return labels[status] || status;
 }
+
+/**
+ * May this person clock in from anywhere, without a geofence?
+ *
+ * ONE rule, because it had already drifted. The server has always read
+ * `allowRemote || role === ADMIN` — an admin needs nothing configured, since
+ * there is no one above them to grant it and the Access screen deliberately
+ * offers no such switch. Every client, though, checked `allowRemote` alone.
+ *
+ * The result was an admin who could clock in remotely as far as the API was
+ * concerned and had no button anywhere to do it with: three UIs each enforcing
+ * three quarters of a rule they had copied rather than shared.
+ *
+ * Remote is geofence-EXEMPT, not location-free — a coarse fix is still taken and
+ * reverse-geocoded to a place, because "worked from Vienna" is a record and
+ * "worked from somewhere" is not. Asking for GPS on a remote clock-in is
+ * correct, and is not what this decides.
+ */
+export function mayClockInRemotely(
+  user: { allowRemote?: boolean | null; role?: string | null } | null | undefined,
+): boolean {
+  if (!user) return false;
+  return user.allowRemote === true || user.role === 'ADMIN';
+}

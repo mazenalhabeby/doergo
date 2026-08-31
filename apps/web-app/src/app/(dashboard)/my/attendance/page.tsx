@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import type { TFunction } from "i18next"
+import { mayClockInRemotely } from "@hbcfield/shared/client"
 
 type ClockLocation = { id: string; name: string; lat?: number | null; lng?: number | null }
 
@@ -187,7 +188,7 @@ export default function MyAttendancePage() {
                   <><LogIn className="h-4 w-4" />{t("attendance.my.clockIn", "Clock In")}</>
                 )}
               </Button>
-              {user?.allowRemote && (
+              {mayClockInRemotely(user) && (
                 <Button onClick={() => clock.mutate("remote")} disabled={pending} variant="outline" className="w-full">
                   {pending && clock.variables === "remote" ? (
                     <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
@@ -199,7 +200,7 @@ export default function MyAttendancePage() {
             </div>
           )}
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-            {user?.allowRemote
+            {mayClockInRemotely(user)
               ? t("attendance.my.gpsHintRemote", "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.")
               : t("attendance.my.gpsHint", "Uses your device location to verify you're on site. Works over VPN.")}
           </p>

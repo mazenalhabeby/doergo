@@ -7,6 +7,7 @@ import { useToast } from '../contexts/toast-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
 import { haversineDistance } from '../lib/utils';
+import { mayClockInRemotely } from '@hbcfield/shared/client';
 
 interface Coords {
   lat: number;
@@ -154,7 +155,7 @@ export function useClockIn(opts: {
     onConfirm: confirmClockIn,
     onClose: () => setLocationModalVisible(false),
     getDistance: getDistanceToLocation,
-    allowRemote: !!user?.allowRemote,
+    allowRemote: mayClockInRemotely(user),
     remoteSelected: isRemoteSelected,
     onSelectRemote: () => {
       setIsRemoteSelected(true);

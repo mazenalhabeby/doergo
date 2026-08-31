@@ -30,6 +30,7 @@ import {
   QUEUE_NAMES,
   buildSingleDayFilter,
   buildDateRangeFilter,
+  mayClockInRemotely as canClockInRemotely,
 } from '@hbcfield/shared';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
@@ -185,7 +186,11 @@ export class AttendanceService {
     // Admins have full org access — they may always clock in remotely, without
     // needing the per-user allowRemote flag toggled on (nothing to configure for
     // an admin). Everyone else still requires an explicit remote-clock-in grant.
-    const mayClockInRemotely = user.allowRemote || user.role === 'ADMIN';
+    //
+    // Shared with all three clock surfaces (web attendance page, web widget,
+    // mobile) so the button appears exactly where the API would allow it. They
+    // each used to restate this and each left out the admin half.
+    const mayClockInRemotely = canClockInRemotely(user);
 
     // ---- Remote clock-in (WFH/anywhere): geofence-exempt, coarse place captured ----
     if (data.isRemote) {

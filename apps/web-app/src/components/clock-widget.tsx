@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import type { TFunction } from "i18next"
+import { mayClockInRemotely } from "@hbcfield/shared/client"
 
 type ClockLocation = { id: string; name: string; lat?: number | null; lng?: number | null }
 
@@ -149,7 +150,7 @@ export function ClockWidget() {
   }
 
   // ── Clocked out + remote-eligible → Clock In split menu ─────────────
-  if (user?.allowRemote) {
+  if (mayClockInRemotely(user)) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
