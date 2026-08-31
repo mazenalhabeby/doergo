@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'HBCField',
     slug: 'doergo',
-    version: '1.0.2',
+    version: '1.0.3',
     // 'default' allows landscape on tablets. Phones are kept portrait so their
     // phone-first UI is never shown rotated: iPhone via the idiom-specific
     // infoPlist keys below, Android phones via a runtime lock in the root layout.
