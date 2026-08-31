@@ -19,6 +19,9 @@ describe('listOrgMembers — role filter', () => {
 
   const prisma: Record<string, any> = {
     user: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) },
+    // The list also flags which row is the owner — one lookup per page. These
+    // tests are about the role filter, so the org reports no owner.
+    organization: { findUnique: jest.fn().mockResolvedValue({ ownerId: null }) },
   };
 
   const ORG = 'org-1';

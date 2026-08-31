@@ -9,6 +9,8 @@ import {
   Param,
   Query,
   Request,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,7 +24,7 @@ import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
-import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto } from './dto';
+import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto, AddBreakForMemberDto } from './dto';
 
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -479,6 +481,41 @@ export class AttendanceController {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
     });
+  }
+
+  /**
+   * Add a break to a member's shift on their behalf.
+   *
+   * Breaks stay self-service — this is the correction path for when that did not
+   * happen: a dead phone, a shift reconstructed after the fact.
+   *
+   * On `canReconcileAttendance`, the grant that already covers correcting
+   * somebody else's attendance, rather than on being an ADMIN. The person who
+   * does payroll should be able to hold it without also being handed the
+   * organization, and an admin who should not touch timesheets should be able to
+   * not hold it.
+   */
+  @Post('entries/:id/breaks')
+  @RequirePermission('canReconcileAttendance')
+  @ApiOperation({ summary: 'Add a break to a member’s shift (reconciliation)' })
+  async addBreakForMember(
+    @Param('id') timeEntryId: string,
+    @Body() dto: AddBreakForMemberDto,
+    @Request() req: any,
+  ) {
+    const result: any = await this.attendanceService.addBreakForMember({
+      timeEntryId,
+      organizationId: req.user.organizationId,
+      editorId: req.user.id,
+      type: dto.type,
+      startedAt: dto.startedAt,
+      endedAt: dto.endedAt,
+      reason: dto.reason,
+    });
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
   }
 
   @Post('breaks/:id/end')

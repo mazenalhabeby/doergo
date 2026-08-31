@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -15,6 +16,7 @@ import {
   buildDateRangeFilter,
   buildSingleDayFilter,
 } from '@hbcfield/shared';
+import { BreakType, ApprovalStatus } from '@prisma/client';
 
 @Injectable()
 export class BreakService {
@@ -94,6 +96,122 @@ export class BreakService {
   /**
    * End current break
    */
+  /**
+   * Add a break to somebody else's shift.
+   *
+   * Breaks are self-service by design and stay that way — the member starts and
+   * ends their own on their phone. This is the correction path for when that did
+   * not happen: a phone that died, a break taken before the app was installed, a
+   * shift reconstructed after the fact.
+   *
+   * Four things make it safe rather than just possible:
+   *
+   *   it is gated on canReconcileAttendance, the same grant that already lets
+   *     somebody correct a time entry — not on being an admin, so it can be given
+   *     to the person who actually does payroll and to nobody else
+   *   the row records WHO added it and WHY, so a manually-entered break can never
+   *     be mistaken for the member's own account of their day
+   *   the window is validated against the shift and against every other break, in
+   *     memory over rows already loaded — a break outside the shift or overlapping
+   *     another one is not a correction, it is a mistake being recorded
+   *   an approved entry returns to PENDING, because paid hours just changed and
+   *     an approval that predates the change is not an approval of it
+   */
+  async addBreakForMember(data: {
+    timeEntryId: string;
+    organizationId: string;
+    editorId: string;
+    type?: BreakType;
+    startedAt: string | Date;
+    endedAt: string | Date;
+    reason: string;
+  }) {
+    const refuse = (statusCode: number, message: string) => ({ success: false as const, statusCode, message });
+
+    const reason = (data.reason || '').trim();
+    if (!reason) return refuse(HttpStatus.BAD_REQUEST, 'A reason is required when adding a break for someone else.');
+
+    const start = new Date(data.startedAt);
+    const end = new Date(data.endedAt);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return refuse(HttpStatus.BAD_REQUEST, 'Start and end must be valid times.');
+    }
+    if (end <= start) return refuse(HttpStatus.BAD_REQUEST, 'The break must end after it starts.');
+
+    // Org-scoped: an id from another tenant reads as "not found", never as an edit.
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: data.timeEntryId, organizationId: data.organizationId },
+      include: { breaks: true },
+    });
+    if (!entry) return refuse(HttpStatus.NOT_FOUND, 'Time entry not found.');
+
+    if (start < entry.clockInAt) {
+      return refuse(HttpStatus.BAD_REQUEST, 'The break starts before the shift does.');
+    }
+    // An open shift has no end to be inside of; a closed one does.
+    if (entry.clockOutAt && end > entry.clockOutAt) {
+      return refuse(HttpStatus.BAD_REQUEST, 'The break ends after the shift does.');
+    }
+
+    /*
+      Overlap, checked in memory over the breaks already fetched with the entry.
+      A shift has a handful of them, so this is cheaper than asking the database
+      and — more importantly — it is the same set the totals are recomputed from,
+      so the check and the arithmetic cannot disagree.
+    */
+    const clash = entry.breaks.find((b) => {
+      const bStart = b.startedAt;
+      const bEnd = b.endedAt ?? entry.clockOutAt ?? new Date();
+      return start < bEnd && end > bStart;
+    });
+    if (clash) return refuse(HttpStatus.CONFLICT, 'That overlaps a break already recorded on this shift.');
+
+    const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+
+    const created = await this.prisma.$transaction(async (tx) => {
+      const br = await tx.break.create({
+        data: {
+          timeEntryId: entry.id,
+          type: data.type ?? BreakType.SHORT,
+          startedAt: start,
+          endedAt: end,
+          durationMinutes,
+          addedById: data.editorId,
+          reason,
+        },
+      });
+
+      /*
+        Recomputed from the rows, never incremented. `breakMinutes` is the sum of
+        the completed breaks, and a running total that is added to drifts the
+        moment anything is edited or deleted — which is exactly what this feature
+        makes possible.
+      */
+      const totalBreakMinutes = [...entry.breaks, br]
+        .filter((b) => b.endedAt)
+        .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+
+      await tx.timeEntry.update({
+        where: { id: entry.id },
+        data: {
+          breakMinutes: totalBreakMinutes,
+          // Paid hours changed, so an approval given before it no longer applies.
+          ...(entry.approvalStatus === ApprovalStatus.APPROVED
+            ? { approvalStatus: ApprovalStatus.PENDING, approvedById: null, approvedAt: null }
+            : {}),
+        },
+      });
+
+      return br;
+    });
+
+    this.logger.warn(
+      `[ATTENDANCE] break added to entry ${entry.id} (user ${entry.userId}) by ${data.editorId}: ${durationMinutes}m — ${reason}`,
+    );
+
+    return { success: true, data: created, message: 'Break added' };
+  }
+
   async endBreak(data: {
     userId: string;
     organizationId: string;

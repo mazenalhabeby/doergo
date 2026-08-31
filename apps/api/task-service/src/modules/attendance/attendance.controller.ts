@@ -230,6 +230,22 @@ export class AttendanceController {
     return this.breakService.getBreakHistory(data);
   }
 
+  @MessagePattern({ cmd: 'add_break_for_member' })
+  async addBreakForMember(
+    @Payload()
+    data: {
+      timeEntryId: string;
+      organizationId: string;
+      editorId: string;
+      type?: any;
+      startedAt: string;
+      endedAt: string;
+      reason: string;
+    },
+  ) {
+    return this.breakService.addBreakForMember(data);
+  }
+
   @MessagePattern({ cmd: 'end_break_manually' })
   async endBreakManually(
     @Payload()

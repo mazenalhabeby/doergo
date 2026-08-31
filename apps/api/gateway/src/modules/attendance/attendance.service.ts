@@ -217,6 +217,22 @@ export class AttendanceService extends BaseGatewayService {
   /**
    * End a break manually (admin)
    */
+  /**
+   * Add a break to a member's shift. `sendOnce`, not `send`: this is a write, and
+   * a retried request would record the same break twice.
+   */
+  async addBreakForMember(data: {
+    timeEntryId: string;
+    organizationId: string;
+    editorId: string;
+    type?: string;
+    startedAt: string;
+    endedAt: string;
+    reason: string;
+  }) {
+    return this.sendOnce({ cmd: 'add_break_for_member' }, data);
+  }
+
   async endBreakManually(data: {
     breakId: string;
     adminId: string;

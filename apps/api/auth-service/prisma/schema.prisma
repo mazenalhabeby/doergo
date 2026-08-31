@@ -741,6 +741,7 @@ model User {
   organization   Organization? @relation(fields: [organizationId], references: [id])
   /// The organization this user owns, if any. Back-reference for ownerId above.
   ownedOrganization Organization? @relation("OrganizationOwner")
+  breaksAddedForOthers Break[]     @relation("BreaksAddedForOthers")
 
   // Customer portal: for role=CUSTOMER, the Customer they log in as + optional
   // default unit. Null for staff (ADMIN/EMPLOYEE). See [[customer-portal]].
@@ -2221,6 +2222,16 @@ model Break {
   durationMinutes Int?
 
   notes String?
+
+  /// Who added this break on the member's behalf. NULL — the normal case, and
+  /// every row that existed before this — means the member recorded it
+  /// themselves. A break somebody else entered must never be indistinguishable
+  /// from one the member took: it changes paid hours, and the timesheet has to
+  /// say whose account of the day it is.
+  addedById String?
+  addedBy   User?   @relation("BreaksAddedForOthers", fields: [addedById], references: [id], onDelete: SetNull)
+  /// Why it was added. Required by the service whenever addedById is set.
+  reason    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
