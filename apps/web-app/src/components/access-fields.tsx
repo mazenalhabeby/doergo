@@ -96,6 +96,7 @@ export function AccessFields({
   showRole = true,
   lockRole = false,
   allowAdmin = true,
+  roleOnly = false,
 }: {
   value: AccessDraft
   /** Emit a partial patch; the parent owns the draft. */
@@ -106,6 +107,8 @@ export function AccessFields({
   showRole?: boolean
   /** Lock the Role selector (editing your own row — can't change your own role). */
   lockRole?: boolean
+  /** Render ONLY the role selector — for an admin, whose permissions are fixed. */
+  roleOnly?: boolean
   /** Offer the Admin option (member edit). Invites can't create admins → false. */
   allowAdmin?: boolean
 }) {
@@ -207,12 +210,17 @@ export function AccessFields({
         : [...value.modules, m],
     })
 
-  return (
-    <div className="space-y-6">
-      {/* Role — ONE selector: Admin (org owner), a named role (Manager/custom
-          grants a permission preset org-wide), or Member (no named role). This is
-          the single home for a member's role; the profile editor has none. */}
-      {showRole && (
+  /*
+    The Role selector, lifted out of the tree so it can be rendered on its own.
+
+    An admin's Access tab replaced this WHOLE component with a "full access,
+    nothing to configure" note. True of permissions — an admin holds all of them
+    — and false of the one control that is not a permission: the Role selector is
+    how somebody stops being an admin, so hiding it meant an admin could never be
+    demoted anywhere in the product.
+  */
+  const roleField = showRole ? (
+
       <Field dataTour="access-role" label={t("accessBuilder.orgRole", "Role")}>
         <Select
           value={roleValue}
@@ -240,7 +248,13 @@ export function AccessFields({
           <p className="mt-1.5 text-xs text-muted-foreground">{t("members.memberEditor.cantChangeOwnRole", "You can't change your own role.")}</p>
         ) : null}
       </Field>
-      )}
+  ) : null
+
+  if (roleOnly) return <div className="space-y-6">{roleField}</div>
+
+  return (
+    <div className="space-y-6">
+      {roleField}
 
       {/* Platform */}
       <Field dataTour="access-platform" label={t("accessBuilder.platformAccess")}>

@@ -161,11 +161,18 @@ export function AccessBuilder({
       </div>
 
       <div className="p-5 space-y-6">
-        {/* Admins have full access by definition — there are no access choices to
-            make (every permission + module is granted, remote clock-in included).
-            Show a clear "full access" note instead of the granular editor. The
-            watchers section below still applies (who is alerted about this admin). */}
+        {/* Admins have full access by definition — there are no PERMISSION choices
+            to make (every permission + module is granted, remote clock-in
+            included), so the granular editor gives way to a plain note.
+
+            The Role selector still renders. It is not a permission: it is how
+            somebody stops being an admin, and replacing the whole editor with the
+            note meant an admin could never be demoted anywhere in the product.
+            The last-admin guard on the server is what stops the org losing its
+            final one. The watchers section below applies either way. */}
         {!isBulk && member.role === "ADMIN" ? (
+          <>
+          <AccessFields value={draft} onChange={patch} showRole={!isBulk} lockRole={isSelf} roleOnly />
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
             <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div>
@@ -180,6 +187,7 @@ export function AccessBuilder({
               </p>
             </div>
           </div>
+          </>
         ) : (
           <AccessFields
             value={draft}
