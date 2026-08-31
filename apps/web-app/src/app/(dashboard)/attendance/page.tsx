@@ -24,7 +24,7 @@ const AddAttendanceDialog = dynamic(() => import("../members/[id]/_components/ad
 
 
 export default function AttendancePage() {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -83,6 +83,18 @@ export default function AttendancePage() {
   // Check role - only ADMIN and DISPATCHER can access
   const canAccess = user?.role === "ADMIN" || !!user?.canViewSpaceAttendance || !!user?.canViewAllTasks
   const isAdmin = user?.role === "ADMIN"
+  /*
+    Correcting somebody else's shift — editing the times, adding a break they
+    could not record themselves.
+
+    Separate from `isAdmin`, which on this page also gates out-of-ring approval
+    and worklog editing. The server accepts `canReconcileAttendance` for these
+    corrections precisely so the person who runs payroll can hold it without
+    being handed the organization — and a UI that only offers them to admins
+    makes that grant unreachable, which is how a permission quietly becomes
+    decorative.
+  */
+  const canReconcile = isAdmin || hasPermission("canReconcileAttendance")
 
   // Fetch locations
   const { data: locationsRaw, isLoading: loadingLocations } = useQuery({
@@ -405,6 +417,7 @@ export default function AttendancePage() {
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               page={page} setPage={setPage} limit={limit} daysOff={daysOff} locations={locations}
               isAdmin={isAdmin}
+              canReconcile={canReconcile}
               sort={sort} onSort={onSort}
             />
           </TabsContent>
@@ -426,6 +439,7 @@ export default function AttendancePage() {
           <TabsContent value="breaks" className="mt-6">
             <BreaksTab
               isAdmin={isAdmin}
+              canReconcile={canReconcile}
               breakSummary={breakSummary}
               loadingBreakSummary={loadingBreakSummary}
               activeBreaks={activeBreaks}

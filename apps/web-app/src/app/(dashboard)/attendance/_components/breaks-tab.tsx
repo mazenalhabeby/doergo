@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar } from "lucide-react"
+import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar, UserPen } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, formatTime, NoteCell } from "./attendance-helpers"
 import { countryFromTz } from "@hbcfield/shared/client"
@@ -27,6 +27,9 @@ interface BreaksTabProps {
   breakTypeFilter: string
   setBreakTypeFilter: (v: string) => void
   endBreakManually: { mutate: (args: { breakId: string }) => void; isPending: boolean }
+  /** May correct someone else's attendance — `canReconcileAttendance`, not the
+   *  admin tier. Ending a member's break for them is that same act. */
+  canReconcile: boolean
 }
 
 export function BreaksTab({
@@ -44,6 +47,7 @@ export function BreaksTab({
   breakTypeFilter,
   setBreakTypeFilter,
   endBreakManually,
+  canReconcile,
 }: BreaksTabProps) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
@@ -230,7 +234,7 @@ export function BreaksTab({
                           <Clock className="size-3.5" />
                           {t("attendance.breaks.onBreak")}
                         </span>
-                        {isAdmin && (
+                        {canReconcile && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -375,9 +379,28 @@ export function BreaksTab({
                         </TableCell>
                         <TableCell className="font-medium text-foreground">
                           {formatDurationMinutes(breakItem.durationMinutes)}
+                          {/*
+                            Who entered it, when it was not the member.
+
+                            The row is otherwise identical to one the member
+                            recorded on their phone, and the difference matters:
+                            this one changed their paid hours and somebody else
+                            decided it. Storing that and not showing it would
+                            leave an audit trail nobody can read.
+                          */}
+                          {breakItem.addedBy && (
+                            <div className="mt-0.5 flex items-center gap-1 text-[11px] font-normal text-amber-600 dark:text-amber-400">
+                              <UserPen className="size-3" />
+                              <span title={breakItem.reason || undefined}>
+                                {t("attendance.breaks.addedBy", "Added by {{name}}", {
+                                  name: `${breakItem.addedBy.firstName} ${breakItem.addedBy.lastName}`.trim(),
+                                })}
+                              </span>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
-                          <NoteCell note={breakItem.notes} />
+                          <NoteCell note={breakItem.reason || breakItem.notes} />
                         </TableCell>
                       </TableRow>
                     ))}

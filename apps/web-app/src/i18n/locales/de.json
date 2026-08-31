@@ -2827,7 +2827,8 @@
         "lunch": "Mittagspause",
         "short": "Kurze Pause",
         "other": "Sonstige Pause"
-      }
+      },
+      "addedBy": "Hinzugefügt von {{name}}"
     },
     "tracking": {
       "currentlyActive": "Derzeit aktiv",

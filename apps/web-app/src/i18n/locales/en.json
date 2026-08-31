@@ -2827,7 +2827,8 @@
         "lunch": "Lunch break",
         "short": "Short break",
         "other": "Other break"
-      }
+      },
+      "addedBy": "Added by {{name}}"
     },
     "tracking": {
       "currentlyActive": "Currently Active",

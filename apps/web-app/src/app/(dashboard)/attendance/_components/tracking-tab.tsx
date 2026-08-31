@@ -55,6 +55,9 @@ interface TrackingTabProps {
   daysOff: DayOffRow[]
   locations: CompanyLocation[]
   isAdmin: boolean
+  /** May correct someone else's shift — edit times, add a break they could not
+   *  record themselves. `canReconcileAttendance`, not "is an admin". */
+  canReconcile: boolean
   sort: { key: string; dir: "asc" | "desc" } | null
   onSort: (key: string) => void
 }
@@ -64,7 +67,7 @@ export function TrackingTab({
   isError, error, refetch, meta,
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
-  page, setPage, limit, daysOff, locations, isAdmin,
+  page, setPage, limit, daysOff, locations, isAdmin, canReconcile,
   sort, onSort,
 }: TrackingTabProps) {
   const { t } = useTranslation()
@@ -414,7 +417,7 @@ export function TrackingTab({
                     <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
-                    {isAdmin && <TableHead className="w-10 text-right" />}
+                    {canReconcile && <TableHead className="w-10 text-right" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -493,7 +496,7 @@ export function TrackingTab({
                     <SortHead label={t("common.duration")} active={sort?.key === "duration"} dir={sort?.dir ?? "asc"} onClick={() => onSort("duration")} />
                     <SortHead label={t("attendance.approval")} active={sort?.key === "approval"} dir={sort?.dir ?? "asc"} onClick={() => onSort("approval")} />
                     <TableHead className="font-semibold text-muted-foreground">{t("worklog.column", "Activity")}</TableHead>
-                    {isAdmin && <TableHead className="w-10 text-right" />}
+                    {canReconcile && <TableHead className="w-10 text-right" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -529,7 +532,7 @@ export function TrackingTab({
                           <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
                         </div>
                       </TableCell>
-                      {isAdmin && (
+                      {canReconcile && (
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <EditEntryDialog entry={entry} />
                         </TableCell>
@@ -537,7 +540,7 @@ export function TrackingTab({
                     </TableRow>
                     {isOpen && (
                       <TableRow className="bg-muted/20 hover:bg-muted/20">
-                        <TableCell colSpan={isAdmin ? 8 : 7} className="p-4">
+                        <TableCell colSpan={canReconcile ? 8 : 7} className="p-4">
                           <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>

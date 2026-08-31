@@ -180,6 +180,16 @@ export interface Break {
   endedAt: string | null;
   durationMinutes: number | null;
   notes: string | null;
+  /**
+   * Who entered this break on the member's behalf, and why.
+   *
+   * NULL — almost every break — means the member recorded it themselves on their
+   * phone. A populated `addedBy` says somebody else added it after the fact,
+   * which changed that member's paid hours, so the two must never look alike.
+   */
+  addedById?: string | null;
+  addedBy?: { id: string; firstName: string; lastName: string } | null;
+  reason?: string | null;
   createdAt: string;
   updatedAt: string;
   // Populated relations

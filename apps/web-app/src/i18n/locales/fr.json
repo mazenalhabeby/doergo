@@ -2827,7 +2827,8 @@
         "lunch": "Pause déjeuner",
         "short": "Pause courte",
         "other": "Autre pause"
-      }
+      },
+      "addedBy": "Ajoutée par {{name}}"
     },
     "tracking": {
       "currentlyActive": "Actuellement actifs",

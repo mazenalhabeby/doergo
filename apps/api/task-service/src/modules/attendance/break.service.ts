@@ -387,6 +387,8 @@ export class BreakService {
         },
       },
       include: {
+        // See getBreakHistory — the same distinction matters on a live break.
+        addedBy: { select: { id: true, firstName: true, lastName: true } },
         timeEntry: {
           include: {
             user: {
@@ -448,6 +450,15 @@ export class BreakService {
       this.prisma.break.findMany({
         where,
         include: {
+          /*
+            Who entered this, when it was not the member.
+
+            NULL for a break somebody recorded themselves, which is almost all of
+            them. Selected here because the reason for storing it at all is that a
+            reader can tell the two apart — an audit trail nobody can see is a
+            column, not an audit trail.
+          */
+          addedBy: { select: { id: true, firstName: true, lastName: true } },
           timeEntry: {
             include: {
               user: {
