@@ -67,7 +67,9 @@
     "production": {
       "android": {
         "serviceAccountKeyPath": "./play-store-key.json",
-        "track": "internal"
+        "track": "production",
+        "releaseStatus": "inProgress",
+        "rollout": 0.2
       },
       "ios": {
         "appleId": "a.holub@hbc-group.eu",
