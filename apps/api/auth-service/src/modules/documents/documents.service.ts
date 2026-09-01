@@ -40,6 +40,10 @@ import {
   routeProblem,
   nextPendingStep,
   isCurrentSigner,
+  signatureStrength,
+  acceptedForSigning,
+  MAX_BATCH_SIGN,
+  type SignableDocument,
   chainProgress,
   resolveMemberRouting,
   type DocumentSignerRole,
@@ -115,6 +119,31 @@ export interface RouteCandidateStep {
   role: DocumentSignerRole;
   candidates: SignerCandidate[];
 }
+
+/**
+ * Who is holding the pen.
+ *
+ * A member signs from an authenticated session; a client signs because they
+ * hold a link that was emailed to them. The two are not the same claim, and the
+ * type keeps them from being written as if they were — `strength` on the
+ * certificate follows directly from which branch this is.
+ */
+type SealSigner =
+  | {
+      kind: 'user';
+      userId: string;
+      name: string;
+      email: string | null;
+      sessionAuthenticatedAt?: Date | null;
+    }
+  | {
+      kind: 'customer';
+      customerId: string;
+      /** What they typed. The only identity a link signature has. */
+      name: string;
+      email: string | null;
+      typedRole?: string | null;
+    };
 
 @Injectable()
 export class DocumentsService {
@@ -267,21 +296,6 @@ export class DocumentsService {
       const problem = routeProblem(data.patch.signerRoute);
       if (problem) throw new BadRequestException(problem);
 
-      /*
-        Not in routeProblem, deliberately.
-
-        parseRoute treats an invalid route as NO route, so putting this rule
-        there would make every type that already contains a customer step
-        quietly fall back to a single signature — a behaviour change nobody
-        asked for, applied to documents already in flight. Here it only ever
-        stops a NEW route being saved.
-      */
-      const steps = Array.isArray(data.patch.signerRoute) ? data.patch.signerRoute : [];
-      if (steps.some((s: any) => s?.role === 'CUSTOMER')) {
-        throw new BadRequestException(
-          'Customer signing is not available yet, so a route cannot ask for it.',
-        );
-      }
     }
 
     // `cadence` and `direction` are absent from the patch on purpose. Changing
@@ -1931,67 +1945,9 @@ export class DocumentsService {
     }
 
     const png = decodeSignaturePng(data.signatureImage);
-
-    // The document as the signer read it. Fetched and hashed here rather than
-    // trusting the stored value, so an object swapped underneath us is caught
-    // BEFORE a signature is attached to it.
-    const originalBytes = await this.withStorage('reading the document to sign', () =>
-      store.get(document.storageKey),
-    );
-    const hashBefore = sha256(originalBytes);
-    if (hashBefore !== document.sha256) {
-      throw new BadRequestException(
-        'This document has changed since it was issued and cannot be signed. Please contact your administrator.',
-      );
-    }
-
     const signatureHash = sha256(png);
     const sigKey = signatureKey(data.actor.organizationId, signatureHash);
     await this.withStorage('storing the signature', () => store.put(sigKey, png, 'image/png'));
-
-    const consentAt = new Date();
-    const signedAt = new Date();
-
-    /*
-      Whose step this was, and whether it was the last.
-
-      Read before the transaction so the status written inside it is decided
-      from the chain rather than assumed. A document with no route has no steps
-      and finishes on its only signature, exactly as it always did.
-    */
-    const stepsBefore = await this.signerSteps(document.id);
-    const currentStep = nextPendingStep(stepsBefore);
-    const isLastStep =
-      stepsBefore.length === 0 ||
-      chainProgress(
-        stepsBefore.map((s) =>
-          s.order === currentStep?.order ? { ...s, status: 'SIGNED' as const } : s,
-        ),
-      ).complete;
-
-    const signerRow = currentStep
-      ? await this.prisma.documentSigner.findFirst({
-          where: { documentId: document.id, order: currentStep.order },
-          select: { id: true },
-        })
-      : null;
-
-    /*
-      Re-rendered from the ORIGINAL with every signature so far, never appended
-      to the previously sealed copy.
-
-      Appending would add a signature page and a certificate per signer, so a
-      three-party time sheet would carry six pages of apparatus behind one page
-      of content. Re-rendering gives one block and one certificate however many
-      people sign — and it is safe because the sequence lives in the HASHES, not
-      in the layout.
-
-      Documents issued before originalKey existed fall back to their current
-      bytes, which for a single-signature document is the same thing.
-    */
-    const baseBytes = document.originalKey
-      ? await this.withStorage('reading the original', () => store.get(document.originalKey as string))
-      : originalBytes;
 
     // The person signing NOW. Not document.user — that is who the document is
     // ABOUT, and from step two onwards they are not the one holding the pen.
@@ -2001,30 +1957,434 @@ export class DocumentsService {
     });
     if (!signerUser) throw new NotFoundException('Signer not found');
 
+    /*
+      Whose step this was, and whether it was the last.
+
+      Read before the seal so the status written inside it is decided from the
+      chain rather than assumed. A document with no route has no steps and
+      finishes on its only signature, exactly as it always did.
+    */
+    const steps = await this.signerSteps(document.id);
+    const currentStep = nextPendingStep(steps);
+    const isLastStep =
+      steps.length === 0 ||
+      chainProgress(
+        steps.map((s) =>
+          s.order === currentStep?.order ? { ...s, status: 'SIGNED' as const } : s,
+        ),
+      ).complete;
+    const signerRow = currentStep
+      ? await this.prisma.documentSigner.findFirst({
+          where: { documentId: document.id, order: currentStep.order },
+          select: { id: true },
+        })
+      : null;
+
+    const sealed = await this.sealAndRecord({
+      document,
+      organizationId: data.actor.organizationId,
+      signer: {
+        kind: 'user',
+        userId: data.actor.userId,
+        name: `${signerUser.firstName} ${signerUser.lastName}`.trim(),
+        email: signerUser.email,
+        sessionAuthenticatedAt: data.sessionAuthenticatedAt
+          ? new Date(data.sessionAuthenticatedAt)
+          : null,
+      },
+      png,
+      signatureHash,
+      sigKey,
+      currentStep,
+      signerRowId: signerRow?.id ?? null,
+      isLastStep,
+      idempotencyKey: data.idempotencyKey,
+      ctx: data.ctx,
+    });
+
+    /*
+      Hand the document on.
+
+      AFTER the seal commits, never inside it: telling somebody a document is
+      waiting for them and then rolling back the signature that made it their
+      turn is worse than not telling them.
+
+      A failure here does not undo the step. The chain has genuinely advanced
+      and the register shows it waiting on the right person — a stalled chain
+      that LOOKS moved is the dangerous version, not one that moved quietly.
+    */
+    if (!isLastStep) {
+      await this.notifyNextSigner(document.id, document.title);
+    }
+
+    return { documentId: document.id, alreadySigned: false, sealedAt: sealed.sealedAt };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // The client, signing by emailed link
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Everything this client is waiting on, and everything they have signed.
+   *
+   * Scoped entirely by the resolved link — no id is ever taken from the
+   * request. A client's own signer rows are the whole authorization: being
+   * named as the signer of a step is what entitles somebody to that document,
+   * and to nothing else.
+   *
+   * Only steps whose TURN it is appear under "to sign". A document three
+   * signatures away is not theirs yet, and listing it would invite a
+   * countersignature on work their supplier has not finished approving.
+   */
+  async listForCustomer(data: { organizationId: string; customerId: string }) {
+    const rows = await this.prisma.documentSigner.findMany({
+      where: {
+        customerId: data.customerId,
+        document: {
+          organizationId: data.organizationId,
+          status: { in: ['AWAITING_SIGNATURE', 'SIGNED'] },
+        },
+      },
+      select: {
+        id: true,
+        order: true,
+        status: true,
+        openedAt: true,
+        document: {
+          select: {
+            id: true,
+            title: true,
+            periodYear: true,
+            periodMonth: true,
+            user: { select: { firstName: true, lastName: true } },
+            // The whole chain, so "whose turn is it" is decided from data
+            // already in hand rather than a second query per document.
+            signers: {
+              select: { order: true, role: true, status: true, userId: true, customerId: true, signedAt: true },
+            },
+            signatures: {
+              orderBy: { signedAt: 'asc' },
+              select: {
+                signedAt: true,
+                signerName: true,
+                user: { select: { firstName: true, lastName: true } },
+                signer: { select: { role: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { document: { issuedAt: 'asc' } },
+      // A bound, not pagination. A client with more than this waiting has a
+      // process problem a longer list would not solve.
+      take: 200,
+    });
+
+    const shape = (r: (typeof rows)[number]): SignableDocument => ({
+      documentId: r.document.id,
+      signerId: r.id,
+      title: r.document.title,
+      forMember: r.document.user
+        ? `${r.document.user.firstName} ${r.document.user.lastName}`.trim()
+        : null,
+      periodYear: r.document.periodYear,
+      periodMonth: r.document.periodMonth,
+      alreadySigned: r.document.signatures.map((s) => ({
+        name: s.signerName ?? (s.user ? `${s.user.firstName} ${s.user.lastName}`.trim() : ''),
+        role: roleLabel(s.signer?.role ?? null),
+        signedAt: s.signedAt.toISOString(),
+      })),
+      openedAt: r.openedAt ? r.openedAt.toISOString() : null,
+    });
+
+    const toSign = rows
+      .filter((r) => {
+        if (r.status !== 'PENDING') return false;
+        const next = nextPendingStep(r.document.signers as unknown as SignerStep[]);
+        return next?.order === r.order;
+      })
+      .map(shape);
+
+    const signed = rows.filter((r) => r.status === 'SIGNED').map(shape);
+    return { toSign, signed };
+  }
+
+  /**
+   * A URL for one document the client may see, and a record that they saw it.
+   *
+   * `openedAt` is evidence, not a gate. Requiring somebody to open ten
+   * identical time sheets buys clicking-through, which is a worse signature
+   * than the honest one — so this records the truth and the certificate reports
+   * it, instead of enforcing a fiction.
+   */
+  async openForCustomer(data: { organizationId: string; customerId: string; signerId: string }) {
+    const row = await this.prisma.documentSigner.findFirst({
+      where: {
+        id: data.signerId,
+        customerId: data.customerId,
+        document: { organizationId: data.organizationId },
+      },
+      select: {
+        id: true,
+        openedAt: true,
+        document: { select: { id: true, storageKey: true, title: true, mimeType: true } },
+      },
+    });
+    if (!row) throw new NotFoundException('Document not found');
+
+    const store = this.requireStore();
+    const url = await this.withStorage('opening the document', () =>
+      store.presignDownload(
+        row.document.storageKey,
+        downloadName(row.document.title, row.document.mimeType),
+        undefined,
+        { inline: canRenderInline(row.document.mimeType), contentType: row.document.mimeType },
+      ),
+    );
+
+    if (!row.openedAt) {
+      await this.prisma.documentSigner.update({
+        where: { id: row.id },
+        data: { openedAt: new Date() },
+      });
+      // No actorId: a client has no user row, and putting a member's id here
+      // would be a false entry on an append-only evidence trail.
+      await this.prisma.documentEvent.create({
+        data: { documentId: row.document.id, type: 'OPENED', meta: { byLink: true } },
+      });
+    }
+    return { url };
+  }
+
+  /**
+   * One ceremony, many documents.
+   *
+   * A client with eleven time sheets signs once. What is shared is the ACT —
+   * the drawing, the consent, the sitting — and nothing else: each document
+   * gets its own signature row, its own hash chain and its own certificate,
+   * exactly as if it had been signed alone. Anything else would make one
+   * document's evidence depend on which others it was batched with.
+   *
+   * Four things here are deliberate.
+   *
+   * The selection is intersected with what is pending RIGHT NOW, because the
+   * page the client is looking at may be hours old and a document may have been
+   * sent back or revoked since it was drawn.
+   *
+   * The signature image is stored ONCE — keys are content-addressed, so one
+   * drawing across eleven documents is one object and eleven references.
+   *
+   * Each document gets its own idempotency key derived from the batch id. One
+   * shared key would hand every document after the first the FIRST one's
+   * result, which is exactly how a batch silently signs one document and
+   * reports eleven.
+   *
+   * And a failure part-way does not throw. Each seal is its own transaction, so
+   * ten successful signatures are ten real signatures whatever happens to the
+   * eleventh; reporting total failure would tell the client none of it took
+   * when most of it did.
+   */
+  async signBatchAsCustomer(data: {
+    organizationId: string;
+    customerId: string;
+    customerEmail: string | null;
+    signerIds: string[];
+    signatureImage: string;
+    typedName: string;
+    typedRole?: string | null;
+    idempotencyKey: string;
+    ctx?: RequestContext;
+  }) {
+    const typedName = (data.typedName ?? '').trim();
+    if (typedName.length < 2) throw new BadRequestException('Please enter your name.');
+    if (!Array.isArray(data.signerIds) || data.signerIds.length === 0) {
+      throw new BadRequestException('Choose at least one document to sign.');
+    }
+    if (data.signerIds.length > MAX_BATCH_SIGN) {
+      throw new BadRequestException(`You can sign at most ${MAX_BATCH_SIGN} documents at once.`);
+    }
+    if ((data.idempotencyKey ?? '').length < 8) {
+      throw new BadRequestException('idempotencyKey must be at least 8 characters');
+    }
+
+    const { toSign } = await this.listForCustomer(data);
+    const accepted = acceptedForSigning(data.signerIds, toSign);
+    if (accepted.length === 0) {
+      throw new BadRequestException('Those documents are no longer waiting for your signature.');
+    }
+
+    const store = this.requireStore();
+    const png = decodeSignaturePng(data.signatureImage);
+    const signatureHash = sha256(png);
+    const sigKey = signatureKey(data.organizationId, signatureHash);
+    await this.withStorage('storing the signature', () => store.put(sigKey, png, 'image/png'));
+
+    const batchId = data.idempotencyKey;
+    const signer: SealSigner = {
+      kind: 'customer',
+      customerId: data.customerId,
+      name: typedName,
+      email: data.customerEmail,
+      typedRole: data.typedRole?.trim() || null,
+    };
+
+    const signed: string[] = [];
+    const failed: { documentId: string; reason: string }[] = [];
+
+    for (const signerId of accepted) {
+      const row = toSign.find((d) => d.signerId === signerId);
+      if (!row) continue;
+      try {
+        const document = await this.prisma.document.findFirst({
+          where: { id: row.documentId, organizationId: data.organizationId },
+          select: {
+            id: true,
+            title: true,
+            storageKey: true,
+            sha256: true,
+            originalKey: true,
+            organization: { select: { name: true } },
+          },
+        });
+        if (!document) continue;
+
+        // Re-read the chain per document. The list said it was their turn; this
+        // says so at the moment of signing, which is the one that counts.
+        const steps = await this.signerSteps(document.id);
+        const currentStep = nextPendingStep(steps);
+        if (!currentStep || currentStep.customerId !== data.customerId) continue;
+
+        const isLastStep = chainProgress(
+          steps.map((s) =>
+            s.order === currentStep.order ? { ...s, status: 'SIGNED' as const } : s,
+          ),
+        ).complete;
+
+        await this.sealAndRecord({
+          document,
+          organizationId: data.organizationId,
+          signer,
+          png,
+          signatureHash,
+          sigKey,
+          currentStep,
+          signerRowId: signerId,
+          isLastStep,
+          idempotencyKey: `${batchId}:${document.id}`,
+          ctx: data.ctx,
+          batchId,
+        });
+        signed.push(document.id);
+
+        if (!isLastStep) await this.notifyNextSigner(document.id, document.title);
+      } catch (err) {
+        failed.push({ documentId: row.documentId, reason: (err as Error).message });
+        this.logger.warn(`Batch sign failed for ${row.documentId}: ${(err as Error).message}`);
+      }
+    }
+
+    return { signed: signed.length, failed, batchId };
+  }
+
+  /**
+   * Attach one signature to one document, re-seal it, and record the act.
+   *
+   * Extracted from `signDocument` so a CLIENT signing eleven time sheets in one
+   * sitting walks exactly the same path eleven times instead of a second copy
+   * of it. The two callers differ only in WHO is signing — everything that
+   * makes a signature evidence (the tamper gate, the chain of hashes, the
+   * re-render from the original, the events) is here and is the same for both.
+   *
+   * The signature PNG is deliberately NOT uploaded here. Keys are
+   * content-addressed, so one drawing applied to eleven documents is one object
+   * — the caller stores it once and passes the key in.
+   */
+  private async sealAndRecord(params: {
+    document: {
+      id: string;
+      title: string;
+      storageKey: string;
+      sha256: string;
+      originalKey: string | null;
+      organization?: { name: string } | null;
+    };
+    organizationId: string;
+    signer: SealSigner;
+    png: Buffer;
+    signatureHash: string;
+    sigKey: string;
+    currentStep: SignerStep | null;
+    signerRowId: string | null;
+    isLastStep: boolean;
+    idempotencyKey: string;
+    ctx?: RequestContext;
+    /** Set when this signature is one of several made in a single sitting. */
+    batchId?: string | null;
+  }): Promise<{ hashBefore: string; hashAfter: string; sealedAt: Date }> {
+    const { document, signer } = params;
+    const store = this.requireStore();
+
+    // The document as the signer read it. Fetched and hashed here rather than
+    // trusting the stored value, so an object swapped underneath us is caught
+    // BEFORE a signature is attached to it.
+    const currentBytes = await this.withStorage('reading the document to sign', () =>
+      store.get(document.storageKey),
+    );
+    const hashBefore = sha256(currentBytes);
+    if (hashBefore !== document.sha256) {
+      throw new BadRequestException(
+        'This document has changed since it was issued and cannot be signed. Please contact your administrator.',
+      );
+    }
+
+    // Always re-rendered from the ORIGINAL, never appended to the last seal —
+    // which is what keeps three signers to one signature block and one
+    // certificate instead of six pages.
+    const baseBytes = document.originalKey
+      ? await this.withStorage('reading the original document', () =>
+          store.get(document.originalKey as string),
+        )
+      : currentBytes;
+
+    const consentAt = new Date();
+    const signedAt = new Date();
+
     const previous = await this.prisma.documentSignature.findMany({
       where: { documentId: document.id },
       orderBy: { signedAt: 'asc' },
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
-        signer: { select: { role: true, userId: true } },
+        customer: { select: { name: true, email: true } },
+        signer: { select: { role: true, userId: true, customerId: true } },
       },
     });
 
     const priorSigners = await Promise.all(
       previous.map(async (s) => ({
         role: roleLabel(s.signer?.role ?? null),
-        signerName: `${s.user.firstName} ${s.user.lastName}`.trim(),
-        signerEmail: s.user.email,
+        signerName:
+          s.signerName ??
+          (s.user ? `${s.user.firstName} ${s.user.lastName}`.trim() : s.customer?.name ?? ''),
+        signerEmail: s.user?.email ?? s.customer?.email ?? '',
         consentText: s.consentText,
         consentAt: s.consentAt,
         signedAt: s.signedAt,
         hashBefore: s.hashBefore,
         // Provenance for an earlier signature lives on its own event row; the
         // certificate reprints what was recorded then, never today's request.
-        ...(await this.signatureContext(s.userId, document.id)),
+        ...(s.userId ? await this.signatureContext(s.userId, document.id) : {}),
         signatureImage: await this.withStorage('reading a signature', () => store.get(s.signatureKey)),
         signatureSha256: s.signatureSha256,
-        strength: (s.signer?.userId ? 'SESSION' : 'SESSION') as 'SESSION' | 'LINK',
+        /*
+          What that signature was worth, honestly.
+
+          This was hardcoded 'SESSION' on both branches, so the certificate has
+          never once been able to say a signature came from a link — the
+          renderer has printed that distinction since the day it was written and
+          nothing ever asked it to. A reader who catches one line overstating
+          itself has no reason to trust the others.
+        */
+        strength: signatureStrength({ userId: s.userId }),
       })),
     );
 
@@ -2034,31 +2394,31 @@ export class DocumentsService {
       signers: [
         ...priorSigners,
         {
-          role: roleLabel(currentStep?.role ?? null),
-          signerName: `${signerUser.firstName} ${signerUser.lastName}`.trim(),
-          signerEmail: signerUser.email,
+          role: roleLabel(params.currentStep?.role ?? null),
+          signerName: signer.name,
+          signerEmail: signer.email ?? '',
           consentText: CONSENT_TEXT,
           consentAt,
           signedAt,
           hashBefore,
-          sessionAuthenticatedAt: data.sessionAuthenticatedAt
-            ? new Date(data.sessionAuthenticatedAt)
-            : null,
-          ip: data.ctx?.ip ?? null,
-          userAgent: data.ctx?.userAgent ?? null,
-          appVersion: data.ctx?.appVersion ?? null,
-          lat: data.ctx?.lat ?? null,
-          lng: data.ctx?.lng ?? null,
-          signatureImage: png,
-          signatureSha256: signatureHash,
-          strength: 'SESSION',
+          sessionAuthenticatedAt:
+            signer.kind === 'user' ? signer.sessionAuthenticatedAt ?? null : null,
+          ip: params.ctx?.ip ?? null,
+          userAgent: params.ctx?.userAgent ?? null,
+          appVersion: params.ctx?.appVersion ?? null,
+          lat: params.ctx?.lat ?? null,
+          lng: params.ctx?.lng ?? null,
+          signatureImage: params.png,
+          signatureSha256: params.signatureHash,
+          strength: signer.kind === 'user' ? 'SESSION' : 'LINK',
         },
       ],
     });
 
     const hashAfter = sha256(sealed);
-    const sealedKey = documentKey(data.actor.organizationId, hashAfter, 'pdf');
+    const sealedKey = documentKey(params.organizationId, hashAfter, 'pdf');
     await this.withStorage('sealing the document', () => store.put(sealedKey, sealed, 'application/pdf'));
+    const sealedAt = new Date();
 
     await this.prisma.$transaction(async (tx) => {
       await tx.document.update({
@@ -2070,31 +2430,51 @@ export class DocumentsService {
           // Only the LAST signature finishes the document. Marking it SIGNED at
           // step one would take it off everybody's list while two people still
           // had to sign it.
-          ...(isLastStep ? { status: 'SIGNED' as const } : {}),
+          ...(params.isLastStep ? { status: 'SIGNED' as const } : {}),
         },
       });
-      if (signerRow) {
+
+      if (params.signerRowId) {
+        /*
+          A step can be signed twice, and the schema only allows one.
+
+          `DocumentSignature.signerId` is unique, so re-signing a step that was
+          returned by a send-back would violate it and throw — send-back
+          deliberately leaves earlier signatures in place as history. Detaching
+          the superseded row keeps that history and frees the slot; deleting it
+          would destroy evidence to satisfy a constraint.
+        */
+        await tx.documentSignature.updateMany({
+          where: { signerId: params.signerRowId },
+          data: { signerId: null },
+        });
         await tx.documentSigner.update({
-          where: { id: signerRow.id },
+          where: { id: params.signerRowId },
           data: { status: 'SIGNED', signedAt },
         });
       }
+
       await tx.documentSignature.create({
         data: {
           documentId: document.id,
-          signerId: signerRow?.id ?? null,
-          userId: data.actor.userId,
-          signatureKey: sigKey,
-          signatureSha256: signatureHash,
+          signerId: params.signerRowId,
+          userId: signer.kind === 'user' ? signer.userId : null,
+          customerId: signer.kind === 'customer' ? signer.customerId : null,
+          signerName: signer.name,
+          signerRole: signer.kind === 'customer' ? signer.typedRole ?? null : null,
+          batchId: params.batchId ?? null,
+          signatureKey: params.sigKey,
+          signatureSha256: params.signatureHash,
           consentText: CONSENT_TEXT,
           consentAt,
           signedAt,
           hashBefore,
           hashAfter,
-          sealedAt: new Date(),
-          idempotencyKey: data.idempotencyKey,
+          sealedAt,
+          idempotencyKey: params.idempotencyKey,
         },
       });
+
       /*
         CONSENTED is written here too, if it is not already on the trail.
 
@@ -2103,9 +2483,6 @@ export class DocumentsService {
         having made an extra call: the consent text and time are stored on the
         signature either way, so a trail missing the entry would contradict the
         certificate page printed from the same row.
-
-        Idempotent by construction — a client that DID call consent leaves one
-        entry, not two.
       */
       const alreadyConsented = await tx.documentEvent.count({
         where: { documentId: document.id, type: 'CONSENTED' },
@@ -2119,9 +2496,17 @@ export class DocumentsService {
           data: {
             documentId: document.id,
             type,
-            actorId: data.actor.userId,
-            ...(type === 'CONSENTED' ? { meta: { text: CONSENT_TEXT } } : {}),
-            ...eventContext(data.ctx),
+            // A client has no user row, so the actor is null and the trail
+            // carries the name they gave instead. Pretending a customer is a
+            // member here would put a fake id into the evidence.
+            actorId: signer.kind === 'user' ? signer.userId : null,
+            meta: {
+              ...(type === 'CONSENTED' ? { text: CONSENT_TEXT } : {}),
+              ...(signer.kind === 'customer'
+                ? { signedByLink: true, signerName: signer.name, batchId: params.batchId ?? null }
+                : {}),
+            },
+            ...eventContext(params.ctx),
           },
         });
       }
@@ -2132,22 +2517,7 @@ export class DocumentsService {
     // certificate page cites its hash — deleting it would remove the only copy
     // the before-hash describes.
 
-    /*
-      Hand the document on.
-
-      AFTER the transaction, never inside it: telling somebody a document is
-      waiting for them and then rolling back the signature that made it their
-      turn is worse than not telling them.
-
-      A failure here does not undo the step. The chain has genuinely advanced
-      and the register shows it waiting on the right person — a stalled chain
-      that LOOKS moved is the dangerous version, not one that moved quietly.
-    */
-    if (!isLastStep) {
-      await this.notifyNextSigner(document.id, document.title);
-    }
-
-    return { documentId: document.id, alreadySigned: false, sealedAt: new Date() };
+    return { hashBefore, hashAfter, sealedAt };
   }
 
   /**
@@ -2651,23 +3021,10 @@ export class DocumentsService {
       const order = i + 1;
 
       /*
-        A customer cannot sign yet, so a customer step must not be created.
-
-        Resolving it would produce a PENDING step nobody on earth can complete:
-        clients have no login here unless a portal account was made for them,
-        and the emailed-link route is not built (and could not deliver while
-        outbound mail is blocked). The document would sit in "awaiting
-        signature" for ever, looking like it was somebody's turn.
-
-        Refusing names the fix. This is checked BEFORE candidates are resolved,
-        so an organisation with a client in the space gets the same honest
-        answer as one without.
+        A customer step resolves to the client of a space this member works in,
+        and is signed by an emailed link rather than a login. Refused until
+        there was a way to sign it — there is now.
       */
-      if (step.role === 'CUSTOMER') {
-        throw new BadRequestException(
-          `Step ${order} asks the customer to sign, and customer signing is not available yet. Remove that step from this document type — the signatures before it still work.`,
-        );
-      }
       const chosen = choices?.find((c) => c.order === order);
       /*
         The member is the document's own `userId` — by definition, not by
@@ -3849,7 +4206,26 @@ export class DocumentsService {
     try {
       const steps = await this.signerSteps(documentId);
       const next = nextPendingStep(steps);
-      if (!next?.userId) return; // Nobody internal to tell — customers are phase 3/4.
+      if (!next) return;
+
+      /*
+        A client is told by email, not by push.
+
+        They have no device registered here and no socket open — the only way to
+        reach them is the address on their record. Marking them as owing a
+        notification rather than sending one here is what makes eleven time
+        sheets issued at 09:00 arrive as ONE email: the sweep collects
+        everything outstanding per client and sends once.
+      */
+      if (!next.userId && next.customerId) {
+        await this.prisma.documentSigner.updateMany({
+          where: { documentId, order: next.order, notifiedAt: null },
+          data: { notifiedAt: new Date() },
+        });
+        return;
+      }
+
+      if (!next.userId) return; // A step nobody can be told about.
 
       const [user, signerRow, document] = await Promise.all([
         this.prisma.user.findUnique({

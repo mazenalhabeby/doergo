@@ -2,6 +2,8 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DocumentsService } from './documents.service';
 import { CredentialExpiryService } from './credential-expiry.service';
+import { CustomerSignLinkService } from './customer-sign-link.service';
+import { CustomerSignMailerService } from './customer-sign-mailer.service';
 
 /**
  * Transport only. Every method forwards to the service, which is where the
@@ -13,6 +15,8 @@ export class DocumentsController {
   constructor(
     private readonly documents: DocumentsService,
     private readonly credentials: CredentialExpiryService,
+    private readonly links: CustomerSignLinkService,
+    private readonly mailer: CustomerSignMailerService,
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
@@ -180,4 +184,99 @@ export class DocumentsController {
   deleteOwn(@Payload() data: any) {
     return this.documents.deleteOwnSupplied(data);
   }
+
+  // ── The client, signing by emailed link ──────────────────────────────────
+  //
+  // Every one of these resolves the token FIRST and derives the organisation
+  // and the client from it. Nothing here accepts an id from the caller, so a
+  // crafted payload has nothing to aim at.
+
+  @MessagePattern({ cmd: 'documents_link_open' })
+  async linkOpen(@Payload() data: { token: string }) {
+    const resolved = await this.links.resolve(data?.token ?? '');
+    if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
+
+    await this.links.markOpened(resolved.link.id);
+    const lists = await this.documents.listForCustomer({
+      organizationId: resolved.link.organizationId,
+      customerId: resolved.link.customerId,
+    });
+    return {
+      ok: true as const,
+      organizationName: resolved.organizationName,
+      customerName: resolved.customer.name,
+      expiresAt: resolved.link.expiresAt,
+      ...lists,
+    };
+  }
+
+  @MessagePattern({ cmd: 'documents_link_file' })
+  async linkFile(@Payload() data: { token: string; signerId: string }) {
+    const resolved = await this.links.resolve(data?.token ?? '');
+    if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
+    const { url } = await this.documents.openForCustomer({
+      organizationId: resolved.link.organizationId,
+      customerId: resolved.link.customerId,
+      signerId: data.signerId,
+    });
+    return { ok: true as const, url };
+  }
+
+  @MessagePattern({ cmd: 'documents_link_sign' })
+  async linkSign(
+    @Payload()
+    data: {
+      token: string;
+      signerIds: string[];
+      signatureImage: string;
+      name: string;
+      role?: string | null;
+      idempotencyKey: string;
+      ctx?: any;
+    },
+  ) {
+    const resolved = await this.links.resolve(data?.token ?? '');
+    if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
+    const result = await this.documents.signBatchAsCustomer({
+      organizationId: resolved.link.organizationId,
+      customerId: resolved.link.customerId,
+      customerEmail: resolved.customer.email,
+      signerIds: data.signerIds ?? [],
+      signatureImage: data.signatureImage,
+      typedName: data.name,
+      typedRole: data.role ?? null,
+      idempotencyKey: data.idempotencyKey,
+      ctx: data.ctx,
+    });
+    return { ok: true as const, ...result };
+  }
+
+  /**
+   * "Send me a new link."
+   *
+   * Always answers the same, whatever it finds. The response cannot vary with
+   * whether the address is known, or this page becomes a way to discover which
+   * companies a supplier works with — so the branch that sends and the branch
+   * that does nothing return identical shapes.
+   */
+  @MessagePattern({ cmd: 'documents_link_reissue' })
+  async linkReissue(@Payload() data: { email: string }) {
+    try {
+      const outcome = await this.links.requestReissue(data?.email ?? '');
+      if (outcome.send) {
+        const sent = await this.mailer.sendReissue({
+          to: outcome.to,
+          token: outcome.token,
+          expiresAt: outcome.expiresAt,
+          organizationName: outcome.organizationName,
+        });
+        if (sent) await this.links.markSent(outcome.linkId);
+      }
+    } catch {
+      // Swallowed on purpose: an error here would be a difference the caller
+      // could measure, and differences are what enumeration is made of.
+    }
+    return { ok: true as const };
+  }
+
 }

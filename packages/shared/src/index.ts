@@ -72,3 +72,6 @@ export * from './mail/transport';
 
 // One replica per scheduled job — see the note in the file.
 export * from './scheduling/cron-lock';
+
+// Bearer-secret helpers (node crypto — NOT client-safe, root entry only).
+export * from './security/tokens';

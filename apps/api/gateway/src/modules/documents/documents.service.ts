@@ -30,6 +30,12 @@ export class DocumentsGatewayService extends BaseGatewayService {
   listTemplates(data: unknown) { return this.send({ cmd: 'documents_list_templates' }, data); }
   browse(data: unknown) { return this.send({ cmd: 'documents_browse' }, data); }
   documentChain(data: unknown) { return this.send({ cmd: 'documents_chain' }, data); }
+
+  // ── The client, signing by emailed link (public, token-authenticated) ─────
+  linkOpen(data: unknown) { return this.send({ cmd: 'documents_link_open' }, data); }
+  linkFile(data: unknown) { return this.send({ cmd: 'documents_link_file' }, data); }
+  linkSign(data: unknown) { return this.send({ cmd: 'documents_link_sign' }, data); }
+  linkReissue(data: unknown) { return this.send({ cmd: 'documents_link_reissue' }, data); }
     routeCandidates(data: unknown) { return this.send({ cmd: 'documents_route_candidates' }, data); }
   listIssued(data: unknown) { return this.send({ cmd: 'documents_list_issued' }, data); }
   compliance(data: unknown) { return this.send({ cmd: 'documents_compliance' }, data); }

@@ -3,6 +3,8 @@ import { ClientsModule } from '@nestjs/microservices';
 import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
+import { CustomerSignLinkService } from './customer-sign-link.service';
+import { CustomerSignMailerService } from './customer-sign-mailer.service';
 import { MrzOcrService } from './mrz-ocr.service';
 import { objectStoreProvider } from './object-store.provider';
 import { CredentialExpiryService } from './credential-expiry.service';
@@ -15,12 +17,14 @@ import { CredentialExpiryService } from './credential-expiry.service';
   controllers: [DocumentsController],
   providers: [
     DocumentsService,
+    CustomerSignLinkService,
+    CustomerSignMailerService,
     CredentialExpiryService,
     // Reads a document's machine-readable zone in-process, so members'
     // passports never leave the box.
     MrzOcrService,
     objectStoreProvider,
   ],
-  exports: [DocumentsService, CredentialExpiryService],
+  exports: [DocumentsService, CredentialExpiryService, CustomerSignLinkService, CustomerSignMailerService],
 })
 export class DocumentsModule {}

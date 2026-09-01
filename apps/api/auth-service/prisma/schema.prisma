@@ -488,6 +488,7 @@ model Organization {
 
   // Customers (first-class entity for customer-scoped work + reporting)
   customers Customer[]
+  customerSignLinks CustomerSignLink[]
 
   // Customer portal (optional B2B2C / B2C module: residents/recipients submit requests)
   customerPortalEnabled Boolean          @default(false) // Org opt-in (true if any Portal exists)
@@ -1470,6 +1471,8 @@ model Customer {
   assets       Asset[]
 
   documentSignerSteps DocumentSigner[]
+  documentSignatures  DocumentSignature[]
+  signLinks           CustomerSignLink[]
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])
@@ -4129,6 +4132,11 @@ model DocumentSigner {
   email String?
 
   status     DocumentSignerStatus @default(PENDING)
+
+  /// When this signer first opened THIS document. Evidence, not a gate: forcing
+  /// somebody to open ten identical time sheets buys clicking-through, which is
+  /// a worse signature than the honest one. The certificate reports it.
+  openedAt DateTime?
   notifiedAt DateTime?
   signedAt   DateTime?
 
@@ -4165,8 +4173,29 @@ model DocumentSignature {
   signerId String?         @unique
   signer   DocumentSigner? @relation(fields: [signerId], references: [id], onDelete: SetNull)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// A signature is by a MEMBER or by a CLIENT, never both and never neither.
+  ///
+  /// This was `userId String` with a required relation, which quietly meant only
+  /// somebody with a login could ever sign. A client countersigning by emailed
+  /// link has no user row, and inventing one for them would put a fake member in
+  /// every roster, seat count and permission check in the product.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  /// What a link signer typed about themselves. The only identity this flow
+  /// has, so it is recorded verbatim and the certificate says where it came
+  /// from rather than dressing it up as an authenticated session.
+  signerName String?
+  signerRole String?
+
+  /// One ceremony, many documents. Eleven time sheets signed in one sitting
+  /// share this id, and each certificate says so — a document signed in a batch
+  /// is weaker evidence than one signed alone, and hiding that would make the
+  /// whole certificate worth less.
+  batchId String?
 
   /// The drawing lives in object storage, NOT in this row. Three columns in
   /// this schema already hold base64 PNGs inline; that is the mistake this
@@ -4192,6 +4221,54 @@ model DocumentSignature {
   /// The chain, in order — every read of a sealed document asks for this.
   @@index([documentId, signedAt])
   @@map("document_signatures")
+}
+
+/// One way in, for a client who has no login here.
+///
+/// The token addresses a CLIENT, not a document. That single choice is what
+/// lets one signature cover eleven time sheets, and what makes a document
+/// issued tomorrow appear on the link somebody bookmarked yesterday — the
+/// alternative was one email, one link and one ceremony per document, which is
+/// how you teach a client to ignore your email.
+///
+/// It expires, because it is a bearer credential and an immortal one sitting in
+/// a forwarded mailbox is permanent access to a company's paperwork. What is
+/// durable is not the token but the EMAIL ADDRESS: an expired link offers to
+/// send a new one, and only ever to the address already on file.
+model CustomerSignLink {
+  id String @id @default(cuid())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  /// SHA-256 of the token. The plaintext exists only in the email that carried
+  /// it — a database dump must never hand somebody a working signing link, the
+  /// mistake already made with invitation codes where the plaintext sits beside
+  /// the hash.
+  tokenHash String   @unique
+  expiresAt DateTime
+
+  /// Rate limiting without new infrastructure: "send me a new link" refuses if
+  /// this is recent, so the form cannot be used to mail-bomb a client.
+  lastSentAt   DateTime?
+  sentCount    Int       @default(0)
+  /// Whether anybody has actually followed it — the difference between "sent"
+  /// and "seen" on the admin register, and the difference between chasing a
+  /// client and chasing your mail provider.
+  firstOpenedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One live link per client per organisation. Re-issuing REPLACES the hash,
+  /// which kills the previous link: two live links is two people able to sign
+  /// as the client.
+  @@unique([organizationId, customerId])
+  @@index([expiresAt])
+  @@map("customer_sign_links")
 }
 
 /// The evidence trail. Append-only by contract: no update path is written and

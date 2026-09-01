@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SignLinkController } from './sign-link.controller';
 import { DocumentsController } from './documents.controller';
 import { DocumentsGatewayService } from './documents.service';
 
@@ -8,7 +9,7 @@ import { DocumentsGatewayService } from './documents.service';
  * RPC errors back to real HTTP statuses.
  */
 @Module({
-  controllers: [DocumentsController],
+  controllers: [DocumentsController, SignLinkController],
   providers: [DocumentsGatewayService],
 })
 export class DocumentsModule {}

@@ -7739,5 +7739,57 @@
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Questo dipendente ha già un’assenza dal {{from}} al {{to}} ({{status}}). Scegli altre date o modifica quella voce."
+  },
+  "signLink": {
+    "tabs": {
+      "toSign": "Da firmare",
+      "signed": "Firmati"
+    },
+    "list": {
+      "nothing": "Non c’è nulla in attesa della tua firma.",
+      "signN": "Firma {{count}} selezionati",
+      "signedHeading": "Già firmati"
+    },
+    "row": {
+      "open": "Apri",
+      "read": "Letto",
+      "unread": "Non aperto",
+      "signedBy": "Firmato da"
+    },
+    "agree": {
+      "title_one": "Stai firmando {{count}} documento",
+      "title_other": "Stai firmando {{count}} documenti",
+      "name": "Il tuo nome completo",
+      "role": "Il tuo ruolo (facoltativo)",
+      "consent": "Ho letto questi documenti e accetto di firmarli elettronicamente.",
+      "recordedTitle": "Quando firmi viene registrato questo",
+      "recorded": "Il nome che hai inserito · il tuo indirizzo IP e browser · l’ora esatta · un’impronta di ogni documento, così ogni modifica successiva si vede · e quali hai aperto.",
+      "next": "Accetta e firma"
+    },
+    "draw": {
+      "title": "Firma con il dito o il mouse",
+      "body_one": "Questa firma vale per {{count}} documento.",
+      "body_other": "Questa firma vale per {{count}} documenti.",
+      "submit_one": "Firma {{count}} documento",
+      "submit_other": "Firma {{count}} documenti"
+    },
+    "done": {
+      "title": "Firmato",
+      "body_one": "{{count}} documento è ora completo, con tutte le firme.",
+      "body_other": "{{count}} documenti sono ora completi, con tutte le firme.",
+      "keep": "Questo link resta il tuo modo per ritrovare questi documenti.",
+      "back": "Torna ai miei documenti"
+    },
+    "invalid": {
+      "title": "Questo link non è valido",
+      "body": "Controlla l’indirizzo nell’e-mail o chiedi un nuovo link all’azienda che l’ha inviato."
+    },
+    "expired": {
+      "title": "Questo link è scaduto",
+      "body": "I tuoi documenti sono ancora qui. Inserisci l’indirizzo a cui è stato inviato e ti manderemo un nuovo link.",
+      "email": "Il tuo indirizzo e-mail",
+      "send": "Mandami un nuovo link",
+      "sent": "Se a quell’indirizzo risultano documenti, il link è in arrivo."
+    }
   }
 }

@@ -6689,3 +6689,78 @@ export const documentsApi = {
     return unwrapDocuments<any>(response);
   },
 };
+
+// ── Signing by emailed link (public — no session, token only) ───────────────
+
+/** One document as a client's signing page shows it. */
+export interface LinkDocumentRow {
+  documentId: string
+  signerId: string
+  title: string
+  forMember: string | null
+  periodYear: number | null
+  periodMonth: number | null
+  alreadySigned: { name: string; role: string; signedAt: string }[]
+  openedAt: string | null
+}
+
+export type LinkRefusal = "unknown" | "expired"
+
+export type LinkOpenResult =
+  | { ok: false; refusal: LinkRefusal }
+  | {
+      ok: true
+      organizationName: string
+      customerName: string
+      expiresAt: string
+      toSign: LinkDocumentRow[]
+      signed: LinkDocumentRow[]
+    }
+
+/*
+  Every call is a POST, including the reads.
+
+  The token must not appear in a URL: the gateway logs `${method} ${url}` on
+  every request and the exception filter echoes the url back inside error
+  bodies, so a token in the path would be written to stdout and returned to
+  callers. In the body it falls under the existing redaction list. The page
+  keeps it in a query string, which never leaves the browser.
+*/
+export const signLinkApi = {
+  open: async (token: string): Promise<LinkOpenResult> => {
+    const res = await api.post<{ success: boolean; data: LinkOpenResult }>("/documents/sign", { token })
+    if (res.error) throw new Error(res.error)
+    return (res.data?.data ?? { ok: false, refusal: "unknown" }) as LinkOpenResult
+  },
+
+  file: async (token: string, signerId: string) => {
+    const res = await api.post<{ success: boolean; data: { ok: boolean; url?: string } }>(
+      "/documents/sign/file",
+      { token, signerId },
+    )
+    if (res.error) throw new Error(res.error)
+    return res.data?.data
+  },
+
+  sign: async (data: {
+    token: string
+    signerIds: string[]
+    signatureImage: string
+    name: string
+    role?: string | null
+    idempotencyKey: string
+  }) => {
+    const res = await api.post<{ success: boolean; data: { ok: boolean; signed: number; failed: unknown[] } }>(
+      "/documents/sign/submit",
+      data,
+    )
+    if (res.error) throw new Error(res.error)
+    return res.data?.data
+  },
+
+  /** Always resolves the same way, whatever the server found. */
+  resend: async (email: string) => {
+    await api.post("/documents/sign/resend", { email })
+    return { ok: true }
+  },
+}

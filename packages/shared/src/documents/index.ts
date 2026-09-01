@@ -1,6 +1,7 @@
 export * from './types';
 export * from './rules';
 export * from './route';
+export * from './sign-link';
 export * from './merge-fields';
 export * from './batch-matching';
 export * from './contract-layout';

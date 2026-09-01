@@ -7730,5 +7730,57 @@
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag."
+  },
+  "signLink": {
+    "tabs": {
+      "toSign": "Zu unterschreiben",
+      "signed": "Unterschrieben"
+    },
+    "list": {
+      "nothing": "Es wartet nichts auf Ihre Unterschrift.",
+      "signN": "{{count}} ausgewählte unterschreiben",
+      "signedHeading": "Bereits unterschrieben"
+    },
+    "row": {
+      "open": "Öffnen",
+      "read": "Gelesen",
+      "unread": "Nicht geöffnet",
+      "signedBy": "Unterschrieben von"
+    },
+    "agree": {
+      "title_one": "Sie unterschreiben {{count}} Dokument",
+      "title_other": "Sie unterschreiben {{count}} Dokumente",
+      "name": "Ihr vollständiger Name",
+      "role": "Ihre Funktion (optional)",
+      "consent": "Ich habe diese Dokumente gelesen und stimme zu, sie elektronisch zu unterschreiben.",
+      "recordedTitle": "Beim Unterschreiben wird Folgendes erfasst",
+      "recorded": "Der eingegebene Name · Ihre IP-Adresse und Ihr Browser · der genaue Zeitpunkt · ein Fingerabdruck jedes Dokuments, damit jede spätere Änderung sichtbar wird · und welche Sie geöffnet haben.",
+      "next": "Zustimmen und unterschreiben"
+    },
+    "draw": {
+      "title": "Mit Finger oder Maus unterschreiben",
+      "body_one": "Diese Unterschrift gilt für {{count}} Dokument.",
+      "body_other": "Diese Unterschrift gilt für {{count}} Dokumente.",
+      "submit_one": "{{count}} Dokument unterschreiben",
+      "submit_other": "{{count}} Dokumente unterschreiben"
+    },
+    "done": {
+      "title": "Unterschrieben",
+      "body_one": "{{count}} Dokument ist jetzt vollständig, mit allen Unterschriften.",
+      "body_other": "{{count}} Dokumente sind jetzt vollständig, mit allen Unterschriften.",
+      "keep": "Über diesen Link finden Sie Ihre Dokumente jederzeit wieder.",
+      "back": "Zurück zu meinen Dokumenten"
+    },
+    "invalid": {
+      "title": "Dieser Link ist ungültig",
+      "body": "Prüfen Sie die Adresse in der E-Mail oder bitten Sie das Unternehmen um einen neuen Link."
+    },
+    "expired": {
+      "title": "Dieser Link ist abgelaufen",
+      "body": "Ihre Dokumente sind weiterhin da. Geben Sie die Adresse an, an die er gesendet wurde, und wir senden einen neuen Link.",
+      "email": "Ihre E-Mail-Adresse",
+      "send": "Neuen Link senden",
+      "sent": "Wenn zu dieser Adresse Dokumente vorliegen, ist ein Link unterwegs."
+    }
   }
 }

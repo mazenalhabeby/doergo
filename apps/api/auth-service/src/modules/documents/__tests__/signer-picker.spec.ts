@@ -231,21 +231,30 @@ describe('DocumentsService — choosing a signer', () => {
       expect(rows.every((r: any) => r.status === 'PENDING')).toBe(true);
     });
 
-    it('refuses a customer step rather than parking the document on somebody who cannot sign', async () => {
+    it('resolves a customer step to the client of a space the member works in', async () => {
+      /*
+        This used to refuse. A CUSTOMER step was blocked at issue because there
+        was no way for a client to sign one — they have no login here. There is
+        now: the step is created PENDING and, when the chain reaches it, the
+        client is emailed a link.
+      */
       prisma.document.findMany.mockResolvedValue([
         {
           ...draft,
           type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] },
         },
       ]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([{ spaceId: 's1', organizationId: 'org1' }]);
       prisma.customer.findMany.mockResolvedValue([
-        { id: 'binderholz', name: 'Binderholz', email: 'x@example.com' },
+        { id: 'binderholz', name: 'Binderholz', email: 'office@binderholz.com' },
       ]);
 
-      // Even WITH a client on the space: they have no login unless somebody
-      // made them a portal account, and the emailed-link route is not built.
-      // A PENDING step nobody can complete reads as "it is their turn" for ever.
-      await expect(publish()).rejects.toThrow(/not available yet/i);
+      await publish();
+
+      const rows = prisma.documentSigner.create.mock.calls.map((c: any[]) => c[0].data);
+      expect(rows[1]).toEqual(
+        expect.objectContaining({ role: 'CUSTOMER', customerId: 'binderholz', status: 'PENDING' }),
+      );
     });
   });
 });

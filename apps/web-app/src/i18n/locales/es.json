@@ -7730,5 +7730,57 @@
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada."
+  },
+  "signLink": {
+    "tabs": {
+      "toSign": "Por firmar",
+      "signed": "Firmados"
+    },
+    "list": {
+      "nothing": "No hay nada esperando tu firma.",
+      "signN": "Firmar {{count}} seleccionados",
+      "signedHeading": "Ya firmados"
+    },
+    "row": {
+      "open": "Abrir",
+      "read": "Leído",
+      "unread": "No abierto",
+      "signedBy": "Firmado por"
+    },
+    "agree": {
+      "title_one": "Vas a firmar {{count}} documento",
+      "title_other": "Vas a firmar {{count}} documentos",
+      "name": "Tu nombre completo",
+      "role": "Tu cargo (opcional)",
+      "consent": "He leído estos documentos y acepto firmarlos electrónicamente.",
+      "recordedTitle": "Al firmar se registra lo siguiente",
+      "recorded": "El nombre que escribiste · tu dirección IP y navegador · la hora exacta · una huella de cada documento, para que cualquier cambio posterior se note · y cuáles abriste.",
+      "next": "Aceptar y firmar"
+    },
+    "draw": {
+      "title": "Firma con el dedo o el ratón",
+      "body_one": "Esta firma se aplica a {{count}} documento.",
+      "body_other": "Esta firma se aplica a {{count}} documentos.",
+      "submit_one": "Firmar {{count}} documento",
+      "submit_other": "Firmar {{count}} documentos"
+    },
+    "done": {
+      "title": "Firmado",
+      "body_one": "{{count}} documento está completo, con todas las firmas.",
+      "body_other": "{{count}} documentos están completos, con todas las firmas.",
+      "keep": "Este enlace sigue siendo tu forma de volver a estos documentos.",
+      "back": "Volver a mis documentos"
+    },
+    "invalid": {
+      "title": "Este enlace no es válido",
+      "body": "Comprueba la dirección del correo o pide un enlace nuevo a la empresa que lo envió."
+    },
+    "expired": {
+      "title": "Este enlace ha caducado",
+      "body": "Tus documentos siguen aquí. Introduce la dirección a la que se envió y te enviaremos un enlace nuevo.",
+      "email": "Tu dirección de correo",
+      "send": "Envíame un enlace nuevo",
+      "sent": "Si esa dirección tiene documentos con nosotros, el enlace va en camino."
+    }
   }
 }

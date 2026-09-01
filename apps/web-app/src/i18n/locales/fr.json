@@ -7739,5 +7739,57 @@
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée."
+  },
+  "signLink": {
+    "tabs": {
+      "toSign": "À signer",
+      "signed": "Signés"
+    },
+    "list": {
+      "nothing": "Rien n’attend votre signature.",
+      "signN": "Signer les {{count}} sélectionnés",
+      "signedHeading": "Déjà signés"
+    },
+    "row": {
+      "open": "Ouvrir",
+      "read": "Lu",
+      "unread": "Non ouvert",
+      "signedBy": "Signé par"
+    },
+    "agree": {
+      "title_one": "Vous signez {{count}} document",
+      "title_other": "Vous signez {{count}} documents",
+      "name": "Votre nom complet",
+      "role": "Votre fonction (facultatif)",
+      "consent": "J’ai lu ces documents et j’accepte de les signer électroniquement.",
+      "recordedTitle": "À la signature, ceci est enregistré",
+      "recorded": "Le nom saisi · votre adresse IP et votre navigateur · l’heure exacte · une empreinte de chaque document, pour que toute modification ultérieure soit visible · et ceux que vous avez ouverts.",
+      "next": "Accepter et signer"
+    },
+    "draw": {
+      "title": "Signez avec le doigt ou la souris",
+      "body_one": "Cette signature s’applique à {{count}} document.",
+      "body_other": "Cette signature s’applique à {{count}} documents.",
+      "submit_one": "Signer {{count}} document",
+      "submit_other": "Signer {{count}} documents"
+    },
+    "done": {
+      "title": "Signé",
+      "body_one": "{{count}} document est désormais complet, avec toutes les signatures.",
+      "body_other": "{{count}} documents sont désormais complets, avec toutes les signatures.",
+      "keep": "Ce lien reste votre moyen de retrouver ces documents.",
+      "back": "Retour à mes documents"
+    },
+    "invalid": {
+      "title": "Ce lien n’est pas valide",
+      "body": "Vérifiez l’adresse dans l’e-mail, ou demandez un nouveau lien à l’entreprise qui l’a envoyé."
+    },
+    "expired": {
+      "title": "Ce lien a expiré",
+      "body": "Vos documents sont toujours là. Indiquez l’adresse à laquelle il a été envoyé et nous vous enverrons un nouveau lien.",
+      "email": "Votre adresse e-mail",
+      "send": "Envoyez-moi un nouveau lien",
+      "sent": "Si cette adresse a des documents chez nous, un lien est en route."
+    }
   }
 }

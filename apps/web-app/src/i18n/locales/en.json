@@ -7730,5 +7730,57 @@
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry."
+  },
+  "signLink": {
+    "tabs": {
+      "toSign": "To sign",
+      "signed": "Signed"
+    },
+    "list": {
+      "nothing": "Nothing is waiting for your signature.",
+      "signN": "Sign {{count}} selected",
+      "signedHeading": "Already signed"
+    },
+    "row": {
+      "open": "Open",
+      "read": "Read",
+      "unread": "Not opened",
+      "signedBy": "Signed by"
+    },
+    "agree": {
+      "title_one": "You are signing {{count}} document",
+      "title_other": "You are signing {{count}} documents",
+      "name": "Your full name",
+      "role": "Your role (optional)",
+      "consent": "I have read these documents and agree to sign them electronically.",
+      "recordedTitle": "When you sign, this is recorded",
+      "recorded": "The name you typed · your IP address and browser · the exact time · a fingerprint of each document, so any later change shows · and which of them you opened.",
+      "next": "Agree and sign"
+    },
+    "draw": {
+      "title": "Sign with your finger or mouse",
+      "body_one": "This signature is applied to {{count}} document.",
+      "body_other": "This signature is applied to {{count}} documents.",
+      "submit_one": "Sign {{count}} document",
+      "submit_other": "Sign {{count}} documents"
+    },
+    "done": {
+      "title": "Signed",
+      "body_one": "{{count}} document is now complete, with every signature on it.",
+      "body_other": "{{count}} documents are now complete, with every signature on them.",
+      "keep": "This link stays your way back to these documents.",
+      "back": "Back to my documents"
+    },
+    "invalid": {
+      "title": "This link is not valid",
+      "body": "Check the address in the email, or ask the company that sent it for a new link."
+    },
+    "expired": {
+      "title": "This link has expired",
+      "body": "Your documents are still here. Enter the address this was sent to and we will send a new link.",
+      "email": "Your email address",
+      "send": "Send me a new link",
+      "sent": "If that address has documents with us, a link is on its way."
+    }
   }
 }
