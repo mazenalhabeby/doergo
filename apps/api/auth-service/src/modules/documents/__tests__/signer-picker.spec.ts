@@ -112,8 +112,15 @@ describe('DocumentsService — choosing a signer', () => {
         role: 'MEMBER',
         candidates: [{ kind: 'USER', id: 'worker', name: 'Mike Muster', email: 'worker@example.com' }],
       });
-      // The member was never looked up: the draft carried them.
-      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+      /*
+        The member candidate came from the draft, not from a query.
+
+        There IS one user lookup now, but for a different purpose: the
+        self-signing guard needs the subject's address to keep them off later
+        steps. It happens once per draft, not once per step — the thing this
+        assertion has always been protecting against.
+      */
+      expect(prisma.user.findUnique.mock.calls.length).toBeLessThanOrEqual(1);
     });
 
     it('offers every candidate for a step that has more than one', async () => {
@@ -316,6 +323,25 @@ describe('DocumentsService — choosing a signer', () => {
           contactName: 'Maria Binder',
         }),
       );
+    });
+
+    it('refuses a typed address belonging to the member themselves', async () => {
+      /*
+        The real case in this database: a CRM client record carrying the same
+        address as the member. Nothing else checks a typed-in address — that is
+        what makes it useful — so this is the only thing between an issuer and a
+        chain that reads as three signatures while being worth one.
+      */
+      prisma.document.findMany.mockResolvedValue([
+        { ...draft, type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] } },
+      ]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([]);
+      prisma.organization.findUnique.mockResolvedValue({ enabledModules: [] });
+      prisma.user.findUnique.mockResolvedValue({ id: 'worker', email: 'worker@example.com' });
+
+      await expect(
+        publish([{ order: 2, email: 'WORKER@example.com', name: 'Ahmed' }]),
+      ).rejects.toThrow(/same person the document is about/i);
     });
 
     it('refuses a typed address that is not one', async () => {

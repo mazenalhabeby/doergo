@@ -138,3 +138,27 @@ export function isUsableEmail(value: string | null | undefined): boolean {
   const v = (value ?? '').trim();
   return v.length >= 6 && v.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
+
+/**
+ * Nobody countersigns their own document.
+ *
+ * A chain is worth something because each step is a DIFFERENT person vouching.
+ * The moment the member the document is about also holds a later step, the
+ * signatures below the first one prove nothing — and it happens quietly, not by
+ * anybody deciding it should: one person with a personal login and a client
+ * record, or a member who is also an admin, resolves to themselves under a
+ * second hat and the chain looks complete.
+ *
+ * Matched on the ADDRESS as well as the id, because the two hats rarely share a
+ * user id and very often share an inbox. A client record carrying the member's
+ * own email is the ordinary way this happens.
+ */
+export function isSelfSigning(
+  member: { id?: string | null; email?: string | null },
+  candidate: { userId?: string | null; email?: string | null },
+): boolean {
+  if (member.id && candidate.userId && member.id === candidate.userId) return true;
+  const a = (member.email ?? '').trim().toLowerCase();
+  const b = (candidate.email ?? '').trim().toLowerCase();
+  return a.length > 0 && a === b;
+}

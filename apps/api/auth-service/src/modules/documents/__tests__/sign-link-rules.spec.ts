@@ -5,6 +5,7 @@ import {
   acceptedForSigning,
   LINK_REISSUE_COOLDOWN_MS,
   SIGN_LINK_TTL_DAYS,
+  isSelfSigning,
 } from '@hbcfield/shared';
 
 /**
@@ -112,5 +113,36 @@ describe('acceptedForSigning', () => {
 
   it('preserves the order the client asked for', () => {
     expect(acceptedForSigning(['c', 'a'], pending)).toEqual(['c', 'a']);
+  });
+});
+
+describe('isSelfSigning', () => {
+  const member = { id: 'worker', email: 'ahmed@example.com' };
+
+  it('catches the same account holding a later step', () => {
+    expect(isSelfSigning(member, { userId: 'worker' })).toBe(true);
+  });
+
+  it('catches the same INBOX behind a different record', () => {
+    /*
+      The ordinary way this happens, and the one an id check misses entirely: a
+      CRM client record carrying the member's own address. Two hats, one person,
+      and a chain that reads as three signatures while being worth one.
+    */
+    expect(isSelfSigning(member, { userId: null, email: 'AHMED@example.com' })).toBe(true);
+  });
+
+  it('ignores case and surrounding space', () => {
+    expect(isSelfSigning(member, { email: '  Ahmed@Example.COM ' })).toBe(true);
+  });
+
+  it('allows a genuinely different person', () => {
+    expect(isSelfSigning(member, { userId: 'anna', email: 'anna@example.com' })).toBe(false);
+  });
+
+  it('does not match two people who merely both lack an address', () => {
+    // Absence is not identity. Treating "no email" as a match would block every
+    // signer a company has not recorded an address for.
+    expect(isSelfSigning({ id: 'worker', email: null }, { userId: 'anna', email: null })).toBe(false);
   });
 });

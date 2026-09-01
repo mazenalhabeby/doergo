@@ -44,6 +44,7 @@ import {
   acceptedForSigning,
   counterpartySourceFor,
   isUsableEmail,
+  isSelfSigning,
   MAX_BATCH_SIGN,
   type SignableDocument,
   chainProgress,
@@ -3173,6 +3174,27 @@ export class DocumentsService {
         }
       }
 
+      /*
+        The subject cannot hold a later step, however the request got here.
+
+        Filtering the candidates stops it being OFFERED; this stops it being
+        DONE. A typed-in address is checked against nothing else — that is the
+        point of it — so this is the only thing standing between an issuer and a
+        chain where the same person signs twice under two hats, which reads as
+        three signatures and is worth one.
+      */
+      if (step.role !== 'MEMBER') {
+        const subject = await tx.user.findUnique({
+          where: { id: document.userId },
+          select: { id: true, email: true },
+        });
+        if (subject && isSelfSigning(subject, { userId, email })) {
+          throw new BadRequestException(
+            `Step ${order} would be signed by the same person the document is about. A countersignature has to come from somebody else.`,
+          );
+        }
+      }
+
       await tx.documentSigner.create({
         data: {
           documentId: document.id,
@@ -3517,6 +3539,25 @@ export class DocumentsService {
     memberId: string,
     role: DocumentSignerRole,
   ): Promise<SignerCandidate[]> {
+    /*
+      Who the document is ABOUT, so they can be kept off every later step.
+
+      A chain means something because each step is a different person vouching.
+      The member appearing again under a second hat — a client record carrying
+      their own address, or an admin account that is also the subject — makes
+      every signature below the first one prove nothing, and it happens quietly
+      rather than by anybody deciding it should.
+    */
+    const subject =
+      role === 'MEMBER'
+        ? null
+        : await this.prisma.user.findUnique({
+            where: { id: memberId },
+            select: { id: true, email: true },
+          });
+    const notTheSubject = (c: SignerCandidate) =>
+      !subject ||
+      !isSelfSigning(subject, { userId: c.kind === 'USER' ? c.id : null, email: c.email });
     if (role === 'MEMBER') {
       const u = await this.prisma.user.findUnique({
         where: { id: memberId },
@@ -3535,9 +3576,11 @@ export class DocumentsService {
         where: { id: { in: [...ids] }, organizationId, isActive: true },
         select: { id: true, firstName: true, lastName: true, email: true },
       });
-      return users.map((u) => ({
-        kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
-      }));
+      return users
+        .map((u) => ({
+          kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
+        }))
+        .filter(notTheSubject);
     }
 
     if (role === 'ORG_REPRESENTATIVE') {
@@ -3551,9 +3594,11 @@ export class DocumentsService {
         select: { id: true, firstName: true, lastName: true, email: true },
         take: 50,
       });
-      return users.map((u) => ({
-        kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
-      }));
+      return users
+        .map((u) => ({
+          kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
+        }))
+        .filter(notTheSubject);
     }
 
     /*
@@ -3619,7 +3664,7 @@ export class DocumentsService {
       }
     }
 
-    return out;
+    return out.filter(notTheSubject);
   }
 
   async listIssued(data: {
