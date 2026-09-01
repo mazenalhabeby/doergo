@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -83,6 +83,27 @@ export default function SentDocumentsPage() {
   const counts = data?.counts
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1
 
+  /*
+    Open on a tab that has something in it.
+
+    "Awaiting signature" is the right default when anything is waiting — it is
+    the only tab describing work. But an organization with nothing outstanding
+    got an empty screen while its documents sat one click away in a tab it had
+    to think to press, which reads as "there is nothing here" rather than "there
+    is nothing to do".
+
+    So the default is the FIRST tab with rows, in order of urgency, and only
+    until the reader chooses for themselves. After that their choice stands,
+    including when they deliberately open an empty tab to confirm it is empty.
+  */
+  const userPicked = useRef(false)
+  useEffect(() => {
+    if (userPicked.current || !counts) return
+    if (counts[tab] > 0) return
+    const fallback = (["awaiting", "unopened", "signed", "all"] as Tab[]).find((k) => counts[k] > 0)
+    if (fallback) setTab(fallback)
+  }, [counts, tab])
+
   const open = useMutation({
     mutationFn: (id: string) => documentsApi.downloadUrl(id),
     onMutate: (id: string) => setOpening(id),
@@ -158,6 +179,7 @@ export default function SentDocumentsPage() {
                   <button
                     key={key}
                     onClick={() => {
+                      userPicked.current = true
                       setTab(key)
                       setPage(1)
                     }}

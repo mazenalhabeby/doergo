@@ -110,6 +110,49 @@ export async function renderContractPdf(values: ContractValues): Promise<Buffer>
 }
 
 /**
+ * What somebody was actually using, in words a reader can act on.
+ *
+ * The certificate showed the raw user-agent, which for the mobile app is
+ * `okhttp/4.12.0` — the name of Android's HTTP library. On a record whose
+ * purpose is to be read by a human deciding whether a signature is sound, that
+ * is worse than nothing: it looks like a fault.
+ *
+ * Deliberately coarse. This is not device fingerprinting and should not become
+ * it; "the Android app" is the fact that matters. The raw agent is still
+ * printed beneath, because it is evidence and losing it to make the page read
+ * better would be a bad trade.
+ */
+export function describeDevice(userAgent: string): string {
+  const ua = userAgent.toLowerCase();
+
+  // The app's own HTTP clients, which no browser sends.
+  if (ua.includes('okhttp')) return 'HBCField app for Android';
+  if (ua.includes('cfnetwork') || ua.includes('darwin')) return 'HBCField app for iOS';
+  if (ua.includes('expo')) return 'HBCField app';
+
+  const os = ua.includes('iphone') ? 'iPhone'
+    : ua.includes('ipad') ? 'iPad'
+    : ua.includes('android') ? 'Android'
+    : ua.includes('mac os') || ua.includes('macintosh') ? 'macOS'
+    : ua.includes('windows') ? 'Windows'
+    : ua.includes('linux') ? 'Linux'
+    : null;
+
+  // Order matters: Edge and Opera both claim Chrome, and Chrome claims Safari.
+  const browser = ua.includes('edg/') ? 'Edge'
+    : ua.includes('opr/') || ua.includes('opera') ? 'Opera'
+    : ua.includes('firefox') ? 'Firefox'
+    : ua.includes('chrome') || ua.includes('crios') ? 'Chrome'
+    : ua.includes('safari') ? 'Safari'
+    : null;
+
+  if (browser && os) return `${browser} on ${os}`;
+  if (browser) return browser;
+  if (os) return os;
+  return 'Unrecognised device';
+}
+
+/**
  * Append the signature block and the certificate of completion, then freeze.
  *
  * TWO pages, not one, and the distinction matters:
@@ -264,20 +307,48 @@ export async function sealSignedPdf(
   y -= 2;
   const stamp = (d: Date) => d.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 
-  muted(`Consent      ${stamp(evidence.consentAt)}`);
-  muted(`"${evidence.consentText}"`, 8.5, 12);
-  muted(`Signed       ${stamp(evidence.signedAt)}`);
+  /*
+    A label column and a value column, positioned — not one string padded with
+    spaces. The font is proportional, so space-padding lines nothing up: an "IP"
+    row and a "Device" row started at different x and the record read as ragged
+    on a document whose whole job is to look deliberate.
+  */
+  const VALUE_X = MARGIN.left + 86;
+  const row = (label: string, value: string, size = 8.5) => {
+    page.drawText(sanitise(label), {
+      x: MARGIN.left, y, size, font: regular, color: rgb(0.55, 0.60, 0.69),
+    });
+    page.drawText(sanitise(value), {
+      x: VALUE_X, y, size, font: regular, color: rgb(0.42, 0.48, 0.58),
+    });
+    y -= size + 5;
+  };
+
+  row('Consent', stamp(evidence.consentAt));
+  muted(`"${evidence.consentText}"`, 8.5, 86);
+  row('Signed', stamp(evidence.signedAt));
   if (evidence.sessionAuthenticatedAt) {
     // The strongest single fact on this page. An emailed signing link proves
     // that somebody opened it; this proves the signer had already authenticated
     // as this account, on this device, before signing.
-    muted(`Session      authenticated ${stamp(evidence.sessionAuthenticatedAt)}`);
+    row('Session', `authenticated ${stamp(evidence.sessionAuthenticatedAt)}`);
   }
-  if (evidence.ip) muted(`IP           ${evidence.ip}`);
-  if (evidence.userAgent) muted(`Device       ${evidence.userAgent}`);
-  if (evidence.appVersion) muted(`App          ${evidence.appVersion}`);
+  if (evidence.ip) row('IP', evidence.ip);
+  if (evidence.userAgent) {
+    /*
+      What a person was using, said in words — then the raw string beneath it.
+
+      This line read `okhttp/4.12.0`: the name of Android's HTTP library, which
+      tells a reader of a legal record nothing at all. But the raw agent is
+      still evidence and must not be thrown away to make the page prettier, so
+      it stays, smaller and secondary.
+    */
+    row('Device', describeDevice(evidence.userAgent));
+    muted(evidence.userAgent, 7, VALUE_X - MARGIN.left);
+  }
+  if (evidence.appVersion) row('App', `HBCField ${evidence.appVersion}`);
   if (evidence.lat != null && evidence.lng != null) {
-    muted(`Location     ${evidence.lat.toFixed(4)}, ${evidence.lng.toFixed(4)}`);
+    row('Location', `${evidence.lat.toFixed(4)}, ${evidence.lng.toFixed(4)}`);
   }
   y -= 12;
 
