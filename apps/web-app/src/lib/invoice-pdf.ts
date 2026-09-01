@@ -1,5 +1,6 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import { invoiceStamp } from "./invoice-status"
 
 /**
  * Client-side invoice PDF, mirroring the "PDF studio" approach in report-pdf.ts
@@ -140,8 +141,6 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
   doc.text(inv.invoiceNumber, pageW - margin, margin + 12, { align: "right" })
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-  doc.text(inv.status, pageW - margin, margin + 17, { align: "right" })
 
   let y = Math.max(ly, margin + 22) + 6
   doc.setDrawColor(ACCENT.r, ACCENT.g, ACCENT.b)
@@ -240,7 +239,60 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   const pageH = doc.internal.pageSize.getHeight()
   doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
   doc.text(`${branding.name || "Company"} · ${inv.invoiceNumber}`, margin, pageH - 8)
+
+  drawStatusStamp(doc, inv.status, pageW, pageH, margin)
   return doc
+}
+
+/**
+ * A stamp, but only when the reader must not mistake what they are holding.
+ *
+ * The status used to be printed on every invoice as a small grey word beside
+ * the number — so a customer received a document saying "SENT", which tells
+ * them nothing they do not already know, and a draft was marked so quietly
+ * that it read as part of the reference.
+ *
+ * Three states earn a mark and the rest earn silence:
+ *
+ *   DRAFT     this is not an invoice yet. Nobody should pay it, and nobody
+ *             should file it. Said loudly, because a draft mistaken for an
+ *             invoice is the expensive direction of that mistake.
+ *   CANCELED  it was an invoice and is not owed. Same reasoning.
+ *   PAID      conventional, and useful to whoever opens the file later.
+ *
+ * SENT, OVERDUE and REFUNDED are deliberately not drawn. Beyond meaning little
+ * to the reader, they go STALE: a PDF is a frozen copy that outlives the state
+ * it was generated in, so one stamped OVERDUE still says so a year after it was
+ * settled. A status that can change must not be baked into a file.
+ */
+function drawStatusStamp(
+  doc: jsPDF,
+  status: string,
+  pageW: number,
+  pageH: number,
+  margin: number,
+): void {
+  const stamp = invoiceStamp(status)
+  if (!stamp) return
+
+  // Diagonal across the page, behind nothing and over everything — a watermark
+  // that has to be read rather than found.
+  doc.saveGraphicsState()
+  // @ts-expect-error — GState is provided by jsPDF at runtime, not in its types.
+  doc.setGState(new doc.GState({ opacity: 0.16 }))
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(74)
+  doc.setTextColor(stamp.color.r, stamp.color.g, stamp.color.b)
+  doc.text(stamp.text, pageW / 2, pageH / 2, { align: "center", angle: 32 })
+  doc.restoreGraphicsState()
+
+  // And once more, small and solid under the invoice number, so it survives
+  // being printed in greyscale or read on a phone at thumbnail size.
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(9)
+  doc.setTextColor(stamp.color.r, stamp.color.g, stamp.color.b)
+  // Directly beneath the invoice number, which sits at margin + 12.
+  doc.text(stamp.text, pageW - margin, margin + 17, { align: "right" })
 }
 
 /** Download the invoice as a PDF file. */
