@@ -165,10 +165,27 @@ export class ObjectStore {
    * "Payslip August 2026.pdf" rather than a 64-character hash — the key is
    * content-addressed and means nothing to a person.
    */
+  /**
+   * A short-lived link to one object.
+   *
+   * `inline` asks the browser to RENDER the file rather than save it, which is
+   * what someone checking a payslip actually wants — saving a copy to look at
+   * it, then deleting it, is a step nobody asked for.
+   *
+   * Only ever pass `inline` for a type that cannot execute. A PDF or a raster
+   * image is inert; HTML and SVG are not, and rendering either inline would run
+   * whatever the uploader put in it. The caller decides, because only the
+   * caller knows which types it accepts.
+   *
+   * `contentType` travels with it: object storage will happily serve a PDF as
+   * application/octet-stream, and a browser given that saves the file whatever
+   * the disposition says.
+   */
   async presignDownload(
     key: string,
     downloadName?: string,
     ttlSeconds = DOWNLOAD_URL_TTL_SECONDS,
+    opts?: { inline?: boolean; contentType?: string },
   ): Promise<string> {
     return getSignedUrl(
       this.client,
@@ -176,8 +193,14 @@ export class ObjectStore {
         Bucket: this.bucket,
         Key: key,
         ...(downloadName
-          ? { ResponseContentDisposition: contentDisposition(downloadName) }
+          ? {
+              ResponseContentDisposition: contentDisposition(
+                downloadName,
+                opts?.inline ? 'inline' : 'attachment',
+              ),
+            }
           : {}),
+        ...(opts?.contentType ? { ResponseContentType: opts.contentType } : {}),
       }),
       { expiresIn: ttlSeconds },
     );
@@ -257,7 +280,10 @@ export class ObjectStore {
  * ASCII-folded name goes in `filename` and the real one in `filename*`, which
  * is the RFC 5987 form every current browser prefers.
  */
-export function contentDisposition(name: string): string {
+export function contentDisposition(
+  name: string,
+  disposition: 'attachment' | 'inline' = 'attachment',
+): string {
   const fallback = name.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_');
-  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+  return `${disposition}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }

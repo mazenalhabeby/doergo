@@ -2545,8 +2545,31 @@ export class DocumentsService {
     }
 
     const store = this.requireStore();
+    /*
+      Rendered in the browser, not saved to disk.
+
+      Someone checking whether a payslip is right wants to LOOK at it. Forcing a
+      download made that a three-step errand — save, open, delete — and left a
+      copy of a confidential document in everybody's Downloads folder, which is
+      the last place it should accumulate.
+
+      Inline is safe only because of what this product accepts: PDF, PNG and
+      JPEG are inert. HTML and SVG can execute, and neither is in ALLOWED_MIME —
+      so the guard is that list, and this must be revisited if anything is ever
+      added to it. `canRenderInline` reads the same list rather than repeating
+      it, so the two cannot drift apart.
+
+      The content type is sent too: object storage will serve a PDF as
+      application/octet-stream given the chance, and a browser handed that saves
+      the file no matter what the disposition asked for.
+    */
     const url = await this.withStorage('preparing a download', () =>
-      store.presignDownload(document.storageKey, downloadName(document.title, document.mimeType)),
+      store.presignDownload(
+        document.storageKey,
+        downloadName(document.title, document.mimeType),
+        undefined,
+        { inline: canRenderInline(document.mimeType), contentType: document.mimeType },
+      ),
     );
 
     await this.prisma.$transaction(async (tx) => {
@@ -2975,6 +2998,18 @@ function cuidish(): string {
 }
 
 /** What the browser should call the saved file. */
+/**
+ * May a browser be asked to render this, rather than save it?
+ *
+ * Reads ALLOWED_MIME rather than listing types again: the set of things this
+ * product accepts and the set it will render inline must not drift apart. A
+ * type that can execute — HTML, SVG — must never be added to that list without
+ * this being reconsidered.
+ */
+function canRenderInline(mimeType: string): boolean {
+  return Object.prototype.hasOwnProperty.call(ALLOWED_MIME, mimeType);
+}
+
 function downloadName(title: string, mimeType: string): string {
   const ext = ALLOWED_MIME[mimeType] ?? 'pdf';
   const safe = title.trim().replace(/[/\\?%*:|"<>]/g, '-').slice(0, 120) || 'document';
