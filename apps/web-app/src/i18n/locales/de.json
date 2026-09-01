@@ -6107,7 +6107,8 @@
       "memberContact": "{{name}} kann kontaktieren",
       "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space.",
       "memberApprove": "Zeichnet für {{name}} ab",
-      "approveEmpty": "Niemand — Dokumente, die eine verantwortliche Person brauchen, können nicht ausgestellt werden"
+      "approveEmpty": "Niemand — Dokumente, die eine verantwortliche Person brauchen, können nicht ausgestellt werden",
+      "noColleagues": "Es ist noch niemand sonst in diesem Arbeitsbereich."
     }
   },
   "spaceSharing": {

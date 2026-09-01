@@ -6107,7 +6107,8 @@
       "memberContact": "{{name}} can contact",
       "noPeople": "No other members with a role in this workspace.",
       "memberApprove": "Signs off for {{name}}",
-      "approveEmpty": "Nobody — documents needing a responsible cannot be issued"
+      "approveEmpty": "Nobody — documents needing a responsible cannot be issued",
+      "noColleagues": "Nobody else is in this workspace yet."
     }
   },
   "spaceSharing": {

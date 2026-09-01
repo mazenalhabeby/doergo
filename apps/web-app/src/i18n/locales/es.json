@@ -6107,7 +6107,8 @@
       "memberContact": "{{name}} puede contactar",
       "noPeople": "No hay otros miembros con un rol en este espacio de trabajo.",
       "memberApprove": "Aprueba por {{name}}",
-      "approveEmpty": "Nadie — los documentos que necesitan un responsable no se pueden emitir"
+      "approveEmpty": "Nadie — los documentos que necesitan un responsable no se pueden emitir",
+      "noColleagues": "Todavía no hay nadie más en este espacio."
     }
   },
   "spaceSharing": {

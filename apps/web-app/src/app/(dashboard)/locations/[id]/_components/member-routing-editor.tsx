@@ -40,6 +40,19 @@ export function MemberRoutingEditor({
   // (Space Manager / Shift Leader / …). Routing goes to leaders, not plain members.
   const people = roster.filter((m) => m.userId !== member.userId && m.user && m.spaceRole)
 
+  /*
+    Sign-off is picked from EVERYONE in the space, not only role holders.
+
+    The two lists above are about defaults that fall back to "the space's
+    leaders", so restricting them to leaders is consistent. This one has no
+    default and no fallback — it is an explicit, per-person choice, and the
+    server stores the user id directly without asking what role they hold.
+    Requiring a space role here would mean a three-person site with no
+    hierarchy could not name a responsible at all, and the documents that need
+    one could never be issued.
+  */
+  const approvers = roster.filter((m) => m.userId !== member.userId && m.user)
+
   const mutation = useMutation({
     mutationFn: () =>
       spaceMembersApi.updateRouting(spaceId, member.id, {
@@ -98,10 +111,11 @@ export function MemberRoutingEditor({
         <PeoplePicker
           icon={PenLine}
           title={t("scheduling.routing.memberApprove", "Signs off for {{name}}", { name })}
-          people={people}
+          people={approvers}
           selected={approveUsers}
           onToggle={(id) => toggle(approveUsers, setApproveUsers, id)}
           emptyHint={t("scheduling.routing.approveEmpty", "Nobody — documents needing a responsible cannot be issued")}
+          noPeopleHint={t("scheduling.routing.noColleagues", "Nobody else is in this workspace yet.")}
         />
       </div>
       <div className="flex justify-end">
@@ -121,6 +135,7 @@ function PeoplePicker({
   selected,
   onToggle,
   emptyHint,
+  noPeopleHint,
 }: {
   icon: typeof Bell
   title: string
@@ -128,6 +143,8 @@ function PeoplePicker({
   selected: string[]
   onToggle: (id: string) => void
   emptyHint: string
+  // "Nobody has a role here" is wrong for a picker that does not need one.
+  noPeopleHint?: string
 }) {
   const { t } = useTranslation()
   return (
@@ -139,7 +156,7 @@ function PeoplePicker({
       <div className="max-h-56 overflow-y-auto">
         {people.length === 0 ? (
           <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-            {t("scheduling.routing.noPeople", "No other members with a role in this workspace.")}
+            {noPeopleHint ?? t("scheduling.routing.noPeople", "No other members with a role in this workspace.")}
           </p>
         ) : (
           people.map((m) => (

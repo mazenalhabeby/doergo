@@ -6116,7 +6116,8 @@
       "memberContact": "{{name}} peut contacter",
       "noPeople": "Aucun autre membre avec un rôle dans cet espace de travail.",
       "memberApprove": "Valide pour {{name}}",
-      "approveEmpty": "Personne — les documents exigeant un responsable ne peuvent pas être émis"
+      "approveEmpty": "Personne — les documents exigeant un responsable ne peuvent pas être émis",
+      "noColleagues": "Personne d’autre n’est encore dans cet espace."
     }
   },
   "spaceSharing": {
