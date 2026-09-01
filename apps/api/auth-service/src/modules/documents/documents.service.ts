@@ -2179,10 +2179,17 @@ export class DocumentsService {
     });
   }
 
-  /** Everything staged and not yet released, with who it is for. */
+  /**
+   * Everything staged and not yet released, with who it is for — and, where the
+   * type has a route, who could sign each step.
+   *
+   * The candidates are resolved HERE rather than by a second call per draft.
+   * A batch of thirty time sheets would otherwise be thirty round trips to
+   * discover that twenty-nine of them had nothing to ask.
+   */
   async listDrafts(data: { actor: DocumentActor }) {
     this.assertCanIssue(data.actor);
-    return this.prisma.document.findMany({
+    const drafts = await this.prisma.document.findMany({
       where: { organizationId: data.actor.organizationId, status: 'DRAFT' },
       select: {
         id: true,
@@ -2193,10 +2200,54 @@ export class DocumentsService {
         mimeType: true,
         createdAt: true,
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        type: { select: { id: true, label: true, signatureMode: true } },
+        type: { select: { id: true, label: true, signatureMode: true, signerRoute: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
+
+    /*
+      One resolution per distinct question, not per draft.
+
+      Thirty time sheets against one type ask the same ORG_REPRESENTATIVE
+      question thirty times, and members repeat across a batch too. The cache
+      holds the PROMISE rather than the result, so concurrent drafts asking the
+      same question share one query instead of both missing and both issuing it.
+    */
+    const cache = new Map<string, Promise<SignerCandidate[]>>();
+
+    return Promise.all(
+      drafts.map(async (d) => {
+        const route = parseRoute(d.type.signerRoute);
+        if (!route) return { ...d, routeSteps: null };
+
+        const steps = await Promise.all(
+          route.map(async (s, i): Promise<RouteCandidateStep> => ({
+            order: i + 1,
+            role: s.role,
+            // The member is already selected above; asking the database who
+            // they are would be a query to learn something in hand.
+            candidates:
+              s.role === 'MEMBER'
+                ? [
+                    {
+                      kind: 'USER',
+                      id: d.user.id,
+                      name: `${d.user.firstName} ${d.user.lastName}`.trim(),
+                      email: d.user.email,
+                    },
+                  ]
+                : await this.cachedCandidatesForRole(
+                    cache,
+                    data.actor.organizationId,
+                    d.user.id,
+                    s.role,
+                  ),
+          })),
+        );
+
+        return { ...d, routeSteps: steps };
+      }),
+    );
   }
 
   /**
@@ -2209,7 +2260,22 @@ export class DocumentsService {
    * and storing already happened, one request per file, so this is a status
    * flip and a set of event rows.
    */
-  async publishBatch(data: { actor: DocumentActor; documentIds: string[]; ctx?: RequestContext }) {
+  async publishBatch(data: {
+    actor: DocumentActor;
+    documentIds: string[];
+    /*
+      Chosen signers, per document, for steps whose route left a choice.
+
+      Carried at publish rather than at upload because the chain is built at
+      publish — and because a draft may sit for days between the two, during
+      which the answer could change.
+    */
+    signerChoices?: Array<{
+      documentId: string;
+      choices: Array<{ order: number; userId?: string | null; customerId?: string | null }>;
+    }>;
+    ctx?: RequestContext;
+  }) {
     this.assertCanIssue(data.actor);
 
     const ids = [...new Set(data.documentIds.filter(Boolean))];
@@ -2250,7 +2316,12 @@ export class DocumentsService {
           upload would resolve signers for documents that might be discarded,
           and leave a published one with no chain at all.
         */
-        await this.createSignerRows(tx, updated, draft.type.signerRoute);
+        await this.createSignerRows(
+          tx,
+          updated,
+          draft.type.signerRoute,
+          data.signerChoices?.find((c) => c.documentId === draft.id)?.choices,
+        );
 
         await tx.documentEvent.create({
           data: {
@@ -2538,7 +2609,17 @@ export class DocumentsService {
     for (const [i, step] of route.entries()) {
       const order = i + 1;
       const chosen = choices?.find((c) => c.order === order);
-      const candidates = await this.candidatesForRole(document.organizationId, document.userId, step.role);
+      /*
+        The member is the document's own `userId` — by definition, not by
+        lookup. Resolving them through a query would spend a round trip to
+        learn something already in hand, and would make the step SKIP if that
+        query ever came back empty: a time sheet published as though nobody
+        had to sign it, which is the one outcome this chain exists to prevent.
+      */
+      const candidates: SignerCandidate[] =
+        step.role === 'MEMBER'
+          ? [{ kind: 'USER', id: document.userId, name: '', email: null }]
+          : await this.candidatesForRole(document.organizationId, document.userId, step.role);
 
       let userId: string | null = null;
       let customerId: string | null = null;
@@ -2805,6 +2886,26 @@ export class DocumentsService {
    *                       document carries no space of its own, so the member is
    *                       what connects it to a client.
    */
+  /**
+   * `candidatesForRole` memoised for the length of one call.
+   *
+   * ORG_REPRESENTATIVE is the same answer for every member in the batch, so it
+   * is keyed without one; the others genuinely differ per member.
+   */
+  private cachedCandidatesForRole(
+    cache: Map<string, Promise<SignerCandidate[]>>,
+    organizationId: string,
+    memberId: string,
+    role: DocumentSignerRole,
+  ): Promise<SignerCandidate[]> {
+    const key = role === 'ORG_REPRESENTATIVE' ? role : `${role}:${memberId}`;
+    const hit = cache.get(key);
+    if (hit) return hit;
+    const pending = this.candidatesForRole(organizationId, memberId, role);
+    cache.set(key, pending);
+    return pending;
+  }
+
   private async candidatesForRole(
     organizationId: string,
     memberId: string,

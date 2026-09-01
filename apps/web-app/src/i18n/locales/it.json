@@ -7193,7 +7193,12 @@
       "published_other": "{{count}} documenti pubblicati",
       "uploadFailed": "Impossibile avviare il caricamento",
       "pendingDrafts_one": "{{count}} documento preparato e non pubblicato",
-      "pendingDrafts_other": "{{count}} documenti preparati e non pubblicati"
+      "pendingDrafts_other": "{{count}} documenti preparati e non pubblicati",
+      "signers": {
+        "title": "Chi li firma?",
+        "hint": "Qui più di una persona può firmare un passaggio. Non viene pubblicato nulla finché ogni domanda non ha una risposta: un documento inviato alla scrivania sbagliata non arriva mai a chi serviva.",
+        "choose": "Scegli chi firma…"
+      }
     },
     "sign": {
       "title": "Firma documento",

@@ -7193,7 +7193,12 @@
       "published_other": "{{count}} documents publiés",
       "uploadFailed": "L’envoi n’a pas pu démarrer",
       "pendingDrafts_one": "{{count}} document préparé et non publié",
-      "pendingDrafts_other": "{{count}} documents préparés et non publiés"
+      "pendingDrafts_other": "{{count}} documents préparés et non publiés",
+      "signers": {
+        "title": "Qui les signe ?",
+        "hint": "Plusieurs personnes peuvent signer une étape ici. Rien n’est publié tant que chaque question n’a pas de réponse : un document envoyé au mauvais bureau n’atteint jamais la personne concernée.",
+        "choose": "Choisir un signataire…"
+      }
     },
     "sign": {
       "title": "Signer le document",

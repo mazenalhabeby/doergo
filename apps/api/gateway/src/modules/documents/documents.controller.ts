@@ -520,6 +520,7 @@ export class DocumentsController {
     return this.documents.publishBatch({
       actor: documentActor(user),
       documentIds: body.documentIds,
+      signerChoices: body.signerChoices,
       ctx: requestContext(req),
     });
   }

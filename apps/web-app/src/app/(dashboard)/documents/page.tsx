@@ -63,6 +63,16 @@ export default function IssueDocumentsPage() {
 
   const [rows, setRows] = useState<Row[]>([])
   const [typeId, setTypeId] = useState<string>("")
+  /*
+    Who signs each ambiguous step, per staged document.
+
+    Only ambiguous ones are held here: a step with one candidate resolves
+    itself, and one with none becomes a skipped step. Keyed by document so a
+    batch of thirty time sheets can have different approvers per member.
+  */
+  const [choices, setChoices] = useState<
+    Record<string, Record<number, { userId?: string; customerId?: string }>>
+  >({})
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -158,7 +168,16 @@ export default function IssueDocumentsPage() {
   }, [rows, typeId, activeType, queryClient, t])
 
   const publish = useMutation({
-    mutationFn: (ids: string[]) => documentsApi.publishBatch(ids),
+    mutationFn: (ids: string[]) =>
+      documentsApi.publishBatch(
+        ids,
+        Object.entries(choices)
+          .filter(([id]) => ids.includes(id))
+          .map(([documentId, byOrder]) => ({
+            documentId,
+            choices: Object.entries(byOrder).map(([order, who]) => ({ order: Number(order), ...who })),
+          })),
+      ),
     onSuccess: (res) => {
       notify.success(t("documents.issue.published", { count: res?.published ?? 0 }))
       setRows([])
@@ -171,8 +190,26 @@ export default function IssueDocumentsPage() {
   const unresolved = rows.filter((r) => !r.userId)
   const failed = rows.filter((r) => r.state === "failed")
   const canStage = rows.length > 0 && batchIsPublishable(rows) && !!typeId && !uploading
+  /*
+    Every ambiguous step must be answered before anything is published.
+
+    All-or-nothing, like the rest of this screen: publishing the drafts whose
+    signers resolved and leaving the rest would split a batch that was assembled
+    as one, and the half that failed would be discovered later by somebody
+    wondering why a time sheet never arrived.
+  */
+  const openQuestions = existingDrafts.filter((d) =>
+    (d.routeSteps ?? []).some(
+      (s) => s.candidates.length > 1 && !choices[d.id]?.[s.order],
+    ),
+  )
+
   const canPublish =
-    staged.length > 0 && staged.length === rows.length && failed.length === 0 && !uploading
+    staged.length > 0 &&
+    staged.length === rows.length &&
+    failed.length === 0 &&
+    !uploading &&
+    openQuestions.length === 0
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
@@ -185,6 +222,15 @@ export default function IssueDocumentsPage() {
             {t("documents.issue.subtitle")}
           </p>
         </div>
+        {openQuestions.length > 0 && (
+          <SignerQuestions
+            drafts={openQuestions}
+            choices={choices}
+            onChoose={(documentId, order, who) =>
+              setChoices((c) => ({ ...c, [documentId]: { ...c[documentId], [order]: who } }))
+            }
+          />
+        )}
         {existingDrafts.length > 0 && rows.length === 0 && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
             {t("documents.issue.pendingDrafts", { count: existingDrafts.length })}
@@ -424,4 +470,90 @@ function titleFor(row: Row, type: DocumentTypeRow | null, t: (k: string) => stri
   }
   if (row.periodYear) return `${label} ${row.periodYear}`
   return label
+}
+
+/*
+  Who signs, when the route leaves it open.
+
+  A route names ROLES, and a role usually resolves to exactly one person — that
+  step never reaches this panel. It appears only where the answer is genuinely
+  ambiguous: a member with two people who can approve for them, an organisation
+  with several representatives. Asking then is not friction, it is the only
+  moment anybody knows the answer.
+
+  Deliberately not a default-to-the-first-candidate: picking a signer for
+  somebody and being wrong sends a document to the wrong desk, and the person it
+  actually needed never learns it existed.
+*/
+function SignerQuestions({
+  drafts,
+  choices,
+  onChoose,
+}: {
+  drafts: DraftDocumentRow[]
+  choices: Record<string, Record<number, { userId?: string; customerId?: string }>>
+  onChoose: (documentId: string, order: number, who: { userId?: string; customerId?: string }) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="w-full rounded-xl border border-border/80 bg-card p-4">
+      <div className="mb-3 flex items-start gap-2">
+        <Users className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <div>
+          <p className="text-sm font-semibold">{t("documents.issue.signers.title")}</p>
+          <p className="text-xs text-muted-foreground">{t("documents.issue.signers.hint")}</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {drafts.map((d) => (
+          <div key={d.id} className="rounded-lg border border-border/60 bg-accent/30 p-3">
+            <p className="mb-2 text-sm font-medium">
+              {d.user.firstName} {d.user.lastName}
+              <span className="ml-2 text-xs font-normal text-muted-foreground">{d.type.label}</span>
+            </p>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(d.routeSteps ?? [])
+                .filter((s) => s.candidates.length > 1)
+                .map((s) => {
+                  const picked = choices[d.id]?.[s.order]
+                  const value = picked?.userId ?? picked?.customerId ?? ""
+                  return (
+                    <label key={s.order} className="flex flex-col gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {t(`documents.types.route.roles.${s.role}`, { defaultValue: s.role })}
+                      </span>
+                      <select
+                        value={value}
+                        onChange={(e) => {
+                          const c = s.candidates.find((x) => x.id === e.target.value)
+                          if (!c) return
+                          onChoose(
+                            d.id,
+                            s.order,
+                            c.kind === "CUSTOMER" ? { customerId: c.id } : { userId: c.id },
+                          )
+                        }}
+                        className="h-9 appearance-none rounded-md border border-border bg-background px-3 text-sm"
+                      >
+                        <option value="" disabled>
+                          {t("documents.issue.signers.choose")}
+                        </option>
+                        {s.candidates.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )
+                })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }

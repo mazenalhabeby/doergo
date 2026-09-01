@@ -7184,7 +7184,12 @@
       "published_other": "{{count}} Dokumente freigegeben",
       "uploadFailed": "Der Upload konnte nicht gestartet werden",
       "pendingDrafts_one": "{{count}} Dokument ist vorbereitet und noch nicht freigegeben",
-      "pendingDrafts_other": "{{count}} Dokumente sind vorbereitet und noch nicht freigegeben"
+      "pendingDrafts_other": "{{count}} Dokumente sind vorbereitet und noch nicht freigegeben",
+      "signers": {
+        "title": "Wer unterschreibt diese?",
+        "hint": "Für einen Schritt kommen hier mehrere Personen infrage. Es wird nichts veröffentlicht, solange nicht jede Frage beantwortet ist — ein Dokument, das an den falschen Schreibtisch geht, erreicht die zuständige Person nie.",
+        "choose": "Unterzeichner wählen…"
+      }
     },
     "sign": {
       "title": "Dokument unterschreiben",

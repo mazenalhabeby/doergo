@@ -425,6 +425,22 @@ export class ListDocumentsQueryDto {
 }
 
 export class PublishBatchDto {
+  /*
+    Chosen signers per document, for steps whose route left a choice.
+
+    Only sent for ambiguous steps — one candidate resolves itself, and none is
+    a SKIPPED step. Every choice is re-checked against the candidates the
+    server computes: a picker is a convenience, not an authorisation.
+  */
+  @ApiPropertyOptional({ description: '[{documentId, choices:[{order, userId|customerId}]}]' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(200)
+  signerChoices?: Array<{
+    documentId: string;
+    choices: Array<{ order: number; userId?: string | null; customerId?: string | null }>;
+  }>;
+
   @ApiProperty({ type: [String], description: 'Every staged document in the batch' })
   @IsArray()
   @IsString({ each: true })

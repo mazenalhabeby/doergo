@@ -7184,7 +7184,12 @@
       "published_other": "{{count}} documentos publicados",
       "uploadFailed": "No se pudo iniciar la subida",
       "pendingDrafts_one": "{{count}} documento preparado y sin publicar",
-      "pendingDrafts_other": "{{count}} documentos preparados y sin publicar"
+      "pendingDrafts_other": "{{count}} documentos preparados y sin publicar",
+      "signers": {
+        "title": "¿Quién firma estos?",
+        "hint": "Aquí más de una persona puede firmar un paso. No se publica nada hasta responder cada pregunta: un documento enviado al escritorio equivocado nunca llega a quien lo necesitaba.",
+        "choose": "Elige quién firma…"
+      }
     },
     "sign": {
       "title": "Firmar documento",

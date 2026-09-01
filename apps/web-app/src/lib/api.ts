@@ -6106,6 +6106,28 @@ export interface DraftDocumentRow {
   createdAt: string;
   user: { id: string; firstName: string; lastName: string; email: string };
   type: { id: string; label: string; signatureMode: string };
+  /**
+   * The route resolved for THIS member, when the type has one.
+   *
+   * Null for a type with no route. A step with one candidate needs no question;
+   * a step with several is what the picker is for; a step with none becomes a
+   * skipped step rather than blocking the publish.
+   */
+  routeSteps?: RouteCandidateStep[] | null;
+}
+
+/** One person or client a route step could resolve to. */
+export interface SignerCandidate {
+  kind: "USER" | "CUSTOMER";
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+export interface RouteCandidateStep {
+  order: number;
+  role: string;
+  candidates: SignerCandidate[];
 }
 
 /** One row of the issued-document register. Carries no url, by design. */
@@ -6621,12 +6643,18 @@ export const documentsApi = {
   },
 
   /** All or nothing — one unresolved row blocks the whole batch. */
-  publishBatch: async (documentIds: string[]) => {
+  publishBatch: async (
+    documentIds: string[],
+    signerChoices?: Array<{
+      documentId: string
+      choices: Array<{ order: number; userId?: string | null; customerId?: string | null }>
+    }>,
+  ) => {
     const response = await api.post<{ success: boolean; data: { published: number } }>(
-      '/documents/publish',
-      { documentIds },
-    );
-    return unwrapDocuments<any>(response);
+      "/documents/publish",
+      { documentIds, ...(signerChoices?.length ? { signerChoices } : {}) },
+    )
+    return unwrapDocuments<{ published: number }>(response)
   },
 
   discardDraft: async (id: string) => {
