@@ -103,11 +103,11 @@ describe('renderContractPdf', () => {
 });
 
 describe('sealSignedPdf', () => {
-  const evidence = {
-    documentTitle: 'Dienstvertrag',
+  /** One signer, as a document with no route collects. */
+  const monika = {
+    role: 'Signed by',
     signerName: 'Monika Holub',
     signerEmail: 'monika@example.com',
-    organizationName: 'HBC Group GmbH',
     consentText: 'I have read this document and agree to sign it electronically.',
     consentAt: new Date('2026-08-29T11:19:52Z'),
     signedAt: new Date('2026-08-29T11:20:01Z'),
@@ -120,6 +120,31 @@ describe('sealSignedPdf', () => {
     lng: 13.8269,
     signatureImage: PNG,
     signatureSha256: '7b1ec904'.repeat(8),
+    strength: 'SESSION' as const,
+  };
+
+  const evidence = {
+    documentTitle: 'Dienstvertrag',
+    organizationName: 'HBC Group GmbH',
+    signers: [monika],
+  };
+
+  /** The same document after a manager has countersigned it. */
+  const chained = {
+    ...evidence,
+    signers: [
+      { ...monika, role: 'Member' },
+      {
+        ...monika,
+        role: 'Responsible',
+        signerName: 'Anna Müller',
+        signerEmail: 'anna@example.com',
+        signedAt: new Date('2026-08-29T14:02:00Z'),
+        // The second signer saw the document as the first one left it: this is
+        // the link in the chain.
+        hashBefore: 'aa11bb22cc33dd44ee55ff6677889900'.repeat(2),
+      },
+    ],
   };
 
   it('appends TWO pages — the signature, then the certificate', async () => {
@@ -132,6 +157,19 @@ describe('sealSignedPdf', () => {
     const original = await renderContractPdf(VALUES);
     const before = (await PDFDocument.load(original)).getPageCount();
     const sealed = await sealSignedPdf(original, evidence);
+    expect((await PDFDocument.load(sealed)).getPageCount()).toBe(before + 2);
+  });
+
+  it('adds the SAME two pages for a chain of signatures, not two per signer', async () => {
+    /*
+      The reason the document is re-rendered from the original rather than
+      appended to. Appending would give a three-party time sheet six pages of
+      apparatus behind one page of content; one block and one certificate hold
+      however many people sign.
+    */
+    const original = await renderContractPdf(VALUES);
+    const before = (await PDFDocument.load(original)).getPageCount();
+    const sealed = await sealSignedPdf(original, chained);
     expect((await PDFDocument.load(sealed)).getPageCount()).toBe(before + 2);
   });
 
@@ -163,7 +201,7 @@ describe('sealSignedPdf', () => {
     // lose it; a question mark in a user-agent line would not.
     const original = await renderContractPdf(VALUES);
     await expect(
-      sealSignedPdf(original, { ...evidence, userAgent: 'Приложение/1.0' }),
+      sealSignedPdf(original, { ...evidence, signers: [{ ...monika, userAgent: 'Приложение/1.0' }] }),
     ).resolves.toBeInstanceOf(Buffer);
   });
 
@@ -171,12 +209,15 @@ describe('sealSignedPdf', () => {
     const original = await renderContractPdf(VALUES);
     const sealed = await sealSignedPdf(original, {
       ...evidence,
-      sessionAuthenticatedAt: null,
-      ip: null,
-      userAgent: null,
-      appVersion: null,
-      lat: null,
-      lng: null,
+      signers: [{
+        ...monika,
+        sessionAuthenticatedAt: null,
+        ip: null,
+        userAgent: null,
+        appVersion: null,
+        lat: null,
+        lng: null,
+      }],
     });
     expect(sealed.length).toBeGreaterThan(0);
   });

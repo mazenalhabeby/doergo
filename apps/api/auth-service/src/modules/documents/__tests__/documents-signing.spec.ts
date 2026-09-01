@@ -34,7 +34,9 @@ describe('DocumentsService — signing', () => {
 
   const prisma: Record<string, any> = {
     document: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
-    documentSignature: { findUnique: jest.fn(), create: jest.fn() },
+    // findMany: the chain is re-read on every signing so the seal can render
+    // every signature so far. Empty here — these are first signatures.
+    documentSignature: { findUnique: jest.fn(), create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     documentEvent: { create: jest.fn(), count: jest.fn() },
     // The signing chain. Empty by default: these tests are about a document
     // with NO route, which is what every one issued before Phase 2 has.
@@ -95,6 +97,12 @@ describe('DocumentsService — signing', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    // Whoever is signing, resolved from the actor rather than from the
+    // document's subject — on a chain those differ from step two onwards.
+    prisma.user.findFirst.mockResolvedValue({
+      firstName: 'Monika', lastName: 'Holub', email: 'monika@example.com',
+    });
+    prisma.documentSignature.findMany.mockResolvedValue([]);
     objects = new Map([['org1/documents/ab/contract.pdf', contractBytes]]);
     prisma.documentSignature.findUnique.mockResolvedValue(null);
     prisma.document.update.mockImplementation(async ({ where, data }: any) => ({ id: where.id, ...data }));

@@ -43,27 +43,6 @@ export interface ContractValues {
   memberName: string;
 }
 
-/** Everything captured at signing, for the certificate page. */
-export interface SealEvidence {
-  documentTitle: string;
-  signerName: string;
-  signerEmail: string;
-  organizationName: string;
-  consentText: string;
-  consentAt: Date;
-  signedAt: Date;
-  hashBefore: string;
-  sessionAuthenticatedAt?: Date | null;
-  ip?: string | null;
-  userAgent?: string | null;
-  appVersion?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-  /** PNG bytes of the drawn signature. */
-  signatureImage: Buffer;
-  signatureSha256: string;
-}
-
 /**
  * Render a contract to PDF bytes.
  *
@@ -170,6 +149,59 @@ export function describeDevice(userAgent: string): string {
  * Neither touches the original pages, so the before-hash still describes
  * exactly what the signer read.
  */
+/**
+ * One person's signature, as the sealed document records it.
+ *
+ * `role` is the label printed beside the mark — "Worker", "Responsible",
+ * "Customer" — because a block of three signatures is unreadable if the reader
+ * cannot tell which is which.
+ *
+ * `strength` is the honest part. A signer who was already authenticated is a
+ * different claim from somebody who followed an emailed link: the first says
+ * WHO signed, the second says the link was used. Both are legitimate; printing
+ * them identically would overstate the weaker one.
+ */
+export interface SignerEvidence {
+  role: string;
+  signerName: string;
+  signerEmail: string;
+  consentText: string;
+  consentAt: Date;
+  signedAt: Date;
+  hashBefore: string;
+  sessionAuthenticatedAt?: Date | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  appVersion?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  /** PNG bytes of the drawn signature. */
+  signatureImage: Buffer;
+  signatureSha256: string;
+  strength?: 'SESSION' | 'LINK';
+}
+
+export interface SealEvidence {
+  documentTitle: string;
+  organizationName: string;
+  /** In signing order. One entry for a document nobody else has to sign. */
+  signers: SignerEvidence[];
+}
+
+/**
+ * Seal a document with every signature it has collected.
+ *
+ * Rendered from the ORIGINAL each time, never from the previously sealed file.
+ * Appending to the sealed copy would add a signature page and a certificate per
+ * signer, so a three-party time sheet would carry six pages of apparatus behind
+ * one page of content. Re-rendering gives one signature block and one
+ * certificate however many people sign.
+ *
+ * That is safe because the chain is kept in the hashes, not in the layout:
+ * each signature records the document as its signer saw it (`hashBefore`) and
+ * as it stood afterwards, so the sequence is provable even though the file is
+ * redrawn.
+ */
 export async function sealSignedPdf(
   originalPdf: Buffer,
   evidence: SealEvidence,
@@ -177,61 +209,76 @@ export async function sealSignedPdf(
   const pdf = await PDFDocument.load(originalPdf);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const png = await pdf.embedPng(evidence.signatureImage);
 
-  // ── The signature page ────────────────────────────────────────────────────
+  const signers = evidence.signers;
+  const images = await Promise.all(signers.map((s) => pdf.embedPng(s.signatureImage)));
+
+  // ── The signature block ───────────────────────────────────────────────────
+  //
+  // One page holding every signature, laid out the way the block at the foot of
+  // a paper time sheet always was. Each mark gets a rule, a name and the role
+  // it was signing in.
   {
     const sig = pdf.addPage([PAGE.width, PAGE.height]);
     let sy = PAGE.height - MARGIN.top;
 
-    sig.drawText('Signature', {
+    sig.drawText(signers.length > 1 ? 'Signatures' : 'Signature', {
       x: MARGIN.left, y: sy, size: 18, font: bold, color: rgb(0.06, 0.09, 0.15),
     });
-    sy -= 40;
+    sy -= 26;
 
     sig.drawText(sanitise(evidence.documentTitle), {
       x: MARGIN.left, y: sy, size: 11, font: regular, color: rgb(0.42, 0.48, 0.58),
     });
-    sy -= 56;
+    sy -= 40;
 
     /*
-      Scaled to fit a generous box, aspect ratio preserved.
+      Sized to what is left, not to a fixed height.
 
-      Bigger than the thumbnail on the certificate: this is the page somebody
-      opens to check that they signed, and a signature the size of a postage
-      stamp does not answer that question.
+      A block of one signature should be readable — this is the page somebody
+      opens to check that they signed — while six must still fit. The mark
+      shrinks as the block grows rather than the page overflowing.
     */
-    const box = { w: 260, h: 96 };
-    const scale = Math.min(box.w / png.width, box.h / png.height, 1);
-    const w = png.width * scale;
-    const h = png.height * scale;
+    const perSigner = Math.min(150, Math.max(86, (sy - MARGIN.bottom - 40) / signers.length));
+    const boxW = 240;
+    const boxH = Math.max(40, perSigner - 58);
 
-    sy -= h;
-    sig.drawImage(png, { x: MARGIN.left, y: sy, width: w, height: h });
+    for (const [i, s] of signers.entries()) {
+      const png = images[i];
+      const scale = Math.min(boxW / png.width, boxH / png.height, 1);
+      const w = png.width * scale;
+      const h = png.height * scale;
 
-    // The rule the mark sits on, drawn at signature-block width rather than the
-    // width of the image, so a short signature does not get a short line.
-    sig.drawLine({
-      start: { x: MARGIN.left, y: sy - 6 },
-      end: { x: MARGIN.left + box.w, y: sy - 6 },
-      thickness: 1,
-      color: rgb(0.55, 0.6, 0.68),
-    });
-    sy -= 26;
+      sy -= h;
+      sig.drawImage(png, { x: MARGIN.left, y: sy, width: w, height: h });
 
-    sig.drawText(sanitise(evidence.signerName), {
-      x: MARGIN.left, y: sy, size: 12, font: bold, color: rgb(0.06, 0.09, 0.15),
-    });
-    sy -= 17;
-    sig.drawText(sanitise(evidence.signerEmail), {
-      x: MARGIN.left, y: sy, size: 9.5, font: regular, color: rgb(0.42, 0.48, 0.58),
-    });
-    sy -= 22;
-    sig.drawText(`Signed ${longDate(evidence.signedAt)}`, {
-      x: MARGIN.left, y: sy, size: 10, font: regular, color: rgb(0.06, 0.09, 0.15),
-    });
-    sy -= 34;
+      // Drawn at block width rather than image width, so a short signature does
+      // not get a short line.
+      sig.drawLine({
+        start: { x: MARGIN.left, y: sy - 6 },
+        end: { x: MARGIN.left + boxW, y: sy - 6 },
+        thickness: 1,
+        color: rgb(0.55, 0.6, 0.68),
+      });
+      sy -= 24;
 
+      sig.drawText(sanitise(s.signerName), {
+        x: MARGIN.left, y: sy, size: 11.5, font: bold, color: rgb(0.06, 0.09, 0.15),
+      });
+      // The role sits to the right of the name: three marks in a column are
+      // indistinguishable without it.
+      sig.drawText(sanitise(s.role.toUpperCase()), {
+        x: MARGIN.left + boxW + 16, y: sy, size: 8.5, font: bold, color: rgb(0.55, 0.6, 0.68),
+      });
+      sy -= 14;
+
+      sig.drawText(`${sanitise(s.signerEmail)}   ·   ${longDate(s.signedAt)}`, {
+        x: MARGIN.left, y: sy, size: 9, font: regular, color: rgb(0.42, 0.48, 0.58),
+      });
+      sy -= 20;
+    }
+
+    sy -= 6;
     for (const line of [
       `Issued by ${evidence.organizationName}.`,
       'Signed electronically. The following page records how, and carries the',
@@ -255,68 +302,23 @@ export async function sealSignedPdf(
 
   const text = (s: string, size: number, isBold = false, indent = 0) => {
     page.drawText(sanitise(s), {
-      x: MARGIN.left + indent,
-      y,
-      size,
-      font: isBold ? bold : regular,
-      color: rgb(0.06, 0.09, 0.15),
+      x: MARGIN.left + indent, y, size,
+      font: isBold ? bold : regular, color: rgb(0.06, 0.09, 0.15),
     });
     y -= size + 6;
   };
 
   const muted = (s: string, size = 8.5, indent = 0) => {
     page.drawText(sanitise(s), {
-      x: MARGIN.left + indent,
-      y,
-      size,
-      font: regular,
-      color: rgb(0.42, 0.48, 0.58),
+      x: MARGIN.left + indent, y, size, font: regular, color: rgb(0.42, 0.48, 0.58),
     });
     y -= size + 5;
   };
 
-  text('Certificate of completion', 16, true);
-  y -= 6;
-  muted(evidence.documentTitle);
-  y -= 14;
-
-  // ── The signature, small, as part of the record ──────────────────────────
-  // Deliberately a thumbnail here. The page before it is where the signature is
-  // meant to be READ; this one is evidence, and repeating it full size would
-  // make the record look like a second signature.
-  const box = { w: 150, h: 52 };
-  const scale = Math.min(box.w / png.width, box.h / png.height, 1);
-  const w = png.width * scale;
-  const h = png.height * scale;
-
-  y -= h;
-  page.drawImage(png, { x: MARGIN.left, y, width: w, height: h });
-  page.drawLine({
-    start: { x: MARGIN.left, y: y - 4 },
-    end: { x: MARGIN.left + box.w, y: y - 4 },
-    thickness: 0.75,
-    color: rgb(0.72, 0.76, 0.82),
-  });
-  y -= 18;
-  text(evidence.signerName, 10.5, true);
-  muted(evidence.signerEmail);
-  y -= 16;
-
-  // ── What happened, and when ──────────────────────────────────────────────
-  text('Record', 11, true);
-  y -= 2;
-  const stamp = (d: Date) => d.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-
-  /*
-    A label column and a value column, positioned — not one string padded with
-    spaces. The font is proportional, so space-padding lines nothing up: an "IP"
-    row and a "Device" row started at different x and the record read as ragged
-    on a document whose whole job is to look deliberate.
-  */
   const VALUE_X = MARGIN.left + 86;
   const row = (label: string, value: string, size = 8.5) => {
     page.drawText(sanitise(label), {
-      x: MARGIN.left, y, size, font: regular, color: rgb(0.55, 0.60, 0.69),
+      x: MARGIN.left, y, size, font: regular, color: rgb(0.55, 0.6, 0.69),
     });
     page.drawText(sanitise(value), {
       x: VALUE_X, y, size, font: regular, color: rgb(0.42, 0.48, 0.58),
@@ -324,42 +326,67 @@ export async function sealSignedPdf(
     y -= size + 5;
   };
 
-  row('Consent', stamp(evidence.consentAt));
-  muted(`"${evidence.consentText}"`, 8.5, 86);
-  row('Signed', stamp(evidence.signedAt));
-  if (evidence.sessionAuthenticatedAt) {
-    // The strongest single fact on this page. An emailed signing link proves
-    // that somebody opened it; this proves the signer had already authenticated
-    // as this account, on this device, before signing.
-    row('Session', `authenticated ${stamp(evidence.sessionAuthenticatedAt)}`);
-  }
-  if (evidence.ip) row('IP', evidence.ip);
-  if (evidence.userAgent) {
-    /*
-      What a person was using, said in words — then the raw string beneath it.
+  text('Certificate of completion', 16, true);
+  y -= 6;
+  muted(evidence.documentTitle);
+  y -= 18;
 
-      This line read `okhttp/4.12.0`: the name of Android's HTTP library, which
-      tells a reader of a legal record nothing at all. But the raw agent is
-      still evidence and must not be thrown away to make the page prettier, so
-      it stays, smaller and secondary.
+  const stamp = (d: Date) => d.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+
+  for (const [i, s] of signers.entries()) {
+    // Each signature is its own record. Numbered when there is more than one,
+    // because the ORDER is part of what the chain asserts.
+    text(signers.length > 1 ? `${i + 1}. ${s.role} — ${s.signerName}` : `${s.signerName}`, 11, true);
+    y -= 2;
+    muted(s.signerEmail, 8.5);
+
+    row('Consent', stamp(s.consentAt));
+    muted(`"${s.consentText}"`, 8.5, 86);
+    row('Signed', stamp(s.signedAt));
+
+    if (s.sessionAuthenticatedAt) {
+      row('Session', `authenticated ${stamp(s.sessionAuthenticatedAt)}`);
+    }
+    /*
+      What this signature is worth, said plainly.
+
+      An authenticated signer and somebody who followed a link are different
+      claims, and a page that presented them identically would be overstating
+      the weaker one — on the document somebody would produce in a dispute.
     */
-    row('Device', describeDevice(evidence.userAgent));
-    muted(evidence.userAgent, 7, VALUE_X - MARGIN.left);
+    if (s.strength === 'LINK') {
+      row('Identity', 'by signing link — not an authenticated session');
+    }
+    if (s.ip) row('IP', s.ip);
+    if (s.userAgent) {
+      row('Device', describeDevice(s.userAgent));
+      muted(s.userAgent, 7, VALUE_X - MARGIN.left);
+    }
+    if (s.appVersion) row('App', `HBCField ${s.appVersion}`);
+    if (s.lat != null && s.lng != null) {
+      row('Location', `${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}`);
+    }
+    y -= 10;
   }
-  if (evidence.appVersion) row('App', `HBCField ${evidence.appVersion}`);
-  if (evidence.lat != null && evidence.lng != null) {
-    row('Location', `${evidence.lat.toFixed(4)}, ${evidence.lng.toFixed(4)}`);
-  }
-  y -= 12;
 
   // ── The integrity chain ──────────────────────────────────────────────────
   text('Integrity', 11, true);
   y -= 2;
-  muted('SHA-256 of the document as signed:');
-  muted(evidence.hashBefore, 8, 12);
+  if (signers.length > 1) {
+    muted('Each signature records the document as its signer saw it, so the');
+    muted('sequence below is what the chain asserts:');
+    y -= 4;
+    for (const [i, s] of signers.entries()) {
+      row(`${i + 1}. before`, s.hashBefore, 7.5);
+    }
+  } else {
+    muted('SHA-256 of the document as signed:');
+    muted(signers[0]?.hashBefore ?? '', 8, 12);
+  }
   muted('Signature image SHA-256:');
-  muted(evidence.signatureSha256, 8, 12);
+  for (const s of signers) muted(s.signatureSha256, 8, 12);
   y -= 10;
+
   for (const line of [
     'This page was appended when the document was signed. If the file still',
     'hashes to the value recorded against it, it has not been altered since.',
@@ -372,7 +399,7 @@ export async function sealSignedPdf(
     right: `${pdf.getPageCount()} / ${pdf.getPageCount()}`,
   });
 
-  return finalise(pdf, `${evidence.documentTitle} (signed)`, evidence.organizationName);
+  return Buffer.from(await pdf.save());
 }
 
 // ── Internals ───────────────────────────────────────────────────────────────

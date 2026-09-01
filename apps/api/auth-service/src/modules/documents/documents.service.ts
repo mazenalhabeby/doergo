@@ -375,6 +375,16 @@ export class DocumentsService {
           periodMonth: data.periodMonth ?? null,
           storageKey: filed.key,
           sha256: filed.hash,
+          /*
+            The same object, recorded twice on purpose.
+
+            storageKey moves to the sealed copy each time somebody signs;
+            originalKey never moves. Re-rendering from the original is what
+            keeps a three-party document at one signature block and one
+            certificate instead of six appended pages.
+          */
+          originalKey: filed.key,
+          originalSha256: filed.hash,
           sizeBytes: filed.sizeBytes,
           mimeType: filed.mimeType,
           status: data.asDraft
@@ -667,6 +677,9 @@ export class DocumentsService {
           title,
           storageKey: key,
           sha256: hash,
+          // The contract as rendered, before anybody signs it — see confirmUpload.
+          originalKey: key,
+          originalSha256: hash,
           sizeBytes: pdf.length,
           mimeType: 'application/pdf',
           status: isBlocking(template.signatureMode) ? 'AWAITING_SIGNATURE' : 'ISSUED',
@@ -1091,6 +1104,16 @@ export class DocumentsService {
           title: data.title?.trim() || type.label,
           storageKey: filed.key,
           sha256: filed.hash,
+          /*
+            The same object, recorded twice on purpose.
+
+            storageKey moves to the sealed copy each time somebody signs;
+            originalKey never moves. Re-rendering from the original is what
+            keeps a three-party document at one signature block and one
+            certificate instead of six appended pages.
+          */
+          originalKey: filed.key,
+          originalSha256: filed.hash,
           sizeBytes: filed.sizeBytes,
           mimeType: filed.mimeType,
           status: 'PENDING_VERIFICATION',
@@ -1872,31 +1895,6 @@ export class DocumentsService {
     const consentAt = new Date();
     const signedAt = new Date();
 
-    const sealed = await sealSignedPdf(originalBytes, {
-      documentTitle: document.title,
-      signerName: `${document.user.firstName} ${document.user.lastName}`.trim(),
-      signerEmail: document.user.email,
-      organizationName: document.organization?.name ?? '',
-      consentText: CONSENT_TEXT,
-      consentAt,
-      signedAt,
-      hashBefore,
-      sessionAuthenticatedAt: data.sessionAuthenticatedAt
-        ? new Date(data.sessionAuthenticatedAt)
-        : null,
-      ip: data.ctx?.ip ?? null,
-      userAgent: data.ctx?.userAgent ?? null,
-      appVersion: data.ctx?.appVersion ?? null,
-      lat: data.ctx?.lat ?? null,
-      lng: data.ctx?.lng ?? null,
-      signatureImage: png,
-      signatureSha256: signatureHash,
-    });
-
-    const hashAfter = sha256(sealed);
-    const sealedKey = documentKey(data.actor.organizationId, hashAfter, 'pdf');
-    await this.withStorage('sealing the document', () => store.put(sealedKey, sealed, 'application/pdf'));
-
     /*
       Whose step this was, and whether it was the last.
 
@@ -1920,6 +1918,90 @@ export class DocumentsService {
           select: { id: true },
         })
       : null;
+
+    /*
+      Re-rendered from the ORIGINAL with every signature so far, never appended
+      to the previously sealed copy.
+
+      Appending would add a signature page and a certificate per signer, so a
+      three-party time sheet would carry six pages of apparatus behind one page
+      of content. Re-rendering gives one block and one certificate however many
+      people sign — and it is safe because the sequence lives in the HASHES, not
+      in the layout.
+
+      Documents issued before originalKey existed fall back to their current
+      bytes, which for a single-signature document is the same thing.
+    */
+    const baseBytes = document.originalKey
+      ? await this.withStorage('reading the original', () => store.get(document.originalKey as string))
+      : originalBytes;
+
+    // The person signing NOW. Not document.user — that is who the document is
+    // ABOUT, and from step two onwards they are not the one holding the pen.
+    const signerUser = await this.prisma.user.findFirst({
+      where: { id: data.actor.userId, organizationId: data.actor.organizationId },
+      select: { firstName: true, lastName: true, email: true },
+    });
+    if (!signerUser) throw new NotFoundException('Signer not found');
+
+    const previous = await this.prisma.documentSignature.findMany({
+      where: { documentId: document.id },
+      orderBy: { signedAt: 'asc' },
+      include: {
+        user: { select: { firstName: true, lastName: true, email: true } },
+        signer: { select: { role: true, userId: true } },
+      },
+    });
+
+    const priorSigners = await Promise.all(
+      previous.map(async (s) => ({
+        role: roleLabel(s.signer?.role ?? null),
+        signerName: `${s.user.firstName} ${s.user.lastName}`.trim(),
+        signerEmail: s.user.email,
+        consentText: s.consentText,
+        consentAt: s.consentAt,
+        signedAt: s.signedAt,
+        hashBefore: s.hashBefore,
+        // Provenance for an earlier signature lives on its own event row; the
+        // certificate reprints what was recorded then, never today's request.
+        ...(await this.signatureContext(s.userId, document.id)),
+        signatureImage: await this.withStorage('reading a signature', () => store.get(s.signatureKey)),
+        signatureSha256: s.signatureSha256,
+        strength: (s.signer?.userId ? 'SESSION' : 'SESSION') as 'SESSION' | 'LINK',
+      })),
+    );
+
+    const sealed = await sealSignedPdf(baseBytes, {
+      documentTitle: document.title,
+      organizationName: document.organization?.name ?? '',
+      signers: [
+        ...priorSigners,
+        {
+          role: roleLabel(currentStep?.role ?? null),
+          signerName: `${signerUser.firstName} ${signerUser.lastName}`.trim(),
+          signerEmail: signerUser.email,
+          consentText: CONSENT_TEXT,
+          consentAt,
+          signedAt,
+          hashBefore,
+          sessionAuthenticatedAt: data.sessionAuthenticatedAt
+            ? new Date(data.sessionAuthenticatedAt)
+            : null,
+          ip: data.ctx?.ip ?? null,
+          userAgent: data.ctx?.userAgent ?? null,
+          appVersion: data.ctx?.appVersion ?? null,
+          lat: data.ctx?.lat ?? null,
+          lng: data.ctx?.lng ?? null,
+          signatureImage: png,
+          signatureSha256: signatureHash,
+          strength: 'SESSION',
+        },
+      ],
+    });
+
+    const hashAfter = sha256(sealed);
+    const sealedKey = documentKey(data.actor.organizationId, hashAfter, 'pdf');
+    await this.withStorage('sealing the document', () => store.put(sealedKey, sealed, 'application/pdf'));
 
     await this.prisma.$transaction(async (tx) => {
       await tx.document.update({
@@ -2470,6 +2552,31 @@ export class DocumentsService {
         },
       });
     }
+  }
+
+  /**
+   * Where an earlier signature was made from.
+   *
+   * Re-rendering the certificate must reprint what was recorded THEN, not the
+   * provenance of whoever is signing now — otherwise a manager's device would
+   * appear beside the worker's signature. The evidence trail already holds it:
+   * the SIGNED event carries ip, device, app version and location, written at
+   * the moment that signature was made.
+   */
+  private async signatureContext(signerUserId: string, documentId: string) {
+    const event = await this.prisma.documentEvent.findFirst({
+      where: { documentId, type: 'SIGNED', actorId: signerUserId },
+      orderBy: { at: 'desc' },
+      select: { ip: true, userAgent: true, appVersion: true, lat: true, lng: true },
+    });
+    return {
+      sessionAuthenticatedAt: null as Date | null,
+      ip: event?.ip ?? null,
+      userAgent: event?.userAgent ?? null,
+      appVersion: event?.appVersion ?? null,
+      lat: event?.lat ?? null,
+      lng: event?.lng ?? null,
+    };
   }
 
   /** The chain on one document, in order — the shape every caller reasons about. */
@@ -3431,6 +3538,23 @@ function cuidish(): string {
  */
 function canRenderInline(mimeType: string): boolean {
   return Object.prototype.hasOwnProperty.call(ALLOWED_MIME, mimeType);
+}
+
+/**
+ * The word printed beside a signature in the block.
+ *
+ * Three marks in a column are indistinguishable without it — and "MEMBER" is
+ * the schema's word, not one anybody reading a time sheet would use.
+ */
+function roleLabel(role: string | null): string {
+  switch (role) {
+    case 'MEMBER': return 'Member';
+    case 'RESPONSIBLE': return 'Responsible';
+    case 'ORG_REPRESENTATIVE': return 'For the company';
+    case 'CUSTOMER': return 'Customer';
+    // A document with no route has one signature and nothing to distinguish.
+    default: return 'Signed by';
+  }
 }
 
 function downloadName(title: string, mimeType: string): string {
