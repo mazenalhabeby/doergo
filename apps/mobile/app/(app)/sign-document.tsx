@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { documentsApi } from '../../src/lib/api';
+import { documentsApi, type DocumentChain } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { SignatureCapture, ScreenContainer } from '../../src/components';
 
@@ -55,6 +55,28 @@ export default function SignDocumentScreen() {
   const [hasRead, setHasRead] = useState(false);
   const [busy, setBusy] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
+
+  /*
+    Who has signed this already.
+
+    A manager countersigning a time sheet is agreeing with the worker's
+    signature, and being asked to do that without seeing it is being asked to
+    rubber-stamp — which is the thing a chain exists to prevent.
+
+    Silent when there is no chain: most documents have one signer, and an empty
+    panel on every payslip would be noise.
+  */
+  const [chain, setChain] = useState<DocumentChain | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    documentsApi
+      .chain(String(params.id))
+      .then((c) => { if (!cancelled && c?.steps?.length > 1) setChain(c); })
+      // Best effort: the panel is context, not a precondition for signing.
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [params.id]);
 
   /*
     Made once, deliberately, and never regenerated.
@@ -142,6 +164,41 @@ export default function SignDocumentScreen() {
 
       <ScreenContainer>
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xxl }}>
+          {/* Who else is on this document, and where it has got to. */}
+          {chain && (
+            <View style={[s.chainCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[s.chainTitle, { color: colors.textMuted }]}>
+                {t('documents.sign.chainTitle', 'Signatures on this document')}
+              </Text>
+              {chain.steps.map((cs) => {
+                const done = cs.status === 'SIGNED';
+                const skipped = cs.status === 'SKIPPED';
+                return (
+                  <View key={cs.order} style={s.chainRow}>
+                    <Ionicons
+                      name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : 'ellipse-outline'}
+                      size={16}
+                      color={done ? COLORS.success : skipped ? colors.textMuted : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        s.chainName,
+                        { color: skipped ? colors.textMuted : colors.textPrimary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {cs.name ?? t('documents.sign.chainNobody', 'Not required')}
+                      {cs.isYou && ` (${t('documents.sign.chainYou', 'you')})`}
+                    </Text>
+                    <Text style={[s.chainRole, { color: colors.textMuted }]} numberOfLines={1}>
+                      {t(`documents.sign.roles.${cs.role}`, cs.role)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
           {/* Progress. Counted, because knowing how much is left is what stops
               people abandoning halfway. */}
           {step !== 'done' && (
@@ -434,4 +491,26 @@ const s = StyleSheet.create({
   sigRule: { width: '80%', height: StyleSheet.hairlineWidth },
   sigHint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
   ring: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+
+  chainCard: {
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  chainTitle: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: SPACING.sm,
+  },
+  chainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: 5,
+  },
+  chainName: { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
+  chainRole: { fontSize: FONT_SIZE.xs },
 });

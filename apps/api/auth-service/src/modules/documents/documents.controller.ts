@@ -16,6 +16,11 @@ export class DocumentsController {
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_chain' })
+  documentChain(@Payload() data: any) {
+    return this.documents.documentChain(data);
+  }
+
   @MessagePattern({ cmd: 'documents_route_candidates' })
   routeCandidates(@Payload() data: any) {
     return this.documents.routeCandidates(data);

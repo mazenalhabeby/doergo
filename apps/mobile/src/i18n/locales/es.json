@@ -1780,7 +1780,16 @@
       "alreadySigned": "Ya estaba firmado: se conservó tu firma anterior.",
       "yourSignature": "Tu firma",
       "onDocument": "Ya está en tu documento, con la fecha y el registro de cómo se firmó.",
-      "openSigned": "Abrir el documento firmado"
+      "openSigned": "Abrir el documento firmado",
+      "chainTitle": "Firmas en este documento",
+      "chainNobody": "No requerido",
+      "chainYou": "tú",
+      "roles": {
+        "MEMBER": "Miembro",
+        "RESPONSIBLE": "Responsable",
+        "ORG_REPRESENTATIVE": "Empresa",
+        "CUSTOMER": "Cliente"
+      }
     },
     "sectionWaiting": "Pendiente de ti",
     "signOnPaper": "Firmar en papel",

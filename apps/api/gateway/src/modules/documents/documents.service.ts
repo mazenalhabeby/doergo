@@ -29,7 +29,8 @@ export class DocumentsGatewayService extends BaseGatewayService {
   listDrafts(data: unknown) { return this.send({ cmd: 'documents_list_drafts' }, data); }
   listTemplates(data: unknown) { return this.send({ cmd: 'documents_list_templates' }, data); }
   browse(data: unknown) { return this.send({ cmd: 'documents_browse' }, data); }
-  routeCandidates(data: unknown) { return this.send({ cmd: 'documents_route_candidates' }, data); }
+  documentChain(data: unknown) { return this.send({ cmd: 'documents_chain' }, data); }
+    routeCandidates(data: unknown) { return this.send({ cmd: 'documents_route_candidates' }, data); }
   listIssued(data: unknown) { return this.send({ cmd: 'documents_list_issued' }, data); }
   compliance(data: unknown) { return this.send({ cmd: 'documents_compliance' }, data); }
   awaitingVerification(data: unknown) { return this.send({ cmd: 'documents_awaiting_verification' }, data); }

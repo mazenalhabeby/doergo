@@ -1780,7 +1780,16 @@
       "alreadySigned": "Déjà signé — votre signature précédente a été conservée.",
       "yourSignature": "Votre signature",
       "onDocument": "Elle figure désormais sur votre document, avec la date et le détail de la signature.",
-      "openSigned": "Ouvrir le document signé"
+      "openSigned": "Ouvrir le document signé",
+      "chainTitle": "Signatures sur ce document",
+      "chainNobody": "Non requis",
+      "chainYou": "vous",
+      "roles": {
+        "MEMBER": "Membre",
+        "RESPONSIBLE": "Responsable",
+        "ORG_REPRESENTATIVE": "Entreprise",
+        "CUSTOMER": "Client"
+      }
     },
     "sectionWaiting": "En attente de vous",
     "signOnPaper": "Signer sur papier",

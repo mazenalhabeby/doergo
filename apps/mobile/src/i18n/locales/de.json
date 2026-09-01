@@ -1780,7 +1780,16 @@
       "alreadySigned": "Bereits unterschrieben — Ihre frühere Unterschrift bleibt erhalten.",
       "yourSignature": "Ihre Unterschrift",
       "onDocument": "Sie steht jetzt auf Ihrem Dokument, mit Datum und einem Nachweis, wie unterschrieben wurde.",
-      "openSigned": "Unterschriebenes Dokument öffnen"
+      "openSigned": "Unterschriebenes Dokument öffnen",
+      "chainTitle": "Unterschriften auf diesem Dokument",
+      "chainNobody": "Nicht erforderlich",
+      "chainYou": "Sie",
+      "roles": {
+        "MEMBER": "Mitarbeiter",
+        "RESPONSIBLE": "Verantwortlich",
+        "ORG_REPRESENTATIVE": "Unternehmen",
+        "CUSTOMER": "Kunde"
+      }
     },
     "sectionWaiting": "Wartet auf Sie",
     "signOnPaper": "Auf Papier unterschreiben",

@@ -53,6 +53,26 @@ export interface DocumentType {
   scanShape: 'CARD' | 'PASSPORT' | 'PAGE';
 }
 
+/** One step of a document's signing chain, as the signing screen sees it. */
+export interface DocumentChainStep {
+  order: number;
+  role: string;
+  status: 'PENDING' | 'SIGNED' | 'SKIPPED';
+  name: string | null;
+  signedAt: string | null;
+  isYou: boolean;
+}
+
+export interface DocumentChain {
+  documentId: string;
+  title: string;
+  steps: DocumentChainStep[];
+  total: number;
+  signed: number;
+  complete: boolean;
+  currentOrder: number | null;
+}
+
 export const documentsApi = {
   list: async (params?: { typeId?: string; year?: number; search?: string }): Promise<MemberDocument[]> => {
     const result = await fetchWithAuth<any>(
@@ -220,6 +240,18 @@ export const documentsApi = {
     POST, not GET — minting the link IS the "opened" event on the evidence
     trail. A GET would be prefetched and the record would fill with robots.
   */
+  /**
+   * Who has signed this, and who is next.
+   *
+   * Asked by the signing screen so somebody countersigning can see what is
+   * above their name. Agreeing with a signature you cannot see is
+   * rubber-stamping, which is the thing a chain is supposed to prevent.
+   */
+  chain: async (id: string): Promise<DocumentChain> => {
+    const result = await fetchWithAuth<any>(`/documents/${id}/chain`);
+    return result?.data ?? result;
+  },
+
   downloadUrl: async (id: string): Promise<{ url: string; fileName: string }> => {
     const result = await fetchWithAuth<any>(`/documents/${id}/download-url`, {
       method: 'POST',

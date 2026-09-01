@@ -2222,7 +2222,7 @@ export class DocumentsService {
       where: { id: { in: ids }, organizationId: data.actor.organizationId, status: 'DRAFT' },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        type: { select: { label: true, signatureMode: true } },
+        type: { select: { label: true, signatureMode: true, signerRoute: true } },
       },
     });
 
@@ -2242,6 +2242,16 @@ export class DocumentsService {
             issuedAt: new Date(),
           },
         });
+        /*
+          The chain is built HERE, not at upload.
+
+          Documents are staged as drafts and published in a batch, so upload is
+          not the moment they become real — publishing is. Building the route at
+          upload would resolve signers for documents that might be discarded,
+          and leave a published one with no chain at all.
+        */
+        await this.createSignerRows(tx, updated, draft.type.signerRoute);
+
         await tx.documentEvent.create({
           data: {
             documentId: draft.id,
@@ -2665,6 +2675,62 @@ export class DocumentsService {
 
     await this.notifyNextSigner(document.id, document.title);
     return { documentId: document.id, backToStep: target.order };
+  }
+
+  /**
+   * The chain on one document, for somebody about to sign it.
+   *
+   * A signer needs to see what is above their name — a manager countersigning a
+   * time sheet is agreeing with the worker's signature, and being asked to do
+   * that blind is being asked to rubber-stamp.
+   *
+   * Readable by anyone IN the chain, or by anyone allowed to see member
+   * documents. Deliberately not gated on `canOpenMemberDocuments`: who signed
+   * and when is metadata, and needing the right to read a payslip in order to
+   * see whether it was signed would make the whole register unusable.
+   */
+  async documentChain(data: { actor: DocumentActor; documentId: string }) {
+    const document = await this.prisma.document.findFirst({
+      where: { id: data.documentId, organizationId: data.actor.organizationId },
+      select: { id: true, title: true, userId: true },
+    });
+    if (!document) throw new NotFoundException('Document not found');
+
+    const rows = await this.prisma.documentSigner.findMany({
+      where: { documentId: document.id },
+      orderBy: { order: 'asc' },
+      select: {
+        order: true, role: true, status: true, userId: true, customerId: true, signedAt: true,
+        user: { select: { firstName: true, lastName: true } },
+        customer: { select: { name: true } },
+      },
+    });
+
+    const inChain = rows.some((r) => r.userId === data.actor.userId);
+    const isSubject = document.userId === data.actor.userId;
+    if (!inChain && !isSubject && !data.actor.canViewMemberDocuments) {
+      throw new ForbiddenException('You cannot see this document');
+    }
+
+    const steps = rows.map((r) => ({
+      order: r.order,
+      role: r.role,
+      status: r.status,
+      name: r.user ? `${r.user.firstName} ${r.user.lastName}`.trim() : (r.customer?.name ?? null),
+      signedAt: r.signedAt,
+      isYou: r.userId === data.actor.userId,
+    }));
+
+    const progress = chainProgress(rows as unknown as SignerStep[]);
+    return {
+      documentId: document.id,
+      title: document.title,
+      steps,
+      total: progress.total,
+      signed: progress.signed,
+      complete: progress.complete,
+      currentOrder: progress.current?.order ?? null,
+    };
   }
 
   /** The chain on one document, in order — the shape every caller reasons about. */

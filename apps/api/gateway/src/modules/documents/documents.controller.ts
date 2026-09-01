@@ -565,6 +565,19 @@ export class DocumentsController {
     });
   }
 
+  /**
+   * Who has signed this, and who is next.
+   *
+   * No permission decorator: the service allows anyone in the chain, the
+   * document's own member, or anyone who may see member documents. A signer has
+   * to be able to see what is above their name.
+   */
+  @Get(':id/chain')
+  @ApiOperation({ summary: 'The signing chain on one document' })
+  async documentChain(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.documents.documentChain({ actor: documentActor(user), documentId: id });
+  }
+
   @Get(':id/events')
   @ApiOperation({ summary: 'The evidence trail for one document' })
   async events(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
