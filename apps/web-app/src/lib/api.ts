@@ -43,7 +43,7 @@ import type {
   ShiftAssignment,
   SpaceRole,
   SpaceMember,
-  SpaceRolePermissions,
+  PermissionSet,
   GeofenceExcursion,
 } from '@hbcfield/shared/client';
 
@@ -4145,14 +4145,14 @@ export const spaceRolesApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data || [];
   },
-  create: async (data: { name: string; description?: string; color?: string; permissions?: Partial<SpaceRolePermissions> }) => {
+  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet }) => {
     const res = await api.post<{ success: boolean; data: SpaceRole }>('/space-roles', data);
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
   update: async (
     id: string,
-    data: { name?: string; description?: string; color?: string; permissions?: Partial<SpaceRolePermissions>; isActive?: boolean },
+    data: { name?: string; description?: string; color?: string; permissions?: PermissionSet; isActive?: boolean },
   ) => {
     const res = await api.patch<{ success: boolean; data: SpaceRole }>(`/space-roles/${id}`, data);
     if (res.error) throw new Error(res.error);

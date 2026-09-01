@@ -5601,7 +5601,9 @@
       "members": "Membres",
       "reports": "Rapports",
       "attendance": "Présence",
-      "crm": "CRM / Clients"
+      "crm": "CRM / Clients",
+      "assets": "Équipements",
+      "tracking": "Suivi de position"
     },
     "permissionCount": "{{count}} permissions",
     "memberCount_one": "{{count}} membre",

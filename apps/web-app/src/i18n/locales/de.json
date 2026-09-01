@@ -5592,7 +5592,9 @@
       "members": "Mitglieder",
       "reports": "Berichte",
       "attendance": "Anwesenheit",
-      "crm": "CRM / Kunden"
+      "crm": "CRM / Kunden",
+      "assets": "Betriebsmittel",
+      "tracking": "Standortverfolgung"
     },
     "permissionCount": "{{count}} Berechtigungen",
     "memberCount_one": "{{count}} Mitglied",

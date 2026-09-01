@@ -10,10 +10,11 @@ import { notify } from "@/lib/toast"
 import { spaceRolesApi, spaceMembersApi, employeesApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
 import { fetchAllPages } from "@/lib/paginate"
 import {
-  SPACE_ROLE_PERMISSION_SCHEMA,
+  ACCESS_PERMISSION_SCHEMA,
   type SpaceRole,
   type SpaceMember,
-  type SpaceRolePermissions,
+  type PermissionSet,
+  type AccessPermissionKey,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -64,11 +65,30 @@ import { MemberRoutingEditor } from "./member-routing-editor"
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
 
-const emptyPermissions = (): SpaceRolePermissions =>
-  SPACE_ROLE_PERMISSION_SCHEMA.reduce((acc, p) => {
+/*
+  What a space role can grant — derived, not listed.
+
+  This screen offered four attendance permissions, which is what a space role
+  meant before the unified access model. It has meant more than that for a
+  while: the server whitelists whatever ACCESS_PERMISSION_SCHEMA marks as
+  grantable on a space, and resolveAccess honours all of them per space. So the
+  other twelve — tasks, CRM, reports, assets, tracking, members — were storable
+  and enforced, and simply could not be ticked.
+
+  Derived from the same constant the server filters on, so the two cannot drift
+  again: adding a permission to the catalogue with scopes ['org','space'] makes
+  it appear here, and nowhere is there a second list to remember.
+*/
+const SPACE_PERMISSIONS = ACCESS_PERMISSION_SCHEMA.filter((p) => p.scopes.includes("space"))
+
+/** Grouped by domain, so twenty checkboxes read as five short subjects. */
+const SPACE_PERMISSION_DOMAINS = [...new Set(SPACE_PERMISSIONS.map((p) => p.domain))]
+
+const emptyPermissions = (): PermissionSet =>
+  SPACE_PERMISSIONS.reduce((acc, p) => {
     acc[p.key] = false
     return acc
-  }, {} as SpaceRolePermissions)
+  }, {} as PermissionSet)
 
 export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApartments?: boolean }) {
   return (
@@ -142,7 +162,7 @@ function SubRolesSection() {
       ) : (
         <div className="space-y-2">
           {roles.map((role) => {
-            const activePerms = SPACE_ROLE_PERMISSION_SCHEMA.filter((p) => role.permissions?.[p.key])
+            const activePerms = SPACE_PERMISSIONS.filter((p) => role.permissions?.[p.key])
             return (
               <div
                 key={role.id}
@@ -238,7 +258,7 @@ function RoleDialog({
   const [name, setName] = useState(role?.name || "")
   const [description, setDescription] = useState(role?.description || "")
   const [color, setColor] = useState(role?.color || DEFAULT_ROLE_COLOR)
-  const [permissions, setPermissions] = useState<SpaceRolePermissions>(
+  const [permissions, setPermissions] = useState<PermissionSet>(
     role?.permissions || emptyPermissions(),
   )
 
@@ -255,7 +275,7 @@ function RoleDialog({
     onError: (err: Error) => notify.error(err.message || t("scheduling.roles.toast.saveFailed")),
   })
 
-  const togglePerm = (key: keyof SpaceRolePermissions) =>
+  const togglePerm = (key: AccessPermissionKey) =>
     setPermissions((prev) => ({ ...prev, [key]: !prev[key] }))
 
   const handleSave = () => {
@@ -296,22 +316,40 @@ function RoleDialog({
 
           <div className="space-y-2">
             <Label>{t("scheduling.roles.fields.permissions")}</Label>
-            <div className="space-y-2">
-              {SPACE_ROLE_PERMISSION_SCHEMA.map((perm) => (
-                <label
-                  key={perm.key}
-                  className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/40 transition-colors"
-                >
-                  <Checkbox
-                    checked={permissions[perm.key]}
-                    onCheckedChange={() => togglePerm(perm.key)}
-                    className="mt-0.5"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{t(`scheduling.roles.permissions.${perm.key}.label`)}</p>
-                    <p className="text-xs text-muted-foreground">{t(`scheduling.roles.permissions.${perm.key}.description`)}</p>
+            <div className="space-y-4">
+              {SPACE_PERMISSION_DOMAINS.map((domain) => (
+                <div key={domain}>
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t(`roles.domains.${domain}`, domain)}
+                  </p>
+                  <div className="space-y-1.5">
+                    {SPACE_PERMISSIONS.filter((p) => p.domain === domain).map((perm) => (
+                      <label
+                        key={perm.key}
+                        className="flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
+                      >
+                        <Checkbox
+                          checked={permissions[perm.key] === true}
+                          onCheckedChange={() => togglePerm(perm.key)}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0">
+                          {/*
+                            The catalogue's own label and description are the
+                            fallback, so a newly added permission is readable
+                            here the day it exists rather than rendering its key.
+                          */}
+                          <p className="text-sm font-medium text-foreground">
+                            {t(`scheduling.roles.permissions.${perm.key}.label`, perm.label)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t(`scheduling.roles.permissions.${perm.key}.description`, perm.description)}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
                   </div>
-                </label>
+                </div>
               ))}
             </div>
           </div>

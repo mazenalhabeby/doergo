@@ -7,6 +7,7 @@
  */
 
 import { WorkModel, ShiftReminderState, ShiftRecurrence } from './enums';
+import type { PermissionSet } from './permissions';
 
 // ============================================================================
 // SHIFT DEFINITION
@@ -114,7 +115,20 @@ export const SPACE_ROLE_PERMISSION_SCHEMA = [
 
 export type SpaceRolePermissionKey = typeof SPACE_ROLE_PERMISSION_SCHEMA[number]['key'];
 
-export type SpaceRolePermissions = Record<SpaceRolePermissionKey, boolean>;
+/**
+ * What a space role grants.
+ *
+ * Was `Record<SpaceRolePermissionKey, boolean>` — the four attendance keys
+ * below, which is what a space role meant before the unified access model.
+ * It has meant more than that since: the server whitelists everything
+ * ACCESS_PERMISSION_SCHEMA marks grantable on a space (sixteen keys), stores
+ * it on the same JSON column, and resolveAccess honours all of it per space.
+ * The narrow type made twelve of them un-typeable, so the editor could not
+ * offer what the backend already enforced.
+ *
+ * PermissionSet is what is actually stored, so it is what this should say.
+ */
+export type SpaceRolePermissions = PermissionSet;
 
 export interface SpaceRole {
   id: string;
