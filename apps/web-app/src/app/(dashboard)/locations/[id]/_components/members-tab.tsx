@@ -7,7 +7,7 @@ import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, 
 import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
-import { spaceRolesApi, spaceMembersApi, employeesApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
+import { spaceRolesApi, spaceMembersApi, organizationsApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
 import { fetchAllPages } from "@/lib/paginate"
 import {
   ACCESS_PERMISSION_SCHEMA,
@@ -402,9 +402,24 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
     people missing from the picker looked like people who did not exist. Paged
     through instead, with the shared helper's runaway guard still in place.
   */
-  const { data: employeeList } = useQuery({
-    queryKey: ["employees-for-space-members"],
-    queryFn: () => fetchAllPages((page) => employeesApi.list({ limit: 100, page, status: "active" })),
+  /*
+    Everyone on the staff — which is NOT what /employees returns.
+
+    That endpoint filters `role: EMPLOYEE`, so it answers "who are the field
+    staff" and deliberately excludes admins and managers. Sourcing the
+    responsible from it meant the COO could not be chosen to sign off for
+    anybody: the one list that had to include leadership was the one that
+    excludes it by definition.
+
+    `lite` because this draws a row — a name, an avatar and a label — and has
+    no use for Access Profiles or allow-lists.
+  */
+  const { data: orgPeople } = useQuery({
+    queryKey: ["org-people-for-routing"],
+    queryFn: () =>
+      fetchAllPages((page) =>
+        organizationsApi.getMembers({ limit: 200, page, lite: true }),
+      ),
   })
   const { data: roles } = useQuery({
     queryKey: ["space-roles"],
@@ -412,7 +427,18 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
   })
 
   const assignedIds = new Set((members || []).map((m) => m.userId))
-  const availableEmployees = (employeeList ?? []).filter((e) => !assignedIds.has(e.id))
+  /*
+    Anyone on the staff can be added to a space, not only field employees.
+
+    This read /employees too, which filters `role: EMPLOYEE` — so an admin or a
+    manager could not be added to their own workspace, and neither of the two
+    accounts running this business appears in any space. That is not a policy
+    anybody chose; it is the shape of an endpoint named for field staff being
+    used as if it meant "people".
+  */
+  const availableEmployees = (orgPeople ?? []).filter(
+    (e) => e.isActive !== false && !assignedIds.has(e.id),
+  )
 
   // Names held by more than one of the people on offer — the only case where
   // the email earns its place in the row.
@@ -544,7 +570,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                   spaceId={spaceId}
                   member={m}
                   roster={members}
-                  orgMembers={employeeList ?? []}
+                  orgMembers={orgPeople ?? []}
                 />
               )}
             </div>

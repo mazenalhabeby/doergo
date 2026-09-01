@@ -51,6 +51,13 @@ const DIRECTORY_MEMBER_SELECT = {
   specialty: true,
   canManageUsers: true,
   canViewAllTasks: true,
+  // The two fields a people-picker needs to say WHICH person this is.
+  // `email` is the only thing that separates two accounts belonging to the same
+  // human — a real case here, and the reason a document was once routed to a
+  // login nobody was signed into. `memberRole` is the label when nobody typed a
+  // job title. Both are cheap: a scalar already on the row, and one small join.
+  email: true,
+  memberRole: { select: { name: true } },
 } as const;
 
 /** Just enough to draw one row of a manager picker. */
