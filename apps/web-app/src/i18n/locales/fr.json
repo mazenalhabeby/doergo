@@ -4043,7 +4043,7 @@
     "emptyHint": "Cliquez sur « Nouvelle facture » pour en créer une",
     "actions": {
       "view": "Voir",
-      "send": "Envoyer",
+      "send": "Marquer comme envoyée",
       "markPaid": "Marquer comme payée",
       "print": "Imprimer",
       "pdf": "PDF"

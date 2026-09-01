@@ -5,7 +5,7 @@ import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Download, Printer, Send, CheckCircle, XCircle, Trash2, Loader2 } from "lucide-react"
+import { ArrowLeft, Download, Printer, FileCheck, CheckCircle, XCircle, Trash2, Loader2 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
@@ -160,7 +160,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
             </Button>
             {isAdmin && inv.status === "DRAFT" && (
               <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("SENT")}>
-                <Send className="size-3.5" /> {t("invoices.actions.send")}
+                <FileCheck className="size-3.5" /> {t("invoices.actions.send")}
               </Button>
             )}
             {isAdmin && (inv.status === "SENT" || inv.status === "OVERDUE") && (

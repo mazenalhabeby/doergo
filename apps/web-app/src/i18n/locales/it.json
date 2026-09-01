@@ -4043,7 +4043,7 @@
     "emptyHint": "Clicca su \"Nuova fattura\" per crearne una",
     "actions": {
       "view": "Visualizza",
-      "send": "Invia",
+      "send": "Segna come inviata",
       "markPaid": "Segna come pagata",
       "print": "Stampa",
       "pdf": "PDF"

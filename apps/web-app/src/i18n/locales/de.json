@@ -4034,7 +4034,7 @@
     "emptyHint": "Klicken Sie auf „Neue Rechnung“, um eine zu erstellen",
     "actions": {
       "view": "Ansehen",
-      "send": "Senden",
+      "send": "Als gesendet markieren",
       "markPaid": "Als bezahlt markieren",
       "print": "Drucken",
       "pdf": "PDF"

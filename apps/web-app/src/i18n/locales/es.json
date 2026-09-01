@@ -4034,7 +4034,7 @@
     "emptyHint": "Toca \"Nueva factura\" para crear una",
     "actions": {
       "view": "Ver",
-      "send": "Enviar",
+      "send": "Marcar como enviada",
       "markPaid": "Marcar como pagada",
       "print": "Imprimir",
       "pdf": "PDF"

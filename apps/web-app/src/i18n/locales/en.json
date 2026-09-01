@@ -4034,7 +4034,7 @@
     "emptyHint": "Click \"New Invoice\" to create one",
     "actions": {
       "view": "View",
-      "send": "Send",
+      "send": "Mark as sent",
       "markPaid": "Mark Paid",
       "print": "Print",
       "pdf": "PDF"

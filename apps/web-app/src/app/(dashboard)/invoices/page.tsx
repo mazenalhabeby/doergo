@@ -10,7 +10,7 @@ import {
   Plus,
   Search,
   MoreHorizontal,
-  Send,
+  FileCheck,
   CheckCircle,
   XCircle,
   DollarSign,
@@ -347,7 +347,7 @@ function InvoicesPageInner() {
                         <DropdownMenuItem onClick={() => router.push(`/invoices/${inv.id}`)}><Eye className="size-3.5 mr-2" /> {t("invoices.actions.view")}</DropdownMenuItem>
                         {inv.status === "DRAFT" && (
                           <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "SENT" })}>
-                            <Send className="size-3.5 mr-2" /> {t("invoices.actions.send")}
+                            <FileCheck className="size-3.5 mr-2" /> {t("invoices.actions.send")}
                           </DropdownMenuItem>
                         )}
                         {/* OVERDUE too, not just SENT. Being paid late is the
