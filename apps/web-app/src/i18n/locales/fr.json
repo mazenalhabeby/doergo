@@ -6110,7 +6110,7 @@
       "heading": "Notifications et contact",
       "intro": "Choisissez quels rôles de l'espace de travail sont notifiés à propos des membres ici, et quels rôles les membres peuvent contacter. Vide = les responsables de l'espace de travail.",
       "saved": "Routage mis à jour",
-      "noRoles": "Aucun rôle d'espace de travail défini pour le moment.",
+      "noRoles": "Aucun rôle d’espace pour l’instant. Créez-en un ci-dessus.",
       "notifyTitle": "Notifiés à propos des membres ici",
       "contactTitle": "Contactables par les membres ici",
       "notifyEmpty": "Par défaut : les responsables de l'espace de travail",
@@ -6123,7 +6123,15 @@
       "noPeople": "Aucun autre membre avec un rôle dans cet espace de travail.",
       "memberApprove": "Valide pour {{name}}",
       "approveEmpty": "Personne — les documents exigeant un responsable ne peuvent pas être émis",
-      "noColleagues": "Personne d’autre n’est encore dans cette organisation."
+      "noColleagues": "Personne d’autre n’est encore dans cette organisation.",
+      "choosePeople": "Choisir quelqu’un…",
+      "searchPeople": "Rechercher par nom ou fonction…",
+      "noMatches": "Personne ne correspond à « {{q}} ».",
+      "approveTitle": "Valide",
+      "chooseRole": "Choisir un rôle…",
+      "holderWarning": "Un document est refusé si personne ne correspond, et l’émetteur doit choisir si plusieurs correspondent.",
+      "approveResolves_one": "Dans cet espace : {{count}} personne l’occupe",
+      "approveResolves_other": "Dans cet espace : {{count}} personnes l’occupent"
     }
   },
   "spaceSharing": {

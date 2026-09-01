@@ -6110,7 +6110,7 @@
       "heading": "Notifiche e contatti",
       "intro": "Scegli quali ruoli dello spazio di lavoro ricevono notifiche sui membri qui e quali ruoli i membri possono contattare. Vuoto = i responsabili dello spazio di lavoro.",
       "saved": "Instradamento aggiornato",
-      "noRoles": "Nessun ruolo dello spazio di lavoro ancora definito.",
+      "noRoles": "Non ci sono ancora ruoli per lo spazio. Creane uno sopra.",
       "notifyTitle": "Notificati sui membri qui",
       "contactTitle": "Contattabili dai membri qui",
       "notifyEmpty": "Predefinito: i responsabili dello spazio di lavoro",
@@ -6123,7 +6123,15 @@
       "noPeople": "Nessun altro membro con un ruolo in questo spazio di lavoro.",
       "memberApprove": "Approva per {{name}}",
       "approveEmpty": "Nessuno — i documenti che richiedono un responsabile non possono essere emessi",
-      "noColleagues": "Non c’è ancora nessun altro in questa organizzazione."
+      "noColleagues": "Non c’è ancora nessun altro in questa organizzazione.",
+      "choosePeople": "Scegli qualcuno…",
+      "searchPeople": "Cerca per nome o ruolo…",
+      "noMatches": "Nessuno corrisponde a “{{q}}”.",
+      "approveTitle": "Approva",
+      "chooseRole": "Scegli un ruolo…",
+      "holderWarning": "Un documento viene rifiutato se non lo ricopre nessuno, e chiede a chi lo emette se lo ricoprono in più.",
+      "approveResolves_one": "In questo spazio: {{count}} persona lo ricopre",
+      "approveResolves_other": "In questo spazio: {{count}} persone lo ricoprono"
     }
   },
   "spaceSharing": {

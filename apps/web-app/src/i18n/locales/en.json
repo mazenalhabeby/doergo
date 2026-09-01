@@ -6101,7 +6101,7 @@
       "heading": "Notifications & contact",
       "intro": "Choose which workspace roles are notified about members here, and which roles members here can contact. Empty = the workspace's leaders.",
       "saved": "Routing updated",
-      "noRoles": "No workspace roles defined yet.",
+      "noRoles": "No space roles exist yet. Create one above.",
       "notifyTitle": "Notified about members here",
       "contactTitle": "Contactable by members here",
       "notifyEmpty": "Default: the workspace's leaders",
@@ -6114,7 +6114,15 @@
       "noPeople": "No other members with a role in this workspace.",
       "memberApprove": "Signs off for {{name}}",
       "approveEmpty": "Nobody — documents needing a responsible cannot be issued",
-      "noColleagues": "Nobody else is in this organisation yet."
+      "noColleagues": "Nobody else is in this organisation yet.",
+      "choosePeople": "Choose someone…",
+      "searchPeople": "Search by name or job title…",
+      "noMatches": "Nobody matches “{{q}}”.",
+      "approveTitle": "Signs off",
+      "chooseRole": "Choose a role…",
+      "holderWarning": "A document is refused when this resolves to nobody, and asks the issuer to choose when it resolves to several.",
+      "approveResolves_one": "In this workspace: {{count}} person holds it",
+      "approveResolves_other": "In this workspace: {{count}} people hold it"
     }
   },
   "spaceSharing": {

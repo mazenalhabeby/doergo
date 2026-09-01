@@ -566,12 +566,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                 </div>
               </div>
               {routingOpen === m.id && (
-                <MemberRoutingEditor
-                  spaceId={spaceId}
-                  member={m}
-                  roster={members}
-                  orgMembers={orgPeople ?? []}
-                />
+                <MemberRoutingEditor spaceId={spaceId} member={m} />
               )}
             </div>
           ))}
@@ -776,7 +771,7 @@ function MemberRoleSelect({
           >
             <span
               className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: r.color ?? "var(--muted-foreground)" }}
+              style={{ backgroundColor: r.color ?? "hsl(var(--muted-foreground))" }}
             />
             <span className="min-w-0 flex-1 truncate">{r.name}</span>
             {r.id === current?.id && <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
