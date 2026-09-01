@@ -29,7 +29,8 @@ interface DocumentRequirementsValue {
   /** Types the member has to supply. Never what the org owes them. */
   toUpload: { typeId: string; label: string; blocksWork: boolean }[];
   /** Already issued to them, waiting on a signature. The other half. */
-  toSign: { id: string; title: string }[];
+  // `forMember` is set when it is somebody else's document waiting on you.
+  toSign: { id: string; title: string; forMember?: string | null }[];
   /** Held, valid, but running out — worth a mention, not a demand. */
   expiringSoon: { typeId: string; label: string; expiresOn: string | null }[];
   /** Everything waiting on the member, of either kind. */

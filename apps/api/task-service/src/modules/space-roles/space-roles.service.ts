@@ -130,6 +130,8 @@ export class SpaceRolesService {
         notifyUserIds: m.notifyUserIds,
         contactRoleIds: m.contactRoleIds,
         contactUserIds: m.contactUserIds,
+        approveRoleIds: m.approveRoleIds,
+        approveUserIds: m.approveUserIds,
       })),
     );
   }
@@ -179,6 +181,8 @@ export class SpaceRolesService {
     notifyUserIds?: string[];
     contactRoleIds?: string[];
     contactUserIds?: string[];
+    approveRoleIds?: string[];
+    approveUserIds?: string[];
   }) {
     const member = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
@@ -192,8 +196,18 @@ export class SpaceRolesService {
         notifyUserIds: arr(data.notifyUserIds),
         contactRoleIds: arr(data.contactRoleIds),
         contactUserIds: arr(data.contactUserIds),
+        approveRoleIds: arr(data.approveRoleIds),
+        approveUserIds: arr(data.approveUserIds),
       },
-      select: { id: true, notifyRoleIds: true, notifyUserIds: true, contactRoleIds: true, contactUserIds: true },
+      select: {
+        id: true,
+        notifyRoleIds: true,
+        notifyUserIds: true,
+        contactRoleIds: true,
+        contactUserIds: true,
+        approveRoleIds: true,
+        approveUserIds: true,
+      },
     });
     return success(updated, 'Routing updated');
   }

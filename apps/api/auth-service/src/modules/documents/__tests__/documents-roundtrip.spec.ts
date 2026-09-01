@@ -48,7 +48,8 @@ describe('DocumentsService — the upload round trip', () => {
 
   const prisma: Record<string, any> = {
     documentType: { findFirst: jest.fn() },
-    document: { create: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    document: { create: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+    documentSigner: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
     documentEvent: { create: jest.fn() },
     user: { findFirst: jest.fn() },
     // Runs the callback against the same mocks — enough to assert what the

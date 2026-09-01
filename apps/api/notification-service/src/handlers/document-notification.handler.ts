@@ -139,6 +139,66 @@ export class DocumentNotificationHandler {
    * This handler stays a delivery mechanism rather than growing a second copy
    * of "who is allowed to review".
    */
+  /**
+   * The chain has moved, and it is now somebody's turn.
+   *
+   * This is the message that makes a multi-party document work at all. Without
+   * it the next signer learns a document is waiting only by opening the app and
+   * looking — which nobody does — and a time sheet sits unsigned while everyone
+   * involved believes it moved on.
+   *
+   * Deliberately NOT the same message as `document_issued`. That one tells the
+   * subject a document about them exists; this one tells somebody else that
+   * work has arrived on their desk, about a person who is not them. Naming the
+   * member is the whole content of it.
+   */
+  @EventPattern('document_awaiting_signature')
+  async handleAwaitingSignature(
+    @Payload()
+    data: {
+      documentId: string;
+      userId: string;
+      email?: string;
+      firstName?: string;
+      title: string;
+      memberName?: string;
+      step?: number;
+      totalSteps?: number;
+    },
+  ) {
+    this.logger.log(
+      `Signature needed: doc=${data.documentId} → user=${data.userId} (step ${data.step ?? '?'}/${data.totalSteps ?? '?'})`,
+    );
+
+    const payload = {
+      documentId: data.documentId,
+      title: data.title,
+      memberName: data.memberName ?? null,
+      step: data.step ?? null,
+      totalSteps: data.totalSteps ?? null,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.websocketGateway.emitToUser(data.userId, 'document_awaiting_signature', payload);
+
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        'Your signature is needed',
+        // Whose document it is, because that is what tells the recipient
+        // whether it is theirs to sign and how urgent it is.
+        data.memberName
+          ? `${data.title} — ${data.memberName} is waiting for you to sign`
+          : `${data.title} is waiting for your signature`,
+        { type: 'document_awaiting_signature', documentId: data.documentId },
+      );
+    } catch (error) {
+      // Never rethrow: the step advanced whether or not the phone was
+      // reachable, and the register shows it waiting either way.
+      this.logger.error(`Could not push signature request ${data.documentId} to ${data.userId}: ${error}`);
+    }
+  }
+
   @EventPattern('document_submitted')
   async handleSubmitted(
     @Payload()

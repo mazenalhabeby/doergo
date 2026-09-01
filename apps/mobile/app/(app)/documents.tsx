@@ -356,6 +356,19 @@ export default function DocumentsScreen() {
             <Text style={[s.meta, { color: colors.textMuted }]}>{fileSize(item.sizeBytes)}</Text>
           </View>
 
+          {/*
+            Whose it is, when it is not yours.
+
+            A manager's waiting list is otherwise nine rows reading "Time sheet
+            September" with nothing to tell them apart, and signing the wrong
+            one is a signature on somebody else's hours.
+          */}
+          {item.forMember && (
+            <Text style={[s.meta, { color: colors.textMuted }]} numberOfLines={1}>
+              {t('documents.onBehalfOf', { name: item.forMember })}
+            </Text>
+          )}
+
           {(item.needsSignature || chip || onPaper) && (
             <View style={s.chips}>
               {onPaper && (

@@ -428,6 +428,18 @@ export default function MyDocumentsPage() {
                       </span>
                     )}
                     {/*
+                      Whose document it is, when it is not the reader's.
+
+                      A responsible countersigning nine time sheets sees nine
+                      rows with the same title otherwise, and signing the wrong
+                      one puts their name on somebody else's hours.
+                    */}
+                    {d.forMember && (
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {t("documents.onBehalfOf", { name: d.forMember })}
+                      </span>
+                    )}
+                    {/*
                       What the member supplied, and where it got to.
 
                       Silence here would be the worst outcome of the whole

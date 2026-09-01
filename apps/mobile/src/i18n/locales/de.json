@@ -1867,6 +1867,7 @@
       "partUpload": "{{count}} hochladen",
       "partSign": "{{count}} unterschreiben",
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
-    }
+    },
+    "onBehalfOf": "Für {{name}}"
   }
 }

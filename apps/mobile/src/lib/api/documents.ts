@@ -32,6 +32,14 @@ export interface MemberDocument {
   standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
   /** Why a reviewer refused something the member supplied. */
   rejectionReason?: string | null;
+  /**
+   * Whose document this is, when it is not yours.
+   *
+   * Set only on a document waiting on your signature that belongs to somebody
+   * else — a responsible countersigning a worker's time sheet. Null on your
+   * own, where naming the person would be naming the reader.
+   */
+  forMember?: string | null;
 }
 
 export interface DocumentType {
@@ -118,7 +126,10 @@ export const documentsApi = {
   pending: async (): Promise<{
     toUpload: { typeId: string; label: string; blocksWork: boolean }[];
     expiring: { typeId: string; label: string; expiresOn: string | null }[];
-    toSign: { id: string; title: string }[];
+    // `forMember` is set when the document belongs to somebody else and is
+    // waiting on you — a responsible countersigning a worker's time sheet.
+    // Null on your own.
+    toSign: { id: string; title: string; forMember?: string | null }[];
   }> => {
     const result = await fetchWithAuth<any>('/documents/pending');
     const data = result?.data ?? result ?? {};

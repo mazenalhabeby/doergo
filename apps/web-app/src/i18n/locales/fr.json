@@ -6114,7 +6114,9 @@
       "people": "Personnes spécifiques",
       "memberNotify": "Notifiés à propos de {{name}}",
       "memberContact": "{{name}} peut contacter",
-      "noPeople": "Aucun autre membre avec un rôle dans cet espace de travail."
+      "noPeople": "Aucun autre membre avec un rôle dans cet espace de travail.",
+      "memberApprove": "Valide pour {{name}}",
+      "approveEmpty": "Personne — les documents exigeant un responsable ne peuvent pas être émis"
     }
   },
   "spaceSharing": {
@@ -7564,7 +7566,9 @@
           "RESPONSIBLE": "issu de son routage d’approbation",
           "ORG_REPRESENTATIVE": "quelqu’un signant au nom de l’organisation",
           "CUSTOMER": "le client des espaces où il travaille"
-        }
+        },
+        "notReady": "La signature du client n’est pas encore disponible.",
+        "soon": "bientôt"
       }
     },
     "supply": {
@@ -7714,7 +7718,8 @@
         "complete_one": "{{count}} signature recueillie",
         "complete_other": "Les {{count}} signatures recueillies"
       }
-    }
+    },
+    "onBehalfOf": "Pour {{name}}"
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée."

@@ -1867,6 +1867,7 @@
       "partUpload": "{{count}} por subir",
       "partSign": "{{count}} por firmar",
       "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
-    }
+    },
+    "onBehalfOf": "Para {{name}}"
   }
 }

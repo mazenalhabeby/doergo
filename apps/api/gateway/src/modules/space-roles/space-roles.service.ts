@@ -60,6 +60,8 @@ export class SpaceRolesService extends BaseGatewayService {
     notifyUserIds?: string[];
     contactRoleIds?: string[];
     contactUserIds?: string[];
+    approveRoleIds?: string[];
+    approveUserIds?: string[];
   }) {
     return this.send({ cmd: 'update_space_member_routing' }, data);
   }

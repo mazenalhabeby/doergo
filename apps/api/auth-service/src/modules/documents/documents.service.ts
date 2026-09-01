@@ -39,6 +39,7 @@ import {
   parseRoute,
   routeProblem,
   nextPendingStep,
+  isCurrentSigner,
   chainProgress,
   resolveMemberRouting,
   type DocumentSignerRole,
@@ -265,6 +266,22 @@ export class DocumentsService {
     if (data.patch.signerRoute !== undefined) {
       const problem = routeProblem(data.patch.signerRoute);
       if (problem) throw new BadRequestException(problem);
+
+      /*
+        Not in routeProblem, deliberately.
+
+        parseRoute treats an invalid route as NO route, so putting this rule
+        there would make every type that already contains a customer step
+        quietly fall back to a single signature — a behaviour change nobody
+        asked for, applied to documents already in flight. Here it only ever
+        stops a NEW route being saved.
+      */
+      const steps = Array.isArray(data.patch.signerRoute) ? data.patch.signerRoute : [];
+      if (steps.some((s: any) => s?.role === 'CUSTOMER')) {
+        throw new BadRequestException(
+          'Customer signing is not available yet, so a route cannot ask for it.',
+        );
+      }
     }
 
     // `cadence` and `direction` are absent from the patch on purpose. Changing
@@ -1581,11 +1598,21 @@ export class DocumentsService {
       }),
       this.prisma.document.findMany({
         where: { organizationId: data.actor.organizationId, userId: data.actor.userId },
-        select: { id: true, title: true, typeId: true, status: true, expiresOn: true },
+        select: {
+          id: true,
+          title: true,
+          typeId: true,
+          status: true,
+          expiresOn: true,
+          // Same reason as the documents list: with a route, AWAITING_SIGNATURE
+          // means somebody has to sign, not that THIS person does.
+          signers: { select: { order: true, role: true, status: true, userId: true, customerId: true } },
+        },
         orderBy: { issuedAt: 'desc' },
       }),
     ]);
 
+    const assigned = await this.documentsWaitingOnMe(data.actor);
     const statuses = requirementStatuses(member, types, held);
 
     return {
@@ -1593,9 +1620,23 @@ export class DocumentsService {
       // own documents screen rather than offering a second opinion.
       toUpload: statuses.filter((r) => waitingOnMember(r)),
       expiring: statuses.filter((r) => r.state === 'EXPIRING'),
-      toSign: held
-        .filter((d) => d.status === 'AWAITING_SIGNATURE')
-        .map((d) => ({ id: d.id, title: d.title })),
+      toSign: [
+        ...held
+          .filter(
+            (d) =>
+              d.status === 'AWAITING_SIGNATURE' &&
+              ((d.signers ?? []).length === 0 ||
+                isCurrentSigner((d.signers ?? []) as unknown as SignerStep[], data.actor.userId)),
+          )
+          .map((d) => ({ id: d.id, title: d.title, forMember: null as string | null })),
+        // Somebody else's, waiting on me. Named, because "Time sheet September"
+        // on a manager's list is nine identical rows without the member.
+        ...assigned.map((d) => ({
+          id: d.id,
+          title: d.title,
+          forMember: `${d.user.firstName} ${d.user.lastName}`.trim(),
+        })),
+      ],
     };
   }
 
@@ -2608,6 +2649,25 @@ export class DocumentsService {
 
     for (const [i, step] of route.entries()) {
       const order = i + 1;
+
+      /*
+        A customer cannot sign yet, so a customer step must not be created.
+
+        Resolving it would produce a PENDING step nobody on earth can complete:
+        clients have no login here unless a portal account was made for them,
+        and the emailed-link route is not built (and could not deliver while
+        outbound mail is blocked). The document would sit in "awaiting
+        signature" for ever, looking like it was somebody's turn.
+
+        Refusing names the fix. This is checked BEFORE candidates are resolved,
+        so an organisation with a client in the space gets the same honest
+        answer as one without.
+      */
+      if (step.role === 'CUSTOMER') {
+        throw new BadRequestException(
+          `Step ${order} asks the customer to sign, and customer signing is not available yet. Remove that step from this document type — the signatures before it still work.`,
+        );
+      }
       const chosen = choices?.find((c) => c.order === order);
       /*
         The member is the document's own `userId` — by definition, not by
@@ -2646,6 +2706,24 @@ export class DocumentsService {
         throw new BadRequestException(
           `Step ${order} has more than one possible signer — choose one before issuing`,
         );
+      } else {
+        /*
+          Nobody can sign a step the type says must be signed.
+
+          This used to create the step as SKIPPED, and that was wrong in the
+          worst way available: the document went out looking like it had
+          travelled the route, past the very approval the organisation
+          configured, with nothing anywhere saying the step had been dropped.
+          A time sheet reached the client without the agency ever countersigning
+          it, and the register showed a healthy chain.
+
+          Refusing is visible, it happens at the moment somebody can fix it, and
+          nothing is half-issued. The message says what to configure, because
+          "no signer found" sends an admin looking through the document rather
+          than through the member's space membership, which is where the answer
+          is.
+        */
+        throw new BadRequestException(this.noSignerMessage(step.role, order));
       }
 
       await tx.documentSigner.create({
@@ -2655,7 +2733,7 @@ export class DocumentsService {
           role: step.role,
           userId,
           customerId,
-          status: userId || customerId ? 'PENDING' : 'SKIPPED',
+          status: 'PENDING',
         },
       });
     }
@@ -2886,6 +2964,76 @@ export class DocumentsService {
    *                       document carries no space of its own, so the member is
    *                       what connects it to a client.
    */
+  /**
+   * Documents belonging to SOMEBODY ELSE that are waiting on this person now.
+   *
+   * Every other query on this screen is scoped to the caller's own personnel
+   * file, which is right for a payslip and wrong for a countersignature: a
+   * responsible signing a worker's time sheet is not the subject of it and so
+   * never saw it. It arrived as a push notification about a document that
+   * existed nowhere in the app.
+   *
+   * Authorisation is the signer row itself — being named as the signer of a
+   * step is what entitles someone to that one document, and nothing else. Only
+   * the CURRENT step qualifies: a document three people down the chain must not
+   * appear on somebody's list before it is their turn, or the list stops
+   * meaning "yours to do" and stops being read.
+   *
+   * Shared by the list and the badge so the two can never disagree about what
+   * is outstanding.
+   */
+  private async documentsWaitingOnMe(actor: DocumentActor) {
+    const rows = await this.prisma.document.findMany({
+      where: {
+        organizationId: actor.organizationId,
+        userId: { not: actor.userId },
+        status: 'AWAITING_SIGNATURE',
+        // Narrowed in SQL by the (userId, status) index; whether it is their
+        // TURN is decided below, since "first pending step" is not expressible
+        // here and duplicating that rule in a query is how the two drift.
+        signers: { some: { userId: actor.userId, status: 'PENDING' } },
+      },
+      select: {
+        id: true,
+        title: true,
+        typeId: true,
+        periodYear: true,
+        periodMonth: true,
+        status: true,
+        sizeBytes: true,
+        mimeType: true,
+        issuedAt: true,
+        expiresOn: true,
+        firstOpenedAt: true,
+        user: { select: { firstName: true, lastName: true } },
+        type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
+        signers: { select: { order: true, role: true, status: true, userId: true, customerId: true } },
+      },
+      orderBy: { issuedAt: 'asc' },
+      // A backstop, not pagination. Somebody with more than this waiting has a
+      // process problem that a longer list would not solve.
+      take: 200,
+    });
+
+    return rows.filter((d) =>
+      isCurrentSigner(d.signers as unknown as SignerStep[], actor.userId),
+    );
+  }
+
+  /** Why a step cannot be filled, and what to do about it. */
+  private noSignerMessage(role: DocumentSignerRole, order: number): string {
+    switch (role) {
+      case 'RESPONSIBLE':
+        return `Step ${order} needs the person who signs off for this member, and nobody is set. Choose one under “Signs off for …” on their space membership.`;
+      case 'ORG_REPRESENTATIVE':
+        return `Step ${order} needs somebody signing for the organisation, and nobody in it can. Give a member the right to manage people, or remove the step from this document type.`;
+      case 'CUSTOMER':
+        return `Step ${order} needs the client of a space this member works in, and there is none. Add the client to the space, or remove the step from this document type.`;
+      default:
+        return `Step ${order} of this document has no possible signer.`;
+    }
+  }
+
   /**
    * `candidatesForRole` memoised for the length of one call.
    *
@@ -3172,6 +3320,9 @@ export class DocumentsService {
         firstOpenedAt: true,
         rejectionReason: true,
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
+        // Only what deciding "is this waiting on you" needs. Selected with the
+        // documents so the list does not become one query per row.
+        signers: { select: { order: true, role: true, status: true, userId: true, customerId: true } },
       },
       orderBy: [
         { periodYear: 'desc' },
@@ -3183,8 +3334,62 @@ export class DocumentsService {
       take: 500,
     });
 
+    /*
+      Documents that are not in this file but are waiting on this person.
+
+      Only on your OWN list. An admin looking at somebody's personnel file wants
+      that file, not a countersignature queue belonging to the person they are
+      looking at — mixing the two would make one screen answer two questions and
+      neither of them clearly.
+    */
+    const alsoWaiting =
+      isSelf && !data.typeId && !data.year && !data.search
+        ? await this.documentsWaitingOnMe(data.actor)
+        : [];
+
     const now = new Date();
-    return documents.map((d) => ({
+    /*
+      Whose turn it is, from the viewer's side.
+
+      No route: the old meaning is the right one — the document is waiting on
+      the person it was issued to. With a route: only while the pending step is
+      theirs, which is what stops somebody who has already signed being told to
+      sign again with no way to clear it.
+    */
+    const waitingOnViewer = (d: { status: string; signers?: SignerStep[] }): boolean => {
+      if (d.status !== 'AWAITING_SIGNATURE') return false;
+      // No rows is not a missing answer, it is the answer: a document issued
+      // before routes existed, or under a type that has none. It waits on the
+      // person it was issued to, which is what it has always meant.
+      const steps = d.signers ?? [];
+      if (steps.length === 0) return targetUserId === data.actor.userId;
+      return isCurrentSigner(steps, data.actor.userId);
+    };
+    return [
+      // Theirs to sign, first: it is somebody else's document and it is holding
+      // up that person's month.
+      ...alsoWaiting.map((d) => ({
+        id: d.id,
+        title: d.title,
+        typeId: d.typeId,
+        typeKey: d.type.key,
+        typeLabel: d.type.label,
+        periodYear: d.periodYear,
+        periodMonth: d.periodMonth,
+        status: d.status,
+        sizeBytes: d.sizeBytes,
+        mimeType: d.mimeType,
+        issuedAt: d.issuedAt,
+        expiresOn: d.expiresOn,
+        unread: d.firstOpenedAt === null,
+        needsSignature: true,
+        rejectionReason: null,
+        standing: null as string | null,
+        // Whose document it is. Without this a manager sees nine rows called
+        // "Time sheet September" and cannot tell them apart.
+        forMember: `${d.user.firstName} ${d.user.lastName}`.trim(),
+      })),
+      ...documents.map((d) => ({
       id: d.id,
       title: d.title,
       typeId: d.typeId,
@@ -3198,7 +3403,16 @@ export class DocumentsService {
       issuedAt: d.issuedAt,
       expiresOn: d.expiresOn,
       unread: d.firstOpenedAt === null,
-      needsSignature: d.status === 'AWAITING_SIGNATURE',
+      /*
+        "Needs your signature" has to mean YOURS.
+
+        A document with a route stays AWAITING_SIGNATURE until the whole chain
+        is done, so reading the document's status told a member who had already
+        signed that they still had to — with no way to make it go away. The
+        chain knows better: where there are steps, this is true only while the
+        pending one is theirs.
+      */
+      needsSignature: waitingOnViewer(d),
       // Only ever set on something the member supplied. Shown to them verbatim:
       // "rejected" with no reason is an instruction to upload the same photo.
       rejectionReason: d.rejectionReason,
@@ -3214,7 +3428,10 @@ export class DocumentsService {
         d.type.isCredential && d.status !== 'PENDING_VERIFICATION' && d.status !== 'REJECTED'
           ? credentialStanding(d.expiresOn, now)
           : null,
-    }));
+      // Their own file: the document is about them, so there is nobody to name.
+      forMember: null as string | null,
+      })),
+    ];
   }
 
   /**
@@ -3236,7 +3453,26 @@ export class DocumentsService {
     if (!document) throw new NotFoundException('Document not found');
 
     const isSelf = document.userId === data.actor.userId;
-    if (!isSelf && !data.actor.canOpenMemberDocuments) {
+    /*
+      Being asked to sign it IS the authorisation to read it.
+
+      A responsible countersigning a worker's time sheet is usually a shift
+      leader, and shift leaders do not hold `canOpenMemberDocuments` — so
+      without this they were sent a signature request for a document they were
+      forbidden to open. Signing something you cannot read is the one outcome a
+      signing feature must never produce.
+
+      Scoped to this document by their own signer row, and it survives their
+      signature on purpose: a person who signed something must always be able to
+      retrieve what they signed.
+    */
+    const isSigner =
+      isSelf ||
+      (await this.prisma.documentSigner.count({
+        where: { documentId: document.id, userId: data.actor.userId },
+      })) > 0;
+
+    if (!isSigner && !data.actor.canOpenMemberDocuments) {
       // Distinct from the list permission on purpose: a dispatcher may need to
       // know a certificate exists and expires on Friday without being able to
       // open a colleague's payslip.
@@ -3615,7 +3851,7 @@ export class DocumentsService {
       const next = nextPendingStep(steps);
       if (!next?.userId) return; // Nobody internal to tell — customers are phase 3/4.
 
-      const [user, signerRow] = await Promise.all([
+      const [user, signerRow, document] = await Promise.all([
         this.prisma.user.findUnique({
           where: { id: next.userId },
           select: { id: true, firstName: true, email: true },
@@ -3623,6 +3859,12 @@ export class DocumentsService {
         this.prisma.documentSigner.findFirst({
           where: { documentId, order: next.order },
           select: { id: true },
+        }),
+        // Whose document it is. "A time sheet needs your signature" is not
+        // actionable to a manager with nine people; "Mike's time sheet" is.
+        this.prisma.document.findUnique({
+          where: { id: documentId },
+          select: { user: { select: { firstName: true, lastName: true } } },
         }),
       ]);
       if (!user) return;
@@ -3640,6 +3882,9 @@ export class DocumentsService {
         email: user.email,
         firstName: user.firstName,
         title,
+        memberName: document?.user
+          ? `${document.user.firstName} ${document.user.lastName}`.trim()
+          : undefined,
         step: next.order,
         totalSteps: steps.length,
       });

@@ -1867,6 +1867,7 @@
       "partUpload": "{{count}} à envoyer",
       "partSign": "{{count}} à signer",
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
-    }
+    },
+    "onBehalfOf": "Pour {{name}}"
   }
 }

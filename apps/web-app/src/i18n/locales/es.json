@@ -6105,7 +6105,9 @@
       "people": "Personas específicas",
       "memberNotify": "Notificados sobre {{name}}",
       "memberContact": "{{name}} puede contactar",
-      "noPeople": "No hay otros miembros con un rol en este espacio de trabajo."
+      "noPeople": "No hay otros miembros con un rol en este espacio de trabajo.",
+      "memberApprove": "Aprueba por {{name}}",
+      "approveEmpty": "Nadie — los documentos que necesitan un responsable no se pueden emitir"
     }
   },
   "spaceSharing": {
@@ -7555,7 +7557,9 @@
           "RESPONSIBLE": "según su enrutamiento de aprobación",
           "ORG_REPRESENTATIVE": "alguien que firma en nombre de la organización",
           "CUSTOMER": "el cliente de los espacios donde trabaja"
-        }
+        },
+        "notReady": "La firma del cliente aún no está disponible.",
+        "soon": "pronto"
       }
     },
     "supply": {
@@ -7705,7 +7709,8 @@
         "complete_one": "{{count}} firma recogida",
         "complete_other": "Las {{count}} firmas recogidas"
       }
-    }
+    },
+    "onBehalfOf": "Para {{name}}"
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada."

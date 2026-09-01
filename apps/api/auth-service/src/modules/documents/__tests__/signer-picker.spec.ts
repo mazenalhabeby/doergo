@@ -204,15 +204,48 @@ describe('DocumentsService — choosing a signer', () => {
       expect(rows[1]).toEqual(expect.objectContaining({ userId: 'anna', status: 'PENDING' }));
     });
 
-    it('skips a step nobody can fill instead of stranding the document on it', async () => {
+    it('refuses a step nobody can fill, and says where to configure it', async () => {
       prisma.document.findMany.mockResolvedValue([draft]);
-      // No approval routing configured at all.
+      // No approval routing configured for this member anywhere.
+
+      /*
+        This used to create the step as SKIPPED and publish anyway, which is how
+        a time sheet reached the customer without the agency ever countersigning
+        it — while the register showed a healthy chain. The organisation put the
+        step in the route; dropping it silently is not ours to do.
+      */
+      await expect(publish()).rejects.toThrow(/signs off for this member/i);
+      await expect(publish()).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('never creates a SKIPPED step — a step is signed or it is refused', async () => {
+      prisma.document.findMany.mockResolvedValue([draft]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([
+        { spaceId: 's1', organizationId: 'org1', approveRoleIds: [], approveUserIds: ['anna'] },
+      ]);
+      prisma.user.findMany.mockResolvedValue([person('anna', 'Anna')]);
+
       await publish();
 
       const rows = prisma.documentSigner.create.mock.calls.map((c: any[]) => c[0].data);
-      expect(rows[1]).toEqual(
-        expect.objectContaining({ role: 'RESPONSIBLE', userId: null, status: 'SKIPPED' }),
-      );
+      expect(rows.every((r: any) => r.status === 'PENDING')).toBe(true);
+    });
+
+    it('refuses a customer step rather than parking the document on somebody who cannot sign', async () => {
+      prisma.document.findMany.mockResolvedValue([
+        {
+          ...draft,
+          type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] },
+        },
+      ]);
+      prisma.customer.findMany.mockResolvedValue([
+        { id: 'binderholz', name: 'Binderholz', email: 'x@example.com' },
+      ]);
+
+      // Even WITH a client on the space: they have no login unless somebody
+      // made them a portal account, and the emailed-link route is not built.
+      // A PENDING step nobody can complete reads as "it is their turn" for ever.
+      await expect(publish()).rejects.toThrow(/not available yet/i);
     });
   });
 });

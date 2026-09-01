@@ -1867,6 +1867,7 @@
       "partUpload": "{{count}} da caricare",
       "partSign": "{{count}} da firmare",
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
-    }
+    },
+    "onBehalfOf": "Per {{name}}"
   }
 }

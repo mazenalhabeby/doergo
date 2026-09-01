@@ -6105,7 +6105,9 @@
       "people": "Bestimmte Personen",
       "memberNotify": "Benachrichtigt über {{name}}",
       "memberContact": "{{name}} kann kontaktieren",
-      "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space."
+      "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space.",
+      "memberApprove": "Zeichnet für {{name}} ab",
+      "approveEmpty": "Niemand — Dokumente, die eine verantwortliche Person brauchen, können nicht ausgestellt werden"
     }
   },
   "spaceSharing": {
@@ -7555,7 +7557,9 @@
           "RESPONSIBLE": "ergibt sich aus der Freigabe-Zuordnung",
           "ORG_REPRESENTATIVE": "jemand, der für das Unternehmen unterschreibt",
           "CUSTOMER": "der Kunde der Spaces, in denen er arbeitet"
-        }
+        },
+        "notReady": "Die Unterschrift des Kunden ist noch nicht verfügbar.",
+        "soon": "bald"
       }
     },
     "supply": {
@@ -7705,7 +7709,8 @@
         "complete_one": "{{count}} Unterschrift vorhanden",
         "complete_other": "Alle {{count}} Unterschriften vorhanden"
       }
-    }
+    },
+    "onBehalfOf": "Für {{name}}"
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag."

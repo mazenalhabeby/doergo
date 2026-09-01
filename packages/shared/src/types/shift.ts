@@ -144,6 +144,15 @@ export interface SpaceMember {
   notifyUserIds?: string[];
   contactRoleIds?: string[];
   contactUserIds?: string[];
+  /*
+    Who signs off FOR this member — deliberately its own list.
+
+    Not a synonym for notify: wanting to hear about somebody's shifts is not
+    authority over their hours, and collapsing the two would hand document
+    sign-off to everyone who ever asked to be kept informed.
+  */
+  approveRoleIds?: string[];
+  approveUserIds?: string[];
 }
 
 // Whether a member (via their space role) holds a given space permission.

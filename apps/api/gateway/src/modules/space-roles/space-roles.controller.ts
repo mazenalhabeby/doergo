@@ -124,7 +124,15 @@ export class SpaceRolesController {
   updateMemberRouting(
     @Param('spaceId') spaceId: string,
     @Param('memberId') memberId: string,
-    @Body() body: { notifyRoleIds?: string[]; notifyUserIds?: string[]; contactRoleIds?: string[]; contactUserIds?: string[] },
+    @Body()
+    body: {
+      notifyRoleIds?: string[];
+      notifyUserIds?: string[];
+      contactRoleIds?: string[];
+      contactUserIds?: string[];
+      approveRoleIds?: string[];
+      approveUserIds?: string[];
+    },
     @Request() req: any,
   ) {
     assertCanManageSpace(req.user, spaceId);

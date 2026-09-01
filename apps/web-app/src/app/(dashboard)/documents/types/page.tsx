@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import {
   FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2,
   CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2, CreditCard,
-  User, UserCheck, Handshake, ChevronUp, ChevronDown, X,
+  User, UserCheck, Handshake, ChevronUp, ChevronDown, X, Clock,
 } from "lucide-react"
 import {
   documentsApi, workflowsApi, organizationsApi,
@@ -859,11 +859,20 @@ function Locked({ children }: { children: React.ReactNode }) {
 function RouteEditor({ route, onChange }: { route: string[]; onChange: (r: string[]) => void }) {
   const { t } = useTranslation()
 
+  /*
+    `ready: false` is offered but not addable.
+
+    A client has no way to sign yet — no login unless a portal account was made
+    for them, and the emailed-link route is not built. Adding the step would
+    produce a document parked on somebody who cannot act, for ever. Showing it
+    greyed out is more honest than hiding it: the intent is real and the reason
+    it is unavailable is worth saying.
+  */
   const ROLES = [
-    { key: "MEMBER", Icon: User },
-    { key: "RESPONSIBLE", Icon: UserCheck },
-    { key: "ORG_REPRESENTATIVE", Icon: Building2 },
-    { key: "CUSTOMER", Icon: Handshake },
+    { key: "MEMBER", Icon: User, ready: true },
+    { key: "RESPONSIBLE", Icon: UserCheck, ready: true },
+    { key: "ORG_REPRESENTATIVE", Icon: Building2, ready: true },
+    { key: "CUSTOMER", Icon: Handshake, ready: false },
   ] as const
 
   const move = (i: number, by: number) => {
@@ -935,16 +944,28 @@ function RouteEditor({ route, onChange }: { route: string[]; onChange: (r: strin
       )}
 
       <div className="flex flex-wrap gap-1.5">
-        {available.map(({ key: k, Icon }) => (
+        {available.map(({ key: k, Icon, ready }) => (
           <button
             key={k}
             type="button"
+            disabled={!ready}
+            title={ready ? undefined : t("documents.types.route.notReady")}
             onClick={() => onChange([...route, k])}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card px-3 py-1 text-sm transition-colors",
+              ready
+                ? "text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                : "cursor-not-allowed border-dashed text-muted-foreground/50",
+            )}
           >
-            <Plus className="size-3.5" />
+            {ready ? <Plus className="size-3.5" /> : <Clock className="size-3.5" />}
             <Icon className="size-3.5" />
             {t(`documents.types.route.roles.${k}`)}
+            {!ready && (
+              <span className="text-[10px] uppercase tracking-wide">
+                {t("documents.types.route.soon")}
+              </span>
+            )}
           </button>
         ))}
         {available.length === 0 && (

@@ -6105,7 +6105,9 @@
       "people": "Specific people",
       "memberNotify": "Notified about {{name}}",
       "memberContact": "{{name}} can contact",
-      "noPeople": "No other members with a role in this workspace."
+      "noPeople": "No other members with a role in this workspace.",
+      "memberApprove": "Signs off for {{name}}",
+      "approveEmpty": "Nobody — documents needing a responsible cannot be issued"
     }
   },
   "spaceSharing": {
@@ -7555,7 +7557,9 @@
           "RESPONSIBLE": "resolved from their approval routing",
           "ORG_REPRESENTATIVE": "somebody signing on behalf of the organisation",
           "CUSTOMER": "the client of the spaces they work in"
-        }
+        },
+        "notReady": "Customer signing is not available yet.",
+        "soon": "soon"
       }
     },
     "supply": {
@@ -7705,7 +7709,8 @@
         "complete_one": "{{count}} signature collected",
         "complete_other": "All {{count}} signatures collected"
       }
-    }
+    },
+    "onBehalfOf": "For {{name}}"
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry."

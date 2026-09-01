@@ -3905,6 +3905,7 @@ export interface UpdateLocationInput {
   billableRateCents?: number | null;
   notifyRoleIds?: string[];
   contactRoleIds?: string[];
+  approveRoleIds?: string[];
 }
 
 export interface LocationAssignment {
@@ -4183,7 +4184,14 @@ export const spaceMembersApi = {
   updateRouting: async (
     spaceId: string,
     memberId: string,
-    data: { notifyRoleIds?: string[]; notifyUserIds?: string[]; contactRoleIds?: string[]; contactUserIds?: string[] },
+    data: {
+      notifyRoleIds?: string[]
+      notifyUserIds?: string[]
+      contactRoleIds?: string[]
+      contactUserIds?: string[]
+      approveRoleIds?: string[]
+      approveUserIds?: string[]
+    },
   ) => {
     const res = await api.patch<{ success: boolean; data: unknown }>(`/spaces/${spaceId}/members/${memberId}/routing`, data);
     if (res.error) throw new Error(res.error);
@@ -6010,7 +6018,12 @@ export interface RequirementRow {
 export interface PendingDocumentsSummary {
   toUpload: RequirementRow[]
   expiring: RequirementRow[]
-  toSign: { id: string; title: string }[]
+  /*
+    `forMember` names the person the document is about, and is set only when
+    that is somebody other than you — a responsible countersigning a worker's
+    time sheet. Null on your own documents.
+  */
+  toSign: { id: string; title: string; forMember?: string | null }[]
 }
 
 export interface PendingReviewRow {
@@ -6051,6 +6064,14 @@ export interface MemberDocumentRow {
   unread: boolean;
   needsSignature: boolean;
   standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
+  /**
+   * Whose document this is, when it is not yours.
+   *
+   * Set only on a document waiting on your signature that belongs to somebody
+   * else — a responsible countersigning a worker's time sheet. Null on your
+   * own, where naming the person would be naming the reader.
+   */
+  forMember?: string | null
   /** Why a reviewer refused something the member supplied. */
   rejectionReason?: string | null;
 }

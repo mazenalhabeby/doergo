@@ -84,6 +84,8 @@ export class SpaceRolesController {
       notifyUserIds?: string[];
       contactRoleIds?: string[];
       contactUserIds?: string[];
+      approveRoleIds?: string[];
+      approveUserIds?: string[];
     },
   ) {
     return this.service.updateMemberRouting(data);

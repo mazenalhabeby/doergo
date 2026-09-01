@@ -21,12 +21,31 @@ describe('DocumentsService — who can reach whose documents', () => {
   const prisma: Record<string, any> = {
     documentType: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
     document: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+    // No signer rows anywhere in this file: these tests are about the ordinary
+    // permission model, and a countersignature must not quietly widen it.
+    documentSigner: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
     documentEvent: { create: jest.fn(), findMany: jest.fn() },
     user: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   };
 
   const notifications = { emit: jest.fn() };
+
+
+  /**
+   * Answer the member's OWN documents query with these rows, and the
+   * "waiting on me" query with nothing.
+   *
+   * Two different questions reach `document.findMany` now — the caller's
+   * personnel file, and other people's documents parked on the caller's
+   * signature. Distinguished by the signer filter, because a mock that answered
+   * both with the same rows would have the service reading a payslip as a
+   * countersignature request.
+   */
+  const ownDocuments = (rows: any[]) =>
+    prisma.document.findMany.mockImplementation(async (args: any) =>
+      args?.where?.signers ? [] : rows,
+    );
 
   const actor = (over: Partial<DocumentActor> = {}): DocumentActor => ({
     userId: 'me',
@@ -67,12 +86,12 @@ describe('DocumentsService — who can reach whose documents', () => {
 
   describe('listForMember', () => {
     it('lets anyone read their own file with no permission at all', async () => {
-      prisma.document.findMany.mockResolvedValue([]);
+      ownDocuments([]);
       await expect(service.listForMember({ actor: actor() })).resolves.toEqual([]);
     });
 
     it('scopes the query by organization AND user, in the where clause', async () => {
-      prisma.document.findMany.mockResolvedValue([]);
+      ownDocuments([]);
       await service.listForMember({ actor: actor() });
 
       const where = prisma.document.findMany.mock.calls[0][0].where;
@@ -91,7 +110,7 @@ describe('DocumentsService — who can reach whose documents', () => {
 
     it('allows another member’s list with canViewMemberDocuments', async () => {
       prisma.user.findFirst.mockResolvedValue({ id: 'u2', firstName: 'A', lastName: 'B', email: 'a@b.c' });
-      prisma.document.findMany.mockResolvedValue([]);
+      ownDocuments([]);
       await expect(
         service.listForMember({ actor: actor({ canViewMemberDocuments: true }), targetUserId: 'u2' }),
       ).resolves.toEqual([]);
@@ -107,7 +126,7 @@ describe('DocumentsService — who can reach whose documents', () => {
     });
 
     it('marks a never-opened document unread, and a signature request blocking', async () => {
-      prisma.document.findMany.mockResolvedValue([
+      ownDocuments([
         {
           id: 'd1', title: 'August', typeId: 't1', periodYear: 2026, periodMonth: 8,
           status: 'AWAITING_SIGNATURE', sizeBytes: 100, mimeType: 'application/pdf',
@@ -123,7 +142,7 @@ describe('DocumentsService — who can reach whose documents', () => {
     });
 
     it('reports a standing for credentials only', async () => {
-      prisma.document.findMany.mockResolvedValue([
+      ownDocuments([
         {
           id: 'c1', title: 'Licence', typeId: 't2', periodYear: null, periodMonth: null,
           status: 'ISSUED', sizeBytes: 1, mimeType: 'application/pdf',

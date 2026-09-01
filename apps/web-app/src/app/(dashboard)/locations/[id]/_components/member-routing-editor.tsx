@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Bell, MessageCircle, Save, Loader2 } from "lucide-react"
+import { Bell, MessageCircle, PenLine, Save, Loader2 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { spaceMembersApi } from "@/lib/api"
@@ -34,6 +34,7 @@ export function MemberRoutingEditor({
 
   const [notifyUsers, setNotifyUsers] = useState<string[]>(member.notifyUserIds || [])
   const [contactUsers, setContactUsers] = useState<string[]>(member.contactUserIds || [])
+  const [approveUsers, setApproveUsers] = useState<string[]>(member.approveUserIds || [])
 
   // People to pick from = the other members of this space who HOLD a space role
   // (Space Manager / Shift Leader / …). Routing goes to leaders, not plain members.
@@ -46,6 +47,8 @@ export function MemberRoutingEditor({
         notifyRoleIds: [],
         contactUserIds: contactUsers,
         contactRoleIds: [],
+        approveUserIds: approveUsers,
+        approveRoleIds: [],
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
@@ -57,14 +60,15 @@ export function MemberRoutingEditor({
   const norm = (a: string[]) => JSON.stringify([...a].sort())
   const dirty =
     norm(notifyUsers) !== norm(member.notifyUserIds || []) ||
-    norm(contactUsers) !== norm(member.contactUserIds || [])
+    norm(contactUsers) !== norm(member.contactUserIds || []) ||
+    norm(approveUsers) !== norm(member.approveUserIds || [])
 
   const toggle = (list: string[], set: (v: string[]) => void, id: string) =>
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
 
   return (
     <div className="mt-2 space-y-3 rounded-xl border border-dashed border-border bg-muted/20 p-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <PeoplePicker
           icon={Bell}
           title={t("scheduling.routing.memberNotify", "Notified about {{name}}", { name })}
@@ -80,6 +84,24 @@ export function MemberRoutingEditor({
           selected={contactUsers}
           onToggle={(id) => toggle(contactUsers, setContactUsers, id)}
           emptyHint={t("scheduling.routing.contactEmpty", "Default: the space's leaders")}
+        />
+        {/*
+          Sign-off, and no default.
+
+          The other two fall back to the space's leaders when left empty; this
+          one does not, on purpose. Being a space leader is not authority to
+          countersign somebody's hours, and a document that quietly routed to
+          whoever happened to lead the space would be signed by the wrong person
+          with nothing on the page to show it. Empty here means nobody — and the
+          issue screen says so rather than skipping the step.
+        */}
+        <PeoplePicker
+          icon={PenLine}
+          title={t("scheduling.routing.memberApprove", "Signs off for {{name}}", { name })}
+          people={people}
+          selected={approveUsers}
+          onToggle={(id) => toggle(approveUsers, setApproveUsers, id)}
+          emptyHint={t("scheduling.routing.approveEmpty", "Nobody — documents needing a responsible cannot be issued")}
         />
       </div>
       <div className="flex justify-end">
