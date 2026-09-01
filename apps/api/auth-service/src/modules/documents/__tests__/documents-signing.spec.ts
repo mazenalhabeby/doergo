@@ -36,6 +36,9 @@ describe('DocumentsService — signing', () => {
     document: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
     documentSignature: { findUnique: jest.fn(), create: jest.fn() },
     documentEvent: { create: jest.fn(), count: jest.fn() },
+    // The signing chain. Empty by default: these tests are about a document
+    // with NO route, which is what every one issued before Phase 2 has.
+    documentSigner: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     documentTemplate: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
     documentType: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
@@ -396,6 +399,7 @@ describe('DocumentsService — template resolution', () => {
     documentType: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
     document: {}, documentEvent: {}, documentSignature: {},
+    documentSigner: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn(),
   };
 

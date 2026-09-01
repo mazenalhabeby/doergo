@@ -117,6 +117,7 @@ describe('exporting a member’s file', () => {
   const prisma: Record<string, any> = {
     document: { findMany: jest.fn() },
     documentEvent: { createMany: jest.fn() },
+    documentSigner: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     user: { findFirst: jest.fn() },
     $transaction: jest.fn(async (fn: any) => fn(prisma)),
   };
@@ -132,7 +133,9 @@ describe('exporting a member’s file', () => {
     sizeBytes: 100, mimeType: 'application/pdf', status: 'ISSUED',
     issuedAt: new Date('2026-08-01'), periodYear: 2026, periodMonth: 8,
     type: { key: 'payslip', label: 'Payslip', direction: 'ISSUED' },
-    signature: null, ...over,
+    // A list now: a document can carry a chain of signatures, and an
+    // unsigned one carries an empty chain rather than a null.
+    signatures: [], ...over,
   });
 
   beforeEach(async () => {
@@ -221,7 +224,7 @@ describe('exporting a member’s file', () => {
 
   it('carries the signature date for anything signed', async () => {
     prisma.document.findMany.mockResolvedValue([
-      doc('c', { status: 'SIGNED', signature: { signedAt: new Date('2026-08-29'), hashAfter: 'x' } }),
+      doc('c', { status: 'SIGNED', signatures: [{ signedAt: new Date('2026-08-29'), hashAfter: 'x' }] }),
     ]);
     const res = await service.exportForMember({ actor: me });
     expect(res.files[0]!.signedAt).toEqual(new Date('2026-08-29'));

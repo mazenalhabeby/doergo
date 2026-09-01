@@ -36,6 +36,12 @@ import {
   type Rect,
   rectToPixels,
   isUsefulCrop,
+  parseRoute,
+  nextPendingStep,
+  chainProgress,
+  resolveMemberRouting,
+  type DocumentSignerRole,
+  type SignerStep,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -92,6 +98,21 @@ const ALLOWED_MIME: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
 };
+
+/** One person (or client) a route step could resolve to. */
+export interface SignerCandidate {
+  kind: 'USER' | 'CUSTOMER';
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+/** A step of a type's route, with everybody it could resolve to for one member. */
+export interface RouteCandidateStep {
+  order: number;
+  role: DocumentSignerRole;
+  candidates: SignerCandidate[];
+}
 
 @Injectable()
 export class DocumentsService {
@@ -299,6 +320,8 @@ export class DocumentsService {
    * client asserted.
    */
   async confirmUpload(data: {
+    /** Chosen signer per route step, where the step had more than one candidate. */
+    signerChoices?: Array<{ order: number; userId?: string | null; customerId?: string | null }>;
     actor: DocumentActor;
     stagingKey: string;
     userId: string;
@@ -383,6 +406,10 @@ export class DocumentsService {
             ...eventContext(data.ctx),
           },
         });
+        // The chain, resolved and frozen in the same transaction as the
+        // document. A document that existed without its route would have no way
+        // to say whose turn it was.
+        await this.createSignerRows(tx, created, type.signerRoute, data.signerChoices);
       }
       return created;
     });
@@ -1802,8 +1829,15 @@ export class DocumentsService {
       return { documentId: existing.documentId, alreadySigned: true, sealedAt: existing.sealedAt };
     }
 
-    const store = this.requireStore();
+    /*
+      Authorization first, storage second — the same ordering getDownloadUrl
+      states and this path did not follow. With it reversed, somebody signing
+      out of turn was told "storage is not configured" instead of being told
+      whose turn it is, and a misconfigured server answered the wrong question
+      to every caller.
+    */
     const document = await this.findSignableOr404(data.actor, data.documentId);
+    const store = this.requireStore();
 
     if (!canSignInApp(document.type.signatureMode)) {
       // WET_INK exists for contract types the law excludes from electronic
@@ -1863,6 +1897,30 @@ export class DocumentsService {
     const sealedKey = documentKey(data.actor.organizationId, hashAfter, 'pdf');
     await this.withStorage('sealing the document', () => store.put(sealedKey, sealed, 'application/pdf'));
 
+    /*
+      Whose step this was, and whether it was the last.
+
+      Read before the transaction so the status written inside it is decided
+      from the chain rather than assumed. A document with no route has no steps
+      and finishes on its only signature, exactly as it always did.
+    */
+    const stepsBefore = await this.signerSteps(document.id);
+    const currentStep = nextPendingStep(stepsBefore);
+    const isLastStep =
+      stepsBefore.length === 0 ||
+      chainProgress(
+        stepsBefore.map((s) =>
+          s.order === currentStep?.order ? { ...s, status: 'SIGNED' as const } : s,
+        ),
+      ).complete;
+
+    const signerRow = currentStep
+      ? await this.prisma.documentSigner.findFirst({
+          where: { documentId: document.id, order: currentStep.order },
+          select: { id: true },
+        })
+      : null;
+
     await this.prisma.$transaction(async (tx) => {
       await tx.document.update({
         where: { id: document.id },
@@ -1870,12 +1928,22 @@ export class DocumentsService {
           storageKey: sealedKey,
           sha256: hashAfter,
           sizeBytes: sealed.length,
-          status: 'SIGNED',
+          // Only the LAST signature finishes the document. Marking it SIGNED at
+          // step one would take it off everybody's list while two people still
+          // had to sign it.
+          ...(isLastStep ? { status: 'SIGNED' as const } : {}),
         },
       });
+      if (signerRow) {
+        await tx.documentSigner.update({
+          where: { id: signerRow.id },
+          data: { status: 'SIGNED', signedAt },
+        });
+      }
       await tx.documentSignature.create({
         data: {
           documentId: document.id,
+          signerId: signerRow?.id ?? null,
           userId: data.actor.userId,
           signatureKey: sigKey,
           signatureSha256: signatureHash,
@@ -1924,6 +1992,22 @@ export class DocumentsService {
     // read, it is content-addressed so nothing else can claim its key, and the
     // certificate page cites its hash — deleting it would remove the only copy
     // the before-hash describes.
+
+    /*
+      Hand the document on.
+
+      AFTER the transaction, never inside it: telling somebody a document is
+      waiting for them and then rolling back the signature that made it their
+      turn is worse than not telling them.
+
+      A failure here does not undo the step. The chain has genuinely advanced
+      and the register shows it waiting on the right person — a stalled chain
+      that LOOKS moved is the dangerous version, not one that moved quietly.
+    */
+    if (!isLastStep) {
+      await this.notifyNextSigner(document.id, document.title);
+    }
+
     return { documentId: document.id, alreadySigned: false, sealedAt: new Date() };
   }
 
@@ -2228,7 +2312,11 @@ export class DocumentsService {
           firstOpenedAt: true, expiresOn: true, sizeBytes: true, mimeType: true,
           user: { select: { id: true, firstName: true, lastName: true } },
           type: { select: { id: true, label: true } },
-          signature: { select: { signedAt: true } },
+          signatures: {
+            select: { signedAt: true },
+            orderBy: { signedAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: [{ periodMonth: 'desc' }, { issuedAt: 'desc' }],
         take: 500,
@@ -2246,7 +2334,7 @@ export class DocumentsService {
           periodMonth: d.periodMonth,
           issuedAt: d.issuedAt,
           openedAt: d.firstOpenedAt,
-          signedAt: d.signature?.signedAt ?? null,
+          signedAt: d.signatures.at(-1)?.signedAt ?? null,
           expiresOn: d.expiresOn,
           sizeBytes: d.sizeBytes,
           mimeType: d.mimeType,
@@ -2312,6 +2400,210 @@ export class DocumentsService {
       });
 
     return { groupBy, level: next, folders, documents: [] };
+  }
+
+  /**
+   * Turn a type's route into real signer rows for one document.
+   *
+   * Called inside the issuing transaction, so a document either has its whole
+   * chain or none of it — a half-built route would strand a document with no
+   * way to tell whose turn it was.
+   *
+   * Frozen here on purpose. A member changing manager next month must not
+   * re-route a document already in flight, and the certificate has to be able
+   * to say who was ASKED, not who would be asked today.
+   *
+   * A step with no candidate is written as SKIPPED rather than left pending or
+   * dropped. Pending would strand the chain on somebody who does not exist;
+   * dropping it would hide from the register that the route asked for a signer
+   * this document never had.
+   */
+  private async createSignerRows(
+    tx: Prisma.TransactionClient,
+    document: { id: string; userId: string; organizationId: string },
+    signerRoute: unknown,
+    choices?: Array<{ order: number; userId?: string | null; customerId?: string | null }>,
+  ): Promise<void> {
+    const route = parseRoute(signerRoute);
+    if (!route) return; // No route: one signature by the member, exactly as before.
+
+    for (const [i, step] of route.entries()) {
+      const order = i + 1;
+      const chosen = choices?.find((c) => c.order === order);
+      const candidates = await this.candidatesForRole(document.organizationId, document.userId, step.role);
+
+      let userId: string | null = null;
+      let customerId: string | null = null;
+
+      if (chosen?.userId || chosen?.customerId) {
+        // An explicit choice still has to be one of the candidates — the picker
+        // is a convenience, not an authorisation.
+        const ok = candidates.some(
+          (c) =>
+            (c.kind === 'USER' && c.id === chosen.userId) ||
+            (c.kind === 'CUSTOMER' && c.id === chosen.customerId),
+        );
+        if (!ok) {
+          throw new BadRequestException(`That signer cannot sign step ${order} of this document`);
+        }
+        userId = chosen.userId ?? null;
+        customerId = chosen.customerId ?? null;
+      } else if (candidates.length === 1) {
+        // Exactly one: there is no question to ask.
+        const only = candidates[0];
+        if (only.kind === 'USER') userId = only.id;
+        else customerId = only.id;
+      } else if (candidates.length > 1) {
+        throw new BadRequestException(
+          `Step ${order} has more than one possible signer — choose one before issuing`,
+        );
+      }
+
+      await tx.documentSigner.create({
+        data: {
+          documentId: document.id,
+          order,
+          role: step.role,
+          userId,
+          customerId,
+          status: userId || customerId ? 'PENDING' : 'SKIPPED',
+        },
+      });
+    }
+  }
+
+  /** The chain on one document, in order — the shape every caller reasons about. */
+  private async signerSteps(documentId: string): Promise<SignerStep[]> {
+    const rows = await this.prisma.documentSigner.findMany({
+      where: { documentId },
+      orderBy: { order: 'asc' },
+      select: { order: true, role: true, status: true, userId: true, customerId: true, signedAt: true },
+    });
+    return rows as SignerStep[];
+  }
+
+  /**
+   * Who could sign each step of a type's route, for one member.
+   *
+   * Asked BEFORE issuing, so the screen can present a choice where there is
+   * one, rather than the service picking somebody and the issuer discovering it
+   * afterwards. Returns candidates per step; the caller sends back a choice for
+   * any step that has more than one.
+   *
+   * Zero candidates is not an error. A route asking for a customer, issued to a
+   * member whose spaces have none, produces a SKIPPED step — the alternative is
+   * a chain stranded forever on a signer who does not exist.
+   */
+  async routeCandidates(data: { actor: DocumentActor; memberId: string; typeId: string }) {
+    if (!data.actor.canIssueDocuments) {
+      throw new ForbiddenException('You cannot issue documents');
+    }
+    const org = data.actor.organizationId;
+
+    const [type, member] = await Promise.all([
+      this.prisma.documentType.findFirst({
+        where: { id: data.typeId, organizationId: org },
+        select: { id: true, label: true, signerRoute: true },
+      }),
+      this.prisma.user.findFirst({
+        where: { id: data.memberId, organizationId: org },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+    ]);
+    if (!type) throw new NotFoundException('Document type not found');
+    if (!member) throw new NotFoundException('Member not found');
+
+    const route = parseRoute(type.signerRoute);
+    if (!route) return { steps: [] as RouteCandidateStep[] };
+
+    const steps: RouteCandidateStep[] = [];
+    for (const [i, s] of route.entries()) {
+      steps.push({
+        order: i + 1,
+        role: s.role,
+        candidates: await this.candidatesForRole(org, member.id, s.role),
+      });
+    }
+    return { steps };
+  }
+
+  /**
+   * The people a single role could resolve to.
+   *
+   * Each role answers a different question, and none of them is "pick an admin
+   * and hope":
+   *
+   *   MEMBER              the person the document is about — always exactly one
+   *   RESPONSIBLE         their `approve` routing, which is configured per
+   *                       member and is deliberately not their notify list
+   *   ORG_REPRESENTATIVE  somebody who may sign for the organization. Scoped to
+   *                       the permission to issue documents rather than to
+   *                       "admin", so it follows the same authority that puts a
+   *                       document into somebody's file in the first place.
+   *   CUSTOMER            clients of the spaces this member works in. The
+   *                       document carries no space of its own, so the member is
+   *                       what connects it to a client.
+   */
+  private async candidatesForRole(
+    organizationId: string,
+    memberId: string,
+    role: DocumentSignerRole,
+  ): Promise<SignerCandidate[]> {
+    if (role === 'MEMBER') {
+      const u = await this.prisma.user.findUnique({
+        where: { id: memberId },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      });
+      return u ? [{ kind: 'USER', id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email }] : [];
+    }
+
+    if (role === 'RESPONSIBLE') {
+      // allowLeaderDefault false: a space nobody configured contributes no one.
+      // Sign-off is not something to fall into by being a space leader.
+      const ids = await resolveMemberRouting(this.prisma as any, organizationId, memberId, 'approve', false);
+      ids.delete(memberId); // nobody approves their own hours
+      if (ids.size === 0) return [];
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: [...ids] }, organizationId, isActive: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      });
+      return users.map((u) => ({
+        kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
+      }));
+    }
+
+    if (role === 'ORG_REPRESENTATIVE') {
+      const users = await this.prisma.user.findMany({
+        where: {
+          organizationId,
+          isActive: true,
+          customerId: null,
+          OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
+        },
+        select: { id: true, firstName: true, lastName: true, email: true },
+        take: 50,
+      });
+      return users.map((u) => ({
+        kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
+      }));
+    }
+
+    // CUSTOMER — through the member's spaces, since a document has no space.
+    const assignments = await this.prisma.spaceAssignment.findMany({
+      where: { userId: memberId, organizationId },
+      select: { spaceId: true },
+    });
+    const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
+    if (spaceIds.length === 0) return [];
+
+    const customers = await this.prisma.customer.findMany({
+      where: { organizationId, isActive: true, spaceId: { in: spaceIds } },
+      select: { id: true, name: true, email: true },
+      take: 50,
+    });
+    return customers.map((c) => ({
+      kind: 'CUSTOMER' as const, id: c.id, name: c.name, email: c.email ?? null,
+    }));
   }
 
   async listIssued(data: {
@@ -2380,7 +2672,25 @@ export class DocumentsService {
           mimeType: true,
           user: { select: { id: true, firstName: true, lastName: true } },
           type: { select: { id: true, label: true, signatureMode: true, isCredential: true } },
-          signature: { select: { signedAt: true } },
+          signatures: {
+            select: { signedAt: true },
+            orderBy: { signedAt: 'desc' },
+            take: 1,
+          },
+          /*
+            The chain. Selected with the row rather than fetched per row: a
+            register of fifty documents would otherwise be fifty extra queries
+            to render a caption.
+          */
+          signers: {
+            select: {
+              order: true, role: true, status: true, userId: true, customerId: true,
+              signedAt: true, notifiedAt: true,
+              user: { select: { firstName: true, lastName: true } },
+              customer: { select: { name: true } },
+            },
+            orderBy: { order: 'asc' },
+          },
         },
         orderBy: [{ issuedAt: 'desc' }],
         skip: (page - 1) * limit,
@@ -2403,7 +2713,7 @@ export class DocumentsService {
         periodMonth: d.periodMonth,
         issuedAt: d.issuedAt,
         openedAt: d.firstOpenedAt,
-        signedAt: d.signature?.signedAt ?? null,
+        signedAt: d.signatures[0]?.signedAt ?? null,
         expiresOn: d.expiresOn,
         sizeBytes: d.sizeBytes,
         mimeType: d.mimeType,
@@ -2413,6 +2723,33 @@ export class DocumentsService {
         typeLabel: d.type.label,
         signatureMode: d.type.signatureMode,
         isCredential: d.type.isCredential,
+        /*
+          Where the document has got to. Absent for a document with no route,
+          which is not "0 of 0" — it is a document that was never a chain, and
+          the screen should say nothing rather than imply an empty one.
+        */
+        chain: d.signers.length
+          ? (() => {
+              const p = chainProgress(d.signers as unknown as SignerStep[]);
+              const waiting = p.current;
+              const row = waiting ? d.signers.find((s) => s.order === waiting.order) : null;
+              return {
+                total: p.total,
+                signed: p.signed,
+                complete: p.complete,
+                currentOrder: waiting?.order ?? null,
+                currentRole: waiting?.role ?? null,
+                waitingOn: row
+                  ? row.user
+                    ? `${row.user.firstName} ${row.user.lastName}`.trim()
+                    : (row.customer?.name ?? null)
+                  : null,
+                // How long it has been sitting there — the other half of
+                // "waiting on whom".
+                waitingSince: row?.notifiedAt ?? null,
+              };
+            })()
+          : null,
       })),
       page,
       limit,
@@ -2648,7 +2985,12 @@ export class DocumentsService {
       },
       include: {
         type: { select: { key: true, label: true, direction: true } },
-        signature: { select: { signedAt: true, hashAfter: true } },
+        // The whole chain, oldest first: an export of somebody's file should
+        // carry every signature the document collected, not just the last.
+        signatures: {
+          select: { signedAt: true, hashAfter: true },
+          orderBy: { signedAt: 'asc' },
+        },
       },
       orderBy: [{ issuedAt: 'asc' }],
     });
@@ -2666,7 +3008,7 @@ export class DocumentsService {
         // The hash is included so the recipient can verify later that what they
         // downloaded is what the record says it was.
         sha256: d.sha256,
-        signedAt: d.signature?.signedAt ?? null,
+        signedAt: d.signatures[0]?.signedAt ?? null,
         url: await this.withStorage('preparing an export', () =>
           store.presignDownload(
             d.storageKey,
@@ -2789,14 +3131,45 @@ export class DocumentsService {
    * somebody else's behalf — that is the one thing a signature cannot survive,
    * and there is deliberately no flag anywhere that could be set to allow it.
    */
+  /**
+   * The document this caller may sign right now, and the step they are signing.
+   *
+   * Two shapes, and the difference is the whole of Phase 2:
+   *
+   *   NO ROUTE   the document's own member signs it, and nobody else. This is
+   *              every document issued before routes existed and every type
+   *              that never gets one, so it is scoped in the WHERE clause as
+   *              before — a colleague's id is NOT FOUND rather than refused.
+   *
+   *   A ROUTE    the person being waited on signs it, who is usually not the
+   *              document's subject. Their manager signing a time sheet is the
+   *              entire point. Turn is decided by the chain, so the query
+   *              cannot be scoped to the caller and the refusal is explicit.
+   *
+   * Signing out of turn is refused rather than queued. A signature means "I
+   * agree with what is above my name", and above the manager's name is supposed
+   * to be the worker's signature — collecting them in any order would make the
+   * order on the page a decoration.
+   */
   private async findSignableOr404(actor: DocumentActor, documentId: string) {
+    const steps = await this.signerSteps(documentId);
+
+    if (steps.length > 0) {
+      const next = nextPendingStep(steps);
+      if (!next) throw new BadRequestException('This document has already been signed.');
+      if (next.userId !== actor.userId) {
+        throw new ForbiddenException('This document is waiting for somebody else to sign.');
+      }
+    }
+
     const document = await this.prisma.document.findFirst({
       where: {
         id: documentId,
         organizationId: actor.organizationId,
-        // Scoped to the caller in the WHERE clause, so an id belonging to a
-        // colleague is not found rather than found-and-refused.
-        userId: actor.userId,
+        // With a route, turn decides who may sign and the chain was just
+        // checked. Without one, the caller must be the subject — scoped here so
+        // a colleague's id is not found rather than found-and-refused.
+        ...(steps.length > 0 ? {} : { userId: actor.userId }),
       },
       include: {
         type: { select: { label: true, signatureMode: true } },
@@ -2863,6 +3236,56 @@ export class DocumentsService {
    * issue. The document exists either way, and delivery is recorded separately
    * — which is why `deliveredAt` is set by the notification path, not here.
    */
+  /**
+   * Tell whoever the document is now waiting for.
+   *
+   * Marks the step notified so the register can say how long it has been
+   * sitting — "waiting on Anna, 4 days" is the question that screen exists to
+   * answer, and it needs a start time.
+   *
+   * Swallows its own failure. Push is best-effort, and an exception here would
+   * surface to the signer as though their signature had failed when it is
+   * already sealed.
+   */
+  private async notifyNextSigner(documentId: string, title: string): Promise<void> {
+    try {
+      const steps = await this.signerSteps(documentId);
+      const next = nextPendingStep(steps);
+      if (!next?.userId) return; // Nobody internal to tell — customers are phase 3/4.
+
+      const [user, signerRow] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: next.userId },
+          select: { id: true, firstName: true, email: true },
+        }),
+        this.prisma.documentSigner.findFirst({
+          where: { documentId, order: next.order },
+          select: { id: true },
+        }),
+      ]);
+      if (!user) return;
+
+      if (signerRow) {
+        await this.prisma.documentSigner.update({
+          where: { id: signerRow.id },
+          data: { notifiedAt: new Date() },
+        });
+      }
+
+      this.notificationClient.emit('document_awaiting_signature', {
+        documentId,
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        title,
+        step: next.order,
+        totalSteps: steps.length,
+      });
+    } catch (err) {
+      this.logger.warn(`Could not notify the next signer of ${documentId}: ${String(err)}`);
+    }
+  }
+
   private notifyIssued(
     documentId: string,
     member: { id: string; firstName: string; lastName: string; email: string },
