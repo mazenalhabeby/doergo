@@ -72,8 +72,24 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           'HBCField uses your photo library to attach images to tasks and service reports, and to submit a document you already have as a photo or scan.',
         UIBackgroundModes: ['remote-notification', 'location'],
         ITSAppUsesNonExemptEncryption: false,
-        // iPhone: portrait only (phone-first UI). iPad: all orientations.
-        UISupportedInterfaceOrientations: ['UIInterfaceOrientationPortrait'],
+        /*
+          iPhone declares landscape, but does NOT get it.
+
+          The phone UI is portrait-first and stays that way: applyOrientationPolicy()
+          locks phones to PORTRAIT_UP at launch, and nothing unlocks it except the
+          signing pad, which asks for landscape while it is open and restores the
+          policy when it closes.
+
+          The declaration is required all the same. iOS refuses any orientation an
+          app has not declared, whatever the code asks for — so without landscape
+          here, a signature on iPhone is stuck in a tall narrow strip that a long
+          name does not fit, and no amount of JavaScript can change it.
+        */
+        UISupportedInterfaceOrientations: [
+          'UIInterfaceOrientationPortrait',
+          'UIInterfaceOrientationLandscapeLeft',
+          'UIInterfaceOrientationLandscapeRight',
+        ],
         // iPad: portrait + both landscapes, but NOT upside-down (rarely wanted).
         'UISupportedInterfaceOrientations~ipad': [
           'UIInterfaceOrientationPortrait',

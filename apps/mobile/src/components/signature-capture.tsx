@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import SignatureScreen from 'react-native-signature-canvas';
+import { requestLandscape, releaseLandscape } from '../lib/orientation';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
@@ -47,11 +48,34 @@ export function SignatureCapture({
   const insets = useSafeAreaInsets();
   const hasSigned = !!existingSignature;
 
-  const handleSignature = useCallback((signature: string) => {
-    onSave(signature);
+  /*
+    Open sideways, close upright.
+
+    A signature is a WIDE, SHORT gesture; portrait gives a tall narrow strip that
+    a long name runs out of room in. So the pad — and only the pad — asks for
+    landscape, and hands orientation straight back to the app-wide policy when it
+    closes. Everything else in the phone UI stays portrait.
+
+    Ordered so the rotation happens BEFORE the canvas mounts and AFTER it is
+    gone. Rotating remounts the WebView, and a rotation mid-stroke would discard
+    what somebody had already drawn.
+  */
+  const openPad = useCallback(async () => {
+    await requestLandscape();
+    setShowModal(true);
+  }, []);
+
+  const closePad = useCallback(() => {
     setShowModal(false);
     setIsSigning(false);
-  }, [onSave]);
+    // Not awaited: the modal should dismiss now, not after the OS has rotated.
+    void releaseLandscape();
+  }, []);
+
+  const handleSignature = useCallback((signature: string) => {
+    onSave(signature);
+    closePad();
+  }, [onSave, closePad]);
 
   const handleClear = useCallback(() => {
     signatureRef.current?.clearSignature();
@@ -95,7 +119,7 @@ export function SignatureCapture({
           { borderColor: colors.border, backgroundColor: colors.surfaceRaised },
           hasSigned && { borderColor: COLORS.success, borderStyle: 'solid', backgroundColor: isDark ? colors.successLight : '#f0fdf4' },
         ]}
-        onPress={() => setShowModal(true)}
+        onPress={openPad}
         activeOpacity={0.7}
       >
         {hasSigned ? (
@@ -150,7 +174,7 @@ export function SignatureCapture({
         animationType="slide"
         presentationStyle="fullScreen"
         supportedOrientations={['portrait', 'landscape']}
-        onRequestClose={() => { setShowModal(false); setIsSigning(false); }}
+        onRequestClose={closePad}
       >
         <View style={[styles.modalContainer, { backgroundColor: isDark ? '#0a0a14' : '#f8fafc' }]}>
           {/* Header */}
@@ -163,7 +187,7 @@ export function SignatureCapture({
             },
           ]}>
             <TouchableOpacity
-              onPress={() => { setShowModal(false); setIsSigning(false); }}
+              onPress={closePad}
               style={styles.headerBtn}
               activeOpacity={0.7}
             >
