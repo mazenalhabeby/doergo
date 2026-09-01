@@ -1,9 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
   BUILTIN_ROLES,
   ACCESS_PERMISSION_SCHEMA,
+  permissionsExceed,
+  permissionsFromOrgRole,
   type PermissionSet,
 } from '@hbcfield/shared';
 
@@ -78,8 +80,20 @@ export class SpaceRolesService {
     color?: string;
     permissions?: PermissionSet;
     isActive?: boolean;
+    /** Ceiling on what the caller may author. Null/undefined = admin. */
+    requesterPerms?: PermissionSet | null;
   }) {
     const role = await this.getOwnedRole(data.organizationId, data.roleId);
+    /*
+      The ceiling applies to what the role ALREADY grants, not only to the edit.
+
+      Otherwise somebody who could not have authored a role could still rename
+      it, recolour it and hand it out — keeping every permission they were never
+      allowed to give. The org role paths guard delete for the same reason.
+    */
+    if (data.requesterPerms && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(role.permissions))) {
+      throw new ForbiddenException('You cannot edit a role with permissions beyond your own');
+    }
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) {
       const name = data.name.trim();
@@ -143,10 +157,35 @@ export class SpaceRolesService {
     userId: string;
     spaceRoleId?: string | null; // AccessRole (space) id — name kept for API compat
     createdById?: string;
+    /**
+     * What the caller holds in this space — the ceiling on what they may hand
+     * out. Undefined/null means no ceiling and is set ONLY for an admin, who
+     * holds every permission and could never trip it.
+     */
+    requesterPerms?: PermissionSet | null;
   }) {
     await this.assertSpaceInOrg(data.organizationId, data.spaceId);
     await this.assertUserInOrg(data.organizationId, data.userId);
-    if (data.spaceRoleId) await this.getOwnedRole(data.organizationId, data.spaceRoleId);
+    if (data.spaceRoleId) {
+      const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId);
+      /*
+        Nobody may grant what they do not hold.
+
+        Checked here rather than at the gateway because this is where the role's
+        permissions are read — a gateway-side check would have to fetch the role
+        a second time, and the two copies would be free to disagree.
+
+        This barely mattered while a space role carried four attendance
+        permissions: the worst a space manager could do was make somebody an
+        approver of overtime. A space role can now carry sixteen, including
+        managing this space's members, deleting assets, the CRM client grants
+        and location tracking — so handing one out is a real transfer of
+        authority and needs the ceiling the org paths have always had.
+      */
+      if (data.requesterPerms && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(role.permissions))) {
+        throw new ForbiddenException('You cannot grant permissions beyond your own');
+      }
+    }
 
     const member = await this.prisma.spaceAssignment.upsert({
       where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
@@ -258,17 +297,40 @@ export class SpaceRolesService {
     if (!user) throw new NotFoundException('User not found in this organization');
   }
 
+  /**
+   * A slug nothing else in the org is using.
+   *
+   * One query, and it terminates by construction. It used to be `while (true)`
+   * around a findFirst — a loop with no bound whose only exit was the database
+   * disagreeing, costing one round trip per collision and spinning forever if
+   * that answer never came. Neither failure needs to be reachable to be worth
+   * removing from a path that runs while a request is held open.
+   *
+   * Reading every sibling slug at once also makes the cost flat: ten roles
+   * called "Shift Leader" cost one query, not ten.
+   */
   private async uniqueSlug(organizationId: string, name: string, excludeId?: string): Promise<string> {
     const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'role';
-    let slug = base;
-    let n = 1;
-    while (true) {
-      const clash = await this.prisma.accessRole.findFirst({
-        where: { organizationId, slug, ...(excludeId ? { id: { not: excludeId } } : {}) },
-        select: { id: true },
-      });
-      if (!clash) return slug;
-      slug = `${base}-${++n}`;
+
+    const siblings = await this.prisma.accessRole.findMany({
+      where: {
+        organizationId,
+        slug: { startsWith: base },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { slug: true },
+    });
+    const taken = new Set(siblings.map((r) => r.slug));
+
+    if (!taken.has(base)) return base;
+    // Bounded by the number of rows that could possibly clash: with N siblings
+    // taken, one of base-2 … base-(N+2) is necessarily free.
+    for (let n = 2; n <= taken.size + 2; n++) {
+      const candidate = `${base}-${n}`;
+      if (!taken.has(candidate)) return candidate;
     }
+    // Unreachable by the pigeonhole argument above; a slug that is unique
+    // anyway beats throwing on a name.
+    return `${base}-${Date.now()}`;
   }
 }

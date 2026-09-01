@@ -38,6 +38,7 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       isActive?: boolean;
+      requesterPerms?: PermissionSet | null;
     },
   ) {
     return this.service.updateRole(data);
@@ -63,6 +64,7 @@ export class SpaceRolesController {
       userId: string;
       spaceRoleId?: string | null;
       createdById?: string;
+      requesterPerms?: PermissionSet | null;
     },
   ) {
     return this.service.assignMember(data);

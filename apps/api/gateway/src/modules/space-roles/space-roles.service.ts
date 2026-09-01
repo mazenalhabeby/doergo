@@ -29,6 +29,8 @@ export class SpaceRolesService extends BaseGatewayService {
     color?: string;
     permissions?: PermissionSet;
     isActive?: boolean;
+    /** Ceiling for what the caller may author. Null = admin, no ceiling. */
+    requesterPerms?: PermissionSet | null;
   }) {
     return this.send({ cmd: 'update_space_role' }, data);
   }
@@ -46,6 +48,8 @@ export class SpaceRolesService extends BaseGatewayService {
     userId: string;
     spaceRoleId?: string | null;
     createdById?: string;
+    /** Ceiling for what the caller may hand out. Null = admin, no ceiling. */
+    requesterPerms?: PermissionSet | null;
   }) {
     return this.send({ cmd: 'assign_space_member' }, data);
   }

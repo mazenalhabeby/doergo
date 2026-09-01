@@ -1,6 +1,13 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { isAdmin, accessAllows, type PermissionSet, type ResolvedAccess } from '@hbcfield/shared';
+import {
+  isAdmin,
+  accessAllows,
+  permissionsExceed,
+  permissionsFromOrgRole,
+  type PermissionSet,
+  type ResolvedAccess,
+} from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { SpaceRolesService } from './space-roles.service';
@@ -21,6 +28,49 @@ function canManageSpace(user: any, spaceId: string): boolean {
 function assertCanManageSpace(user: any, spaceId: string) {
   if (!canManageSpace(user, spaceId)) {
     throw new ForbiddenException('You do not manage this space');
+  }
+}
+
+/**
+ * Everything the caller holds when acting on THIS space: org-wide grants plus
+ * whatever their assignment in this space adds.
+ *
+ * Read from `access`, which validateToken resolves server-side from the
+ * caller's own roles — never from the request. It is the ceiling for what they
+ * may hand to somebody else.
+ */
+function actorPermsForSpace(user: any, spaceId: string): PermissionSet {
+  const access = user?.access as ResolvedAccess | undefined;
+  return { ...(access?.org ?? {}), ...(access?.perSpace?.[spaceId] ?? {}) };
+}
+
+/**
+ * Nobody may grant what they do not hold.
+ *
+ * The org paths have enforced this for a while (role authoring, member role
+ * changes, invitation pre-assignment). The SPACE paths never did, and until
+ * today it barely showed: a space role could carry four attendance permissions,
+ * so the worst a space manager could do was make somebody else an approver of
+ * overtime.
+ *
+ * A space role can now carry sixteen — including managing this space's members,
+ * deleting assets, the CRM client grants and location tracking. Assigning one is
+ * now a real transfer of authority, so it needs the ceiling the org side has:
+ * a space manager cannot mint themselves asset deletion by assigning a role
+ * that happens to include it.
+ *
+ * Admins bypass, exactly as they do everywhere else — they already hold every
+ * permission, so the check could never fire for them anyway.
+ */
+function assertMayGrant(user: any, rolePerms: unknown, spaceId?: string) {
+  if (isAdmin(user)) return;
+  // No spaceId = authoring a role DEFINITION, which is org-wide and usable in
+  // any space, so it is measured against org grants alone. A space manager's
+  // extra powers in one workspace must not let them mint a role carrying those
+  // powers everywhere.
+  const ceiling = spaceId ? actorPermsForSpace(user, spaceId) : (user?.access?.org ?? {});
+  if (permissionsExceed(ceiling, permissionsFromOrgRole(rolePerms))) {
+    throw new ForbiddenException('You cannot grant permissions beyond your own');
   }
 }
 
@@ -52,6 +102,7 @@ export class SpaceRolesController {
     body: { name: string; description?: string; color?: string; permissions?: PermissionSet },
     @Request() req: any,
   ) {
+    assertMayGrant(req.user, body.permissions);
     return this.service.createRole({ ...body, organizationId: req.user.organizationId });
   }
 
@@ -70,7 +121,16 @@ export class SpaceRolesController {
     },
     @Request() req: any,
   ) {
-    return this.service.updateRole({ ...body, roleId, organizationId: req.user.organizationId });
+    if (body.permissions !== undefined) assertMayGrant(req.user, body.permissions);
+    return this.service.updateRole({
+      ...body,
+      roleId,
+      organizationId: req.user.organizationId,
+      // The ceiling also applies to what the role ALREADY grants: editing a role
+      // you could not have authored would otherwise let you rename it, hand it
+      // out, and keep every permission you were never allowed to give.
+      requesterPerms: isAdmin(req.user) ? null : (req.user?.access?.org ?? {}),
+    });
   }
 
   @Delete('space-roles/:id')
@@ -105,6 +165,10 @@ export class SpaceRolesController {
       spaceRoleId: body.spaceRoleId ?? null,
       organizationId: req.user.organizationId,
       createdById: req.user.id,
+      // The role being handed out is loaded in the service, so the ceiling is
+      // checked there. Null means "no ceiling" and is set ONLY for an admin,
+      // who holds everything and could never trip it.
+      requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
     });
   }
 
