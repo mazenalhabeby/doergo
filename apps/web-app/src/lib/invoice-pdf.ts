@@ -167,10 +167,18 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   }
   if (inv.clientEmail) { doc.text(inv.clientEmail, margin, by); by += 4 }
 
-  // Meta rows on the right
+  /*
+    Meta rows on the right.
+
+    A missing due date printed as an em-dash, so the invoice read "Due date —"
+    and looked broken. It is not broken: an invoice with no term is payable on
+    receipt, which is a real and common arrangement — it just has to be SAID.
+    A customer cannot act on a dash, and an unanswered "when" is the line an
+    unpaid invoice is argued over.
+  */
   const metaRows: [string, string][] = [
     ["Issue date", fmtDate(inv.issueDate)],
-    ["Due date", fmtDate(inv.dueDate)],
+    ["Due date", inv.dueDate ? fmtDate(inv.dueDate) : "On receipt"],
   ]
   let my = y
   for (const [k, v] of metaRows) {
