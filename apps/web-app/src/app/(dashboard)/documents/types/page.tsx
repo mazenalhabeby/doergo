@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import {
   FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2,
   CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2, CreditCard,
+  User, UserCheck, Handshake, ChevronUp, ChevronDown, X,
 } from "lucide-react"
 import {
   documentsApi, workflowsApi, organizationsApi,
@@ -355,6 +356,17 @@ function TypeEditor({
   const [requiredFromRoleIds, setRequiredFromRoleIds] = useState<string[]>(type?.requiredFromRoleIds ?? [])
   const [twoSided, setTwoSided] = useState(type?.twoSided ?? starter?.twoSided ?? false)
   const [scanShape, setScanShape] = useState(type?.scanShape ?? starter?.scanShape ?? "CARD")
+  /*
+    The signing route: an ordered list of roles.
+
+    Empty means one signature by the member, which is what every type did before
+    routes existed — so an untouched type keeps behaving exactly as it did.
+  */
+  const [route, setRoute] = useState<string[]>(
+    Array.isArray(type?.signerRoute)
+      ? (type!.signerRoute as Array<{ role: string }>).map((s) => s.role)
+      : [],
+  )
   const [retentionMonths, setRetentionMonths] = useState<number | null>(
     type?.retentionMonths ?? starter?.retentionMonths ?? null,
   )
@@ -394,6 +406,9 @@ function TypeEditor({
         twoSided: direction === "SUPPLIED" && twoSided,
         scanShape,
         retentionMonths,
+        // null, not [] — the server reads null as "no route" and an empty array
+        // as a type somebody misconfigured.
+        signerRoute: route.length ? route.map((r) => ({ role: r })) : null,
       })
     },
     onSuccess: () => {
@@ -661,6 +676,27 @@ function TypeEditor({
                 />
               ))}
             </div>
+
+            {/*
+              The signing route.
+
+              Only offered once the type takes a signature at all: a route on a
+              type nobody signs is a list of people who will never be asked.
+            */}
+            {signatureMode !== "NONE" && (
+              <div className="mt-5 border-t border-border/60 pt-5">
+                <p className="text-sm font-medium text-foreground">
+                  {t("documents.types.route.title", "Who signs it")}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t(
+                    "documents.types.route.hint",
+                    "Leave empty and the member signs it alone. Add steps and the document travels — each person signs in turn, and all their signatures end up on it.",
+                  )}
+                </p>
+                <RouteEditor route={route} onChange={setRoute} />
+              </div>
+            )}
           </Step>
         )}
 
@@ -805,5 +841,118 @@ function Locked({ children }: { children: React.ReactNode }) {
       <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       {children}
     </p>
+  )
+}
+
+/**
+ * The signing route, as an ordered list.
+ *
+ * Roles, never named people. Naming somebody on the TYPE means re-editing it
+ * whenever they leave; a role keeps working, and who it resolves to is decided
+ * per document when it is issued.
+ *
+ * Order is the route, so it is movable and the numbers are shown. A role can
+ * appear once: the same role twice either asks one person to sign twice, which
+ * the chain cannot distinguish, or means two different people, which the role
+ * cannot express.
+ */
+function RouteEditor({ route, onChange }: { route: string[]; onChange: (r: string[]) => void }) {
+  const { t } = useTranslation()
+
+  const ROLES = [
+    { key: "MEMBER", Icon: User },
+    { key: "RESPONSIBLE", Icon: UserCheck },
+    { key: "ORG_REPRESENTATIVE", Icon: Building2 },
+    { key: "CUSTOMER", Icon: Handshake },
+  ] as const
+
+  const move = (i: number, by: number) => {
+    const next = [...route]
+    const j = i + by
+    if (j < 0 || j >= next.length) return
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onChange(next)
+  }
+
+  const available = ROLES.filter((r) => !route.includes(r.key))
+
+  return (
+    <div className="mt-4">
+      {route.length > 0 && (
+        <ul className="mb-3 space-y-2">
+          {route.map((role, i) => {
+            const meta = ROLES.find((r) => r.key === role)
+            const Icon = meta?.Icon ?? User
+            return (
+              <li
+                key={role}
+                className="flex items-center gap-3 rounded-lg border border-border/80 bg-card px-3 py-2.5"
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary tabular-nums">
+                  {i + 1}
+                </span>
+                <Icon className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {t(`documents.types.route.roles.${role}`)}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t(`documents.types.route.roleHints.${role}`)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    aria-label={t("common.moveUp", "Move up")}
+                    className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ChevronUp className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(i, 1)}
+                    disabled={i === route.length - 1}
+                    aria-label={t("common.moveDown", "Move down")}
+                    className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ChevronDown className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange(route.filter((r) => r !== role))}
+                    aria-label={t("common.remove", "Remove")}
+                    className="rounded p-1 text-muted-foreground hover:text-red-600"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <div className="flex flex-wrap gap-1.5">
+        {available.map(({ key: k, Icon }) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => onChange([...route, k])}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <Plus className="size-3.5" />
+            <Icon className="size-3.5" />
+            {t(`documents.types.route.roles.${k}`)}
+          </button>
+        ))}
+        {available.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            {t("documents.types.route.allAdded", "Every kind of signer is in the route.")}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }

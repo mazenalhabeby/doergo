@@ -663,7 +663,9 @@
     "backToHome": "Retour à l’accueil",
     "reject": "Refuser",
     "clear": "Effacer",
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "moveUp": "Monter",
+    "moveDown": "Descendre"
   },
   "auth": {
     "login": {
@@ -7541,6 +7543,23 @@
           "name": "Une feuille",
           "hint": "Attestation A4, à la verticale"
         }
+      },
+      "route": {
+        "title": "Qui signe",
+        "hint": "Laissez vide et le membre signe seul. Ajoutez des étapes et le document circule : chacun signe à son tour, et toutes les signatures y figurent.",
+        "allAdded": "Tous les types de signataires sont dans le circuit.",
+        "roles": {
+          "MEMBER": "Le membre",
+          "RESPONSIBLE": "Son responsable",
+          "ORG_REPRESENTATIVE": "Pour l’entreprise",
+          "CUSTOMER": "Le client"
+        },
+        "roleHints": {
+          "MEMBER": "à qui le document est émis",
+          "RESPONSIBLE": "issu de son routage d’approbation",
+          "ORG_REPRESENTATIVE": "quelqu’un signant au nom de l’organisation",
+          "CUSTOMER": "le client des espaces où il travaille"
+        }
       }
     },
     "supply": {
@@ -7681,7 +7700,15 @@
       "allFiles": "Tous les fichiers",
       "undated": "Sans période",
       "emptyFolder": "Ce dossier est vide.",
-      "groupByLabel": "Trier par"
+      "groupByLabel": "Trier par",
+      "chain": {
+        "step": "Étape {{step}} sur {{total}}",
+        "waitingOn": "en attente de {{name}}",
+        "days_one": "{{count}} jour",
+        "days_other": "{{count}} jours",
+        "complete_one": "{{count}} signature recueillie",
+        "complete_other": "Les {{count}} signatures recueillies"
+      }
     }
   },
   "serverErrors": {

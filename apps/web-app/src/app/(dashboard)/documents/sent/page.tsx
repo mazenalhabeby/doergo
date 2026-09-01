@@ -8,7 +8,7 @@ import {
   ArrowLeft, Search, Loader2, Eye, PenLine, MailOpen, CheckCircle2,
   FileText, Inbox, ChevronLeft, ChevronRight, FolderTree, ListChecks,
 } from "lucide-react"
-import { documentsApi, type IssuedRegister, type IssuedRow } from "@/lib/api"
+import { documentsApi, type IssuedRegister, type IssuedRow, type DocumentChain } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserAvatar } from "@/components/user-avatar"
@@ -271,6 +271,7 @@ export default function SentDocumentsPage() {
                               </>
                             )}
                           </p>
+                          <ChainLine chain={row.chain} />
                         </div>
 
                         <StateChip row={row} />
@@ -322,6 +323,64 @@ export default function SentDocumentsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * Where a document has got to, and who is holding it up.
+ *
+ * Rendered only when the type has a route. A document with none is not "1 of 1"
+ * — it was never a chain, and saying so would imply the others were unfinished.
+ *
+ * "Waiting on whom, and for how long" is the question this screen exists to
+ * answer: a chain that stalls silently is worse than no chain, because everyone
+ * assumes it moved.
+ */
+function ChainLine({ chain }: { chain?: DocumentChain | null }) {
+  const { t } = useTranslation()
+  if (!chain) return null
+
+  if (chain.complete) {
+    return (
+      <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
+        {t("documents.sent.chain.complete", {
+          defaultValue: "All {{count}} signatures collected",
+          count: chain.total,
+        })}
+      </p>
+    )
+  }
+
+  const days = chain.waitingSince
+    ? Math.floor((Date.now() - new Date(chain.waitingSince).getTime()) / 86_400_000)
+    : null
+
+  return (
+    <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
+      {t("documents.sent.chain.step", {
+        defaultValue: "Step {{step}} of {{total}}",
+        step: (chain.currentOrder ?? chain.signed + 1),
+        total: chain.total,
+      })}
+      {chain.waitingOn && (
+        <>
+          <span className="px-1.5 text-muted-foreground/40">·</span>
+          {t("documents.sent.chain.waitingOn", {
+            defaultValue: "waiting on {{name}}",
+            name: chain.waitingOn,
+          })}
+        </>
+      )}
+      {/* Only once it has been sitting long enough to be worth saying. */}
+      {days != null && days >= 1 && (
+        <>
+          <span className="px-1.5 text-muted-foreground/40">·</span>
+          <span className={days >= 3 ? "text-amber-600 dark:text-amber-400" : undefined}>
+            {t("documents.sent.chain.days", { defaultValue: "{{count}} days", count: days })}
+          </span>
+        </>
+      )}
+    </p>
   )
 }
 

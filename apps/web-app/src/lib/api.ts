@@ -6077,6 +6077,13 @@ export interface DocumentTypeRow {
   scanShape: 'CARD' | 'PASSPORT' | 'PAGE';
   isActive: boolean;
   position: number;
+  /**
+   * The signing route: an ordered list of {role}, or null for one signature.
+   *
+   * Deliberately loose here. The shape is owned and validated by the server —
+   * a second definition on the client is a second place for it to be wrong.
+   */
+  signerRoute?: Array<{ role: string }> | null
 }
 
 export interface MatchCandidateRow {
@@ -6120,6 +6127,8 @@ export interface IssuedRow {
   typeLabel: string
   signatureMode: string
   isCredential: boolean
+  /** Null for a document whose type has no route — not an empty chain. */
+  chain?: DocumentChain | null
 }
 
 /** A folder in the cabinet: a type, a member, or a year. */
@@ -6137,6 +6146,18 @@ export interface BrowseLevel {
   level: "type" | "member" | "year" | "documents"
   folders: BrowseFolder[]
   documents: IssuedRow[]
+}
+
+/** Where a document has got to, when its type has a signing route. */
+export interface DocumentChain {
+  total: number
+  signed: number
+  complete: boolean
+  currentOrder: number | null
+  currentRole: string | null
+  waitingOn: string | null
+  /** When the current signer was told. Null if they have not been notified. */
+  waitingSince: string | null
 }
 
 export interface IssuedRegister {

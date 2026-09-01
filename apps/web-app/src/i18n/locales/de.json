@@ -663,7 +663,9 @@
     "backToHome": "Zurück zur Startseite",
     "reject": "Ablehnen",
     "clear": "Zurücksetzen",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten"
   },
   "auth": {
     "login": {
@@ -7532,6 +7534,23 @@
           "name": "Ein Blatt Papier",
           "hint": "A4-Zeugnis, hochkant"
         }
+      },
+      "route": {
+        "title": "Wer unterschreibt",
+        "hint": "Leer lassen — dann unterschreibt nur der Mitarbeiter. Mit Schritten wandert das Dokument: jede Person unterschreibt der Reihe nach, und alle Unterschriften landen darauf.",
+        "allAdded": "Alle Unterzeichner-Arten sind im Ablauf.",
+        "roles": {
+          "MEMBER": "Der Mitarbeiter",
+          "RESPONSIBLE": "Sein Verantwortlicher",
+          "ORG_REPRESENTATIVE": "Für das Unternehmen",
+          "CUSTOMER": "Der Kunde"
+        },
+        "roleHints": {
+          "MEMBER": "an wen das Dokument ausgestellt wird",
+          "RESPONSIBLE": "ergibt sich aus der Freigabe-Zuordnung",
+          "ORG_REPRESENTATIVE": "jemand, der für das Unternehmen unterschreibt",
+          "CUSTOMER": "der Kunde der Spaces, in denen er arbeitet"
+        }
       }
     },
     "supply": {
@@ -7672,7 +7691,15 @@
       "allFiles": "Alle Dateien",
       "undated": "Ohne Zeitraum",
       "emptyFolder": "Dieser Ordner ist leer.",
-      "groupByLabel": "Ansicht"
+      "groupByLabel": "Ansicht",
+      "chain": {
+        "step": "Schritt {{step}} von {{total}}",
+        "waitingOn": "wartet auf {{name}}",
+        "days_one": "{{count}} Tag",
+        "days_other": "{{count}} Tage",
+        "complete_one": "{{count}} Unterschrift vorhanden",
+        "complete_other": "Alle {{count}} Unterschriften vorhanden"
+      }
     }
   },
   "serverErrors": {

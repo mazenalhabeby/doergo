@@ -663,7 +663,9 @@
     "backToHome": "Torna alla home",
     "reject": "Rifiuta",
     "clear": "Cancella",
-    "undo": "Annulla"
+    "undo": "Annulla",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù"
   },
   "auth": {
     "login": {
@@ -7541,6 +7543,23 @@
           "name": "Un foglio",
           "hint": "Attestato A4, verticale"
         }
+      },
+      "route": {
+        "title": "Chi firma",
+        "hint": "Lascia vuoto e firma solo il membro. Aggiungi passaggi e il documento circola: ognuno firma a turno e tutte le firme finiscono su di esso.",
+        "allAdded": "Tutti i tipi di firmatario sono nel percorso.",
+        "roles": {
+          "MEMBER": "Il membro",
+          "RESPONSIBLE": "Il suo responsabile",
+          "ORG_REPRESENTATIVE": "Per l’azienda",
+          "CUSTOMER": "Il cliente"
+        },
+        "roleHints": {
+          "MEMBER": "a chi viene emesso il documento",
+          "RESPONSIBLE": "dal suo instradamento di approvazione",
+          "ORG_REPRESENTATIVE": "qualcuno che firma per conto dell’organizzazione",
+          "CUSTOMER": "il cliente degli spazi in cui lavora"
+        }
       }
     },
     "supply": {
@@ -7681,7 +7700,15 @@
       "allFiles": "Tutti i file",
       "undated": "Senza periodo",
       "emptyFolder": "Questa cartella è vuota.",
-      "groupByLabel": "Sfoglia per"
+      "groupByLabel": "Sfoglia per",
+      "chain": {
+        "step": "Passaggio {{step}} di {{total}}",
+        "waitingOn": "in attesa di {{name}}",
+        "days_one": "{{count}} giorno",
+        "days_other": "{{count}} giorni",
+        "complete_one": "{{count}} firma raccolta",
+        "complete_other": "Tutte le {{count}} firme raccolte"
+      }
     }
   },
   "serverErrors": {

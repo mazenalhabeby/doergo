@@ -663,7 +663,9 @@
     "backToHome": "Volver al inicio",
     "reject": "Rechazar",
     "clear": "Borrar",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "moveUp": "Subir",
+    "moveDown": "Bajar"
   },
   "auth": {
     "login": {
@@ -7532,6 +7534,23 @@
           "name": "Una hoja de papel",
           "hint": "Certificado A4, vertical"
         }
+      },
+      "route": {
+        "title": "Quién la firma",
+        "hint": "Déjalo vacío y solo firma el miembro. Añade pasos y el documento circula: cada persona firma por turno y todas las firmas acaban en él.",
+        "allAdded": "Todos los tipos de firmante están en la ruta.",
+        "roles": {
+          "MEMBER": "El miembro",
+          "RESPONSIBLE": "Su responsable",
+          "ORG_REPRESENTATIVE": "Por la empresa",
+          "CUSTOMER": "El cliente"
+        },
+        "roleHints": {
+          "MEMBER": "a quien se emite el documento",
+          "RESPONSIBLE": "según su enrutamiento de aprobación",
+          "ORG_REPRESENTATIVE": "alguien que firma en nombre de la organización",
+          "CUSTOMER": "el cliente de los espacios donde trabaja"
+        }
       }
     },
     "supply": {
@@ -7672,7 +7691,15 @@
       "allFiles": "Todos los archivos",
       "undated": "Sin periodo",
       "emptyFolder": "Esta carpeta está vacía.",
-      "groupByLabel": "Ver por"
+      "groupByLabel": "Ver por",
+      "chain": {
+        "step": "Paso {{step}} de {{total}}",
+        "waitingOn": "esperando a {{name}}",
+        "days_one": "{{count}} día",
+        "days_other": "{{count}} días",
+        "complete_one": "{{count}} firma recogida",
+        "complete_other": "Las {{count}} firmas recogidas"
+      }
     }
   },
   "serverErrors": {

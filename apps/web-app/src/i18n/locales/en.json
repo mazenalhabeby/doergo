@@ -663,7 +663,9 @@
     "backToHome": "Back to home",
     "reject": "Reject",
     "clear": "Clear",
-    "undo": "Undo"
+    "undo": "Undo",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "auth": {
     "login": {
@@ -7532,6 +7534,23 @@
           "name": "A sheet of paper",
           "hint": "A4 certificate, upright"
         }
+      },
+      "route": {
+        "title": "Who signs it",
+        "hint": "Leave empty and the member signs it alone. Add steps and the document travels — each person signs in turn, and all their signatures end up on it.",
+        "allAdded": "Every kind of signer is in the route.",
+        "roles": {
+          "MEMBER": "The member",
+          "RESPONSIBLE": "Their responsible",
+          "ORG_REPRESENTATIVE": "For the company",
+          "CUSTOMER": "The customer"
+        },
+        "roleHints": {
+          "MEMBER": "whoever the document is issued to",
+          "RESPONSIBLE": "resolved from their approval routing",
+          "ORG_REPRESENTATIVE": "somebody signing on behalf of the organisation",
+          "CUSTOMER": "the client of the spaces they work in"
+        }
       }
     },
     "supply": {
@@ -7672,7 +7691,15 @@
       "allFiles": "All files",
       "undated": "No period",
       "emptyFolder": "This folder is empty.",
-      "groupByLabel": "Browse by"
+      "groupByLabel": "Browse by",
+      "chain": {
+        "step": "Step {{step}} of {{total}}",
+        "waitingOn": "waiting on {{name}}",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days",
+        "complete_one": "{{count}} signature collected",
+        "complete_other": "All {{count}} signatures collected"
+      }
     }
   },
   "serverErrors": {
