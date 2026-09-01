@@ -37,6 +37,7 @@ import {
   rectToPixels,
   isUsefulCrop,
   parseRoute,
+  routeProblem,
   nextPendingStep,
   chainProgress,
   resolveMemberRouting,
@@ -246,10 +247,25 @@ export class DocumentsService {
       scanShape: string;
       isActive: boolean;
       position: number;
+      /** Ordered signer roles, or null to go back to a single signature. */
+      signerRoute: unknown;
     }>;
   }) {
     this.assertCanManageTypes(data.actor);
     const existing = await this.findTypeOr404(data.id, data.actor.organizationId);
+
+    /*
+      A route is validated here rather than trusted.
+
+      It is JSON on a column, so nothing else stops a malformed one being
+      stored — and a document type whose route cannot be parsed would issue
+      documents with no chain while appearing to have one, which is the worst
+      of both. routeProblem returns the reason so the message is written once.
+    */
+    if (data.patch.signerRoute !== undefined) {
+      const problem = routeProblem(data.patch.signerRoute);
+      if (problem) throw new BadRequestException(problem);
+    }
 
     // `cadence` and `direction` are absent from the patch on purpose. Changing
     // either would re-interpret every document already filed under the type —
@@ -258,7 +274,7 @@ export class DocumentsService {
     // payslips. Make a new type instead.
     return this.prisma.documentType.update({
       where: { id: existing.id },
-      data: data.patch,
+      data: data.patch as Prisma.DocumentTypeUpdateInput,
     });
   }
 
@@ -2577,6 +2593,78 @@ export class DocumentsService {
       lat: event?.lat ?? null,
       lng: event?.lng ?? null,
     };
+  }
+
+  /**
+   * Send a document back to an earlier signer, with a reason.
+   *
+   * The alternative — revoke and re-issue — throws away the chain, so the
+   * worker signs a NEW document and the record of the first attempt disappears.
+   * Sending back keeps one document and one history: the earlier step goes
+   * pending again, everything after it goes pending again, and the trail says
+   * why.
+   *
+   * Only the person currently being waited on may do it. Anybody else "sending
+   * back" would be reaching into a document that is not in their hands.
+   *
+   * The signatures already collected are NOT deleted. They are what happened;
+   * the seals that carry them remain valid for the versions they described, and
+   * re-signing adds to the chain rather than rewriting it.
+   */
+  async sendBack(data: {
+    actor: DocumentActor;
+    documentId: string;
+    reason: string;
+    ctx?: RequestContext;
+  }) {
+    const reason = (data.reason ?? '').trim();
+    if (reason.length < 3) {
+      throw new BadRequestException('Say why you are sending it back');
+    }
+
+    const document = await this.prisma.document.findFirst({
+      where: { id: data.documentId, organizationId: data.actor.organizationId },
+      select: { id: true, title: true },
+    });
+    if (!document) throw new NotFoundException('Document not found');
+
+    const steps = await this.signerSteps(document.id);
+    const current = nextPendingStep(steps);
+    if (!current) throw new BadRequestException('This document is not waiting for a signature.');
+    if (current.userId !== data.actor.userId) {
+      throw new ForbiddenException('This document is waiting for somebody else.');
+    }
+
+    // The nearest earlier step that actually signed. A skipped one cannot be
+    // sent back to — nobody was ever asked.
+    const target = [...steps]
+      .filter((s) => s.order < current.order && s.status === 'SIGNED')
+      .sort((a, b) => b.order - a.order)[0];
+    if (!target) {
+      throw new BadRequestException('There is no earlier signer to send this back to.');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // That step and everything after it are pending again. Leaving the
+      // in-between steps signed would let the chain skip them on the way back
+      // up, and the order is the point.
+      await tx.documentSigner.updateMany({
+        where: { documentId: document.id, order: { gte: target.order }, status: 'SIGNED' },
+        data: { status: 'PENDING', signedAt: null },
+      });
+      await tx.documentEvent.create({
+        data: {
+          documentId: document.id,
+          type: 'SENT_BACK',
+          actorId: data.actor.userId,
+          meta: { reason, toStep: target.order },
+          ...eventContext(data.ctx),
+        },
+      });
+    });
+
+    await this.notifyNextSigner(document.id, document.title);
+    return { documentId: document.id, backToStep: target.order };
   }
 
   /** The chain on one document, in order — the shape every caller reasons about. */

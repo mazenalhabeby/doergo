@@ -29,6 +29,8 @@ import {
   ListDocumentsQueryDto,
   ListIssuedQueryDto,
   BrowseQueryDto,
+  RouteCandidatesQueryDto,
+  SendBackDto,
   PresignUploadDto,
   PublishBatchDto,
   SignDocumentDto,
@@ -177,6 +179,26 @@ export class DocumentsController {
    * Same permission as the register: which folders exist and how full they are
    * is metadata. Opening any document inside one is still checked separately.
    */
+  /**
+   * Who could sign each step, for this member and this type.
+   *
+   * Asked BEFORE issuing so the screen can present a choice where there is one,
+   * rather than the service picking somebody and the issuer finding out later.
+   */
+  @Get('route-candidates')
+  @RequirePermission('canIssueDocuments')
+  @ApiOperation({ summary: 'Possible signers for each step of a type’s route' })
+  async routeCandidates(
+    @CurrentUser() user: CurrentUserData,
+    @Query() query: RouteCandidatesQueryDto,
+  ) {
+    return this.documents.routeCandidates({
+      actor: documentActor(user),
+      memberId: query.memberId,
+      typeId: query.typeId,
+    });
+  }
+
   @Get('browse')
   @RequirePermission('canViewMemberDocuments')
   @ApiOperation({ summary: 'Browse issued documents as folders' })
@@ -400,6 +422,29 @@ export class DocumentsController {
     no permission anywhere that could grant signing on somebody else's behalf,
     because that is the one thing a signature cannot survive.
   */
+
+  /**
+   * Return a document to an earlier signer, with a reason.
+   *
+   * Deliberately no @RequirePermission: the right to send back comes from being
+   * the person currently waited on, which the service verifies. A permission
+   * here would let somebody outside the chain reach into it.
+   */
+  @Post(':id/send-back')
+  @ApiOperation({ summary: 'Send a document back to an earlier signer' })
+  async sendBack(
+    @CurrentUser() user: CurrentUserData,
+    @Param('id') id: string,
+    @Body() body: SendBackDto,
+    @Req() req: any,
+  ) {
+    return this.documents.sendBack({
+      actor: documentActor(user),
+      documentId: id,
+      reason: body.reason,
+      ctx: requestContext(req),
+    });
+  }
 
   @Post(':id/consent')
   @ApiOperation({ summary: 'Record agreement to sign electronically' })

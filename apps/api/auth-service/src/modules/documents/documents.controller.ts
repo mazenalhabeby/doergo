@@ -16,6 +16,16 @@ export class DocumentsController {
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_route_candidates' })
+  routeCandidates(@Payload() data: any) {
+    return this.documents.routeCandidates(data);
+  }
+
+  @MessagePattern({ cmd: 'documents_send_back' })
+  sendBack(@Payload() data: any) {
+    return this.documents.sendBack(data);
+  }
+
   @MessagePattern({ cmd: 'documents_browse' })
   browse(@Payload() data: any) {
     return this.documents.browse(data);

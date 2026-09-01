@@ -3865,6 +3865,10 @@ enum DocumentEventType {
   ACKNOWLEDGED
   VERIFIED
   REJECTED
+  /// A signer returned the document to an earlier step with a reason. Distinct
+  /// from REJECTED, which ends a supplied document — this one keeps the chain
+  /// alive and says why it went backwards.
+  SENT_BACK
   REVOKED
   SUPERSEDED
 }

@@ -29,6 +29,7 @@ export class DocumentsGatewayService extends BaseGatewayService {
   listDrafts(data: unknown) { return this.send({ cmd: 'documents_list_drafts' }, data); }
   listTemplates(data: unknown) { return this.send({ cmd: 'documents_list_templates' }, data); }
   browse(data: unknown) { return this.send({ cmd: 'documents_browse' }, data); }
+  routeCandidates(data: unknown) { return this.send({ cmd: 'documents_route_candidates' }, data); }
   listIssued(data: unknown) { return this.send({ cmd: 'documents_list_issued' }, data); }
   compliance(data: unknown) { return this.send({ cmd: 'documents_compliance' }, data); }
   awaitingVerification(data: unknown) { return this.send({ cmd: 'documents_awaiting_verification' }, data); }
@@ -36,6 +37,7 @@ export class DocumentsGatewayService extends BaseGatewayService {
   pending(data: unknown) { return this.send({ cmd: 'documents_pending_for_member' }, data); }
 
   // ── Writes ───────────────────────────────────────────────────────────────
+  sendBack(data: unknown) { return this.sendOnce({ cmd: 'documents_send_back' }, data); }
   createType(data: unknown) { return this.sendOnce({ cmd: 'documents_create_type' }, data); }
   updateType(data: unknown) { return this.sendOnce({ cmd: 'documents_update_type' }, data); }
   deactivateType(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_type' }, data); }

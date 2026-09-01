@@ -123,6 +123,21 @@ export class CreateDocumentTypeDto {
  * re-interpret every document already filed under the type. Make a new type.
  */
 export class UpdateDocumentTypeDto {
+  /*
+    The signing route: an ordered list of {role}, or null for one signature.
+
+    Passed through as an opaque array and validated in the service, where
+    routeProblem() owns the rule — restating it here as decorators would give
+    two definitions of a legal route and one place for them to disagree.
+  */
+  @ApiPropertyOptional({
+    description: 'Ordered signer roles, e.g. [{"role":"MEMBER"},{"role":"RESPONSIBLE"}]. Null for a single signature.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(6)
+  signerRoute?: unknown[] | null;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -217,6 +232,19 @@ export class PresignUploadDto {
 }
 
 export class ConfirmUploadDto {
+  /*
+    Who signs each step, where the route left a choice.
+
+    Only sent for steps with more than one candidate — a step with exactly one
+    resolves itself. The service re-checks every choice against the candidates
+    it computes, because a picker is a convenience and not an authorisation.
+  */
+  @ApiPropertyOptional({ description: 'Chosen signer per route step: [{order, userId|customerId}]' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(6)
+  signerChoices?: Array<{ order: number; userId?: string | null; customerId?: string | null }>;
+
   @ApiProperty({ description: 'The key returned by /presign' })
   @IsString()
   @Length(1, 500)
@@ -272,6 +300,27 @@ export class ConfirmUploadDto {
  * narrow view into the whole register.
  */
 /** One level of the filing cabinet. Every field narrows the folder walked to. */
+/** Ask who could sign each step, before issuing. */
+export class RouteCandidatesQueryDto {
+  @ApiProperty()
+  @IsString()
+  @Length(1, 64)
+  memberId!: string;
+
+  @ApiProperty()
+  @IsString()
+  @Length(1, 64)
+  typeId!: string;
+}
+
+/** Return a document to an earlier signer. */
+export class SendBackDto {
+  @ApiProperty({ description: 'Why it is going back — shown to the earlier signer' })
+  @IsString()
+  @Length(3, 500)
+  reason!: string;
+}
+
 export class BrowseQueryDto {
   @ApiPropertyOptional({ enum: ['type', 'member', 'year'] })
   @IsOptional()
