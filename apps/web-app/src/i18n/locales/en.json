@@ -6071,11 +6071,13 @@
         "added": "Member added",
         "removed": "Member removed",
         "addFailed": "Failed to add member",
-        "removeFailed": "Failed to remove member"
+        "removeFailed": "Failed to remove member",
+        "roleUpdated": "Role updated"
       },
       "remove": "Remove",
       "removeTitle": "Remove from workspace?",
-      "removeConfirm": "{{name}} will lose their role and routing in this workspace. This does not remove them from the organization."
+      "removeConfirm": "{{name}} will lose their role and routing in this workspace. This does not remove them from the organization.",
+      "roleFor": "Role in this workspace"
     },
     "attendanceTab": {
       "heading": "Attendance",

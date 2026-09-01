@@ -6080,11 +6080,13 @@
         "added": "Membro aggiunto",
         "removed": "Membro rimosso",
         "addFailed": "Impossibile aggiungere il membro",
-        "removeFailed": "Impossibile rimuovere il membro"
+        "removeFailed": "Impossibile rimuovere il membro",
+        "roleUpdated": "Ruolo aggiornato"
       },
       "remove": "Rimuovi",
       "removeTitle": "Rimuovere dallo spazio di lavoro?",
-      "removeConfirm": "{{name}} perderà il ruolo e l instradamento in questo spazio di lavoro. Non viene rimosso dall organizzazione."
+      "removeConfirm": "{{name}} perderà il ruolo e l instradamento in questo spazio di lavoro. Non viene rimosso dall organizzazione.",
+      "roleFor": "Ruolo in questo spazio"
     },
     "attendanceTab": {
       "heading": "Presenze",

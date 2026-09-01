@@ -430,15 +430,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                     <span className="text-sm font-medium text-foreground truncate block">
                       {m.user ? `${m.user.firstName} ${m.user.lastName}` : t("scheduling.members.unknownMember")}
                     </span>
-                    {m.spaceRole && (
-                      <Badge
-                        variant="outline"
-                        className="text-[11px] mt-0.5"
-                        style={m.spaceRole.color ? { borderColor: `${m.spaceRole.color}66`, color: m.spaceRole.color } : undefined}
-                      >
-                        {m.spaceRole.name}
-                      </Badge>
-                    )}
+                    <MemberRoleSelect spaceId={spaceId} member={m} roles={roles ?? []} />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -565,6 +557,78 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+// ── A member's role in this space, changeable in place ───────────────────────
+//
+// The role could only be chosen while ADDING somebody; afterwards it was a
+// read-only badge. The only way to correct it was to remove the member and add
+// them again, which deletes the membership row — and with it their routing
+// overrides, including who signs off for them, and the record of when they
+// joined. A promotion should not cost somebody their history.
+//
+// The backend already did this: assign is an upsert keyed on (userId, spaceId)
+// whose update touches roleId alone, so the routing columns survive. Only the
+// control was missing.
+
+function MemberRoleSelect({
+  spaceId,
+  member,
+  roles,
+}: {
+  spaceId: string
+  member: SpaceMember
+  roles: SpaceRole[]
+}) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+
+  const change = useMutation({
+    mutationFn: (roleId: string) =>
+      spaceMembersApi.assign(spaceId, {
+        userId: member.userId,
+        spaceRoleId: roleId === NO_ROLE ? null : roleId,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      notify.success(t("scheduling.members.toast.roleUpdated", "Role updated"))
+    },
+    onError: (err: Error) => notify.error(err.message || t("common.error", "Something went wrong")),
+  })
+
+  return (
+    <Select
+      value={member.spaceRole?.id ?? NO_ROLE}
+      onValueChange={(v) => change.mutate(v)}
+      disabled={change.isPending}
+    >
+      <SelectTrigger
+        className="mt-0.5 h-7 w-[160px] border-dashed text-xs"
+        aria-label={t("scheduling.members.roleFor", "Role in this workspace")}
+      >
+        {change.isPending ? (
+          <span className="flex items-center gap-1.5">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <SelectValue />
+          </span>
+        ) : (
+          <SelectValue />
+        )}
+      </SelectTrigger>
+      <SelectContent>
+        {/*
+          "No role" is a real choice, not an absence. A member without one is a
+          plain member of the space: they work here and lead nothing.
+        */}
+        <SelectItem value={NO_ROLE}>{t("scheduling.members.noRole", "No role")}</SelectItem>
+        {roles.map((r) => (
+          <SelectItem key={r.id} value={r.id}>
+            {r.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

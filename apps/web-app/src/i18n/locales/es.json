@@ -6071,11 +6071,13 @@
         "added": "Miembro añadido",
         "removed": "Miembro eliminado",
         "addFailed": "No se pudo añadir el miembro",
-        "removeFailed": "No se pudo eliminar el miembro"
+        "removeFailed": "No se pudo eliminar el miembro",
+        "roleUpdated": "Rol actualizado"
       },
       "remove": "Quitar",
       "removeTitle": "¿Quitar del espacio de trabajo?",
-      "removeConfirm": "{{name}} perderá su rol y enrutamiento en este espacio de trabajo. Esto no lo elimina de la organización."
+      "removeConfirm": "{{name}} perderá su rol y enrutamiento en este espacio de trabajo. Esto no lo elimina de la organización.",
+      "roleFor": "Rol en este espacio"
     },
     "attendanceTab": {
       "heading": "Asistencia",
