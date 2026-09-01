@@ -80,7 +80,14 @@ describe('DocumentsService — a client signing a batch', () => {
   });
 
   const prisma: Record<string, any> = {
-    documentSigner: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+    documentSigner: {
+      findMany: jest.fn(),
+      // The turn is re-checked per document at the moment of signing: the row
+      // must still be PENDING and still be the current step.
+      findFirst: jest.fn(async () => ({ order: 3 })),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
     document: { findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     documentSignature: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), updateMany: jest.fn() },
     documentEvent: { create: jest.fn(), count: jest.fn().mockResolvedValue(0), findFirst: jest.fn().mockResolvedValue(null) },
@@ -89,8 +96,7 @@ describe('DocumentsService — a client signing a batch', () => {
 
   const base = {
     organizationId: 'org1',
-    customerId: 'cust1',
-    customerEmail: 'office@binderholz.com',
+    email: 'office@binderholz.com',
     signatureImage: PNG,
     typedName: 'Maria Binder',
     idempotencyKey: 'ceremony-abc12345',
@@ -98,6 +104,7 @@ describe('DocumentsService — a client signing a batch', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    prisma.documentSigner.findFirst.mockResolvedValue({ order: 3 });
     prisma.documentSignature.findMany.mockResolvedValue([]);
     prisma.documentEvent.count.mockResolvedValue(0);
     prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
@@ -229,7 +236,6 @@ describe('DocumentsService — a client signing a batch', () => {
 
       const row = prisma.documentSignature.create.mock.calls[0][0].data;
       expect(row.userId).toBeNull();
-      expect(row.customerId).toBe('cust1');
       expect(row.signerName).toBe('Maria Binder');
       expect(row.signerRole).toBe('Site Manager');
     });

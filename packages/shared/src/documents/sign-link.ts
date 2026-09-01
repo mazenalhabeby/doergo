@@ -98,3 +98,43 @@ export function acceptedForSigning(
     return true;
   });
 }
+
+/**
+ * Where the counterparty on a CUSTOMER step comes from.
+ *
+ * A space already knows who it is for, and asking a second source when the
+ * first one holds the answer is how two records of the same client drift apart.
+ * So the source is decided, not configured:
+ *
+ *   SPACE   the space IS a client company (`kind: CUSTOMER`) and carries the
+ *           contact — the details are already there, and a CRM record would be
+ *           a duplicate of them
+ *   CRM     an internal space with the CRM module on — the clients are real
+ *           records and choosing one links the document to it
+ *   MANUAL  neither — type the name and address, once, for this document
+ *
+ * MANUAL is always available regardless of what this returns. A cascade decides
+ * what is OFFERED; it must never decide what is possible, because the one time
+ * somebody needs to send a document to a person the system has never heard of
+ * is exactly the time a closed list makes the product useless.
+ */
+export type CounterpartySource = 'SPACE' | 'CRM' | 'MANUAL';
+
+export function counterpartySourceFor(
+  space: { kind?: string | null; contactEmail?: string | null } | null | undefined,
+  modules: readonly string[] = [],
+): CounterpartySource {
+  if (!space) return 'MANUAL';
+  // A client space without a contact address is not a source — it is a space
+  // somebody has not finished filling in, and offering it would resolve a step
+  // to somebody unreachable.
+  if (space.kind === 'CUSTOMER' && (space.contactEmail ?? '').trim()) return 'SPACE';
+  if (modules.includes('crm')) return 'CRM';
+  return 'MANUAL';
+}
+
+/** A plausible address, checked before anything is stored or sent. */
+export function isUsableEmail(value: string | null | undefined): boolean {
+  const v = (value ?? '').trim();
+  return v.length >= 6 && v.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}

@@ -23,6 +23,7 @@ describe('CustomerSignLinkService', () => {
       deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     customer: { findFirst: jest.fn() },
+    documentSigner: { findFirst: jest.fn() },
     $queryRawUnsafe: jest.fn().mockResolvedValue([{ ok: true }]),
   };
 
@@ -45,7 +46,7 @@ describe('CustomerSignLinkService', () => {
       */
       prisma.customerSignLink.findUnique.mockResolvedValue(null);
 
-      const { token } = await service.mintFor('org1', 'cust1');
+      const { token } = await service.mintFor('org1', 'office@binderholz.com');
       const stored = prisma.customerSignLink.upsert.mock.calls[0][0];
 
       expect(token).toBeTruthy();
@@ -58,14 +59,14 @@ describe('CustomerSignLinkService', () => {
       // bits, which is right for something a person types and far too little
       // for the only thing between a stranger and a company's paperwork.
       prisma.customerSignLink.findUnique.mockResolvedValue(null);
-      const { token } = await service.mintFor('org1', 'cust1');
+      const { token } = await service.mintFor('org1', 'office@binderholz.com');
       expect((token as string).length).toBeGreaterThanOrEqual(40);
     });
 
     it('expires it', async () => {
       prisma.customerSignLink.findUnique.mockResolvedValue(null);
       const before = Date.now();
-      await service.mintFor('org1', 'cust1');
+      await service.mintFor('org1', 'office@binderholz.com');
       const { expiresAt } = prisma.customerSignLink.upsert.mock.calls[0][0].create;
       const days = (expiresAt.getTime() - before) / 86_400_000;
       expect(days).toBeGreaterThan(SIGN_LINK_TTL_DAYS - 0.01);
@@ -77,7 +78,7 @@ describe('CustomerSignLinkService', () => {
       prisma.customerSignLink.findUnique.mockResolvedValue({
         expiresAt: new Date(Date.now() + 86_400_000),
       });
-      const { token } = await service.mintFor('org1', 'cust1');
+      const { token } = await service.mintFor('org1', 'office@binderholz.com');
       expect(token).toBeNull();
       expect(prisma.customerSignLink.upsert).not.toHaveBeenCalled();
     });
@@ -86,7 +87,7 @@ describe('CustomerSignLinkService', () => {
       prisma.customerSignLink.findUnique.mockResolvedValue({
         expiresAt: new Date(Date.now() + 86_400_000),
       });
-      const { token } = await service.mintFor('org1', 'cust1', { force: true });
+      const { token } = await service.mintFor('org1', 'office@binderholz.com', { force: true });
       expect(token).toBeTruthy();
       // Two live links would be two people able to sign as the client.
       expect(prisma.customerSignLink.upsert.mock.calls[0][0].update.tokenHash).toBe(
@@ -101,7 +102,8 @@ describe('CustomerSignLinkService', () => {
       organizationId: 'org1',
       customerId: 'cust1',
       expiresAt: new Date(Date.now() + 86_400_000),
-      customer: { id: 'cust1', name: 'Binderholz', email: 'office@binderholz.com', isActive: true },
+      email: 'office@binderholz.com',
+      customer: { name: 'Binderholz', isActive: true },
       organization: { name: 'HBC USA Inc.' },
     };
 
@@ -138,6 +140,15 @@ describe('CustomerSignLinkService', () => {
       expect(res).toEqual({ ok: false, refusal: 'expired' });
     });
 
+    it('stands on its own when there is no client row at all', async () => {
+      // A space contact or a one-off address has nothing to deactivate. The
+      // link rests on the signer rows addressed to it.
+      prisma.customerSignLink.findUnique.mockResolvedValue({ ...live, customer: null });
+      const res: any = await service.resolve('a-token-long-enough-to-be-real-xxxx');
+      expect(res.ok).toBe(true);
+      expect(res.counterpartyName).toBe('office@binderholz.com');
+    });
+
     it('treats a deactivated client as unknown, not expired', async () => {
       /*
         They are not owed an offer of a fresh link to documents they are no
@@ -154,49 +165,46 @@ describe('CustomerSignLinkService', () => {
   });
 
   describe('asking for a new link', () => {
-    it('sends nothing for an address nobody here uses', async () => {
-      prisma.customer.findFirst.mockResolvedValue(null);
+    const addressed = {
+      customerId: 'cust1',
+      document: { organizationId: 'org1', organization: { name: 'HBC USA Inc.' } },
+    };
+
+    it('sends nothing for an address nothing was ever addressed to', async () => {
+      prisma.documentSigner.findFirst.mockResolvedValue(null);
       expect(await service.requestReissue('stranger@example.com')).toEqual({ send: false });
     });
 
-    it('sends nothing for a client with no documents at all', async () => {
-      // The query requires at least one signer row; a client who has never been
-      // asked to sign anything has no link to be sent.
-      prisma.customer.findFirst.mockResolvedValue(null);
-      const res = await service.requestReissue('office@binderholz.com');
-      expect(res).toEqual({ send: false });
-      expect(prisma.customer.findFirst.mock.calls[0][0].where.documentSignerSteps).toEqual({ some: {} });
+    it('sends nothing for an address that is not one', async () => {
+      // Rejected before any query — a malformed address cannot match a row, and
+      // asking would be a free query per guess.
+      expect(await service.requestReissue('not-an-address')).toEqual({ send: false });
+      expect(prisma.documentSigner.findFirst).not.toHaveBeenCalled();
     });
 
-    it('sends to the address ON FILE, never to the one typed in', async () => {
+    it('finds the person by the SIGNER ROW, not by a client record', async () => {
       /*
-        The form asks for an address so it can FIND a client, and for no other
-        reason. If the typed address decided where mail went, anybody could
-        redirect a company's documents to themselves by typing their own.
+        Two of the three kinds of counterparty have no client record at all — a
+        client space carries its own contact, and a one-off address has nothing.
+        The row is what was actually addressed, so it is what gets searched.
       */
-      prisma.customer.findFirst.mockResolvedValue({
-        id: 'cust1', name: 'Binderholz', email: 'office@binderholz.com',
-        organizationId: 'org1', organization: { name: 'HBC USA Inc.' },
-      });
+      prisma.documentSigner.findFirst.mockResolvedValue(addressed);
       prisma.customerSignLink.findUnique
-        .mockResolvedValueOnce({ id: 'link1', lastSentAt: null })  // cooldown check
-        .mockResolvedValueOnce(null)                                // mintFor: no live link
-        .mockResolvedValueOnce({ id: 'link1' });                    // re-read after mint
+        .mockResolvedValueOnce({ id: 'link1', lastSentAt: null })
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'link1' });
 
       const res: any = await service.requestReissue('OFFICE@BINDERHOLZ.COM');
       expect(res.send).toBe(true);
+      // Normalised, and sent to the address that was addressed — never to
+      // whatever casing or spelling somebody typed into the form.
       expect(res.to).toBe('office@binderholz.com');
+      expect(prisma.documentSigner.findFirst.mock.calls[0][0].where.email).toBe('office@binderholz.com');
     });
 
     it('refuses inside the cooldown, so the form cannot be a mail bomb', async () => {
-      prisma.customer.findFirst.mockResolvedValue({
-        id: 'cust1', name: 'Binderholz', email: 'office@binderholz.com',
-        organizationId: 'org1', organization: { name: 'HBC USA Inc.' },
-      });
-      prisma.customerSignLink.findUnique.mockResolvedValue({
-        id: 'link1',
-        lastSentAt: new Date(),
-      });
+      prisma.documentSigner.findFirst.mockResolvedValue(addressed);
+      prisma.customerSignLink.findUnique.mockResolvedValue({ id: 'link1', lastSentAt: new Date() });
       expect(await service.requestReissue('office@binderholz.com')).toEqual({ send: false });
     });
   });

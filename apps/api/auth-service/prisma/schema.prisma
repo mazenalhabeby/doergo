@@ -4133,6 +4133,10 @@ model DocumentSigner {
 
   status     DocumentSignerStatus @default(PENDING)
 
+  /// The counterparty's display name when they are not a member and not a CRM
+  /// record — a space's contact, or somebody typed in for this one document.
+  contactName String?
+
   /// When this signer first opened THIS document. Evidence, not a gate: forcing
   /// somebody to open ten identical time sheets buys clicking-through, which is
   /// a worse signature than the honest one. The certificate reports it.
@@ -4241,8 +4245,26 @@ model CustomerSignLink {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /**
+   * WHO the link is for — an address, not a record.
+   *
+   * Keyed on the email because that is the only identity every counterparty
+   * has. A CRM client has a row; a client space has a contact; somebody typed
+   * in for one document has neither. Keying on `customerId` served exactly one
+   * of those three and left the other two unable to hold a link at all.
+   *
+   * It is also the right scope. A link resolves the signer rows addressed to
+   * THIS address, so a one-off contact sees the one document sent to them and
+   * never a client's history — which keying on a client record could not
+   * express.
+   */
+  email String
+
+  /// The CRM client, when there is one. Provenance only: never what the link
+  /// resolves by, so a client's address changing tomorrow cannot redirect a
+  /// document already in flight.
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   /// SHA-256 of the token. The plaintext exists only in the email that carried
   /// it — a database dump must never hand somebody a working signing link, the
@@ -4266,7 +4288,10 @@ model CustomerSignLink {
   /// One live link per client per organisation. Re-issuing REPLACES the hash,
   /// which kills the previous link: two live links is two people able to sign
   /// as the client.
-  @@unique([organizationId, customerId])
+  /// One live link per address per organisation. Re-issuing REPLACES the hash,
+  /// which kills the previous link: two live links is two people able to sign
+  /// as the same counterparty.
+  @@unique([organizationId, email])
   @@index([expiresAt])
   @@map("customer_sign_links")
 }

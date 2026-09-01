@@ -199,12 +199,12 @@ export class DocumentsController {
     await this.links.markOpened(resolved.link.id);
     const lists = await this.documents.listForCustomer({
       organizationId: resolved.link.organizationId,
-      customerId: resolved.link.customerId,
+      email: resolved.link.email,
     });
     return {
       ok: true as const,
       organizationName: resolved.organizationName,
-      customerName: resolved.customer.name,
+      customerName: resolved.counterpartyName,
       expiresAt: resolved.link.expiresAt,
       ...lists,
     };
@@ -216,7 +216,7 @@ export class DocumentsController {
     if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
     const { url } = await this.documents.openForCustomer({
       organizationId: resolved.link.organizationId,
-      customerId: resolved.link.customerId,
+      email: resolved.link.email,
       signerId: data.signerId,
     });
     return { ok: true as const, url };
@@ -239,8 +239,7 @@ export class DocumentsController {
     if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
     const result = await this.documents.signBatchAsCustomer({
       organizationId: resolved.link.organizationId,
-      customerId: resolved.link.customerId,
-      customerEmail: resolved.customer.email,
+      email: resolved.link.email,
       signerIds: data.signerIds ?? [],
       signatureImage: data.signatureImage,
       typedName: data.name,

@@ -42,6 +42,8 @@ import {
   isCurrentSigner,
   signatureStrength,
   acceptedForSigning,
+  counterpartySourceFor,
+  isUsableEmail,
   MAX_BATCH_SIGN,
   type SignableDocument,
   chainProgress,
@@ -107,7 +109,8 @@ const ALLOWED_MIME: Record<string, string> = {
 
 /** One person (or client) a route step could resolve to. */
 export interface SignerCandidate {
-  kind: 'USER' | 'CUSTOMER';
+  /** CONTACT is a space's own client contact — an address with no client row. */
+  kind: 'USER' | 'CUSTOMER' | 'CONTACT';
   id: string;
   name: string;
   email: string | null;
@@ -138,10 +141,12 @@ type SealSigner =
     }
   | {
       kind: 'customer';
-      customerId: string;
       /** What they typed. The only identity a link signature has. */
       name: string;
+      /** Where the link was sent — the address the signature is attributed to. */
       email: string | null;
+      /** The CRM client, when the step resolved to one. Provenance only. */
+      customerId?: string | null;
       typedRole?: string | null;
     };
 
@@ -2036,10 +2041,14 @@ export class DocumentsService {
    * signatures away is not theirs yet, and listing it would invite a
    * countersignature on work their supplier has not finished approving.
    */
-  async listForCustomer(data: { organizationId: string; customerId: string }) {
+  async listForCustomer(data: { organizationId: string; email: string }) {
     const rows = await this.prisma.documentSigner.findMany({
       where: {
-        customerId: data.customerId,
+        // Addressed to THIS address — not to a client record. Two of the three
+        // kinds of counterparty have no record to scope by, and the address is
+        // frozen onto the row at issue so a client changing theirs tomorrow
+        // cannot redirect a document already in flight.
+        email: data.email,
         document: {
           organizationId: data.organizationId,
           status: { in: ['AWAITING_SIGNATURE', 'SIGNED'] },
@@ -2117,11 +2126,11 @@ export class DocumentsService {
    * than the honest one — so this records the truth and the certificate reports
    * it, instead of enforcing a fiction.
    */
-  async openForCustomer(data: { organizationId: string; customerId: string; signerId: string }) {
+  async openForCustomer(data: { organizationId: string; email: string; signerId: string }) {
     const row = await this.prisma.documentSigner.findFirst({
       where: {
         id: data.signerId,
-        customerId: data.customerId,
+        email: data.email,
         document: { organizationId: data.organizationId },
       },
       select: {
@@ -2186,8 +2195,7 @@ export class DocumentsService {
    */
   async signBatchAsCustomer(data: {
     organizationId: string;
-    customerId: string;
-    customerEmail: string | null;
+    email: string;
     signerIds: string[];
     signatureImage: string;
     typedName: string;
@@ -2222,9 +2230,8 @@ export class DocumentsService {
     const batchId = data.idempotencyKey;
     const signer: SealSigner = {
       kind: 'customer',
-      customerId: data.customerId,
       name: typedName,
-      email: data.customerEmail,
+      email: data.email,
       typedRole: data.typedRole?.trim() || null,
     };
 
@@ -2252,7 +2259,19 @@ export class DocumentsService {
         // says so at the moment of signing, which is the one that counts.
         const steps = await this.signerSteps(document.id);
         const currentStep = nextPendingStep(steps);
-        if (!currentStep || currentStep.customerId !== data.customerId) continue;
+        /*
+          The row we are about to sign must STILL be the current step.
+
+          The list said so when it was drawn; this says so at the moment of
+          signing, which is the one that counts — a document could have been
+          sent back in between, and signing a superseded step would attach a
+          countersignature to a version its supplier has withdrawn.
+        */
+        const mine = await this.prisma.documentSigner.findFirst({
+          where: { id: signerId, documentId: document.id, status: 'PENDING' },
+          select: { order: true },
+        });
+        if (!currentStep || !mine || currentStep.order !== mine.order) continue;
 
         const isLastStep = chainProgress(
           steps.map((s) =>
@@ -2459,7 +2478,7 @@ export class DocumentsService {
           documentId: document.id,
           signerId: params.signerRowId,
           userId: signer.kind === 'user' ? signer.userId : null,
-          customerId: signer.kind === 'customer' ? signer.customerId : null,
+          customerId: signer.kind === 'customer' ? signer.customerId ?? null : null,
           signerName: signer.name,
           signerRole: signer.kind === 'customer' ? signer.typedRole ?? null : null,
           batchId: params.batchId ?? null,
@@ -3012,7 +3031,14 @@ export class DocumentsService {
     tx: Prisma.TransactionClient,
     document: { id: string; userId: string; organizationId: string },
     signerRoute: unknown,
-    choices?: Array<{ order: number; userId?: string | null; customerId?: string | null }>,
+    choices?: Array<{
+      order: number;
+      userId?: string | null;
+      customerId?: string | null;
+      /** Typed in for this document — a counterparty with no record anywhere. */
+      email?: string | null;
+      name?: string | null;
+    }>,
   ): Promise<void> {
     const route = parseRoute(signerRoute);
     if (!route) return; // No route: one signature by the member, exactly as before.
@@ -3040,25 +3066,70 @@ export class DocumentsService {
 
       let userId: string | null = null;
       let customerId: string | null = null;
+      let email: string | null = null;
+      let contactName: string | null = null;
 
-      if (chosen?.userId || chosen?.customerId) {
+      /*
+        Typed in, for a counterparty the system has never heard of.
+
+        Always allowed, whatever the cascade offered. A closed list is exactly
+        useless the one time somebody must send a document to a person who is
+        not a member, not a CRM client and not a space's contact — and that is
+        an ordinary Tuesday, not an edge case.
+
+        It is checked against the candidates ONLY when it claims to be one of
+        them. A free address claims nothing, so there is nothing to check it
+        against — the issuer is choosing where to send a document they can
+        already open, which is a decision they are entitled to make and which
+        the evidence trail records.
+      */
+      if (chosen?.email && !chosen.userId && !chosen.customerId) {
+        const addr = chosen.email.trim().toLowerCase();
+        if (!isUsableEmail(addr)) {
+          throw new BadRequestException(`Step ${order} needs a usable email address`);
+        }
+        email = addr;
+        contactName = chosen.name?.trim() || addr;
+      } else if (chosen?.userId || chosen?.customerId) {
         // An explicit choice still has to be one of the candidates — the picker
         // is a convenience, not an authorisation.
         const ok = candidates.some(
           (c) =>
             (c.kind === 'USER' && c.id === chosen.userId) ||
-            (c.kind === 'CUSTOMER' && c.id === chosen.customerId),
+            ((c.kind === 'CUSTOMER' || c.kind === 'CONTACT') && c.id === chosen.customerId),
         );
         if (!ok) {
           throw new BadRequestException(`That signer cannot sign step ${order} of this document`);
         }
         userId = chosen.userId ?? null;
-        customerId = chosen.customerId ?? null;
+        // A space contact is identified as `space:<id>` and has no client row —
+        // it carries an address, not a foreign key.
+        const contact = candidates.find((c) => c.kind === 'CONTACT' && c.id === chosen.customerId);
+        if (contact) {
+          email = contact.email;
+          contactName = contact.name;
+        } else {
+          customerId = chosen.customerId ?? null;
+        }
       } else if (candidates.length === 1) {
         // Exactly one: there is no question to ask.
         const only = candidates[0];
-        if (only.kind === 'USER') userId = only.id;
-        else customerId = only.id;
+        if (only.kind === 'USER') {
+          userId = only.id;
+        } else if (only.kind === 'CUSTOMER') {
+          customerId = only.id;
+        } else {
+          /*
+            A client SPACE's own contact — an address with no record behind it.
+
+            There is nothing to point a foreign key at, and that is correct
+            rather than a gap: the space carries the contact, and creating a
+            client row to mirror it would make a second copy free to drift from
+            the first. The address and the name are the whole identity.
+          */
+          email = only.email;
+          contactName = only.name;
+        }
       } else if (candidates.length > 1) {
         throw new BadRequestException(
           `Step ${order} has more than one possible signer — choose one before issuing`,
@@ -3083,6 +3154,25 @@ export class DocumentsService {
         throw new BadRequestException(this.noSignerMessage(step.role, order));
       }
 
+      /*
+        Freeze WHERE this step is reachable, at issue.
+
+        The link resolves signer rows by address, so it has to be on the row —
+        and it has to be a copy, not a lookup. A client changing their email
+        next month must not silently redirect a document already in flight to
+        an address nobody agreed to send it to.
+      */
+      if (!email && (customerId || userId)) {
+        const resolved = customerId
+          ? await tx.customer.findUnique({ where: { id: customerId }, select: { email: true, name: true } })
+          : await tx.user.findUnique({ where: { id: userId as string }, select: { email: true, firstName: true, lastName: true } });
+        if (resolved) {
+          email = (resolved as any).email ?? null;
+          const person = `${(resolved as any).firstName ?? ''} ${(resolved as any).lastName ?? ''}`.trim();
+          contactName = (resolved as any).name ?? (person || null);
+        }
+      }
+
       await tx.documentSigner.create({
         data: {
           documentId: document.id,
@@ -3090,6 +3180,17 @@ export class DocumentsService {
           role: step.role,
           userId,
           customerId,
+          /*
+            Normalised, always.
+
+            The link resolves rows by exact address, and it lowercases what a
+            person types into the form. A contact stored as somebody typed it —
+            "PLang@AgruAmerica.com" is what is actually in this database — would
+            produce a row the link could never match, and a document waiting on
+            a person who could never reach it.
+          */
+          email: email ? email.trim().toLowerCase() : null,
+          contactName,
           status: 'PENDING',
         },
       });
@@ -3455,22 +3556,70 @@ export class DocumentsService {
       }));
     }
 
-    // CUSTOMER — through the member's spaces, since a document has no space.
-    const assignments = await this.prisma.spaceAssignment.findMany({
-      where: { userId: memberId, organizationId },
-      select: { spaceId: true },
-    });
-    const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
-    if (spaceIds.length === 0) return [];
+    /*
+      CUSTOMER — through the member's spaces, since a document has no space.
 
-    const customers = await this.prisma.customer.findMany({
-      where: { organizationId, isActive: true, spaceId: { in: spaceIds } },
-      select: { id: true, name: true, email: true },
-      take: 50,
+      Where the counterparty comes from is DECIDED by the space, not configured:
+
+        • the space IS a client company (`kind: CUSTOMER`) → its own contact,
+          because the details are already there and a CRM record would be a
+          second copy of them, free to drift
+        • an internal space with the CRM module on → its client records
+        • neither → nothing is offered, and the issuer types the address
+
+      Typing it in is always available whatever this returns. A cascade decides
+      what is OFFERED and must never decide what is possible: the one time
+      somebody has to send a document to a person the system has never heard of
+      is exactly when a closed list makes the product useless.
+    */
+    const spaces = await this.prisma.spaceAssignment.findMany({
+      where: { userId: memberId, organizationId },
+      select: {
+        space: { select: { id: true, name: true, kind: true, contactName: true, contactEmail: true, enabledModules: true } },
+      },
     });
-    return customers.map((c) => ({
-      kind: 'CUSTOMER' as const, id: c.id, name: c.name, email: c.email ?? null,
-    }));
+    if (spaces.length === 0) return [];
+
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { enabledModules: true },
+    });
+
+    const out: SignerCandidate[] = [];
+    const crmSpaceIds: string[] = [];
+
+    for (const { space } of spaces) {
+      if (!space) continue;
+      // A space's own modules override the org's — the same rule the gates use.
+      const modules = (space.enabledModules ?? org?.enabledModules ?? []) as string[];
+      const source = counterpartySourceFor(space, Array.isArray(modules) ? modules : []);
+
+      if (source === 'SPACE' && space.contactEmail) {
+        out.push({
+          kind: 'CONTACT',
+          // The SPACE is the identity here: there is no client row to point at,
+          // and the address is what the link will be addressed to anyway.
+          id: `space:${space.id}`,
+          name: space.contactName?.trim() || space.name,
+          email: space.contactEmail,
+        });
+      } else if (source === 'CRM') {
+        crmSpaceIds.push(space.id);
+      }
+    }
+
+    if (crmSpaceIds.length > 0) {
+      const customers = await this.prisma.customer.findMany({
+        where: { organizationId, isActive: true, spaceId: { in: crmSpaceIds } },
+        select: { id: true, name: true, email: true },
+        take: 50,
+      });
+      for (const c of customers) {
+        out.push({ kind: 'CUSTOMER', id: c.id, name: c.name, email: c.email ?? null });
+      }
+    }
+
+    return out;
   }
 
   async listIssued(data: {

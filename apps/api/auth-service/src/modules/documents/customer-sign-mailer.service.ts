@@ -86,48 +86,39 @@ export class CustomerSignMailerService {
    * cooldown has not elapsed. The caller decides what to say about that; this
    * never reports success it did not achieve.
    */
-  async sendPending(organizationId: string, customerId: string): Promise<boolean> {
-    const customer = await this.prisma.customer.findFirst({
-      where: { id: customerId, organizationId, isActive: true },
-      select: { id: true, name: true, email: true, organization: { select: { name: true } } },
-    });
-    if (!customer?.email) return false;
+  async sendPending(organizationId: string, email: string): Promise<boolean> {
+    const addr = email.trim().toLowerCase();
 
     const link = await this.prisma.customerSignLink.findUnique({
-      where: { organizationId_customerId: { organizationId, customerId } },
+      where: { organizationId_email: { organizationId, email: addr } },
       select: { id: true, lastSentAt: true },
     });
     if (link && !canReissue(link.lastSentAt)) return false;
 
-    const { toSign } = await this.documentsWaiting(organizationId, customerId);
+    const { toSign, customerId, organizationName } = await this.documentsWaiting(organizationId, addr);
     if (toSign.length === 0) return false;
 
     /*
       A fresh link every time.
 
-      The plaintext exists only inside an email, so a client who deleted the
+      The plaintext exists only inside an email, so somebody who deleted the
       last one has no way back to it — minting anew is the only way to send a
       usable link, and it kills the previous one, which is what we want.
     */
-    const { token, expiresAt } = await this.links.mintFor(organizationId, customerId, { force: true });
+    const { token, expiresAt } = await this.links.mintFor(organizationId, addr, { force: true, customerId });
     if (!token) return false;
 
     const sent = await this.send(
-      customer.email,
+      addr,
       toSign.length === 1
-        ? `A document needs your signature — ${customer.organization?.name ?? ''}`.trim()
-        : `${toSign.length} documents need your signature — ${customer.organization?.name ?? ''}`.trim(),
-      this.html({
-        organizationName: customer.organization?.name ?? '',
-        documents: toSign,
-        token,
-        expiresAt,
-      }),
+        ? `A document needs your signature — ${organizationName}`.trim()
+        : `${toSign.length} documents need your signature — ${organizationName}`.trim(),
+      this.html({ organizationName, documents: toSign, token, expiresAt }),
     );
 
     if (!sent) return false;
     const row = await this.prisma.customerSignLink.findUnique({
-      where: { organizationId_customerId: { organizationId, customerId } },
+      where: { organizationId_email: { organizationId, email: addr } },
       select: { id: true },
     });
     if (row) await this.links.markSent(row.id);
@@ -135,19 +126,21 @@ export class CustomerSignMailerService {
   }
 
   /** Titles of what is genuinely this client's turn — the list the email names. */
-  private async documentsWaiting(organizationId: string, customerId: string) {
+  private async documentsWaiting(organizationId: string, email: string) {
     const rows = await this.prisma.documentSigner.findMany({
       where: {
-        customerId,
+        email,
         status: 'PENDING',
         document: { organizationId, status: 'AWAITING_SIGNATURE' },
       },
       select: {
         order: true,
+        customerId: true,
         document: {
           select: {
             title: true,
             user: { select: { firstName: true, lastName: true } },
+            organization: { select: { name: true } },
             signers: { select: { order: true, status: true } },
           },
         },
@@ -158,21 +151,24 @@ export class CustomerSignMailerService {
 
     // Only steps whose turn it actually is. A document three signatures away is
     // not theirs yet, and naming it in an email invites a countersignature on
-    // work their supplier has not finished approving.
-    const toSign = rows
-      .filter((r) => {
-        const pending = r.document.signers
-          .filter((s) => s.status === 'PENDING')
-          .sort((a, b) => a.order - b.order);
-        return pending[0]?.order === r.order;
-      })
-      .map((r) => ({
+    // work the supplier has not finished approving.
+    const live = rows.filter((r) => {
+      const pending = r.document.signers
+        .filter((s) => s.status === 'PENDING')
+        .sort((a, b) => a.order - b.order);
+      return pending[0]?.order === r.order;
+    });
+
+    return {
+      toSign: live.map((r) => ({
         title: r.document.title,
         forMember: r.document.user
           ? `${r.document.user.firstName} ${r.document.user.lastName}`.trim()
           : null,
-      }));
-    return { toSign };
+      })),
+      customerId: live.find((r) => r.customerId)?.customerId ?? null,
+      organizationName: live[0]?.document.organization?.name ?? '',
+    };
   }
 
   private async send(to: string, subject: string, html: string): Promise<boolean> {
@@ -329,24 +325,25 @@ export class CustomerSignMailerService {
         const due = await this.prisma.documentSigner.findMany({
           where: {
             status: 'PENDING',
-            customerId: { not: null },
+            email: { not: null },
             notifiedAt: { not: null },
             document: { status: 'AWAITING_SIGNATURE' },
           },
-          select: { customerId: true, document: { select: { organizationId: true } } },
+          select: { email: true, document: { select: { organizationId: true } } },
           take: 500,
         });
 
-        // One send per client, however many documents they are owed.
+        // One send per ADDRESS, however many documents it is owed — which is
+        // the whole reason eleven time sheets are one email.
         const seen = new Set<string>();
         let sent = 0;
         for (const row of due) {
-          if (!row.customerId) continue;
-          const key = `${row.document.organizationId}:${row.customerId}`;
+          if (!row.email) continue;
+          const key = `${row.document.organizationId}:${row.email}`;
           if (seen.has(key)) continue;
           seen.add(key);
           try {
-            if (await this.sendPending(row.document.organizationId, row.customerId)) sent++;
+            if (await this.sendPending(row.document.organizationId, row.email)) sent++;
           } catch (err) {
             this.logger.warn(`Signing-link sweep failed for ${key}: ${(err as Error).message}`);
           }

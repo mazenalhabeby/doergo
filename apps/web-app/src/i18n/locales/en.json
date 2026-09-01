@@ -7206,7 +7206,10 @@
       "signers": {
         "title": "Who signs these?",
         "hint": "More than one person can sign a step here. Nothing publishes until each one is answered — a document sent to the wrong desk is never seen by the person who needed it.",
-        "choose": "Choose a signer…"
+        "choose": "Choose a signer…",
+        "manual": "Someone else…",
+        "manualName": "Their name",
+        "manualEmail": "Their email address"
       }
     },
     "sign": {

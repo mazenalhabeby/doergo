@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   generateSecret,
@@ -6,6 +6,7 @@ import {
   signLinkExpiry,
   signLinkRefusal,
   canReissue,
+  isUsableEmail,
   runWithCronLock,
   type SignLinkRefusal,
   type SignableDocument,
@@ -39,11 +40,14 @@ export class CustomerSignLinkService {
    */
   async mintFor(
     organizationId: string,
-    customerId: string,
-    opts: { force?: boolean } = {},
+    email: string,
+    opts: { force?: boolean; customerId?: string | null } = {},
   ): Promise<{ token: string | null; expiresAt: Date }> {
+    const addr = email.trim().toLowerCase();
+    if (!isUsableEmail(addr)) throw new BadRequestException('A usable email address is required');
+
     const existing = await this.prisma.customerSignLink.findUnique({
-      where: { organizationId_customerId: { organizationId, customerId } },
+      where: { organizationId_email: { organizationId, email: addr } },
       select: { expiresAt: true },
     });
 
@@ -55,9 +59,20 @@ export class CustomerSignLinkService {
     const token = generateSecret();
     const expiresAt = signLinkExpiry();
     await this.prisma.customerSignLink.upsert({
-      where: { organizationId_customerId: { organizationId, customerId } },
-      create: { organizationId, customerId, tokenHash: hashSecret(token), expiresAt },
-      update: { tokenHash: hashSecret(token), expiresAt, firstOpenedAt: null },
+      where: { organizationId_email: { organizationId, email: addr } },
+      create: {
+        organizationId,
+        email: addr,
+        customerId: opts.customerId ?? null,
+        tokenHash: hashSecret(token),
+        expiresAt,
+      },
+      update: {
+        tokenHash: hashSecret(token),
+        expiresAt,
+        firstOpenedAt: null,
+        ...(opts.customerId ? { customerId: opts.customerId } : {}),
+      },
     });
     return { token, expiresAt };
   }
@@ -72,8 +87,12 @@ export class CustomerSignLinkService {
    * message.
    */
   async resolve(token: string): Promise<
-    | { ok: true; link: { id: string; organizationId: string; customerId: string; expiresAt: Date };
-        customer: { id: string; name: string; email: string | null }; organizationName: string }
+    | {
+        ok: true;
+        link: { id: string; organizationId: string; email: string; expiresAt: Date };
+        counterpartyName: string;
+        organizationName: string;
+      }
     | { ok: false; refusal: SignLinkRefusal }
   > {
     if (!token || token.length < 20) return { ok: false, refusal: 'unknown' };
@@ -81,23 +100,38 @@ export class CustomerSignLinkService {
     const link = await this.prisma.customerSignLink.findUnique({
       where: { tokenHash: hashSecret(token) },
       select: {
-        id: true, organizationId: true, customerId: true, expiresAt: true,
-        customer: { select: { id: true, name: true, email: true, isActive: true } },
+        id: true,
+        organizationId: true,
+        email: true,
+        expiresAt: true,
+        customer: { select: { name: true, isActive: true } },
         organization: { select: { name: true } },
       },
     });
 
-    // A deactivated client reads as unknown, not expired: they are not owed an
-    // offer of a new link to documents they are no longer party to.
-    if (!link || !link.customer?.isActive) return { ok: false, refusal: 'unknown' };
+    if (!link) return { ok: false, refusal: 'unknown' };
+    /*
+      A deactivated CLIENT reads as unknown, not expired — they are not owed an
+      offer of a fresh link to documents they are no longer party to, and
+      "expired" would confirm the address had been a client here.
+
+      A link with no client row is a space contact or a one-off address, and has
+      nothing to deactivate. It stands on the signer rows alone.
+    */
+    if (link.customer && !link.customer.isActive) return { ok: false, refusal: 'unknown' };
 
     const refusal = signLinkRefusal(link);
     if (refusal) return { ok: false, refusal };
 
     return {
       ok: true,
-      link: { id: link.id, organizationId: link.organizationId, customerId: link.customerId, expiresAt: link.expiresAt },
-      customer: { id: link.customer.id, name: link.customer.name, email: link.customer.email },
+      link: {
+        id: link.id,
+        organizationId: link.organizationId,
+        email: link.email,
+        expiresAt: link.expiresAt,
+      },
+      counterpartyName: link.customer?.name ?? link.email,
       organizationName: link.organization?.name ?? '',
     };
   }
@@ -129,48 +163,58 @@ export class CustomerSignLinkService {
    * whatever happens here.
    */
   async requestReissue(email: string): Promise<
-    { send: false } | { send: true; to: string; token: string; expiresAt: Date; linkId: string; organizationName: string; customerName: string }
+    | { send: false }
+    | { send: true; to: string; token: string; expiresAt: Date; linkId: string; organizationName: string }
   > {
     const addr = email.trim().toLowerCase();
-    if (!addr || addr.length > 320) return { send: false };
+    if (!isUsableEmail(addr)) return { send: false };
 
-    // A client with nothing outstanding and nothing signed has no reason to be
-    // sent a link at all.
-    const customer = await this.prisma.customer.findFirst({
-      where: {
-        isActive: true,
-        email: { equals: addr, mode: 'insensitive' },
-        documentSignerSteps: { some: {} },
+    /*
+      Anything genuinely addressed to this person, anywhere.
+
+      Matched on the signer row rather than on a client record, because two of
+      the three kinds of counterparty have no record: a client space carries its
+      own contact, and a one-off address has nothing at all. The row is the
+      thing that was actually addressed, so it is the thing to search.
+    */
+    const row = await this.prisma.documentSigner.findFirst({
+      where: { email: addr },
+      select: {
+        customerId: true,
+        document: { select: { organizationId: true, organization: { select: { name: true } } } },
       },
-      select: { id: true, name: true, email: true, organizationId: true,
-                organization: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
     });
-    if (!customer?.email) return { send: false };
+    if (!row?.document) return { send: false };
+
+    const organizationId = row.document.organizationId;
 
     const link = await this.prisma.customerSignLink.findUnique({
-      where: { organizationId_customerId: { organizationId: customer.organizationId, customerId: customer.id } },
+      where: { organizationId_email: { organizationId, email: addr } },
       select: { id: true, lastSentAt: true },
     });
     // Per-address cooldown. The gateway throttles per IP, which stops one
-    // machine hammering the form; this stops many machines being pointed at one
-    // client's inbox.
+    // machine hammering the form; this stops many machines being pointed at
+    // one person's inbox.
     if (link && !canReissue(link.lastSentAt)) return { send: false };
 
-    const { token, expiresAt } = await this.mintFor(customer.organizationId, customer.id, { force: true });
+    const { token, expiresAt } = await this.mintFor(organizationId, addr, {
+      force: true,
+      customerId: row.customerId,
+    });
     const fresh = await this.prisma.customerSignLink.findUnique({
-      where: { organizationId_customerId: { organizationId: customer.organizationId, customerId: customer.id } },
+      where: { organizationId_email: { organizationId, email: addr } },
       select: { id: true },
     });
     if (!token || !fresh) return { send: false };
 
     return {
       send: true,
-      to: customer.email,
+      to: addr,
       token,
       expiresAt,
       linkId: fresh.id,
-      organizationName: customer.organization?.name ?? '',
-      customerName: customer.name,
+      organizationName: row.document.organization?.name ?? '',
     };
   }
 

@@ -7206,7 +7206,10 @@
       "signers": {
         "title": "Wer unterschreibt diese?",
         "hint": "Für einen Schritt kommen hier mehrere Personen infrage. Es wird nichts veröffentlicht, solange nicht jede Frage beantwortet ist — ein Dokument, das an den falschen Schreibtisch geht, erreicht die zuständige Person nie.",
-        "choose": "Unterzeichner wählen…"
+        "choose": "Unterzeichner wählen…",
+        "manual": "Jemand anderes…",
+        "manualName": "Name",
+        "manualEmail": "E-Mail-Adresse"
       }
     },
     "sign": {

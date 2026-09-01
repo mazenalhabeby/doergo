@@ -7206,7 +7206,10 @@
       "signers": {
         "title": "¿Quién firma estos?",
         "hint": "Aquí más de una persona puede firmar un paso. No se publica nada hasta responder cada pregunta: un documento enviado al escritorio equivocado nunca llega a quien lo necesitaba.",
-        "choose": "Elige quién firma…"
+        "choose": "Elige quién firma…",
+        "manual": "Otra persona…",
+        "manualName": "Su nombre",
+        "manualEmail": "Su correo electrónico"
       }
     },
     "sign": {

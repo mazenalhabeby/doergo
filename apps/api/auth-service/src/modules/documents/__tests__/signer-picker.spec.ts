@@ -30,7 +30,9 @@ describe('DocumentsService — choosing a signer', () => {
     documentSigner: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     documentEvent: { create: jest.fn() },
     user: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn(), findFirst: jest.fn() },
-    customer: { findMany: jest.fn().mockResolvedValue([]) },
+    customer: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue(null) },
+    // The cascade asks the org for its default modules when a space sets none.
+    organization: { findUnique: jest.fn().mockResolvedValue({ enabledModules: [] }) },
     spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
     companyLocation: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn(async (fn: any) => fn(prisma)),
@@ -231,12 +233,12 @@ describe('DocumentsService — choosing a signer', () => {
       expect(rows.every((r: any) => r.status === 'PENDING')).toBe(true);
     });
 
-    it('resolves a customer step to the client of a space the member works in', async () => {
+    it('resolves a customer step from a CRM space', async () => {
       /*
-        This used to refuse. A CUSTOMER step was blocked at issue because there
-        was no way for a client to sign one — they have no login here. There is
-        now: the step is created PENDING and, when the chain reaches it, the
-        client is emailed a link.
+        Where the counterparty comes from is decided by the space. An internal
+        space with the CRM module on offers its client records; a client-kind
+        space would offer its own contact instead, and a space with neither
+        offers nothing and the issuer types the address.
       */
       prisma.document.findMany.mockResolvedValue([
         {
@@ -244,17 +246,86 @@ describe('DocumentsService — choosing a signer', () => {
           type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] },
         },
       ]);
-      prisma.spaceAssignment.findMany.mockResolvedValue([{ spaceId: 's1', organizationId: 'org1' }]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([
+        { space: { id: 's1', name: 'HBC Office', kind: 'COMPANY', contactName: null, contactEmail: null, enabledModules: ['crm'] } },
+      ]);
+      prisma.organization.findUnique.mockResolvedValue({ enabledModules: [] });
       prisma.customer.findMany.mockResolvedValue([
         { id: 'binderholz', name: 'Binderholz', email: 'office@binderholz.com' },
       ]);
+      prisma.customer.findUnique.mockResolvedValue({ email: 'office@binderholz.com', name: 'Binderholz' });
 
       await publish();
 
       const rows = prisma.documentSigner.create.mock.calls.map((c: any[]) => c[0].data);
       expect(rows[1]).toEqual(
-        expect.objectContaining({ role: 'CUSTOMER', customerId: 'binderholz', status: 'PENDING' }),
+        expect.objectContaining({
+          role: 'CUSTOMER',
+          customerId: 'binderholz',
+          // Frozen at issue: the link resolves by address, and a client
+          // changing theirs must not redirect a document already in flight.
+          email: 'office@binderholz.com',
+          status: 'PENDING',
+        }),
       );
+    });
+
+    it('resolves a customer step from a client-kind SPACE, with no CRM at all', async () => {
+      // The space already carries the contact. Asking CRM for a second copy is
+      // how two records of one client start to disagree.
+      prisma.document.findMany.mockResolvedValue([
+        { ...draft, type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] } },
+      ]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([
+        { space: { id: 's2', name: 'AGRU America', kind: 'CUSTOMER', contactName: 'P. Lang', contactEmail: 'PLang@AgruAmerica.com', enabledModules: [] } },
+      ]);
+      prisma.organization.findUnique.mockResolvedValue({ enabledModules: [] });
+      prisma.customer.findMany.mockResolvedValue([]);
+
+      await publish();
+
+      const rows = prisma.documentSigner.create.mock.calls.map((c: any[]) => c[0].data);
+      expect(rows[1]).toEqual(
+        expect.objectContaining({
+          role: 'CUSTOMER',
+          customerId: null,
+          email: 'plang@agruamerica.com',
+          contactName: 'P. Lang',
+        }),
+      );
+    });
+
+    it('accepts an address typed in for a counterparty nobody has on file', async () => {
+      // Always available, whatever the cascade offered. A closed list is
+      // exactly useless the one time it matters.
+      prisma.document.findMany.mockResolvedValue([
+        { ...draft, type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] } },
+      ]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([]);
+      prisma.organization.findUnique.mockResolvedValue({ enabledModules: [] });
+
+      await publish([{ order: 2, email: 'Site.Manager@Example.com', name: 'Maria Binder' }]);
+
+      const rows = prisma.documentSigner.create.mock.calls.map((c: any[]) => c[0].data);
+      expect(rows[1]).toEqual(
+        expect.objectContaining({
+          role: 'CUSTOMER',
+          customerId: null,
+          userId: null,
+          email: 'site.manager@example.com',
+          contactName: 'Maria Binder',
+        }),
+      );
+    });
+
+    it('refuses a typed address that is not one', async () => {
+      prisma.document.findMany.mockResolvedValue([
+        { ...draft, type: { ...draft.type, signerRoute: [{ role: 'MEMBER' }, { role: 'CUSTOMER' }] } },
+      ]);
+      prisma.spaceAssignment.findMany.mockResolvedValue([]);
+      prisma.organization.findUnique.mockResolvedValue({ enabledModules: [] });
+
+      await expect(publish([{ order: 2, email: 'not-an-address' }])).rejects.toThrow(/usable email/i);
     });
   });
 });

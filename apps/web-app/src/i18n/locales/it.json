@@ -7215,7 +7215,10 @@
       "signers": {
         "title": "Chi li firma?",
         "hint": "Qui più di una persona può firmare un passaggio. Non viene pubblicato nulla finché ogni domanda non ha una risposta: un documento inviato alla scrivania sbagliata non arriva mai a chi serviva.",
-        "choose": "Scegli chi firma…"
+        "choose": "Scegli chi firma…",
+        "manual": "Qualcun altro…",
+        "manualName": "Nome",
+        "manualEmail": "Indirizzo e-mail"
       }
     },
     "sign": {

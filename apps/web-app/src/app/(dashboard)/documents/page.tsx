@@ -71,7 +71,7 @@ export default function IssueDocumentsPage() {
     batch of thirty time sheets can have different approvers per member.
   */
   const [choices, setChoices] = useState<
-    Record<string, Record<number, { userId?: string; customerId?: string }>>
+    Record<string, Record<number, { userId?: string; customerId?: string; email?: string; name?: string }>>
   >({})
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -198,9 +198,22 @@ export default function IssueDocumentsPage() {
     as one, and the half that failed would be discovered later by somebody
     wondering why a time sheet never arrived.
   */
+  const answered = (
+    c: { userId?: string; customerId?: string; email?: string } | undefined,
+  ): boolean => {
+    if (!c) return false
+    if (c.userId || c.customerId) return true
+    // A typed-in counterparty counts as answered only once it is actually
+    // typed. An empty box is a question still open, not a choice.
+    return !!c.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email)
+  }
+
   const openQuestions = existingDrafts.filter((d) =>
     (d.routeSteps ?? []).some(
-      (s) => s.candidates.length > 1 && !choices[d.id]?.[s.order],
+      (s) =>
+        // No candidate at all is still a question — it is answered by typing
+        // somebody in, which is the whole point of the manual option.
+        (s.candidates.length !== 1 || s.role === "CUSTOMER") && !answered(choices[d.id]?.[s.order]),
     ),
   )
 
@@ -485,14 +498,17 @@ function titleFor(row: Row, type: DocumentTypeRow | null, t: (k: string) => stri
   somebody and being wrong sends a document to the wrong desk, and the person it
   actually needed never learns it existed.
 */
+/** One answer to "who signs this step" — a person on file, or one typed in. */
+type SignerChoice = { userId?: string; customerId?: string; email?: string; name?: string }
+
 function SignerQuestions({
   drafts,
   choices,
   onChoose,
 }: {
   drafts: DraftDocumentRow[]
-  choices: Record<string, Record<number, { userId?: string; customerId?: string }>>
-  onChoose: (documentId: string, order: number, who: { userId?: string; customerId?: string }) => void
+  choices: Record<string, Record<number, SignerChoice>>
+  onChoose: (documentId: string, order: number, who: SignerChoice) => void
 }) {
   const { t } = useTranslation()
 
@@ -516,7 +532,7 @@ function SignerQuestions({
 
             <div className="grid gap-2 sm:grid-cols-2">
               {(d.routeSteps ?? [])
-                .filter((s) => s.candidates.length > 1)
+                .filter((s) => s.candidates.length !== 1 || s.role === "CUSTOMER")
                 .map((s) => {
                   const picked = choices[d.id]?.[s.order]
                   const value = picked?.userId ?? picked?.customerId ?? ""
@@ -526,14 +542,18 @@ function SignerQuestions({
                         {t(`documents.types.route.roles.${s.role}`, { defaultValue: s.role })}
                       </span>
                       <select
-                        value={value}
+                        value={picked?.email ? "__manual__" : value}
                         onChange={(e) => {
+                          if (e.target.value === "__manual__") {
+                            onChoose(d.id, s.order, { email: "", name: "" })
+                            return
+                          }
                           const c = s.candidates.find((x) => x.id === e.target.value)
                           if (!c) return
                           onChoose(
                             d.id,
                             s.order,
-                            c.kind === "CUSTOMER" ? { customerId: c.id } : { userId: c.id },
+                            c.kind === "USER" ? { userId: c.id } : { customerId: c.id },
                           )
                         }}
                         className="h-9 appearance-none rounded-md border border-border bg-background px-3 text-sm"
@@ -544,9 +564,42 @@ function SignerQuestions({
                         {s.candidates.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
+                            {c.email ? ` · ${c.email}` : ""}
                           </option>
                         ))}
+                        {/*
+                          Always offered, whatever the space could suggest.
+
+                          A closed list is exactly useless the one time somebody
+                          must send a document to a person who is not a member,
+                          not a CRM client and not a space's contact — which is
+                          an ordinary Tuesday, not an edge case.
+                        */}
+                        <option value="__manual__">
+                          {t("documents.issue.signers.manual", "Someone else…")}
+                        </option>
                       </select>
+                      {picked?.email !== undefined && !picked.userId && !picked.customerId && (
+                        <span className="mt-1 flex flex-col gap-1">
+                          <input
+                            value={picked.name ?? ""}
+                            onChange={(e) =>
+                              onChoose(d.id, s.order, { ...picked, name: e.target.value })
+                            }
+                            placeholder={t("documents.issue.signers.manualName", "Their name")}
+                            className="h-8 rounded-md border border-border bg-background px-2.5 text-sm"
+                          />
+                          <input
+                            type="email"
+                            value={picked.email ?? ""}
+                            onChange={(e) =>
+                              onChoose(d.id, s.order, { ...picked, email: e.target.value })
+                            }
+                            placeholder={t("documents.issue.signers.manualEmail", "Their email address")}
+                            className="h-8 rounded-md border border-border bg-background px-2.5 text-sm"
+                          />
+                        </span>
+                      )}
                     </label>
                   )
                 })}

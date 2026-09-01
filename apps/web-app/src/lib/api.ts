@@ -6139,7 +6139,8 @@ export interface DraftDocumentRow {
 
 /** One person or client a route step could resolve to. */
 export interface SignerCandidate {
-  kind: "USER" | "CUSTOMER";
+  /** CONTACT is a client space's own contact — an address with no client row. */
+  kind: "USER" | "CUSTOMER" | "CONTACT";
   id: string;
   name: string;
   email: string | null;
@@ -6668,7 +6669,14 @@ export const documentsApi = {
     documentIds: string[],
     signerChoices?: Array<{
       documentId: string
-      choices: Array<{ order: number; userId?: string | null; customerId?: string | null }>
+      choices: Array<{
+        order: number
+        userId?: string | null
+        customerId?: string | null
+        /** Typed in for a counterparty nobody has on file. */
+        email?: string | null
+        name?: string | null
+      }>
     }>,
   ) => {
     const response = await api.post<{ success: boolean; data: { published: number } }>(

@@ -243,7 +243,15 @@ export class ConfirmUploadDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(6)
-  signerChoices?: Array<{ order: number; userId?: string | null; customerId?: string | null }>;
+  signerChoices?: Array<{
+    order: number;
+    userId?: string | null;
+    customerId?: string | null;
+    /** Typed in for this document — a counterparty with no record anywhere.
+     *  Validated in the service, where the cascade and the address rule live. */
+    email?: string | null;
+    name?: string | null;
+  }>;
 
   @ApiProperty({ description: 'The key returned by /presign' })
   @IsString()
@@ -438,7 +446,15 @@ export class PublishBatchDto {
   @ArrayMaxSize(200)
   signerChoices?: Array<{
     documentId: string;
-    choices: Array<{ order: number; userId?: string | null; customerId?: string | null }>;
+    choices: Array<{
+    order: number;
+    userId?: string | null;
+    customerId?: string | null;
+    /** Typed in for this document — a counterparty with no record anywhere.
+     *  Validated in the service, where the cascade and the address rule live. */
+    email?: string | null;
+    name?: string | null;
+  }>;
   }>;
 
   @ApiProperty({ type: [String], description: 'Every staged document in the batch' })
