@@ -55,7 +55,6 @@ import { MemberRoutingEditor } from "./member-routing-editor"
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
-const NO_APT = "__vacant__"
 
 const emptyPermissions = (): SpaceRolePermissions =>
   SPACE_ROLE_PERMISSION_SCHEMA.reduce((acc, p) => {
@@ -444,11 +443,8 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {hasApartments && (
-                    <MemberApartmentControl
-                      spaceId={spaceId}
-                      userId={m.userId}
-                      units={units}
-                      currentUnitId={units.find((u) => u.residentUserId === m.userId)?.id ?? null}
+                    <MemberApartmentBadge
+                      unit={units.find((u) => u.residentUserId === m.userId) ?? null}
                     />
                   )}
                   <Button
@@ -572,53 +568,27 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
   )
 }
 
-// ── Per-member apartment picker (the "assign apartment in the user" surface) ──
-// Reverse of the apartment-side resident picker; writes the same residentUserId
-// via one backend path (one home per member per space, enforced server-side).
+// ── Where a member lives, as information ─────────────────────────────────────
+//
+// Read-only on purpose. This row is about membership and routing; housing is a
+// different question, and it is already answered from the apartment itself —
+// the thing being allocated, and the only surface that can show whether it is
+// free and who is in it. Two editable controls writing one field meant an
+// apartment could be reassigned from a screen that never showed its occupant.
+//
+// Nothing renders when nobody is housed. A "Vacant" control on every row of a
+// workspace that houses no one is noise standing in for an answer.
 
-function MemberApartmentControl({ spaceId, userId, units, currentUnitId }: {
-  spaceId: string; userId: string; units: SpaceUnit[]; currentUnitId: string | null
-}) {
+function MemberApartmentBadge({ unit }: { unit: SpaceUnit | null }) {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
-
-  const unitResident = (u: SpaceUnit) =>
-    u.residentUser ? `${u.residentUser.firstName} ${u.residentUser.lastName}`.trim() : u.customer?.name || ""
-
-  const assign = useMutation({
-    mutationFn: (unitId: string | null) => spaceUnitsApi.assignMember(spaceId, { userId, unitId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-member-units", spaceId] })
-      queryClient.invalidateQueries({ queryKey: ["space-units-dir", spaceId] })
-      notify.success(t("apartments.residentUpdated", "Apartment updated"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("common.error", "Something went wrong")),
-  })
-
+  if (!unit) return null
   return (
-    <Select
-      value={currentUnitId ?? NO_APT}
-      onValueChange={(v) => assign.mutate(v === NO_APT ? null : v)}
-      disabled={assign.isPending}
+    <span
+      className="inline-flex max-w-[150px] items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-xs text-muted-foreground"
+      title={t("apartments.residentOf", "Lives in {{name}}", { name: unit.name })}
     >
-      <SelectTrigger className="h-8 w-[150px] text-xs" aria-label={t("apartments.assign", "Assign apartment")}>
-        <span className="flex min-w-0 items-center gap-1.5">
-          {assign.isPending ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Home className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-          <SelectValue placeholder={t("apartments.assign", "Assign apartment")} />
-        </span>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={NO_APT}>{t("apartments.vacant", "Vacant")}</SelectItem>
-        {units.map((u) => {
-          const occupiedByOther = !!(u.residentUserId && u.residentUserId !== userId) || !!u.customer
-          return (
-            <SelectItem key={u.id} value={u.id}>
-              {u.name}
-              {occupiedByOther && <span className="text-muted-foreground"> · {unitResident(u)}</span>}
-            </SelectItem>
-          )
-        })}
-      </SelectContent>
-    </Select>
+      <Home className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">{unit.name}</span>
+    </span>
   )
 }

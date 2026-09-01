@@ -6262,7 +6262,8 @@
     "residentUpdated": "Apartamento actualizado",
     "updated": "Apartamento actualizado",
     "updatedEntity": "{{e}} actualizado",
-    "vacant": "Libre"
+    "vacant": "Libre",
+    "residentOf": "Vive en {{name}}"
   },
   "modules": {
     "subtasks": {
