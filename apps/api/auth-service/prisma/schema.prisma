@@ -834,6 +834,8 @@ model User {
   documentSignatures DocumentSignature[]
   documentEvents     DocumentEvent[] // evidence-trail entries they are the actor of
 
+  documentSignerSteps DocumentSigner[] @relation("DocumentSignerUser")
+
   @@index([role])
   @@index([email])
   @@index([memberRoleId])
@@ -1467,6 +1469,8 @@ model Customer {
   // Things this client holds (see Asset.customerId).
   assets       Asset[]
 
+  documentSignerSteps DocumentSigner[]
+
   @@index([organizationId, isActive])
   @@index([organizationId, name])
   @@index([portalId])
@@ -1882,6 +1886,8 @@ model CompanyLocation {
   // Empty = default: the space's leader roles (permissions.canViewSpaceAttendance).
   notifyRoleIds  String[] @default([])
   contactRoleIds String[] @default([])
+  /// The space's default approvers, when a member has no override.
+  approveRoleIds String[] @default([])
 
   // Tasks linked to this space
   tasks Task[]
@@ -2485,6 +2491,10 @@ model SpaceAssignment {
   notifyUserIds  String[] @default([])
   contactRoleIds String[] @default([])
   contactUserIds String[] @default([])
+  /// Who signs off FOR this member. A third kind, not a synonym for notify:
+  /// wanting to hear about somebody's shifts is not authority over their hours.
+  approveRoleIds String[] @default([])
+  approveUserIds String[] @default([])
 
   createdById String?
   createdAt   DateTime @default(now())
@@ -3884,6 +3894,14 @@ model DocumentType {
 
   signatureMode SignatureMode @default(NONE)
 
+  /// The signing route: an ordered list of roles, e.g.
+  ///   [{"role":"MEMBER"},{"role":"RESPONSIBLE"},{"role":"CUSTOMER"}]
+  ///
+  /// Null means today's behaviour exactly — one signature, by the member. JSON
+  /// rather than a table because it is three rows of config, and the shape is
+  /// owned and validated in packages/shared/src/documents/route.ts.
+  signerRoute Json?
+
   isCredential           Boolean  @default(false)
   hasExpiry              Boolean  @default(false)
   requiredForWorkflowIds String[] @default([])
@@ -3983,6 +4001,13 @@ model Document {
 
   /// Content-addressed key — {orgId}/documents/{sha[0:2]}/{sha}.ext
   storageKey String
+  /// The document as ISSUED, before any signature.
+  ///
+  /// Each signing re-renders from here: original + ONE signature block + ONE
+  /// certificate. Without it the only way to add a signature is to append
+  /// another pair of pages, so three signers would produce six.
+  originalKey    String?
+  originalSha256 String?
   sha256     String
   sizeBytes  Int
   mimeType   String @default("application/pdf")
@@ -4035,7 +4060,10 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  signature DocumentSignature?
+  /// Superseded by `signatures` — a document can now carry a chain. Kept as a
+  /// list so the old one-signature reads become the first element.
+  signatures DocumentSignature[]
+  signers    DocumentSigner[]
   events    DocumentEvent[]
 
   // The member's own list: their documents, by type, newest year first.
@@ -4058,10 +4086,80 @@ model Document {
 /// is this row: linked to an identified signer under sole control, with any
 /// later change detectable. If `hashAfter` still matches the stored bytes, the
 /// document provably has not been altered since it was sealed.
-model DocumentSignature {
+/// One step of a document's signing route: who is expected to sign, and whether
+/// they have. The plan and the state; the signature itself is a separate row.
+enum DocumentSignerRole {
+  MEMBER /// whoever the document was issued to
+  RESPONSIBLE /// resolved through the member's `approve` routing
+  ORG_REPRESENTATIVE /// somebody signing on behalf of the organization
+  CUSTOMER /// the space's client — the only role that can be external
+}
+
+enum DocumentSignerStatus {
+  PENDING
+  SIGNED
+  SKIPPED /// the route asked for a signer this document has none of
+}
+
+/// A step in the chain, resolved to a real person when the document is issued.
+///
+/// Frozen at issue on purpose: a member changing manager next month must not
+/// re-route a document already in flight, and the certificate has to be able to
+/// say who was asked, not who would be asked today.
+model DocumentSigner {
   id         String   @id @default(cuid())
-  documentId String   @unique
+  documentId String
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  /// Position in the route. 1-based, and the order signatures are collected in.
+  order Int
+  role  DocumentSignerRole
+
+  /// Resolved signer. A member for the internal roles, a customer for CUSTOMER.
+  userId     String?
+  user       User?     @relation("DocumentSignerUser", fields: [userId], references: [id], onDelete: SetNull)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  /// Where a signing link was sent, when the customer has no account.
+  email String?
+
+  status     DocumentSignerStatus @default(PENDING)
+  notifiedAt DateTime?
+  signedAt   DateTime?
+
+  /// Phase 4. Hashed like every other token here — the plaintext is only ever
+  /// in the link, never at rest.
+  tokenHash      String?   @unique
+  tokenExpiresAt DateTime?
+
+  signature DocumentSignature?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One signer per position: the route cannot fork or duplicate a step.
+  @@unique([documentId, order])
+  /// "What is waiting for me" — the question every signer's home screen asks.
+  @@index([userId, status])
+  @@index([documentId, status])
+  @@map("document_signers")
+}
+
+model DocumentSignature {
+  id String @id @default(cuid())
+
+  /// NOT unique any more. A document can carry a chain of signatures — worker,
+  /// then their responsible, then the client — and the unique constraint was
+  /// what made that impossible. One signature per STEP is enforced on signerId
+  /// instead, which is the guarantee that actually matters.
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  /// The step this signature completes. Null only for documents issued before
+  /// routes existed, which have exactly one signature and no signer rows.
+  signerId String?         @unique
+  signer   DocumentSigner? @relation(fields: [signerId], references: [id], onDelete: SetNull)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -4087,6 +4185,8 @@ model DocumentSignature {
   idempotencyKey String @unique
 
   @@index([userId])
+  /// The chain, in order — every read of a sealed document asks for this.
+  @@index([documentId, signedAt])
   @@map("document_signatures")
 }
 

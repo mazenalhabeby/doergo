@@ -1,4 +1,4 @@
-import { resolveMemberRouting } from '../space-access.util';
+import { resolveMemberRouting } from '@hbcfield/shared';
 
 /**
  * Characterization tests for space-driven routing.

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
-import { resolveMemberRouting } from './space-access.util';
+import { resolveMemberRouting } from '@hbcfield/shared';
 
 export type NotificationCategory = 'attendance' | 'tasks';
 
