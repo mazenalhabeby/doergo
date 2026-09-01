@@ -2348,4 +2348,43 @@ export class UsersService {
     await this.prisma.user.update({ where: { id: userId }, data: { notificationPrefs: merged } });
     return { data: merged };
   }
+  /**
+   * Remember which build of the app somebody is on.
+   *
+   * Guarded by a WHERE on the value itself, so a phone that reports the same
+   * version it reported last time performs no write at all — which is every
+   * request but the first after an update. That matters: this runs on the hot
+   * path for every authenticated mobile request in the system.
+   *
+   * Version strings are bounded and shape-checked before they reach the
+   * database. They arrive in a header, which is to say from anywhere.
+   *
+   * Failures are swallowed on purpose. This is bookkeeping; it must never turn
+   * a working request into a failed one.
+   */
+  async recordAppVersion(data: { userId: string; version: string; platform?: string }) {
+    const version = (data.version || '').trim().slice(0, 32);
+    if (!/^\d+\.\d+\.\d+/.test(version)) return { recorded: false };
+
+    const platform = data.platform === 'ios' || data.platform === 'android' ? data.platform : null;
+
+    try {
+      const { count } = await this.prisma.user.updateMany({
+        where: {
+          id: data.userId,
+          // The whole point: no write when nothing changed.
+          OR: [{ lastAppVersion: { not: version } }, { lastAppVersion: null }],
+        },
+        data: {
+          lastAppVersion: version,
+          ...(platform ? { lastAppPlatform: platform } : {}),
+          lastAppSeenAt: new Date(),
+        },
+      });
+      return { recorded: count > 0 };
+    } catch {
+      return { recorded: false };
+    }
+  }
+
 }

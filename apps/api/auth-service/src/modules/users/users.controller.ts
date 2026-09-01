@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import {
   CreateEmployeeDto,
@@ -210,6 +210,18 @@ export class UsersController {
       data.organizationId,
       data.requesterId,
     );
+  }
+
+  /**
+   * Record which build of the app a member is running.
+   *
+   * An EVENT, not a message: the gateway emits and moves on. Nothing about a
+   * request should wait on bookkeeping, and losing one is harmless — the next
+   * request from that phone records the same thing.
+   */
+  @EventPattern('app_version_seen')
+  async appVersionSeen(@Payload() data: { userId: string; version: string; platform?: string }) {
+    return this.usersService.recordAppVersion(data);
   }
 
   @MessagePattern({ cmd: 'remove_member' })

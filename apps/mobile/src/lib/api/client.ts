@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // Dynamically get API URL based on Expo dev server host
 export function getApiUrl(): string {
@@ -26,6 +27,20 @@ export function getApiUrl(): string {
 }
 
 export const API_URL = getApiUrl();
+
+/*
+  Which build this is, sent on every authenticated request.
+
+  The server had no way to know what anybody was running. When a crash took out
+  every Play Store user, "who is affected" and "who still needs to update" could
+  not be asked at all, so the only available response was to notify everybody.
+
+  Two headers rather than a parsed user-agent: this is a fact the app knows
+  about itself, and guessing it from a string other libraries also write is how
+  it silently stops being true.
+*/
+export const APP_VERSION: string = Constants.expoConfig?.version ?? '0.0.0';
+export const APP_PLATFORM: string = Platform.OS === 'ios' ? 'ios' : 'android';
 
 /**
  * Resolve a media path (e.g. an uploaded avatar `/uploads/avatars/…`) to an
@@ -269,6 +284,8 @@ export async function fetchApi<T>(
       headers: {
         'Content-Type': 'application/json',
         'X-Client-Platform': 'mobile',
+        'X-App-Version': APP_VERSION,
+        'X-App-Platform': APP_PLATFORM,
         ...options.headers,
       },
     });
@@ -352,6 +369,8 @@ async function _fetchWithAuthInner<T>(
       headers: {
         'Content-Type': 'application/json',
         'X-Client-Platform': 'mobile',
+        'X-App-Version': APP_VERSION,
+        'X-App-Platform': APP_PLATFORM,
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },

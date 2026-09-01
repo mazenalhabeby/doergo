@@ -62,6 +62,7 @@ import { ModuleGuard } from './common/guards/module.guard';
 import { SpaceModulesModule } from './common/space-modules.service';
 import { OrgEventsModule } from './common/events/org-events.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { AppVersionInterceptor } from './common/interceptors/app-version.interceptor';
 import { StorageModule } from './common/storage/storage.module';
 
 @Module({
@@ -225,6 +226,12 @@ import { StorageModule } from './common/storage/storage.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    {
+      // Records which build of the app a member is running. Emits and returns;
+      // nothing on the request waits for it.
+      provide: APP_INTERCEPTOR,
+      useClass: AppVersionInterceptor,
     },
   ],
 })

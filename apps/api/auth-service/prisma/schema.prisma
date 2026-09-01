@@ -684,6 +684,13 @@ model User {
   allowRemote         Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
   presence            String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
   lastActiveAt        DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
+
+  // Which build of the app this person is actually running. Written only when
+  // it changes, from a header the app sends — the steady state costs nothing.
+  // Without it, "who is still on the old version" had no answer at all.
+  lastAppVersion      String?
+  lastAppPlatform     String?   // "android" | "ios"
+  lastAppSeenAt       DateTime?
   // Contact directory / access — open within the org by default; admins restrict
   // via the Access Builder (canContact:false, or contactScope SELECTED).
   contactable         Boolean           @default(true) // CHAT: reachable in chat / messaging (inbound)
@@ -832,6 +839,7 @@ model User {
   @@index([memberRoleId])
   @@index([organizationId, role, isActive]) // list technicians/members in org
   @@index([customerId]) // customer portal: a customer's login users
+  @@index([organizationId, lastAppVersion]) // who in this org is still on an old build
   @@map("users")
 }
 
