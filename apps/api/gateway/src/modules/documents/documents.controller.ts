@@ -28,6 +28,7 @@ import {
   IssueFromTemplateDto,
   ListDocumentsQueryDto,
   ListIssuedQueryDto,
+  BrowseQueryDto,
   PresignUploadDto,
   PublishBatchDto,
   SignDocumentDto,
@@ -170,6 +171,26 @@ export class DocumentsController {
    * what state it is in. Opening one is checked separately when a link is
    * minted, so chasing a signature never becomes reading a payslip.
    */
+  /**
+   * One level of the filing cabinet.
+   *
+   * Same permission as the register: which folders exist and how full they are
+   * is metadata. Opening any document inside one is still checked separately.
+   */
+  @Get('browse')
+  @RequirePermission('canViewMemberDocuments')
+  @ApiOperation({ summary: 'Browse issued documents as folders' })
+  async browse(@CurrentUser() user: CurrentUserData, @Query() query: BrowseQueryDto) {
+    return this.documents.browse({
+      actor: documentActor(user),
+      groupBy: query.groupBy,
+      typeId: query.typeId,
+      userId: query.userId,
+      year: query.year ? Number(query.year) : undefined,
+      undated: query.undated === 'true',
+    });
+  }
+
   @Get('sent')
   @RequirePermission('canViewMemberDocuments')
   @ApiOperation({ summary: 'Every document the organization has issued, by state' })

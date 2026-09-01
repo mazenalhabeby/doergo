@@ -2152,6 +2152,168 @@ export class DocumentsService {
    * separately in `getDownloadUrl`, so chasing a signature never becomes the
    * ability to read a colleague's payslip.
    */
+  /**
+   * The filing cabinet: one level of folders at a time.
+   *
+   * A flat register answers "what needs attention". It is the wrong shape for
+   * "find the March payslip for Mike", which is how people actually look for a
+   * document they know exists — by walking to it.
+   *
+   * Three orderings, because two jobs look for the same document differently.
+   * Payroll thinks type-then-period; HR thinks person-then-file. Forcing either
+   * to use the other's hierarchy makes them scroll:
+   *
+   *   type     Type   → Year   → Member
+   *   member   Member → Type   → Year
+   *   year     Year   → Type   → Member
+   *
+   * ONE LEVEL PER REQUEST, with counts. The whole tree is never assembled:
+   * that would be a query over every document in the organization to render a
+   * screen showing eight folders, and it would get slower every month the
+   * product is used. Each level is one groupBy plus one lookup to turn ids into
+   * names, both scoped by the path already walked.
+   *
+   * Undated documents get their own folder rather than being hidden. A ONE_OFF
+   * type has no period by design — a driving licence does not belong to March —
+   * and dropping those rows from a year-grouped tree would make documents
+   * disappear from a cabinet that claims to hold everything.
+   */
+  async browse(data: {
+    actor: DocumentActor;
+    groupBy?: 'type' | 'member' | 'year';
+    typeId?: string;
+    userId?: string;
+    year?: number | null;
+    /** Explicitly at the undated folder, which is not the same as "no filter". */
+    undated?: boolean;
+  }) {
+    if (!data.actor.canViewMemberDocuments) {
+      throw new ForbiddenException('You cannot see other members’ documents');
+    }
+
+    const groupBy = data.groupBy ?? 'type';
+    const order: ('type' | 'member' | 'year')[] =
+      groupBy === 'member'
+        ? ['member', 'type', 'year']
+        : groupBy === 'year'
+          ? ['year', 'type', 'member']
+          : ['type', 'year', 'member'];
+
+    // Every level of the path already chosen narrows the query. The org scope
+    // is first and unconditional.
+    const where: Prisma.DocumentWhereInput = {
+      organizationId: data.actor.organizationId,
+      status: { not: 'DRAFT' },
+      ...(data.typeId ? { typeId: data.typeId } : {}),
+      ...(data.userId ? { userId: data.userId } : {}),
+      ...(data.undated ? { periodYear: null } : data.year ? { periodYear: data.year } : {}),
+    };
+
+    const chosen = {
+      type: !!data.typeId,
+      member: !!data.userId,
+      year: data.year != null || !!data.undated,
+    };
+
+    // The next level is the first in this ordering that has not been chosen.
+    const next = order.find((level) => !chosen[level]) ?? null;
+
+    if (!next) {
+      // Every folder walked: this is the shelf, so return the documents.
+      const docs = await this.prisma.document.findMany({
+        where,
+        select: {
+          id: true, title: true, status: true,
+          periodYear: true, periodMonth: true, issuedAt: true,
+          firstOpenedAt: true, expiresOn: true, sizeBytes: true, mimeType: true,
+          user: { select: { id: true, firstName: true, lastName: true } },
+          type: { select: { id: true, label: true } },
+          signature: { select: { signedAt: true } },
+        },
+        orderBy: [{ periodMonth: 'desc' }, { issuedAt: 'desc' }],
+        take: 500,
+      });
+
+      return {
+        groupBy,
+        level: 'documents' as const,
+        folders: [],
+        documents: docs.map((d) => ({
+          id: d.id,
+          title: d.title,
+          status: d.status,
+          periodYear: d.periodYear,
+          periodMonth: d.periodMonth,
+          issuedAt: d.issuedAt,
+          openedAt: d.firstOpenedAt,
+          signedAt: d.signature?.signedAt ?? null,
+          expiresOn: d.expiresOn,
+          sizeBytes: d.sizeBytes,
+          mimeType: d.mimeType,
+          memberId: d.user.id,
+          memberName: `${d.user.firstName} ${d.user.lastName}`.trim(),
+          typeId: d.type.id,
+          typeLabel: d.type.label,
+        })),
+      };
+    }
+
+    const field = next === 'type' ? 'typeId' : next === 'member' ? 'userId' : 'periodYear';
+    const groups = await this.prisma.document.groupBy({
+      by: [field as any],
+      where,
+      _count: true,
+    });
+
+    // One lookup turns ids into names — not one per folder.
+    let labels = new Map<string, string>();
+    if (next === 'type') {
+      const ids = groups.map((g: any) => g.typeId).filter(Boolean);
+      const types = await this.prisma.documentType.findMany({
+        where: { id: { in: ids }, organizationId: data.actor.organizationId },
+        select: { id: true, label: true },
+      });
+      labels = new Map(types.map((x) => [x.id, x.label]));
+    } else if (next === 'member') {
+      const ids = groups.map((g: any) => g.userId).filter(Boolean);
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: ids }, organizationId: data.actor.organizationId },
+        select: { id: true, firstName: true, lastName: true },
+      });
+      labels = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`.trim()]));
+    }
+
+    const folders = groups
+      .map((g: any) => {
+        const raw = g[field];
+        if (next === 'year') {
+          return {
+            kind: 'year' as const,
+            key: raw == null ? 'undated' : String(raw),
+            label: raw == null ? null : String(raw), // null → the client names it
+            undated: raw == null,
+            count: g._count,
+          };
+        }
+        return {
+          kind: next,
+          key: String(raw),
+          label: labels.get(String(raw)) ?? null,
+          undated: false,
+          count: g._count,
+        };
+      })
+      // Newest year first; everything else alphabetical. Undated last, because
+      // it is a residue rather than a period.
+      .sort((a, b) => {
+        if (a.undated !== b.undated) return a.undated ? 1 : -1;
+        if (next === 'year') return Number(b.key) - Number(a.key);
+        return (a.label ?? '').localeCompare(b.label ?? '');
+      });
+
+    return { groupBy, level: next, folders, documents: [] };
+  }
+
   async listIssued(data: {
     actor: DocumentActor;
     tab?: 'awaiting' | 'unopened' | 'signed' | 'all';

@@ -7629,7 +7629,20 @@
         "unopened": "Everything sent has been opened.",
         "signed": "Nothing has been signed yet.",
         "all": "Nothing has been issued yet."
-      }
+      },
+      "view": {
+        "attention": "Attention",
+        "files": "Files"
+      },
+      "groupBy": {
+        "type": "Type",
+        "member": "Member",
+        "year": "Year"
+      },
+      "allFiles": "All files",
+      "undated": "No period",
+      "emptyFolder": "This folder is empty.",
+      "groupByLabel": "Browse by"
     }
   },
   "serverErrors": {

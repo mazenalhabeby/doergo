@@ -6122,6 +6122,23 @@ export interface IssuedRow {
   isCredential: boolean
 }
 
+/** A folder in the cabinet: a type, a member, or a year. */
+export interface BrowseFolder {
+  kind: "type" | "member" | "year"
+  key: string
+  /** Null for the undated folder, which the client names in the user's language. */
+  label: string | null
+  undated: boolean
+  count: number
+}
+
+export interface BrowseLevel {
+  groupBy: "type" | "member" | "year"
+  level: "type" | "member" | "year" | "documents"
+  folders: BrowseFolder[]
+  documents: IssuedRow[]
+}
+
 export interface IssuedRegister {
   rows: IssuedRow[]
   page: number
@@ -6405,6 +6422,40 @@ export const documentsApi = {
   },
 
   // ── Credentials ──────────────────────────────────────────────────────────
+
+  // ── The filing cabinet ───────────────────────────────────────────────────
+
+  /**
+   * One level of folders, never the whole tree.
+   *
+   * Each call returns just the children of the path given, with counts, so the
+   * cost of drawing a folder does not grow with the size of the archive.
+   */
+  browse: async (params: {
+    groupBy?: "type" | "member" | "year"
+    typeId?: string
+    userId?: string
+    year?: number
+    undated?: boolean
+  }) => {
+    const response = await api.get<{ success: boolean; data: BrowseLevel }>(
+      buildUrlWithQuery("/documents/browse", {
+        groupBy: params.groupBy,
+        typeId: params.typeId,
+        userId: params.userId,
+        year: params.year,
+        undated: params.undated ? "true" : undefined,
+      }),
+    )
+    return (
+      unwrapDocuments<BrowseLevel>(response) ?? {
+        groupBy: params.groupBy ?? "type",
+        level: "type" as const,
+        folders: [],
+        documents: [],
+      }
+    )
+  },
 
   // ── The register ─────────────────────────────────────────────────────────
 

@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsBooleanString,
   IsEnum,
   IsDateString,
   IsISO8601,
@@ -270,6 +271,38 @@ export class ConfirmUploadDto {
  * refused rather than silently widened to everything — a typo must not turn a
  * narrow view into the whole register.
  */
+/** One level of the filing cabinet. Every field narrows the folder walked to. */
+export class BrowseQueryDto {
+  @ApiPropertyOptional({ enum: ['type', 'member', 'year'] })
+  @IsOptional()
+  @IsEnum(['type', 'member', 'year'])
+  groupBy?: 'type' | 'member' | 'year';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  typeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  userId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1970)
+  @Max(2200)
+  year?: number;
+
+  @ApiPropertyOptional({ description: 'Documents with no period at all' })
+  @IsOptional()
+  @IsBooleanString()
+  undated?: string;
+}
+
 export class ListIssuedQueryDto {
   @ApiPropertyOptional({ enum: ['awaiting', 'unopened', 'signed', 'all'] })
   @IsOptional()

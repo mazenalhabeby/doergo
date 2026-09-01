@@ -7638,7 +7638,20 @@
         "unopened": "Tutto ciò che è stato inviato è stato aperto.",
         "signed": "Non è stato ancora firmato nulla.",
         "all": "Non è stato ancora emesso nulla."
-      }
+      },
+      "view": {
+        "attention": "Da gestire",
+        "files": "File"
+      },
+      "groupBy": {
+        "type": "Tipo",
+        "member": "Membro",
+        "year": "Anno"
+      },
+      "allFiles": "Tutti i file",
+      "undated": "Senza periodo",
+      "emptyFolder": "Questa cartella è vuota.",
+      "groupByLabel": "Sfoglia per"
     }
   },
   "serverErrors": {

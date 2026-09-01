@@ -7629,7 +7629,20 @@
         "unopened": "Todo lo enviado se ha abierto.",
         "signed": "Aún no se ha firmado nada.",
         "all": "Aún no se ha emitido nada."
-      }
+      },
+      "view": {
+        "attention": "Pendiente",
+        "files": "Archivos"
+      },
+      "groupBy": {
+        "type": "Tipo",
+        "member": "Miembro",
+        "year": "Año"
+      },
+      "allFiles": "Todos los archivos",
+      "undated": "Sin periodo",
+      "emptyFolder": "Esta carpeta está vacía.",
+      "groupByLabel": "Ver por"
     }
   },
   "serverErrors": {

@@ -7638,7 +7638,20 @@
         "unopened": "Tout ce qui a été envoyé a été ouvert.",
         "signed": "Rien n'a encore été signé.",
         "all": "Rien n'a encore été émis."
-      }
+      },
+      "view": {
+        "attention": "À traiter",
+        "files": "Fichiers"
+      },
+      "groupBy": {
+        "type": "Type",
+        "member": "Membre",
+        "year": "Année"
+      },
+      "allFiles": "Tous les fichiers",
+      "undated": "Sans période",
+      "emptyFolder": "Ce dossier est vide.",
+      "groupByLabel": "Trier par"
     }
   },
   "serverErrors": {

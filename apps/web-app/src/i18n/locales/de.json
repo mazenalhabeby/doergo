@@ -7629,7 +7629,20 @@
         "unopened": "Alles Gesendete wurde geöffnet.",
         "signed": "Es wurde noch nichts unterschrieben.",
         "all": "Es wurde noch nichts ausgestellt."
-      }
+      },
+      "view": {
+        "attention": "Zu erledigen",
+        "files": "Dateien"
+      },
+      "groupBy": {
+        "type": "Typ",
+        "member": "Mitarbeiter",
+        "year": "Jahr"
+      },
+      "allFiles": "Alle Dateien",
+      "undated": "Ohne Zeitraum",
+      "emptyFolder": "Dieser Ordner ist leer.",
+      "groupByLabel": "Ansicht"
     }
   },
   "serverErrors": {

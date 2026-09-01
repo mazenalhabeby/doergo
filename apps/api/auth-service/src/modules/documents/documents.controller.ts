@@ -16,6 +16,11 @@ export class DocumentsController {
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_browse' })
+  browse(@Payload() data: any) {
+    return this.documents.browse(data);
+  }
+
   @MessagePattern({ cmd: 'documents_list_issued' })
   listIssued(@Payload() data: any) {
     return this.documents.listIssued(data);

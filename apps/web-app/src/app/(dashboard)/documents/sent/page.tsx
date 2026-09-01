@@ -6,13 +6,14 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Search, Loader2, Eye, PenLine, MailOpen, CheckCircle2,
-  FileText, Inbox, ChevronLeft, ChevronRight,
+  FileText, Inbox, ChevronLeft, ChevronRight, FolderTree, ListChecks,
 } from "lucide-react"
 import { documentsApi, type IssuedRegister, type IssuedRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { FolderBrowser } from "./_components/folder-browser"
 
 /*
   What the organization has sent.
@@ -54,6 +55,15 @@ export default function SentDocumentsPage() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
 
+  /*
+    Two ways of looking, not two screens.
+
+    "Attention" is the working queue — what is unsigned, what was never opened.
+    "Files" is the cabinet, for finding a document you already know exists.
+    They answer different questions and share nothing but the data, so they sit
+    behind one switch rather than in two places in the navigation.
+  */
+  const [view, setView] = useState<"attention" | "files">("attention")
   const [tab, setTab] = useState<Tab>("awaiting")
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
@@ -110,6 +120,32 @@ export default function SentDocumentsPage() {
         </div>
       </div>
 
+      {/* Which way of looking */}
+      <div className="mb-5 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
+        {([
+          ["attention", ListChecks],
+          ["files", FolderTree],
+        ] as const).map(([key, Icon]) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
+              view === key
+                ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-50"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200",
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {t(`documents.sent.view.${key}`)}
+          </button>
+        ))}
+      </div>
+
+      {view === "files" ? (
+        <FolderBrowser />
+      ) : (
+      <>
       {/* Tabs — each states its count, so a tap is a decision rather than a guess */}
       <div className="mb-4 flex flex-wrap gap-2">
         {TABS.map(({ key, icon: Icon }) => {
@@ -250,6 +286,8 @@ export default function SentDocumentsPage() {
             </Button>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )
