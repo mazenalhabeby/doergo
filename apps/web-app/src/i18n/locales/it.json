@@ -2650,7 +2650,8 @@
     "breakEnded": "Pausa terminata",
     "clockInAction": "Entrata registrata",
     "clockOutAction": "Uscita registrata",
-    "crmReminder": "Follow-up cliente in scadenza"
+    "crmReminder": "Follow-up cliente in scadenza",
+    "signatureNeeded": "Serve la tua firma"
   },
   "landing": {
     "nav": {
@@ -6122,7 +6123,7 @@
       "noPeople": "Nessun altro membro con un ruolo in questo spazio di lavoro.",
       "memberApprove": "Approva per {{name}}",
       "approveEmpty": "Nessuno — i documenti che richiedono un responsabile non possono essere emessi",
-      "noColleagues": "Non c’è ancora nessun altro in questo spazio."
+      "noColleagues": "Non c’è ancora nessun altro in questa organizzazione."
     }
   },
   "spaceSharing": {

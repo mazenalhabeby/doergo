@@ -2650,7 +2650,8 @@
     "breakEnded": "Descanso finalizado",
     "clockInAction": "Entrada registrada",
     "clockOutAction": "Salida registrada",
-    "crmReminder": "Seguimiento de cliente pendiente"
+    "crmReminder": "Seguimiento de cliente pendiente",
+    "signatureNeeded": "Se necesita tu firma"
   },
   "landing": {
     "nav": {
@@ -6113,7 +6114,7 @@
       "noPeople": "No hay otros miembros con un rol en este espacio de trabajo.",
       "memberApprove": "Aprueba por {{name}}",
       "approveEmpty": "Nadie — los documentos que necesitan un responsable no se pueden emitir",
-      "noColleagues": "Todavía no hay nadie más en este espacio."
+      "noColleagues": "Todavía no hay nadie más en esta organización."
     }
   },
   "spaceSharing": {

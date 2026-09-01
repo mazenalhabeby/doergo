@@ -11,6 +11,7 @@ import { spaceRolesApi, spaceMembersApi, employeesApi, spaceUnitsApi, type Space
 import { fetchAllPages } from "@/lib/paginate"
 import {
   ACCESS_PERMISSION_SCHEMA,
+  jobTitleOf,
   type SpaceRole,
   type SpaceMember,
   type PermissionSet,
@@ -61,6 +62,9 @@ import {
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
 import { MemberRoutingEditor } from "./member-routing-editor"
+
+const fullName = (p: { firstName?: string | null; lastName?: string | null }) =>
+  `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
@@ -410,6 +414,19 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
   const assignedIds = new Set((members || []).map((m) => m.userId))
   const availableEmployees = (employeeList ?? []).filter((e) => !assignedIds.has(e.id))
 
+  // Names held by more than one of the people on offer — the only case where
+  // the email earns its place in the row.
+  const duplicateNames = (() => {
+    const seen = new Set<string>()
+    const dupes = new Set<string>()
+    for (const e of availableEmployees) {
+      const n = fullName(e).toLowerCase()
+      if (seen.has(n)) dupes.add(n)
+      seen.add(n)
+    }
+    return dupes
+  })()
+
   const assignMutation = useMutation({
     mutationFn: () =>
       spaceMembersApi.assign(spaceId, {
@@ -476,6 +493,20 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                     <span className="text-sm font-medium text-foreground truncate block">
                       {m.user ? `${m.user.firstName} ${m.user.lastName}` : t("scheduling.members.unknownMember")}
                     </span>
+                    {/*
+                      What they do, under their name.
+
+                      A roster of names answers "who is in this space" and not
+                      "who is the right person for this" — and the second is the
+                      question somebody is actually holding when they open it.
+                      Same rule as the routing picker, from the same function,
+                      so the two can never describe one person differently.
+                    */}
+                    {jobTitleOf({ position: m.user?.position, memberRole: m.spaceRole }) && (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {jobTitleOf({ position: m.user?.position, memberRole: m.spaceRole })}
+                      </span>
+                    )}
                     <MemberRoleSelect spaceId={spaceId} member={m} roles={roles ?? []} />
                   </div>
                 </div>
@@ -509,7 +540,12 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                 </div>
               </div>
               {routingOpen === m.id && (
-                <MemberRoutingEditor spaceId={spaceId} member={m} roster={members} />
+                <MemberRoutingEditor
+                  spaceId={spaceId}
+                  member={m}
+                  roster={members}
+                  orgMembers={employeeList ?? []}
+                />
               )}
             </div>
           ))}
@@ -535,11 +571,32 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                 {availableEmployees.length === 0 ? (
                   <div className="p-2 text-sm text-muted-foreground text-center">{t("scheduling.members.noAvailable")}</div>
                 ) : (
-                  availableEmployees.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName}
-                    </SelectItem>
-                  ))
+                  availableEmployees.map((e) => {
+                    const title = jobTitleOf(e)
+                    /*
+                      A name on its own is not enough to add the right person.
+
+                      Two accounts for one human is ordinary here — a personal
+                      login and an admin one — and this dropdown listed both as
+                      the same words, so choosing between them was guesswork.
+                      The job title tells them apart on sight; the address is
+                      held back until the names actually collide, because beside
+                      a unique name it is noise.
+                    */
+                    const showEmail = duplicateNames.has(fullName(e).toLowerCase())
+                    return (
+                      <SelectItem key={e.id} value={e.id}>
+                        <span className="flex flex-col items-start">
+                          <span>{fullName(e)}</span>
+                          {(title || showEmail) && (
+                            <span className="text-xs text-muted-foreground">
+                              {[title, showEmail ? e.email : null].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })
                 )}
               </SelectContent>
             </Select>

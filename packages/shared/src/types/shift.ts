@@ -151,7 +151,7 @@ export interface SpaceMember {
   userId: string;
   spaceId?: string;
   // Populated relations (optional)
-  user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null };
+  user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null; position?: string | null };
   spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions'> | null;
   // Per-member, per-space routing override (Phase 4d). Empty = space default.
   notifyRoleIds?: string[];

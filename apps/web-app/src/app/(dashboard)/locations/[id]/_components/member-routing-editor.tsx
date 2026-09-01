@@ -7,7 +7,7 @@ import { Bell, MessageCircle, PenLine, Save, Loader2 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { spaceMembersApi } from "@/lib/api"
-import type { SpaceMember } from "@hbcfield/shared/client"
+import { jobTitleOf, type SpaceMember } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -23,10 +23,35 @@ export function MemberRoutingEditor({
   spaceId,
   member,
   roster,
+  orgMembers,
 }: {
   spaceId: string
   member: SpaceMember
   roster: SpaceMember[]
+  /**
+   * Everyone in the organisation — the pool the RESPONSIBLE is chosen from.
+   *
+   * Not the space roster. Whoever signs off for somebody is usually an owner or
+   * a manager, and those people are frequently in no space at all: the two
+   * accounts that run this business belong to none, so a picker limited to
+   * space members could never offer either of them, and the one person it did
+   * offer was the wrong one. Sign-off is an organisational relationship, not a
+   * seat on a site.
+   *
+   * The server already agreed: approveUserIds stores a plain user id,
+   * resolveMemberRouting adds it without checking membership, and the document
+   * chain resolves the candidate by organizationId. Only this list disagreed.
+   */
+  orgMembers?: {
+    id: string
+    firstName: string
+    lastName: string
+    email?: string
+    avatarUrl?: string | null
+    position?: string | null
+    specialty?: string | null
+    memberRole?: { id: string; name: string; color?: string | null } | null
+  }[]
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -51,7 +76,18 @@ export function MemberRoutingEditor({
     hierarchy could not name a responsible at all, and the documents that need
     one could never be issued.
   */
-  const approvers = roster.filter((m) => m.userId !== member.userId && m.user)
+  const approvers: PickablePerson[] = (orgMembers ?? [])
+    // Nobody approves their own hours.
+    .filter((e) => e.id !== member.userId)
+    .map((e) => ({
+      id: `org-${e.id}`,
+      userId: e.id,
+      user: { id: e.id, firstName: e.firstName, lastName: e.lastName, email: e.email, avatarUrl: e.avatarUrl ?? null },
+      // Deliberately no space role: these people are being offered as
+      // colleagues in the organisation, and most hold no role in THIS space.
+      spaceRole: null,
+      subtitle: jobTitleOf(e),
+    }))
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -115,7 +151,7 @@ export function MemberRoutingEditor({
           selected={approveUsers}
           onToggle={(id) => toggle(approveUsers, setApproveUsers, id)}
           emptyHint={t("scheduling.routing.approveEmpty", "Nobody — documents needing a responsible cannot be issued")}
-          noPeopleHint={t("scheduling.routing.noColleagues", "Nobody else is in this workspace yet.")}
+          noPeopleHint={t("scheduling.routing.noColleagues", "Nobody else is in this organisation yet.")}
         />
       </div>
       <div className="flex justify-end">
@@ -126,6 +162,25 @@ export function MemberRoutingEditor({
       </div>
     </div>
   )
+}
+
+/** A person as this list shows them: the member, plus what they do. */
+type PickablePerson = SpaceMember & { subtitle?: string | null }
+
+/** How a person reads in this list — the thing that has to be unique. */
+const displayName = (m: PickablePerson) =>
+  `${m.user?.firstName ?? ""} ${m.user?.lastName ?? ""}`.trim().toLowerCase()
+
+/** Names held by more than one of the people offered. */
+function ambiguousNames(people: PickablePerson[]): Set<string> {
+  const seen = new Set<string>()
+  const dupes = new Set<string>()
+  for (const m of people) {
+    const n = displayName(m)
+    if (seen.has(n)) dupes.add(n)
+    seen.add(n)
+  }
+  return dupes
 }
 
 function PeoplePicker({
@@ -139,7 +194,7 @@ function PeoplePicker({
 }: {
   icon: typeof Bell
   title: string
-  people: SpaceMember[]
+  people: PickablePerson[]
   selected: string[]
   onToggle: (id: string) => void
   emptyHint: string
@@ -147,6 +202,7 @@ function PeoplePicker({
   noPeopleHint?: string
 }) {
   const { t } = useTranslation()
+  const ambiguous = ambiguousNames(people)
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-card">
       <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
@@ -166,7 +222,34 @@ function PeoplePicker({
                 {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
                 <AvatarFallback className="text-[9px]">{(m.user?.firstName?.[0] || "") + (m.user?.lastName?.[0] || "")}</AvatarFallback>
               </Avatar>
-              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{m.user?.firstName} {m.user?.lastName}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-foreground">
+                  {m.user?.firstName} {m.user?.lastName}
+                </span>
+                {/*
+                  What they do, and — only when two people share a name — which
+                  account it is.
+
+                  A name alone does not tell you whether this is the right
+                  person to countersign somebody's hours. "IT Engineering" and
+                  "Sales" do, immediately.
+
+                  The email is held back unless the name is ambiguous: two
+                  accounts for one human is ordinary, and this list showed both
+                  as an identical row with nothing to choose between — somebody
+                  picked one, got the other, and the document went to an account
+                  they were not signed into. Beside a name that is already
+                  unique the address is noise, and a picker that whispers twice
+                  as much stops being read.
+                */}
+                {(m.subtitle || (ambiguous.has(displayName(m)) && m.user?.email)) && (
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {[m.subtitle, ambiguous.has(displayName(m)) ? m.user?.email : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
+              </span>
               {m.spaceRole && (
                 <Badge
                   variant="outline"

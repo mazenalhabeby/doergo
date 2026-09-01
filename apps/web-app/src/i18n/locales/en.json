@@ -2650,7 +2650,8 @@
     "breakEnded": "Break ended",
     "clockInAction": "Clocked in",
     "clockOutAction": "Clocked out",
-    "crmReminder": "Client follow-up due"
+    "crmReminder": "Client follow-up due",
+    "signatureNeeded": "Your signature is needed"
   },
   "landing": {
     "nav": {
@@ -6113,7 +6114,7 @@
       "noPeople": "No other members with a role in this workspace.",
       "memberApprove": "Signs off for {{name}}",
       "approveEmpty": "Nobody — documents needing a responsible cannot be issued",
-      "noColleagues": "Nobody else is in this workspace yet."
+      "noColleagues": "Nobody else is in this organisation yet."
     }
   },
   "spaceSharing": {

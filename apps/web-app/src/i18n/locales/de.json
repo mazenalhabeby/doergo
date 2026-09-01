@@ -2650,7 +2650,8 @@
     "breakEnded": "Pause beendet",
     "clockInAction": "Eingestempelt",
     "clockOutAction": "Ausgestempelt",
-    "crmReminder": "Kundenfolgetermin fällig"
+    "crmReminder": "Kundenfolgetermin fällig",
+    "signatureNeeded": "Ihre Unterschrift wird benötigt"
   },
   "landing": {
     "nav": {
@@ -6113,7 +6114,7 @@
       "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space.",
       "memberApprove": "Zeichnet für {{name}} ab",
       "approveEmpty": "Niemand — Dokumente, die eine verantwortliche Person brauchen, können nicht ausgestellt werden",
-      "noColleagues": "Es ist noch niemand sonst in diesem Arbeitsbereich."
+      "noColleagues": "Es ist sonst niemand in dieser Organisation."
     }
   },
   "spaceSharing": {

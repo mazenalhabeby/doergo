@@ -28,6 +28,13 @@ export interface EmployeeProfile {
   // Technician-specific fields
   specialty: string | null;
   position?: string | null;
+  /**
+   * Their access role, e.g. "Operations Manager".
+   *
+   * The server has always selected it; the type never declared it, so every
+   * screen that wanted to say who somebody IS had only a name to work with.
+   */
+  memberRole?: { id: string; name: string; color?: string | null } | null;
   enabledModules?: string[] | null;
   /** 'IN_HOUSE' (employed → €9 field seat) | 'EXTERNAL' (freelancer → €15). */
   employmentType?: string | null;

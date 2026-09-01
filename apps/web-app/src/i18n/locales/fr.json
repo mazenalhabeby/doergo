@@ -2650,7 +2650,8 @@
     "breakEnded": "Pause terminée",
     "clockInAction": "Pointé en entrée",
     "clockOutAction": "Pointé en sortie",
-    "crmReminder": "Relance client à effectuer"
+    "crmReminder": "Relance client à effectuer",
+    "signatureNeeded": "Votre signature est requise"
   },
   "landing": {
     "nav": {
@@ -6122,7 +6123,7 @@
       "noPeople": "Aucun autre membre avec un rôle dans cet espace de travail.",
       "memberApprove": "Valide pour {{name}}",
       "approveEmpty": "Personne — les documents exigeant un responsable ne peuvent pas être émis",
-      "noColleagues": "Personne d’autre n’est encore dans cet espace."
+      "noColleagues": "Personne d’autre n’est encore dans cette organisation."
     }
   },
   "spaceSharing": {

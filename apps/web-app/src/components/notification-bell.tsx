@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import type { TaskEventPayload } from "@/types/socket-events"
 import {
   Bell, UserPlus, ClipboardList, MessageSquare, CheckCircle,
-  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck,
+  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck, PenLine,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -105,6 +105,7 @@ type NotificationType =
   | "invitation_created"
   | "chat_message"
   | "crm_reminder"
+  | "signature_needed"
 
 interface Notification {
   id: string
@@ -129,6 +130,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   comment_added:      { icon: MessageSquare, color: "text-amber-600", bg: "bg-amber-50" },
   chat_message:       { icon: MessageSquare, color: "text-blue-600", bg: "bg-blue-50" },
   crm_reminder:       { icon: Bell, color: "text-indigo-600", bg: "bg-indigo-50" },
+  signature_needed:   { icon: PenLine, color: "text-amber-600", bg: "bg-amber-50" },
   attachment_added:   { icon: Paperclip, color: "text-cyan-600", bg: "bg-cyan-50" },
   join_request:       { icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50" },
   join_approved:      { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
@@ -154,6 +156,7 @@ function eventTypeToNotifType(eventType: string): NotificationType {
     "join_request_submitted": "join_request",
     "chat.message": "chat_message",
     "customer_reminder_due": "crm_reminder",
+    "document_awaiting_signature": "signature_needed",
   }
   return map[eventType] || "task_status_changed"
 }
@@ -252,6 +255,29 @@ export function NotificationBell() {
         const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t("chat.title", "Messages")
         add("chat_message", name, (m.body || "").slice(0, 80), `chat:${m.senderId}`)
       }),
+
+      /*
+        A document has reached this person's step of a signing chain.
+
+        It was emitted and nothing on any client listened — the same shape as
+        the CRM reminder below, and with the same consequence: the phone got a
+        push and the web got nothing at all. Worse here, because the person the
+        chain is waiting on is usually at a desk, and a document that nobody
+        knows about stops a whole month's time sheet.
+      */
+      subscribe<{ documentId: string; title?: string; memberName?: string }>(
+        "document_awaiting_signature",
+        (d) => {
+          add(
+            "signature_needed",
+            t("notifications.signatureNeeded", "Your signature is needed"),
+            // Whose document it is — a manager with nine people cannot act on
+            // "a time sheet needs signing".
+            [d?.memberName, d?.title].filter(Boolean).join(" — "),
+            "/my/documents",
+          )
+        },
+      ),
 
       // A CRM follow-up fell due. Emitted to each assigned manager with a complete
       // payload (client name, note, kind) — it needs no query, which is why it can

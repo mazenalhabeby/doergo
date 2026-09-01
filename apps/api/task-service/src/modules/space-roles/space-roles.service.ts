@@ -14,7 +14,13 @@ const SPACE_PERMISSION_KEYS = ACCESS_PERMISSION_SCHEMA
   .filter((p) => p.scopes.includes('space'))
   .map((p) => p.key);
 
-const userSelect = { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } };
+// `position` is the free-form job title an admin typed — "IT Engineering",
+// "Sales", "CEO". The member lists show it under the name, and a list that
+// displays a field should carry it rather than have the browser join it back
+// on from somewhere else.
+const userSelect = {
+  select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true, position: true },
+};
 const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true } };
 
 /**
