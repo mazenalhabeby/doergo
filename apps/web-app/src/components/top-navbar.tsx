@@ -208,6 +208,12 @@ export function TopNavbar() {
     /my/documents, which is nobody's permission because it is their own file.
   */
   const showIssueDocuments = hasPlanFeature("documents") && hasPermission("canIssueDocuments")
+  /*
+    Seeing what the organization has sent needs the permission to see member
+    documents — deliberately NOT the permission to issue them. A manager who
+    chases signatures should not have to be given the ability to send payslips.
+  */
+  const showSentDocuments = hasPlanFeature("documents") && hasPermission("canViewMemberDocuments")
   const showDocumentTemplates = hasPlanFeature("documents") && hasPermission("canManageDocumentTemplates")
   /*
     Credential validity rides on canAssignTasks, not on a document permission:
@@ -454,6 +460,7 @@ export function TopNavbar() {
           <DocumentsDropdown
             pathname={pathname}
             showIssue={showIssueDocuments}
+            showSent={showSentDocuments}
             showTemplates={showDocumentTemplates}
             showCompliance={showDocumentCompliance}
           />
@@ -571,11 +578,13 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
 function DocumentsDropdown({
   pathname,
   showIssue,
+  showSent,
   showTemplates,
   showCompliance,
 }: {
   pathname: string
   showIssue: boolean
+  showSent: boolean
   showTemplates: boolean
   showCompliance: boolean
 }) {
@@ -601,6 +610,13 @@ function DocumentsDropdown({
   const items = [
     { href: "/my/documents", label: t("nav.myDocuments"), show: true },
     { href: "/documents", label: t("nav.issueDocuments"), show: showIssue },
+    /*
+      The register of what went out. Beside "Issue" because it answers the
+      question issuing raises — did it arrive, was it opened, is it signed —
+      and gated on seeing member documents, not on issuing them: chasing a
+      signature is a different job from sending one.
+    */
+    { href: "/documents/sent", label: t("nav.sentDocuments"), show: showSent },
     { href: "/documents/review", label: t("documents.review.title"), show: showIssue },
     { href: "/documents/types", label: t("documents.types.title"), show: showTemplates },
     { href: "/documents/templates", label: t("documents.templates.title"), show: showTemplates },

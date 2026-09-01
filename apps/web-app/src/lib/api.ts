@@ -6101,6 +6101,35 @@ export interface DraftDocumentRow {
   type: { id: string; label: string; signatureMode: string };
 }
 
+/** One row of the issued-document register. Carries no url, by design. */
+export interface IssuedRow {
+  id: string
+  title: string
+  status: string
+  periodYear: number | null
+  periodMonth: number | null
+  issuedAt: string
+  openedAt: string | null
+  signedAt: string | null
+  expiresOn: string | null
+  sizeBytes: number
+  mimeType: string
+  memberId: string
+  memberName: string
+  typeId: string
+  typeLabel: string
+  signatureMode: string
+  isCredential: boolean
+}
+
+export interface IssuedRegister {
+  rows: IssuedRow[]
+  page: number
+  limit: number
+  total: number
+  counts: { awaiting: number; unopened: number; signed: number; all: number }
+}
+
 export interface ComplianceRow {
   id: string;
   title: string;
@@ -6376,6 +6405,48 @@ export const documentsApi = {
   },
 
   // ── Credentials ──────────────────────────────────────────────────────────
+
+  // ── The register ─────────────────────────────────────────────────────────
+
+  /**
+   * Everything the organization has issued, by state.
+   *
+   * Carries no urls: a link is minted only by opening a document, and that mint
+   * is what records the delivery evidence.
+   */
+  listIssued: async (params?: {
+    tab?: "awaiting" | "unopened" | "signed" | "all"
+    typeId?: string
+    userId?: string
+    year?: number
+    search?: string
+    page?: number
+    limit?: number
+  }) => {
+    const response = await api.get<{ success: boolean; data: IssuedRegister }>(
+      buildUrlWithQuery("/documents/sent", {
+        tab: params?.tab,
+        typeId: params?.typeId,
+        userId: params?.userId,
+        year: params?.year,
+        search: params?.search,
+        page: params?.page,
+        limit: params?.limit,
+      }),
+    )
+    // An empty register rather than undefined: the screen renders the same way
+    // for "nothing issued" and for a response the unwrapper did not recognise,
+    // and neither is an error worth showing an admin.
+    return (
+      unwrapDocuments<IssuedRegister>(response) ?? {
+        rows: [],
+        page: 1,
+        limit: 25,
+        total: 0,
+        counts: { awaiting: 0, unopened: 0, signed: 0, all: 0 },
+      }
+    )
+  },
 
   /** Validity and dates only — never the certificate itself. */
   compliance: async () => {

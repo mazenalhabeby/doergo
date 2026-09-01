@@ -871,7 +871,8 @@
     "ledger": "Registro",
     "documents": "Documenti",
     "issueDocuments": "Emetti documenti",
-    "myDocuments": "I miei documenti"
+    "myDocuments": "I miei documenti",
+    "sentDocuments": "Documenti inviati"
   },
   "dashboard": {
     "admin": {
@@ -7609,6 +7610,35 @@
       "partUpload": "{{count}} da caricare",
       "partSign": "{{count}} da firmare",
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
+    },
+    "sent": {
+      "title": "Documenti inviati",
+      "subtitle": "Tutto ciò che è stato emesso ai membri e dove è arrivato.",
+      "searchPlaceholder": "Cerca per titolo",
+      "open": "Apri",
+      "openFailed": "Impossibile aprire il documento",
+      "count_one": "{{count}} documento",
+      "count_other": "{{count}} documenti",
+      "tab": {
+        "awaiting": "In attesa di firma",
+        "unopened": "Non aperto",
+        "signed": "Firmato",
+        "all": "Tutti"
+      },
+      "state": {
+        "awaiting": "In attesa di firma",
+        "unopened": "Non aperto",
+        "opened": "Aperto",
+        "signed": "Firmato",
+        "revoked": "Revocato",
+        "expired": "Scaduto"
+      },
+      "empty": {
+        "awaiting": "Nulla è in attesa di firma.",
+        "unopened": "Tutto ciò che è stato inviato è stato aperto.",
+        "signed": "Non è stato ancora firmato nulla.",
+        "all": "Non è stato ancora emesso nulla."
+      }
     }
   },
   "serverErrors": {

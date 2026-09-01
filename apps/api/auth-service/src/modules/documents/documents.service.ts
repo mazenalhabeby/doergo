@@ -2124,6 +2124,146 @@ export class DocumentsService {
    * documents carrying two hundred live links would be two hundred leaked
    * capabilities and would make "opened" mean nothing.
    */
+  /**
+   * Everything the organization has issued, as one register.
+   *
+   * The gap this closes: every other list here answers "what does THIS PERSON
+   * have" — `listForMember` takes one user id and defaults to the caller. So an
+   * admin could inspect one member at a time and never see the shape of the
+   * whole thing: what went out, who never opened it, what is still unsigned.
+   *
+   * Organized by the question being asked rather than by date, because the
+   * useful ones are not "everything":
+   *
+   *   awaiting   still needs a signature — the only rows blocking anybody
+   *   unopened   delivered and never looked at, which nothing surfaced before
+   *   signed     finished, kept for the evidence trail
+   *   all        the register proper, for looking something up
+   *
+   * DRAFT is excluded from every tab. A draft is a staged batch that no member
+   * can see, so counting it as "sent" would overstate what was delivered — and
+   * the issue screen already shows drafts, where they belong.
+   *
+   * Returns NO urls, like every other list here. A link is minted only by an
+   * explicit open, and that mint IS the delivery evidence; a register that
+   * pre-fetched links would quietly destroy the audit trail it exists to show.
+   *
+   * Needs `canViewMemberDocuments` and nothing more. Opening a file is checked
+   * separately in `getDownloadUrl`, so chasing a signature never becomes the
+   * ability to read a colleague's payslip.
+   */
+  async listIssued(data: {
+    actor: DocumentActor;
+    tab?: 'awaiting' | 'unopened' | 'signed' | 'all';
+    typeId?: string;
+    userId?: string;
+    year?: number;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    if (!data.actor.canViewMemberDocuments) {
+      throw new ForbiddenException('You cannot see other members’ documents');
+    }
+
+    const page = Math.max(1, data.page ?? 1);
+    const limit = Math.min(100, Math.max(1, data.limit ?? 25));
+
+    // The organization scope is on every branch below, never added later: it is
+    // what stops a guessed type or user id reaching across tenants.
+    const base: Prisma.DocumentWhereInput = {
+      organizationId: data.actor.organizationId,
+      status: { not: 'DRAFT' },
+      ...(data.typeId ? { typeId: data.typeId } : {}),
+      ...(data.userId ? { userId: data.userId } : {}),
+      ...(data.year ? { periodYear: data.year } : {}),
+      ...(data.search
+        ? { title: { contains: data.search.trim(), mode: 'insensitive' as const } }
+        : {}),
+    };
+
+    const tabWhere = (tab: string): Prisma.DocumentWhereInput => {
+      switch (tab) {
+        case 'awaiting':
+          return { ...base, status: 'AWAITING_SIGNATURE' };
+        case 'unopened':
+          return { ...base, firstOpenedAt: null, status: { in: ['ISSUED', 'AWAITING_SIGNATURE'] } };
+        case 'signed':
+          return { ...base, status: 'SIGNED' };
+        default:
+          return base;
+      }
+    };
+
+    const tab = data.tab ?? 'awaiting';
+    const where = tabWhere(tab);
+
+    /*
+      Counts for the tabs come from ONE grouped query plus one count, not one
+      query per tab. Both are served by @@index([organizationId, status]).
+    */
+    const [rows, total, byStatus, unopened] = await Promise.all([
+      this.prisma.document.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          periodYear: true,
+          periodMonth: true,
+          issuedAt: true,
+          firstOpenedAt: true,
+          expiresOn: true,
+          sizeBytes: true,
+          mimeType: true,
+          user: { select: { id: true, firstName: true, lastName: true } },
+          type: { select: { id: true, label: true, signatureMode: true, isCredential: true } },
+          signature: { select: { signedAt: true } },
+        },
+        orderBy: [{ issuedAt: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.document.count({ where }),
+      this.prisma.document.groupBy({ by: ['status'], where: base, _count: true }),
+      this.prisma.document.count({ where: tabWhere('unopened') }),
+    ]);
+
+    const counted = (s: string) =>
+      byStatus.find((g) => g.status === s)?._count ?? 0;
+
+    return {
+      rows: rows.map((d) => ({
+        id: d.id,
+        title: d.title,
+        status: d.status,
+        periodYear: d.periodYear,
+        periodMonth: d.periodMonth,
+        issuedAt: d.issuedAt,
+        openedAt: d.firstOpenedAt,
+        signedAt: d.signature?.signedAt ?? null,
+        expiresOn: d.expiresOn,
+        sizeBytes: d.sizeBytes,
+        mimeType: d.mimeType,
+        memberId: d.user.id,
+        memberName: `${d.user.firstName} ${d.user.lastName}`.trim(),
+        typeId: d.type.id,
+        typeLabel: d.type.label,
+        signatureMode: d.type.signatureMode,
+        isCredential: d.type.isCredential,
+      })),
+      page,
+      limit,
+      total,
+      counts: {
+        awaiting: counted('AWAITING_SIGNATURE'),
+        unopened,
+        signed: counted('SIGNED'),
+        all: byStatus.reduce((n, g) => n + g._count, 0),
+      },
+    };
+  }
+
   async listForMember(data: {
     actor: DocumentActor;
     targetUserId?: string;

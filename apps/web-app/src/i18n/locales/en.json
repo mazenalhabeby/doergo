@@ -871,7 +871,8 @@
     "ledger": "Ledger",
     "documents": "Documents",
     "issueDocuments": "Issue documents",
-    "myDocuments": "My documents"
+    "myDocuments": "My documents",
+    "sentDocuments": "Sent documents"
   },
   "dashboard": {
     "admin": {
@@ -7600,6 +7601,35 @@
       "partUpload": "{{count}} to upload",
       "partSign": "{{count}} to sign",
       "blocking": "You cannot be given work until this is supplied and approved."
+    },
+    "sent": {
+      "title": "Sent documents",
+      "subtitle": "Everything issued to members, and where it got to.",
+      "searchPlaceholder": "Search by title",
+      "open": "Open",
+      "openFailed": "Could not open the document",
+      "count_one": "{{count}} document",
+      "count_other": "{{count}} documents",
+      "tab": {
+        "awaiting": "Awaiting signature",
+        "unopened": "Not opened",
+        "signed": "Signed",
+        "all": "All"
+      },
+      "state": {
+        "awaiting": "Awaiting signature",
+        "unopened": "Not opened",
+        "opened": "Opened",
+        "signed": "Signed",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      },
+      "empty": {
+        "awaiting": "Nothing is waiting for a signature.",
+        "unopened": "Everything sent has been opened.",
+        "signed": "Nothing has been signed yet.",
+        "all": "Nothing has been issued yet."
+      }
     }
   },
   "serverErrors": {

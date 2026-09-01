@@ -871,7 +871,8 @@
     "ledger": "Kassenbuch",
     "documents": "Dokumente",
     "issueDocuments": "Dokumente ausstellen",
-    "myDocuments": "Meine Dokumente"
+    "myDocuments": "Meine Dokumente",
+    "sentDocuments": "Gesendete Dokumente"
   },
   "dashboard": {
     "admin": {
@@ -7600,6 +7601,35 @@
       "partUpload": "{{count}} hochladen",
       "partSign": "{{count}} unterschreiben",
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
+    },
+    "sent": {
+      "title": "Gesendete Dokumente",
+      "subtitle": "Alles, was an Mitarbeitende ausgestellt wurde – und wo es gelandet ist.",
+      "searchPlaceholder": "Nach Titel suchen",
+      "open": "Öffnen",
+      "openFailed": "Dokument konnte nicht geöffnet werden",
+      "count_one": "{{count}} Dokument",
+      "count_other": "{{count}} Dokumente",
+      "tab": {
+        "awaiting": "Unterschrift ausstehend",
+        "unopened": "Nicht geöffnet",
+        "signed": "Unterschrieben",
+        "all": "Alle"
+      },
+      "state": {
+        "awaiting": "Unterschrift ausstehend",
+        "unopened": "Nicht geöffnet",
+        "opened": "Geöffnet",
+        "signed": "Unterschrieben",
+        "revoked": "Widerrufen",
+        "expired": "Abgelaufen"
+      },
+      "empty": {
+        "awaiting": "Es wartet nichts auf eine Unterschrift.",
+        "unopened": "Alles Gesendete wurde geöffnet.",
+        "signed": "Es wurde noch nichts unterschrieben.",
+        "all": "Es wurde noch nichts ausgestellt."
+      }
     }
   },
   "serverErrors": {

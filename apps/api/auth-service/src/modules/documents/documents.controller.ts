@@ -16,6 +16,11 @@ export class DocumentsController {
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'documents_list_issued' })
+  listIssued(@Payload() data: any) {
+    return this.documents.listIssued(data);
+  }
+
   @MessagePattern({ cmd: 'documents_list_types' })
   listTypes(@Payload() data: any) {
     return this.documents.listTypes(data);

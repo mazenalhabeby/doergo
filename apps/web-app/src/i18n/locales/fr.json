@@ -871,7 +871,8 @@
     "ledger": "Registre",
     "documents": "Documents",
     "issueDocuments": "Émettre des documents",
-    "myDocuments": "Mes documents"
+    "myDocuments": "Mes documents",
+    "sentDocuments": "Documents envoyés"
   },
   "dashboard": {
     "admin": {
@@ -7609,6 +7610,35 @@
       "partUpload": "{{count}} à envoyer",
       "partSign": "{{count}} à signer",
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
+    },
+    "sent": {
+      "title": "Documents envoyés",
+      "subtitle": "Tout ce qui a été émis aux membres, et où cela en est.",
+      "searchPlaceholder": "Rechercher par titre",
+      "open": "Ouvrir",
+      "openFailed": "Impossible d'ouvrir le document",
+      "count_one": "{{count}} document",
+      "count_other": "{{count}} documents",
+      "tab": {
+        "awaiting": "Signature en attente",
+        "unopened": "Non ouvert",
+        "signed": "Signé",
+        "all": "Tous"
+      },
+      "state": {
+        "awaiting": "Signature en attente",
+        "unopened": "Non ouvert",
+        "opened": "Ouvert",
+        "signed": "Signé",
+        "revoked": "Révoqué",
+        "expired": "Expiré"
+      },
+      "empty": {
+        "awaiting": "Rien n'attend de signature.",
+        "unopened": "Tout ce qui a été envoyé a été ouvert.",
+        "signed": "Rien n'a encore été signé.",
+        "all": "Rien n'a encore été émis."
+      }
     }
   },
   "serverErrors": {

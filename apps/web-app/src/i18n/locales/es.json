@@ -871,7 +871,8 @@
     "ledger": "Libro",
     "documents": "Documentos",
     "issueDocuments": "Emitir documentos",
-    "myDocuments": "Mis documentos"
+    "myDocuments": "Mis documentos",
+    "sentDocuments": "Documentos enviados"
   },
   "dashboard": {
     "admin": {
@@ -7600,6 +7601,35 @@
       "partUpload": "{{count}} por subir",
       "partSign": "{{count}} por firmar",
       "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
+    },
+    "sent": {
+      "title": "Documentos enviados",
+      "subtitle": "Todo lo emitido a los miembros y dónde ha llegado.",
+      "searchPlaceholder": "Buscar por título",
+      "open": "Abrir",
+      "openFailed": "No se pudo abrir el documento",
+      "count_one": "{{count}} documento",
+      "count_other": "{{count}} documentos",
+      "tab": {
+        "awaiting": "Pendiente de firma",
+        "unopened": "Sin abrir",
+        "signed": "Firmado",
+        "all": "Todos"
+      },
+      "state": {
+        "awaiting": "Pendiente de firma",
+        "unopened": "Sin abrir",
+        "opened": "Abierto",
+        "signed": "Firmado",
+        "revoked": "Revocado",
+        "expired": "Caducado"
+      },
+      "empty": {
+        "awaiting": "No hay nada pendiente de firma.",
+        "unopened": "Todo lo enviado se ha abierto.",
+        "signed": "Aún no se ha firmado nada.",
+        "all": "Aún no se ha emitido nada."
+      }
     }
   },
   "serverErrors": {

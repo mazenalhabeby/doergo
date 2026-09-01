@@ -27,6 +27,7 @@ import {
   SubmitOwnDocumentDto,
   IssueFromTemplateDto,
   ListDocumentsQueryDto,
+  ListIssuedQueryDto,
   PresignUploadDto,
   PublishBatchDto,
   SignDocumentDto,
@@ -162,6 +163,29 @@ export class DocumentsController {
     This returns validity and dates — never the certificate itself, which stays
     behind canOpenMemberDocuments.
   */
+  /**
+   * The register: everything this organization has issued.
+   *
+   * On `canViewMemberDocuments`, which grants seeing THAT a document exists and
+   * what state it is in. Opening one is checked separately when a link is
+   * minted, so chasing a signature never becomes reading a payslip.
+   */
+  @Get('sent')
+  @RequirePermission('canViewMemberDocuments')
+  @ApiOperation({ summary: 'Every document the organization has issued, by state' })
+  async listIssued(@CurrentUser() user: CurrentUserData, @Query() query: ListIssuedQueryDto) {
+    return this.documents.listIssued({
+      actor: documentActor(user),
+      tab: query.tab,
+      typeId: query.typeId,
+      userId: query.userId,
+      year: query.year ? Number(query.year) : undefined,
+      search: query.search,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined,
+    });
+  }
+
   @Get('compliance')
   @RequirePermission('canAssignTasks')
   @ApiOperation({ summary: 'Credential validity across the organization' })

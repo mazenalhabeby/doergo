@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsEnum,
   IsDateString,
   IsISO8601,
   IsIn,
@@ -259,6 +260,61 @@ export class ConfirmUploadDto {
   @IsOptional()
   @IsBoolean()
   asDraft?: boolean;
+}
+
+/**
+ * The issued-document register.
+ *
+ * `tab` is the question being asked, not a status: "unopened" spans two
+ * statuses and is the one nobody could see before. An unrecognised value is
+ * refused rather than silently widened to everything — a typo must not turn a
+ * narrow view into the whole register.
+ */
+export class ListIssuedQueryDto {
+  @ApiPropertyOptional({ enum: ['awaiting', 'unopened', 'signed', 'all'] })
+  @IsOptional()
+  @IsEnum(['awaiting', 'unopened', 'signed', 'all'])
+  tab?: 'awaiting' | 'unopened' | 'signed' | 'all';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  typeId?: string;
+
+  @ApiPropertyOptional({ description: 'Narrow to one member' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  userId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1970)
+  @Max(2200)
+  year?: number;
+
+  @ApiPropertyOptional({ description: 'Matches the document title' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  search?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  // Bounded here as well as in the service: a register is the natural place for
+  // somebody to ask for every row at once.
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }
 
 export class ListDocumentsQueryDto {
