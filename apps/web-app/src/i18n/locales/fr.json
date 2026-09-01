@@ -6086,7 +6086,8 @@
       "remove": "Retirer",
       "removeTitle": "Retirer de l espace de travail ?",
       "removeConfirm": "{{name}} perdra son rôle et son routage dans cet espace de travail. Cela ne le retire pas de l organisation.",
-      "roleFor": "Rôle dans cet espace"
+      "roleFor": "Rôle dans cet espace",
+      "setRole": "Définir un rôle"
     },
     "attendanceTab": {
       "heading": "Présence",

@@ -6077,7 +6077,8 @@
       "remove": "Remove",
       "removeTitle": "Remove from workspace?",
       "removeConfirm": "{{name}} will lose their role and routing in this workspace. This does not remove them from the organization.",
-      "roleFor": "Role in this workspace"
+      "roleFor": "Role in this workspace",
+      "setRole": "Add role"
     },
     "attendanceTab": {
       "heading": "Attendance",

@@ -6077,7 +6077,8 @@
       "remove": "Entfernen",
       "removeTitle": "Aus dem Space entfernen?",
       "removeConfirm": "{{name}} verliert die Rolle und Weiterleitung in diesem Space. Aus der Organisation wird die Person dadurch nicht entfernt.",
-      "roleFor": "Rolle in diesem Arbeitsbereich"
+      "roleFor": "Rolle in diesem Arbeitsbereich",
+      "setRole": "Rolle festlegen"
     },
     "attendanceTab": {
       "heading": "Anwesenheit",

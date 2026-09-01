@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, Lock, SlidersHorizontal, ChevronDown, Home } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, Lock, SlidersHorizontal, ChevronDown, Home, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
@@ -17,6 +17,14 @@ import {
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -568,9 +576,15 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
 // overrides, including who signs off for them, and the record of when they
 // joined. A promotion should not cost somebody their history.
 //
+// It stays a BADGE rather than becoming a form control. The role is identity
+// first — colour-coded, scanned down a column of twenty people — and a select
+// box on every row turns a list you read into a form you fill in, while
+// throwing away the one thing that made the column readable. So the badge
+// keeps its colour and opens a menu when clicked: the control appears on
+// intent, and costs nothing until then.
+//
 // The backend already did this: assign is an upsert keyed on (userId, spaceId)
-// whose update touches roleId alone, so the routing columns survive. Only the
-// control was missing.
+// whose update touches roleId alone, so the routing columns survive.
 
 function MemberRoleSelect({
   spaceId,
@@ -583,13 +597,11 @@ function MemberRoleSelect({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const current = member.spaceRole ?? null
 
   const change = useMutation({
-    mutationFn: (roleId: string) =>
-      spaceMembersApi.assign(spaceId, {
-        userId: member.userId,
-        spaceRoleId: roleId === NO_ROLE ? null : roleId,
-      }),
+    mutationFn: (roleId: string | null) =>
+      spaceMembersApi.assign(spaceId, { userId: member.userId, spaceRoleId: roleId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
       notify.success(t("scheduling.members.toast.roleUpdated", "Role updated"))
@@ -597,38 +609,77 @@ function MemberRoleSelect({
     onError: (err: Error) => notify.error(err.message || t("common.error", "Something went wrong")),
   })
 
+  const tint = current?.color ?? undefined
+
   return (
-    <Select
-      value={member.spaceRole?.id ?? NO_ROLE}
-      onValueChange={(v) => change.mutate(v)}
-      disabled={change.isPending}
-    >
-      <SelectTrigger
-        className="mt-0.5 h-7 w-[160px] border-dashed text-xs"
-        aria-label={t("scheduling.members.roleFor", "Role in this workspace")}
-      >
-        {change.isPending ? (
-          <span className="flex items-center gap-1.5">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild disabled={change.isPending}>
+        <button
+          type="button"
+          aria-label={t("scheduling.members.roleFor", "Role in this workspace")}
+          className={cn(
+            "group mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
+            current
+              ? "bg-transparent"
+              : // No role is the ordinary case, so it whispers: dashed and muted
+                // until hovered, rather than an empty field demanding to be filled.
+                "border-dashed border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+          )}
+          style={current ? { borderColor: `${tint}66`, color: tint } : undefined}
+        >
+          {change.isPending ? (
             <Loader2 className="h-3 w-3 animate-spin" />
-            <SelectValue />
-          </span>
-        ) : (
-          <SelectValue />
-        )}
-      </SelectTrigger>
-      <SelectContent>
-        {/*
-          "No role" is a real choice, not an absence. A member without one is a
-          plain member of the space: they work here and lead nothing.
-        */}
-        <SelectItem value={NO_ROLE}>{t("scheduling.members.noRole", "No role")}</SelectItem>
+          ) : (
+            current && (
+              <span
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: tint ?? "currentColor" }}
+              />
+            )
+          )}
+          {current ? current.name : t("scheduling.members.setRole", "Add role")}
+          <ChevronDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60 group-data-[state=open]:opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          {t("scheduling.members.roleFor", "Role in this workspace")}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         {roles.map((r) => (
-          <SelectItem key={r.id} value={r.id}>
-            {r.name}
-          </SelectItem>
+          <DropdownMenuItem
+            key={r.id}
+            onSelect={() => r.id !== current?.id && change.mutate(r.id)}
+            className="gap-2 text-sm"
+          >
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: r.color ?? "var(--muted-foreground)" }}
+            />
+            <span className="min-w-0 flex-1 truncate">{r.name}</span>
+            {r.id === current?.id && <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          </DropdownMenuItem>
         ))}
-      </SelectContent>
-    </Select>
+        {roles.length > 0 && <DropdownMenuSeparator />}
+        {/*
+          Removing the role is a real choice, not an empty one — a member who
+          works here and leads nothing. Kept below the line so it reads as the
+          deliberate act it is rather than the first item on the list.
+        */}
+        <DropdownMenuItem
+          onSelect={() => current && change.mutate(null)}
+          disabled={!current}
+          className="gap-2 text-sm text-muted-foreground"
+        >
+          <span className="h-2 w-2 shrink-0 rounded-full border border-dashed border-current" />
+          <span className="min-w-0 flex-1 truncate">
+            {t("scheduling.members.noRole", "No role")}
+          </span>
+          {!current && <Check className="h-3.5 w-3.5 shrink-0" />}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
