@@ -4050,7 +4050,8 @@
     },
     "toast": {
       "statusUpdated": "Stato della fattura aggiornato",
-      "deleted": "Fattura eliminata"
+      "deleted": "Fattura eliminata",
+      "updated": "Fattura aggiornata"
     },
     "outstanding": "Da incassare",
     "notFound": "Fattura non trovata",
@@ -4116,7 +4117,36 @@
       "d61_90": "61–90 giorni",
       "d90_plus": "90+ giorni"
     },
-    "mixedCurrencies": "I totali mescolano valute ({{list}}) e sono solo indicativi."
+    "mixedCurrencies": "I totali mescolano valute ({{list}}) e sono solo indicativi.",
+    "delete": {
+      "title": "Eliminare questa bozza di fattura?",
+      "desc": "{{number}} per {{client}} — {{total}} — e tutte le sue righe verranno eliminate. L’operazione è irreversibile."
+    },
+    "edit": {
+      "title": "Modifica fattura",
+      "billTo": "Intestata a",
+      "lines": "Righe",
+      "addLine": "Aggiungi riga",
+      "noLines": "Questa fattura non ha ancora righe.",
+      "dueHint": "Lascia vuoto e la fattura riporterà «Pagamento alla consegna».",
+      "onlyDrafts": "Si può modificare solo una bozza. Annulla questa ed emettine un’altra."
+    },
+    "fields": {
+      "clientName": "Nome cliente",
+      "clientEmail": "Email",
+      "clientAddress": "Indirizzo",
+      "issueDate": "Data di emissione",
+      "dueDate": "Scadenza",
+      "description": "Descrizione",
+      "quantity": "Qtà",
+      "unitPrice": "Prezzo unitario",
+      "taxRate": "IVA %",
+      "discount": "Sconto",
+      "subtotal": "Subtotale",
+      "tax": "IVA",
+      "total": "Totale",
+      "notes": "Note"
+    }
   },
   "overtime": {
     "title": "Gestione degli straordinari",

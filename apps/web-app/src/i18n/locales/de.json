@@ -4041,7 +4041,8 @@
     },
     "toast": {
       "statusUpdated": "Rechnungsstatus aktualisiert",
-      "deleted": "Rechnung gelöscht"
+      "deleted": "Rechnung gelöscht",
+      "updated": "Rechnung aktualisiert"
     },
     "outstanding": "Offen",
     "notFound": "Rechnung nicht gefunden",
@@ -4107,7 +4108,36 @@
       "d61_90": "61–90 Tage",
       "d90_plus": "90+ Tage"
     },
-    "mixedCurrencies": "Summen mischen Währungen ({{list}}) und sind nur ein Anhaltspunkt."
+    "mixedCurrencies": "Summen mischen Währungen ({{list}}) und sind nur ein Anhaltspunkt.",
+    "delete": {
+      "title": "Diesen Rechnungsentwurf löschen?",
+      "desc": "{{number}} für {{client}} — {{total}} — und alle Positionen werden gelöscht. Das lässt sich nicht rückgängig machen."
+    },
+    "edit": {
+      "title": "Rechnung bearbeiten",
+      "billTo": "Rechnungsempfänger",
+      "lines": "Positionen",
+      "addLine": "Position hinzufügen",
+      "noLines": "Diese Rechnung hat noch keine Positionen.",
+      "dueHint": "Leer lassen — dann steht auf der Rechnung „Zahlbar bei Erhalt“.",
+      "onlyDrafts": "Nur ein Rechnungsentwurf lässt sich bearbeiten. Stornieren Sie diese und stellen Sie eine neue aus."
+    },
+    "fields": {
+      "clientName": "Kundenname",
+      "clientEmail": "E-Mail",
+      "clientAddress": "Adresse",
+      "issueDate": "Rechnungsdatum",
+      "dueDate": "Fällig am",
+      "description": "Beschreibung",
+      "quantity": "Menge",
+      "unitPrice": "Einzelpreis",
+      "taxRate": "Steuer %",
+      "discount": "Rabatt",
+      "subtotal": "Zwischensumme",
+      "tax": "Steuer",
+      "total": "Gesamt",
+      "notes": "Notizen"
+    }
   },
   "overtime": {
     "title": "Überstundenverwaltung",

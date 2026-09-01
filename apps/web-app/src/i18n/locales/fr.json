@@ -4050,7 +4050,8 @@
     },
     "toast": {
       "statusUpdated": "Statut de la facture mis à jour",
-      "deleted": "Facture supprimée"
+      "deleted": "Facture supprimée",
+      "updated": "Facture mise à jour"
     },
     "outstanding": "En attente de paiement",
     "notFound": "Facture introuvable",
@@ -4116,7 +4117,36 @@
       "d61_90": "61–90 jours",
       "d90_plus": "90+ jours"
     },
-    "mixedCurrencies": "Les totaux mélangent des devises ({{list}}) et sont indicatifs."
+    "mixedCurrencies": "Les totaux mélangent des devises ({{list}}) et sont indicatifs.",
+    "delete": {
+      "title": "Supprimer ce brouillon de facture ?",
+      "desc": "{{number}} pour {{client}} — {{total}} — et toutes ses lignes seront supprimées. Cette action est irréversible."
+    },
+    "edit": {
+      "title": "Modifier la facture",
+      "billTo": "Facturer à",
+      "lines": "Lignes",
+      "addLine": "Ajouter une ligne",
+      "noLines": "Cette facture n’a pas encore de lignes.",
+      "dueHint": "Laissez vide et la facture indiquera « Payable à réception ».",
+      "onlyDrafts": "Seul un brouillon peut être modifié. Annulez celle-ci et émettez-en une autre."
+    },
+    "fields": {
+      "clientName": "Nom du client",
+      "clientEmail": "E-mail",
+      "clientAddress": "Adresse",
+      "issueDate": "Date d’émission",
+      "dueDate": "Échéance",
+      "description": "Description",
+      "quantity": "Qté",
+      "unitPrice": "Prix unitaire",
+      "taxRate": "TVA %",
+      "discount": "Remise",
+      "subtotal": "Sous-total",
+      "tax": "TVA",
+      "total": "Total",
+      "notes": "Notes"
+    }
   },
   "overtime": {
     "title": "Gestion des heures supplémentaires",

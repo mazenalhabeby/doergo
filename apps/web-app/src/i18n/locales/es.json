@@ -4041,7 +4041,8 @@
     },
     "toast": {
       "statusUpdated": "Estado de la factura actualizado",
-      "deleted": "Factura eliminada"
+      "deleted": "Factura eliminada",
+      "updated": "Factura actualizada"
     },
     "outstanding": "Pendiente de cobro",
     "notFound": "Factura no encontrada",
@@ -4107,7 +4108,36 @@
       "d61_90": "61–90 días",
       "d90_plus": "90+ días"
     },
-    "mixedCurrencies": "Los totales mezclan monedas ({{list}}) y son solo orientativos."
+    "mixedCurrencies": "Los totales mezclan monedas ({{list}}) y son solo orientativos.",
+    "delete": {
+      "title": "¿Eliminar este borrador de factura?",
+      "desc": "{{number}} para {{client}} — {{total}} — y todas sus líneas se eliminarán. Esto no se puede deshacer."
+    },
+    "edit": {
+      "title": "Editar factura",
+      "billTo": "Facturar a",
+      "lines": "Líneas",
+      "addLine": "Añadir línea",
+      "noLines": "Esta factura aún no tiene líneas.",
+      "dueHint": "Déjalo vacío y la factura dirá «Pagadera al recibirla».",
+      "onlyDrafts": "Solo se puede editar un borrador. Cancela esta y emite otra."
+    },
+    "fields": {
+      "clientName": "Nombre del cliente",
+      "clientEmail": "Correo",
+      "clientAddress": "Dirección",
+      "issueDate": "Fecha de emisión",
+      "dueDate": "Vencimiento",
+      "description": "Descripción",
+      "quantity": "Cant.",
+      "unitPrice": "Precio unitario",
+      "taxRate": "Impuesto %",
+      "discount": "Descuento",
+      "subtotal": "Subtotal",
+      "tax": "Impuesto",
+      "total": "Total",
+      "notes": "Notas"
+    }
   },
   "overtime": {
     "title": "Gestión de horas extra",

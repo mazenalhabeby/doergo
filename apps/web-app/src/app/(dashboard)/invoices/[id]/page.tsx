@@ -5,7 +5,7 @@ import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Download, Printer, FileCheck, CheckCircle, XCircle, Trash2, Loader2 } from "lucide-react"
+import { ArrowLeft, Download, Printer, FileCheck, CheckCircle, XCircle, Trash2, Pencil, Loader2 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
@@ -13,6 +13,16 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { exportInvoicePdf, renderInvoicePdfUrl, type InvoicePdfData, type InvoiceBranding } from "@/lib/invoice-pdf"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -96,6 +106,15 @@ function InvoiceDetailInner({ id }: { id: string }) {
     },
     onError: (e: Error) => notify.error(e.message),
   })
+  /*
+    Deleting used to happen on one click, from a button sitting beside Print.
+    A draft invoice is still an invoice somebody assembled — this one is worth
+    €65,625 — and its line items go with it. The dialog names the amount,
+    because "delete this draft" and "delete sixty-five thousand euros" are not
+    the same sentence to read.
+  */
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
   const deleteMutation = useMutation({
     mutationFn: () => invoicesApi.delete(id),
     onSuccess: () => {
@@ -252,13 +271,48 @@ function InvoiceDetailInner({ id }: { id: string }) {
               </Button>
             )}
             {inv.status === "DRAFT" && (
-              <Button variant="ghost" size="sm" className="text-red-600 gap-1.5" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.push(`/invoices/${id}/edit`)}>
+                <Pencil className="size-3.5" /> {t("common.edit", "Edit")}
+              </Button>
+            )}
+            {inv.status === "DRAFT" && (
+              <Button variant="ghost" size="sm" className="text-red-600 gap-1.5" disabled={deleteMutation.isPending} onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="size-3.5" /> {t("common.delete")}
               </Button>
             )}
           </div>
         )}
       </div>
+
+      {/* ── Delete confirmation ─────────────────────────────────────────── */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("invoices.delete.title", "Delete this draft invoice?")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("invoices.delete.desc", {
+                defaultValue:
+                  "{{number}} for {{client}} — {{total}} — and all of its line items will be deleted. This cannot be undone.",
+                number: inv.invoiceNumber,
+                client: inv.clientName,
+                total: money(inv.total, inv.currency),
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate()}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

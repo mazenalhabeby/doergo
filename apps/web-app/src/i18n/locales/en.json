@@ -4041,7 +4041,8 @@
     },
     "toast": {
       "statusUpdated": "Invoice status updated",
-      "deleted": "Invoice deleted"
+      "deleted": "Invoice deleted",
+      "updated": "Invoice updated"
     },
     "outstanding": "Outstanding",
     "notFound": "Invoice not found",
@@ -4107,7 +4108,36 @@
       "d61_90": "61–90 days",
       "d90_plus": "90+ days"
     },
-    "mixedCurrencies": "Totals mix currencies ({{list}}) and are only indicative."
+    "mixedCurrencies": "Totals mix currencies ({{list}}) and are only indicative.",
+    "delete": {
+      "title": "Delete this draft invoice?",
+      "desc": "{{number}} for {{client}} — {{total}} — and all of its line items will be deleted. This cannot be undone."
+    },
+    "edit": {
+      "title": "Edit invoice",
+      "billTo": "Bill to",
+      "lines": "Line items",
+      "addLine": "Add line",
+      "noLines": "This invoice has no lines yet.",
+      "dueHint": "Leave empty and the invoice reads “Due on receipt”.",
+      "onlyDrafts": "Only a draft invoice can be edited. Cancel this one and issue another instead."
+    },
+    "fields": {
+      "clientName": "Client name",
+      "clientEmail": "Email",
+      "clientAddress": "Address",
+      "issueDate": "Issue date",
+      "dueDate": "Due date",
+      "description": "Description",
+      "quantity": "Qty",
+      "unitPrice": "Unit price",
+      "taxRate": "Tax %",
+      "discount": "Discount",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "total": "Total",
+      "notes": "Notes"
+    }
   },
   "overtime": {
     "title": "Overtime Management",

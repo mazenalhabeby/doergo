@@ -27,6 +27,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -72,6 +82,12 @@ function InvoicesPageInner() {
   const queryClient = useQueryClient()
   const isAdmin = user?.role === "ADMIN"
 
+  /*
+    The row being deleted, not a boolean. Deleting was a bare menu item that
+    fired on click — in a dropdown, which is exactly where a mis-tap lands —
+    and the dialog has to be able to say WHICH invoice and for how much.
+  */
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null)
   const [statusFilter, setStatusFilter] = useState("__all__")
   const [search, setSearch] = useState("")
 
@@ -361,7 +377,7 @@ function InvoicesPageInner() {
                         )}
                         <DropdownMenuSeparator />
                         {inv.status === "DRAFT" && (
-                          <DropdownMenuItem className="text-red-600" onClick={() => deleteMutation.mutate(inv.id)}>
+                          <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTarget(inv)}>
                             <XCircle className="size-3.5 mr-2" /> {t("common.delete")}
                           </DropdownMenuItem>
                         )}
@@ -380,6 +396,40 @@ function InvoicesPageInner() {
           )}
         </div>
       </div>
+
+      {/* ── Delete confirmation ─────────────────────────────────────────── */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("invoices.delete.title", "Delete this draft invoice?")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget &&
+                t("invoices.delete.desc", {
+                  defaultValue:
+                    "{{number}} for {{client}} — {{total}} — and all of its line items will be deleted. This cannot be undone.",
+                  number: deleteTarget.invoiceNumber,
+                  client: deleteTarget.clientName,
+                  total: formatCurrency(deleteTarget.total, deleteTarget.currency),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (deleteTarget) deleteMutation.mutate(deleteTarget.id)
+                setDeleteTarget(null)
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
