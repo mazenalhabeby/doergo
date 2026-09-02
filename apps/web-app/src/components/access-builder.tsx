@@ -54,6 +54,10 @@ export function AccessBuilder({
   const { user: currentUser } = useAuth()
   // Editing your own row — you can't change your own role (backend rejects it).
   const isSelf = !isBulk && currentUser?.id === member.id
+  /* Works for a client or partner. Never in bulk: a selection can mix external
+     members with our own staff, and hiding controls for all of them because one
+     was external would silently drop settings from the rest. */
+  const isExternalMember = !isBulk && (member as { isExternal?: boolean }).isExternal === true
 
   const initial = useMemo(() => readAccessDraft(member), [member])
   const [draft, setDraft] = useState<AccessDraft>(initial)
@@ -193,7 +197,15 @@ export function AccessBuilder({
             value={draft}
             onChange={patch}
             excludeContactId={isBulk ? undefined : member.id}
-            showRole={!isBulk}
+            /*
+              The same treatment the invite dialog gives an external member, from
+              the same component — so the panel does not describe one person two
+              ways depending which screen you opened. No org Role (the server
+              refuses one), and no Clock / Time Off / remote clock-in, which are
+              settings about attendance for somebody who never clocks in here.
+            */
+            showRole={!isBulk && !isExternalMember}
+            external={isExternalMember}
             lockRole={isSelf}
           />
         )}

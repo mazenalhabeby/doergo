@@ -13,6 +13,8 @@ export interface Invitation {
   id: string;
   code?: string | null;
   targetRole: string;
+  /** Invited as a client's or partner's person, not as one of the org's own. */
+  isExternal?: boolean;
   organizationId: string;
   status: InvitationStatus;
   expiresAt: string;

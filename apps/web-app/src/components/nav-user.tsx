@@ -44,7 +44,7 @@ export function NavUser() {
 
   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`
   const fullName = `${user.firstName} ${user.lastName}`
-  const role = roleBadge(user.role)
+  const role = roleBadge(user.role, { isExternal: user.isExternal })
 
   return (
     <SidebarMenu>

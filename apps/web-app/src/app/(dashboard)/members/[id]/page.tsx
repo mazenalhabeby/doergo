@@ -197,7 +197,7 @@ export default function MemberProfilePage({
     )
   }
 
-  const roleConfig = roleBadge(member.role)
+  const roleConfig = roleBadge(member.role, { isExternal: member.isExternal })
   const scheduleLabel = member.scheduleType === "FIXED"
     ? t("members.detail.fixedSchedule")
     : member.scheduleType === "FLEXIBLE"

@@ -25,6 +25,9 @@ export interface User {
   organizationName?: string;
   /** Owns this organization. Cannot be removed or demoted until ownership moves. */
   isOwner?: boolean;
+  /** Works for a client or partner, not for this organization. Carried on the
+   *  session so their own badge reads the same as the one an admin sees. */
+  isExternal?: boolean;
   /** IANA timezone of the org — the default display zone for all times on the
    *  client (attendance times override per-entry with the location's zone). */
   organizationTimezone?: string | null;

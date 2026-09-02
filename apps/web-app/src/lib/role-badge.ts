@@ -55,10 +55,36 @@ const BADGES: Record<Role, RoleBadge> = {
 }
 
 /**
+ * How an EXTERNAL member reads, wherever their account type is shown.
+ *
+ * Not a role — it overrides one. Somebody a client sent to supervise one of our
+ * sites holds the EMPLOYEE account type in the database, and printing
+ * "Employee" for them is false in the one column an admin scans to see who is
+ * on their team. They also hold no org role by construction, so without this
+ * their cell shows the bare account type and nothing more specific, on every
+ * screen.
+ *
+ * Amber, the colour the external treatment uses everywhere else.
+ */
+const EXTERNAL_BADGE: RoleBadge = {
+  className:
+    "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/50 dark:border-amber-800/50",
+  dotClassName: "bg-amber-500",
+  gradient: "from-amber-500 to-amber-600",
+  labelKey: "members.external.badge",
+}
+
+/**
  * Always returns a badge — an unknown or legacy role normalizes to EMPLOYEE, which
  * is the safe read (least privilege), not ADMIN.
+ *
+ * `isExternal` wins over the role, and it belongs HERE rather than at each call
+ * site for the reason this file exists: the account-type badge was written out
+ * three times before and all three had drifted. A fourth treatment decided per
+ * screen is the same mistake with a new fact.
  */
-export function roleBadge(role?: string | null): RoleBadge {
+export function roleBadge(role?: string | null, opts?: { isExternal?: boolean | null }): RoleBadge {
+  if (opts?.isExternal) return EXTERNAL_BADGE
   return BADGES[normalizeRole(role || "")]
 }
 

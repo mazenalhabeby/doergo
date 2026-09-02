@@ -292,27 +292,7 @@ function RoleBadge({ member }: { member: OrgMember }) {
     so one list looked like two systems; they read the same way now, with colour
     telling them apart.
   */
-  /*
-    An external member is not an "Employee".
-
-    This chip is the ACCOUNT TYPE, and for somebody a client sent to supervise
-    one site, "Employee" is simply false — it is the column an admin scans to
-    see who is on their team, and it was counting an outsider as staff. They
-    hold no org role by construction, so this cell would otherwise always show
-    the default account type and never anything more specific.
-  */
-  if (member.isExternal) {
-    return (
-      <Badge
-        variant="outline"
-        className="gap-1.5 border text-xs font-medium border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-        {t("members.external.badge")}
-      </Badge>
-    )
-  }
-  const conf = roleBadge(member.role)
+  const conf = roleBadge(member.role, { isExternal: member.isExternal })
   const owner = member.isOwner === true
   return (
     <Badge
@@ -1068,7 +1048,7 @@ export default function MembersPage() {
             {showPending && (
               <div className="divide-y divide-border/60 border-t border-border/60">
                 {pendingInvitations.map((inv) => {
-                  const roleConf = roleBadge(inv.targetRole)
+                  const roleConf = roleBadge(inv.targetRole, { isExternal: inv.isExternal })
                   const expiresDate = new Date(inv.expiresAt)
                   const isExpired = expiresDate < new Date()
                   return (

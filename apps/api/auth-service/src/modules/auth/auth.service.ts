@@ -412,6 +412,10 @@ export class AuthService {
               role: true,
               organizationId: true,
               onboardingCompleted: true,
+              // Works for a client or partner — see the same field on the
+              // validateToken select. Both session payloads must carry it or
+              // the badge changes meaning depending which one built the user.
+              isExternal: true,
               avatarUrl: true,
 
               canCreateTasks: true,
@@ -1285,6 +1289,9 @@ export class AuthService {
           role: true,
           organizationId: true,
           onboardingCompleted: true,
+          // Works for a client or partner — the session carries it so every
+          // screen that shows an account type shows the same one.
+          isExternal: true,
           avatarUrl: true,
           isActive: true,
           // Permission fields
