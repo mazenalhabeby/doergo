@@ -533,7 +533,6 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                         <Badge
                           variant="outline"
                           className="shrink-0 text-[10px] font-medium border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
-                          title={(m.user as { externalCompany?: string | null }).externalCompany || undefined}
                         >
                           {t("members.external.badge")}
                         </Badge>

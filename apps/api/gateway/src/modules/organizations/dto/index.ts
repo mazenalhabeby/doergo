@@ -314,12 +314,6 @@ export class UpdateMemberDto {
   @IsBoolean()
   isExternal?: boolean;
 
-  @ApiPropertyOptional({ description: 'Which company an external member works for' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(120)
-  externalCompany?: string | null;
-
   @ApiPropertyOptional({ description: 'Can create tasks' })
   @IsOptional()
   @IsBoolean()

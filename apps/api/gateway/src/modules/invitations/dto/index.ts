@@ -177,12 +177,6 @@ export class CreateInvitationDto {
   @IsOptional()
   isExternal?: boolean;
 
-  @ApiPropertyOptional({ description: 'Which company they work for' })
-  @IsString()
-  @IsOptional()
-  @MaxLength(120)
-  externalCompany?: string;
-
   @ApiPropertyOptional({
     type: AccessProfileDto,
     description: 'Pre-configured Access Profile applied to the member on accept',

@@ -716,7 +716,10 @@ model User {
   employmentType    String? @default("EXTERNAL") // "IN_HOUSE" | "EXTERNAL"
 
   /// Works for somebody else — a client's or partner's shift leader who
-  /// supervises our people on one site. NOT the same axis as `employmentType`,
+  /// supervises our people on one site. WHICH company is not stored: an
+  /// external member is assigned to exactly one workspace, and that workspace
+  /// already names the client. A second field would restate it by hand and be
+  /// free to disagree. NOT the same axis as `employmentType`,
   /// which says who pays a FIELD worker (a freelancer is "EXTERNAL" there and
   /// is still entirely ours). This says whose company they belong to, and it is
   /// what payroll, headcount, rotas and staff exports filter on.
@@ -726,8 +729,6 @@ model User {
   /// matching a role's NAME would fail the day somebody edits that word — and
   /// fail towards granting access.
   isExternal        Boolean @default(false)
-  /// Whose. Shown beside their name so nobody has to remember.
-  externalCompany   String?
 
   // Employee fields
   specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"
@@ -2579,7 +2580,6 @@ model Invitation {
   /// their very first session — there is no window in which they exist as
   /// ordinary staff. Refused together with `memberRoleId`; see User.isExternal.
   isExternal      Boolean @default(false)
-  externalCompany String?
   memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)

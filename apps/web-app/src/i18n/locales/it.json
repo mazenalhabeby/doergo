@@ -2059,9 +2059,6 @@
       "staffOptionHint": "Sul suo libro paga. Può avere ruoli a livello di organizzazione e lavorare in tutti gli spazi.",
       "externalOption": "Esterno",
       "externalOptionHint": "Lavora per un cliente o partner. Solo ruoli di spazio, negli spazi che le assegna.",
-      "externalCompanyLabel": "Lavora per",
-      "externalCompanyPlaceholder": "Binderholz GmbH",
-      "externalCompanyHint": "Mostrato accanto al nome, così nessuno lo confonde con il suo personale.",
       "externalNeedsSpace": "Scelga prima un’area di lavoro: un membro esterno lavora in una sola."
     },
     "showingCount": "Visualizzati {{count}} di {{total}} membro{{plural}}",

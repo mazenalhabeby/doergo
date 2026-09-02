@@ -122,19 +122,6 @@ export class OrganizationsController {
   // MEMBERS
   // ============================================================================
 
-  // Declared before @Get('members/:id') can shadow it — a literal segment must
-  // win over a parameter that would happily match the same word.
-  @Get('members/external-companies')
-  @RequirePermission('canManageUsers')
-  @ApiOperation({ summary: 'Companies already recorded on this org\'s external members' })
-  async listExternalCompanies(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'list_external_companies' }, {
-        organizationId: user.organizationId,
-      }),
-    );
-  }
-
   @Get('members')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List organization members' })
@@ -323,7 +310,6 @@ export class OrganizationsController {
           canViewReports: dto.canViewReports,
           memberRoleId: dto.memberRoleId,
           isExternal: dto.isExternal,
-          externalCompany: dto.externalCompany,
           enabledModules: dto.enabledModules,
           contactable: dto.contactable,
           contactScope: dto.contactScope,

@@ -2059,9 +2059,6 @@
       "staffOptionHint": "Sur votre masse salariale. Peut détenir des rôles au niveau de l’organisation et travailler dans tous les espaces.",
       "externalOption": "Externe",
       "externalOptionHint": "Travaille pour un client ou un partenaire. Uniquement des rôles d’espace, dans les espaces que vous attribuez.",
-      "externalCompanyLabel": "Travaille pour",
-      "externalCompanyPlaceholder": "Binderholz GmbH",
-      "externalCompanyHint": "Affiché à côté de son nom, pour que personne ne le confonde avec votre personnel.",
       "externalNeedsSpace": "Choisissez d’abord un espace de travail — un membre externe travaille dans un seul."
     },
     "showingCount": "Affichage de {{count}} sur {{total}} membre{{plural}}",

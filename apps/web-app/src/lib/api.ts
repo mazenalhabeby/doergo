@@ -3569,10 +3569,10 @@ export interface OrgMember {
   /**
    * Works for a client or partner, not for this organization. A different axis
    * from `employmentType`, which prices a FIELD seat — a freelancer is
-   * "EXTERNAL" there and is still entirely ours.
+   * "EXTERNAL" there and is still entirely ours. WHICH company is not stored:
+   * they are assigned to exactly one workspace and it already names the client.
    */
   isExternal?: boolean;
-  externalCompany?: string | null;
 }
 
 /** An org-assignable role (Admin, Manager, or a custom role). */
@@ -3634,21 +3634,6 @@ export interface MemberWatcher {
 }
 
 export const organizationsApi = {
-  /**
-   * Companies already recorded on this org's external members — suggestions for
-   * the "Works for" field, so the same employer is not spelt three ways across
-   * three invites. Not the CRM client list: a client is somebody you sell to,
-   * an external member's employer is the company whose supervisor watches your
-   * people, and those are different relationships that only sometimes coincide.
-   */
-  listExternalCompanies: async () => {
-    const response = await api.get<{ success: boolean; data: string[] }>(
-      '/organizations/members/external-companies',
-    );
-    if (response.error) throw new Error(response.error);
-    return response.data?.data ?? [];
-  },
-
   getJoinCode: async () => {
     const response = await api.get<{
       success: boolean;

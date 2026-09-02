@@ -2065,9 +2065,6 @@
       "staffOptionHint": "Auf Ihrer Lohnliste. Kann organisationsweite Rollen tragen und in allen Bereichen arbeiten.",
       "externalOption": "Extern",
       "externalOptionHint": "Arbeitet für einen Kunden oder Partner. Nur Bereichsrollen, in den von Ihnen zugewiesenen Bereichen.",
-      "externalCompanyLabel": "Arbeitet für",
-      "externalCompanyPlaceholder": "Binderholz GmbH",
-      "externalCompanyHint": "Wird neben dem Namen angezeigt, damit niemand die Person für eigenes Personal hält.",
       "externalNeedsSpace": "Wählen Sie zuerst einen Arbeitsbereich — ein externes Mitglied arbeitet in genau einem."
     },
     "showingCount": "{{count}} von {{total}} Mitglied{{plural}} angezeigt",

@@ -812,7 +812,6 @@ export class LocationsService {
             // Badged in the roster, and the flag the attendance and rota views
             // filter on — an external supervisor never clocks in here.
             isExternal: true,
-            externalCompany: true,
           },
         },
       },

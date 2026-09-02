@@ -2065,9 +2065,6 @@
       "staffOptionHint": "On your payroll. Can hold organization-wide roles and work across spaces.",
       "externalOption": "External",
       "externalOptionHint": "Works for a client or partner. Space roles only, in the spaces you assign.",
-      "externalCompanyLabel": "Works for",
-      "externalCompanyPlaceholder": "Binderholz GmbH",
-      "externalCompanyHint": "Shown beside their name, so nobody mistakes them for one of yours.",
       "externalNeedsSpace": "Choose a workspace first — an external member works in exactly one."
     },
     "showingCount": "Showing {{count}} of {{total}} member{{plural}}",

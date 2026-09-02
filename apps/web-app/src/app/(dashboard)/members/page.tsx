@@ -275,7 +275,6 @@ function ExternalBadge({ member }: { member: OrgMember }) {
     <Badge
       variant="outline"
       className="text-[10px] font-medium border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
-      title={member.externalCompany || undefined}
     >
       {t("members.external.badge")}
     </Badge>
@@ -501,11 +500,7 @@ const MemberRow = memo(function MemberRow({
             {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
             <ExternalBadge member={member} />
           </div>
-          <p className="text-sm text-muted-foreground truncate">
-            {member.isExternal && member.externalCompany
-              ? `${member.externalCompany} · ${member.email}`
-              : member.email}
-          </p>
+          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
         </div>
         <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/40")}>
           {member.position || "\u2014"}
@@ -528,11 +523,7 @@ const MemberRow = memo(function MemberRow({
             {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
             <ExternalBadge member={member} />
           </div>
-          <p className="text-sm text-muted-foreground truncate">
-            {member.isExternal && member.externalCompany
-              ? `${member.externalCompany} · ${member.email}`
-              : member.email}
-          </p>
+          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
             <RoleBadge member={member} />
             {member.position && <span className="text-xs text-muted-foreground">{member.position}</span>}

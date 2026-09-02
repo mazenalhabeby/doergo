@@ -101,7 +101,6 @@ export class InvitationService {
     // Pre-assigned org role (AccessRole id) applied to the member on accept.
     memberRoleId?: string;
     isExternal?: boolean;
-    externalCompany?: string;
     // Full pre-configured Access Profile (applied to the member on accept).
     accessProfile?: unknown;
     // Customer-portal invite (targetRole = CUSTOMER)
@@ -326,8 +325,6 @@ export class InvitationService {
         memberRoleId: isTechnician ? validMemberRoleId : null,
         // Who they work for. Only meaningful on a member invite.
         isExternal: isTechnician ? inviteIsExternal : false,
-        externalCompany:
-          isTechnician && inviteIsExternal ? data.externalCompany?.trim() || null : null,
         // Pre-configured Access Profile — sanitized here, re-sanitized on accept.
         // For non-admin creators, permission flags are capped at the creator's own
         // ceiling so the profile can't grant more than the creator holds.
@@ -593,7 +590,6 @@ export class InvitationService {
                 // edited underneath it) cannot deliver one.
                 memberRoleId: invitation.isExternal ? null : (invitation.memberRoleId ?? null),
                 isExternal: invitation.isExternal,
-                externalCompany: invitation.isExternal ? invitation.externalCompany : null,
                 ...(accessProfile
                   ? {
                       // Admin pre-configured the access → apply it verbatim so the

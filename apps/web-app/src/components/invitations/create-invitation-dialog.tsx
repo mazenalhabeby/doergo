@@ -7,7 +7,7 @@ import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, locationsApi, organizationsApi, type CreateInvitationInput, type CompanyLocation } from "@/lib/api"
+import { invitationsApi, locationsApi, type CreateInvitationInput, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,7 +47,6 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
   const [isExternal, setIsExternal] = useState(false)
-  const [externalCompany, setExternalCompany] = useState("")
   const [scheduleType, setScheduleType] = useState("NONE")
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
@@ -78,24 +77,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   const locations = spacesData?.data || []
 
   /*
-    Employers already recorded on this org's external members.
-
-    Suggestions, not a closed list — an external member is a MEMBER who happens
-    to work elsewhere, with no relationship to the CRM. A client is somebody you
-    sell to; this is the company whose supervisor watches your people, and a
-    subcontractor partner is the second without ever being the first.
-
-    So the field is a text box that remembers. The first external member from a
-    company is typed in; everyone after picks the spelling already in use, which
-    is where drift would otherwise start.
+    An external member works in exactly ONE workspace, and that workspace is
+    what says which client they belong to — so no company is recorded against
+    the person. A second field would restate the workspace by hand and be free
+    to disagree with it.
   */
   const hasSpace = isExternal && spaceId !== "none" && !!spaceId
-  const { data: knownCompanies = [] } = useQuery({
-    queryKey: ["external-companies"],
-    queryFn: () => organizationsApi.listExternalCompanies(),
-    enabled: open && isExternal,
-    staleTime: 60000,
-  })
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
@@ -135,13 +122,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       // Their authority comes from a space role, never an org-wide one — the
       // server refuses the combination, so the form does not send it either.
       input.isExternal = true
-      if (externalCompany.trim()) input.externalCompany = externalCompany.trim()
     } else if (access.memberRoleId) {
       input.memberRoleId = access.memberRoleId
     }
     input.accessProfile = serializeAccessDraft(access)
     createMutation.mutate(input)
-  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, externalCompany, createMutation])
+  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, createMutation])
 
   // Keep the feature tabs in sync with the position until the admin edits access
   // themselves (then their choices win).
@@ -390,36 +376,6 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   {t("members.invite.externalNeedsSpace")}
                 </p>
               )}
-            </div>
-          )}
-
-          {/* Works for — an external member's client, chosen from what the space
-              knows. A dropdown when there is something to offer, a text field
-              when there is not: an empty dropdown with no explanation is worse
-              than a box, and the one time somebody must name a company we have
-              never heard of is exactly when a closed list breaks the product. */}
-          {isExternal && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("members.invite.externalCompanyLabel")}
-              </Label>
-              <Input
-                list="external-companies"
-                placeholder={t("members.invite.externalCompanyPlaceholder")}
-                value={externalCompany}
-                onChange={(e) => setExternalCompany(e.target.value)}
-                maxLength={120}
-                className="h-9"
-              />
-              {/* A native datalist rather than a combobox component: it suggests
-                  without constraining, which is the whole requirement — typing a
-                  company nobody has used yet must stay as easy as picking one. */}
-              <datalist id="external-companies">
-                {knownCompanies.map((name) => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
-              <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
             </div>
           )}
 

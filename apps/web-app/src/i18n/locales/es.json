@@ -2059,9 +2059,6 @@
       "staffOptionHint": "En su nómina. Puede tener funciones de toda la organización y trabajar en varios espacios.",
       "externalOption": "Externo",
       "externalOptionHint": "Trabaja para un cliente o socio. Solo funciones de espacio, en los espacios que le asigne.",
-      "externalCompanyLabel": "Trabaja para",
-      "externalCompanyPlaceholder": "Binderholz GmbH",
-      "externalCompanyHint": "Se muestra junto a su nombre, para que nadie lo confunda con su personal.",
       "externalNeedsSpace": "Elija primero un espacio de trabajo: un miembro externo trabaja exactamente en uno."
     },
     "showingCount": "Mostrando {{count}} de {{total}} miembro{{plural}}",
