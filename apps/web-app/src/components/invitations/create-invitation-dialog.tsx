@@ -46,6 +46,8 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   const [mode, setMode] = useState<"email" | "code">("email")
   const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
+  const [isExternal, setIsExternal] = useState(false)
+  const [externalCompany, setExternalCompany] = useState("")
   const [scheduleType, setScheduleType] = useState("NONE")
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
@@ -109,10 +111,17 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     if (spaceId && spaceId !== "none") input.spaceId = spaceId
     // Pre-assigned role (validated server-side) + pre-configured access → both
     // applied to the new member on accept, so their first screen already matches.
-    if (access.memberRoleId) input.memberRoleId = access.memberRoleId
+    if (isExternal) {
+      // Their authority comes from a space role, never an org-wide one — the
+      // server refuses the combination, so the form does not send it either.
+      input.isExternal = true
+      if (externalCompany.trim()) input.externalCompany = externalCompany.trim()
+    } else if (access.memberRoleId) {
+      input.memberRoleId = access.memberRoleId
+    }
     input.accessProfile = serializeAccessDraft(access)
     createMutation.mutate(input)
-  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, createMutation])
+  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, externalCompany, createMutation])
 
   // Keep the feature tabs in sync with the position until the admin edits access
   // themselves (then their choices win).
@@ -293,6 +302,49 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
               onChange={(e) => handlePositionChange(e.target.value)}
               className="h-9"
             />
+          </div>
+
+          {/* Staff, or somebody else's */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">
+              {t("members.invite.whoSection")}
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: false, label: t("members.invite.staffOption"), hint: t("members.invite.staffOptionHint") },
+                { value: true, label: t("members.invite.externalOption"), hint: t("members.invite.externalOptionHint") },
+              ] as const).map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setIsExternal(opt.value)}
+                  aria-pressed={isExternal === opt.value}
+                  className={`rounded-lg border p-2.5 text-left transition-colors ${
+                    isExternal === opt.value
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "border-border bg-muted/40 hover:bg-muted"
+                  }`}
+                >
+                  <span className="block text-xs font-medium text-foreground">{opt.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{opt.hint}</span>
+                </button>
+              ))}
+            </div>
+            {isExternal && (
+              <div className="pt-1.5 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("members.invite.externalCompanyLabel")}
+                </Label>
+                <Input
+                  placeholder={t("members.invite.externalCompanyPlaceholder")}
+                  value={externalCompany}
+                  onChange={(e) => setExternalCompany(e.target.value)}
+                  maxLength={120}
+                  className="h-9"
+                />
+                <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
+              </div>
+            )}
           </div>
 
           {/* Schedule — same control as the Edit dialog (type + weekly hours / budget) */}

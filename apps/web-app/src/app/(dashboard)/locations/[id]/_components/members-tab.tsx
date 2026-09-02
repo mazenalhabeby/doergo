@@ -516,8 +516,28 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <span className="text-sm font-medium text-foreground truncate block">
-                      {m.user ? `${m.user.firstName} ${m.user.lastName}` : t("scheduling.members.unknownMember")}
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-sm font-medium text-foreground truncate">
+                        {m.user ? `${m.user.firstName} ${m.user.lastName}` : t("scheduling.members.unknownMember")}
+                      </span>
+                      {/*
+                        Works for somebody else.
+
+                        This roster is where a space's leadership is read, and it
+                        is the one place the distinction actually bites: a client's
+                        shift leader and ours hold the SAME role, so without the
+                        badge the two are indistinguishable at exactly the moment
+                        somebody is choosing who signs off our hours.
+                      */}
+                      {(m.user as { isExternal?: boolean } | null)?.isExternal && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 text-[10px] font-medium border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
+                          title={(m.user as { externalCompany?: string | null }).externalCompany || undefined}
+                        >
+                          {t("members.external.badge")}
+                        </Badge>
+                      )}
                     </span>
                     {/*
                       What they do, under their name.
