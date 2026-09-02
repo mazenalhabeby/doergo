@@ -7,7 +7,7 @@ import {
   Modal,
   Image,
   Platform,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -25,7 +25,6 @@ import {
   SHADOWS,
 } from '../lib/constants';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface SignatureCaptureProps {
   title: string;
@@ -45,6 +44,24 @@ export function SignatureCapture({
   const [showModal, setShowModal] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const signatureRef = useRef<any>(null);
+
+  /*
+    The canvas has to be BUILT at the size it will be drawn on.
+
+    `requestLandscape()` resolves when the lock is requested, not when the OS
+    has finished turning the device — so the pad mounts while still portrait and
+    the rotation lands a moment later. React Native resizes the WebView, but
+    signature_pad's own <canvas> keeps the backing store it was created with, so
+    every touch is mapped into a coordinate space that no longer matches what is
+    on screen. The stroke goes somewhere off the visible canvas and the pad
+    looks dead: you draw and nothing appears.
+
+    Remounting on width settles it, because the canvas is then created once the
+    rotation is done. Safe here and nowhere else: the only rotations happen as
+    the pad opens and closes, never while somebody is mid-signature — which is
+    exactly the case a remount would ruin.
+  */
+  const { width: padWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const hasSigned = !!existingSignature;
 
@@ -60,9 +77,24 @@ export function SignatureCapture({
     gone. Rotating remounts the WebView, and a rotation mid-stroke would discard
     what somebody had already drawn.
   */
-  const openPad = useCallback(async () => {
-    await requestLandscape();
+  const openPad = useCallback(() => {
+    /*
+      Open the pad FIRST. The rotation is a bonus, never a precondition.
+
+      This used to await the lock and open afterwards, which quietly made the
+      signature pad depend on an orientation the app might not be allowed to
+      have. iOS refuses any orientation an app has not declared in its plist,
+      and the declaration only reaches a device through a NATIVE build — so on
+      every binary shipped before that build, the pad opened on the far side of
+      a request the OS had already refused.
+
+      Now the pad opens regardless and asks for landscape in the background. If
+      the rotation lands, the canvas rebuilds at the new width; if it never
+      comes, the pad is portrait — narrow, which is where this started, and
+      which is survivable in a way "nothing draws" is not.
+    */
     setShowModal(true);
+    void requestLandscape();
   }, []);
 
   const closePad = useCallback(() => {
@@ -225,6 +257,7 @@ export function SignatureCapture({
               },
             ]}>
               <SignatureScreen
+                key={padWidth}
                 ref={signatureRef}
                 onOK={handleSignature}
                 onBegin={handleBegin}
