@@ -12,7 +12,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi, invitationsApi, type InvitationValidation } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { INVITATION_CODE_LENGTH } from '@hbcfield/shared/client';
+import { INVITATION_CODE_LENGTH, INVITATION_CODE_MIN_LENGTH } from '@hbcfield/shared/client';
 
 export default function UseInvitationScreen() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function UseInvitationScreen() {
 
   const handleValidate = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    if (trimmedCode.length < 6) { setError(t('onboarding.useInvitation.codeMustBe6Chars')); return; }
+    if (trimmedCode.length < INVITATION_CODE_MIN_LENGTH) { setError(t('onboarding.useInvitation.codeMustBe6Chars')); return; }
 
     setIsValidating(true);
     setError('');
@@ -96,9 +96,9 @@ export default function UseInvitationScreen() {
                   />
                 </View>
                 <TouchableOpacity
-                  style={[styles.verifyButton, (isValidating || code.trim().length < 6) && styles.verifyButtonDisabled]}
+                  style={[styles.verifyButton, (isValidating || code.trim().length < INVITATION_CODE_MIN_LENGTH) && styles.verifyButtonDisabled]}
                   onPress={handleValidate}
-                  disabled={isValidating || code.trim().length < 6}
+                  disabled={isValidating || code.trim().length < INVITATION_CODE_MIN_LENGTH}
                 >
                   {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>{t('common.verify')}</Text>}
                 </TouchableOpacity>

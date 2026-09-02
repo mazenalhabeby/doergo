@@ -25,7 +25,7 @@ export default function JoinOrgPage() {
 
   const handleValidate = async () => {
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length !== 8) {
+    if (trimmed.length !== ORG_CODE_LENGTH) {
       setError(t('onboarding.joinOrg.codeMustBe8Chars'));
       return;
     }
@@ -105,7 +105,7 @@ export default function JoinOrgPage() {
             <Button
               type="button"
               onClick={handleValidate}
-              disabled={isValidating || code.trim().length !== 8}
+              disabled={isValidating || code.trim().length !== ORG_CODE_LENGTH}
               className="h-11 shrink-0 bg-blue-600 px-5 font-semibold text-white hover:bg-blue-700"
             >
               {isValidating ? <Spinner size="sm" /> : t('onboarding.joinOrg.verify')}

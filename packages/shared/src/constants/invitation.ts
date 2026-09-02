@@ -24,6 +24,14 @@
  * — validation is a hash lookup, and the accept DTO still accepts a 6 minimum.
  */
 export const INVITATION_CODE_LENGTH = 10;
+/**
+ * The shortest code still accepted — the length codes were issued at before the
+ * audit. Anything that RECEIVES a code bounds itself by these two constants and
+ * never by a literal: the max sat at 8 while the generator made 10, so a valid
+ * code validated, showed the right organization, and was refused at the moment
+ * of joining.
+ */
+export const INVITATION_CODE_MIN_LENGTH = 6;
 export const INVITATION_CODE_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excludes I, O, 0, 1 to avoid confusion
 
 // Expiration

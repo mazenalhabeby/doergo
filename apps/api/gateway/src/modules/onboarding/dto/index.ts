@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { INVITATION_CODE_LENGTH, INVITATION_CODE_MIN_LENGTH, ORG_CODE_LENGTH } from '@hbcfield/shared';
 import { CompanyNameField } from '@hbcfield/shared';
 
 /**
@@ -39,8 +40,8 @@ export class CreateOrganizationDto {
 export class SubmitJoinRequestDto {
   @ApiProperty({ example: 'ABCD1234', description: 'Organization join code (8 characters)' })
   @IsString()
-  @MinLength(8, { message: 'Organization code must be 8 characters' })
-  @MaxLength(8, { message: 'Organization code must be 8 characters' })
+  @MinLength(ORG_CODE_LENGTH, { message: `Organization code must be ${ORG_CODE_LENGTH} characters` })
+  @MaxLength(ORG_CODE_LENGTH, { message: `Organization code must be ${ORG_CODE_LENGTH} characters` })
   @Matches(/^[A-Z0-9]+$/, { message: 'Organization code must be uppercase alphanumeric' })
   @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
   orgCode: string;
@@ -57,10 +58,28 @@ export class SubmitJoinRequestDto {
  * Accept invitation as existing user DTO (Path C)
  */
 export class AcceptInvitationExistingUserDto {
-  @ApiProperty({ example: 'ABC123', description: 'Invitation code (6-8 characters)' })
+  @ApiProperty({
+    example: 'ABCD23JKLM',
+    description: `Invitation code (${INVITATION_CODE_MIN_LENGTH}-${INVITATION_CODE_LENGTH} characters)`,
+  })
   @IsString()
-  @MinLength(6, { message: 'Invitation code must be at least 6 characters' })
-  @MaxLength(8, { message: 'Invitation code must not exceed 8 characters' })
+  /*
+    Bounds from the constant the generator uses, never a literal.
+
+    This cap sat at 8 while codes were issued at 10, so a valid code passed
+    validation, showed the right organization on screen, and was refused at the
+    moment of joining. The generator moved 6 → 10 in the audit; three separate
+    places that RECEIVE a code did not move with it.
+
+    The minimum stays below the current length on purpose: codes issued before
+    that change are shorter and must still work.
+  */
+  @MinLength(INVITATION_CODE_MIN_LENGTH, {
+    message: `Invitation code must be at least ${INVITATION_CODE_MIN_LENGTH} characters`,
+  })
+  @MaxLength(INVITATION_CODE_LENGTH, {
+    message: `Invitation code must not exceed ${INVITATION_CODE_LENGTH} characters`,
+  })
   @Transform(({ value }) => typeof value === 'string' ? value.trim().toUpperCase() : value)
   code: string;
 }

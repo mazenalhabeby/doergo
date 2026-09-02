@@ -9,7 +9,7 @@ import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, invitationsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { INVITATION_CODE_LENGTH } from '@hbcfield/shared/client'
+import { INVITATION_CODE_LENGTH, INVITATION_CODE_MIN_LENGTH } from '@hbcfield/shared/client'
 
 interface InvitationCheck {
   valid: boolean;
@@ -31,7 +31,7 @@ export default function UseInvitationPage() {
 
   const handleValidate = async () => {
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length < 6) {
+    if (trimmed.length < INVITATION_CODE_MIN_LENGTH) {
       setError(t('onboarding.useInvitation.codeMustBe6Chars'));
       return;
     }
@@ -104,7 +104,7 @@ export default function UseInvitationPage() {
             <Button
               type="button"
               onClick={handleValidate}
-              disabled={isValidating || code.trim().length < 6}
+              disabled={isValidating || code.trim().length < INVITATION_CODE_MIN_LENGTH}
               className="h-11 shrink-0 bg-blue-600 px-5 font-semibold text-white hover:bg-blue-700"
             >
               {isValidating ? <Spinner size="sm" /> : t('onboarding.useInvitation.verify')}

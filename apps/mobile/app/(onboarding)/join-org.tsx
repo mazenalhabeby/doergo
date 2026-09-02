@@ -31,7 +31,7 @@ export default function JoinOrgScreen() {
 
   const handleValidate = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    if (trimmedCode.length !== 8) { setError(t('onboarding.joinOrg.codeMustBe8Chars')); return; }
+    if (trimmedCode.length !== ORG_CODE_LENGTH) { setError(t('onboarding.joinOrg.codeMustBe8Chars')); return; }
 
     setIsValidating(true);
     setError('');
@@ -106,9 +106,9 @@ export default function JoinOrgScreen() {
                   />
                 </View>
                 <TouchableOpacity
-                  style={[styles.verifyButton, (isValidating || code.trim().length !== 8) && styles.verifyButtonDisabled]}
+                  style={[styles.verifyButton, (isValidating || code.trim().length !== ORG_CODE_LENGTH) && styles.verifyButtonDisabled]}
                   onPress={handleValidate}
-                  disabled={isValidating || code.trim().length !== 8}
+                  disabled={isValidating || code.trim().length !== ORG_CODE_LENGTH}
                 >
                   {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>{t('common.verify')}</Text>}
                 </TouchableOpacity>
