@@ -523,9 +523,19 @@ export class ApprovalService {
       const clockIn = zonedWallTimeToUtc(ymd, data.startTime);
       let clockOut = zonedWallTimeToUtc(ymd, data.endTime);
       if (clockOut <= clockIn) clockOut = new Date(clockOut.getTime() + 24 * 3600_000); // overnight
+      /*
+        GROSS minutes. The break is stored beside it, never inside it.
+
+        This subtracted `breakMin` here, which made a manually added entry mean
+        something different from a clocked one: the clock-out path stores raw
+        wall time and `workedMinutes()` nets the break at the point of display.
+        Subtracting twice took an hour off every back-filled shift — a 18:00 to
+        06:00 night with an hour's break read as ten hours instead of eleven —
+        and left nothing to show as a break, because it had been folded away.
+      */
       const totalMinutes = Math.max(
         0,
-        Math.round((clockOut.getTime() - clockIn.getTime()) / 60000) - breakMin,
+        Math.round((clockOut.getTime() - clockIn.getTime()) / 60000),
       );
       toCreate.push({
         userId: data.userId,
