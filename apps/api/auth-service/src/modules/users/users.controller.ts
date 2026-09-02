@@ -81,6 +81,11 @@ export class UsersController {
   // ORGANIZATION MEMBERS
   // ============================================================================
 
+  @MessagePattern({ cmd: 'list_external_companies' })
+  listExternalCompanies(@Payload() data: { organizationId: string }) {
+    return this.usersService.listExternalCompanies(data);
+  }
+
   @MessagePattern({ cmd: 'list_org_members' })
   async listOrgMembers(@Payload() data: ListOrgMembersDto) {
     return this.usersService.listOrgMembers(data);

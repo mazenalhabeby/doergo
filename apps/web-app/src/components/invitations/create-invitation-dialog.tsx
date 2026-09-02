@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from "lucide-react"
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, locationsApi, type CreateInvitationInput, type CompanyLocation } from "@/lib/api"
+import { invitationsApi, locationsApi, organizationsApi, type CreateInvitationInput, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -78,28 +78,24 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   const locations = spacesData?.data || []
 
   /*
-    Which companies this space knows about.
+    Employers already recorded on this org's external members.
 
-    Asked of the SPACE rather than the organization, because the space is what
-    decides: a space that IS a client company offers itself, an internal space
-    with CRM offers its client records, and a space with neither offers nothing
-    and the admin types the name. One rule, resolved server-side — the same one
-    the signing chain uses to address a document, so the company on the roster
-    and the company on the paperwork cannot drift apart.
+    Suggestions, not a closed list — an external member is a MEMBER who happens
+    to work elsewhere, with no relationship to the CRM. A client is somebody you
+    sell to; this is the company whose supervisor watches your people, and a
+    subcontractor partner is the second without ever being the first.
+
+    So the field is a text box that remembers. The first external member from a
+    company is typed in; everyone after picks the spelling already in use, which
+    is where drift would otherwise start.
   */
   const hasSpace = isExternal && spaceId !== "none" && !!spaceId
-  const { data: companies, isFetching: companiesLoading } = useQuery({
-    queryKey: ["space-companies", spaceId],
-    queryFn: () => locationsApi.getSpaceCompanies(spaceId),
-    enabled: open && hasSpace,
+  const { data: knownCompanies = [] } = useQuery({
+    queryKey: ["external-companies"],
+    queryFn: () => organizationsApi.listExternalCompanies(),
+    enabled: open && isExternal,
     staleTime: 60000,
   })
-  const companyOptions = companies?.options ?? []
-
-  // A space change invalidates a company picked from the previous one.
-  useEffect(() => {
-    setExternalCompany("")
-  }, [spaceId])
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
@@ -386,6 +382,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   ))}
                 </SelectContent>
               </Select>
+              {/* Under the field it is about, and only while it is unmet — this
+                  is the one thing standing between the admin and a disabled
+                  Send button, so it has to say so where they are looking. */}
+              {isExternal && !hasSpace && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  {t("members.invite.externalNeedsSpace")}
+                </p>
+              )}
             </div>
           )}
 
@@ -399,35 +403,23 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
               <Label className="text-xs font-medium text-muted-foreground">
                 {t("members.invite.externalCompanyLabel")}
               </Label>
-              {!hasSpace ? (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                  {t("members.invite.externalNeedsSpace")}
-                </p>
-              ) : companiesLoading ? (
-                <div className="h-9 rounded-md border border-border bg-muted/40" />
-              ) : companyOptions.length > 0 ? (
-                <Select value={externalCompany} onValueChange={setExternalCompany}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder={t("members.invite.externalCompanyPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companyOptions.map((c) => (
-                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  placeholder={t("members.invite.externalCompanyPlaceholder")}
-                  value={externalCompany}
-                  onChange={(e) => setExternalCompany(e.target.value)}
-                  maxLength={120}
-                  className="h-9"
-                />
-              )}
-              {hasSpace && (
-                <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
-              )}
+              <Input
+                list="external-companies"
+                placeholder={t("members.invite.externalCompanyPlaceholder")}
+                value={externalCompany}
+                onChange={(e) => setExternalCompany(e.target.value)}
+                maxLength={120}
+                className="h-9"
+              />
+              {/* A native datalist rather than a combobox component: it suggests
+                  without constraining, which is the whole requirement — typing a
+                  company nobody has used yet must stay as easy as picking one. */}
+              <datalist id="external-companies">
+                {knownCompanies.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+              <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
             </div>
           )}
 

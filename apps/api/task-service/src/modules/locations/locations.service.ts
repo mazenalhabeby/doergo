@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, counterpartySourceFor, SERVICE_NAMES } from '@hbcfield/shared';
+import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -579,83 +579,6 @@ export class LocationsService {
       workflowId: location.workflowId ?? null,
       source: location.enabledModules ? 'space' : 'organization',
     });
-  }
-
-  /**
-   * Which companies somebody in this space could work FOR.
-   *
-   * Used when inviting an external member — a client's or partner's supervisor
-   * — so "Works for" is chosen from what the space already knows rather than
-   * typed from memory. Typed differently by two admins, the same client becomes
-   * two companies in the roster and neither is wrong.
-   *
-   * The source is DECIDED by the space, not configured, and it is the same
-   * cascade the signing chain resolves a counterparty through
-   * (`counterpartySourceFor`) — one rule, so the company offered here and the
-   * company a document is addressed to can never disagree:
-   *
-   *   • the space IS a client company (`kind: CUSTOMER`) → itself
-   *   • an internal space with the CRM module on → its client records
-   *   • neither → nothing to offer, and the admin types it
-   *
-   * MANUAL is a real answer, not a failure. A closed list is useless the one
-   * time somebody has to name a company the system has never heard of, so the
-   * caller keeps a free-text field for an empty list — the same principle the
-   * document cascade states: what is OFFERED must never decide what is possible.
-   */
-  async getSpaceCompanies(data: { id: string; organizationId: string }) {
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
-      select: {
-        id: true,
-        name: true,
-        kind: true,
-        contactName: true,
-        contactEmail: true,
-        enabledModules: true,
-        organization: { select: { enabledModules: true } },
-      },
-    });
-    if (!space) throw new NotFoundException('Company location not found');
-
-    const raw = (space.enabledModules ?? space.organization.enabledModules ?? []) as unknown;
-    const modules = Array.isArray(raw) ? (raw as string[]) : [];
-    const source = counterpartySourceFor(space, modules);
-
-    if (source === 'SPACE') {
-      /*
-        The SPACE is the company, so `name` — never `contactName`.
-
-        `contactName` is the primary contact: a PERSON. The signing chain
-        prefers it, correctly, because a document is addressed to somebody who
-        can sign it. This question is the other half of the same record — which
-        COMPANY does this person work for — and answering it with the client's
-        receptionist puts a human being in a field that names an employer.
-      */
-      return success({ source, options: [{ id: space.id, name: space.name }] });
-    }
-
-    if (source === 'CRM') {
-      const customers = await this.prisma.customer.findMany({
-        where: {
-          organizationId: data.organizationId,
-          isActive: true,
-          spaceId: space.id,
-          // Clients are people OR companies, and only a company employs anybody.
-          // Without this an apartments or B2C space offers its residents and
-          // tenants as employers.
-          type: 'COMPANY',
-        },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-        take: 200,
-      });
-      // No companies on a client list is a real answer: the caller falls back to
-      // a text field rather than showing an empty dropdown.
-      return success({ source: customers.length ? source : 'MANUAL', options: customers });
-    }
-
-    return success({ source, options: [] });
   }
 
   // ==================== MEMBER ASSIGNMENT METHODS ====================

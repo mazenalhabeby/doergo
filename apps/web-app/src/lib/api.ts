@@ -3634,6 +3634,21 @@ export interface MemberWatcher {
 }
 
 export const organizationsApi = {
+  /**
+   * Companies already recorded on this org's external members — suggestions for
+   * the "Works for" field, so the same employer is not spelt three ways across
+   * three invites. Not the CRM client list: a client is somebody you sell to,
+   * an external member's employer is the company whose supervisor watches your
+   * people, and those are different relationships that only sometimes coincide.
+   */
+  listExternalCompanies: async () => {
+    const response = await api.get<{ success: boolean; data: string[] }>(
+      '/organizations/members/external-companies',
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? [];
+  },
+
   getJoinCode: async () => {
     const response = await api.get<{
       success: boolean;
@@ -4051,21 +4066,6 @@ export const locationsApi = {
 
   getEffectiveModules: async (spaceId: string) => {
     const response = await api.get<{ success: boolean; data: { enabledModules: string[]; workflowId?: string } }>(`/locations/${spaceId}/modules`);
-    if (response.error) throw new Error(response.error);
-    return response.data?.data;
-  },
-
-  /**
-   * Companies somebody in this space could work FOR — for external member
-   * invites. `source` says WHY the list looks the way it does, which is what
-   * lets the caller fall back to a text field honestly instead of showing an
-   * empty dropdown and no explanation.
-   */
-  getSpaceCompanies: async (spaceId: string) => {
-    const response = await api.get<{
-      success: boolean
-      data: { source: "SPACE" | "CRM" | "MANUAL"; options: { id: string; name: string }[] }
-    }>(`/locations/${spaceId}/companies`);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },

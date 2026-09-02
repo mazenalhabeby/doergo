@@ -40,11 +40,6 @@ export class LocationsService extends BaseGatewayService {
     return this.send({ cmd: 'get_effective_modules' }, data);
   }
 
-  /** Companies somebody in this space could work FOR (external member invites). */
-  async getSpaceCompanies(data: { id: string; organizationId: string }) {
-    return this.send({ cmd: 'get_space_companies' }, data);
-  }
-
   /**
    * Get all members assigned to a location
    */

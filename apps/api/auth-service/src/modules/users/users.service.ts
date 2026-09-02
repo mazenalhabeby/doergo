@@ -861,6 +861,37 @@ export class UsersService {
   /**
    * List all members of an organization with filtering and pagination
    */
+  /**
+   * Companies this organization already works with — every distinct employer
+   * already recorded on an external member.
+   *
+   * Deliberately NOT the CRM client list. A CRM client is somebody you sell to;
+   * an external member's employer is the company whose supervisor watches your
+   * people. The two coincide often enough to look like one idea and are not:
+   * a subcontractor partner supervising a site is nobody's customer, and a
+   * space's residents are customers who employ no one.
+   *
+   * So the source is the column itself. It costs one indexed DISTINCT, needs no
+   * module switched on and no space of any particular kind, and it answers the
+   * only question the field ever had — was this company already spelt some
+   * other way? The first external member types the name; everyone after picks
+   * it. Drift starts at the second entry, which is exactly where this catches.
+   */
+  async listExternalCompanies(data: { organizationId: string }) {
+    const rows = await this.prisma.user.findMany({
+      where: {
+        organizationId: data.organizationId,
+        isExternal: true,
+        externalCompany: { not: null },
+      },
+      select: { externalCompany: true },
+      distinct: ['externalCompany'],
+      orderBy: { externalCompany: 'asc' },
+      take: 200,
+    });
+    return { success: true, data: rows.map((r) => r.externalCompany as string).filter(Boolean) };
+  }
+
   async listOrgMembers(dto: ListOrgMembersDto & { managersOnly?: boolean; includeIds?: string[]; excludeId?: string; lite?: boolean }) {
     const { organizationId, search, role } = dto;
     // Clamp pagination server-side so a client can't request an unbounded page (M6).
