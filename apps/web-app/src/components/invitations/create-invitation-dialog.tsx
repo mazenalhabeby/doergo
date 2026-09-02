@@ -325,24 +325,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   type="button"
                   onClick={() => {
                     setIsExternal(opt.value)
-                    // Hiding a control is not the same as clearing it. Someone
-                    // who picks Fixed, then switches to External, would
-                    // otherwise send a schedule through a form that no longer
-                    // shows one. Same for the attendance settings and the org
-                    // role below: what the form stops showing, it stops sending.
-                    if (opt.value) {
-                      setScheduleType("NONE")
-                      setAccess((cur) => ({
-                        ...cur,
-                        memberRoleId: null,
-                        // Web, because they are here to look at a shift and
-                        // approve it — the mobile app is built around clocking
-                        // in and doing the work, which is not their job.
-                        platforms: "web",
-                        modules: cur.modules.filter((m) => m === "tasks"),
-                        allowRemote: false,
-                      }))
-                    }
+                    // Schedule is the one control that disappears for an
+                    // external member, so its value is cleared with it — what
+                    // the form stops showing, it stops sending. Access is NOT
+                    // touched: the panel is identical for both, so the
+                    // selections in it must be too.
+                    if (opt.value) setScheduleType("NONE")
                   }}
                   aria-pressed={isExternal === opt.value}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${
@@ -430,16 +418,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             </button>
             {accessOpen && (
               <div className="border-t border-border px-3 py-4">
-                <AccessFields
-                  value={access}
-                  onChange={patchAccess}
-                  allowAdmin={false}
-                  /* No org role for an external member: the server refuses one,
-                     so offering the selector would be a control whose value is
-                     silently discarded. Their authority is the space role. */
-                  showRole={!isExternal}
-                  external={isExternal}
-                />
+                <AccessFields value={access} onChange={patchAccess} allowAdmin={false} />
               </div>
             )}
           </div>
