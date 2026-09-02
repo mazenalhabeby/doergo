@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from "lucide-react"
@@ -76,6 +76,30 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     enabled: open,
   })
   const locations = spacesData?.data || []
+
+  /*
+    Which companies this space knows about.
+
+    Asked of the SPACE rather than the organization, because the space is what
+    decides: a space that IS a client company offers itself, an internal space
+    with CRM offers its client records, and a space with neither offers nothing
+    and the admin types the name. One rule, resolved server-side — the same one
+    the signing chain uses to address a document, so the company on the roster
+    and the company on the paperwork cannot drift apart.
+  */
+  const hasSpace = isExternal && spaceId !== "none" && !!spaceId
+  const { data: companies, isFetching: companiesLoading } = useQuery({
+    queryKey: ["space-companies", spaceId],
+    queryFn: () => locationsApi.getSpaceCompanies(spaceId),
+    enabled: open && hasSpace,
+    staleTime: 60000,
+  })
+  const companyOptions = companies?.options ?? []
+
+  // A space change invalidates a company picked from the previous one.
+  useEffect(() => {
+    setExternalCompany("")
+  }, [spaceId])
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
@@ -330,21 +354,6 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                 </button>
               ))}
             </div>
-            {isExternal && (
-              <div className="pt-1.5 space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  {t("members.invite.externalCompanyLabel")}
-                </Label>
-                <Input
-                  placeholder={t("members.invite.externalCompanyPlaceholder")}
-                  value={externalCompany}
-                  onChange={(e) => setExternalCompany(e.target.value)}
-                  maxLength={120}
-                  className="h-9"
-                />
-                <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
-              </div>
-            )}
           </div>
 
           {/* Schedule — same control as the Edit dialog (type + weekly hours / budget) */}
@@ -372,6 +381,46 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Works for — an external member's client, chosen from what the space
+              knows. A dropdown when there is something to offer, a text field
+              when there is not: an empty dropdown with no explanation is worse
+              than a box, and the one time somebody must name a company we have
+              never heard of is exactly when a closed list breaks the product. */}
+          {isExternal && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("members.invite.externalCompanyLabel")}
+              </Label>
+              {!hasSpace ? (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  {t("members.invite.externalNeedsSpace")}
+                </p>
+              ) : companiesLoading ? (
+                <div className="h-9 rounded-md border border-border bg-muted/40" />
+              ) : companyOptions.length > 0 ? (
+                <Select value={externalCompany} onValueChange={setExternalCompany}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder={t("members.invite.externalCompanyPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder={t("members.invite.externalCompanyPlaceholder")}
+                  value={externalCompany}
+                  onChange={(e) => setExternalCompany(e.target.value)}
+                  maxLength={120}
+                  className="h-9"
+                />
+              )}
+              <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
             </div>
           )}
 
@@ -408,7 +457,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           <Button variant="outline" onClick={handleClose} className="rounded-lg">{t("common.cancel")}</Button>
           <Button
             onClick={handleSubmit}
-            disabled={createMutation.isPending || (mode === "email" && !email.trim())}
+            disabled={
+              createMutation.isPending ||
+              (mode === "email" && !email.trim()) ||
+              // An external member's whole authority is one space assignment. An
+              // invite without one creates somebody who works for a client, has
+              // a login, and can reach nothing — a dead account that looks fine.
+              (isExternal && !hasSpace)
+            }
             data-tour="members-invite-send"
             className="rounded-lg"
           >

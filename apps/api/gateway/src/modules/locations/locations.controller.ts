@@ -217,6 +217,18 @@ export class LocationsController {
     });
   }
 
+  @Get(':id/companies')
+  // Same permission as inviting somebody, because that is the only thing this
+  // is for: an admin choosing which client a new external member works for.
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Companies a member of this space could work for (external invites)" })
+  async getSpaceCompanies(@Param('id') id: string, @Request() req: any) {
+    return this.locationsService.getSpaceCompanies({
+      id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   // ==================== MEMBER ASSIGNMENT ENDPOINTS ====================
 
   @Get(':id/members')

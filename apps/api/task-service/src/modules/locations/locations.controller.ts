@@ -21,6 +21,11 @@ export class LocationsController {
     return this.locationsService.getEffectiveModules(data);
   }
 
+  @MessagePattern({ cmd: 'get_space_companies' })
+  getSpaceCompanies(@Payload() data: { id: string; organizationId: string }) {
+    return this.locationsService.getSpaceCompanies(data);
+  }
+
   @MessagePattern({ cmd: 'get_location_assignments' })
   async getLocationAssignments(@Payload() data: any) {
     return this.locationsService.getLocationAssignments(data);

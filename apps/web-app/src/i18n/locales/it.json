@@ -2061,7 +2061,8 @@
       "externalOptionHint": "Lavora per un cliente o partner. Solo ruoli di spazio, negli spazi che le assegna.",
       "externalCompanyLabel": "Lavora per",
       "externalCompanyPlaceholder": "Binderholz GmbH",
-      "externalCompanyHint": "Mostrato accanto al nome, così nessuno lo confonde con il suo personale."
+      "externalCompanyHint": "Mostrato accanto al nome, così nessuno lo confonde con il suo personale.",
+      "externalNeedsSpace": "Scelga prima uno spazio: un membro esterno lavora in uno solo."
     },
     "showingCount": "Visualizzati {{count}} di {{total}} membro{{plural}}",
     "noMembersFound": "Nessun membro trovato",

@@ -4055,6 +4055,21 @@ export const locationsApi = {
     return response.data?.data;
   },
 
+  /**
+   * Companies somebody in this space could work FOR — for external member
+   * invites. `source` says WHY the list looks the way it does, which is what
+   * lets the caller fall back to a text field honestly instead of showing an
+   * empty dropdown and no explanation.
+   */
+  getSpaceCompanies: async (spaceId: string) => {
+    const response = await api.get<{
+      success: boolean
+      data: { source: "SPACE" | "CRM" | "MANUAL"; options: { id: string; name: string }[] }
+    }>(`/locations/${spaceId}/companies`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   // Re-sync existing tasks in a space onto the space's workflow (ADMIN only).
   resyncTasks: async (spaceId: string) => {
     const response = await api.post<{ success: boolean; data: { updated: number; remapped: number; reason?: string } }>(`/tasks/resync/${spaceId}`, {});
