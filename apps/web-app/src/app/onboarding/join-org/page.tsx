@@ -9,6 +9,7 @@ import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, type OrgCodeValidation } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { ORG_CODE_LENGTH } from '@hbcfield/shared'
 
 export default function JoinOrgPage() {
   const router = useRouter();
@@ -92,7 +93,7 @@ export default function JoinOrgPage() {
               autoFocus
               placeholder={t('onboarding.joinOrg.codePlaceholder')}
               value={code}
-              maxLength={8}
+              maxLength={ORG_CODE_LENGTH}
               onChange={(e) => {
                 setCode(e.target.value.toUpperCase());
                 setError('');

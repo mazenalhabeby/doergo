@@ -12,6 +12,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
+import { ORG_CODE_LENGTH } from '@hbcfield/shared';
 
 export default function JoinOrgScreen() {
   const router = useRouter();
@@ -101,7 +102,7 @@ export default function JoinOrgScreen() {
                     onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
                     autoCapitalize="characters"
                     autoCorrect={false}
-                    maxLength={8}
+                    maxLength={ORG_CODE_LENGTH}
                   />
                 </View>
                 <TouchableOpacity

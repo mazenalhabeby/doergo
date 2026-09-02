@@ -12,6 +12,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi, invitationsApi, type InvitationValidation } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { INVITATION_CODE_LENGTH } from '@hbcfield/shared';
 
 export default function UseInvitationScreen() {
   const router = useRouter();
@@ -91,7 +92,7 @@ export default function UseInvitationScreen() {
                     onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
                     autoCapitalize="characters"
                     autoCorrect={false}
-                    maxLength={8}
+                    maxLength={INVITATION_CODE_LENGTH}
                   />
                 </View>
                 <TouchableOpacity

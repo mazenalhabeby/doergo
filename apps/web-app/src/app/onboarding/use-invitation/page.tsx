@@ -9,6 +9,7 @@ import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, invitationsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { INVITATION_CODE_LENGTH } from '@hbcfield/shared'
 
 interface InvitationCheck {
   valid: boolean;
@@ -91,7 +92,7 @@ export default function UseInvitationPage() {
               autoFocus
               placeholder={t('onboarding.useInvitation.codePlaceholder')}
               value={code}
-              maxLength={8}
+              maxLength={INVITATION_CODE_LENGTH}
               onChange={(e) => {
                 setCode(e.target.value.toUpperCase());
                 setError('');
