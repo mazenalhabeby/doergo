@@ -25,6 +25,7 @@ import {
   permissionsExceed,
   externalMayHold,
 } from '@hbcfield/shared';
+import { memberFieldsFromInvitation } from './invitation-apply';
 
 function hashCode(code: string): string {
   return createHash('sha256').update(code).digest('hex');
@@ -585,77 +586,10 @@ export class InvitationService {
           passwordHash,
           firstName: data.firstName.trim(),
           lastName: data.lastName.trim(),
-          role: invitation.targetRole,
           organizationId: invitation.organizationId,
-          canCreateTasks: defaultPerms.canCreateTasks,
-          taskCreationScope: defaultPerms.taskCreationScope,
-          canViewAllTasks: defaultPerms.canViewAllTasks,
-          canAssignTasks: defaultPerms.canAssignTasks,
-          canManageUsers: defaultPerms.canManageUsers,
-          ...(invitation.targetRole === 'EMPLOYEE'
-            ? {
-                position: invitation.position || null,
-                scheduleType: invitation.scheduleType || 'NONE',
-                monthlyHourBudget: invitation.monthlyHourBudget ?? null,
-                specialty: invitation.specialty,
-                maxDailyJobs: invitation.maxDailyJobs || 5,
-                // Pre-assigned org role (validated at invite time) → the member's
-                // named role from their first login. Null when none was chosen.
-                // Never for an external member — refused at invite time, and
-                // forced null here so an invitation predating that rule (or
-                // edited underneath it) cannot deliver one.
-                memberRoleId: invitation.isExternal ? null : (invitation.memberRoleId ?? null),
-                isExternal: invitation.isExternal,
-                ...(accessProfile
-                  ? {
-                      // Admin pre-configured the access → apply it verbatim so the
-                      // first screen already matches (overrides the role defaults
-                      // set above).
-                      enabledModules: accessProfile.enabledModules,
-                      canCreateTasks: accessProfile.canCreateTasks,
-                      taskCreationScope: accessProfile.taskCreationScope as any,
-                      canAssignTasks: accessProfile.canAssignTasks,
-                      canViewAllTasks: accessProfile.canViewAllTasks,
-                      canManageUsers: accessProfile.canManageUsers,
-                      contactable: accessProfile.contactable,
-                      contactScope: accessProfile.contactScope,
-                      contactAllowedIds: accessProfile.contactAllowedIds,
-                      canViewReports: accessProfile.canViewReports,
-                      allowRemote: accessProfile.allowRemote,
-                    }
-                  : {
-                      // No pre-config → LEAST-PRIVILEGE: own assigned spaces only
-                      // (admins widen later via the Access tab). Standard tabs.
-                      enabledModules: {
-                        modules: getDefaultModules(invitation.position),
-                        spaceScope: 'own',
-                      },
-                    }),
-              }
-            : {}),
-          /*
-            An external member holds only what the allow-list permits — applied
-            last, so it wins over the role defaults AND over a pre-configured
-            Access Profile, whichever set them. Read from the shared list rather
-            than written out, so allowing one of these to externals later is a
-            one-line change in one file and this follows it.
-          */
-          ...(invitation.isExternal
-            ? {
-                canManageUsers: externalMayHold('canManageUsers'),
-                canViewReports: externalMayHold('canViewReports'),
-              }
-            : {}),
-          // Customer-portal login: bind to the Customer + optional default unit.
-          // onboardingCompleted defaults to true → the portal never sees the
-          // org-builder wizard. See [[customer-portal]].
-          ...(invitation.targetRole === 'CUSTOMER'
-            ? {
-                customerId: invitation.customerId,
-                unitId: invitation.unitId,
-                assetId: invitation.assetId,
-              }
-            : {}),
+          // Every field the invitation dictates — the same mapping the mobile
+          // onboarding path uses, so the two cannot drift again.
+          ...memberFieldsFromInvitation(invitation, accessProfile),
         },
         select: {
           id: true,

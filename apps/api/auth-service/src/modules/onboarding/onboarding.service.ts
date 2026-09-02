@@ -20,6 +20,7 @@ import {
   generateSecureCode,
   industryUsesExternalWorkers,
 } from '@hbcfield/shared';
+import { memberFieldsFromInvitation } from '../invitations/invitation-apply';
 
 @Injectable()
 export class OnboardingService {
@@ -402,58 +403,21 @@ export class OnboardingService {
         where: { id: userId },
         data: {
           organizationId: invitation.organizationId,
-          role: invitation.targetRole,
           onboardingCompleted: true,
-
-          canCreateTasks: defaultPerms.canCreateTasks,
-          taskCreationScope: defaultPerms.taskCreationScope,
-          canViewAllTasks: defaultPerms.canViewAllTasks,
-          canAssignTasks: defaultPerms.canAssignTasks,
-          canManageUsers: defaultPerms.canManageUsers,
-          ...(isTechnician
-            ? {
-                position: invitation.position || 'technician',
-                specialty: invitation.specialty,
-                maxDailyJobs: invitation.maxDailyJobs || 5,
-                // Schedule pre-set on the invite (mirror of the register-path accept).
-                scheduleType: invitation.scheduleType || 'NONE',
-                monthlyHourBudget: invitation.monthlyHourBudget ?? null,
-                // Pre-assigned org role (validated at invite time) → the member's
-                // named role from their first login. Null when none was chosen.
-                memberRoleId: invitation.memberRoleId ?? null,
-                ...(accessProfile
-                  ? {
-                      // Admin pre-configured the access → apply it verbatim so the
-                      // first screen already matches (overrides the role defaults above).
-                      enabledModules: accessProfile.enabledModules,
-                      canCreateTasks: accessProfile.canCreateTasks,
-                      taskCreationScope: accessProfile.taskCreationScope as any,
-                      canAssignTasks: accessProfile.canAssignTasks,
-                      canViewAllTasks: accessProfile.canViewAllTasks,
-                      canManageUsers: accessProfile.canManageUsers,
-                      contactable: accessProfile.contactable,
-                      contactScope: accessProfile.contactScope,
-                      contactAllowedIds: accessProfile.contactAllowedIds,
-                      canViewReports: accessProfile.canViewReports,
-                      allowRemote: accessProfile.allowRemote,
-                    }
-                  : {
-                      // No pre-config → LEAST-PRIVILEGE: own assigned spaces only.
-                      enabledModules: {
-                        modules: getDefaultModules(invitation.position),
-                        spaceScope: 'own',
-                      },
-                    }),
-              }
-            : {}),
-          // Customer-portal invite: bind the login to its Customer + optional unit
-          // (mirror of the public accept path) so the portal scopes correctly.
-          ...(role === Role.CUSTOMER
-            ? {
-                customerId: invitation.customerId,
-                unitId: invitation.unitId,
-              }
-            : {}),
+          /*
+            Every field the invitation dictates, from the one mapping the
+            register path also uses. Written out by hand here until now — and it
+            drifted: `isExternal` reached the other copy and this one kept
+            turning external invitations into ordinary employees, with no error
+            anywhere to notice. The comment above about pre-set access being
+            "silently dropped" on this path was a warning; this is a mechanism.
+          */
+          ...memberFieldsFromInvitation(invitation, accessProfile, {
+            // This path has always defaulted an unset position; the register
+            // path has always left it null. Preserved rather than unified, so
+            // neither flow starts producing something different today.
+            defaultPosition: 'technician',
+          }),
         },
         select: {
           id: true,

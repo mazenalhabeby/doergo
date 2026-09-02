@@ -260,27 +260,6 @@ const TABLE_GRID =
  * somebody can do, ownership says whose organization it is. An owner is always
  * an admin, so folding it into the role badge would hide one behind the other.
  */
-/**
- * Marks somebody who works for a client or partner rather than for us.
- *
- * Beside the name rather than in the role column, because it is not a role: the
- * role says what they may do, this says whose company they belong to. A client's
- * shift leader and ours hold the SAME role, and the difference between them is
- * the one thing a roster must never blur.
- */
-function ExternalBadge({ member }: { member: OrgMember }) {
-  const { t } = useTranslation()
-  if (!member.isExternal) return null
-  return (
-    <Badge
-      variant="outline"
-      className="text-[10px] font-medium border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
-    >
-      {t("members.external.badge")}
-    </Badge>
-  )
-}
-
 function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
   // Admin (system tier) always shows as Admin, even if it also carries a role row.
@@ -313,6 +292,26 @@ function RoleBadge({ member }: { member: OrgMember }) {
     so one list looked like two systems; they read the same way now, with colour
     telling them apart.
   */
+  /*
+    An external member is not an "Employee".
+
+    This chip is the ACCOUNT TYPE, and for somebody a client sent to supervise
+    one site, "Employee" is simply false — it is the column an admin scans to
+    see who is on their team, and it was counting an outsider as staff. They
+    hold no org role by construction, so this cell would otherwise always show
+    the default account type and never anything more specific.
+  */
+  if (member.isExternal) {
+    return (
+      <Badge
+        variant="outline"
+        className="gap-1.5 border text-xs font-medium border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        {t("members.external.badge")}
+      </Badge>
+    )
+  }
   const conf = roleBadge(member.role)
   const owner = member.isOwner === true
   return (
@@ -498,7 +497,6 @@ const MemberRow = memo(function MemberRow({
           <div className="flex items-center gap-2">
             {nameButton}
             {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
-            <ExternalBadge member={member} />
           </div>
           <p className="text-sm text-muted-foreground truncate">{member.email}</p>
         </div>
@@ -521,7 +519,6 @@ const MemberRow = memo(function MemberRow({
           <div className="flex items-center gap-2">
             {nameButton}
             {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
-            <ExternalBadge member={member} />
           </div>
           <p className="text-sm text-muted-foreground truncate">{member.email}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
