@@ -623,22 +623,36 @@ export class LocationsService {
     const source = counterpartySourceFor(space, modules);
 
     if (source === 'SPACE') {
-      // No client row exists — the SPACE is the company, and its own contact
-      // name is the better label when somebody has filled one in.
-      return success({
-        source,
-        options: [{ id: space.id, name: (space.contactName?.trim() || space.name) }],
-      });
+      /*
+        The SPACE is the company, so `name` — never `contactName`.
+
+        `contactName` is the primary contact: a PERSON. The signing chain
+        prefers it, correctly, because a document is addressed to somebody who
+        can sign it. This question is the other half of the same record — which
+        COMPANY does this person work for — and answering it with the client's
+        receptionist puts a human being in a field that names an employer.
+      */
+      return success({ source, options: [{ id: space.id, name: space.name }] });
     }
 
     if (source === 'CRM') {
       const customers = await this.prisma.customer.findMany({
-        where: { organizationId: data.organizationId, isActive: true, spaceId: space.id },
+        where: {
+          organizationId: data.organizationId,
+          isActive: true,
+          spaceId: space.id,
+          // Clients are people OR companies, and only a company employs anybody.
+          // Without this an apartments or B2C space offers its residents and
+          // tenants as employers.
+          type: 'COMPANY',
+        },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
         take: 200,
       });
-      return success({ source, options: customers });
+      // No companies on a client list is a real answer: the caller falls back to
+      // a text field rather than showing an empty dropdown.
+      return success({ source: customers.length ? source : 'MANUAL', options: customers });
     }
 
     return success({ source, options: [] });
