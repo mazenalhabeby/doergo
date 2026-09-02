@@ -251,6 +251,40 @@ export const BUILTIN_ROLES: RolePreset[] = [
       canViewSpaceAttendance: true,
     },
   },
+  /*
+    The client's own supervisor — an EXTERNAL member's role.
+
+    Every permission here is inside `EXTERNAL_ALLOWED_PERMISSIONS`, so it can
+    never trip the ceiling: an admin picking this one for somebody who works for
+    a client gets a grant that succeeds, instead of discovering by refusal which
+    of sixteen checkboxes made Space Manager illegal.
+
+    It differs from Shift Leader by `canViewAllTasks`, and that is the whole
+    point of it rather than an accident: a client's supervisor stands ON the
+    site. They approve our hours AND watch the work those hours were spent on,
+    which is more of the day than an internal shift leader needs and strictly
+    less of the organization — no members, no clients, no documents, no
+    tracking, and nothing at all outside the one space they are assigned to.
+
+    Available to anyone; nothing binds it to `isExternal`. A role that only
+    appears for certain people is a rule hidden in a dropdown, and the real rule
+    already lives on the server where it can refuse.
+  */
+  {
+    slug: 'external-supervisor',
+    name: 'External Supervisor',
+    description: "A client's or partner's supervisor: approves our hours and follows the work, in one space only",
+    // The amber the External badge uses, so the role and the person carry one
+    // colour wherever either appears.
+    color: '#b45309',
+    scope: 'SPACE',
+    permissions: {
+      canViewSpaceAttendance: true,
+      canApproveOvertime: true,
+      canReconcileAttendance: true,
+      canViewAllTasks: true,
+    },
+  },
 ];
 
 // ── Mappers: legacy → unified (used by the Phase 1 backfill) ─────────────────

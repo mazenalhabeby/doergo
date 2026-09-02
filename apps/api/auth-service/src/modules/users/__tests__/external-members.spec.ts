@@ -107,6 +107,26 @@ describe('external member permission ceiling', () => {
       },
     );
 
+    it('External Supervisor may — the role that exists for exactly this', () => {
+      const perms = permissionsFromOrgRole(
+        roleBySlug('external-supervisor').permissions as PermissionSet,
+      );
+      expect(externalForbiddenIn(perms)).toEqual([]);
+    });
+
+    it('External Supervisor is space-scoped — an org role would reach every space', () => {
+      expect(roleBySlug('external-supervisor').scope).toBe('SPACE');
+    });
+
+    it('External Supervisor sees the work as well as the hours', () => {
+      // The one permission separating it from Shift Leader. If this ever stops
+      // being true the role is a duplicate and should be deleted, not kept.
+      const ext = roleBySlug('external-supervisor').permissions as PermissionSet;
+      const shift = roleBySlug('shift-leader').permissions as PermissionSet;
+      expect(ext.canViewAllTasks).toBe(true);
+      expect(shift.canViewAllTasks).toBeUndefined();
+    });
+
     it('Space Manager may NOT — it carries canManageUsers for the space', () => {
       const perms = permissionsFromOrgRole(roleBySlug('space-manager').permissions as PermissionSet);
       expect(externalForbiddenIn(perms)).toContain('canManageUsers');
