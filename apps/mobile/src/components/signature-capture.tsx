@@ -197,6 +197,23 @@ export function SignatureCapture({
               width: winHeight,
               height: winWidth,
               transform: [{ rotate: '90deg' }],
+              /*
+                Safe areas, turned with the page.
+
+                A quarter turn clockwise puts the page's top edge along the
+                device's RIGHT edge, its right along the bottom, and so on — so
+                applying `insets.top` to the page's top now pads the wrong side
+                entirely, which is why the notch and the home indicator were
+                sitting over the content.
+
+                Re-mapped rather than dropped: the notch and the home bar are
+                still physically there, they are just on the page's left and
+                right once it is rotated.
+              */
+              paddingTop: insets.right,
+              paddingRight: insets.bottom,
+              paddingBottom: insets.left,
+              paddingLeft: insets.top,
             },
           ]}
         >
@@ -204,7 +221,7 @@ export function SignatureCapture({
           <View style={[
             styles.modalHeader,
             {
-              paddingTop: Math.max(insets.top, SPACING.md) + SPACING.sm,
+              paddingTop: SPACING.md + SPACING.sm,
               backgroundColor: isDark ? '#101020' : '#ffffff',
               borderBottomColor: colors.border,
             },
@@ -269,7 +286,7 @@ export function SignatureCapture({
           <View style={[
             styles.modalFooter,
             {
-              paddingBottom: Math.max(insets.bottom, SPACING.lg),
+              paddingBottom: SPACING.lg,
               backgroundColor: isDark ? '#101020' : '#ffffff',
               borderTopColor: colors.border,
             },
