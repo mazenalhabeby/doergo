@@ -310,11 +310,23 @@ export class InvitationService {
         // Job title (e.g. "Plumber"). Blank → null, NOT a work-mode value.
         position: isTechnician ? (data.position?.trim() || null) : null,
         // Schedule pre-set on the invite (applied to the user on accept).
-        scheduleType: isTechnician ? (data.scheduleType || null) : null,
-        schedule: isTechnician && data.scheduleType === 'FIXED' && data.schedule?.length
+        /*
+          No schedule for an external member.
+
+          A schedule is the hours WE expect somebody to work. This person's
+          hours are their own employer's business — they come to approve ours,
+          not to file theirs. Left set, a rota line for them sits permanently
+          unmet and the no-show engine starts raising flags against a company
+          that owes us no attendance at all.
+
+          Enforced here as well as hidden in the form: the form is a courtesy,
+          this is the rule.
+        */
+        scheduleType: isTechnician && !inviteIsExternal ? (data.scheduleType || null) : null,
+        schedule: isTechnician && !inviteIsExternal && data.scheduleType === 'FIXED' && data.schedule?.length
           ? (data.schedule as any)
           : undefined,
-        monthlyHourBudget: isTechnician && data.scheduleType === 'FLEXIBLE'
+        monthlyHourBudget: isTechnician && !inviteIsExternal && data.scheduleType === 'FLEXIBLE'
           ? (data.monthlyHourBudget ?? null)
           : null,
         specialty: isTechnician ? data.specialty || null : null,

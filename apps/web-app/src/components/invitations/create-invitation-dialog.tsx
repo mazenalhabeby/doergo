@@ -323,7 +323,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                 <button
                   key={String(opt.value)}
                   type="button"
-                  onClick={() => setIsExternal(opt.value)}
+                  onClick={() => {
+                    setIsExternal(opt.value)
+                    // Hiding a control is not the same as clearing it. Someone
+                    // who picks Fixed, then switches to External, would
+                    // otherwise send a schedule through a form that no longer
+                    // shows one.
+                    if (opt.value) setScheduleType("NONE")
+                  }}
                   aria-pressed={isExternal === opt.value}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${
                     isExternal === opt.value
@@ -338,15 +345,23 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             </div>
           </div>
 
-          {/* Schedule — same control as the Edit dialog (type + weekly hours / budget) */}
-          <ScheduleFields
-            scheduleType={scheduleType}
-            onScheduleTypeChange={setScheduleType}
-            scheduleRows={scheduleRows}
-            onScheduleRowsChange={setScheduleRows}
-            monthlyHourBudget={monthlyHourBudget}
-            onMonthlyHourBudgetChange={setMonthlyHourBudget}
-          />
+          {/* Schedule — same control as the Edit dialog (type + weekly hours /
+              budget). Not for an external member: a schedule is the hours WE
+              expect somebody to work, and this person's hours are their own
+              employer's business. They come to approve ours, not to file
+              theirs — they never clock in, so a rota line for them would sit
+              permanently unmet and start raising no-shows against a company
+              that owes us no attendance. */}
+          {!isExternal && (
+            <ScheduleFields
+              scheduleType={scheduleType}
+              onScheduleTypeChange={setScheduleType}
+              scheduleRows={scheduleRows}
+              onScheduleRowsChange={setScheduleRows}
+              monthlyHourBudget={monthlyHourBudget}
+              onMonthlyHourBudgetChange={setMonthlyHourBudget}
+            />
+          )}
 
           {/* Space (optional) */}
           {locations.length > 0 && (
