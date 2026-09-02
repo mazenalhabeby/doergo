@@ -833,18 +833,28 @@ export default function MembersPage() {
                 <SelectValue placeholder={t("common.all")} />
               </SelectTrigger>
               <SelectContent>
+                {/*
+                  The roles this organization has, and the one state that is not
+                  a role.
+
+                  This listed the ACCOUNT TYPES as well — so "Admin" appeared
+                  twice meaning two different things, and "Employee" and "No
+                  role" were two labels for the same people. Both duplications
+                  came from exposing an internal distinction (account type vs
+                  assigned role) that nobody outside the code thinks in.
+
+                  A member either holds one of these roles or holds none, and
+                  the Role column already says exactly that. The filter now
+                  offers what the column shows.
+                */}
                 <SelectItem value="all">{t("common.allRoles")}</SelectItem>
-                {/* Account types first: they are what the badge falls back to. */}
-                <SelectItem value="ADMIN">{t("members.roles.admin")}</SelectItem>
-                <SelectItem value="EMPLOYEE">{t("members.roles.employee")}</SelectItem>
-                {/* Then the roles this organization actually has. */}
                 {orgRoles.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.name}
                   </SelectItem>
                 ))}
-                {/* And the state the Employee badge hides: no role at all. */}
-                <SelectItem value="none">{t("members.roles.none", "No role")}</SelectItem>
+                {/* No role assigned — which the list displays as Employee. */}
+                <SelectItem value="none">{t("members.roles.employee")}</SelectItem>
               </SelectContent>
             </Select>
 
