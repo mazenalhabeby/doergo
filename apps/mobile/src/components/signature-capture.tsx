@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import {
+  useWindowDimensions,
   View,
   Text,
   StyleSheet,
@@ -42,6 +43,7 @@ export function SignatureCapture({
   const [showModal, setShowModal] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const signatureRef = useRef<NativeSignaturePadHandle>(null);
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
 
 
   const insets = useSafeAreaInsets();
@@ -166,10 +168,38 @@ export function SignatureCapture({
         visible={showModal}
         animationType="slide"
         presentationStyle="fullScreen"
-        supportedOrientations={['portrait', 'landscape']}
+        // Portrait only. The page turns itself; asking the OS to rotate is
+        // what dragged the rest of the app around with it.
+        supportedOrientations={['portrait']}
         onRequestClose={closePad}
       >
-        <View style={[styles.modalContainer, { backgroundColor: isDark ? '#0a0a14' : '#f8fafc' }]}>
+        {/*
+          The PAGE turns, not the phone.
+
+          Locking the device to landscape did rotate the pad — and everything
+          else with it, including the rest of the app once the pad closed. So
+          the screen stays exactly where it is and this one view is rotated
+          inside it: width and height are swapped and the whole thing is turned
+          a quarter turn, which makes the signing page landscape on a portrait
+          phone. Turn the device and it reads the right way up.
+
+          Nothing outside this modal is affected, because nothing outside it is
+          being asked to move. Touches follow the transform — React Native
+          reports them in the rotated view's own coordinates — so the pad draws
+          exactly where the finger is.
+        */}
+        <View style={[styles.rotateHost, { backgroundColor: isDark ? '#0a0a14' : '#f8fafc' }]}>
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: isDark ? '#0a0a14' : '#f8fafc',
+              width: winHeight,
+              height: winWidth,
+              transform: [{ rotate: '90deg' }],
+            },
+          ]}
+        >
           {/* Header */}
           <View style={[
             styles.modalHeader,
@@ -198,7 +228,7 @@ export function SignatureCapture({
                 out once signing is confirmed working.
               */}
               <Text style={[styles.headerTitle, { color: colors.textMuted, fontSize: 10 }]}>
-                pad v2 · native
+                pad v3 · rotated page
               </Text>
             </View>
 
@@ -265,6 +295,7 @@ export function SignatureCapture({
               <Text style={styles.saveButtonText}>{t('components.signatureCapture.confirmSignature')}</Text>
             </TouchableOpacity>
           </View>
+        </View>
         </View>
       </Modal>
     </View>
@@ -351,8 +382,16 @@ const styles = StyleSheet.create({
   // =========================================================================
   // Full-screen Modal
   // =========================================================================
-  modalContainer: {
+  /** Fills the screen and centres the rotated page inside it. */
+  rotateHost: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContainer: {
+    // No flex: the size is set explicitly from the swapped window dimensions,
+    // because a rotated view still lays out in its parent's axes.
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
