@@ -27,33 +27,12 @@ export async function applyOrientationPolicy(): Promise<void> {
   }
 }
 
-/**
- * Turn the device sideways for one screen, then give the policy back.
- *
- * A signature is a WIDE, SHORT gesture. In portrait the pad is a tall narrow
- * strip, so a long name runs out of width while most of the height is never
- * touched — and no layout change fixes that, because the empty space is above
- * and below the stroke. Every serious signing product rotates for this.
- *
- * Only the signing pad may call it, and it MUST be paired with
- * releaseLandscape() — the phone UI is portrait-first and everything else in
- * the app would be shown rotated otherwise.
- *
- * Call this BEFORE the pad renders, never while somebody is drawing: rotating
- * remounts the canvas, and a stroke in progress would be lost.
- *
- * Best-effort, like the policy itself. If the lock fails the pad still works —
- * it is merely narrow, which is where this started.
- */
-export async function requestLandscape(): Promise<void> {
-  try {
-    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-  } catch {
-    // Unsupported device, or an OS that declined. Portrait is survivable.
-  }
-}
+/*
+  There was a requestLandscape()/releaseLandscape() pair here.
 
-/** Hand orientation back to the app-wide policy. Always pair with the above. */
-export async function releaseLandscape(): Promise<void> {
-  await applyOrientationPolicy();
-}
+  They locked the device sideways for the signing pad and handed orientation
+  back on close. It worked, and it was the wrong shape: locking the DEVICE
+  turned the whole app, and it did not reliably come back. The pad rotates its
+  own view inside a portrait window now, which asks nothing of the OS and
+  behaves the same on both platforms — so there is nothing left for them to do.
+*/

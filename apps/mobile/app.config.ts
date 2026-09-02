@@ -73,23 +73,17 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         UIBackgroundModes: ['remote-notification', 'location'],
         ITSAppUsesNonExemptEncryption: false,
         /*
-          iPhone declares landscape, but does NOT get it.
+          iPhone: portrait only.
 
-          The phone UI is portrait-first and stays that way: applyOrientationPolicy()
-          locks phones to PORTRAIT_UP at launch, and nothing unlocks it except the
-          signing pad, which asks for landscape while it is open and restores the
-          policy when it closes.
-
-          The declaration is required all the same. iOS refuses any orientation an
-          app has not declared, whatever the code asks for — so without landscape
-          here, a signature on iPhone is stuck in a tall narrow strip that a long
-          name does not fit, and no amount of JavaScript can change it.
+          Landscape was declared here so the signing pad could ask iOS to rotate
+          the device. That approach is gone — the pad rotates its own view
+          inside a portrait window instead, which needs nothing from the OS and
+          works the same on both platforms. Declaring an orientation the product
+          never wants is an invitation the app would eventually accept: the JS
+          policy locks phones to portrait, and the day that lock fails is the
+          day the whole phone UI is shown sideways.
         */
-        UISupportedInterfaceOrientations: [
-          'UIInterfaceOrientationPortrait',
-          'UIInterfaceOrientationLandscapeLeft',
-          'UIInterfaceOrientationLandscapeRight',
-        ],
+        UISupportedInterfaceOrientations: ['UIInterfaceOrientationPortrait'],
         // iPad: portrait + both landscapes, but NOT upside-down (rarely wanted).
         'UISupportedInterfaceOrientations~ipad': [
           'UIInterfaceOrientationPortrait',
