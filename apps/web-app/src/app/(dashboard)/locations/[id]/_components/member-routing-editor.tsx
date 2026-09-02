@@ -8,8 +8,10 @@ import { Bell, MessageCircle, PenLine, Save, Loader2 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { spaceMembersApi } from "@/lib/api"
 import { type SpaceMember } from "@hbcfield/shared/client"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { RoleField } from "./role-field"
 
 /**
  * Per-member, per-space routing override (Phase 4d): choose which PEOPLE in this
@@ -30,42 +32,56 @@ import { RoleField } from "./role-field"
  * It is also the only version that scales: a list of members grows forever, a
  * space's roles are a handful and stay one.
  */
+/**
+ * Per-member, per-space routing: who is told about this member, whom they may
+ * reach, and who signs off for them.
+ *
+ * All three name PEOPLE, chosen from the space's leaders — the members who hold
+ * a space role. Naming the ROLE instead was tried and is wrong for the way this
+ * is actually used: a space manager might be the contact while a shift leader
+ * signs off, and picking "Shift Leader" targets everybody who holds it rather
+ * than the one person meant.
+ *
+ * Sign-off may name several, and any of them can sign — the first to do so
+ * completes the step and it leaves the others' lists. That is why it is not a
+ * single-select: a shift with two leaders should not stall because one is away.
+ */
 export function MemberRoutingEditor({
   spaceId,
   member,
+  roster,
 }: {
   spaceId: string
   member: SpaceMember
+  roster: SpaceMember[]
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const name = member.user ? `${member.user.firstName}` : t("scheduling.members.unknownMember")
 
-  const [notifyRoles, setNotifyRoles] = useState<string[]>(member.notifyRoleIds || [])
-  const [contactRoles, setContactRoles] = useState<string[]>(member.contactRoleIds || [])
-  const [approveRoles, setApproveRoles] = useState<string[]>(member.approveRoleIds || [])
+  const [notifyUsers, setNotifyUsers] = useState<string[]>(member.notifyUserIds || [])
+  const [contactUsers, setContactUsers] = useState<string[]>(member.contactUserIds || [])
+  const [approveUsers, setApproveUsers] = useState<string[]>(member.approveUserIds || [])
+
+  /*
+    The space's leaders, and not the member themselves.
+
+    Routing goes to people who hold a role here — a plain colleague is not who
+    anyone means by "notified about" or "signs off for". A space where nobody
+    holds a role offers nobody, and the empty state says so rather than
+    pretending the field is optional.
+  */
+  const leaders = roster.filter((m) => m.userId !== member.userId && m.user && m.spaceRole)
 
   const mutation = useMutation({
     mutationFn: () =>
       spaceMembersApi.updateRouting(spaceId, member.id, {
-        /*
-          Roles, not names, on all three.
-
-          The space-level defaults beside this panel have always been role
-          based; per-member overrides naming individuals meant one screen spoke
-          two vocabularies, and the half that named people went stale the day
-          somebody left — routing quietly at an account that no longer works
-          here. The user lists are cleared rather than left behind, so a stale
-          name cannot outlive the switch.
-        */
-        notifyRoleIds: notifyRoles,
-        notifyUserIds: [],
-        contactRoleIds: contactRoles,
-        contactUserIds: [],
-        // The role IS the answer now; a named person would go stale the day
-        // they left, and the routing would keep pointing at a dead account.
-        approveRoleIds: approveRoles,
-        approveUserIds: [],
+        notifyUserIds: notifyUsers,
+        notifyRoleIds: [],
+        contactUserIds: contactUsers,
+        contactRoleIds: [],
+        approveUserIds: approveUsers,
+        approveRoleIds: [],
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
@@ -76,9 +92,9 @@ export function MemberRoutingEditor({
 
   const norm = (a: string[]) => JSON.stringify([...a].sort())
   const dirty =
-    norm(notifyRoles) !== norm(member.notifyRoleIds || []) ||
-    norm(contactRoles) !== norm(member.contactRoleIds || []) ||
-    norm(approveRoles) !== norm(member.approveRoleIds || [])
+    norm(notifyUsers) !== norm(member.notifyUserIds || []) ||
+    norm(contactUsers) !== norm(member.contactUserIds || []) ||
+    norm(approveUsers) !== norm(member.approveUserIds || [])
 
   const toggle = (list: string[], set: (v: string[]) => void, id: string) =>
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
@@ -86,50 +102,48 @@ export function MemberRoutingEditor({
   return (
     <div className="mt-2 space-y-3 rounded-xl border border-dashed border-border bg-muted/20 p-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <RoleField
-          spaceId={spaceId}
+        <PeoplePicker
           icon={Bell}
           title={t("scheduling.routing.memberNotify", "Notified about {{name}}", { name })}
-          value={notifyRoles}
-          onChange={setNotifyRoles}
+          people={leaders}
+          selected={notifyUsers}
+          onToggle={(id) => toggle(notifyUsers, setNotifyUsers, id)}
           emptyHint={t("scheduling.routing.notifyEmpty", "Default: the space's leaders")}
         />
-        <RoleField
-          spaceId={spaceId}
+        <PeoplePicker
           icon={MessageCircle}
           title={t("scheduling.routing.memberContact", "{{name}} can contact", { name })}
-          value={contactRoles}
-          onChange={setContactRoles}
+          people={leaders}
+          selected={contactUsers}
+          onToggle={(id) => toggle(contactUsers, setContactUsers, id)}
           emptyHint={t("scheduling.routing.contactEmpty", "Default: the space's leaders")}
         />
         {/*
-          Sign-off names a ROLE, not a person.
+          Sign-off has NO default, unlike the two beside it.
 
-          A name goes stale: whoever leads this site today leaves in March, and
-          every member pointed at them keeps routing at an account that no
-          longer works here — a document parked on a departed colleague looks
-          exactly like one nobody has got to yet. The role stays; who holds it
-          changes underneath, and the routing follows without anyone remembering
-          to edit it.
-
-          It is also the only version of this that scales. A list of members
-          grows forever; the roles in a space are a handful and stay one.
-
-          No space default here, unlike the two beside it — leading a space is
-          not authority to countersign somebody's hours, so empty means nobody.
+          Leading a space is not authority to countersign somebody's hours, so
+          empty means nobody and documents needing a responsible cannot be
+          issued — which the hint says, because discovering it on payroll day is
+          the alternative.
         */}
-        <RoleField
-          spaceId={spaceId}
-          mode="single"
-          showHolderCount
+        <PeoplePicker
           icon={PenLine}
           title={t("scheduling.routing.memberApprove", "Signs off for {{name}}", { name })}
-          value={approveRoles}
-          onChange={setApproveRoles}
+          people={leaders}
+          selected={approveUsers}
+          onToggle={(id) => toggle(approveUsers, setApproveUsers, id)}
           emptyHint={t(
             "scheduling.routing.approveEmpty",
             "Nobody — documents needing a responsible cannot be issued",
           )}
+          footHint={
+            approveUsers.length > 1
+              ? t(
+                  "scheduling.routing.approveAny",
+                  "Any one of them can sign. Whoever signs first completes it.",
+                )
+              : undefined
+          }
         />
       </div>
       <div className="flex justify-end">
@@ -138,6 +152,69 @@ export function MemberRoutingEditor({
           {t("common.save")}
         </Button>
       </div>
+    </div>
+  )
+}
+
+function PeoplePicker({
+  icon: Icon,
+  title,
+  people,
+  selected,
+  onToggle,
+  emptyHint,
+  footHint,
+}: {
+  icon: typeof Bell
+  title: string
+  people: SpaceMember[]
+  selected: string[]
+  onToggle: (id: string) => void
+  emptyHint: string
+  /** Said only when it changes what happens — see the sign-off case. */
+  footHint?: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="rounded-lg border border-border overflow-hidden bg-card">
+      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+        <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{title}</p>
+      </div>
+      <div className="max-h-56 overflow-y-auto">
+        {people.length === 0 ? (
+          <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+            {t("scheduling.routing.noPeople", "No other members with a role in this workspace.")}
+          </p>
+        ) : (
+          people.map((m) => (
+            <label key={m.userId} className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-accent/40">
+              <Checkbox checked={selected.includes(m.userId)} onCheckedChange={() => onToggle(m.userId)} />
+              <Avatar className="h-6 w-6">
+                {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
+                <AvatarFallback className="text-[9px]">
+                  {(m.user?.firstName?.[0] || "") + (m.user?.lastName?.[0] || "")}
+                </AvatarFallback>
+              </Avatar>
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                {m.user?.firstName} {m.user?.lastName}
+              </span>
+              {m.spaceRole && (
+                <Badge
+                  variant="outline"
+                  className="shrink-0 text-[10px]"
+                  style={m.spaceRole.color ? { borderColor: `${m.spaceRole.color}66`, color: m.spaceRole.color } : undefined}
+                >
+                  {m.spaceRole.name}
+                </Badge>
+              )}
+            </label>
+          ))
+        )}
+      </div>
+      <p className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
+        {selected.length === 0 ? emptyHint : footHint ?? null}
+      </p>
     </div>
   )
 }

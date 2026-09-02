@@ -164,18 +164,32 @@ describe('DocumentsService — choosing a signer', () => {
         ...(choices ? { signerChoices: [{ documentId: 'doc1', choices }] } : {}),
       } as any);
 
-    it('refuses rather than guessing a signer, and names the step', async () => {
+    it('opens the step to everyone who could sign it, rather than refusing', async () => {
+      /*
+        This used to refuse and make the issuer choose. That is right when a
+        step has one responsible and wrong when a shift has a space manager and
+        two shift leaders who can each countersign: naming one at issue means
+        the document waits on whoever happens to be away.
+
+        The step stays a single row and carries the set; whoever signs first
+        completes it, and the row then records which of them it was.
+      */
       prisma.document.findMany.mockResolvedValue([draft]);
       twoResponsibles();
 
-      // The refusal has to say WHICH step is unanswered: "choose a signer" on a
-      // three-step route sends the issuer looking through all of them.
-      await expect(publish()).rejects.toThrow(/step 2/i);
-      await expect(publish()).rejects.toBeInstanceOf(BadRequestException);
+      await publish();
 
-      // And it undoes the rows written before the refusal — the publish runs
-      // inside one transaction, so a batch never half-releases.
-      expect(prisma.$transaction).toHaveBeenCalled();
+      const rows = prisma.documentSigner.create.mock.calls.map((c: any[]) => c[0].data);
+      expect(rows[1]).toEqual(
+        expect.objectContaining({
+          role: 'RESPONSIBLE',
+          // Nobody is named yet — there is no answer to "whose signature is
+          // this" until one of them signs.
+          userId: null,
+          eligibleUserIds: ['anna', 'karim'],
+          status: 'PENDING',
+        }),
+      );
     });
 
     it('freezes the chosen signer onto the document', async () => {

@@ -47,7 +47,23 @@ export interface SignerStep {
   order: number;
   role: DocumentSignerRole;
   status: DocumentSignerStatus;
+  /**
+   * Who signed it — set when the step completes, not when it is created.
+   *
+   * A step can be open to several people (see `eligibleUserIds`), so until one
+   * of them signs there is no answer to "whose signature is this". Null while
+   * pending is therefore correct rather than missing.
+   */
   userId?: string | null;
+  /**
+   * Everyone who MAY sign this step. First one to do so completes it.
+   *
+   * A shift has a space manager and two shift leaders and any of them can
+   * countersign; naming one of them at issue means a document stalls because
+   * that particular person is on holiday. So the step holds the eligible set
+   * and resolves to a person at the moment of signing.
+   */
+  eligibleUserIds?: string[] | null;
   customerId?: string | null;
   signedAt?: Date | string | null;
 }
@@ -115,10 +131,23 @@ export function nextPendingStep(steps: SignerStep[]): SignerStep | null {
   );
 }
 
-/** Is this person the one being waited on right now? */
+/** May this person sign this step — either named on it, or among its eligible. */
+export function maySignStep(step: SignerStep | null | undefined, userId: string): boolean {
+  if (!step) return false;
+  if (step.userId === userId) return true;
+  return (step.eligibleUserIds ?? []).includes(userId);
+}
+
+/**
+ * Is this person being waited on right now?
+ *
+ * True for ANY of the people a step is open to, not only a named one — which
+ * is what makes "whoever is free signs it" work: they all see it waiting, and
+ * the moment one signs the step completes and it leaves the others' lists,
+ * because it is no longer the pending step at all.
+ */
 export function isCurrentSigner(steps: SignerStep[], userId: string): boolean {
-  const next = nextPendingStep(steps);
-  return !!next && next.userId === userId;
+  return maySignStep(nextPendingStep(steps), userId);
 }
 
 /**

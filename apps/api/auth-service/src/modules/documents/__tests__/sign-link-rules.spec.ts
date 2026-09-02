@@ -6,6 +6,7 @@ import {
   LINK_REISSUE_COOLDOWN_MS,
   SIGN_LINK_TTL_DAYS,
   isSelfSigning,
+  isCurrentSigner,
 } from '@hbcfield/shared';
 
 /**
@@ -144,5 +145,65 @@ describe('isSelfSigning', () => {
     // Absence is not identity. Treating "no email" as a match would block every
     // signer a company has not recorded an address for.
     expect(isSelfSigning({ id: 'worker', email: null }, { userId: 'anna', email: null })).toBe(false);
+  });
+});
+
+describe('a step several people may sign', () => {
+  const step = (over: Partial<any> = {}) => ({
+    order: 2,
+    role: 'RESPONSIBLE' as const,
+    status: 'PENDING' as const,
+    userId: null,
+    eligibleUserIds: ['anna', 'karim'],
+    ...over,
+  });
+
+  it('is waiting on every one of them, not just the first', () => {
+    /*
+      The point of the feature: a shift has a space manager and two shift
+      leaders, any of whom can countersign. All three see it and all three are
+      told, so the document does not sit waiting on whoever is on holiday.
+    */
+    expect(isCurrentSigner([step()], 'anna')).toBe(true);
+    expect(isCurrentSigner([step()], 'karim')).toBe(true);
+  });
+
+  it('is not waiting on somebody it was never open to', () => {
+    expect(isCurrentSigner([step()], 'stranger')).toBe(false);
+  });
+
+  it('leaves everyone else the moment one of them signs', () => {
+    // Signing completes the STEP, so it stops being the pending one — which is
+    // what makes it disappear for the others rather than lingering as a task
+    // nobody can action.
+    const signed = [step({ status: 'SIGNED', userId: 'karim' })];
+    expect(isCurrentSigner(signed, 'anna')).toBe(false);
+    expect(isCurrentSigner(signed, 'karim')).toBe(false);
+  });
+
+  it('records which of them actually signed', () => {
+    const signed = step({ status: 'SIGNED', userId: 'karim' });
+    expect(signed.userId).toBe('karim');
+    // The others remain on the row as who COULD have — the certificate says who
+    // did, and the trail keeps who was asked.
+    expect(signed.eligibleUserIds).toContain('anna');
+  });
+
+  it('still works for a step named to one person', () => {
+    // Every step issued before this existed has one name and no eligible set;
+    // it must keep behaving exactly as it did.
+    const named = { order: 1, role: 'MEMBER' as const, status: 'PENDING' as const, userId: 'worker' };
+    expect(isCurrentSigner([named], 'worker')).toBe(true);
+    expect(isCurrentSigner([named], 'anna')).toBe(false);
+  });
+
+  it('does not let a later step be signed early', () => {
+    const chain = [
+      { order: 1, role: 'MEMBER' as const, status: 'PENDING' as const, userId: 'worker' },
+      step(),
+    ];
+    // Anna may sign step 2 eventually — but not while step 1 is open.
+    expect(isCurrentSigner(chain, 'anna')).toBe(false);
+    expect(isCurrentSigner(chain, 'worker')).toBe(true);
   });
 });

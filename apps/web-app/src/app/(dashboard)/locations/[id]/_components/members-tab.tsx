@@ -566,7 +566,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                 </div>
               </div>
               {routingOpen === m.id && (
-                <MemberRoutingEditor spaceId={spaceId} member={m} />
+                <MemberRoutingEditor spaceId={spaceId} member={m} roster={members} />
               )}
             </div>
           ))}

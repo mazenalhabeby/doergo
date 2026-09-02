@@ -4137,6 +4137,15 @@ model DocumentSigner {
   /// record — a space's contact, or somebody typed in for this one document.
   contactName String?
 
+  /// Everyone who MAY sign this step. The first to do so completes it, and
+  /// `userId` records which of them it was.
+  ///
+  /// A shift has a space manager and two shift leaders, and any of them can
+  /// countersign. Naming one at issue means the document stalls when that
+  /// particular person is away — so the step carries the eligible set and
+  /// resolves to a person at the moment of signing, not before it.
+  eligibleUserIds String[] @default([])
+
   /// When this signer first opened THIS document. Evidence, not a gate: forcing
   /// somebody to open ten identical time sheets buys clicking-through, which is
   /// a worse signature than the honest one. The certificate reports it.

@@ -40,6 +40,7 @@ import {
   routeProblem,
   nextPendingStep,
   isCurrentSigner,
+  maySignStep,
   signatureStrength,
   acceptedForSigning,
   counterpartySourceFor,
@@ -1626,7 +1627,7 @@ export class DocumentsService {
           expiresOn: true,
           // Same reason as the documents list: with a route, AWAITING_SIGNATURE
           // means somebody has to sign, not that THIS person does.
-          signers: { select: { order: true, role: true, status: true, userId: true, customerId: true } },
+          signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
         },
         orderBy: { issuedAt: 'desc' },
       }),
@@ -2070,7 +2071,7 @@ export class DocumentsService {
             // The whole chain, so "whose turn is it" is decided from data
             // already in hand rather than a second query per document.
             signers: {
-              select: { order: true, role: true, status: true, userId: true, customerId: true, signedAt: true },
+              select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true, signedAt: true },
             },
             signatures: {
               orderBy: { signedAt: 'asc' },
@@ -2470,7 +2471,14 @@ export class DocumentsService {
         });
         await tx.documentSigner.update({
           where: { id: params.signerRowId },
-          data: { status: 'SIGNED', signedAt },
+          data: {
+            status: 'SIGNED',
+            signedAt,
+            // Who actually signed, out of everyone who could have. Until this
+            // moment the step had no answer to that, and recording it is what
+            // takes the document off the others' lists.
+            ...(signer.kind === 'user' ? { userId: signer.userId } : {}),
+          },
         });
       }
 
@@ -3069,6 +3077,7 @@ export class DocumentsService {
       let customerId: string | null = null;
       let email: string | null = null;
       let contactName: string | null = null;
+      let eligibleUserIds: string[] = [];
 
       /*
         Typed in, for a counterparty the system has never heard of.
@@ -3103,6 +3112,7 @@ export class DocumentsService {
           throw new BadRequestException(`That signer cannot sign step ${order} of this document`);
         }
         userId = chosen.userId ?? null;
+        if (userId) eligibleUserIds = [userId];
         // A space contact is identified as `space:<id>` and has no client row —
         // it carries an address, not a foreign key.
         const contact = candidates.find((c) => c.kind === 'CONTACT' && c.id === chosen.customerId);
@@ -3117,6 +3127,7 @@ export class DocumentsService {
         const only = candidates[0];
         if (only.kind === 'USER') {
           userId = only.id;
+          eligibleUserIds = [only.id];
         } else if (only.kind === 'CUSTOMER') {
           customerId = only.id;
         } else {
@@ -3132,9 +3143,25 @@ export class DocumentsService {
           contactName = only.name;
         }
       } else if (candidates.length > 1) {
-        throw new BadRequestException(
-          `Step ${order} has more than one possible signer — choose one before issuing`,
-        );
+        /*
+          Several people may sign it, and any of them can.
+
+          This used to refuse and make the issuer pick one — which is right when
+          a step has a single responsible and wrong when a shift has a space
+          manager and two shift leaders who can each countersign. Naming one of
+          them at issue means the document waits on whoever is away.
+
+          The step stays ONE row; it simply carries the set. `userId` is left
+          null and records who actually signed, at the moment they do.
+        */
+        eligibleUserIds = candidates.filter((c) => c.kind === 'USER').map((c) => c.id);
+        if (eligibleUserIds.length === 0) {
+          // Several CUSTOMER or CONTACT candidates cannot be resolved this way:
+          // a client is one counterparty, not a pool, so the issuer chooses.
+          throw new BadRequestException(
+            `Step ${order} has more than one possible signer — choose one before issuing`,
+          );
+        }
       } else {
         /*
           Nobody can sign a step the type says must be signed.
@@ -3201,6 +3228,16 @@ export class DocumentsService {
           order,
           role: step.role,
           userId,
+          /*
+            Whoever may sign, always — including the single-signer case.
+
+            Keeping this populated even when one person is named is what lets
+            "what is waiting for me" ask ONE indexed question instead of an OR
+            across two columns, which no single index can serve. The fallback
+            makes it an invariant rather than something three branches have to
+            remember.
+          */
+          eligibleUserIds: eligibleUserIds.length ? eligibleUserIds : userId ? [userId] : [],
           customerId,
           /*
             Normalised, always.
@@ -3339,13 +3376,21 @@ export class DocumentsService {
       where: { documentId: document.id },
       orderBy: { order: 'asc' },
       select: {
-        order: true, role: true, status: true, userId: true, customerId: true, signedAt: true,
+        order: true, role: true, status: true, userId: true, eligibleUserIds: true,
+        customerId: true, signedAt: true,
         user: { select: { firstName: true, lastName: true } },
         customer: { select: { name: true } },
       },
     });
 
-    const inChain = rows.some((r) => r.userId === data.actor.userId);
+    // Same reasoning as opening it: somebody asked to sign must be able to see
+    // what has been signed above them, and until they sign there is no userId
+    // on their step to match.
+    const inChain = rows.some(
+      (r) =>
+        r.userId === data.actor.userId ||
+        (r.eligibleUserIds ?? []).includes(data.actor.userId),
+    );
     const isSubject = document.userId === data.actor.userId;
     if (!inChain && !isSubject && !data.actor.canViewMemberDocuments) {
       throw new ForbiddenException('You cannot see this document');
@@ -3377,7 +3422,7 @@ export class DocumentsService {
     const rows = await this.prisma.documentSigner.findMany({
       where: { documentId },
       orderBy: { order: 'asc' },
-      select: { order: true, role: true, status: true, userId: true, customerId: true, signedAt: true },
+      select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true, signedAt: true },
     });
     return rows as SignerStep[];
   }
@@ -3468,10 +3513,17 @@ export class DocumentsService {
         organizationId: actor.organizationId,
         userId: { not: actor.userId },
         status: 'AWAITING_SIGNATURE',
-        // Narrowed in SQL by the (userId, status) index; whether it is their
-        // TURN is decided below, since "first pending step" is not expressible
-        // here and duplicating that rule in a query is how the two drift.
-        signers: { some: { userId: actor.userId, status: 'PENDING' } },
+        /*
+          Narrowed in SQL; whether it is their TURN is decided below, since
+          "first pending step" is not expressible here and duplicating that rule
+          in a query is how the two drift.
+
+          Either named on the step or among the people it is open to — a step
+          with three eligible leaders is genuinely waiting on all three, and
+          matching only `userId` would hide it from everyone until somebody had
+          already signed it.
+        */
+        signers: { some: { status: 'PENDING', eligibleUserIds: { has: actor.userId } } },
       },
       select: {
         id: true,
@@ -3487,7 +3539,7 @@ export class DocumentsService {
         firstOpenedAt: true,
         user: { select: { firstName: true, lastName: true } },
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
-        signers: { select: { order: true, role: true, status: true, userId: true, customerId: true } },
+        signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
       },
       orderBy: { issuedAt: 'asc' },
       // A backstop, not pagination. Somebody with more than this waiting has a
@@ -3873,7 +3925,7 @@ export class DocumentsService {
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
         // Only what deciding "is this waiting on you" needs. Selected with the
         // documents so the list does not become one query per row.
-        signers: { select: { order: true, role: true, status: true, userId: true, customerId: true } },
+        signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
       },
       orderBy: [
         { periodYear: 'desc' },
@@ -4017,10 +4069,18 @@ export class DocumentsService {
       signature on purpose: a person who signed something must always be able to
       retrieve what they signed.
     */
+    /*
+      Named on a step, OR among the people it is open to.
+
+      `userId` is null until somebody signs, so matching it alone would refuse
+      the document to exactly the people being asked to sign it — signing
+      something you cannot read is the one outcome a signing feature must never
+      produce.
+    */
     const isSigner =
       isSelf ||
       (await this.prisma.documentSigner.count({
-        where: { documentId: document.id, userId: data.actor.userId },
+        where: { documentId: document.id, eligibleUserIds: { has: data.actor.userId } },
       })) > 0;
 
     if (!isSigner && !data.actor.canOpenMemberDocuments) {
@@ -4306,7 +4366,7 @@ export class DocumentsService {
     if (steps.length > 0) {
       const next = nextPendingStep(steps);
       if (!next) throw new BadRequestException('This document has already been signed.');
-      if (next.userId !== actor.userId) {
+      if (!maySignStep(next, actor.userId)) {
         throw new ForbiddenException('This document is waiting for somebody else to sign.');
       }
     }
@@ -4419,11 +4479,24 @@ export class DocumentsService {
         return;
       }
 
-      if (!next.userId) return; // A step nobody can be told about.
+      /*
+        Tell EVERYONE the step is open to.
 
-      const [user, signerRow, document] = await Promise.all([
-        this.prisma.user.findUnique({
-          where: { id: next.userId },
+        A step with three eligible leaders is waiting on all three until one of
+        them acts, so telling only the first would make the other two wonder why
+        a document appeared on their list unannounced — and would quietly make
+        the first person the responsible after all.
+      */
+      const audience = next.eligibleUserIds?.length
+        ? next.eligibleUserIds
+        : next.userId
+        ? [next.userId]
+        : [];
+      if (audience.length === 0) return; // A step nobody can be told about.
+
+      const [users, signerRow, document] = await Promise.all([
+        this.prisma.user.findMany({
+          where: { id: { in: audience } },
           select: { id: true, firstName: true, email: true },
         }),
         this.prisma.documentSigner.findFirst({
@@ -4437,7 +4510,7 @@ export class DocumentsService {
           select: { user: { select: { firstName: true, lastName: true } } },
         }),
       ]);
-      if (!user) return;
+      if (users.length === 0) return;
 
       if (signerRow) {
         await this.prisma.documentSigner.update({
@@ -4446,7 +4519,7 @@ export class DocumentsService {
         });
       }
 
-      this.notificationClient.emit('document_awaiting_signature', {
+      for (const user of users) this.notificationClient.emit('document_awaiting_signature', {
         documentId,
         userId: user.id,
         email: user.email,

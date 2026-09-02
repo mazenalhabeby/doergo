@@ -6101,7 +6101,6 @@
       "heading": "Benachrichtigungen & Kontakt",
       "intro": "Wählen Sie, welche Space-Rollen über Mitglieder hier benachrichtigt werden und welche Rollen Mitglieder hier kontaktieren dürfen. Leer = die Leiter des Space.",
       "saved": "Weiterleitung aktualisiert",
-      "noRoles": "Es gibt noch keine Bereichsrollen. Legen Sie oben eine an.",
       "notifyTitle": "Über Mitglieder hier benachrichtigt",
       "contactTitle": "Von Mitgliedern hier kontaktierbar",
       "notifyEmpty": "Standard: die Leiter des Space",
@@ -6114,15 +6113,7 @@
       "noPeople": "Keine anderen Mitglieder mit einer Rolle in diesem Space.",
       "memberApprove": "Zeichnet für {{name}} ab",
       "approveEmpty": "Niemand — Dokumente, die eine verantwortliche Person brauchen, können nicht ausgestellt werden",
-      "noColleagues": "Es ist sonst niemand in dieser Organisation.",
-      "choosePeople": "Jemanden auswählen…",
-      "searchPeople": "Nach Name oder Position suchen…",
-      "noMatches": "Niemand passt zu „{{q}}“.",
-      "approveTitle": "Zeichnet ab",
-      "chooseRole": "Rolle wählen…",
-      "holderWarning": "Ein Dokument wird abgelehnt, wenn niemand darauf passt, und fragt nach, wenn mehrere passen.",
-      "approveResolves_one": "In diesem Arbeitsbereich: {{count}} Person hat sie",
-      "approveResolves_other": "In diesem Arbeitsbereich: {{count}} Personen haben sie"
+      "approveAny": "Eine dieser Personen genügt. Wer zuerst unterschreibt, schließt es ab."
     }
   },
   "spaceSharing": {
