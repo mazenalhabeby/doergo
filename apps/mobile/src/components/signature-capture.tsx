@@ -11,7 +11,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { NativeSignaturePad, type NativeSignaturePadHandle } from './signature-pad-native';
-import { requestLandscape, releaseLandscape } from '../lib/orientation';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
@@ -62,29 +61,21 @@ export function SignatureCapture({
   */
   const openPad = useCallback(() => {
     /*
-      Open the pad FIRST. The rotation is a bonus, never a precondition.
+      No rotation. The pad opens, and the phone stays where it is.
 
-      This used to await the lock and open afterwards, which quietly made the
-      signature pad depend on an orientation the app might not be allowed to
-      have. iOS refuses any orientation an app has not declared in its plist,
-      and the declaration only reaches a device through a NATIVE build — so on
-      every binary shipped before that build, the pad opened on the far side of
-      a request the OS had already refused.
-
-      Now the pad opens regardless and asks for landscape in the background. If
-      the rotation lands, the canvas rebuilds at the new width; if it never
-      comes, the pad is portrait — narrow, which is where this started, and
-      which is survivable in a way "nothing draws" is not.
+      Signing sideways was a real improvement on paper — a signature is a wide,
+      short gesture and portrait gives it a tall narrow strip. In practice it
+      turned the WHOLE app sideways and did not reliably come back, which is a
+      much worse problem than a narrow pad. It can return when it is driven by
+      the pad's own view rather than by locking the device, which is the correct
+      way to do it and not a thing to attempt while signing is broken.
     */
     setShowModal(true);
-    void requestLandscape();
   }, []);
 
   const closePad = useCallback(() => {
     setShowModal(false);
     setIsSigning(false);
-    // Not awaited: the modal should dismiss now, not after the OS has rotated.
-    void releaseLandscape();
   }, []);
 
   const handleSignature = useCallback((signature: string) => {
@@ -198,6 +189,17 @@ export function SignatureCapture({
 
             <View style={styles.headerCenter}>
               <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
+              {/*
+                Which pad is running, readable at a glance.
+
+                Two OTAs looked like they changed nothing, and neither of us
+                could tell whether the phone had the new code or the old — so
+                every result since has been ambiguous. This ends that. It comes
+                out once signing is confirmed working.
+              */}
+              <Text style={[styles.headerTitle, { color: colors.textMuted, fontSize: 10 }]}>
+                pad v2 · native
+              </Text>
             </View>
 
             <TouchableOpacity onPress={handleClear} style={styles.headerBtn} activeOpacity={0.7}>
