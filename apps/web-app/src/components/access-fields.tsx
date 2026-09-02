@@ -97,6 +97,7 @@ export function AccessFields({
   lockRole = false,
   allowAdmin = true,
   roleOnly = false,
+  external = false,
 }: {
   value: AccessDraft
   /** Emit a partial patch; the parent owns the draft. */
@@ -111,6 +112,14 @@ export function AccessFields({
   roleOnly?: boolean
   /** Offer the Admin option (member edit). Invites can't create admins → false. */
   allowAdmin?: boolean
+  /**
+   * This member works for a client or partner. Drops the controls that only
+   * mean something for our own staff: they never clock in here and they do not
+   * book time off from us, so a Clock tab and a remote-clock-in switch are
+   * settings with no effect — and a setting with no effect is worse than an
+   * absent one, because somebody will set it and expect something to happen.
+   */
+  external?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -362,7 +371,7 @@ export function AccessFields({
       {/* Feature tabs */}
       <Field dataTour="access-features" label={t("accessBuilder.featureTabsLabel")}>
         <div className="flex flex-wrap gap-2">
-          {FEATURE_TABS.map((m) => {
+          {FEATURE_TABS.filter((m) => !external || m.key === "tasks").map((m) => {
             const on = value.modules.includes(m.key)
             return (
               <button
@@ -381,8 +390,10 @@ export function AccessFields({
         </div>
       </Field>
 
-      {/* Attendance — remote clock-in. Always shown; disabled with a hint when
-          the Clock module is off (remote clock-in needs clock access). */}
+      {/* Attendance — remote clock-in. Shown for our own staff, disabled with a
+          hint when the Clock module is off (remote clock-in needs clock
+          access). Absent for an external member, who never clocks in here. */}
+      {!external && (
       <Field dataTour="access-attendance" label={t("accessBuilder.attendance", "Attendance")}>
         <div className={cn(
           "flex items-center justify-between rounded-xl border border-border px-4 py-3",
@@ -403,6 +414,7 @@ export function AccessFields({
           />
         </div>
       </Field>
+      )}
 
       {/* Space scope */}
       <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
