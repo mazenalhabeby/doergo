@@ -2062,7 +2062,7 @@
       "externalCompanyLabel": "Lavora per",
       "externalCompanyPlaceholder": "Binderholz GmbH",
       "externalCompanyHint": "Mostrato accanto al nome, così nessuno lo confonde con il suo personale.",
-      "externalNeedsSpace": "Scelga prima uno spazio: un membro esterno lavora in uno solo."
+      "externalNeedsSpace": "Scelga prima un’area di lavoro: un membro esterno lavora in una sola."
     },
     "showingCount": "Visualizzati {{count}} di {{total}} membro{{plural}}",
     "noMembersFound": "Nessun membro trovato",

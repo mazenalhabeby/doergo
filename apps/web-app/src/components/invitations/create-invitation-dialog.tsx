@@ -370,7 +370,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           {locations.length > 0 && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
-                {t("invitations.inviteDialog.spaceLabel")} <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
+                {t("invitations.inviteDialog.spaceLabel")}{" "}
+                {isExternal ? (
+                  <span className="text-destructive">*</span>
+                ) : (
+                  <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
+                )}
               </Label>
               <Select value={spaceId} onValueChange={setSpaceId}>
                 <SelectTrigger className="h-9"><SelectValue placeholder={t("invitations.inviteDialog.spacePlaceholder")} /></SelectTrigger>
@@ -420,7 +425,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                   className="h-9"
                 />
               )}
-              <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
+              {hasSpace && (
+                <p className="text-[11px] text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
+              )}
             </div>
           )}
 
