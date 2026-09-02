@@ -978,7 +978,9 @@
       "clear": "Borrar",
       "confirmSignature": "Confirmar firma",
       "technician": "Empleado",
-      "customer": "Cliente"
+      "customer": "Cliente",
+      "padLoading": "Preparando el área de firma…",
+      "padFailed": "No se pudo cargar el área de firma."
     },
     "photoGrid": {
       "beforePhotos": "Fotos de antes",

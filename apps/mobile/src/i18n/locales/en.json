@@ -982,7 +982,9 @@
       "clear": "Clear",
       "confirmSignature": "Confirm Signature",
       "technician": "Employee",
-      "customer": "Customer"
+      "customer": "Customer",
+      "padLoading": "Preparing the signature pad…",
+      "padFailed": "The signature pad could not load."
     },
     "photoGrid": {
       "beforePhotos": "Before Photos",

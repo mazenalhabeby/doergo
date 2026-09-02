@@ -62,6 +62,22 @@ export function SignatureCapture({
     exactly the case a remount would ruin.
   */
   const { width: padWidth } = useWindowDimensions();
+
+  /*
+    Whether the pad is actually alive, and saying so when it is not.
+
+    A signature pad that fails silently is the worst version of this screen:
+    a white rectangle that looks ready, takes a finger, and keeps nothing. The
+    person tries again, presses harder, and eventually decides the app is
+    broken — which it is, but nothing on screen ever said so.
+
+    The canvas lives in a WebView, so there are two distinct failures and they
+    need different words: it never loaded, or it loaded and refuses to draw.
+    Both are reported here rather than left to look identical.
+  */
+  const [padLoaded, setPadLoaded] = useState(false);
+  const [padError, setPadError] = useState<string | null>(null);
+  const [padAttempt, setPadAttempt] = useState(0);
   const insets = useSafeAreaInsets();
   const hasSigned = !!existingSignature;
 
@@ -257,7 +273,9 @@ export function SignatureCapture({
               },
             ]}>
               <SignatureScreen
-                key={padWidth}
+                key={`${padWidth}:${padAttempt}`}
+                onLoadEnd={() => { setPadLoaded(true); setPadError(null); }}
+                onError={(e: any) => setPadError(String(e?.nativeEvent?.description ?? e ?? 'unknown'))}
                 ref={signatureRef}
                 onOK={handleSignature}
                 onBegin={handleBegin}
@@ -269,6 +287,37 @@ export function SignatureCapture({
                 dotSize={2}
                 style={styles.signatureCanvas}
               />
+              {/*
+                Shown only while the pad is not usable. It sits ABOVE the
+                canvas but takes no touches, so it can never be the reason a
+                stroke is lost — a diagnostic that breaks the thing it is
+                diagnosing would be worse than none.
+              */}
+              {(!padLoaded || padError) && (
+                <View style={styles.padStatus} pointerEvents="box-none">
+                  <Text style={[styles.padStatusText, { color: colors.textMuted }]}>
+                    {padError
+                      ? t('components.signatureCapture.padFailed', 'The signature pad could not load.')
+                      : t('components.signatureCapture.padLoading', 'Preparing the signature pad…')}
+                  </Text>
+                  {padError && (
+                    <>
+                      <Text style={[styles.padStatusDetail, { color: colors.textMuted }]} numberOfLines={2}>
+                        {padError}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => { setPadError(null); setPadLoaded(false); setPadAttempt((n) => n + 1); }}
+                        style={styles.padRetry}
+                      >
+                        <Text style={[styles.padRetryText, { color: COLORS.primary }]}>
+                          {t('common.retry', 'Try again')}
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              )}
+
               {/* Signature baseline */}
               <View style={styles.baselineContainer} pointerEvents="none">
                 <View style={[styles.baseline, { backgroundColor: isDark ? '#d0d0d0' : '#cbd5e1' }]} />
@@ -441,6 +490,17 @@ const styles = StyleSheet.create({
   signatureCanvas: {
     flex: 1,
   },
+  padStatus: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
+  padStatusText: { fontSize: 13, textAlign: 'center' },
+  padStatusDetail: { fontSize: 11, textAlign: 'center', marginTop: 4 },
+  padRetry: { marginTop: SPACING.sm, padding: SPACING.sm },
+  padRetryText: { fontSize: 13, fontWeight: '600' },
   baselineContainer: {
     position: 'absolute',
     bottom: '22%',

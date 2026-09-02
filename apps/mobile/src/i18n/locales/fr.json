@@ -978,7 +978,9 @@
       "clear": "Effacer",
       "confirmSignature": "Confirmer la signature",
       "technician": "Employé",
-      "customer": "Client"
+      "customer": "Client",
+      "padLoading": "Préparation de la zone de signature…",
+      "padFailed": "La zone de signature n’a pas pu se charger."
     },
     "photoGrid": {
       "beforePhotos": "Photos avant",

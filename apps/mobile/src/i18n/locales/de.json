@@ -978,7 +978,9 @@
       "clear": "Löschen",
       "confirmSignature": "Unterschrift bestätigen",
       "technician": "Techniker",
-      "customer": "Kunde"
+      "customer": "Kunde",
+      "padLoading": "Unterschriftenfeld wird vorbereitet…",
+      "padFailed": "Das Unterschriftenfeld konnte nicht geladen werden."
     },
     "photoGrid": {
       "beforePhotos": "Vorher-Fotos",

@@ -978,7 +978,9 @@
       "clear": "Cancella",
       "confirmSignature": "Conferma firma",
       "technician": "Dipendente",
-      "customer": "Cliente"
+      "customer": "Cliente",
+      "padLoading": "Preparazione dell’area di firma…",
+      "padFailed": "Impossibile caricare l’area di firma."
     },
     "photoGrid": {
       "beforePhotos": "Foto prima",
