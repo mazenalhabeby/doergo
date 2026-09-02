@@ -219,17 +219,6 @@ export function SignatureCapture({
 
             <View style={styles.headerCenter}>
               <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
-              {/*
-                Which pad is running, readable at a glance.
-
-                Two OTAs looked like they changed nothing, and neither of us
-                could tell whether the phone had the new code or the old — so
-                every result since has been ambiguous. This ends that. It comes
-                out once signing is confirmed working.
-              */}
-              <Text style={[styles.headerTitle, { color: colors.textMuted, fontSize: 10 }]}>
-                pad v3 · rotated page
-              </Text>
             </View>
 
             <TouchableOpacity onPress={handleClear} style={styles.headerBtn} activeOpacity={0.7}>
