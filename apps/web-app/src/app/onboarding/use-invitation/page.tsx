@@ -10,13 +10,17 @@ import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, invitationsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { INVITATION_CODE_LENGTH, INVITATION_CODE_MIN_LENGTH } from '@hbcfield/shared/client'
+import type { InvitationValidation } from '@hbcfield/shared/client'
 
-interface InvitationCheck {
-  valid: boolean;
-  organizationName?: string;
-  targetRole?: string;
-  message?: string;
-}
+/*
+  The validation shape is the shared one, not a copy.
+
+  A local duplicate is how `isExternal` reached this screen from the server and
+  could not be read: the server sent it, the shared type declared it, and this
+  file's private interface — four fields written out by hand — did not. It went
+  missing silently, which is what copies of a contract do.
+*/
+type InvitationCheck = InvitationValidation;
 
 export default function UseInvitationPage() {
   const router = useRouter();
@@ -121,7 +125,15 @@ export default function UseInvitationPage() {
                 <p className="truncate text-sm font-semibold text-slate-800">{validation.organizationName}</p>
                 {validation.targetRole && (
                   <p className="text-xs text-slate-500">
-                    {t('onboarding.useInvitation.joiningAs', { role: validation.targetRole.toLowerCase() })}
+                    {t('onboarding.useInvitation.joiningAs', {
+                      // A translated word, not the raw enum — see the mobile
+                      // screen, which had the identical bug in the same line.
+                      role: validation.isExternal
+                        ? t('onboarding.useInvitation.roleExternal')
+                        : validation.targetRole === 'ADMIN'
+                        ? t('onboarding.useInvitation.roleAdmin')
+                        : t('onboarding.useInvitation.roleMember'),
+                    })}
                   </p>
                 )}
               </div>

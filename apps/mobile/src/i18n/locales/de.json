@@ -191,7 +191,10 @@
       "codeMustBe6Chars": "Der Code muss mindestens 6 Zeichen lang sein",
       "invalidOrExpired": "Ungültiger oder abgelaufener Code",
       "failedToValidate": "Code konnte nicht überprüft werden",
-      "failedToAccept": "Einladung konnte nicht angenommen werden"
+      "failedToAccept": "Einladung konnte nicht angenommen werden",
+      "roleMember": "Mitglied",
+      "roleExternal": "externes Mitglied",
+      "roleAdmin": "Administrator"
     },
     "pendingApproval": {
       "waitingTitle": "Warten auf Genehmigung",

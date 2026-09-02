@@ -4662,7 +4662,10 @@
       "submitButton": "Aceptar y unirte",
       "codeMustBe6Chars": "El código de invitación debe tener al menos 6 caracteres.",
       "invalidOrExpired": "Esa invitación no es válida o ha caducado.",
-      "failedToAccept": "No se pudo aceptar la invitación. Vuelve a intentarlo."
+      "failedToAccept": "No se pudo aceptar la invitación. Vuelve a intentarlo.",
+      "roleMember": "miembro",
+      "roleExternal": "miembro externo",
+      "roleAdmin": "administrador"
     },
     "pendingApproval": {
       "waitingTitle": "Esperando aprobación",

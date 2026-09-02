@@ -4671,7 +4671,10 @@
       "submitButton": "Accetta e aderisci",
       "codeMustBe6Chars": "Il codice di invito deve contenere almeno 6 caratteri.",
       "invalidOrExpired": "Questo invito non è valido o è scaduto.",
-      "failedToAccept": "Impossibile accettare l'invito. Riprovare."
+      "failedToAccept": "Impossibile accettare l'invito. Riprovare.",
+      "roleMember": "membro",
+      "roleExternal": "membro esterno",
+      "roleAdmin": "amministratore"
     },
     "pendingApproval": {
       "waitingTitle": "In attesa di approvazione",

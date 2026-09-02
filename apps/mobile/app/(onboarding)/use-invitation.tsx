@@ -111,7 +111,23 @@ export default function UseInvitationScreen() {
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
                 <View style={styles.validInfo}>
                   <Text style={[styles.validOrg, { color: colors.textPrimary }]}>{validation.organizationName}</Text>
-                  <Text style={[styles.validRole, { color: colors.textSecondary }]}>{t('onboarding.useInvitation.joiningAs', { role: validation.targetRole?.toLowerCase() })}</Text>
+                  <Text style={[styles.validRole, { color: colors.textSecondary }]}>{t('onboarding.useInvitation.joiningAs', {
+                      /*
+                        A translated word, not the raw enum.
+
+                        This printed `targetRole.toLowerCase()`, so a German
+                        screen read "Beitritt als employee" — the enum leaking
+                        through the translation it was interpolated into. And an
+                        external member was told they were joining as an
+                        employee of ours, which is the first thing the product
+                        says to them and was not true.
+                      */
+                      role: validation.isExternal
+                        ? t('onboarding.useInvitation.roleExternal')
+                        : validation.targetRole === 'ADMIN'
+                        ? t('onboarding.useInvitation.roleAdmin')
+                        : t('onboarding.useInvitation.roleMember'),
+                    })}</Text>
                 </View>
               </View>
             )}

@@ -462,6 +462,10 @@ export class InvitationService {
       valid: true,
       targetRole: invitation.targetRole,
       organizationName: invitation.organization.name,
+      // What they are joining AS. Somebody invited by a client to supervise one
+      // site should not be told they are joining as an employee of ours — it is
+      // the first thing the product says to them, and it would be wrong.
+      isExternal: invitation.isExternal,
 
       position: invitation.position,
       specialty: invitation.specialty,

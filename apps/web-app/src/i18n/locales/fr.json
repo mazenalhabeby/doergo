@@ -4671,7 +4671,10 @@
       "submitButton": "Accepter et rejoindre",
       "codeMustBe6Chars": "Le code d'invitation doit comporter au moins 6 caractères.",
       "invalidOrExpired": "Cette invitation est invalide ou a expiré.",
-      "failedToAccept": "Impossible d'accepter l'invitation. Veuillez réessayer."
+      "failedToAccept": "Impossible d'accepter l'invitation. Veuillez réessayer.",
+      "roleMember": "membre",
+      "roleExternal": "membre externe",
+      "roleAdmin": "administrateur"
     },
     "pendingApproval": {
       "waitingTitle": "En attente d'approbation",

@@ -4662,7 +4662,10 @@
       "submitButton": "Annehmen & beitreten",
       "codeMustBe6Chars": "Der Einladungscode muss mindestens 6 Zeichen lang sein.",
       "invalidOrExpired": "Diese Einladung ist ungültig oder abgelaufen.",
-      "failedToAccept": "Die Einladung konnte nicht angenommen werden. Bitte versuchen Sie es erneut."
+      "failedToAccept": "Die Einladung konnte nicht angenommen werden. Bitte versuchen Sie es erneut.",
+      "roleMember": "Mitglied",
+      "roleExternal": "externes Mitglied",
+      "roleAdmin": "Administrator"
     },
     "pendingApproval": {
       "waitingTitle": "Warten auf Genehmigung",

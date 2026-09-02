@@ -191,7 +191,10 @@
       "codeMustBe6Chars": "El código debe tener al menos 6 caracteres",
       "invalidOrExpired": "Código no válido o vencido",
       "failedToValidate": "No se pudo validar el código",
-      "failedToAccept": "No se pudo aceptar la invitación"
+      "failedToAccept": "No se pudo aceptar la invitación",
+      "roleMember": "miembro",
+      "roleExternal": "miembro externo",
+      "roleAdmin": "administrador"
     },
     "pendingApproval": {
       "waitingTitle": "Esperando aprobación",

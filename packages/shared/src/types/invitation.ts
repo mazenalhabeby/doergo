@@ -50,6 +50,8 @@ export interface InvitationValidation {
   valid: boolean;
   targetRole?: string;
   organizationName?: string;
+  /** Joining as a client's or partner's person, not as one of the org's own. */
+  isExternal?: boolean;
 
   workMode?: string;
   specialty?: string;
