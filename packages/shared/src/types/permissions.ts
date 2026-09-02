@@ -334,6 +334,74 @@ export function permissionsExceed(
 }
 
 /**
+ * What an EXTERNAL member may hold — an allow-list, deliberately.
+ *
+ * An external member works for a client or a partner, not for the organization.
+ * They hold a login to your tenant, so the question "what may they be given?"
+ * gets a closed answer rather than an open one: a deny-list grants every
+ * permission added after it was written, and grants it silently, to outsiders.
+ * This list fails the other way — a new key is refused until somebody decides
+ * otherwise, in a diff, on purpose. Same discipline as the billing gates, which
+ * 402 on a key they do not recognise rather than waving it through.
+ *
+ * The line drawn: an external member may run the WORK and the HOURS in the
+ * space they were assigned to. That is the job a client's shift leader actually
+ * does — approve the overtime, reconcile the shift, see the roster for the site
+ * they supervise, and keep the tasks moving.
+ *
+ * Everything absent is absent for a reason. Your client list, your personnel
+ * files, where your staff physically are, your invoices, your portals, your
+ * workspaces and your other sites all belong to the organization, and an
+ * outsider supervising one site has no claim on any of them.
+ */
+export const EXTERNAL_ALLOWED_PERMISSIONS: readonly AccessPermissionKey[] = [
+  // The work in their space
+  'canCreateTasks',
+  'canViewAllTasks',
+  'canAssignTasks',
+  // The hours in their space — the reason they are here
+  'canApproveOvertime',
+  'canManageRota',
+  'canReconcileAttendance',
+  'canViewSpaceAttendance',
+];
+
+const EXTERNAL_ALLOWED = new Set<string>(EXTERNAL_ALLOWED_PERMISSIONS);
+
+/**
+ * A permission's human label, from the schema that already drives the role
+ * builder. Server-side refusals name the permission the same way the checkbox
+ * does, so an admin reading the error recognises what they just tried to grant.
+ */
+export function permissionLabel(key: string): string {
+  return ACCESS_PERMISSION_SCHEMA.find((p) => p.key === key)?.label ?? key;
+}
+
+/** May an external member hold this permission at all? */
+export function externalMayHold(key: string): boolean {
+  return EXTERNAL_ALLOWED.has(key);
+}
+
+/**
+ * Which permissions in `perms` an external member may NOT hold.
+ *
+ * Returns the offending keys rather than a boolean so the caller can name them
+ * in the refusal — "you cannot grant this role to an external member" sends an
+ * admin hunting through sixteen checkboxes; naming the two that are the problem
+ * does not. Empty array = the grant is fine.
+ */
+export function externalForbiddenIn(
+  perms: PermissionSet | null | undefined,
+): AccessPermissionKey[] {
+  const out: AccessPermissionKey[] = [];
+  const p = perms ?? {};
+  for (const key of PERMISSION_KEYS) {
+    if (p[key] === true && !EXTERNAL_ALLOWED.has(key)) out.push(key);
+  }
+  return out;
+}
+
+/**
  * The permission that marks a role as a space "leader" — the default recipient
  * for notifications ABOUT members in the space, and the default contact target
  * for those members. All three built-in space roles (space-manager, shift-leader,

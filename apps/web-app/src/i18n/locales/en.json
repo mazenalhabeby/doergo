@@ -2083,7 +2083,15 @@
       "successTitle": "Invitation Created!",
       "successDescription": "Share this code with the person you want to invite.",
       "shareCodeHint": "They can enter this code during registration to join your organization.",
-      "inviteAnother": "Invite Another"
+      "inviteAnother": "Invite Another",
+      "whoSection": "Who is this?",
+      "staffOption": "Your staff",
+      "staffOptionHint": "On your payroll. Can hold organization-wide roles and work across spaces.",
+      "externalOption": "External",
+      "externalOptionHint": "Works for a client or partner. Space roles only, in the spaces you assign.",
+      "externalCompanyLabel": "Works for",
+      "externalCompanyPlaceholder": "Binderholz GmbH",
+      "externalCompanyHint": "Shown beside their name, so nobody mistakes them for one of yours."
     },
     "showingCount": "Showing {{count}} of {{total}} member{{plural}}",
     "noMembersFound": "No members found",
@@ -2275,6 +2283,11 @@
       "transferred": "Ownership transferred",
       "pick": "Choose the new owner",
       "title": "Owns this organization"
+    },
+    "external": {
+      "badge": "External",
+      "company": "Works for {{company}}",
+      "noOrgRole": "An external member cannot hold an organization-wide role. Give them a role in a space instead."
     }
   },
   "invitations": {

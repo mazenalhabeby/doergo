@@ -2083,7 +2083,15 @@
       "successTitle": "Einladung erstellt!",
       "successDescription": "Teilen Sie diesen Code mit der Person, die Sie einladen möchten.",
       "shareCodeHint": "Der Code kann bei der Registrierung eingegeben werden, um Ihrer Organisation beizutreten.",
-      "inviteAnother": "Weitere einladen"
+      "inviteAnother": "Weitere einladen",
+      "whoSection": "Wer ist das?",
+      "staffOption": "Eigenes Personal",
+      "staffOptionHint": "Auf Ihrer Lohnliste. Kann organisationsweite Rollen tragen und in allen Bereichen arbeiten.",
+      "externalOption": "Extern",
+      "externalOptionHint": "Arbeitet für einen Kunden oder Partner. Nur Bereichsrollen, in den von Ihnen zugewiesenen Bereichen.",
+      "externalCompanyLabel": "Arbeitet für",
+      "externalCompanyPlaceholder": "Binderholz GmbH",
+      "externalCompanyHint": "Wird neben dem Namen angezeigt, damit niemand die Person für eigenes Personal hält."
     },
     "showingCount": "{{count}} von {{total}} Mitglied{{plural}} angezeigt",
     "noMembersFound": "Keine Mitglieder gefunden",
@@ -2275,6 +2283,11 @@
       "transferred": "Eigentümerschaft übertragen",
       "pick": "Neuen Eigentümer wählen",
       "title": "Eigentümer dieser Organisation"
+    },
+    "external": {
+      "badge": "Extern",
+      "company": "Arbeitet für {{company}}",
+      "noOrgRole": "Ein externes Mitglied kann keine organisationsweite Rolle tragen. Weisen Sie stattdessen eine Rolle in einem Bereich zu."
     }
   },
   "invitations": {

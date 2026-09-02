@@ -23,6 +23,7 @@ import {
   permissionsFromOrgRole,
   mergePermissions,
   permissionsExceed,
+  externalMayHold,
 } from '@hbcfield/shared';
 
 function hashCode(code: string): string {
@@ -99,6 +100,8 @@ export class InvitationService {
     spaceId?: string;
     // Pre-assigned org role (AccessRole id) applied to the member on accept.
     memberRoleId?: string;
+    isExternal?: boolean;
+    externalCompany?: string;
     // Full pre-configured Access Profile (applied to the member on accept).
     accessProfile?: unknown;
     // Customer-portal invite (targetRole = CUSTOMER)
@@ -195,6 +198,23 @@ export class InvitationService {
           ? permissionsFromOrgRole(creator.memberRole.permissions)
           : undefined,
       );
+    }
+
+    /*
+      External and org-wide role are mutually exclusive, refused at the door.
+
+      An org role applies in every space, present and future, which is precisely
+      what somebody who works for a client must not have. Checked here as well
+      as on the member so the invitation cannot be used to arrive already
+      holding one — the accept path applies what the invite says.
+    */
+    const inviteIsExternal = data.isExternal === true;
+    if (inviteIsExternal && data.memberRoleId) {
+      return {
+        success: false,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'An external member cannot be given an organization-wide role',
+      };
     }
 
     // Validate a pre-assigned org role (EMPLOYEE invites only): must be an
@@ -304,6 +324,10 @@ export class InvitationService {
         spaceId: isTechnician ? (data.spaceId || null) : null,
         // Pre-assigned org role (validated above) — applied to the user on accept.
         memberRoleId: isTechnician ? validMemberRoleId : null,
+        // Who they work for. Only meaningful on a member invite.
+        isExternal: isTechnician ? inviteIsExternal : false,
+        externalCompany:
+          isTechnician && inviteIsExternal ? data.externalCompany?.trim() || null : null,
         // Pre-configured Access Profile — sanitized here, re-sanitized on accept.
         // For non-admin creators, permission flags are capped at the creator's own
         // ceiling so the profile can't grant more than the creator holds.
@@ -564,7 +588,12 @@ export class InvitationService {
                 maxDailyJobs: invitation.maxDailyJobs || 5,
                 // Pre-assigned org role (validated at invite time) → the member's
                 // named role from their first login. Null when none was chosen.
-                memberRoleId: invitation.memberRoleId ?? null,
+                // Never for an external member — refused at invite time, and
+                // forced null here so an invitation predating that rule (or
+                // edited underneath it) cannot deliver one.
+                memberRoleId: invitation.isExternal ? null : (invitation.memberRoleId ?? null),
+                isExternal: invitation.isExternal,
+                externalCompany: invitation.isExternal ? invitation.externalCompany : null,
                 ...(accessProfile
                   ? {
                       // Admin pre-configured the access → apply it verbatim so the
@@ -590,6 +619,19 @@ export class InvitationService {
                         spaceScope: 'own',
                       },
                     }),
+              }
+            : {}),
+          /*
+            An external member holds only what the allow-list permits — applied
+            last, so it wins over the role defaults AND over a pre-configured
+            Access Profile, whichever set them. Read from the shared list rather
+            than written out, so allowing one of these to externals later is a
+            one-line change in one file and this follows it.
+          */
+          ...(invitation.isExternal
+            ? {
+                canManageUsers: externalMayHold('canManageUsers'),
+                canViewReports: externalMayHold('canViewReports'),
               }
             : {}),
           // Customer-portal login: bind to the Customer + optional default unit.

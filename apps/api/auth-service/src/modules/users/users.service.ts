@@ -109,6 +109,10 @@ const ORG_MEMBER_SELECT = {
   lastActiveAt: true,
   memberRoleId: true,
   memberRole: { select: { id: true, name: true, color: true } },
+  // Who they work for — every member list badges an external member, so it is
+  // part of the shared select rather than added per screen and forgotten on one.
+  isExternal: true,
+  externalCompany: true,
 } as const;
 
 @Injectable()
@@ -1078,6 +1082,15 @@ export class UsersService {
    * role whose permission set is a SUBSET of their own; otherwise they could
    * escalate past their ceiling by selecting the built-in admin role.
    */
+  /** Does this member work for somebody else? One indexed lookup, one column. */
+  private async isExternalMember(memberId: string): Promise<boolean> {
+    const u = await this.prisma.user.findUnique({
+      where: { id: memberId },
+      select: { isExternal: true },
+    });
+    return u?.isExternal === true;
+  }
+
   private async assertCanAssignMemberRole(
     requesterId: string,
     organizationId: string,
@@ -1429,6 +1442,42 @@ export class UsersService {
     if ((dto as any).contactAllowedIds !== undefined) data.contactAllowedIds = (dto as any).contactAllowedIds;
     if ((dto as any).canViewReports !== undefined) data.canViewReports = (dto as any).canViewReports;
     if ((dto as any).allowRemote !== undefined) data.allowRemote = (dto as any).allowRemote;
+    /*
+      Who they work for.
+
+      Flipping somebody to external is a REDUCTION in reach, so it is refused
+      while an org role is still attached rather than silently stripping one —
+      an admin who meant to demote and an admin who forgot the role look
+      identical here, and quietly removing authority is the worse guess.
+    */
+    if ((dto as any).isExternal !== undefined) {
+      const nextExternal = (dto as any).isExternal === true;
+      if (nextExternal) {
+        const clearingRole =
+          (dto as any).memberRoleId !== undefined &&
+          ((dto as any).memberRoleId === null || (dto as any).memberRoleId === '');
+        if (!clearingRole) {
+          const current = await this.prisma.user.findFirst({
+            where: { id: memberId, organizationId },
+            select: { memberRoleId: true },
+          });
+          if (current?.memberRoleId) {
+            throw new BadRequestException(
+              'Remove this member\'s organization-wide role before marking them external',
+            );
+          }
+        }
+      }
+      data.isExternal = nextExternal;
+      // An internal member has no company but yours — clear it on the way back
+      // so a stale name cannot outlive the flag it belonged to.
+      if (!nextExternal) data.externalCompany = null;
+    }
+    if ((dto as any).externalCompany !== undefined) {
+      const company = String((dto as any).externalCompany ?? '').trim();
+      data.externalCompany = company || null;
+    }
+
     // Unified org-wide role (Phase 4). Validated against the org + ORG scope so a
     // member can never be pointed at another org's role or a space-only role.
     if ((dto as any).memberRoleId !== undefined) {
@@ -1436,6 +1485,24 @@ export class UsersService {
       if (roleId === null || roleId === '') {
         data.memberRoleId = null;
       } else {
+        /*
+          An external member never holds an ORG role.
+
+          Org roles apply in every space, present and future — which is the one
+          thing an outsider must not have. Their authority comes from a space
+          assignment and ends at that space's edge. Checked against the value
+          being written when the request also flips the flag, so the two cannot
+          be combined in a single call to slip past each other.
+        */
+        const willBeExternal =
+          (dto as any).isExternal !== undefined
+            ? (dto as any).isExternal === true
+            : await this.isExternalMember(memberId);
+        if (willBeExternal) {
+          throw new BadRequestException(
+            'An external member cannot hold an organization-wide role — assign them a role in a space instead',
+          );
+        }
         const role = await this.prisma.accessRole.findFirst({
           where: { id: roleId, organizationId, isActive: true, scope: { in: ['ORG', 'BOTH'] } },
           select: { id: true },

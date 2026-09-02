@@ -6,6 +6,8 @@ import {
   ACCESS_PERMISSION_SCHEMA,
   permissionsExceed,
   permissionsFromOrgRole,
+  externalForbiddenIn,
+  permissionLabel,
   type PermissionSet,
 } from '@hbcfield/shared';
 
@@ -171,9 +173,28 @@ export class SpaceRolesService {
     requesterPerms?: PermissionSet | null;
   }) {
     await this.assertSpaceInOrg(data.organizationId, data.spaceId);
-    await this.assertUserInOrg(data.organizationId, data.userId);
+    const target = await this.assertUserInOrg(data.organizationId, data.userId);
     if (data.spaceRoleId) {
       const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId);
+      /*
+        An external member may hold only what the allow-list permits.
+
+        This is the ONE place a space role becomes real authority, so it is the
+        place the ceiling belongs — a check in the gateway would have to read
+        the role again and the two copies would be free to disagree. The
+        allow-list is shared with the UI, which greys the same permissions out;
+        this is what makes the greying true rather than decorative.
+      */
+      if (target.isExternal) {
+        const forbidden = externalForbiddenIn(permissionsFromOrgRole(role.permissions));
+        if (forbidden.length) {
+          throw new ForbiddenException(
+            `This role cannot be given to an external member — it grants ${forbidden
+              .map((k) => permissionLabel(k))
+              .join(', ')}`,
+          );
+        }
+      }
       /*
         Nobody may grant what they do not hold.
 
@@ -298,9 +319,14 @@ export class SpaceRolesService {
     if (!space) throw new NotFoundException('Space not found');
   }
 
+  /** Tenancy check that also answers who the member works for — one query, both facts. */
   private async assertUserInOrg(organizationId: string, userId: string) {
-    const user = await this.prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true } });
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId },
+      select: { id: true, isExternal: true },
+    });
     if (!user) throw new NotFoundException('User not found in this organization');
+    return user;
   }
 
   /**

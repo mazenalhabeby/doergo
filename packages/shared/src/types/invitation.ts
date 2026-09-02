@@ -74,6 +74,10 @@ export interface CreateInvitationInput {
   spaceId?: string;
   /** Pre-assigned org role (AccessRole id) — applied to the member on accept. */
   memberRoleId?: string;
+  /** Invite somebody who works for a client or partner. Mutually exclusive with memberRoleId. */
+  isExternal?: boolean;
+  /** Which company they work for — shown beside their name. */
+  externalCompany?: string;
   /** Customer-portal invite (targetRole=CUSTOMER): the Customer + optional unit. */
   customerId?: string;
   unitId?: string;

@@ -260,6 +260,28 @@ const TABLE_GRID =
  * somebody can do, ownership says whose organization it is. An owner is always
  * an admin, so folding it into the role badge would hide one behind the other.
  */
+/**
+ * Marks somebody who works for a client or partner rather than for us.
+ *
+ * Beside the name rather than in the role column, because it is not a role: the
+ * role says what they may do, this says whose company they belong to. A client's
+ * shift leader and ours hold the SAME role, and the difference between them is
+ * the one thing a roster must never blur.
+ */
+function ExternalBadge({ member }: { member: OrgMember }) {
+  const { t } = useTranslation()
+  if (!member.isExternal) return null
+  return (
+    <Badge
+      variant="outline"
+      className="text-[10px] font-medium border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
+      title={member.externalCompany || undefined}
+    >
+      {t("members.external.badge")}
+    </Badge>
+  )
+}
+
 function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
   // Admin (system tier) always shows as Admin, even if it also carries a role row.
@@ -477,8 +499,13 @@ const MemberRow = memo(function MemberRow({
           <div className="flex items-center gap-2">
             {nameButton}
             {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
+            <ExternalBadge member={member} />
           </div>
-          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+          <p className="text-sm text-muted-foreground truncate">
+            {member.isExternal && member.externalCompany
+              ? `${member.externalCompany} · ${member.email}`
+              : member.email}
+          </p>
         </div>
         <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/40")}>
           {member.position || "\u2014"}
@@ -499,8 +526,13 @@ const MemberRow = memo(function MemberRow({
           <div className="flex items-center gap-2">
             {nameButton}
             {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
+            <ExternalBadge member={member} />
           </div>
-          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+          <p className="text-sm text-muted-foreground truncate">
+            {member.isExternal && member.externalCompany
+              ? `${member.externalCompany} · ${member.email}`
+              : member.email}
+          </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
             <RoleBadge member={member} />
             {member.position && <span className="text-xs text-muted-foreground">{member.position}</span>}

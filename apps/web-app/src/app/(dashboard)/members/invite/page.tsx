@@ -56,6 +56,8 @@ export default function InviteMemberPage() {
   const [email, setEmail] = useState("")
   const [expiresInHours, setExpiresInHours] = useState("168")
   const [specialty, setSpecialty] = useState("")
+  const [isExternal, setIsExternal] = useState(false)
+  const [externalCompany, setExternalCompany] = useState("")
   const [access, setAccess] = useState<AccessDraft>(() => defaultAccessDraft())
   const patchAccess = (p: Partial<AccessDraft>) => setAccess((cur) => ({ ...cur, ...p }))
 
@@ -97,7 +99,15 @@ export default function InviteMemberPage() {
 
     if (isEmployee) {
       if (specialty) input.specialty = specialty
-      if (access.memberRoleId) input.memberRoleId = access.memberRoleId
+      if (isExternal) {
+        // An external member's authority comes from a space role, never an
+        // org-wide one — the server refuses the combination, so the form does
+        // not offer it either.
+        input.isExternal = true
+        if (externalCompany.trim()) input.externalCompany = externalCompany.trim()
+      } else if (access.memberRoleId) {
+        input.memberRoleId = access.memberRoleId
+      }
       input.accessProfile = serializeAccessDraft(access)
     }
 
@@ -231,6 +241,47 @@ export default function InviteMemberPage() {
                 )}
               </div>
             </div>
+
+            {/* Who this is — staff or somebody else's */}
+            {isEmployee && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-foreground">{t("members.invite.whoSection")}</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {([
+                    { value: false, label: t("members.invite.staffOption"), hint: t("members.invite.staffOptionHint") },
+                    { value: true, label: t("members.invite.externalOption"), hint: t("members.invite.externalOptionHint") },
+                  ] as const).map((opt) => (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={() => setIsExternal(opt.value)}
+                      aria-pressed={isExternal === opt.value}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        isExternal === opt.value
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border bg-muted/40 hover:bg-muted"
+                      }`}
+                    >
+                      <span className="block text-sm font-medium text-foreground">{opt.label}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">{opt.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                {isExternal && (
+                  <div className="space-y-2">
+                    <Label htmlFor="externalCompany">{t("members.invite.externalCompanyLabel")}</Label>
+                    <Input
+                      id="externalCompany"
+                      value={externalCompany}
+                      onChange={(e) => setExternalCompany(e.target.value)}
+                      placeholder={t("members.invite.externalCompanyPlaceholder")}
+                      maxLength={120}
+                    />
+                    <p className="text-xs text-muted-foreground">{t("members.invite.externalCompanyHint")}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Email (optional) */}
             <div className="space-y-4">

@@ -715,6 +715,20 @@ model User {
   // (freelancer/contractor, default) → €15 seat. Office seats ignore this.
   employmentType    String? @default("EXTERNAL") // "IN_HOUSE" | "EXTERNAL"
 
+  /// Works for somebody else — a client's or partner's shift leader who
+  /// supervises our people on one site. NOT the same axis as `employmentType`,
+  /// which says who pays a FIELD worker (a freelancer is "EXTERNAL" there and
+  /// is still entirely ours). This says whose company they belong to, and it is
+  /// what payroll, headcount, rotas and staff exports filter on.
+  ///
+  /// A real column rather than an inferred one: built-in roles are renameable
+  /// (`isSystem` blocks deletion, not editing), so anything deciding this by
+  /// matching a role's NAME would fail the day somebody edits that word — and
+  /// fail towards granting access.
+  isExternal        Boolean @default(false)
+  /// Whose. Shown beside their name so nobody has to remember.
+  externalCompany   String?
+
   // Employee fields
   specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"
   rating       Float?  @default(5.0) // Average rating (1-5)
@@ -2559,6 +2573,13 @@ model Invitation {
   // Unified org-wide role (AccessRole) pre-assigned at invite (e.g. Manager),
   // validated server-side + applied to the member's memberRoleId on accept.
   memberRoleId String?
+
+  /// Invite somebody who works for a client or partner. Carried on the
+  /// invitation rather than set after they join, so the person is external from
+  /// their very first session — there is no window in which they exist as
+  /// ordinary staff. Refused together with `memberRoleId`; see User.isExternal.
+  isExternal      Boolean @default(false)
+  externalCompany String?
   memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)

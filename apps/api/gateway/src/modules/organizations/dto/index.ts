@@ -306,6 +306,20 @@ export class UpdateMemberDto {
   @IsString()
   memberRoleId?: string | null;
 
+  @ApiPropertyOptional({
+    description:
+      'Works for a client or partner, not for this organization. Excluded from payroll, headcount and rotas; cannot hold an org-wide role.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isExternal?: boolean;
+
+  @ApiPropertyOptional({ description: 'Which company an external member works for' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  externalCompany?: string | null;
+
   @ApiPropertyOptional({ description: 'Can create tasks' })
   @IsOptional()
   @IsBoolean()

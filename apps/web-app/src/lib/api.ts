@@ -3566,6 +3566,13 @@ export interface OrgMember {
   /** Unified org-wide role (AccessRole id) — e.g. Manager. */
   memberRoleId?: string | null;
   memberRole?: { id: string; name: string; color?: string | null } | null;
+  /**
+   * Works for a client or partner, not for this organization. A different axis
+   * from `employmentType`, which prices a FIELD seat — a freelancer is
+   * "EXTERNAL" there and is still entirely ours.
+   */
+  isExternal?: boolean;
+  externalCompany?: string | null;
 }
 
 /** An org-assignable role (Admin, Manager, or a custom role). */

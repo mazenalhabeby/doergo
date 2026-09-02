@@ -2077,7 +2077,15 @@
       "successTitle": "¡Invitación creada!",
       "successDescription": "Comparte este código con la persona que quieres invitar.",
       "shareCodeHint": "Puede ingresar este código al registrarse para unirse a tu organización.",
-      "inviteAnother": "Invitar a otra persona"
+      "inviteAnother": "Invitar a otra persona",
+      "whoSection": "¿Quién es?",
+      "staffOption": "Su personal",
+      "staffOptionHint": "En su nómina. Puede tener funciones de toda la organización y trabajar en varios espacios.",
+      "externalOption": "Externo",
+      "externalOptionHint": "Trabaja para un cliente o socio. Solo funciones de espacio, en los espacios que le asigne.",
+      "externalCompanyLabel": "Trabaja para",
+      "externalCompanyPlaceholder": "Binderholz GmbH",
+      "externalCompanyHint": "Se muestra junto a su nombre, para que nadie lo confunda con su personal."
     },
     "showingCount": "Mostrando {{count}} de {{total}} miembro{{plural}}",
     "noMembersFound": "No se encontraron miembros",
@@ -2275,6 +2283,11 @@
       "transferred": "Propiedad transferida",
       "pick": "Elige al nuevo propietario",
       "title": "Propietario de esta organización"
+    },
+    "external": {
+      "badge": "Externo",
+      "company": "Trabaja para {{company}}",
+      "noOrgRole": "Un miembro externo no puede tener una función de toda la organización. Asígnele una función en un espacio."
     }
   },
   "invitations": {

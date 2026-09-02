@@ -309,6 +309,8 @@ export class OrganizationsController {
           canManageUsers: dto.canManageUsers,
           canViewReports: dto.canViewReports,
           memberRoleId: dto.memberRoleId,
+          isExternal: dto.isExternal,
+          externalCompany: dto.externalCompany,
           enabledModules: dto.enabledModules,
           contactable: dto.contactable,
           contactScope: dto.contactScope,

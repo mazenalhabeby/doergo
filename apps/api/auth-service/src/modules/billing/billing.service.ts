@@ -1,6 +1,7 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type Stripe from 'stripe';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StripeService } from './stripe.service';
 import { OrgBillService } from './org-bill.service';
@@ -218,7 +219,10 @@ export class BillingService {
         select: { usesExternalWorkers: true },
       }),
       this.prisma.user.findMany({
-        where: { organizationId, isActive: true },
+        // CUSTOMER is excluded in the query as well as in `countSeats` — the
+        // classifier is what guarantees the rule, this just avoids loading rows
+        // only to drop them, on orgs whose portal has more logins than staff.
+        where: { organizationId, isActive: true, role: { not: Role.CUSTOMER } },
         select: { role: true, isActive: true, enabledModules: true, employmentType: true },
       }),
     ]);

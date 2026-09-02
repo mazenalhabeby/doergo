@@ -110,6 +110,26 @@ export function isFieldWorker(user: SeatClassifiable): boolean {
   return classifySeat(user) !== 'office';
 }
 
+/**
+ * Is this person a SEAT at all?
+ *
+ * A seat is a member of the organization. A CUSTOMER is a client's login to the
+ * Client Portal — an outsider we gave a door key, not a colleague. The portal
+ * they log into is already paid for on the space that runs it (`b2c_portal`:
+ * €49 covering the first, €29 each after), so billing the login again as a seat
+ * charges twice for one thing, and makes onboarding a client cost more the
+ * better the portal works.
+ *
+ * The rule lives here, next to the classifier, because it was previously spelt
+ * out in the operator console (`role: { not: 'CUSTOMER' }`) and NOT in the
+ * billing count — so the two disagreed, and the invoice was the one that was
+ * wrong.
+ */
+export function isBillableSeat(user: SeatClassifiable): boolean {
+  if (user.isActive === false) return false;
+  return (user.role ?? '').toUpperCase() !== 'CUSTOMER';
+}
+
 export interface SeatCounts {
   office: number;
   /** External/freelancer field seats (€15). */
@@ -121,15 +141,15 @@ export interface SeatCounts {
 
 /**
  * Count billable seats for an organization from its member list.
- * Only ACTIVE users are billed (isActive !== false). Deactivated members free
- * their seat.
+ * Only ACTIVE STAFF are billed — see `isBillableSeat`. Deactivated members free
+ * their seat; client-portal logins were never a seat.
  */
 export function countSeats(users: SeatClassifiable[], opts?: SeatOptions): SeatCounts {
   let office = 0;
   let field = 0;
   let fieldInhouse = 0;
   for (const u of users) {
-    if (u.isActive === false) continue;
+    if (!isBillableSeat(u)) continue;
     const seat = classifySeat(u, opts);
     if (seat === 'office') office += 1;
     else if (seat === 'field_inhouse') fieldInhouse += 1;
