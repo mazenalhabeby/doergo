@@ -9,7 +9,7 @@ import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, type OrgCodeValidation } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { ORG_CODE_LENGTH } from '@hbcfield/shared'
+import { ORG_CODE_LENGTH } from '@hbcfield/shared/client'
 
 export default function JoinOrgPage() {
   const router = useRouter();

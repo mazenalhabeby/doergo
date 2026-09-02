@@ -42,6 +42,14 @@ export * from './constants/task';
 // The single per-task authorization rule — pure, shared by every service.
 export * from './access/task-access';
 
+// Code lengths and charsets for invitations and org join codes. Pure data, and
+// the CLIENTS are what need them: the inputs that receive a code cap their
+// length, and a cap that does not track the generator silently truncates a
+// valid code and reports it as invalid. Both apps import these; neither may
+// import the root entry, which carries Node-only crypto.
+export * from './constants/invitation';
+export * from './constants/onboarding';
+
 // Personnel file — document types, retention/credential rules and contract
 // merge fields. Pure data + pure functions, so both entries carry it.
 export * from './documents';

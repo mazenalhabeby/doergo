@@ -9,7 +9,7 @@ import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, invitationsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { INVITATION_CODE_LENGTH } from '@hbcfield/shared'
+import { INVITATION_CODE_LENGTH } from '@hbcfield/shared/client'
 
 interface InvitationCheck {
   valid: boolean;
