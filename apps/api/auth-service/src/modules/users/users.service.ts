@@ -10,7 +10,7 @@ import {
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, type PermissionSet } from '@hbcfield/shared';
+import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, filterExternalModules, type PermissionSet } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
 import {
   CreateEmployeeDto,
@@ -1516,7 +1516,32 @@ export class UsersService {
     if (dto.scheduleType !== undefined) data.scheduleType = dto.scheduleType;
     if (dto.monthlyHourBudget !== undefined) data.monthlyHourBudget = dto.monthlyHourBudget;
     // Per-user Access Profile (modules / spaceScope / platforms / canContact)
-    if ((dto as any).enabledModules !== undefined) data.enabledModules = (dto as any).enabledModules;
+    if ((dto as any).enabledModules !== undefined) {
+      /*
+        An external member cannot hold `clock` or `time_off`.
+
+        Not features but an employment: clocking in records hours WE owe payment
+        for, and a vacation request asks US for leave. Stripped on SAVE rather
+        than hidden in the editor — the access panel is identical for everybody
+        by design, so the rule has to survive whatever the panel offers, and a
+        checkbox nobody can see is not a rule.
+
+        Reads the flag being written when the same call sets it, so marking
+        somebody external and editing their access in one request cannot slip
+        past by ordering.
+      */
+      const willBeExternal =
+        (dto as any).isExternal !== undefined
+          ? (dto as any).isExternal === true
+          : await this.isExternalMember(memberId);
+      const modules = (dto as any).enabledModules;
+      data.enabledModules =
+        willBeExternal && modules && typeof modules === 'object' && !Array.isArray(modules)
+          ? { ...modules, modules: filterExternalModules((modules as { modules?: unknown }).modules) }
+          : willBeExternal
+          ? filterExternalModules(modules)
+          : modules;
+    }
     // Contact directory + access control
     if ((dto as any).contactable !== undefined) data.contactable = (dto as any).contactable;
     if ((dto as any).contactScope !== undefined) data.contactScope = (dto as any).contactScope;

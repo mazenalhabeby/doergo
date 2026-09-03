@@ -19,6 +19,26 @@ export type MobileModule = 'tasks' | 'clock' | 'time_off' | 'create_task' | 'man
 /** All available modules */
 export const ALL_MODULES: MobileModule[] = ['tasks', 'clock', 'time_off', 'create_task', 'manage'];
 
+/**
+ * Modules an EXTERNAL member cannot hold, whatever an admin ticks.
+ *
+ * `clock` and `time_off` are not features, they are an employment: clocking in
+ * records hours WE owe payment for, and a vacation request asks US for leave.
+ * A client's or partner's supervisor does neither, and offering it produces a
+ * screen where somebody books holiday from a company they do not work for.
+ *
+ * Enforced when the profile is SAVED rather than hidden in the editor. The
+ * access panel is deliberately identical for everybody, so the rule cannot live
+ * in a checkbox — it has to survive whatever the panel offers.
+ */
+const EXTERNAL_FORBIDDEN_MODULES: MobileModule[] = ['clock', 'time_off'];
+
+/** An external member's module list, with the ones that cannot apply removed. */
+export function filterExternalModules(modules: unknown): MobileModule[] {
+  if (!Array.isArray(modules)) return [];
+  return (modules as MobileModule[]).filter((m) => !EXTERNAL_FORBIDDEN_MODULES.includes(m));
+}
+
 // ── Access Profile ───────────────────────────────────────────────────────────
 // A per-user, fully-configurable access model stored in `User.enabledModules`.
 // Two storage forms are supported (back-compat):

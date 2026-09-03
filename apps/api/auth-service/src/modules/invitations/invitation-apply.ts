@@ -4,6 +4,7 @@ import {
   Role,
   getDefaultModules,
   externalMayHold,
+  filterExternalModules,
   type AccessPersisted,
 } from '@hbcfield/shared';
 
@@ -116,6 +117,18 @@ export function memberFieldsFromInvitation(
         canManageUsers: externalMayHold('canManageUsers'),
         canViewReports: externalMayHold('canViewReports'),
       });
+      /*
+        And no `clock` or `time_off` in their module list, whatever the invite
+        carried. Both describe an employment we do not have with them: clocking
+        in records hours WE owe payment for, a vacation request asks US for
+        leave. Same rule the member-edit path applies on save.
+      */
+      const current = base.enabledModules as { modules?: unknown } | unknown[] | undefined;
+      if (Array.isArray(current)) {
+        base.enabledModules = filterExternalModules(current);
+      } else if (current && typeof current === 'object') {
+        base.enabledModules = { ...current, modules: filterExternalModules(current.modules) };
+      }
     }
   }
 

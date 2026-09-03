@@ -6,6 +6,7 @@ import {
   permissionLabel,
   BUILTIN_ROLES,
   permissionsFromOrgRole,
+  filterExternalModules,
   type PermissionSet,
 } from '@hbcfield/shared';
 
@@ -182,5 +183,37 @@ describe('ownership transfer refusals', () => {
 
   it('allows an internal admin', () => {
     expect(refuseFor({ role: 'ADMIN', isExternal: false })).toBeNull();
+  });
+});
+
+/**
+ * Modules an external member cannot hold.
+ *
+ * `clock` and `time_off` are not features, they are an employment: clocking in
+ * records hours WE owe payment for, and a vacation request asks US for leave. A
+ * client's supervisor does neither, and holding them produced a Vacation
+ * Requests screen where somebody books holiday from a company they do not work
+ * for.
+ *
+ * Enforced on SAVE, not hidden in the editor — the access panel is identical
+ * for everybody by design, so the rule has to survive whatever the panel offers.
+ */
+describe('external member modules', () => {
+  it('strips clock and time_off', () => {
+    expect(filterExternalModules(['tasks', 'clock', 'time_off'])).toEqual(['tasks']);
+  });
+
+  it('keeps everything that does apply', () => {
+    expect(filterExternalModules(['tasks'])).toEqual(['tasks']);
+  });
+
+  it('survives a missing or malformed list rather than throwing', () => {
+    expect(filterExternalModules(undefined)).toEqual([]);
+    expect(filterExternalModules(null)).toEqual([]);
+    expect(filterExternalModules('tasks')).toEqual([]);
+  });
+
+  it('leaves nothing behind when the list was only the forbidden two', () => {
+    expect(filterExternalModules(['clock', 'time_off'])).toEqual([]);
   });
 });
