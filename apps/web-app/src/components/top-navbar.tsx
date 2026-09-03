@@ -245,7 +245,19 @@ export function TopNavbar() {
     a dispatcher needs to know WHY somebody dropped out of the schedule without
     being able to open their file.
   */
-  const showDocumentCompliance = hasPlanFeature("documents") && hasPermission("canAssignTasks")
+  /*
+    Org-wide only, matching the endpoint.
+
+    `GET /documents/compliance` is `@RequirePermission('canAssignTasks')` — the
+    ORG-wide flag — and it lists every employee's document status across the
+    organization. A member holding canAssignTasks in a single space is refused
+    there, so offering the item is a menu entry whose only outcome is a 403.
+
+    (Worth revisiting separately: "can assign tasks" is a strange key for a
+    board of personnel-document compliance. Narrowing it would remove access
+    from people who have it today, so it is a decision rather than a fix.)
+  */
+  const showDocumentCompliance = hasPlanFeature("documents") && user.canAssignTasks === true
 
   // Measured overflow for the navigation row (see hooks/use-overflow-nav).
   // Re-measures whenever the language changes, because that changes every width.

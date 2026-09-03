@@ -133,9 +133,19 @@ describe('the documents navigation', () => {
   it('gates each admin surface on its own permission', () => {
     expect(navbar).toContain('hasPermission("canIssueDocuments")');
     expect(navbar).toContain('hasPermission("canManageDocumentTemplates")');
-    // Credentials ride on canAssignTasks: a dispatcher needs to know WHY
-    // somebody dropped out of the schedule without being able to open a file.
-    expect(navbar).toContain('hasPermission("canAssignTasks")');
+    /*
+      Credentials ride on canAssignTasks: a dispatcher needs to know WHY
+      somebody dropped out of the schedule without being able to open a file.
+
+      Read from the FLAT column, not hasPermission. `GET /documents/compliance`
+      is `@RequirePermission('canAssignTasks')` — the org-wide answer — and it
+      lists every employee's document status across the organization. Since
+      hasPermission became space-aware, asking it here offered the item to
+      somebody holding canAssignTasks in a single space, for whom the endpoint
+      returns 403. The nav and its endpoint must ask the same question.
+    */
+    expect(navbar).toContain('user.canAssignTasks === true');
+    expect(navbar).not.toContain('hasPermission("canAssignTasks")');
   });
 
   it('marks the dropdown active from exactly the routes it contains', () => {
