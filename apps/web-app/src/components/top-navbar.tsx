@@ -181,7 +181,16 @@ export function TopNavbar() {
     user.canManageUsers ||
     hasPermission('canViewAllTasks') ||
     hasPermission('canViewSpaceAttendance')
-  const showSchedule = hasPermission('canViewAllTasks') || hasPermission('canManageRota')
+  /*
+    Org-wide only, matching the endpoint.
+
+    `GET /employees/availability` is `@RequirePermission('canViewAllTasks')` —
+    the org-wide flag — so a member holding that permission in a single space is
+    refused there. Offering the link would be a nav item whose only outcome is a
+    403, which is the thing this navbar was just fixed to stop doing in the
+    other direction.
+  */
+  const showSchedule = user.canViewAllTasks === true || user.canManageRota === true
   const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
   // CRM navbar tab: for members with CRM access who are NOT org-level managers.
