@@ -36,6 +36,24 @@ import {
 
 const STATUS_COUNTS_TTL = 30; // seconds
 
+/**
+ * Everything the per-task authorization rule needs about the caller.
+ *
+ * Named and passed as one object so a fact the gateway resolves — a space
+ * grant, a cross-org share — cannot reach some checks and not others.
+ */
+export interface TaskAccessFacts {
+  userId: string;
+  userRole: string;
+  organizationId: string;
+  /** The ORG-wide resolution of canViewAllTasks. */
+  canViewAllTasks?: boolean;
+  /** Cross-org spaces shared with this caller (server-authoritative). */
+  sharedSpaceIds?: string[];
+  /** Spaces where the caller holds canViewAllTasks through a SPACE role. */
+  viewAllSpaceIds?: string[];
+}
+
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
@@ -1052,15 +1070,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(
-      task,
-      data.userId,
-      data.userRole,
-      data.organizationId,
-      (data as any).canViewAllTasks,
-      data.sharedSpaceIds,
-      (data as any).viewAllSpaceIds,
-    );
+    await this.checkTaskAccess(task, data);
 
     // Derive task-time anchors from the status history (no schema change), so the
     // timer is DB-backed and identical on web, mobile and the admin view:
@@ -1824,7 +1834,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const events = await this.prisma.taskEvent.findMany({
       where: { taskId: data.id },
@@ -1877,16 +1887,22 @@ export class TasksService {
    * the co-assignee rows when they were not included with the task, and turns a
    * "no" into the exception the callers expect.
    */
-  private async checkTaskAccess(
-    task: any,
-    userId: string,
-    userRole: string,
-    organizationId: string,
-    canViewAllTasks?: boolean,
-    sharedSpaceIds?: string[],
-    /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
-    viewAllSpaceIds?: string[],
-  ) {
+  private async checkTaskAccess(task: any, data: TaskAccessFacts) {
+    /*
+      The caller's whole identity, taken from the request payload in one piece.
+
+      This used to be seven positional arguments, and the last two — the
+      cross-org shares and the SPACE grants — were supplied by exactly one of
+      the eleven call sites. Every other read and write on a task therefore
+      asked the ORG-wide question: a member whose authority comes from a space
+      could open a task from their own list and then be refused its comments,
+      its timeline, its checklist, its assignees and its subtasks, all at once,
+      because the screen loads them together.
+
+      Passing the payload itself means a new fact reaches every check the moment
+      the gateway sends it. There is nothing left to forget.
+    */
+    const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = data;
     const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds };
 
     // Only hit the database when the answer is genuinely unknown — and only
@@ -1951,7 +1967,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const comment = await this.prisma.comment.create({
       data: {
@@ -1999,7 +2015,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const comments = await this.prisma.comment.findMany({
       where: { taskId: data.taskId },
@@ -2181,7 +2197,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     // Determine position: use provided or append at end
     let position = data.position;
@@ -2227,7 +2243,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
@@ -2269,7 +2285,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
@@ -2301,7 +2317,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     // Update positions in a transaction
     await this.prisma.$transaction(
@@ -2334,7 +2350,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const assignees = await this.prisma.taskAssignee.findMany({
       where: { taskId: data.taskId },
@@ -2359,7 +2375,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const items = await this.prisma.checklistItem.findMany({
       where: { taskId: data.taskId },
@@ -2911,7 +2927,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const subtasks = await this.prisma.task.findMany({
       where: { parentId: data.taskId },

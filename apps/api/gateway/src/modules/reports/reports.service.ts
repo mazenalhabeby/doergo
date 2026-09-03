@@ -29,6 +29,8 @@ export class ReportsService extends BaseGatewayService {
     userId: string;
     userRole: string;
     canViewAllTasks?: boolean;
+    /** Spaces where the caller holds canViewAllTasks through a SPACE role. */
+    viewAllSpaceIds?: string[];
     organizationId: string;
   }) {
     this.logger.debug(`Getting report for task ${data.taskId} via direct microservice call`);
@@ -45,6 +47,8 @@ export class ReportsService extends BaseGatewayService {
     userId: string;
     userRole: string;
     canViewAllTasks?: boolean;
+    /** Spaces where the caller holds canViewAllTasks through a SPACE role. */
+    viewAllSpaceIds?: string[];
     organizationId: string;
   }) {
     this.logger.debug(`Getting reports for asset ${data.assetId} via direct microservice call`);

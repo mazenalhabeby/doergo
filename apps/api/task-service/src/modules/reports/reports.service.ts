@@ -17,7 +17,11 @@ import {
   Role,
   success,
   paginated,
+  canAccessTask,
+  isTaskAssignee,
+  isWithinTaskBoundary,
 } from '@hbcfield/shared';
+import type { TaskAccessFacts } from '../tasks/tasks.service';
 
 // Report attachments are before/after photos + signatures only — an image
 // allow-list keeps active content (html/svg) out of the report gallery + PDF.
@@ -215,7 +219,7 @@ export class ReportsService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    await this.checkTaskAccess(task, data);
 
     const report = await this.prisma.serviceReport.findUnique({
       where: { taskId: data.taskId },
@@ -660,39 +664,33 @@ export class ReportsService {
   }
 
   /**
-   * Check if user has access to a task
+   * May this caller read this task's service report?
+   *
+   * Delegates to the shared rule — the same decision tasks.service and
+   * attachments.service make. This was a third private copy of it, and it had
+   * drifted in both directions: it knew nothing about SPACE grants, so the
+   * supervisor of a site could open a completed job and be refused the report
+   * of the work done there; and it restricted an ADMIN to tasks they had
+   * created themselves, so an owner could not read the report for a job their
+   * own dispatcher raised. Neither difference was intended — they are what a
+   * copy becomes.
    */
-  private async checkTaskAccess(
-    task: any,
-    userId: string,
-    userRole: string,
-    organizationId: string,
-    canViewAllTasks?: boolean,
-  ) {
-    // Admin: only their own created tasks (in their org).
-    if (userRole === Role.ADMIN) {
-      if (task.createdById !== userId || task.organizationId !== organizationId) {
-        throw new ForbiddenException('Access denied');
-      }
-      return;
-    }
-    // "View all tasks" grant → any task in their org.
-    if (canViewAllTasks) {
-      if (task.organizationId !== organizationId) {
-        throw new ForbiddenException('Access denied');
-      }
-      return;
-    }
-    // Otherwise: only tasks in their org assigned to them — recognise BOTH the
-    // LEAD (legacy assignedToId) and multi-assignee MEMBER rows (task_assignees),
-    // so a member who completed the task can still edit its report/parts.
-    const isAssignedUser =
-      task.assignedToId === userId ||
-      !!(await this.prisma.taskAssignee.findFirst({
+  private async checkTaskAccess(task: any, data: TaskAccessFacts) {
+    const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = data;
+    const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds };
+
+    // Recognise BOTH the LEAD (legacy assignedToId) and multi-assignee MEMBER
+    // rows, so the member who completed the task can still edit its report.
+    let assignee = isTaskAssignee(task, userId);
+    if (assignee === null && isWithinTaskBoundary(task, caller)) {
+      const membership = await this.prisma.taskAssignee.findFirst({
         where: { taskId: task.id, userId },
         select: { id: true },
-      }));
-    if (task.organizationId !== organizationId || !isAssignedUser) {
+      });
+      assignee = !!membership;
+    }
+
+    if (!canAccessTask(task, caller, assignee ?? false)) {
       throw new ForbiddenException('Access denied');
     }
   }

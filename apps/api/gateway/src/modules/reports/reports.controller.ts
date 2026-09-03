@@ -16,7 +16,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
+import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -51,6 +51,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -67,6 +72,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -90,6 +100,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -111,6 +126,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -133,6 +153,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -158,6 +183,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -178,6 +208,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -205,6 +240,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -233,6 +273,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -253,6 +298,11 @@ export class ReportsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space — the
+      // flag above is only the org-wide answer. Without this a member whose
+      // authority comes from a space was refused the service report for a job
+      // at their own site.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }

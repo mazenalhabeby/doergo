@@ -12,6 +12,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskEventType, AttachmentType, Role, success, canAccessTask } from '@hbcfield/shared';
+import type { TaskAccessFacts } from '../tasks/tasks.service';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
@@ -60,7 +61,13 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data.uploadedById, data.userRole || '', data.organizationId, (data as any).canViewAllTasks);
+    // The uploader IS the caller on this path — the payload names them
+    // `uploadedById`, so the facts are assembled rather than passed straight.
+    this.checkTaskAccess(task, {
+      ...(data as object),
+      userId: data.uploadedById,
+      userRole: data.userRole || '',
+    } as TaskAccessFacts);
 
     // The confirmed URL must be the presigned object for THIS task — never an
     // arbitrary client-supplied URL (would be stored-XSS/phishing in the gallery).
@@ -127,7 +134,7 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    this.checkTaskAccess(task, data);
 
     const attachments = await this.prisma.attachment.findMany({
       where: { taskId: data.taskId },
@@ -215,7 +222,7 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data.userId, data.userRole, data.organizationId, (data as any).canViewAllTasks);
+    this.checkTaskAccess(task, data);
 
     // Validate file type format and allowed types
     if (!data.fileType || !/^[a-z]+\/[a-z0-9\-\.+]+$/i.test(data.fileType)) {
@@ -333,14 +340,25 @@ export class AttachmentsService {
    * that recognised only the LEAD assignee, so a member co-assigned to a task
    * could comment on it but was refused when attaching a photo to it.
    */
-  private checkTaskAccess(
-    task: any,
-    userId: string,
-    userRole: string,
-    organizationId: string,
-    canViewAllTasks?: boolean,
-  ) {
-    if (!canAccessTask(task, { userId, userRole, organizationId, canViewAllTasks })) {
+  private checkTaskAccess(task: any, caller: TaskAccessFacts) {
+    /*
+      The caller in one piece — see the note on TaskAccessFacts.
+
+      The space grants the gateway resolves were not among the five positional
+      arguments this took, so a member whose authority comes from a space was
+      refused every attachment on a task they could otherwise open.
+    */
+    const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = caller;
+    if (
+      !canAccessTask(task, {
+        userId,
+        userRole,
+        organizationId,
+        canViewAllTasks,
+        sharedSpaceIds,
+        viewAllSpaceIds,
+      })
+    ) {
       throw new ForbiddenException('Access denied');
     }
   }
