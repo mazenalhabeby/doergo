@@ -1896,7 +1896,8 @@
       "records": {
         "month": "No shifts in the last 30 days.",
         "today": "Nobody has clocked in today.",
-        "week": "No shifts in the last 7 days."
+        "week": "No shifts in the last 7 days.",
+        "custom": "No shifts in this period."
       },
       "noMatch": "Nothing for “{{name}}” in this period."
     },
@@ -1927,7 +1928,8 @@
     "period": {
       "month": "30 days",
       "today": "Today",
-      "week": "7 days"
+      "week": "7 days",
+      "custom": "Custom"
     },
     "searchPlaceholder": "Search by name",
     "outcome": {
@@ -1935,6 +1937,27 @@
       "AUTO_APPROVED": "Auto-approved",
       "PENDING": "Waiting",
       "REJECTED": "Sent back"
+    },
+    "rangeFrom": "From",
+    "rangeTo": "To",
+    "edit": {
+      "button": "Edit shift",
+      "clockIn": "Clock in",
+      "clockOut": "Clock out",
+      "deviceZone": "Times in this device’s time zone",
+      "editedBadge": "edited",
+      "endBeforeStart": "The end must come after the start.",
+      "failed": "Could not save this change",
+      "inZone": "Times in {{zone}}",
+      "notes": "Note",
+      "notesPlaceholder": "Anything worth recording about this shift",
+      "pickDate": "Pick a date",
+      "reason": "Why are you changing this?",
+      "reasonHint": "Kept with the shift — it says who changed it, when and why.",
+      "reasonPlaceholder": "e.g. forgot to clock out",
+      "saved": "Shift updated",
+      "timeHint": "Add the time as HH:MM.",
+      "title": "Edit shift"
     }
   }
 }

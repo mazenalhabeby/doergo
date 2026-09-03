@@ -16,7 +16,10 @@ import { workedMinutes } from '@hbcfield/shared/client';
 import { formatDurationMinutes } from '../../../src/lib/utils';
 import { holds } from '../../../src/lib/permissions';
 import { FilterChip } from '../../../src/components/filter-chip';
-import { Skeleton, ScreenContainer, BlurSheet, SheetPanel } from '../../../src/components';
+import {
+  Skeleton, ScreenContainer, BlurSheet, SheetPanel, AttendanceEditSheet,
+} from '../../../src/components';
+import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 
 /**
@@ -32,17 +35,17 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../
  * for its supervisor, from the identical request. Nothing is filtered here, and
  * no screen asks who somebody is: it asks what they may do.
  *
- * Deliberately not ported: editing an entry's times. That is a 600-line dialog
- * on web with per-entry timezone arithmetic and an audit trail, and correcting
- * somebody's hours by thumb is where a mistake gets made. Approve, reject and
- * excuse are the decisions; the corrections stay at a desk.
+ * Corrections are here too — a forgotten clock-out is noticed on the site, not
+ * at a desk — but only the part a thumb should do: the times, the note and the
+ * reason. The web dialog's breaks editor, timezone re-assignment and delete stay
+ * where a mistake is easier to see and to undo.
  */
 
 type Segment = 'approvals' | 'records' | 'noshows';
-type Period = 'today' | 'week' | 'month';
+type Period = 'today' | 'week' | 'month' | 'custom';
 
 const SEGMENTS: Segment[] = ['approvals', 'records', 'noshows'];
-const PERIODS: Period[] = ['today', 'week', 'month'];
+const PERIODS: Period[] = ['today', 'week', 'month', 'custom'];
 /** One screenful and a bit — every list pages in as it is read. */
 const PAGE = 30;
 /** How far back the no-show sweep looks, matching the web default. */
@@ -87,6 +90,11 @@ export default function AttendanceReviewScreen() {
   const [segment, setSegment] = useState<Segment>('approvals');
   const [period, setPeriod] = useState<Period>('today');
   const [search, setSearch] = useState('');
+  /* A range the reader picked themselves — two calendar days, inclusive. */
+  const [customFrom, setCustomFrom] = useState<string | null>(null);
+  const [customTo, setCustomTo] = useState<string | null>(null);
+  const [pickingRange, setPickingRange] = useState<'from' | 'to' | null>(null);
+  const [editing, setEditing] = useState<TimeEntry | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [approvals, setApprovals] = useState<Feed<TimeEntry> | null>(null);
@@ -117,14 +125,22 @@ export default function AttendanceReviewScreen() {
   */
   const rangeParams = useCallback(() => {
     if (period === 'today') return { date: dayISO(0) };
+    if (period === 'custom') {
+      // Until both ends are chosen, a custom range has nothing to ask about —
+      // showing the last 30 days under a "Custom" chip would be a lie.
+      if (!customFrom || !customTo) return null;
+      return { startDate: customFrom, endDate: customTo };
+    }
     return { startDate: dayISO(period === 'week' ? 6 : 29), endDate: dayISO(0) };
-  }, [period]);
+  }, [period, customFrom, customTo]);
 
   const fetchPage = useCallback(async (which: Segment, page: number) => {
     if (which === 'approvals') return attendanceApi.getPendingApprovals({ page, limit: PAGE });
     if (which === 'records') {
+      const range = rangeParams();
+      if (!range) return [] as TimeEntry[];
       return attendanceApi.getAllEntries({
-        ...rangeParams(),
+        ...range,
         search: debouncedSearch || undefined,
         page,
         limit: PAGE,
@@ -198,7 +214,7 @@ export default function AttendanceReviewScreen() {
     if (records === null) return; // History has not been opened yet.
     load('records');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, debouncedSearch]);
+  }, [period, debouncedSearch, customFrom, customTo]);
 
   useFocusEffect(useCallback(() => {
     if (Date.now() - lastLoadedRef.current[segment] < 30000) return;
@@ -343,6 +359,18 @@ export default function AttendanceReviewScreen() {
           <Text style={[s.note, { color: colors.textMuted }]} numberOfLines={2}>{entry.notes}</Text>
         )}
 
+        {/* Correcting a past shift belongs to whoever reconciles attendance —
+            the same grant the endpoint enforces. */}
+        {canDecide && segment === 'records' && (
+          <TouchableOpacity style={s.editRow} onPress={() => setEditing(entry)} activeOpacity={0.7}>
+            <Ionicons name="create-outline" size={15} color={COLORS.primary} />
+            <Text style={[s.editText, { color: COLORS.primary }]}>{t('attendanceReview.edit.button')}</Text>
+            {entry.isEdited && (
+              <Text style={[s.editedNote, { color: colors.textMuted }]}>{t('attendanceReview.edit.editedBadge')}</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
         {decidable && (
           <View style={s.actions}>
             <TouchableOpacity
@@ -480,9 +508,18 @@ export default function AttendanceReviewScreen() {
             {PERIODS.map((p) => (
               <FilterChip
                 key={p}
-                label={t(`attendanceReview.period.${p}`)}
+                /* The custom chip carries the days it holds, so the list never
+                   shows a window whose name does not say what it is. */
+                label={
+                  p === 'custom' && customFrom && customTo
+                    ? `${shortDay(customFrom)} – ${shortDay(customTo)}`
+                    : t(`attendanceReview.period.${p}`)
+                }
                 active={period === p}
-                onPress={() => setPeriod(p)}
+                onPress={() => {
+                  setPeriod(p);
+                  if (p === 'custom') setPickingRange('from');
+                }}
               />
             ))}
           </View>
@@ -556,8 +593,60 @@ export default function AttendanceReviewScreen() {
           </TouchableOpacity>
         </SheetPanel>
       </BlurSheet>
+
+      {/* Correcting the shift itself. */}
+      <AttendanceEditSheet
+        entry={editing}
+        visible={!!editing}
+        onClose={() => setEditing(null)}
+        onSaved={(updated) => {
+          // Replace the row in place: the reader is looking at the list they
+          // just corrected, and a refetch would scroll it out from under them.
+          setRecords((f) =>
+            f ? { ...f, rows: f.rows.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)) } : f,
+          );
+        }}
+      />
+
+      {/* Two calendar days for a custom window: from, then to. */}
+      <DatePickerModal
+        visible={pickingRange !== null}
+        selectedDate={dateFromISO(pickingRange === 'to' ? customTo : customFrom)}
+        onSelect={(d) => {
+          const iso = isoFromDate(d);
+          if (pickingRange === 'from') {
+            setCustomFrom(iso);
+            // The second half follows immediately — a range is one intention,
+            // not two errands.
+            if (!customTo || customTo < iso) setCustomTo(iso);
+            setPickingRange('to');
+          } else {
+            setCustomTo(iso < (customFrom ?? iso) ? (customFrom as string) : iso);
+            setPickingRange(null);
+          }
+        }}
+        onClear={() => setPickingRange(null)}
+        onClose={() => setPickingRange(null)}
+        title={t(pickingRange === 'to' ? 'attendanceReview.rangeTo' : 'attendanceReview.rangeFrom')}
+      />
     </View>
   );
+}
+
+/** "yyyy-MM-dd" → a Date for the calendar; a calendar day has no zone. */
+function dateFromISO(d: string | null): Date | null {
+  if (!d) return null;
+  const [y, m, day] = d.split('-').map(Number);
+  if (!y || !m || !day) return null;
+  return new Date(y, m - 1, day);
+}
+function isoFromDate(d: Date): string {
+  return `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`;
+}
+/** "2026-08-05" → "8/5" — short enough to sit inside a chip. */
+function shortDay(iso: string): string {
+  const [, m = '', d = ''] = iso.split('-');
+  return `${Number(m)}/${Number(d)}`;
 }
 
 /**
@@ -605,6 +694,9 @@ const s = StyleSheet.create({
   actionBtnText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
   empty: { paddingVertical: SPACING.xxxl * 2, alignItems: 'center' },
   emptyText: { fontSize: FONT_SIZE.base, marginTop: SPACING.md, textAlign: 'center', paddingHorizontal: SPACING.xl },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.md },
+  editText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
+  editedNote: { fontSize: FONT_SIZE.xs, marginLeft: SPACING.sm },
   sheetHint: { fontSize: FONT_SIZE.sm, marginBottom: SPACING.md },
   input: {
     minHeight: 90, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,

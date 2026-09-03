@@ -1896,7 +1896,8 @@
       "records": {
         "month": "Nessun turno negli ultimi 30 giorni.",
         "today": "Oggi non ha timbrato nessuno.",
-        "week": "Nessun turno negli ultimi 7 giorni."
+        "week": "Nessun turno negli ultimi 7 giorni.",
+        "custom": "Nessun turno in questo periodo."
       },
       "noMatch": "Nessun risultato per «{{name}}» in questo periodo."
     },
@@ -1927,7 +1928,8 @@
     "period": {
       "month": "30 giorni",
       "today": "Oggi",
-      "week": "7 giorni"
+      "week": "7 giorni",
+      "custom": "Personalizzato"
     },
     "searchPlaceholder": "Cerca per nome",
     "outcome": {
@@ -1935,6 +1937,27 @@
       "AUTO_APPROVED": "Approvato automaticamente",
       "PENDING": "In attesa",
       "REJECTED": "Rimandato"
+    },
+    "rangeFrom": "Dal",
+    "rangeTo": "Al",
+    "edit": {
+      "button": "Modifica turno",
+      "clockIn": "Entrata",
+      "clockOut": "Uscita",
+      "deviceZone": "Orari nel fuso di questo dispositivo",
+      "editedBadge": "modificato",
+      "endBeforeStart": "La fine deve seguire l’inizio.",
+      "failed": "Impossibile salvare la modifica",
+      "inZone": "Orari in {{zone}}",
+      "notes": "Nota",
+      "notesPlaceholder": "Qualcosa da annotare su questo turno",
+      "pickDate": "Scegli una data",
+      "reason": "Perché lo modifichi?",
+      "reasonHint": "Resta con il turno: chi lo ha modificato, quando e perché.",
+      "reasonPlaceholder": "es. dimenticata la timbratura di uscita",
+      "saved": "Turno aggiornato",
+      "timeHint": "Inserisci l’ora come HH:MM.",
+      "title": "Modifica turno"
     }
   }
 }

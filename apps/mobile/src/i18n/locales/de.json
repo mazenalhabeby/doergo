@@ -1896,7 +1896,8 @@
       "records": {
         "month": "Keine Schichten in den letzten 30 Tagen.",
         "today": "Heute hat sich noch niemand eingestempelt.",
-        "week": "Keine Schichten in den letzten 7 Tagen."
+        "week": "Keine Schichten in den letzten 7 Tagen.",
+        "custom": "Keine Schichten in diesem Zeitraum."
       },
       "noMatch": "Nichts für „{{name}}“ in diesem Zeitraum."
     },
@@ -1927,7 +1928,8 @@
     "period": {
       "month": "30 Tage",
       "today": "Heute",
-      "week": "7 Tage"
+      "week": "7 Tage",
+      "custom": "Zeitraum"
     },
     "searchPlaceholder": "Nach Name suchen",
     "outcome": {
@@ -1935,6 +1937,27 @@
       "AUTO_APPROVED": "Automatisch freigegeben",
       "PENDING": "Offen",
       "REJECTED": "Zurückgeschickt"
+    },
+    "rangeFrom": "Von",
+    "rangeTo": "Bis",
+    "edit": {
+      "button": "Schicht bearbeiten",
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "deviceZone": "Zeiten in der Zeitzone dieses Geräts",
+      "editedBadge": "bearbeitet",
+      "endBeforeStart": "Das Ende muss nach dem Beginn liegen.",
+      "failed": "Änderung konnte nicht gespeichert werden",
+      "inZone": "Zeiten in {{zone}}",
+      "notes": "Notiz",
+      "notesPlaceholder": "Was zu dieser Schicht festgehalten werden soll",
+      "pickDate": "Datum wählen",
+      "reason": "Warum ändern Sie das?",
+      "reasonHint": "Wird bei der Schicht gespeichert — wer sie wann und warum geändert hat.",
+      "reasonPlaceholder": "z. B. Ausstempeln vergessen",
+      "saved": "Schicht aktualisiert",
+      "timeHint": "Zeit als HH:MM eingeben.",
+      "title": "Schicht bearbeiten"
     }
   }
 }

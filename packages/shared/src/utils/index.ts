@@ -13,6 +13,9 @@ export * from './attendance-flags';
 // Export route navigation / deep-link + fallback-ordering helpers
 export * from './route-nav';
 
+// Wall-clock ↔ instant against an explicit zone (attendance editing, both clients)
+export * from './zoned-time';
+
 // NOTE: crypto utilities are NOT exported here because they use Node's
 // "crypto" module which is unavailable in React Native / browser runtimes.
 // Import directly: import { hashCode, generateSecureCode } from '@hbcfield/shared/utils/crypto';

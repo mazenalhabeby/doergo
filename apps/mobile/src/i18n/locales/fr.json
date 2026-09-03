@@ -1896,7 +1896,8 @@
       "records": {
         "month": "Aucun poste ces 30 derniers jours.",
         "today": "Personne n'a pointé aujourd'hui.",
-        "week": "Aucun poste ces 7 derniers jours."
+        "week": "Aucun poste ces 7 derniers jours.",
+        "custom": "Aucun poste sur cette période."
       },
       "noMatch": "Rien pour « {{name}} » sur cette période."
     },
@@ -1927,7 +1928,8 @@
     "period": {
       "month": "30 jours",
       "today": "Aujourd'hui",
-      "week": "7 jours"
+      "week": "7 jours",
+      "custom": "Personnalisé"
     },
     "searchPlaceholder": "Rechercher un nom",
     "outcome": {
@@ -1935,6 +1937,27 @@
       "AUTO_APPROVED": "Validé automatiquement",
       "PENDING": "En attente",
       "REJECTED": "Renvoyé"
+    },
+    "rangeFrom": "Du",
+    "rangeTo": "Au",
+    "edit": {
+      "button": "Modifier le poste",
+      "clockIn": "Arrivée",
+      "clockOut": "Départ",
+      "deviceZone": "Heures dans le fuseau de cet appareil",
+      "editedBadge": "modifié",
+      "endBeforeStart": "La fin doit suivre le début.",
+      "failed": "Impossible d’enregistrer la modification",
+      "inZone": "Heures en {{zone}}",
+      "notes": "Note",
+      "notesPlaceholder": "Ce qu’il faut retenir de ce poste",
+      "pickDate": "Choisir une date",
+      "reason": "Pourquoi cette modification ?",
+      "reasonHint": "Conservé avec le poste : qui l’a modifié, quand et pourquoi.",
+      "reasonPlaceholder": "p. ex. oubli de pointer la sortie",
+      "saved": "Poste mis à jour",
+      "timeHint": "Saisissez l’heure au format HH:MM.",
+      "title": "Modifier le poste"
     }
   }
 }

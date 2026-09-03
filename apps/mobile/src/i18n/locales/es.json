@@ -1896,7 +1896,8 @@
       "records": {
         "month": "Sin turnos en los últimos 30 días.",
         "today": "Hoy nadie ha fichado.",
-        "week": "Sin turnos en los últimos 7 días."
+        "week": "Sin turnos en los últimos 7 días.",
+        "custom": "Sin turnos en este periodo."
       },
       "noMatch": "Nada de «{{name}}» en este periodo."
     },
@@ -1927,7 +1928,8 @@
     "period": {
       "month": "30 días",
       "today": "Hoy",
-      "week": "7 días"
+      "week": "7 días",
+      "custom": "Personalizado"
     },
     "searchPlaceholder": "Buscar por nombre",
     "outcome": {
@@ -1935,6 +1937,27 @@
       "AUTO_APPROVED": "Aprobado automáticamente",
       "PENDING": "Pendiente",
       "REJECTED": "Devuelto"
+    },
+    "rangeFrom": "Desde",
+    "rangeTo": "Hasta",
+    "edit": {
+      "button": "Editar turno",
+      "clockIn": "Entrada",
+      "clockOut": "Salida",
+      "deviceZone": "Horas en la zona horaria de este dispositivo",
+      "editedBadge": "editado",
+      "endBeforeStart": "El final debe ir después del inicio.",
+      "failed": "No se pudo guardar el cambio",
+      "inZone": "Horas en {{zone}}",
+      "notes": "Nota",
+      "notesPlaceholder": "Algo que valga la pena registrar de este turno",
+      "pickDate": "Elegir fecha",
+      "reason": "¿Por qué lo cambias?",
+      "reasonHint": "Se guarda con el turno: quién lo cambió, cuándo y por qué.",
+      "reasonPlaceholder": "p. ej. se olvidó de fichar la salida",
+      "saved": "Turno actualizado",
+      "timeHint": "Añade la hora como HH:MM.",
+      "title": "Editar turno"
     }
   }
 }

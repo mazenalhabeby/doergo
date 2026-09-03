@@ -164,6 +164,23 @@ export const attendanceApi = {
     });
   },
 
+  /**
+   * Correct a shift's times or note (`canReconcileAttendance`).
+   *
+   * `reason` is required by the server and kept with the entry: an edited shift
+   * says who changed it, when, from what, and why — the member's pay depends on
+   * these numbers, so a silent correction is not an option.
+   */
+  editEntry: async (
+    entryId: string,
+    body: { clockInAt?: string; clockOutAt?: string; notes?: string; timezone?: string; reason: string },
+  ): Promise<TimeEntry> => {
+    return fetchWithAuth<TimeEntry>(`/attendance/entries/${entryId}/edit`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
+
   /** Scheduled shifts nobody clocked in for (`canViewSpaceAttendance`). */
   listNoShows: async (days = 7): Promise<NoShow[]> => {
     const result = await fetchWithAuth<any>(buildUrlWithQuery('/attendance/no-shows', { days }), { method: 'GET' });
