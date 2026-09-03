@@ -8,6 +8,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, ApprovalStatus, computeScheduleFlags, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
+import { scopeWhere, scopeAllows, type AttendanceScope } from './attendance-scope';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else
@@ -40,6 +41,8 @@ export class ApprovalService {
    * Get entries pending approval
    */
   async getPendingApprovals(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     page?: number;
     limit?: number;
@@ -50,6 +53,9 @@ export class ApprovalService {
 
     const where = {
       organizationId: data.organizationId,
+      // Only the caller's granted spaces — an entry outside them reads as
+      // 'not found', which is also the right thing to tell them.
+      ...scopeWhere(data.scopeSpaceIds),
       approvalStatus: ApprovalStatus.PENDING,
       status: { not: 'CLOCKED_IN' as any }, // Only completed entries
     };
@@ -80,6 +86,8 @@ export class ApprovalService {
    * Approve a time entry
    */
   async approveEntry(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     entryId: string;
     approverId: string;
     organizationId: string;
@@ -89,6 +97,9 @@ export class ApprovalService {
       where: {
         id: data.entryId,
         organizationId: data.organizationId,
+        // Only the caller's granted spaces — an entry outside them reads as
+        // 'not found', which is also the right thing to tell them.
+        ...scopeWhere(data.scopeSpaceIds),
       },
     });
 
@@ -132,6 +143,8 @@ export class ApprovalService {
    * Reject a time entry
    */
   async rejectEntry(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     entryId: string;
     approverId: string;
     organizationId: string;
@@ -145,6 +158,9 @@ export class ApprovalService {
       where: {
         id: data.entryId,
         organizationId: data.organizationId,
+        // Only the caller's granted spaces — an entry outside them reads as
+        // 'not found', which is also the right thing to tell them.
+        ...scopeWhere(data.scopeSpaceIds),
       },
     });
 
@@ -194,6 +210,8 @@ export class ApprovalService {
   }
 
   async editEntry(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     entryId: string;
     editorId: string;
     organizationId: string;
@@ -211,6 +229,9 @@ export class ApprovalService {
       where: {
         id: data.entryId,
         organizationId: data.organizationId,
+        // Only the caller's granted spaces — an entry outside them reads as
+        // 'not found', which is also the right thing to tell them.
+        ...scopeWhere(data.scopeSpaceIds),
       },
     });
 
@@ -372,11 +393,14 @@ export class ApprovalService {
    * editEntry (org-scoped, newest-first, served by the [resourceId, createdAt]
    * index). Drives the "Edit history" table in the UI.
    */
-  async getEntryHistory(data: { entryId: string; organizationId: string }) {
+  async getEntryHistory(data: { entryId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
     const logs = await this.prisma.activityLog.findMany({
       where: {
         resourceId: data.entryId,
         organizationId: data.organizationId,
+        // Only the caller's granted spaces — an entry outside them reads as
+        // 'not found', which is also the right thing to tell them.
+        ...scopeWhere(data.scopeSpaceIds),
         eventType: 'TIME_ENTRY_EDITED',
       },
       orderBy: { createdAt: 'desc' },
@@ -398,9 +422,11 @@ export class ApprovalService {
   }
 
   /** Admin: delete a time entry (its breaks cascade), scoped to the org. */
-  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string }) {
+  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
     const entry = await this.prisma.timeEntry.findFirst({
-      where: { id: data.entryId, organizationId: data.organizationId },
+      // Scoped: an entry in a space the caller was not granted reads as 'not
+      // found', which is both the right refusal and the right disclosure.
+      where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
       select: { id: true },
     });
     if (!entry) {
@@ -420,6 +446,8 @@ export class ApprovalService {
    * Skips days that already have an entry for that employee (safe to re-run).
    */
   async addManualEntries(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     editorId: string;
     organizationId: string;
     userId: string;
@@ -445,6 +473,15 @@ export class ApprovalService {
     ]);
     if (!user) throw new NotFoundException('Employee not found in your organization');
     if (!loc) throw new NotFoundException('Work site not found');
+    /*
+      Back-dating attendance NAMES its space, so the check is the other way
+      round from a read: not "which spaces may they see" but "were they granted
+      THIS one". Without it, a supervisor scoped to one site could write hours
+      into any site in the organization — which is worse than reading them.
+    */
+    if (!scopeAllows(data.scopeSpaceIds, data.locationId)) {
+      throw new NotFoundException('Work site not found');
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)) {
       throw new BadRequestException('Invalid date range');
     }
@@ -605,6 +642,8 @@ export class ApprovalService {
    * Bulk approve entries
    */
   async bulkApprove(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     entryIds: string[];
     approverId: string;
     organizationId: string;
@@ -621,6 +660,9 @@ export class ApprovalService {
           entryId,
           approverId: data.approverId,
           organizationId: data.organizationId,
+          // Only the caller's granted spaces — an entry outside them reads as
+          // 'not found', which is also the right thing to tell them.
+          ...scopeWhere(data.scopeSpaceIds),
           notes: data.notes,
         });
         results.approved.push(entryId);

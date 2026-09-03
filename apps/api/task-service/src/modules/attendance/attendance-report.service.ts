@@ -9,6 +9,7 @@ import {
   getEndOfMonth,
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
+import { scopeWhere, type AttendanceScope } from './attendance-scope';
 
 @Injectable()
 export class AttendanceReportService {
@@ -39,6 +40,8 @@ export class AttendanceReportService {
   }
 
   async getAttendanceSummary(data: {
+    /** Spaces the caller may read; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     userId?: string;
     startDate: Date | string;
@@ -49,6 +52,9 @@ export class AttendanceReportService {
 
     const where: any = {
       organizationId: data.organizationId,
+      // Only the caller's granted spaces — a report is the widest read there
+      // is, so an unnarrowed one hands over the whole organization at once.
+      ...scopeWhere(data.scopeSpaceIds),
       clockInAt: dateFilter,
     };
 
@@ -155,6 +161,8 @@ export class AttendanceReportService {
   }
 
   async getWeeklyReport(data: {
+    /** Spaces the caller may read; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     userId?: string;
     weekStartDate?: Date | string;
@@ -165,6 +173,9 @@ export class AttendanceReportService {
 
     return this.getAttendanceSummary({
       organizationId: data.organizationId,
+      // Only the caller's granted spaces — a report is the widest read there
+      // is, so an unnarrowed one hands over the whole organization at once.
+      ...scopeWhere(data.scopeSpaceIds),
       userId: data.userId,
       startDate,
       endDate,
@@ -172,6 +183,8 @@ export class AttendanceReportService {
   }
 
   async getMonthlyReport(data: {
+    /** Spaces the caller may read; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     userId?: string;
     year?: number;
@@ -187,6 +200,9 @@ export class AttendanceReportService {
 
     return this.getAttendanceSummary({
       organizationId: data.organizationId,
+      // Only the caller's granted spaces — a report is the widest read there
+      // is, so an unnarrowed one hands over the whole organization at once.
+      ...scopeWhere(data.scopeSpaceIds),
       userId: data.userId,
       startDate,
       endDate,
@@ -194,6 +210,8 @@ export class AttendanceReportService {
   }
 
   async exportToCSV(data: {
+    /** Spaces the caller may read; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     startDate: Date | string;
     endDate: Date | string;
@@ -204,6 +222,9 @@ export class AttendanceReportService {
 
     const where: any = {
       organizationId: data.organizationId,
+      // Only the caller's granted spaces — a report is the widest read there
+      // is, so an unnarrowed one hands over the whole organization at once.
+      ...scopeWhere(data.scopeSpaceIds),
       clockInAt: dateFilter,
     };
 

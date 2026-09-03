@@ -23,6 +23,8 @@ export class AttendanceService extends BaseGatewayService {
   async getHistory(data: {
     userId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     startDate?: string;
     endDate?: string;
     page?: number;
@@ -46,6 +48,8 @@ export class AttendanceService extends BaseGatewayService {
   async getLocationEntries(data: {
     locationId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     date?: string;
     startDate?: string;
     endDate?: string;
@@ -64,6 +68,8 @@ export class AttendanceService extends BaseGatewayService {
   async getLocationEntriesBatch(data: {
     locationIds: string[];
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     date?: string;
     requesterId?: string;
     requesterCanViewAll?: boolean;
@@ -76,6 +82,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getAllEntries(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     date?: string;
     startDate?: string;
     endDate?: string;
@@ -89,15 +97,15 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_all_entries' }, data);
   }
 
-  async getActiveEntries(data: { organizationId: string }) {
+  async getActiveEntries(data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'get_active_entries' }, data);
   }
 
-  async listNoShows(data: { organizationId: string; days?: number; spaceId?: string }) {
+  async listNoShows(data: { organizationId: string; scopeSpaceIds?: string[] | null; days?: number; spaceId?: string }) {
     return this.send({ cmd: 'list_no_shows' }, data);
   }
 
-  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
+  async resolveNoShow(data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
     return this.send({ cmd: 'resolve_no_show' }, data);
   }
 
@@ -110,6 +118,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getAttendanceSummary(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     userId?: string;
     startDate: string;
     endDate: string;
@@ -122,6 +132,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getWeeklyReport(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     userId?: string;
     weekStartDate?: string;
   }) {
@@ -133,6 +145,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getMonthlyReport(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     userId?: string;
     year?: number;
     month?: number;
@@ -145,6 +159,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async exportToCSV(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     startDate: string;
     endDate: string;
     userId?: string;
@@ -162,6 +178,8 @@ export class AttendanceService extends BaseGatewayService {
   async startBreak(data: {
     userId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     type?: string;
     notes?: string;
   }) {
@@ -174,6 +192,8 @@ export class AttendanceService extends BaseGatewayService {
   async endBreak(data: {
     userId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     notes?: string;
   }) {
     return this.send({ cmd: 'end_break' }, data);
@@ -196,7 +216,7 @@ export class AttendanceService extends BaseGatewayService {
   /**
    * Get all active breaks in the organization (admin)
    */
-  async getActiveBreaks(data: { organizationId: string }) {
+  async getActiveBreaks(data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'get_active_breaks' }, data);
   }
 
@@ -205,6 +225,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getBreakHistory(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     date?: string;
     userId?: string;
     type?: string;
@@ -224,6 +246,8 @@ export class AttendanceService extends BaseGatewayService {
   async addBreakForMember(data: {
     timeEntryId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     editorId: string;
     type?: string;
     startedAt: string;
@@ -234,7 +258,7 @@ export class AttendanceService extends BaseGatewayService {
   }
 
   /** Remove a break. `sendOnce` — a retried delete must not race a re-add. */
-  async deleteBreak(data: { breakId: string; organizationId: string; editorId: string }) {
+  async deleteBreak(data: { breakId: string; organizationId: string; scopeSpaceIds?: string[] | null; editorId: string }) {
     return this.sendOnce({ cmd: 'delete_break' }, data);
   }
 
@@ -242,6 +266,8 @@ export class AttendanceService extends BaseGatewayService {
     breakId: string;
     adminId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     notes?: string;
   }) {
     return this.send({ cmd: 'end_break_manually' }, data);
@@ -252,6 +278,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getBreakSummary(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     startDate: string;
     endDate: string;
     userId?: string;
@@ -268,6 +296,8 @@ export class AttendanceService extends BaseGatewayService {
    */
   async getPendingApprovals(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     page?: number;
     limit?: number;
   }) {
@@ -281,6 +311,8 @@ export class AttendanceService extends BaseGatewayService {
     entryId: string;
     approverId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     notes?: string;
   }) {
     return this.send({ cmd: 'approve_entry' }, data);
@@ -293,6 +325,8 @@ export class AttendanceService extends BaseGatewayService {
     entryId: string;
     approverId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     reason: string;
   }) {
     return this.send({ cmd: 'reject_entry' }, data);
@@ -304,6 +338,8 @@ export class AttendanceService extends BaseGatewayService {
   async reportExcursion(data: {
     userId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     reason: string;
     requestedMinutes: number;
   }) {
@@ -315,6 +351,8 @@ export class AttendanceService extends BaseGatewayService {
     excursionId: string;
     approverId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     grantedMinutes?: number;
   }) {
     return this.send({ cmd: 'approve_geofence_excursion' }, data);
@@ -325,6 +363,8 @@ export class AttendanceService extends BaseGatewayService {
     excursionId: string;
     approverId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
   }) {
     return this.send({ cmd: 'reject_geofence_excursion' }, data);
   }
@@ -332,6 +372,8 @@ export class AttendanceService extends BaseGatewayService {
   /** Approver surface: active (PENDING/APPROVED) out-of-ring requests. */
   async listExcursions(data: {
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     status?: 'active' | 'pending' | 'approved';
   }) {
     return this.send({ cmd: 'list_geofence_excursions' }, data);
@@ -345,6 +387,8 @@ export class AttendanceService extends BaseGatewayService {
     entryId: string;
     clockOutAt: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
   }) {
     return this.send({ cmd: 'resolve_forgot_clock_out' }, data);
   }
@@ -360,6 +404,8 @@ export class AttendanceService extends BaseGatewayService {
     entryId: string;
     minutes: number;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
   }) {
     return this.send({ cmd: 'approve_extra_time' }, data);
   }
@@ -381,6 +427,8 @@ export class AttendanceService extends BaseGatewayService {
     entryId: string;
     editorId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     clockInAt?: string;
     clockOutAt?: string;
     notes?: string;
@@ -391,17 +439,19 @@ export class AttendanceService extends BaseGatewayService {
   }
 
   /** Full edit history (per-edit audit rows) for a time entry. */
-  async getEntryHistory(data: { entryId: string; organizationId: string }) {
+  async getEntryHistory(data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'get_entry_history' }, data);
   }
 
-  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string }) {
+  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'delete_entry' }, data);
   }
 
   async addManualEntries(data: {
     editorId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     userId: string;
     locationId: string;
     startDate: string;
@@ -423,6 +473,8 @@ export class AttendanceService extends BaseGatewayService {
     entryIds: string[];
     approverId: string;
     organizationId: string;
+    /** Spaces the caller may see; null = org-wide, [] = none. */
+    scopeSpaceIds?: string[] | null;
     notes?: string;
   }) {
     return this.send({ cmd: 'bulk_approve_entries' }, data);

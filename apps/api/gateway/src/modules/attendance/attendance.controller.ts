@@ -18,9 +18,15 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role , RequireAccessModule } from '@hbcfield/shared';
+import {
+  Role,
+  RequireAccessModule,
+  isAdmin,
+  spacesGranting,
+  type AccessPermissionKey,
+} from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
@@ -30,6 +36,28 @@ import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto, AddB
 @ApiBearerAuth()
 @Controller('attendance')
 export class AttendanceController {
+  /**
+   * Which spaces this caller may see attendance for — the list every query
+   * narrows to.
+   *
+   * The guard above only ever WIDENS: none of these routes names a space (they
+   * are keyed on entry ids, approval ids, or nothing), so a space-scoped grant
+   * satisfies `accessAllowsAnywhere` and would otherwise read every site in the
+   * organization. The narrowing has to happen where the query is built, and
+   * this is what carries it there.
+   *
+   * `null` means org-wide — do not narrow. An empty array means granted in no
+   * space and must return NOTHING. They are deliberately different values,
+   * because collapsing them into one falsy check is precisely how this becomes
+   * a data leak.
+   */
+  private scope(req: any, key: AccessPermissionKey): string[] | null {
+    // An admin holds every permission org-wide by being an admin, not by a role
+    // — and `access.org` may not spell that out. Never narrowed.
+    if (isAdmin(req.user)) return null;
+    return spacesGranting(req.user?.access, key);
+  }
+
   constructor(
     private readonly attendanceService: AttendanceService,
     private readonly attendanceQueueService: AttendanceQueueService,
@@ -246,7 +274,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('all-entries')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get all time entries for the organization' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Single day (defaults to today) — ignored when startDate/endDate given' })
   @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Range start (yyyy-MM-dd)' })
@@ -270,6 +298,7 @@ export class AttendanceController {
     const parsedLimit = Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500);
     return this.attendanceService.getAllEntries({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       date,
       startDate,
       endDate,
@@ -283,29 +312,31 @@ export class AttendanceController {
   }
 
   @Get('active-entries')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Who is clocked in right now (org-wide, date-independent)' })
   async getActiveEntries(@Request() req: any) {
     return this.attendanceService.getActiveEntries({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
 
   @Get('no-shows')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Recent no-shows (scheduled shift, no clock-in) for review' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiQuery({ name: 'spaceId', required: false, type: String })
   async listNoShows(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any) {
     return this.attendanceService.listNoShows({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       days: days ? Math.min(Math.max(1, Number(days) || 7), 60) : 7,
       spaceId: spaceId || undefined,
     });
   }
 
   @Patch('no-shows/:id')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Excuse or reopen a no-show' })
   async resolveNoShow(
     @Param('id') id: string,
@@ -315,6 +346,7 @@ export class AttendanceController {
     return this.attendanceService.resolveNoShow({
       id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       action: body?.action === 'reopen' ? 'reopen' : 'excuse',
       reason: body?.reason,
       excusedById: req.user.id,
@@ -326,7 +358,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('reports/summary')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get attendance summary for a date range' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -339,6 +371,7 @@ export class AttendanceController {
   ) {
     return this.attendanceService.getAttendanceSummary({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       userId,
       startDate,
       endDate,
@@ -346,7 +379,7 @@ export class AttendanceController {
   }
 
   @Get('reports/weekly')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get weekly attendance report' })
   @ApiQuery({ name: 'weekStartDate', required: false, type: String, description: 'Week start date (defaults to current week)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
@@ -357,13 +390,14 @@ export class AttendanceController {
   ) {
     return this.attendanceService.getWeeklyReport({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       userId,
       weekStartDate,
     });
   }
 
   @Get('reports/monthly')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get monthly attendance report' })
   @ApiQuery({ name: 'year', required: false, type: Number, description: 'Year (defaults to current)' })
   @ApiQuery({ name: 'month', required: false, type: Number, description: 'Month 1-12 (defaults to current)' })
@@ -376,6 +410,7 @@ export class AttendanceController {
   ) {
     return this.attendanceService.getMonthlyReport({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       userId,
       year: year ? Number(year) : undefined,
       month: month ? Number(month) : undefined,
@@ -383,7 +418,7 @@ export class AttendanceController {
   }
 
   @Get('reports/export')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Export attendance data to CSV' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -396,6 +431,7 @@ export class AttendanceController {
   ) {
     return this.attendanceService.exportToCSV({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       startDate,
       endDate,
       userId,
@@ -449,16 +485,17 @@ export class AttendanceController {
   }
 
   @Get('breaks/active')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get all active breaks in the organization' })
   async getActiveBreaks(@Request() req: any) {
     return this.attendanceService.getActiveBreaks({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
 
   @Get('breaks/history')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get break history with filters' })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'Date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'userId', required: false, type: String })
@@ -475,6 +512,7 @@ export class AttendanceController {
   ) {
     return this.attendanceService.getBreakHistory({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       date,
       userId,
       type,
@@ -496,7 +534,7 @@ export class AttendanceController {
    * not hold it.
    */
   @Post('entries/:id/breaks')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Add a break to a member’s shift (reconciliation)' })
   async addBreakForMember(
     @Param('id') timeEntryId: string,
@@ -506,6 +544,7 @@ export class AttendanceController {
     const result: any = await this.attendanceService.addBreakForMember({
       timeEntryId,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       editorId: req.user.id,
       type: dto.type,
       startedAt: dto.startedAt,
@@ -526,12 +565,13 @@ export class AttendanceController {
    * returns an approved entry to PENDING, because its paid hours change.
    */
   @Delete('breaks/:id')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Remove a break from a shift (reconciliation)' })
   async deleteBreak(@Param('id') breakId: string, @Request() req: any) {
     const result: any = await this.attendanceService.deleteBreak({
       breakId,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       editorId: req.user.id,
     });
     if (result && result.success === false) {
@@ -541,7 +581,7 @@ export class AttendanceController {
   }
 
   @Post('breaks/:id/end')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'End a break manually (manager action)' })
   async endBreakManually(
     @Param('id') breakId: string,
@@ -552,12 +592,13 @@ export class AttendanceController {
       breakId,
       adminId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       notes: body?.notes,
     });
   }
 
   @Get('breaks/summary')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get break summary statistics' })
   @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
@@ -570,6 +611,7 @@ export class AttendanceController {
   ) {
     return this.attendanceService.getBreakSummary({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       startDate,
       endDate,
       userId,
@@ -581,7 +623,7 @@ export class AttendanceController {
   // =========================================================================
 
   @Get('approvals/pending')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get time entries pending approval' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -592,13 +634,14 @@ export class AttendanceController {
   ) {
     return this.attendanceService.getPendingApprovals({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
     });
   }
 
   @Post('approvals/:id/approve')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Approve a time entry' })
   async approveEntry(
     @Param('id') entryId: string,
@@ -609,12 +652,13 @@ export class AttendanceController {
       entryId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       notes: body?.notes,
     });
   }
 
   @Post('approvals/:id/reject')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Reject a time entry' })
   async rejectEntry(
     @Param('id') entryId: string,
@@ -625,6 +669,7 @@ export class AttendanceController {
       entryId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       reason: body.reason,
     });
   }
@@ -647,7 +692,7 @@ export class AttendanceController {
   }
 
   @Get('excursions')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'List active out-of-ring requests (approver surface)' })
   @ApiQuery({ name: 'status', required: false, enum: ['active', 'pending', 'approved'] })
   async listExcursions(
@@ -656,12 +701,13 @@ export class AttendanceController {
   ) {
     return this.attendanceService.listExcursions({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       status,
     });
   }
 
   @Patch('excursions/:id/approve')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Approve an out-of-ring request (optionally adjust the granted time)' })
   async approveExcursion(
     @Param('id') excursionId: string,
@@ -672,19 +718,21 @@ export class AttendanceController {
       excursionId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       grantedMinutes:
         body?.grantedMinutes != null ? Number(body.grantedMinutes) : undefined,
     });
   }
 
   @Patch('excursions/:id/reject')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Reject an out-of-ring request (clocks the worker out)' })
   async rejectExcursion(@Param('id') excursionId: string, @Request() req?: any) {
     return this.attendanceService.rejectExcursion({
       excursionId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
     });
   }
 
@@ -762,7 +810,7 @@ export class AttendanceController {
   }
 
   @Put('entries/:id/edit')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Edit a time entry (manager correction)' })
   async editEntry(
     @Param('id') entryId: string,
@@ -779,6 +827,7 @@ export class AttendanceController {
       entryId,
       editorId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       clockInAt: body.clockInAt,
       clockOutAt: body.clockOutAt,
       notes: body.notes,
@@ -788,28 +837,30 @@ export class AttendanceController {
   }
 
   @Get('entries/:id/history')
-  @RequirePermission('canViewSpaceAttendance')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get the full edit history for a time entry' })
   async getEntryHistory(@Param('id') entryId: string, @Request() req?: any) {
     return this.attendanceService.getEntryHistory({
       entryId,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
 
   @Delete('entries/:id')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Delete a time entry (admin)' })
   async deleteEntry(@Param('id') entryId: string, @Request() req?: any) {
     return this.attendanceService.deleteEntry({
       entryId,
       editorId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
     });
   }
 
   @Post('entries/manual')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({
     summary:
       'Admin: add/back-date attendance for an employee (single day, or a weekday-filtered date-range backfill)',
@@ -843,11 +894,12 @@ export class AttendanceController {
       reason: body.reason,
       editorId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
     });
   }
 
   @Post('approvals/bulk-approve')
-  @RequirePermission('canReconcileAttendance')
+  @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Bulk approve multiple time entries' })
   async bulkApprove(
     @Body() body: { entryIds: string[]; notes?: string },
@@ -857,6 +909,7 @@ export class AttendanceController {
       entryIds: body.entryIds,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       notes: body.notes,
     });
   }

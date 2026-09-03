@@ -25,6 +25,8 @@ export class AttendanceController {
     data: {
       userId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       startDate?: string;
       endDate?: string;
       page?: number;
@@ -40,6 +42,8 @@ export class AttendanceController {
     data: {
       locationId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       date?: string;
       search?: string;
       page?: number;
@@ -59,6 +63,8 @@ export class AttendanceController {
     data: {
       locationIds: string[];
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       date?: string;
       requesterId?: string;
       requesterCanViewAll?: boolean;
@@ -72,6 +78,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       date?: string;
       status?: string;
       search?: string;
@@ -108,6 +116,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       userId?: string;
       startDate: string;
       endDate: string;
@@ -121,6 +131,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       userId?: string;
       weekStartDate?: string;
     },
@@ -133,6 +145,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       userId?: string;
       year?: number;
       month?: number;
@@ -146,6 +160,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       startDate: string;
       endDate: string;
       userId?: string;
@@ -164,6 +180,8 @@ export class AttendanceController {
     data: {
       userId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       type?: string;
       notes?: string;
     },
@@ -177,6 +195,8 @@ export class AttendanceController {
     data: {
       userId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       notes?: string;
     },
   ) {
@@ -189,6 +209,8 @@ export class AttendanceController {
     data: {
       userId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
     },
   ) {
     return this.breakService.getBreakStatus(data);
@@ -200,6 +222,8 @@ export class AttendanceController {
     data: {
       timeEntryId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
     },
   ) {
     return this.breakService.getBreaksForEntry(data);
@@ -210,6 +234,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
     },
   ) {
     return this.breakService.getActiveBreaks(data);
@@ -220,6 +246,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       date?: string;
       userId?: string;
       type?: string;
@@ -236,6 +264,8 @@ export class AttendanceController {
     data: {
       timeEntryId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       editorId: string;
       type?: any;
       startedAt: string;
@@ -258,6 +288,8 @@ export class AttendanceController {
       breakId: string;
       adminId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       notes?: string;
     },
   ) {
@@ -269,6 +301,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       startDate: string;
       endDate: string;
       userId?: string;
@@ -286,6 +320,8 @@ export class AttendanceController {
     @Payload()
     data: {
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       page?: number;
       limit?: number;
     },
@@ -300,6 +336,8 @@ export class AttendanceController {
       entryId: string;
       approverId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       notes?: string;
     },
   ) {
@@ -313,6 +351,8 @@ export class AttendanceController {
       entryId: string;
       approverId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       reason: string;
     },
   ) {
@@ -395,6 +435,8 @@ export class AttendanceController {
       entryId: string;
       editorId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       clockInAt?: string;
       clockOutAt?: string;
       notes?: string;
@@ -422,6 +464,8 @@ export class AttendanceController {
     data: {
       editorId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       userId: string;
       locationId: string;
       startDate: string;
@@ -444,6 +488,8 @@ export class AttendanceController {
       entryIds: string[];
       approverId: string;
       organizationId: string;
+      /** Spaces the caller may act in; null = org-wide, [] = none. */
+      scopeSpaceIds?: string[] | null;
       notes?: string;
     },
   ) {

@@ -17,6 +17,7 @@ import {
   buildSingleDayFilter,
 } from '@hbcfield/shared';
 import { BreakType, ApprovalStatus } from '@prisma/client';
+import { scopeWhere, type AttendanceScope } from './attendance-scope';
 
 @Injectable()
 export class BreakService {
@@ -118,6 +119,8 @@ export class BreakService {
    *     an approval that predates the change is not an approval of it
    */
   async addBreakForMember(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     timeEntryId: string;
     organizationId: string;
     editorId: string;
@@ -140,7 +143,7 @@ export class BreakService {
 
     // Org-scoped: an id from another tenant reads as "not found", never as an edit.
     const entry = await this.prisma.timeEntry.findFirst({
-      where: { id: data.timeEntryId, organizationId: data.organizationId },
+      where: { id: data.timeEntryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
       include: { breaks: true },
     });
     if (!entry) return refuse(HttpStatus.NOT_FOUND, 'Time entry not found.');
@@ -228,13 +231,13 @@ export class BreakService {
    * is recomputed from the rows that remain, and an approved entry returns to
    * PENDING because its paid hours just changed.
    */
-  async deleteBreak(data: { breakId: string; organizationId: string; editorId: string }) {
+  async deleteBreak(data: { breakId: string; organizationId: string; editorId: string; scopeSpaceIds?: AttendanceScope }) {
     const refuse = (statusCode: number, message: string) => ({ success: false as const, statusCode, message });
 
     // Org-scoped through the entry: a break id from another tenant reads as "not
     // found", never as a deletion.
     const br = await this.prisma.break.findFirst({
-      where: { id: data.breakId, timeEntry: { organizationId: data.organizationId } },
+      where: { id: data.breakId, timeEntry: { organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) } },
       include: { timeEntry: { select: { id: true, approvalStatus: true } } },
     });
     if (!br) return refuse(HttpStatus.NOT_FOUND, 'Break not found.');
@@ -406,11 +409,13 @@ export class BreakService {
   /**
    * Get breaks for a time entry
    */
-  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string }) {
+  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
         id: data.timeEntryId,
         organizationId: data.organizationId,
+        // An entry outside the caller's granted spaces reads as 'not found'.
+        ...scopeWhere(data.scopeSpaceIds),
       },
     });
 
@@ -442,12 +447,14 @@ export class BreakService {
   /**
    * Get all active breaks in the organization (admin view)
    */
-  async getActiveBreaks(data: { organizationId: string }) {
+  async getActiveBreaks(data: { organizationId: string; scopeSpaceIds?: AttendanceScope }) {
     const breaks = await this.prisma.break.findMany({
       where: {
         endedAt: null, // Active breaks
         timeEntry: {
           organizationId: data.organizationId,
+          // Only the caller's granted spaces — see attendance-scope.ts.
+          ...scopeWhere(data.scopeSpaceIds),
         },
       },
       include: {
@@ -484,6 +491,8 @@ export class BreakService {
    * Get break history with filters (admin view)
    */
   async getBreakHistory(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     date?: string;
     userId?: string;
@@ -505,6 +514,8 @@ export class BreakService {
       ...dateFilter,
       timeEntry: {
         organizationId: data.organizationId,
+        // Only the caller's granted spaces — see attendance-scope.ts.
+        ...scopeWhere(data.scopeSpaceIds),
         ...(data.userId ? { userId: data.userId } : {}),
       },
       ...(data.type ? { type: data.type } : {}),
@@ -562,6 +573,8 @@ export class BreakService {
    * End a break manually (admin action)
    */
   async endBreakManually(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     breakId: string;
     adminId: string;
     organizationId: string;
@@ -573,6 +586,8 @@ export class BreakService {
         endedAt: null, // Must be active
         timeEntry: {
           organizationId: data.organizationId,
+          // Only the caller's granted spaces — see attendance-scope.ts.
+          ...scopeWhere(data.scopeSpaceIds),
         },
       },
       include: {
@@ -639,6 +654,8 @@ export class BreakService {
    * Get break summary statistics for a date range
    */
   async getBreakSummary(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     organizationId: string;
     startDate: string;
     endDate: string;
@@ -651,6 +668,8 @@ export class BreakService {
       startedAt: dateFilter,
       timeEntry: {
         organizationId: data.organizationId,
+        // Only the caller's granted spaces — see attendance-scope.ts.
+        ...scopeWhere(data.scopeSpaceIds),
         ...(data.userId ? { userId: data.userId } : {}),
       },
       durationMinutes: { not: null }, // Only completed breaks

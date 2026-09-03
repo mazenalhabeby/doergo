@@ -587,6 +587,32 @@ export function accessAllows(
 }
 
 /**
+ * Which spaces grant `key` — the list a query narrows to.
+ *
+ * The guard can only answer "may they, somewhere?" for a route that names no
+ * space, and a list endpoint names none: `GET /attendance/entries` returns the
+ * organization's time entries. Without this the guard widens and NOTHING
+ * narrows, so a space-scoped grant reads every site in the company.
+ *
+ * Returns null when the permission is held ORG-WIDE, meaning "do not narrow" —
+ * distinct from an empty array, which means "granted nowhere" and must return
+ * nothing rather than everything. Those two collapsing into one falsy value is
+ * exactly how a scoping bug becomes a data leak, so they are different types.
+ */
+export function spacesGranting(
+  access: ResolvedAccess | null | undefined,
+  key: AccessPermissionKey,
+): string[] | null {
+  if (!access) return [];
+  if (access.org?.[key] === true) return null;
+  const out: string[] = [];
+  for (const spaceId in access.perSpace) {
+    if (access.perSpace[spaceId]?.[key] === true) out.push(spaceId);
+  }
+  return out;
+}
+
+/**
  * SPACE-ONLY grant check — does the resolved access grant `key` within THIS exact
  * space, with NO org-wide fallback? Use this to authorize actions on a FOREIGN
  * (cross-org shared) resource: `perSpace[spaceId]` is populated only by a native

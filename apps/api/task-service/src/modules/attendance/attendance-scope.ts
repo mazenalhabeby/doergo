@@ -1,0 +1,40 @@
+/**
+ * Narrowing attendance reads to the spaces a caller was actually granted.
+ *
+ * The gateway's guard can only ever WIDEN. None of the attendance routes names
+ * a space — they are keyed on entry ids, approval ids, or nothing at all — so a
+ * space-scoped grant satisfies "granted anywhere" and the guard lets it through.
+ * If nothing narrowed afterwards, a supervisor granted one site would read every
+ * site in the organization. This is the narrowing.
+ *
+ * The three states are distinct on purpose:
+ *
+ *   null / undefined  org-wide grant (or an internal call) → do not narrow
+ *   []                granted in NO space → must match nothing
+ *   [ids]             granted here → match only these
+ *
+ * `[]` and `null` collapsing into one falsy check is exactly how this becomes a
+ * data leak, so they are never tested with a plain truthiness check anywhere.
+ */
+export type AttendanceScope = string[] | null | undefined;
+
+/** A `where` fragment that limits rows to the caller's spaces. */
+export function scopeWhere(scope: AttendanceScope): { locationId?: { in: string[] } } {
+  if (scope === null || scope === undefined) return {};
+  // An empty list yields `IN ()`, which matches nothing — the correct answer for
+  // somebody holding the permission in no space, and the opposite of what
+  // dropping the filter would do.
+  return { locationId: { in: scope } };
+}
+
+/**
+ * May the caller act on a row in THIS space?
+ *
+ * For writes the route names a resource, not a space, so the guard cannot help:
+ * only the service knows which space the entry belongs to. Called after loading
+ * the row and before changing it.
+ */
+export function scopeAllows(scope: AttendanceScope, locationId: string | null | undefined): boolean {
+  if (scope === null || scope === undefined) return true;
+  return !!locationId && scope.includes(locationId);
+}

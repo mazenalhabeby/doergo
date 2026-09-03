@@ -32,6 +32,7 @@ import {
   buildDateRangeFilter,
   mayClockInRemotely as canClockInRemotely,
 } from '@hbcfield/shared';
+import { scopeWhere, scopeAllows, type AttendanceScope } from './attendance-scope';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
@@ -786,6 +787,8 @@ export class AttendanceService {
 
   /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
   async approveExtraTime(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     approverId: string;
     entryId: string;
     minutes: number;
@@ -797,7 +800,10 @@ export class AttendanceService {
     }
 
     const entry = await this.prisma.timeEntry.findFirst({
-      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+      // Scoped as well as checked below: `userCanApproveOvertime` already tests
+      // this entry's own space, and the two agreeing is the point — the guard
+      // now admits a space-scoped caller, so nothing here may assume org-wide.
+      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN, ...scopeWhere(data.scopeSpaceIds) },
       include: { shift: { select: { graceMin: true } } },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
@@ -1151,12 +1157,14 @@ export class AttendanceService {
    * time) → PENDING → APPROVED with a countdown to expiresAt.
    */
   async approveExcursion(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     excursionId: string;
     approverId: string;
     organizationId: string;
     grantedMinutes?: number;
   }) {
-    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId);
+    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId, data.scopeSpaceIds);
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
@@ -1190,11 +1198,13 @@ export class AttendanceService {
    * worker out (the ONLY automatic clock-out in this workflow).
    */
   async rejectExcursion(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     excursionId: string;
     approverId: string;
     organizationId: string;
   }) {
-    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId);
+    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId, data.scopeSpaceIds);
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
@@ -1226,7 +1236,7 @@ export class AttendanceService {
   }
 
   /** Approver surface: active (PENDING/APPROVED) excursions for the org. */
-  async listActiveExcursions(data: { organizationId: string; status?: 'active' | 'pending' | 'approved' }) {
+  async listActiveExcursions(data: { organizationId: string; status?: 'active' | 'pending' | 'approved'; scopeSpaceIds?: AttendanceScope }) {
     const statusFilter =
       data.status === 'pending'
         ? (['PENDING'] as const)
@@ -1235,7 +1245,13 @@ export class AttendanceService {
           : (['PENDING', 'APPROVED'] as const);
 
     const rows = await this.prisma.geofenceExcursion.findMany({
-      where: { organizationId: data.organizationId, status: { in: statusFilter as any } },
+      where: {
+        organizationId: data.organizationId,
+        status: { in: statusFilter as any },
+        // GeofenceExcursion names its own space, so it narrows on `spaceId`
+        // rather than the `locationId` a time entry uses.
+        ...(data.scopeSpaceIds ? { spaceId: { in: data.scopeSpaceIds } } : {}),
+      },
       orderBy: [{ status: 'asc' }, { reportedAt: 'desc' }, { leftRingAt: 'desc' }],
       take: 200,
     });
@@ -1264,9 +1280,10 @@ export class AttendanceService {
     return Math.min(n, GEOFENCE_EXCURSION.CUSTOM_MAX_MINUTES);
   }
 
-  private async loadOrgExcursion(excursionId: string, organizationId: string) {
+  private async loadOrgExcursion(excursionId: string, organizationId: string, scope?: AttendanceScope) {
     const excursion = await this.prisma.geofenceExcursion.findUnique({ where: { id: excursionId } });
-    if (!excursion || excursion.organizationId !== organizationId) {
+    // An excursion names the space whose ring was left, so the check is direct.
+    if (!excursion || excursion.organizationId !== organizationId || !scopeAllows(scope, excursion.spaceId)) {
       throw new NotFoundException('Out-of-ring request not found');
     }
     return excursion;
@@ -1550,11 +1567,13 @@ export class AttendanceService {
    * narrow select (only what the dashboard reads) → O(open entries), tiny
    * payload. No pagination: the open set is always small.
    */
-  async getActiveEntries(data: { organizationId: string }) {
+  async getActiveEntries(data: { organizationId: string; scopeSpaceIds?: AttendanceScope }) {
     const entries = await this.prisma.timeEntry.findMany({
       where: {
         organizationId: data.organizationId,
         status: 'CLOCKED_IN',
+        // Only the spaces this caller was granted — see attendance-scope.ts.
+        ...scopeWhere(data.scopeSpaceIds),
       },
       select: {
         id: true,
@@ -1989,13 +2008,17 @@ export class AttendanceService {
   }
 
   /** Admin list: recent no-shows (reminded / escalated / excused) for review. */
-  async listNoShows(data: { organizationId: string; days?: number; spaceId?: string }) {
+  async listNoShows(data: { organizationId: string; days?: number; spaceId?: string; scopeSpaceIds?: AttendanceScope }) {
     const now = new Date();
     const since = new Date(now.getTime() - (data.days ?? 7) * 86_400_000);
     const rows = await this.prisma.shiftInstance.findMany({
       where: {
         organizationId: data.organizationId,
         ...(data.spaceId ? { spaceId: data.spaceId } : {}),
+        // ShiftInstance is keyed on the space too. Applied after the explicit
+        // filter above so a caller asking for one space still cannot reach a
+        // space they were never granted.
+        ...(data.scopeSpaceIds ? { spaceId: { in: data.scopeSpaceIds } } : {}),
         state: { in: ['REMINDED', 'ESCALATED', 'EXCUSED'] },
         expectedClockInAt: { gte: since, lte: now },
       },
@@ -2034,9 +2057,15 @@ export class AttendanceService {
   }
 
   /** Excuse a no-show (mark EXCUSED + record the reason) or reopen it (back to PENDING). */
-  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
+  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string; scopeSpaceIds?: AttendanceScope }) {
     const inst = await this.prisma.shiftInstance.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      // ShiftInstance names its own space, so it narrows on `spaceId`. A
+      // no-show in a space the caller was not granted reads as 'not found'.
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+        ...(data.scopeSpaceIds ? { spaceId: { in: data.scopeSpaceIds } } : {}),
+      },
       select: { id: true },
     });
     if (!inst) throw new NotFoundException('No-show not found');
@@ -2115,6 +2144,8 @@ export class AttendanceService {
 
   async getAllEntries(data: {
     organizationId: string;
+    /** Spaces the caller may read; null/undefined = org-wide, [] = none. */
+    scopeSpaceIds?: AttendanceScope;
     date?: Date | string;
     startDate?: Date | string;
     endDate?: Date | string;
@@ -2131,6 +2162,9 @@ export class AttendanceService {
 
     const where: any = {
       organizationId: data.organizationId,
+      // Only the spaces this caller was granted — see attendance-scope.ts. The
+      // gateway guard widens on any space grant; this is what narrows again.
+      ...scopeWhere(data.scopeSpaceIds),
     };
 
     // Date filter — a startDate/endDate range takes precedence over a single day.
