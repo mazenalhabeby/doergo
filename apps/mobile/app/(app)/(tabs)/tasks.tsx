@@ -20,6 +20,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
 import { oversees } from '../../../src/lib/permissions';
+import { hasRouteToPlan } from '../../../src/lib/my-route';
 import { TaskCard, FilterChip, Skeleton, ScreenContainer, PressableScale } from '../../../src/components';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TourTarget } from '../../../src/components/tour';
@@ -314,6 +315,20 @@ export default function TasksScreen() {
   // Client-side status filtering (same multi-status aggregates as before)
   // ---------------------------------------------------------------------------
 
+  /*
+    Is there a route to plan — my own open jobs with a place to be?
+
+    Derived from the list already loaded, so the banner costs no request. Read
+    from the CURRENT tab only, and remembered: the other two tabs are date
+    windows (what is coming, what is done), and letting them answer made the
+    banner blink out the moment somebody looked at their history.
+  */
+  const [hasRoute, setHasRoute] = useState(false);
+  useEffect(() => {
+    if (activeTab !== 'current' || isLoading) return;
+    setHasRoute(hasRouteToPlan(tasks, user?.id));
+  }, [activeTab, isLoading, tasks, user?.id]);
+
   // Derive blocked tasks from existing fetched data (no extra API call)
   const blockedTasks = useMemo(
     () => tasks.filter(t => t.status === TaskStatus.BLOCKED),
@@ -421,7 +436,10 @@ export default function TasksScreen() {
           )
         }
       >
-      {/* Plan route — optimize today's location tasks into a driving route */}
+      {/* Plan route — optimize MY open location jobs into a driving route.
+          Offered only when there is a route to plan: a supervisor's list is
+          other people's work, and a route through it means nothing. */}
+      {hasRoute && (
       <PressableScale
         onPress={() => router.push('/(app)/route-planner')}
         activeScale={0.97}
@@ -440,6 +458,7 @@ export default function TasksScreen() {
           <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.85)" />
         </LinearGradient>
       </PressableScale>
+      )}
 
       {/* Search Bar */}
       <TourTarget name="tasks-search" style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>

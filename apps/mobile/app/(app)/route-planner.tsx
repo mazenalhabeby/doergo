@@ -9,7 +9,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
-import { tasksApi, TaskStatus, type Task } from '../../src/lib/api';
+import { tasksApi, type Task } from '../../src/lib/api';
+import { isMyRouteStop } from '../../src/lib/my-route';
+import { useAuth } from '../../src/contexts/auth-context';
 import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -20,7 +22,6 @@ import {
 
 type LatLng = { lat: number; lng: number; label?: string };
 
-const OPEN_HIDDEN = [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.CLOSED] as string[];
 const NAV_APPS: { key: NavApp; label: string }[] = [
   { key: 'google', label: 'Google Maps' },
   { key: 'waze', label: 'Waze' },
@@ -39,6 +40,7 @@ const fmtDur = (s: number) => {
 export default function RoutePlannerScreen() {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,22 +52,28 @@ export default function RoutePlannerScreen() {
   const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load the worker's open tasks that have a location.
+  /*
+    My open jobs that have somewhere to be.
+
+    The list endpoint answers with everything the caller may SEE, which for
+    anyone who oversees work is the whole site's workload — so this screen used
+    to propose a driving route around other people's jobs. "My route" means
+    mine: the same rule the Tasks banner uses to decide whether to offer this at
+    all.
+  */
   const load = useCallback(async () => {
     try {
       const all = await tasksApi.list({ limit: 100 } as any);
-      const withLoc = (all || []).filter(
-        (x) => x.locationLat != null && x.locationLng != null && !OPEN_HIDDEN.includes(x.status as string),
-      );
-      setTasks(withLoc);
+      const mine = (all || []).filter((x) => isMyRouteStop(x, user?.id));
+      setTasks(mine);
       // Preselect all by default.
-      setSelected(Object.fromEntries(withLoc.map((x) => [x.id, true])));
+      setSelected(Object.fromEntries(mine.map((x) => [x.id, true])));
     } catch (e: any) {
       setError(e?.message || 'Failed to load tasks');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { useMyLocation(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
