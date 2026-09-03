@@ -78,6 +78,14 @@ import { openUntrustedImage } from './image-input';
 
 /** What a caller is allowed to do, resolved by the gateway from their access. */
 export interface DocumentActor {
+  /**
+   * Works for a client or partner, not for this organization.
+   *
+   * The personnel file is the one area where the answer is a relationship
+   * rather than a permission: we ask somebody else's employee for nothing, and
+   * we accept nothing from them either.
+   */
+  isExternal?: boolean;
   userId: string;
   organizationId: string;
   canViewMemberDocuments: boolean;
@@ -1028,12 +1036,35 @@ export class DocumentsService {
    * TYPE: a member may upload against a SUPPLIED type and nothing else, so this
    * can never become a way to file yourself a payslip.
    */
+  /**
+   * Nobody uploads a personnel document for somebody else's employee.
+   *
+   * The company asks an external member for nothing — `requirementsFor` returns
+   * an empty list for them — and the other half of that has to be true too: a
+   * file we never asked for should not be accepted either. Otherwise a client's
+   * supervisor uploads their passport into our organization's personnel store,
+   * and we are holding an outsider's identity documents with no reason to and
+   * no policy covering them.
+   *
+   * Refused rather than hidden, because hiding a button is a courtesy and this
+   * is a rule. Signing is untouched: countersigning a document we sent them is
+   * the one document flow that IS theirs.
+   */
+  private assertNotExternal(actor: DocumentActor) {
+    if (actor.isExternal) {
+      throw new BadRequestException(
+        'External members do not have a personnel file — nothing is required from them',
+      );
+    }
+  }
+
   async presignOwnUpload(data: {
     actor: DocumentActor;
     typeId: string;
     mimeType: string;
     sizeBytes: number;
   }) {
+    this.assertNotExternal(data.actor);
     const store = this.requireStore();
     const extension = this.assertUploadable(data.mimeType, data.sizeBytes);
     await this.assertMemberSuppliableType(data.typeId, data.actor.organizationId);
@@ -1075,6 +1106,9 @@ export class DocumentsService {
     backCrop?: Rect | null;
     ctx?: RequestContext;
   }) {
+    // Checked here as well as at presign: presign is a courtesy, this is the
+    // step that would actually file the document.
+    this.assertNotExternal(data.actor);
     this.assertStagingKey(
       data.stagingKey,
       this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),

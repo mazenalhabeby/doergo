@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/contexts/auth-context"
 
 /*
   A member's own file.
@@ -79,6 +80,11 @@ function StandingChip({ standing, expiresOn }: { standing: string; expiresOn: st
 
 export default function MyDocumentsPage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  /* Works for a client or partner — see the upload buttons below. Their page
+     still lists documents ISSUED to them, which is where anything awaiting
+     their signature appears. */
+  const isExternalMember = user?.isExternal === true
   const queryClient = useQueryClient()
   const router = useRouter()
 
@@ -193,7 +199,10 @@ export default function MyDocumentsPage() {
           {/* Only when the organization actually asks its members for
               something. An upload button on an organization that issues
               everything is an invitation to be refused. */}
-          {types.some((ty) => ty.direction === "SUPPLIED" && ty.isActive) && (
+          {/* And never for an external member: the company asks somebody else's
+              employee for nothing, so there is nothing here for them to supply.
+              The server refuses it too — this only avoids offering it. */}
+          {!isExternalMember && types.some((ty) => ty.direction === "SUPPLIED" && ty.isActive) && (
             <Button size="sm" onClick={() => setSupplying(true)}>
               <Upload className="mr-2 h-4 w-4" />
               {t("documents.supply.action")}
@@ -240,10 +249,12 @@ export default function MyDocumentsPage() {
               </li>
             ))}
           </ul>
-          <Button size="sm" className="mt-3" onClick={() => setSupplying(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            {t("documents.supply.action")}
-          </Button>
+          {!isExternalMember && (
+            <Button size="sm" className="mt-3" onClick={() => setSupplying(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              {t("documents.supply.action")}
+            </Button>
+          )}
         </div>
       )}
 

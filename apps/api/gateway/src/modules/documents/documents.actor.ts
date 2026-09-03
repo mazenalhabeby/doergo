@@ -20,6 +20,14 @@ import { isAdmin, type CurrentUserData } from '@hbcfield/shared';
 export interface DocumentActor {
   userId: string;
   organizationId: string;
+  /**
+   * Works for a client or partner, not for this organization.
+   *
+   * Carried because the personnel file is the one area where the answer is not
+   * a permission but a relationship: we do not ask somebody else's employee for
+   * their papers, and we do not accept them either.
+   */
+  isExternal: boolean;
   canViewMemberDocuments: boolean;
   canOpenMemberDocuments: boolean;
   canIssueDocuments: boolean;
@@ -35,6 +43,9 @@ export function documentActor(user: CurrentUserData): DocumentActor {
     // it. Coerced rather than asserted so a future public route fails closed
     // on an empty tenant scope instead of matching every row.
     organizationId: user.organizationId ?? '',
+    // Not admin-bypassed: this is not a permission an admin outranks, it is who
+    // the person works for.
+    isExternal: (user as { isExternal?: boolean }).isExternal === true,
     canViewMemberDocuments: admin || !!user.canViewMemberDocuments,
     canOpenMemberDocuments: admin || !!user.canOpenMemberDocuments,
     canIssueDocuments: admin || !!user.canIssueDocuments,
