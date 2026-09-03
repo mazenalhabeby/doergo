@@ -792,12 +792,28 @@ export class TasksService {
       in full, it does not replace the assignment clause.
     */
     if (viewAllSpaceIds?.length) {
+      /*
+        Returned as AND-of-OR, not a bare `OR`.
+
+        findAll copies only `organizationId` and `AND` off this result. A bare
+        `OR` was therefore DROPPED on the floor and the caller was left with
+        `{ organizationId }` — every task in the organization, to somebody
+        entitled to one space. The narrowest possible clause and the widest
+        possible outcome, from the same return statement.
+
+        `AND: [{ OR: [...] }]` is the shape this function has always returned
+        and the only one its callers read.
+      */
       return {
         organizationId,
-        OR: [
-          { spaceId: { in: viewAllSpaceIds } },
-          { assignedToId: userId },
-          { assignees: { some: { userId } } },
+        AND: [
+          {
+            OR: [
+              { spaceId: { in: viewAllSpaceIds } },
+              { assignedToId: userId },
+              { assignees: { some: { userId } } },
+            ],
+          },
         ],
       };
     }
