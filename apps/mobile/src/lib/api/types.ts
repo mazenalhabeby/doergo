@@ -1,3 +1,4 @@
+import type { ResolvedAccess as ResolvedGrants } from '@hbcfield/shared/client';
 import {
   
 
@@ -70,6 +71,16 @@ export interface User {
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
   canManageUsers: boolean;
+  /**
+   * The resolved grants — `{ org, perSpace }`.
+   *
+   * The server has always sent this on login and refresh; this type simply
+   * never declared it, so every mobile check fell back to the flat columns
+   * above. Those carry the ORG-wide answer only, which is why a member granted
+   * "create tasks" by a SPACE role got no create screen here while the API
+   * would have accepted the request.
+   */
+  access?: ResolvedGrants | null;
   // When true the member may clock in remotely (WFH / anywhere), geofence-exempt.
   // Sent in the login/validateToken payload; drives the mobile clock-in choice.
   allowRemote?: boolean;

@@ -1,3 +1,11 @@
+/*
+  Aliased: this file exports its OWN `ResolvedAccess` (platforms / spaceScope /
+  canContact — the Access Profile), which is a different thing from the
+  permissions module's (org + perSpace grants). Two exported types share the
+  name across this package; importing one into the other needs the alias until
+  somebody renames one, which is a wider change than this.
+*/
+import { accessAllowsAnywhere, type ResolvedAccess as PermissionGrants } from './permissions';
 /**
  * Mobile Module Configuration
  *
@@ -137,7 +145,19 @@ export interface UserPermissionFields {
  * member's selection never clobbers another user's surfaces.
  */
 export function hasAccessModule(
-  user: { enabledModules?: unknown } & UserPermissionFields,
+  /*
+    `access` is typed structurally, not as the branded `ResolvedAccess`.
+
+    Both apps declare their own session shape with plain
+    `Record<string, boolean>` maps, which are not assignable to the branded
+    PermissionSet. Demanding the exact type here would force a cast at every
+    call site — and a cast at a call site is where somebody eventually passes
+    the wrong thing.
+  */
+  user: {
+    enabledModules?: unknown;
+    access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> } | null;
+  } & UserPermissionFields,
   module: MobileModule,
 ): boolean {
   // Admins have full access by definition — every module, always, regardless of
@@ -146,8 +166,26 @@ export function hasAccessModule(
   // choices to configure — see AccessBuilder).
   const role = (user.role || '').toUpperCase();
   if (role === 'ADMIN' || role === 'CLIENT') return true;
-  if (module === 'create_task') return user.canCreateTasks === true;
-  if (module === 'manage') return user.canManageUsers === true;
+  /*
+    Derived from the permission — org-wide OR held in a space.
+
+    These two read the flat columns, and those carry only the ORG-wide
+    resolution. So a member granted "create tasks" by a SPACE role had the
+    surface withheld: no Create button on the web tasks page, no create screen
+    on mobile — while `POST /tasks`, which is
+    `@RequirePermissionInSpace('canCreateTasks')`, would have accepted the
+    request. The tab was the last thing still asking the old question.
+
+    Any-space is the right test for a SURFACE. It cannot widen real access: the
+    server resolves the permission against the task's own space and refuses
+    independently.
+  */
+  if (module === 'create_task') {
+    return user.canCreateTasks === true || accessAllowsAnywhere(user.access as PermissionGrants | null | undefined, 'canCreateTasks');
+  }
+  if (module === 'manage') {
+    return user.canManageUsers === true || accessAllowsAnywhere(user.access as PermissionGrants | null | undefined, 'canManageUsers');
+  }
   const profile = asProfile(user.enabledModules);
   if (!profile) return true; // no per-user profile → full access
   return Array.isArray(profile.modules) ? profile.modules.includes(module) : false;
