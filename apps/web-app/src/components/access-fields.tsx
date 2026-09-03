@@ -97,6 +97,7 @@ export function AccessFields({
   lockRole = false,
   allowAdmin = true,
   roleOnly = false,
+  external = false,
 }: {
   value: AccessDraft
   /** Emit a partial patch; the parent owns the draft. */
@@ -111,6 +112,21 @@ export function AccessFields({
   roleOnly?: boolean
   /** Offer the Admin option (member edit). Invites can't create admins → false. */
   allowAdmin?: boolean
+  /**
+   * This person works for a client or partner. Shows only what shapes their
+   * SCREENS — where they log in, and which tabs they get.
+   *
+   * The four sections dropped are not hidden for tidiness, they are sections
+   * that cannot mean anything here: the org Role is refused by the server, the
+   * Permissions readout is derived from that role and so reads "grants no
+   * permissions yet" for everybody external, remote clock-in belongs to
+   * somebody who clocks in, and space visibility is settled by their single
+   * assignment. A control that cannot take effect is worse than an absent one
+   * — somebody sets it and waits for something to happen.
+   *
+   * Their actual powers come from the role they are given IN a space.
+   */
+  external?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -219,8 +235,9 @@ export function AccessFields({
     how somebody stops being an admin, so hiding it meant an admin could never be
     demoted anywhere in the product.
   */
-  const roleField = showRole ? (
-
+  // Not for an external member: the server refuses an org-wide role for one, so
+  // the selector would be a control whose value is discarded.
+  const roleField = showRole && !external ? (
       <Field dataTour="access-role" label={t("accessBuilder.orgRole", "Role")}>
         <Select
           value={roleValue}
@@ -281,6 +298,7 @@ export function AccessFields({
         this section reports what that means rather than offering a second place
         to set it. See LEGACY_DIRECT_KEYS for why per-member switches went away.
       */}
+      {!external && (
       <Field dataTour="access-permissions" label={t("accessBuilder.permissions")}>
         <div className="space-y-3">
           {permView.groups.length === 0 ? (
@@ -358,6 +376,7 @@ export function AccessFields({
           )}
         </div>
       </Field>
+      )}
 
       {/* Feature tabs */}
       <Field dataTour="access-features" label={t("accessBuilder.featureTabsLabel")}>
@@ -383,6 +402,7 @@ export function AccessFields({
 
       {/* Attendance — remote clock-in. Always shown; disabled with a hint when
           the Clock module is off (remote clock-in needs clock access). */}
+      {!external && (
       <Field dataTour="access-attendance" label={t("accessBuilder.attendance", "Attendance")}>
         <div className={cn(
           "flex items-center justify-between rounded-xl border border-border px-4 py-3",
@@ -403,8 +423,10 @@ export function AccessFields({
           />
         </div>
       </Field>
+      )}
 
       {/* Space scope */}
+      {!external && (
       <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
         <div className="space-y-2">
           {/* "View all tasks" is what the space list is scoped against, so a
@@ -441,6 +463,7 @@ export function AccessFields({
           ))}
         </div>
       </Field>
+      )}
 
       {/* Messaging — ONE symmetric switch: being able to reach teammates and
           being reachable by them are the same capability. Drives both

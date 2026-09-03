@@ -330,7 +330,24 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                     // the form stops showing, it stops sending. Access is NOT
                     // touched: the panel is identical for both, so the
                     // selections in it must be too.
-                    if (opt.value) setScheduleType("NONE")
+                    if (opt.value) {
+                      setScheduleType("NONE")
+                      /*
+                        What the form stops showing, it stops sending.
+
+                        The four hidden sections still hold whatever was set
+                        before the switch, and an invitation carrying an org
+                        role or remote clock-in for an external member would be
+                        refused — or worse, quietly applied. Their space is a
+                        single assignment, so the scope is 'own' by definition.
+                      */
+                      setAccess((cur) => ({
+                        ...cur,
+                        memberRoleId: null,
+                        allowRemote: false,
+                        spaceScope: "own",
+                      }))
+                    }
                   }}
                   aria-pressed={isExternal === opt.value}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${
@@ -418,7 +435,15 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             </button>
             {accessOpen && (
               <div className="border-t border-border px-3 py-4">
-                <AccessFields value={access} onChange={patchAccess} allowAdmin={false} />
+                <AccessFields
+                  value={access}
+                  onChange={patchAccess}
+                  allowAdmin={false}
+                  /* External: only what shapes their screens — where they log
+                     in and which tabs they get. Their powers come from the role
+                     they are given in a space, not from here. */
+                  external={isExternal}
+                />
               </div>
             )}
           </div>
