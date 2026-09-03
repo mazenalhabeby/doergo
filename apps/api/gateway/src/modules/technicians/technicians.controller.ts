@@ -331,6 +331,32 @@ export class EmployeesController {
         {
           id,
           organizationId: user.organizationId,
+          /*
+            Who is asking, so the answer can be layered.
+
+            This route carries no permission decorator by design — every member
+            needs to open a colleague's card from a roster they already see. So
+            the scoping is in the payload rather than the guard:
+
+              null           org-wide viewer (admin, or a manager holding
+                             canViewAllTasks / canManageUsers org-wide) — the
+                             full record, as before
+              [space ids]    a member whose authority is per-space: they may
+                             open somebody they SHARE a space with, and the
+                             numbers cover those spaces only
+
+            Computed server-side from the resolved grant, never from the client.
+          */
+          viewerSpaceIds: isAdmin(user as any) || user.canViewAllTasks || user.canManageUsers
+            ? null
+            : Array.from(
+                new Set([
+                  ...(spacesGranting((user as any)?.access, 'canViewAllTasks') ?? []),
+                  ...(spacesGranting((user as any)?.access, 'canViewSpaceAttendance') ?? []),
+                ]),
+              ),
+          // Coordinates are their own permission — see lastLocation in the service.
+          canViewTracking: isAdmin(user as any) || (user as any).canViewTracking === true,
         },
       ),
     );

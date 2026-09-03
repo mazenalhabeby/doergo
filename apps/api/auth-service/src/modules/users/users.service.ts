@@ -373,6 +373,27 @@ export class UsersService {
    */
   async getEmployeeDetail(dto: GetEmployeeDetailDto) {
     const { id, organizationId } = dto;
+    /*
+      Who is allowed to read a colleague's record, and how much of it.
+
+      This endpoint had NO permission guard: any authenticated member could
+      fetch any other member's full profile — every task they have completed
+      across every space, their hours, their recent activity and their last GPS
+      position. For an external member that is a client's supervisor reading the
+      complete work history of people at sites they have nothing to do with.
+
+      `viewerSpaceIds` is null for an org-wide viewer (an admin or a manager) and
+      the caller's granted spaces otherwise. Undefined means an older caller that
+      sends nothing, which is treated as org-wide so existing internal callers
+      are unaffected — the gateway sends it on the one route a member reaches.
+    */
+    const viewerSpaceIds = (dto as { viewerSpaceIds?: string[] | null }).viewerSpaceIds;
+    const scoped = Array.isArray(viewerSpaceIds);
+    // Coordinates need their own permission — see lastLocation below. Absent
+    // means an older caller that does not send it; only the scoped path (the
+    // one a plain member reaches) is restricted, so nothing internal changes.
+    const canSeeLocation =
+      !scoped || (dto as { canViewTracking?: boolean }).canViewTracking === true;
 
     const employee = await this.prisma.user.findFirst({
       where: {
@@ -423,9 +444,22 @@ export class UsersService {
     }
 
     // Batch all stats queries in parallel to avoid N+1
+    if (scoped) {
+      // Reachable only through a space they were both put in. Reads as "not
+      // found" rather than "forbidden": whether a given colleague exists is
+      // itself something this caller has no business learning.
+      const shared = await this.prisma.spaceAssignment.findFirst({
+        where: { userId: id, spaceId: { in: viewerSpaceIds as string[] } },
+        select: { id: true },
+      });
+      if (!shared) throw new NotFoundException('Employee not found');
+    }
+
     const [taskStats, attendanceStats, recentActivity] = await Promise.all([
-      this.getTaskStatsForEmployee(id),
-      this.getAttendanceStatsForEmployee(id),
+      // Scoped to the spaces the viewer holds, so a supervisor of one site sees
+      // that site's work and not a career total.
+      this.getTaskStatsForEmployee(id, scoped ? (viewerSpaceIds as string[]) : undefined),
+      this.getAttendanceStatsForEmployee(id, scoped ? (viewerSpaceIds as string[]) : undefined),
       this.getRecentActivityForEmployee(id),
     ]);
 
@@ -449,16 +483,28 @@ export class UsersService {
       canCreateTasks: employee.canCreateTasks,
       organizationId: employee.organizationId,
       organization: employee.organization,
-      lastLocation: employee.lastLocation
-        ? {
-            lat: employee.lastLocation.lat,
-            lng: employee.lastLocation.lng,
-            accuracy: employee.lastLocation.accuracy,
-            updatedAt: employee.lastLocation.updatedAt.toISOString(),
-          }
+      /*
+        Where this person physically is — the most sensitive field here, and it
+        was returned to anybody who asked.
+
+        `canViewTracking` exists for exactly this and was split out of
+        canViewAllTasks because "read a task list" and "track a person's
+        location" are not the same permission. Without it the coordinates are
+        withheld and `isOnline` still answers the question a roster actually
+        asks: are they around?
+      */
+      lastLocation:
+        canSeeLocation && employee.lastLocation
+          ? {
+              lat: employee.lastLocation.lat,
+              lng: employee.lastLocation.lng,
+              accuracy: employee.lastLocation.accuracy,
+              updatedAt: employee.lastLocation.updatedAt.toISOString(),
+            }
+          : null,
+      lastLocationUpdatedAt: canSeeLocation
+        ? employee.lastLocation?.updatedAt?.toISOString() || null
         : null,
-      lastLocationUpdatedAt:
-        employee.lastLocation?.updatedAt?.toISOString() || null,
       isOnline: this.isOnline(employee.lastLocation?.updatedAt),
       currentTaskCount: taskStats.inProgress,
       todayTaskCount: taskStats.todayTotal,
@@ -2055,7 +2101,14 @@ export class UsersService {
     return password;
   }
 
-  private async getTaskStatsForEmployee(employeeId: string) {
+  /**
+   * @param spaceIds Limit the count to these spaces. Undefined = org-wide, for
+   *   an admin or a manager. A supervisor of one site is answering "how is this
+   *   person doing HERE", and a career total across sites they cannot see is a
+   *   different question they were never granted.
+   */
+  private async getTaskStatsForEmployee(employeeId: string, spaceIds?: string[]) {
+    const spaceFilter = spaceIds ? { spaceId: { in: spaceIds } } : {};
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -2063,12 +2116,12 @@ export class UsersService {
     const [statusCounts, priorityCounts, todayCount] = await Promise.all([
       this.prisma.task.groupBy({
         by: ['status'],
-        where: { assignedToId: employeeId },
+        where: { assignedToId: employeeId, ...spaceFilter },
         _count: { status: true },
       }),
       this.prisma.task.groupBy({
         by: ['priority'],
-        where: { assignedToId: employeeId },
+        where: { assignedToId: employeeId, ...spaceFilter },
         _count: { priority: true },
       }),
       this.prisma.task.count({
@@ -2143,7 +2196,8 @@ export class UsersService {
     };
   }
 
-  private async getAttendanceStatsForEmployee(employeeId: string) {
+  /** @param spaceIds Limit to these sites — see getTaskStatsForEmployee. */
+  private async getAttendanceStatsForEmployee(employeeId: string, spaceIds?: string[]) {
     const now = new Date();
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - now.getDay());
@@ -2156,6 +2210,8 @@ export class UsersService {
       where: {
         userId: employeeId,
         clockInAt: { gte: monthStart },
+        // Hours worked at the sites this viewer supervises, not everywhere.
+        ...(spaceIds ? { locationId: { in: spaceIds } } : {}),
       },
       select: {
         totalMinutes: true,
