@@ -51,6 +51,35 @@ describe('requirementsFor', () => {
     expect(requirementsFor({ memberRoleId: null }, [type({ requiredFromAll: true })])).toHaveLength(1);
   });
 
+  /*
+    "Required from all" means all STAFF.
+
+    An external member is a client's or partner's supervisor. A supplied
+    requirement is a demand for their personal papers — an ID, a licence, a tax
+    form — collected by a company they do not work for, and an outstanding one
+    BLOCKS WORK, so they would be nagged and stopped from doing the only thing
+    they came to do.
+  */
+  it('asks nothing of an external member, even when required from all', () => {
+    expect(
+      requirementsFor({ memberRoleId: null, isExternal: true }, [type({ requiredFromAll: true })]),
+    ).toHaveLength(0);
+  });
+
+  it('asks nothing of an external member who somehow holds a role', () => {
+    expect(
+      requirementsFor({ memberRoleId: TECH, isExternal: true }, [
+        type({ requiredFromAll: false, requiredFromRoleIds: [TECH] }),
+      ]),
+    ).toHaveLength(0);
+  });
+
+  it('still asks our own staff', () => {
+    expect(
+      requirementsFor({ memberRoleId: null, isExternal: false }, [type({ requiredFromAll: true })]),
+    ).toHaveLength(1);
+  });
+
   it('asks only the named roles otherwise', () => {
     const t = [type({ requiredFromRoleIds: [TECH] })];
     expect(requirementsFor({ memberRoleId: TECH }, t)).toHaveLength(1);

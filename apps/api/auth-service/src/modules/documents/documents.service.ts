@@ -1568,7 +1568,8 @@ export class DocumentsService {
 
     const member = await this.prisma.user.findFirst({
       where: { id: targetUserId, organizationId: data.actor.organizationId },
-      select: { id: true, memberRoleId: true },
+      // isExternal: we ask nothing of somebody else's employee — see requirementsFor.
+      select: { id: true, memberRoleId: true, isExternal: true },
     });
     if (!member) throw new NotFoundException('Member not found');
 
@@ -1609,7 +1610,8 @@ export class DocumentsService {
   async pendingForMember(data: { actor: DocumentActor }) {
     const member = await this.prisma.user.findFirst({
       where: { id: data.actor.userId, organizationId: data.actor.organizationId },
-      select: { id: true, memberRoleId: true },
+      // isExternal: we ask nothing of somebody else's employee — see requirementsFor.
+      select: { id: true, memberRoleId: true, isExternal: true },
     });
     if (!member) throw new NotFoundException('Member not found');
 

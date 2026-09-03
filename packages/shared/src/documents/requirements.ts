@@ -65,9 +65,27 @@ export interface RequirementStatus {
  * that did it would be unanswerable.
  */
 export function requirementsFor(
-  member: { memberRoleId?: string | null },
+  member: { memberRoleId?: string | null; isExternal?: boolean | null },
   types: RequirableType[],
 ): RequirableType[] {
+  /*
+    We ask nothing of somebody else's employee.
+
+    "Required from all" means all STAFF. An external member is a client's or
+    partner's supervisor who holds a login here, and a supplied requirement is a
+    demand for their personal papers — an ID, a licence, a tax form — collected
+    by a company they do not work for. That is the wrong side of a data
+    protection line before it is a UX problem.
+
+    It is also not merely noise: an outstanding requirement BLOCKS WORK, so a
+    supervisor invited on Monday would be nagged for documents and stopped from
+    doing the one thing they came to do.
+
+    Their role-based requirements never matched anyway — an external member
+    holds no org role by construction, so `memberRoleId` is null. Only
+    `requiredFromAll` reached them, and it reached every one of them.
+  */
+  if (member.isExternal) return [];
   return types.filter((t) => {
     if (!t.isActive || t.direction !== 'SUPPLIED') return false;
     if (t.requiredFromAll) return true;
