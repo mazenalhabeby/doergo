@@ -24,6 +24,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { useTranslation } from 'react-i18next';
 import { tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task, type Comment, type CompleteTaskInput, type UpdateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { Role } from '@hbcfield/shared/client';
+import { oversees } from '../../../src/lib/permissions';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -82,7 +83,13 @@ export function TaskDetailPane({
   // Dates follow the active language instead of a hardcoded en-US locale.
   const { formatDateFull, formatDueDate: formatRelativeDate } = useTimeFormat();
   const toast = useToast();
-  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
+  /*
+    Overseeing the work, not being an admin.
+
+    This decided the manager section, and a supervisor of a site needs it while
+    not being an admin — so it was invisible to exactly the person it is for.
+  */
+  const isAdmin = oversees(user);
 
   // Bottom sheet animation
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -90,6 +97,17 @@ export function TaskDetailPane({
   const hasAnimatedIn = useRef(false);
 
   const [task, setTask] = useState<Task | null>(null);
+  /*
+    Am I the one doing this job?
+
+    The timer, GPS toggle, checklist and progress used to be gated on NOT being
+    an admin, which is a proxy that breaks the moment somebody both oversees and
+    works: a Space Manager assigned a job does the job. Answered by being on the
+    task instead, and left permissive for anybody who is not overseeing so an
+    ordinary member's screen is unchanged.
+  */
+  const isMine = !!user?.id && task?.assignedToId === user.id;
+  const doingTheWork = !isAdmin || isMine;
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -872,14 +890,14 @@ export function TaskDetailPane({
   const progressIndex = getDetailProgressIndex(task.status, flowSteps);
   const jobId = getJobId(task.id);
   // Timer is visible from accept through execution (counts from acceptedAt).
-  const showTimer = !isAdmin && hasCapability(caps, 'timer') && !!task.acceptedAt && [
+  const showTimer = doingTheWork && hasCapability(caps, 'timer') && !!task.acceptedAt && [
     TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED,
     TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED,
   ].includes(task.status as any);
   const statusAction = getStatusAction(task.status, flowSteps);
   // GPS toggle is purely capability-driven now: it shows on whatever status has
   // the 'gps' capability (field-service → En route, logistics → In transit, …).
-  const showLocationToggle = !isAdmin && hasCapability(caps, 'gps');
+  const showLocationToggle = doingTheWork && hasCapability(caps, 'gps');
   const showBottomBar = ![TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(task.status);
   const currentStepLabel = progressSteps[progressIndex]?.label;
 
@@ -1254,7 +1272,7 @@ export function TaskDetailPane({
         </TourTarget>
 
         {/* Section 2: Compact Progress Dots (Technician only) */}
-        {!isAdmin && progressIndex >= 0 && (
+        {doingTheWork && progressIndex >= 0 && (
           <TourTarget name="taskdetail-status" style={[styles.progressCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.progressLabel, { color: colors.textMuted }]}>{t('taskDetail.progress')}</Text>
             <View style={styles.progressDotsRow}>
@@ -1292,7 +1310,7 @@ export function TaskDetailPane({
         )}
 
         {/* Per-step widgets — driven by the current status's capabilities */}
-        {!isAdmin && (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos') || hasCapability(caps, 'form') || hasCapability(caps, 'signature')) && (
+        {doingTheWork && (hasCapability(caps, 'checklist') || hasCapability(caps, 'photos') || hasCapability(caps, 'form') || hasCapability(caps, 'signature')) && (
           <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('taskDetail.thisStep.title')}</Text>
 
@@ -1489,7 +1507,7 @@ export function TaskDetailPane({
               </MapView>
             </TouchableOpacity>
             <Text style={[styles.locationAddress, { color: colors.textSecondary }]}>{task.locationAddress}</Text>
-            {!isAdmin && [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE].includes(task.status) && (
+            {doingTheWork && [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE].includes(task.status) && (
               <TouchableOpacity style={styles.navigationButton} onPress={handleStartNavigation}>
                 <Ionicons name="navigate" size={20} color="white" />
                 <Text style={styles.navigationButtonText}>{t('taskDetail.startNavigation')}</Text>

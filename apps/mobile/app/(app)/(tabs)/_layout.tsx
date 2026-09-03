@@ -11,6 +11,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
 import { TourTarget, useTourTarget } from '../../../src/components/tour';
 import { Role, hasAccessModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
+import { oversees } from '../../../src/lib/permissions';
 import { resolveMediaUrl } from '../../../src/lib/api';
 
 // Maps a tab route name → guided-tour target key (only the tabs the tours spotlight).
@@ -347,7 +348,10 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: isAdmin ? t('tabs.dashboard') : t('tabs.home'),
+            /* Says what the screen IS: `oversees` decides which home renders
+               (see (tabs)/index.tsx), so the label has to ask the same question
+               or a supervisor gets the dashboard under a tab marked "Home". */
+            title: oversees(user) ? t('tabs.dashboard') : t('tabs.home'),
           }}
         />
         {/* Tasks tab - ADMIN always sees, TECHNICIAN based on enabledModules */}

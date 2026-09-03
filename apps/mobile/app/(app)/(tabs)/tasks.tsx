@@ -19,6 +19,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
+import { oversees } from '../../../src/lib/permissions';
 import { TaskCard, FilterChip, Skeleton, ScreenContainer, PressableScale } from '../../../src/components';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TourTarget } from '../../../src/components/tour';
@@ -161,7 +162,15 @@ export default function TasksScreen() {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const r = useResponsive();
-  const isAdmin = user?.role === Role.ADMIN || user?.role === 'CLIENT';
+  /*
+    The oversight view of the task list, not the admin one.
+
+    This asked `role === ADMIN`, which decided the filter set and whether a card
+    shows its assignee and priority. Somebody supervising a site needs all
+    three — the list they see is that site's work, not their own — and is not an
+    admin, so they were given a field worker's list of jobs they do not do.
+  */
+  const isAdmin = oversees(user);
   // In master-detail split the list lives in a narrow left pane → single column.
   const listColumns = r.isSplit ? 1 : r.columns;
   // Fixed card width for the tablet grid: split the (capped) row into columns.
