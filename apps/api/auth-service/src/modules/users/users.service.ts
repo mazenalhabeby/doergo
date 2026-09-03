@@ -387,6 +387,8 @@ export class UsersService {
         lastName: true,
         avatarUrl: true,
         role: true,
+        // Their worker statistics are structurally zero — see EmployeeProfile.
+        isExternal: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,

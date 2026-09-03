@@ -21,6 +21,12 @@ export interface EmployeeProfile {
   firstName: string;
   lastName: string;
   role: Role;
+  /**
+   * Works for a client or partner. Their worker statistics — tasks done, hours
+   * this week, an on-time score — are structurally zero: they supervise, they
+   * do not execute, and they never clock in here.
+   */
+  isExternal?: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

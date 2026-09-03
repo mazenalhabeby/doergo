@@ -714,15 +714,42 @@ function WorkerDropdownContent({
   const selfClock = isSelf && hasAccessModule(user ?? {}, "clock")
   const selfTimeOff = isSelf && hasAccessModule(user ?? {}, "time_off")
 
+  /*
+    An external member has no worker statistics to fetch.
+
+    Score, tasks done, active and hours-this-week measure somebody EXECUTING
+    work. A client's supervisor approves it — they hold no tasks and never clock
+    in — so all four are structurally zero and always will be. For the signed-in
+    member we know this before asking, so the request is skipped outright rather
+    than made and then hidden; for anybody else the answer arrives with the
+    profile and the block is not rendered.
+  */
   const { data: detail } = useQuery({
     queryKey: ["employee", userId],
     queryFn: () => employeesApi.getById(userId),
-    staleTime: 30000,
+    // Not for yourself: your own card is reached from your own dashboard, where
+    // these numbers are already on screen.
     enabled: !isSelf,
+    staleTime: 30000,
   })
 
   const emp = detail
   const stats = emp?.stats
+  /*
+    Render the statistics only when we actually HAVE them, and only for somebody
+    they can describe.
+
+    Two faults met here. The query is disabled for yourself, so `detail` is
+    undefined and every one of these read from `?? 0` — a member opening their
+    own card saw 0 done, 0 active, 0h and a dash for a score, none of it real.
+    And for an EXTERNAL member the numbers are structurally zero whoever is
+    looking: score, tasks and hours measure somebody executing work, and a
+    client's supervisor approves it — they hold no tasks and never clock in.
+
+    So: no data, or nothing the data could ever say — no block.
+  */
+  const isExternalPerson = (isSelf && user?.isExternal === true) || detail?.isExternal === true
+  const showWorkerStats = !!detail && !isExternalPerson
   const tasksCompleted = stats?.tasks?.completed ?? 0
   const tasksActive = stats?.tasks?.inProgress ?? 0
   const hoursWeek = stats?.attendance?.totalHoursThisWeek ?? 0
@@ -779,7 +806,8 @@ function WorkerDropdownContent({
         </div>
       </div>
 
-      {/* ── Performance + Stats ── */}
+      {/* ── Performance + Stats — our own workers only, see knownExternalSelf ── */}
+      {showWorkerStats && (
       <div className="px-4 py-3 flex items-center gap-4">
         {/* Performance ring */}
         <div className="relative size-14 shrink-0">
@@ -812,6 +840,7 @@ function WorkerDropdownContent({
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Current Task ── */}
       {person.currentTask && (
