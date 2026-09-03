@@ -12,7 +12,7 @@ export class OvertimeController {
   }
 
   @MessagePattern({ cmd: 'get_pending_overtime_approvals' })
-  async getPendingApprovals(@Payload() data: { organizationId: string }) {
+  async getPendingApprovals(@Payload() data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.overtimeService.getPendingApprovals(data);
   }
 

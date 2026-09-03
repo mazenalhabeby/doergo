@@ -8,7 +8,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, ApprovalStatus, computeScheduleFlags, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
-import { scopeWhere, scopeAllows, type AttendanceScope } from './attendance-scope';
+import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else

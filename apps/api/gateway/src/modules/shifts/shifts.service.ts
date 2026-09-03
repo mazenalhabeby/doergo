@@ -9,7 +9,7 @@ export class ShiftsService extends BaseGatewayService {
   }
 
   // Shifts
-  listShifts(data: { organizationId: string; spaceId?: string }) {
+  listShifts(data: { organizationId: string; scopeSpaceIds?: string[] | null; spaceId?: string }) {
     return this.send({ cmd: 'list_shifts' }, data);
   }
   createShift(data: Record<string, any>) {
@@ -18,12 +18,12 @@ export class ShiftsService extends BaseGatewayService {
   updateShift(data: Record<string, any>) {
     return this.send({ cmd: 'update_shift' }, data);
   }
-  deleteShift(data: { organizationId: string; shiftId: string }) {
+  deleteShift(data: { organizationId: string; scopeSpaceIds?: string[] | null; shiftId: string }) {
     return this.send({ cmd: 'delete_shift' }, data);
   }
 
   // Rota
-  listAssignments(data: { organizationId: string; spaceId: string; includeEnded?: boolean }) {
+  listAssignments(data: { organizationId: string; scopeSpaceIds?: string[] | null; spaceId: string; includeEnded?: boolean }) {
     return this.send({ cmd: 'list_shift_assignments' }, data);
   }
   createAssignment(data: Record<string, any>) {
@@ -32,7 +32,7 @@ export class ShiftsService extends BaseGatewayService {
   updateAssignment(data: Record<string, any>) {
     return this.send({ cmd: 'update_shift_assignment' }, data);
   }
-  deleteAssignment(data: { organizationId: string; assignmentId: string }) {
+  deleteAssignment(data: { organizationId: string; scopeSpaceIds?: string[] | null; assignmentId: string }) {
     return this.send({ cmd: 'delete_shift_assignment' }, data);
   }
 }

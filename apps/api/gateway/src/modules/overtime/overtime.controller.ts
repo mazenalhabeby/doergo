@@ -13,9 +13,9 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
+import { Role, isAdmin, spacesGranting, type AccessPermissionKey } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { OvertimeGatewayService } from './overtime.service';
 import { OvertimeQueueService } from './overtime.queue.service';
@@ -31,6 +31,16 @@ import {
 @RequirePlan('overtime') // Professional+ (write routes; reads pass through)
 @Controller('overtime')
 export class OvertimeController {
+  /**
+   * Which spaces this caller may act in — see the attendance controller, which
+   * carries the full reasoning. OvertimeRequest names its own `locationId`, so
+   * the service narrows on that.
+   */
+  private scope(req: any, key: AccessPermissionKey): string[] | null {
+    if (isAdmin(req.user)) return null;
+    return spacesGranting(req.user?.access, key);
+  }
+
   constructor(
     private readonly overtimeService: OvertimeGatewayService,
     private readonly overtimeQueueService: OvertimeQueueService,
@@ -55,7 +65,7 @@ export class OvertimeController {
   }
 
   @Post(':id/approve')
-  @RequirePermission('canApproveOvertime')
+  @RequirePermissionInSpace('canApproveOvertime')
   @ApiOperation({ summary: 'Approve overtime request remotely (Path A)' })
   async approve(
     @Param('id') id: string,
@@ -67,6 +77,7 @@ export class OvertimeController {
       approverId: req.user.id,
       ...dto,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
 
@@ -87,7 +98,7 @@ export class OvertimeController {
   }
 
   @Post(':id/reject')
-  @RequirePermission('canApproveOvertime')
+  @RequirePermissionInSpace('canApproveOvertime')
   @ApiOperation({ summary: 'Reject overtime request' })
   async reject(
     @Param('id') id: string,
@@ -99,20 +110,22 @@ export class OvertimeController {
       approverId: req.user.id,
       ...dto,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
 
   @Get('pending-approvals')
-  @RequirePermission('canApproveOvertime')
+  @RequirePermissionInSpace('canApproveOvertime')
   @ApiOperation({ summary: 'List pending overtime approval requests' })
   async getPendingApprovals(@Request() req: any) {
     return this.overtimeService.getPendingApprovals({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
 
   @Get('history')
-  @RequirePermission('canApproveOvertime')
+  @RequirePermissionInSpace('canApproveOvertime')
   @ApiOperation({ summary: 'Get overtime history' })
   @ApiQuery({ name: 'technicianId', required: false })
   @ApiQuery({ name: 'status', required: false })
@@ -127,6 +140,7 @@ export class OvertimeController {
   ) {
     return this.overtimeService.getHistory({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
       technicianId,
       status,
       page: page ? parseInt(page) : undefined,

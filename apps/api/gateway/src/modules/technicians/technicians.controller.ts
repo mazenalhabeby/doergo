@@ -21,7 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData , RequireAccessModule } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, RequireAccessModule, RequirePermissionInSpace, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -492,7 +492,9 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee attendance history' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Attendance history retrieved' })
-  @RequirePermission('canViewSpaceAttendance')
+  // Space-aware, like every other attendance read: a member whose grant comes
+  // from a space role may see this history, narrowed to the spaces they hold.
+  @RequirePermissionInSpace('canViewSpaceAttendance')
   async getEmployeeAttendance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
@@ -505,6 +507,9 @@ export class EmployeesController {
         {
           userId: id,
           organizationId: user?.organizationId,
+          scopeSpaceIds: isAdmin(user as any)
+            ? null
+            : spacesGranting((user as any)?.access, 'canViewSpaceAttendance'),
           startDate,
           endDate,
         },

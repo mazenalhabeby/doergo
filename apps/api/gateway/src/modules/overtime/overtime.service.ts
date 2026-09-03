@@ -14,7 +14,7 @@ export class OvertimeGatewayService extends BaseGatewayService {
     return this.send({ cmd: 'get_active_overtime' }, data);
   }
 
-  async getPendingApprovals(data: { organizationId: string }) {
+  async getPendingApprovals(data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'get_pending_overtime_approvals' }, data);
   }
 

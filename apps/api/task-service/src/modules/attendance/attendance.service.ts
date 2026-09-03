@@ -32,7 +32,7 @@ import {
   buildDateRangeFilter,
   mayClockInRemotely as canClockInRemotely,
 } from '@hbcfield/shared';
-import { scopeWhere, scopeAllows, type AttendanceScope } from './attendance-scope';
+import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
@@ -1118,6 +1118,8 @@ export class AttendanceService {
   async reportExcursion(data: {
     userId: string;
     organizationId: string;
+    /** Spaces the caller may read; null/undefined = unnarrowed (own history). */
+    scopeSpaceIds?: AttendanceScope;
     reason: string;
     requestedMinutes: number;
   }) {
@@ -1429,6 +1431,8 @@ export class AttendanceService {
   async getHistory(data: {
     userId: string;
     organizationId: string;
+    /** Spaces the caller may read; null/undefined = unnarrowed (own history). */
+    scopeSpaceIds?: AttendanceScope;
     startDate?: Date | string;
     endDate?: Date | string;
     page?: number;
@@ -1441,6 +1445,16 @@ export class AttendanceService {
     const where: any = {
       userId: data.userId,
       organizationId: data.organizationId,
+      /*
+        Narrowed only when a scope is passed.
+
+        This method serves two callers: a member reading their OWN history,
+        which passes none and must stay complete, and an admin or supervisor
+        reading somebody else's through /employees/:id/attendance, which passes
+        the spaces they hold. `undefined` meaning "do not narrow" is what lets
+        one method do both without a second copy.
+      */
+      ...scopeWhere(data.scopeSpaceIds),
     };
 
     // Date range filter. Uses the shared builder so a date-only `endDate`

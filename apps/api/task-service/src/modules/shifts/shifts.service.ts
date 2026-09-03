@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
+import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhere, scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -19,9 +19,19 @@ export class ShiftsService {
   // ── Shifts ─────────────────────────────────────────────────────────────
 
   /** List shifts for an org; optionally only those usable in a given space (space-scoped + org-wide). */
-  async listShifts(data: { organizationId: string; spaceId?: string }) {
+  async listShifts(data: { organizationId: string; spaceId?: string; scopeSpaceIds?: SpaceScopeIds }) {
     const where: any = { organizationId: data.organizationId };
     if (data.spaceId) where.OR = [{ spaceId: data.spaceId }, { spaceId: null }];
+    /*
+      Narrowed to the caller's granted spaces, and org-wide templates
+      (`spaceId: null`) come with them — a shift pattern that belongs to no
+      space applies in theirs too, and hiding it would make their rota look
+      emptier than it is. Applied as an AND beside the filter above, so asking
+      for one space still cannot reach a space they were never granted.
+    */
+    if (data.scopeSpaceIds) {
+      where.AND = [...(where.AND ?? []), { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] }];
+    }
     const shifts = await this.prisma.shift.findMany({
       where,
       orderBy: [{ isActive: 'desc' }, { startLocal: 'asc' }],
@@ -31,6 +41,8 @@ export class ShiftsService {
   }
 
   async createShift(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     organizationId: string;
     spaceId?: string | null;
     name: string;
@@ -48,7 +60,7 @@ export class ShiftsService {
     if (!name) throw new BadRequestException('Shift name is required');
     this.assertTime(data.startLocal, 'start');
     this.assertTime(data.endLocal, 'end');
-    if (data.spaceId) await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    if (data.spaceId) await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.scopeSpaceIds);
 
     const shift = await this.prisma.shift.create({
       data: {
@@ -71,6 +83,8 @@ export class ShiftsService {
   }
 
   async updateShift(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     organizationId: string;
     shiftId: string;
     name?: string;
@@ -85,7 +99,7 @@ export class ShiftsService {
     flagToleranceMin?: number;
     isActive?: boolean;
   }) {
-    const shift = await this.getOwnedShift(data.organizationId, data.shiftId);
+    const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
 
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) {
@@ -119,8 +133,8 @@ export class ShiftsService {
     return success(updated, 'Shift updated');
   }
 
-  async deleteShift(data: { organizationId: string; shiftId: string }) {
-    const shift = await this.getOwnedShift(data.organizationId, data.shiftId);
+  async deleteShift(data: { organizationId: string; shiftId: string; scopeSpaceIds?: SpaceScopeIds }) {
+    const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
     // Cascades to its rota assignments (schema onDelete: Cascade).
     await this.prisma.shift.delete({ where: { id: shift.id } });
     return success({ id: shift.id }, 'Shift deleted');
@@ -129,8 +143,8 @@ export class ShiftsService {
   // ── Rota (assignments) ───────────────────────────────────────────────────
 
   /** Active rota for a space (optionally including ended assignments). */
-  async listAssignments(data: { organizationId: string; spaceId: string; includeEnded?: boolean }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+  async listAssignments(data: { organizationId: string; spaceId: string; includeEnded?: boolean; scopeSpaceIds?: SpaceScopeIds }) {
+    await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.scopeSpaceIds);
     const where: any = { organizationId: data.organizationId, spaceId: data.spaceId };
     if (!data.includeEnded) where.isActive = true;
     const assignments = await this.prisma.shiftAssignment.findMany({
@@ -148,6 +162,8 @@ export class ShiftsService {
   }
 
   async createAssignment(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     organizationId: string;
     spaceId: string;
     userId: string;
@@ -161,9 +177,9 @@ export class ShiftsService {
     priority?: number;
     createdById?: string;
   }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.scopeSpaceIds);
     await this.assertUserInOrg(data.organizationId, data.userId);
-    const shift = await this.getOwnedShift(data.organizationId, data.shiftId);
+    const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
     // A space-scoped shift can only be rostered in its own space.
     if (shift.spaceId && shift.spaceId !== data.spaceId) {
       throw new BadRequestException('That shift belongs to a different space');
@@ -196,6 +212,8 @@ export class ShiftsService {
   }
 
   async updateAssignment(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     organizationId: string;
     assignmentId: string;
     shiftId?: string;
@@ -229,7 +247,7 @@ export class ShiftsService {
 
     const patch: Record<string, unknown> = {};
     if (data.shiftId !== undefined) {
-      await this.getOwnedShift(data.organizationId, data.shiftId);
+      await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
       patch.shiftId = data.shiftId;
     }
     if (data.recurrence !== undefined) patch.recurrence = data.recurrence;
@@ -254,7 +272,7 @@ export class ShiftsService {
   }
 
   /** Remove a rota assignment. Hard delete — past attendance is unaffected (it stamped its own expected end at clock-in). */
-  async deleteAssignment(data: { organizationId: string; assignmentId: string }) {
+  async deleteAssignment(data: { organizationId: string; assignmentId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const existing = await this.prisma.shiftAssignment.findFirst({
       where: { id: data.assignmentId, organizationId: data.organizationId },
     });
@@ -321,15 +339,23 @@ export class ShiftsService {
     return Math.min(max, Math.max(min, n));
   }
 
-  private async getOwnedShift(organizationId: string, shiftId: string) {
+  private async getOwnedShift(organizationId: string, shiftId: string, scope?: SpaceScopeIds) {
+    /*
+      Every write on a shift loads it through here, so the scope check belongs
+      here too — a shift outside the caller's granted spaces reads as 'not
+      found'. Shift.spaceId is nullable (an org-wide shift template), and a
+      shift belonging to NO space is not one a space-scoped caller may edit:
+      `scopeAllows` refuses a null on purpose.
+    */
     const shift = await this.prisma.shift.findFirst({ where: { id: shiftId, organizationId } });
-    if (!shift) throw new NotFoundException('Shift not found');
+    if (!shift || !scopeAllows(scope, shift.spaceId)) throw new NotFoundException('Shift not found');
     return shift;
   }
 
-  private async assertSpaceInOrg(organizationId: string, spaceId: string) {
+  private async assertSpaceInOrg(organizationId: string, spaceId: string, scope?: SpaceScopeIds) {
     const space = await this.prisma.companyLocation.findFirst({ where: { id: spaceId, organizationId }, select: { id: true } });
-    if (!space) throw new NotFoundException('Space not found');
+    // A space they were not granted reads as absent, not as forbidden.
+    if (!space || !scopeAllows(scope, spaceId)) throw new NotFoundException('Space not found');
   }
 
   private async assertUserInOrg(organizationId: string, userId: string) {

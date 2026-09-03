@@ -9,7 +9,7 @@ import {
   getEndOfMonth,
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
-import { scopeWhere, type AttendanceScope } from './attendance-scope';
+import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 
 @Injectable()
 export class AttendanceReportService {

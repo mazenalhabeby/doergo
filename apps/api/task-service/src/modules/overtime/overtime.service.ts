@@ -16,6 +16,8 @@ import {
   OVERTIME_JOB_TYPES,
   OVERTIME_CONSTANTS,
   TimeEntryStatus,
+  scopeWhere,
+  type SpaceScopeIds,
 } from '@hbcfield/shared';
 
 @Injectable()
@@ -39,6 +41,7 @@ export class OvertimeService {
     timeEntryId: string;
     locationId: string;
     organizationId: string;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     this.logger.log(`Initiating overtime request for user ${data.userId}, entry ${data.timeEntryId}`);
 
@@ -94,6 +97,7 @@ export class OvertimeService {
     response: 'YES' | 'NO';
     reason?: string;
     organizationId: string;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     const request = await this.prisma.overtimeRequest.findFirst({
       where: {
@@ -172,13 +176,15 @@ export class OvertimeService {
    * Team leader approves remotely (Path A)
    */
   async leaderApprove(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     overtimeRequestId: string;
     approverId: string;
     maxDurationMinutes: number;
     notes?: string;
     organizationId: string;
   }) {
-    const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId);
+    const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
     return this.approveRequest(request, {
       approverId: data.approverId,
       maxDurationMinutes: data.maxDurationMinutes,
@@ -199,8 +205,9 @@ export class OvertimeService {
     notes?: string;
     userId: string; // technician's userId (request comes from their device)
     organizationId: string;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
-    const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId);
+    const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
 
     // Verify the approver is an ADMIN or DISPATCHER in the same org
     const approver = await this.prisma.user.findFirst({
@@ -229,12 +236,14 @@ export class OvertimeService {
    * Team leader rejects overtime request
    */
   async leaderReject(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     overtimeRequestId: string;
     approverId: string;
     reason: string;
     organizationId: string;
   }) {
-    const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId);
+    const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
     const now = new Date();
 
     await this.prisma.overtimeRequest.update({
@@ -387,11 +396,12 @@ export class OvertimeService {
   /**
    * Get pending overtime approvals for admins/dispatchers
    */
-  async getPendingApprovals(data: { organizationId: string }) {
+  async getPendingApprovals(data: { organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const requests = await this.prisma.overtimeRequest.findMany({
       where: {
         organizationId: data.organizationId,
         status: 'PENDING_APPROVAL',
+        ...scopeWhere(data.scopeSpaceIds),
       },
       include: {
         technician: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -412,6 +422,8 @@ export class OvertimeService {
    * Get overtime history
    */
   async getHistory(data: {
+    /** Spaces the caller may act in; null = org-wide, [] = none. */
+    scopeSpaceIds?: SpaceScopeIds;
     organizationId: string;
     technicianId?: string;
     status?: string;
@@ -420,7 +432,7 @@ export class OvertimeService {
   }) {
     const page = data.page ?? 1;
     const limit = data.limit ?? 20;
-    const where: any = { organizationId: data.organizationId };
+    const where: any = { organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) };
     if (data.technicianId) where.technicianId = data.technicianId;
     if (data.status) where.status = data.status;
 
@@ -449,12 +461,16 @@ export class OvertimeService {
   // PRIVATE HELPERS
   // =========================================================================
 
-  private async findPendingApproval(requestId: string, organizationId: string) {
+  private async findPendingApproval(requestId: string, organizationId: string, scope?: SpaceScopeIds) {
     const request = await this.prisma.overtimeRequest.findFirst({
       where: {
         id: requestId,
         organizationId,
         status: 'PENDING_APPROVAL',
+        // Only the caller's granted spaces. One loader serves approve and
+        // reject, so the check cannot be present on one and missing from the
+        // other — a request outside their spaces reads as 'not found'.
+        ...scopeWhere(scope),
       },
     });
     if (!request) {

@@ -1,4 +1,4 @@
-import { scopeWhere, scopeAllows } from '../attendance-scope';
+import { scopeWhere, scopeAllows } from '@hbcfield/shared';
 
 /**
  * The narrowing that stands between a space-scoped grant and the whole

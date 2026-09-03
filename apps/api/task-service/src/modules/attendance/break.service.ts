@@ -17,7 +17,7 @@ import {
   buildSingleDayFilter,
 } from '@hbcfield/shared';
 import { BreakType, ApprovalStatus } from '@prisma/client';
-import { scopeWhere, type AttendanceScope } from './attendance-scope';
+import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 
 @Injectable()
 export class BreakService {
