@@ -1902,7 +1902,20 @@ export class TasksService {
     }
 
     if (!canAccessTask(task, caller, assignee ?? false)) {
-      this.logger.warn('Authorization denied for task', { userId, taskId: task.id });
+      /*
+        Log WHY, not just that.
+
+        "Authorization denied for task" is true of every refusal and explains
+        none of them, so a correct denial and a bug look identical in the log —
+        and the only way to tell them apart was to read the database by hand.
+        These four fields are the whole rule: which space the task is in, which
+        spaces the caller holds, whether they hold it org-wide, and whether they
+        are on the task. Ids only; no titles, no names.
+      */
+      this.logger.warn(
+        `Authorization denied for task ${task.id}: user=${userId} taskSpace=${task.spaceId ?? 'none'} ` +
+          `grantedSpaces=[${(viewAllSpaceIds ?? []).join(',')}] orgWide=${canViewAllTasks === true} assignee=${assignee === true}`,
+      );
       throw new ForbiddenException('Access denied');
     }
   }
