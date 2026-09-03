@@ -298,3 +298,57 @@ describe('what goes under a name', () => {
     expect(displayName({ firstName: 'Ada', lastName: '' } as never)).toBe('Ada')
   })
 })
+
+/*
+  Whose people show on the board.
+
+  `memberMap` holds the rosters of the spaces the viewer can see. Somebody
+  missing from it is working at a site the viewer supervises while being
+  ROSTERED somewhere else — their task is visible, they are not. A fallback to
+  `task.assignedTo` used to put them on the board anyway, assembled from a
+  person the viewer was never given.
+*/
+describe('people on the board come from visible rosters', () => {
+  const handlers2 = { onEdit: () => {}, onAssign: () => {}, onViewTasks: () => {}, onPersonClick: () => {} }
+
+  const withOutsiderOnTask = (currentUser: unknown) =>
+    buildWorkspaceBoxes(
+      input({
+        locations: [space('s1')],
+        handlers: handlers2,
+        currentUser,
+        /*
+          An active task in the viewer's space, assigned to somebody who is NOT
+          on its roster — the builder reads this map, not the task list, so the
+          fixture has to hand it over the same way the dashboard does.
+        */
+        activeTaskMap: new Map([
+          [
+            'outsider',
+            {
+              id: 't1',
+              title: 'Ticket: badge access denied',
+              status: 'IN_PROGRESS',
+              spaceId: 's1',
+              assignedTo: { id: 'outsider', firstName: 'Hassan', lastName: 'Berger', avatarUrl: null },
+            },
+          ],
+        ]),
+      } as never),
+    )
+
+  it('does not surface somebody rostered elsewhere to a space-scoped viewer', () => {
+    const boxes = withOutsiderOnTask({ access: { org: {}, perSpace: { s1: { canViewAllTasks: true } } } })
+    const names = boxes.flatMap((b) => [
+      ...(b.people ?? []),
+      ...((b as { onRoadPeople?: unknown[] }).onRoadPeople ?? []),
+    ]) as { name?: string }[]
+    expect(names.some((p) => (p.name ?? '').startsWith('Hassan'))).toBe(false)
+  })
+
+  it('still surfaces them to an org-wide viewer, whose roster is everyone', () => {
+    const boxes = withOutsiderOnTask({ canViewAllTasks: true })
+    const found = JSON.stringify(boxes).includes('Hassan')
+    expect(found).toBe(true)
+  })
+})

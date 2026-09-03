@@ -98,7 +98,13 @@ export interface BuildWorkspaceBoxesInput {
   shiftLabelInfo: (userId: string) => { isShiftBased: boolean; atSpace: boolean }
   isAdminOrDispatcher: boolean
   /** The signed-in member, for the per-space capability checks below. */
-  currentUser?: { canManageWorkspaces?: boolean; canManageUsers?: boolean; access?: unknown } | null
+  currentUser?: {
+    canManageWorkspaces?: boolean
+    canManageUsers?: boolean
+    /** The ORG-wide resolution — see viewerIsOrgWide. */
+    canViewAllTasks?: boolean
+    access?: unknown
+  } | null
   /** Viewer — always treated as online, since they are looking at the page. */
   currentUserId?: string
   handlers: {
@@ -117,6 +123,16 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
     handlers,
   } = input
   const { onEdit: handleEditLocation, onAssign: handleAssignWorkers, onViewTasks: handleViewTasks, onPersonClick: handleNavigateToProfile } = handlers
+  /*
+    Can this viewer see everybody, or only their own spaces?
+
+    The FLAT columns, deliberately — they carry the org-wide resolution, which
+    is precisely the question here. `isAdminOrDispatcher` cannot be used: it now
+    answers "holds view-all-tasks anywhere, including in one space", which is
+    true of the very people this must restrict.
+  */
+  const viewerIsOrgWide =
+    currentUser?.canViewAllTasks === true || currentUser?.canManageUsers === true
   // The body below reads the viewer through `user`, exactly as it did inside the
   // component; keeping that shape made the extraction a move rather than a rewrite.
   const user = { id: input.currentUserId }
@@ -302,7 +318,21 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
       if (accountedWorkerIds.has(userId)) continue
       const member = memberMap.get(userId)
       if (!member) {
-        // Fallback to task.assignedTo data if member not found
+        /*
+          Not on any roster this viewer can see — so not their person.
+
+          `memberMap` is built from the rosters of the spaces the viewer holds.
+          Somebody missing from it is somebody working at a site the viewer
+          supervises while being ROSTERED somewhere else: their task is visible,
+          they are not. Falling back to `task.assignedTo` put them on the board
+          as a body, with a status and a current task, assembled from a person
+          the viewer was never given.
+
+          An org-wide viewer keeps the fallback: their roster is everyone, so
+          the only person it can add is somebody with no space assignment at
+          all, which is exactly the case it was written for.
+        */
+        if (!viewerIsOrgWide) continue
         if (task.assignedTo) {
           const fallbackStatus = getEmployeeStatus({
             isClockedIn: clockedInUserIds.has(task.assignedTo.id),
