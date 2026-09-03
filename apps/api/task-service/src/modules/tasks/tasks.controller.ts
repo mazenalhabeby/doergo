@@ -30,14 +30,36 @@ export class TasksController {
 
   @MessagePattern({ cmd: 'find_task' })
   async findOne(
-    @Payload() data: { id: string; userId: string; userRole: string; organizationId: string },
+    @Payload()
+    data: {
+      id: string;
+      userId: string;
+      userRole: string;
+      organizationId: string;
+      canViewAllTasks?: boolean;
+      /** Cross-org shared spaces the caller may read. */
+      sharedSpaceIds?: string[];
+      /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
+      viewAllSpaceIds?: string[];
+    },
   ) {
     return this.tasksService.findOne(data);
   }
 
   @MessagePattern({ cmd: 'get_task_timeline' })
   async getTimeline(
-    @Payload() data: { id: string; userId: string; userRole: string; organizationId: string },
+    @Payload()
+    data: {
+      id: string;
+      userId: string;
+      userRole: string;
+      organizationId: string;
+      canViewAllTasks?: boolean;
+      /** Cross-org shared spaces the caller may read. */
+      sharedSpaceIds?: string[];
+      /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
+      viewAllSpaceIds?: string[];
+    },
   ) {
     return this.tasksService.getTimeline(data);
   }
