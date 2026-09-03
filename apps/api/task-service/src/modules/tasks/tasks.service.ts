@@ -1914,7 +1914,17 @@ export class TasksService {
       */
       this.logger.warn(
         `Authorization denied for task ${task.id}: user=${userId} taskSpace=${task.spaceId ?? 'none'} ` +
-          `grantedSpaces=[${(viewAllSpaceIds ?? []).join(',')}] orgWide=${canViewAllTasks === true} assignee=${assignee === true}`,
+          `grantedSpaces=${
+            /*
+              ABSENT and EMPTY are different failures and must not print the
+              same. Absent means the gateway sent no scope — it is on old code,
+              or the caller is an admin / holds the permission org-wide. Empty
+              means the scope was computed and found nothing, so the session
+              carries no space grant. `?? []` collapsed the two and hid which
+              one was happening.
+            */
+            viewAllSpaceIds === undefined ? 'absent' : `[${viewAllSpaceIds.join(',')}]`
+          } orgWide=${canViewAllTasks === true} assignee=${assignee === true}`,
       );
       throw new ForbiddenException('Access denied');
     }
