@@ -1,0 +1,14 @@
+-- A fifth signer role: the client's own supervisor on the site.
+--
+-- An EXTERNAL member, assigned to the space, holding a login — so unlike
+-- CUSTOMER they sign in session rather than through an emailed link, which is
+-- both stronger evidence and deliverable while SMTP is blocked.
+--
+-- Additive and idempotent. No existing row changes meaning: a document type
+-- only gets this step when somebody adds it to that type's route.
+--
+-- `ADD VALUE IF NOT EXISTS` is transaction-safe on PostgreSQL 12+ (production
+-- runs 16.4) provided the new value is not USED in the same transaction — this
+-- migration only declares it, and the first document that carries it is written
+-- long afterwards.
+ALTER TYPE "DocumentSignerRole" ADD VALUE IF NOT EXISTS 'SITE_SUPERVISOR' AFTER 'ORG_REPRESENTATIVE';

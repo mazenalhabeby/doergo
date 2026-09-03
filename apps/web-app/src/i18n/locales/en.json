@@ -7550,13 +7550,15 @@
           "MEMBER": "The member",
           "RESPONSIBLE": "Their responsible",
           "ORG_REPRESENTATIVE": "For the company",
-          "CUSTOMER": "The customer"
+          "CUSTOMER": "The customer",
+          "SITE_SUPERVISOR": "Site supervisor"
         },
         "roleHints": {
           "MEMBER": "whoever the document is issued to",
           "RESPONSIBLE": "resolved from their approval routing",
           "ORG_REPRESENTATIVE": "somebody signing on behalf of the organisation",
-          "CUSTOMER": "the client of the spaces they work in"
+          "CUSTOMER": "the client of the spaces they work in",
+          "SITE_SUPERVISOR": "The client's supervisor on the workspace — countersigns for the company whose site it is"
         },
         "notReady": "Customer signing is not available yet.",
         "soon": "soon"

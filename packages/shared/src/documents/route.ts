@@ -18,20 +18,32 @@
  *   RESPONSIBLE         resolved through the member's `approve` routing
  *   ORG_REPRESENTATIVE  somebody signing for the organization — an employment
  *                       contract has an employer on it, not only an employee
+ *   SITE_SUPERVISOR     the client's own supervisor on the site — an EXTERNAL
+ *                       member, assigned to the space, holding a login. They
+ *                       countersign for the company the space belongs to.
  *   CUSTOMER            the space's client; the only role that can be external,
  *                       and therefore the only one that can sign without a
  *                       session
+ *
+ * SITE_SUPERVISOR and CUSTOMER both speak for the client, and the difference is
+ * the whole reason for the first one: a supervisor has an ACCOUNT. They sign in
+ * the app, in session, and the certificate records the strong kind of signature
+ * — where CUSTOMER is a link emailed to somebody with no login, which is weaker
+ * evidence and, while SMTP is blocked, not deliverable at all. Where a site has
+ * a supervisor, they are the better counterparty by both measures.
  */
 export type DocumentSignerRole =
   | 'MEMBER'
   | 'RESPONSIBLE'
   | 'ORG_REPRESENTATIVE'
+  | 'SITE_SUPERVISOR'
   | 'CUSTOMER';
 
 export const DOCUMENT_SIGNER_ROLES: readonly DocumentSignerRole[] = [
   'MEMBER',
   'RESPONSIBLE',
   'ORG_REPRESENTATIVE',
+  'SITE_SUPERVISOR',
   'CUSTOMER',
 ] as const;
 

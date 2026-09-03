@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import {
   FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2,
   CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2, CreditCard,
-  User, UserCheck, Handshake, ChevronUp, ChevronDown, X, Clock,
+  User, UserCheck, Handshake, HardHat, ChevronUp, ChevronDown, X, Clock,
 } from "lucide-react"
 import {
   documentsApi, workflowsApi, organizationsApi,
@@ -872,6 +872,15 @@ function RouteEditor({ route, onChange }: { route: string[]; onChange: (r: strin
     { key: "MEMBER", Icon: User, ready: true },
     { key: "RESPONSIBLE", Icon: UserCheck, ready: true },
     { key: "ORG_REPRESENTATIVE", Icon: Building2, ready: true },
+    /*
+      The client's supervisor IS addable, where the client's own record is not.
+
+      Both speak for the client and the difference is decisive: a supervisor is
+      an external MEMBER of the space with a login, so they sign in session,
+      today, with the stronger signature — while CUSTOMER waits on an emailed
+      link that SMTP cannot currently deliver.
+    */
+    { key: "SITE_SUPERVISOR", Icon: HardHat, ready: true },
     { key: "CUSTOMER", Icon: Handshake, ready: false },
   ] as const
 

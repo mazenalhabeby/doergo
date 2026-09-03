@@ -4120,6 +4120,7 @@ enum DocumentSignerRole {
   MEMBER /// whoever the document was issued to
   RESPONSIBLE /// resolved through the member's `approve` routing
   ORG_REPRESENTATIVE /// somebody signing on behalf of the organization
+  SITE_SUPERVISOR /// the client's own supervisor on the space — external, and holds a login
   CUSTOMER /// the space's client — the only role that can be external
 }
 

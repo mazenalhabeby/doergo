@@ -7550,13 +7550,15 @@
           "MEMBER": "Der Mitarbeiter",
           "RESPONSIBLE": "Sein Verantwortlicher",
           "ORG_REPRESENTATIVE": "Für das Unternehmen",
-          "CUSTOMER": "Der Kunde"
+          "CUSTOMER": "Der Kunde",
+          "SITE_SUPERVISOR": "Bauleiter des Kunden"
         },
         "roleHints": {
           "MEMBER": "an wen das Dokument ausgestellt wird",
           "RESPONSIBLE": "ergibt sich aus der Freigabe-Zuordnung",
           "ORG_REPRESENTATIVE": "jemand, der für das Unternehmen unterschreibt",
-          "CUSTOMER": "der Kunde der Spaces, in denen er arbeitet"
+          "CUSTOMER": "der Kunde der Spaces, in denen er arbeitet",
+          "SITE_SUPERVISOR": "Die Aufsichtsperson des Kunden im Workspace — gegenzeichnet für das Unternehmen, dessen Standort es ist"
         },
         "notReady": "Die Unterschrift des Kunden ist noch nicht verfügbar.",
         "soon": "bald"

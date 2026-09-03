@@ -34,6 +34,34 @@ describe('routeProblem', () => {
     expect(routeProblem([{ role: 'MEMBER' }, { role: 'ORG_REPRESENTATIVE' }])).toBeNull();
   });
 
+  /*
+    The client's own supervisor, added to a route like any other step.
+
+    It is a step type on the TYPE, so a time sheet can ask for it and a payslip
+    cannot — nothing about it is hard-wired, and a type that does not name it is
+    untouched by its existence.
+  */
+  it('accepts a time sheet that the client’s supervisor countersigns', () => {
+    expect(
+      routeProblem([{ role: 'MEMBER' }, { role: 'RESPONSIBLE' }, { role: 'SITE_SUPERVISOR' }]),
+    ).toBeNull();
+  });
+
+  it('refuses two supervisor steps — one role signs once', () => {
+    // Two supervisors on a site are TWO CANDIDATES for one step, not two steps:
+    // the step is open to both and the first to sign completes it.
+    expect(
+      routeProblem([{ role: 'MEMBER' }, { role: 'SITE_SUPERVISOR' }, { role: 'SITE_SUPERVISOR' }]),
+    ).toMatch(/only ask SITE_SUPERVISOR to sign once/);
+  });
+
+  it('lets the supervisor stand in a route beside the client record', () => {
+    // Different counterparties: one signs in session, the other by link.
+    expect(
+      routeProblem([{ role: 'MEMBER' }, { role: 'SITE_SUPERVISOR' }, { role: 'CUSTOMER' }]),
+    ).toBeNull();
+  });
+
   it('refuses an empty route rather than treating it as no route', () => {
     // Distinct states: no route is "one signature as always"; an empty route is
     // a type somebody misconfigured, and silently doing something reasonable

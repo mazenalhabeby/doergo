@@ -7559,13 +7559,15 @@
           "MEMBER": "Le membre",
           "RESPONSIBLE": "Son responsable",
           "ORG_REPRESENTATIVE": "Pour l’entreprise",
-          "CUSTOMER": "Le client"
+          "CUSTOMER": "Le client",
+          "SITE_SUPERVISOR": "Superviseur du client"
         },
         "roleHints": {
           "MEMBER": "à qui le document est émis",
           "RESPONSIBLE": "issu de son routage d’approbation",
           "ORG_REPRESENTATIVE": "quelqu’un signant au nom de l’organisation",
-          "CUSTOMER": "le client des espaces où il travaille"
+          "CUSTOMER": "le client des espaces où il travaille",
+          "SITE_SUPERVISOR": "Le superviseur du client sur l'espace — contresigne pour l'entreprise dont c'est le site"
         },
         "notReady": "La signature du client n’est pas encore disponible.",
         "soon": "bientôt"

@@ -3595,6 +3595,8 @@ export class DocumentsService {
         return `Step ${order} needs the person who signs off for this member, and nobody is set. Choose one under “Signs off for …” on their space membership.`;
       case 'ORG_REPRESENTATIVE':
         return `Step ${order} needs somebody signing for the organisation, and nobody in it can. Give a member the right to manage people, or remove the step from this document type.`;
+      case 'SITE_SUPERVISOR':
+        return `Step ${order} needs the client's supervisor on a space this member works in, and none is assigned. Invite their supervisor as an external member of that space, or remove the step from this document type.`;
       case 'CUSTOMER':
         return `Step ${order} needs the client of a space this member works in, and there is none. Add the client to the space, or remove the step from this document type.`;
       default:
@@ -3680,6 +3682,55 @@ export class DocumentsService {
           OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
         },
         select: { id: true, firstName: true, lastName: true, email: true },
+        take: 50,
+      });
+      return users
+        .map((u) => ({
+          kind: 'USER' as const, id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email,
+        }))
+        .filter(notTheSubject);
+    }
+
+    if (role === 'SITE_SUPERVISOR') {
+      /*
+        The client's own supervisor on the site.
+
+        Resolved through the SPACE, not through the member's routing: this
+        signature says "the company whose site this is accepts what happened
+        there", and it is the space that names that company. An external member
+        is assigned to exactly one space, so their presence on the roster IS
+        the claim to represent it.
+
+        `isExternal` is the whole filter — internal colleagues on the same
+        roster sign as RESPONSIBLE if anybody, never as the client. One query,
+        one join, bounded: the roster of the member's spaces, narrowed to
+        external members in the database rather than fetched and filtered here.
+      */
+      const users = await this.prisma.user.findMany({
+        where: {
+          organizationId,
+          isActive: true,
+          isExternal: true,
+          id: { not: memberId },
+          spaceAssignments: {
+            some: {
+              organizationId,
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+              // The spaces this member works in — the sites their document is about.
+              space: {
+                spaceAssignments: {
+                  some: {
+                    userId: memberId,
+                    OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+                  },
+                },
+              },
+            },
+          },
+        },
+        select: { id: true, firstName: true, lastName: true, email: true },
+        // Same ceiling the other roles use: a candidate list is a picker, not a
+        // report, and an unbounded one is a denial-of-service on the issue screen.
         take: 50,
       });
       return users

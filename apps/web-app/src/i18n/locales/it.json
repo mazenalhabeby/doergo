@@ -7559,13 +7559,15 @@
           "MEMBER": "Il membro",
           "RESPONSIBLE": "Il suo responsabile",
           "ORG_REPRESENTATIVE": "Per l’azienda",
-          "CUSTOMER": "Il cliente"
+          "CUSTOMER": "Il cliente",
+          "SITE_SUPERVISOR": "Supervisore del cliente"
         },
         "roleHints": {
           "MEMBER": "a chi viene emesso il documento",
           "RESPONSIBLE": "dal suo instradamento di approvazione",
           "ORG_REPRESENTATIVE": "qualcuno che firma per conto dell’organizzazione",
-          "CUSTOMER": "il cliente degli spazi in cui lavora"
+          "CUSTOMER": "il cliente degli spazi in cui lavora",
+          "SITE_SUPERVISOR": "Il supervisore del cliente nello spazio: controfirma per l'azienda a cui appartiene il sito"
         },
         "notReady": "La firma del cliente non è ancora disponibile.",
         "soon": "presto"
