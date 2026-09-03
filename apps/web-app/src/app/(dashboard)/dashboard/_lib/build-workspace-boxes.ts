@@ -6,6 +6,7 @@ import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 import { getAvatarColor, getInitials } from "../_components/helpers"
 
 import { getEmployeeStatus, isOnline, memberToPersonNode } from "./presence"
+import { canManageSpace, canManageMembersInSpace } from "@/lib/can-manage-space"
 
 /**
  * Build the dashboard's space cards.
@@ -96,6 +97,8 @@ export interface BuildWorkspaceBoxesInput {
   /** Is this space shift-based, and is the member confirmed inside its geofence? */
   shiftLabelInfo: (userId: string) => { isShiftBased: boolean; atSpace: boolean }
   isAdminOrDispatcher: boolean
+  /** The signed-in member, for the per-space capability checks below. */
+  currentUser?: { canManageWorkspaces?: boolean; canManageUsers?: boolean; access?: unknown } | null
   /** Viewer — always treated as online, since they are looking at the page. */
   currentUserId?: string
   handlers: {
@@ -110,7 +113,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
   const {
     locations, tasks, members, memberMap, assignmentsPerLocation,
     clockedInUserIds, onBreakUserIds, attendanceByUser, activeTaskMap, rosterActiveTaskMap,
-    activeSpaceByUser, spaceNameById, shiftLabelInfo, isAdminOrDispatcher,
+    activeSpaceByUser, spaceNameById, shiftLabelInfo, isAdminOrDispatcher, currentUser,
     handlers,
   } = input
   const { onEdit: handleEditLocation, onAssign: handleAssignWorkers, onViewTasks: handleViewTasks, onPersonClick: handleNavigateToProfile } = handlers
@@ -274,9 +277,20 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
         activeCount,
         locationId: locId,
         alerts: locAlerts,
-        // Manage/assign are admin-only; employees get a read-only space view.
-        onEdit: isAdminOrDispatcher ? handleEditLocation : undefined,
-        onAssign: isAdminOrDispatcher ? handleAssignWorkers : undefined,
+        /*
+          Asked per SPACE, and with the permission each button actually needs.
+
+          These were gated on `isAdminOrDispatcher`, which is "can view all
+          tasks" — the wrong question twice over. Managing a workspace needs
+          `canManageWorkspaces` and adding a member needs `canManageUsers`, and
+          somebody holding neither was offered both: the endpoints refused, so
+          the buttons only ever led to a wall.
+
+          Per space because a Space Manager may manage the one they run and no
+          other, and this dashboard shows several side by side.
+        */
+        onEdit: canManageSpace(currentUser, locId) ? handleEditLocation : undefined,
+        onAssign: canManageMembersInSpace(currentUser, locId) ? handleAssignWorkers : undefined,
         onViewTasks: handleViewTasks,
         onPersonClick: handleNavigateToProfile,
       })

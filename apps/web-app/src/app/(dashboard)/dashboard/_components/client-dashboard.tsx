@@ -44,6 +44,7 @@ import { useDashboardData } from "../_lib/use-dashboard-data"
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"
+import { canManageSpace } from "@/lib/can-manage-space"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -243,6 +244,9 @@ export function ClientDashboard() {
         spaceNameById,
         shiftLabelInfo,
         isAdminOrDispatcher,
+        // For the per-space capability checks on Manage / Add member — they
+        // need the resolved grants, not just an id.
+        currentUser: user,
         currentUserId: user?.id,
         handlers: {
           // Manage/assign are admin-only; employees get a read-only space view.
@@ -484,7 +488,12 @@ export function ClientDashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            {isAdminOrDispatcher && (
+            {/* Creating a workspace needs `canManageWorkspaces`, org-wide —
+                `isAdminOrDispatcher` is "can view all tasks", which a member
+                can now legitimately hold in a single space. That offered the
+                button to somebody the endpoint refuses. No spaceId here on
+                purpose: creating one is not an action inside any space. */}
+            {canManageSpace(user) && (
               <Button asChild size="sm" variant="outline" className="gap-1.5 text-xs">
                 <Link href="/locations">
                   <Plus className="h-3.5 w-3.5" />

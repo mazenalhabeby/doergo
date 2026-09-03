@@ -175,14 +175,63 @@ describe('buildWorkspaceBoxes', () => {
     expect(boxes[0].alerts).toBe(2)
   })
 
-  it('withholds manage/assign from non-admins', () => {
-    const asAdmin = buildWorkspaceBoxes(
-      input({ locations: [space('s1')], handlers: { onEdit: () => {}, onAssign: () => {}, onViewTasks: () => {}, onPersonClick: () => {} } }),
+  /*
+    Manage and Add-member follow the permission each one NEEDS, per space.
+
+    This used to assert they followed `isAdminOrDispatcher` — "can view all
+    tasks". That became wrong the moment a member could hold that permission in
+    a single space: they were offered both buttons, and both led to an endpoint
+    that refused them. Managing a workspace needs canManageWorkspaces; adding a
+    member needs canManageUsers.
+  */
+  const handlers = { onEdit: () => {}, onAssign: () => {}, onViewTasks: () => {}, onPersonClick: () => {} }
+
+  it('offers manage/assign to somebody who holds the permissions org-wide', () => {
+    const boxes = buildWorkspaceBoxes(
+      input({
+        locations: [space('s1')],
+        handlers,
+        currentUser: { canManageWorkspaces: true, canManageUsers: true },
+      } as never),
     )
-    const asMember = buildWorkspaceBoxes(input({ locations: [space('s1')], isAdminOrDispatcher: false }))
-    expect(asAdmin[0].onEdit).toBeDefined()
-    expect(asMember[0].onEdit).toBeUndefined()
-    expect(asMember[0].onViewTasks).toBeDefined()
+    expect(boxes[0].onEdit).toBeDefined()
+    expect(boxes[0].onAssign).toBeDefined()
+  })
+
+  it('withholds them from a member who holds neither — the endpoints would refuse', () => {
+    const boxes = buildWorkspaceBoxes(
+      input({ locations: [space('s1')], handlers, currentUser: {} } as never),
+    )
+    expect(boxes[0].onEdit).toBeUndefined()
+    expect(boxes[0].onAssign).toBeUndefined()
+    // Viewing is not gated on either — the read is theirs.
+    expect(boxes[0].onViewTasks).toBeDefined()
+  })
+
+  it('a SPACE grant reaches that space and no other', () => {
+    const boxes = buildWorkspaceBoxes(
+      input({
+        locations: [space('s1'), space('s2')],
+        handlers,
+        currentUser: { access: { org: {}, perSpace: { s1: { canManageWorkspaces: true } } } },
+      } as never),
+    )
+    const s1 = boxes.find((b) => b.locationId === 's1')!
+    const s2 = boxes.find((b) => b.locationId === 's2')!
+    expect(s1.onEdit).toBeDefined()
+    expect(s2.onEdit).toBeUndefined()
+  })
+
+  it('view-all-tasks alone does NOT confer them — the bug this replaced', () => {
+    const boxes = buildWorkspaceBoxes(
+      input({
+        locations: [space('s1')],
+        handlers,
+        currentUser: { access: { org: {}, perSpace: { s1: { canViewAllTasks: true } } } },
+      } as never),
+    )
+    expect(boxes[0].onEdit).toBeUndefined()
+    expect(boxes[0].onAssign).toBeUndefined()
   })
 
   it('treats the viewer as online even when their own timestamp is stale', () => {

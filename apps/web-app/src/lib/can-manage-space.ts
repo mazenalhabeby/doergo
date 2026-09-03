@@ -32,3 +32,19 @@ export function canManageSpace(
     accessAllows(access, "canManageUsers", spaceId)
   )
 }
+
+/**
+ * May this member add or remove people in THIS space?
+ *
+ * A different permission from configuring the space, and kept a separate
+ * function so the two cannot be conflated again: the dashboard offered both
+ * buttons on a "can view all tasks" check, which is neither of them.
+ */
+export function canManageMembersInSpace(
+  user: { canManageUsers?: boolean; access?: unknown } | null | undefined,
+  spaceId?: string,
+): boolean {
+  if (!user) return false
+  if (user.canManageUsers === true) return true
+  return accessAllows(user.access as Parameters<typeof accessAllows>[0], "canManageUsers", spaceId)
+}
