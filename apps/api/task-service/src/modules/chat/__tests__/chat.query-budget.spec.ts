@@ -81,14 +81,22 @@ describe('query budget for sending a message', () => {
     expect(authCalls()).toEqual(['conversationMember.findUnique', 'user.findUnique']);
   });
 
-  it('costs 5 for a member whose reach runs through spaces', async () => {
+  it('costs 6 for a member whose reach runs through spaces', async () => {
     // contactScope NONE resolves space-driven contact targets, which was four
     // reads on its own (the person's spaces fetched twice, then two more
     // against the same table, all sequential) and is three now — two of which
     // run together, so it is two round trips rather than four.
+    //
+    // The sixth is the downward half: the people in the spaces this member
+    // LEADS. Routing answered contact upward only — a worker reaching their
+    // leaders — so a supervisor could approve somebody's overtime and not
+    // message them. One query, and it runs alongside the upward resolve rather
+    // than after it, so it costs a read and not a round trip. Written as a
+    // single relation filter for that reason; the obvious two-step version
+    // (my spaces, then their rosters) would have cost two.
     setup(null, 'same', 'NONE'); await build();
     await service.sendMessage({ conversationId: 'c', senderId: 'me', body: 'x' }).catch(() => {});
-    expect(authCalls().length).toBeLessThanOrEqual(5);
+    expect(authCalls().length).toBeLessThanOrEqual(6);
   });
 
   it('costs 4 for a cross-org send', async () => {
