@@ -87,7 +87,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} ${familjen.variable} ${martian.variable} ${inter.className}`}>
+      {/*
+        Browser extensions write into <body> before React hydrates — Grammarly
+        adds `data-gr-ext-installed` and `data-new-gr-c-s-check-loaded`, and
+        password managers do the same — so the server HTML and the client tree
+        disagree about attributes this app never set.
+
+        `suppressHydrationWarning` on <html> does NOT cover this: it applies to
+        that element and its attributes only, one level deep, so <body> needs
+        its own. It silences the ATTRIBUTE diff on this element alone and does
+        not hide mismatches in anything rendered inside it.
+      */}
+      <body
+        suppressHydrationWarning
+        className={`${inter.variable} ${outfit.variable} ${familjen.variable} ${martian.variable} ${inter.className}`}
+      >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme={undefined} storageKey="hbcfield-theme">
           <I18nProvider>
             <QueryProvider>
