@@ -153,7 +153,7 @@ const SPRINT_STATUS_LABEL: Record<string, string> = {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function TasksPage() {
-  const { user, hasModule, hasPlanFeature } = useAuth()
+  const { user, hasModule, hasPlanFeature, hasPermission } = useAuth()
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
@@ -895,7 +895,19 @@ export default function TasksPage() {
   const total = meta?.total || 0
 
   // Create requires BOTH the permission and the create_task access module.
-  const canCreateTasks = (user?.canCreateTasks ?? false) && hasAccessModule(user ?? {}, "create_task")
+  /*
+    Asked through hasPermission, not the flat column.
+
+    `user.canCreateTasks` is the ORG-wide resolution, so somebody whose grant
+    comes from a SPACE role held it false and the button never appeared — while
+    `POST /tasks` is already `@RequirePermissionInSpace('canCreateTasks')` and
+    would have accepted the request. The API allowed what the UI refused to
+    offer.
+
+    The Access Profile check stays: it is a different question — whether the
+    create screen is part of this member's app at all.
+  */
+  const canCreateTasks = hasPermission("canCreateTasks") && hasAccessModule(user ?? {}, "create_task")
   const canAssignTasks = user?.canAssignTasks ?? false
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
