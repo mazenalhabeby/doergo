@@ -521,7 +521,21 @@ export function ClientDashboard() {
               {t("dashboard.client.exampleLabel")}
             </p>
           )}
-          <WorkspaceGrid boxes={displayBoxes} autoExpandSingle={showExampleInSpaces} canSeeAbsenceReason={isAdminOrDispatcher} />
+          {/*
+            One space opens itself.
+
+            The grid only auto-expands when there is EXACTLY one box, so this is
+            unconditional rather than guessing: somebody with a single workspace
+            — a supervisor of one site, a small company — had to click their
+            only card to see anything, and the collapsed chip showed nothing
+            worth having. Somebody with several still chooses.
+
+            The other render of this grid (the two-column layout above) has
+            always passed it; this one only did while the guide's example was up,
+            so the same dashboard behaved differently depending which branch
+            drew it.
+          */}
+          <WorkspaceGrid boxes={displayBoxes} autoExpandSingle canSeeAbsenceReason={isAdminOrDispatcher} />
         </div>
       </div>
 
