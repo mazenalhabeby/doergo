@@ -39,6 +39,25 @@ export function scopeWhere(scope: SpaceScopeIds): { locationId?: { in: string[] 
 }
 
 /**
+ * A `where` fragment for a model that names its space something other than
+ * `locationId` — ShiftInstance and GeofenceExcursion both use `spaceId`.
+ *
+ * Exists so those call sites stop writing `scope ? { spaceId: { in: scope } }
+ * : {}` by hand. That is correct today only because an empty array is TRUTHY in
+ * JavaScript, so `[]` produces `IN ()` and matches nothing — which is the right
+ * answer, reached by accident. The day somebody "tidies" it to
+ * `scope?.length ? … : {}` the filter disappears for a caller granted nothing
+ * and they read every space in the organization. Declared here instead, once.
+ */
+export function scopeWhereOn(
+  field: string,
+  scope: SpaceScopeIds,
+): Record<string, { in: string[] }> {
+  if (scope === null || scope === undefined) return {};
+  return { [field]: { in: scope } };
+}
+
+/**
  * May the caller act on a row in THIS space?
  *
  * For writes the route names a resource, not a space, so the guard cannot help:

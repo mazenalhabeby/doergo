@@ -29,8 +29,13 @@ export class ShiftsService {
       emptier than it is. Applied as an AND beside the filter above, so asking
       for one space still cannot reach a space they were never granted.
     */
-    if (data.scopeSpaceIds) {
-      where.AND = [...(where.AND ?? []), { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] }];
+    if (data.scopeSpaceIds !== null && data.scopeSpaceIds !== undefined) {
+      // Explicit about the three states rather than relying on `[]` being
+      // truthy — granted NOWHERE must still narrow, to nothing.
+      where.AND = [
+        ...(where.AND ?? []),
+        { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] },
+      ];
     }
     const shifts = await this.prisma.shift.findMany({
       where,

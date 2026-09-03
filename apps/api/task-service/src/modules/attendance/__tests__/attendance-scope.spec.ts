@@ -1,4 +1,4 @@
-import { scopeWhere, scopeAllows } from '@hbcfield/shared';
+import { scopeWhere, scopeWhereOn, scopeAllows } from '@hbcfield/shared';
 
 /**
  * The narrowing that stands between a space-scoped grant and the whole
@@ -62,5 +62,31 @@ describe('attendance scope', () => {
       expect(scopeAllows(['space-1'], null)).toBe(false);
       expect(scopeAllows(['space-1'], undefined)).toBe(false);
     });
+  });
+});
+
+/**
+ * The `spaceId`-named variant, for models that do not call it `locationId`
+ * (ShiftInstance, GeofenceExcursion).
+ *
+ * It exists because those call sites wrote `scope ? { spaceId: { in: scope } }
+ * : {}` by hand, which is correct ONLY because an empty array is truthy in
+ * JavaScript — the right answer reached by accident. A tidy-up to
+ * `scope?.length ? … : {}` would drop the filter for a caller granted nothing,
+ * and they would read every space in the organization.
+ */
+describe('scopeWhereOn', () => {
+  it('does not narrow an org-wide grant', () => {
+    expect(scopeWhereOn('spaceId', null)).toEqual({});
+    expect(scopeWhereOn('spaceId', undefined)).toEqual({});
+  });
+
+  it('narrows to the granted spaces', () => {
+    expect(scopeWhereOn('spaceId', ['a'])).toEqual({ spaceId: { in: ['a'] } });
+  });
+
+  it('matches NOTHING when granted nowhere — not everything', () => {
+    expect(scopeWhereOn('spaceId', [])).toEqual({ spaceId: { in: [] } });
+    expect(scopeWhereOn('spaceId', [])).not.toEqual({});
   });
 });

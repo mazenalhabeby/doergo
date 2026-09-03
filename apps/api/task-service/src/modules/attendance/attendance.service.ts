@@ -32,7 +32,7 @@ import {
   buildDateRangeFilter,
   mayClockInRemotely as canClockInRemotely,
 } from '@hbcfield/shared';
-import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
+import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
@@ -1252,7 +1252,7 @@ export class AttendanceService {
         status: { in: statusFilter as any },
         // GeofenceExcursion names its own space, so it narrows on `spaceId`
         // rather than the `locationId` a time entry uses.
-        ...(data.scopeSpaceIds ? { spaceId: { in: data.scopeSpaceIds } } : {}),
+        ...scopeWhereOn('spaceId', data.scopeSpaceIds),
       },
       orderBy: [{ status: 'asc' }, { reportedAt: 'desc' }, { leftRingAt: 'desc' }],
       take: 200,
@@ -2032,7 +2032,7 @@ export class AttendanceService {
         // ShiftInstance is keyed on the space too. Applied after the explicit
         // filter above so a caller asking for one space still cannot reach a
         // space they were never granted.
-        ...(data.scopeSpaceIds ? { spaceId: { in: data.scopeSpaceIds } } : {}),
+        ...scopeWhereOn('spaceId', data.scopeSpaceIds),
         state: { in: ['REMINDED', 'ESCALATED', 'EXCUSED'] },
         expectedClockInAt: { gte: since, lte: now },
       },
@@ -2078,7 +2078,7 @@ export class AttendanceService {
       where: {
         id: data.id,
         organizationId: data.organizationId,
-        ...(data.scopeSpaceIds ? { spaceId: { in: data.scopeSpaceIds } } : {}),
+        ...scopeWhereOn('spaceId', data.scopeSpaceIds),
       },
       select: { id: true },
     });
