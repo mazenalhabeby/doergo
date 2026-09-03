@@ -211,7 +211,15 @@ export function AdminDashboard() {
     */
     for (const a of rosters) {
       if (a.user && !map.has(a.user.id)) {
-        map.set(a.user.id, { ...a.user, isActive: true, role: 'EMPLOYEE' } as unknown as OrgMember);
+        // `presenceUnknown` marks what this record cannot answer: the roster
+        // carries no activity timestamp, so "are they reachable right now" has
+        // no answer here — see how the off-the-clock groups read it.
+        map.set(a.user.id, {
+          ...a.user,
+          isActive: true,
+          role: 'EMPLOYEE',
+          presenceUnknown: true,
+        } as unknown as OrgMember);
       }
     }
     for (const m of members) map.set(m.id, m);
@@ -331,8 +339,17 @@ export function AdminDashboard() {
 
         const activeSpace = activeSpaceByUser.get(userId);
         if (!clocked) {
-          // Off the clock → Off-shift (online/reachable) vs Off Duty (offline).
-          (online ? offShift : offDuty).push(node);
+          /*
+            Off the clock → Off-shift (online/reachable) vs Off Duty (offline).
+
+            Unless nobody told us: a roster gives a name and a face and no
+            activity timestamp, so a viewer without the member directory knows
+            only that these people are not on the clock. Reading that silence as
+            "offline" put a whole space under Off Duty and asserted something
+            the screen had no way to know. Not-on-the-clock is the honest half.
+          */
+          const activityUnknown = (m as { presenceUnknown?: boolean }).presenceUnknown === true;
+          (online || activityUnknown ? offShift : offDuty).push(node);
         } else if (activeSpace !== loc.id) {
           // Clocked in, but active ELSEWHERE → off-shift here with a hint, not a
           // misleading active "off-site" node (and not double-counted).
@@ -535,7 +552,16 @@ export function AdminDashboard() {
     return actions.slice(0, 5);
   }, [tasks, i18n.language]);
 
+  /*
+    Two columns is a layout for a wall of spaces, not for one.
+
+    A member who supervises a single site got that site as a half-width card
+    with the whole right half of the screen empty beside it, and its roster
+    squeezed two faces to a row so it ran off the bottom. The grid earns its
+    second column from the second card.
+  */
   const columns = useMemo(() => splitColumns(boxes), [boxes]);
+  const isSingleCard = boxes.length === 1;
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const greeting = useMemo(() => {
@@ -560,6 +586,28 @@ export function AdminDashboard() {
     setSelectedMemberId(null);
     router.push('/(app)/manage/members' as any);
   }, []);
+
+  // One card, rendered by both layouts — a full-width card differs from a
+  // masonry cell only in how much room it is given.
+  const renderCard = useCallback(
+    (box: WorkspaceBoxData, compact: boolean) => (
+      <WorkspaceCard
+        key={`${box.type}-${box.locationId}`}
+        box={box}
+        compact={compact}
+        onPersonPress={handlePersonPress}
+        /*
+          Assigning somebody to a space is `@RequirePermissionInSpace
+          ('canManageWorkspaces')`. A supervisor who oversees one site holds no
+          such thing, so the button led straight to a refusal — no handler, no
+          button.
+        */
+        onAssign={canManageMembersInSpace(user, box.locationId) ? setAssignLocationId : undefined}
+        onViewTasks={handleViewTasks}
+      />
+    ),
+    [handlePersonPress, handleViewTasks, user],
+  );
 
   const assignLocationName = useMemo(
     () => locations.find((l) => l.id === assignLocationId)?.name,
@@ -715,29 +763,17 @@ export function AdminDashboard() {
               </Text>
             </View>
           ) : (
+            isSingleCard ? (
+              renderCard(boxes[0], false)
+            ) : (
             <View style={styles.columns}>
               {columns.map((column, ci) => (
                 <View key={`col-${ci}`} style={styles.column}>
-                  {column.map((box) => (
-                    <WorkspaceCard
-                      key={`${box.type}-${box.locationId}`}
-                      box={box}
-                      compact
-                      onPersonPress={handlePersonPress}
-                      /*
-                        Assigning somebody to a space is
-                        `@RequirePermissionInSpace('canManageWorkspaces')`. A
-                        supervisor who oversees one site holds no such thing, so
-                        the button led straight to a refusal — no handler, no
-                        button.
-                      */
-                      onAssign={canManageMembersInSpace(user, box.locationId) ? setAssignLocationId : undefined}
-                      onViewTasks={handleViewTasks}
-                    />
-                  ))}
+                  {column.map((box) => renderCard(box, true))}
                 </View>
               ))}
             </View>
+            )
           )}
         </TourTarget>
       </ScrollView>
