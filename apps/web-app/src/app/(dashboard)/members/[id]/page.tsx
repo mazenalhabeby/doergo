@@ -197,6 +197,8 @@ export default function MemberProfilePage({
     )
   }
 
+  /* Works for a client or partner — see the tab list below for what that hides. */
+  const isExternalMember = member.isExternal === true
   const roleConfig = roleBadge(member.role, { isExternal: member.isExternal })
   const scheduleLabel = member.scheduleType === "FIXED"
     ? t("members.detail.fixedSchedule")
@@ -536,10 +538,19 @@ export default function MemberProfilePage({
                       <ClipboardList className="size-3.5" />
                       {t("technicians.detail.tabs.tasks")}
                     </TabsTrigger>
-                    <TabsTrigger value="attendance" className={triggerCls}>
-                      <Clock className="size-3.5" />
-                      {t("technicians.detail.tabs.attendance")}
-                    </TabsTrigger>
+                    {/* Nothing an external member could ever fill: they do not
+                        clock in here, book no leave with us, and their
+                        performance is our own workers' output, not theirs. A
+                        tab that can never hold anything reads as a broken
+                        feature rather than an empty one. Tasks STAYS — work can
+                        genuinely be assigned to them, so hiding it would lose
+                        real data the first time somebody does. */}
+                    {!isExternalMember && (
+                      <TabsTrigger value="attendance" className={triggerCls}>
+                        <Clock className="size-3.5" />
+                        {t("technicians.detail.tabs.attendance")}
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger value="locations" className={triggerCls}>
                       <MapPin className="size-3.5" />
                       {t("technicians.detail.tabs.locations")}
@@ -552,14 +563,18 @@ export default function MemberProfilePage({
                         {t("technicians.detail.tabs.schedule")}
                       </TabsTrigger>
                     )}
-                    <TabsTrigger value="time-off" className={triggerCls}>
-                      <Umbrella className="size-3.5" />
-                      {t("technicians.detail.tabs.timeOff")}
-                    </TabsTrigger>
-                    <TabsTrigger value="performance" className={triggerCls}>
-                      <BarChart3 className="size-3.5" />
-                      {t("technicians.detail.tabs.performance")}
-                    </TabsTrigger>
+                    {!isExternalMember && (
+                      <TabsTrigger value="time-off" className={triggerCls}>
+                        <Umbrella className="size-3.5" />
+                        {t("technicians.detail.tabs.timeOff")}
+                      </TabsTrigger>
+                    )}
+                    {!isExternalMember && (
+                      <TabsTrigger value="performance" className={triggerCls}>
+                        <BarChart3 className="size-3.5" />
+                        {t("technicians.detail.tabs.performance")}
+                      </TabsTrigger>
+                    )}
                   </>
                 )}
               </TabsList>
@@ -606,14 +621,19 @@ export default function MemberProfilePage({
                       </div>
                     )}
                   </TabsContent>
-                  <TabsContent value="attendance" className="mt-6">
-                    <AttendanceTab
-                      attendance={attendance}
-                      employeeId={memberId}
-                      employeeName={`${member.firstName} ${member.lastName}`.trim()}
-                      canManage={canManage}
-                    />
-                  </TabsContent>
+                  {/* Gated with their triggers above — a mounted panel for a
+                      hidden tab still fetches, so leaving these in would query
+                      attendance and time-off for somebody who has neither. */}
+                  {!isExternalMember && (
+                    <TabsContent value="attendance" className="mt-6">
+                      <AttendanceTab
+                        attendance={attendance}
+                        employeeId={memberId}
+                        employeeName={`${member.firstName} ${member.lastName}`.trim()}
+                        canManage={canManage}
+                      />
+                    </TabsContent>
+                  )}
                   <TabsContent value="locations" className="mt-6">
                     <LocationsTab assignments={memberAssignments} />
                   </TabsContent>
@@ -622,12 +642,16 @@ export default function MemberProfilePage({
                       <ScheduleTab employeeId={memberId} canManage={canManage} />
                     </TabsContent>
                   )}
-                  <TabsContent value="time-off" className="mt-6">
-                    <TimeOffTab employeeId={memberId} canManage={canManage} />
-                  </TabsContent>
-                  <TabsContent value="performance" className="mt-6">
-                    <PerformanceTab performance={performance} />
-                  </TabsContent>
+                  {!isExternalMember && (
+                    <TabsContent value="time-off" className="mt-6">
+                      <TimeOffTab employeeId={memberId} canManage={canManage} />
+                    </TabsContent>
+                  )}
+                  {!isExternalMember && (
+                    <TabsContent value="performance" className="mt-6">
+                      <PerformanceTab performance={performance} />
+                    </TabsContent>
+                  )}
                 </>
               )}
             </Tabs>

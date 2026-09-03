@@ -194,6 +194,12 @@ export function AccessBuilder({
             onChange={patch}
             excludeContactId={isBulk ? undefined : member.id}
             showRole={!isBulk}
+            /* Same panel the invite dialog shows an external member: where they
+               log in and which tabs they get. Never in bulk — a selection can
+               mix external members with our own staff, and hiding sections for
+               all of them because one was external would silently drop settings
+               from the rest. */
+            external={!isBulk && (member as { isExternal?: boolean }).isExternal === true}
             lockRole={isSelf}
           />
         )}
