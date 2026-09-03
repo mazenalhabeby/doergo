@@ -28,6 +28,7 @@ import {
   normalizeRole,
   buildResolvedAccess,
   accessAllows,
+  resolveTaskCreationScope,
   mailRoutes,
   sendViaFirstWorking,
   type MailRoute,
@@ -83,8 +84,22 @@ function resolveProfileBadges(
  * This is also what makes the columns droppable: afterwards nothing in the
  * request path reads them.
  */
-function orgPermissionFields(access: ReturnType<typeof buildResolvedAccess>) {
+function orgPermissionFields(
+  access: ReturnType<typeof buildResolvedAccess>,
+  /*
+    The member's own `taskCreationScope` column.
+
+    Every other field here is restated from `access` alone, because a column
+    duplicating a permission is a column that can disagree with it. This one
+    cannot be derived that way: NONE/SELF/SPACE/ORG is a genuine per-member
+    choice about how WIDELY, on top of the permission's WHETHER. So the column
+    is passed in and reconciled — see resolveTaskCreationScope, which exists
+    because the two did disagree and a space-granted member was refused.
+  */
+  taskCreationScopeColumn?: string | null,
+) {
   return {
+    taskCreationScope: resolveTaskCreationScope(taskCreationScopeColumn, access),
     canCreateTasks: accessAllows(access, 'canCreateTasks'),
     canViewAllTasks: accessAllows(access, 'canViewAllTasks'),
     canAssignTasks: accessAllows(access, 'canAssignTasks'),
@@ -721,7 +736,8 @@ export class AuthService {
             // gates its own UI on them (useTaskPermissions reads
             // user.canCreateTasks), so they must be the same answer the server
             // will give, not the raw columns.
-            taskCreationScope: user.taskCreationScope,
+            // taskCreationScope comes from orgPermissionFields below, reconciled
+            // with the grant — the raw column disagreed with it.
             allowRemote: user.allowRemote,
             presence: user.presence,
             // Worker configuration
@@ -751,7 +767,7 @@ export class AuthService {
             // …and the permission fields derived from it, so what the client
             // gates its UI on is what the server will authorize. Last, to win
             // over the individual fields set above.
-            ...orgPermissionFields(loginAccess),
+            ...orgPermissionFields(loginAccess, user.taskCreationScope),
           },
           ...tokens,
         },
@@ -805,6 +821,21 @@ export class AuthService {
           user: {
             include: {
               organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+              /*
+                The role and space assignments, because this response REPLACES
+                the mobile client's stored user (see `onUserRefreshed`).
+
+                Without them the refresh cannot resolve access, and it was
+                answering with raw columns and no `access` at all — so a member
+                whose grant comes from a space role was handed their permissions
+                at sign-in and lost them at the next token refresh, silently,
+                mid-session. Two short indexed reads on a path that already
+                loads the user.
+              */
+              memberRole: { select: { isActive: true, permissions: true } },
+              spaceAssignments: {
+                select: { spaceId: true, role: { select: { isActive: true, permissions: true } } },
+              },
             },
           },
         },
@@ -990,6 +1021,26 @@ export class AuthService {
         // was previously used but is lost on restart/crash, orphaning rows.
       }
 
+      const refreshAccess = buildResolvedAccess({
+        isAdmin: storedToken.user.role === Role.ADMIN,
+        userFlags: ignoreLegacyFlags()
+          ? undefined
+          : {
+              canCreateTasks: storedToken.user.canCreateTasks,
+              canViewAllTasks: storedToken.user.canViewAllTasks,
+              canAssignTasks: storedToken.user.canAssignTasks,
+              canManageUsers: storedToken.user.canManageUsers,
+              canViewReports: storedToken.user.canViewReports,
+            },
+        memberRolePermissions: storedToken.user.memberRole?.isActive
+          ? storedToken.user.memberRole.permissions
+          : undefined,
+        spaces: storedToken.user.spaceAssignments.map((a) => ({
+          spaceId: a.spaceId,
+          permissions: a.role?.isActive ? a.role.permissions : undefined,
+        })),
+      });
+
       return {
         success: true,
         data: {
@@ -1003,11 +1054,14 @@ export class AuthService {
             organizationId: storedToken.user.organizationId,
             onboardingCompleted: storedToken.user.onboardingCompleted,
             avatarUrl: storedToken.user.avatarUrl,
-            canCreateTasks: storedToken.user.canCreateTasks,
-            taskCreationScope: storedToken.user.taskCreationScope,
-            canViewAllTasks: storedToken.user.canViewAllTasks,
-            canAssignTasks: storedToken.user.canAssignTasks,
-            canManageUsers: storedToken.user.canManageUsers,
+            /*
+              Permission fields and `access` from the SAME resolution login
+              uses, never the raw columns — this response replaces the mobile
+              client's user, so anything answered differently here is a
+              permission that changes when a token rotates.
+            */
+            access: refreshAccess,
+            ...orgPermissionFields(refreshAccess, storedToken.user.taskCreationScope),
             allowRemote: storedToken.user.allowRemote,
             presence: storedToken.user.presence,
             specialty: storedToken.user.specialty,
@@ -1443,7 +1497,7 @@ export class AuthService {
           plat: payload.plat,
           // Permission fields from `access`, never the raw columns — see
           // orgPermissionFields. Must come after the spread to win over it.
-          ...orgPermissionFields(access),
+          ...orgPermissionFields(access, (userData as { taskCreationScope?: string | null }).taskCreationScope),
           // Canonicalize the role once at this boundary so every downstream
           // service (and the gateway's req.user) sees ADMIN/MANAGER/EMPLOYEE,
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.

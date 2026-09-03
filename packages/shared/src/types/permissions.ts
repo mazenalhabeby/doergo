@@ -613,6 +613,33 @@ export function spacesGranting(
 }
 
 /**
+ * How widely a member may create tasks, once the grant is taken into account.
+ *
+ * `taskCreationScope` is a COLUMN on the user (NONE | SELF | SPACE | ORG) and
+ * `canCreateTasks` is a permission that a role can grant — two mechanisms for
+ * one decision, and they can disagree. They did: a member granted "create
+ * tasks" by a space role was refused with "You do not have permission to create
+ * tasks", because the column still held the NONE their invitation defaulted to
+ * and nothing ever recomputed it.
+ *
+ * The permission decides WHETHER; the column decides HOW WIDELY. So a column
+ * saying NONE while the permission is held is not a restriction somebody chose
+ * — it is a value nobody set — and it resolves to SPACE, the narrowest scope
+ * that permits creating anything: their own assigned spaces.
+ *
+ * An explicit SELF, SPACE or ORG is always honoured. Taking the permission away
+ * is how you stop somebody creating tasks; that is what it is for.
+ */
+export function resolveTaskCreationScope(
+  column: string | null | undefined,
+  access: ResolvedAccess | null | undefined,
+): 'NONE' | 'SELF' | 'SPACE' | 'ORG' {
+  const set = (column ?? '').toUpperCase();
+  if (set === 'SELF' || set === 'SPACE' || set === 'ORG') return set;
+  return accessAllowsAnywhere(access, 'canCreateTasks') ? 'SPACE' : 'NONE';
+}
+
+/**
  * SPACE-ONLY grant check — does the resolved access grant `key` within THIS exact
  * space, with NO org-wide fallback? Use this to authorize actions on a FOREIGN
  * (cross-org shared) resource: `perSpace[spaceId]` is populated only by a native
