@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters';
+import { spacesGranting } from '@hbcfield/shared';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -157,6 +158,18 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   console.log(`API Gateway is running on: http://0.0.0.0:${port}`);
+  /*
+    Does THIS process have space-scoped access resolution?
+ 
+    A permission fix that cannot be reproduced is usually a process running code
+    the author is not reading. Inferring it from behaviour costs a round trip
+    every time and is frequently wrong; the boot line answers it once. Printed
+    from the same import the request path uses, so it cannot say yes while the
+    routes use something else.
+  */
+  console.log(
+    `[access] space-scoped resolution: ${typeof spacesGranting === 'function' ? 'ON' : 'MISSING'}`,
+  );
   if (!isProduction) {
     console.log(`Swagger docs available at: http://localhost:${port}/docs`);
   }
