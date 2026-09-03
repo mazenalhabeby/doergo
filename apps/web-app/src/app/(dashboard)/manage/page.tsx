@@ -9,7 +9,7 @@ import { hasAccessModule } from "@hbcfield/shared/client"
 type Item = { href: string; label: string; desc: string; icon: typeof Users; show: boolean }
 
 export default function ManagePage() {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const { t } = useTranslation()
   const canSee = !user || hasAccessModule(user, "manage")
 
@@ -26,9 +26,9 @@ export default function ManagePage() {
   const items: Item[] = [
     { href: "/members", label: t('manage.items.members.label'), desc: t('manage.items.members.desc'), icon: Users, show: !!user?.canManageUsers },
     { href: "/invitations", label: t('manage.items.invitations.label'), desc: t('manage.items.invitations.desc'), icon: Mail, show: !!user?.canManageUsers },
-    { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: !!user?.canManageUsers || !!user?.canViewAllTasks },
-    { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: !!user?.canViewAllTasks },
-    { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: !!user?.canManageWorkspaces || !!user?.canManageUsers || !!user?.canViewAllTasks },
+    { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: !!user?.canManageUsers || hasPermission('canViewAllTasks') },
+    { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: hasPermission('canViewAllTasks') },
+    { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: !!user?.canManageWorkspaces || !!user?.canManageUsers || hasPermission('canViewAllTasks') },
     // No "Task types" entry: they belong to the space that runs them, so this
     // linked to the same place as Spaces above it — two rows, one destination.
   ]

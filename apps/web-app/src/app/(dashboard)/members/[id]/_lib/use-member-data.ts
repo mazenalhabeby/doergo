@@ -23,13 +23,13 @@ const TASKS_PAGE_SIZE = 20
 const ATTENDANCE_WINDOW_DAYS = 90
 
 export function useMemberData(memberId: string) {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const queryClient = useQueryClient()
 
   const isAdmin = user?.role === "ADMIN"
   // Manager+ may see the operational tabs (tasks/attendance/schedule/perf) and
   // manage schedules/attendance — same gate the retired /employees page used.
-  const canViewOps = isAdmin || !!user?.canViewAllTasks
+  const canViewOps = isAdmin || hasPermission('canViewAllTasks')
   const canManage = canViewOps
   // Editing a member's role / access. Mirrors the server exactly:
   // PATCH /organizations/members/:id is @RequirePermission('canManageUsers').

@@ -208,7 +208,16 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const showTasks = hasAccessModule(user || {}, 'tasks');
   const showAttendance = hasAccessModule(user || {}, 'clock');
   const showTimeOff = hasAccessModule(user || {}, 'time_off');
-  const showCreate = hasAccessModule(user || {}, 'create_task') && !!user?.canCreateTasks;
+  /*
+    One question, asked once.
+
+    `hasAccessModule('create_task')` already IS the create permission — it
+    derives from `canCreateTasks`, org-wide or held in a space. The second half
+    of this was the same decision asked a narrower way, and it cancelled the
+    first: a member granted "create tasks" by a space role passed the module
+    check and was then refused by the org column.
+  */
+  const showCreate = hasAccessModule(user || {}, 'create_task');
   const showTeam = canContactColleagues(user || {});
 
   // Filter routes based on role and modules (profile is in header, not tab bar)
@@ -296,7 +305,16 @@ export default function TabsLayout() {
   const showTechTasks = hasAccessModule(user || {}, 'tasks');
   const showAttendance = hasAccessModule(user || {}, 'clock');
   const showTimeOff = hasAccessModule(user || {}, 'time_off');
-  const showCreate = hasAccessModule(user || {}, 'create_task') && !!user?.canCreateTasks;
+  /*
+    One question, asked once.
+
+    `hasAccessModule('create_task')` already IS the create permission — it
+    derives from `canCreateTasks`, org-wide or held in a space. The second half
+    of this was the same decision asked a narrower way, and it cancelled the
+    first: a member granted "create tasks" by a space role passed the module
+    check and was then refused by the org column.
+  */
+  const showCreate = hasAccessModule(user || {}, 'create_task');
   const showTeam = canContactColleagues(user || {});
 
   return (

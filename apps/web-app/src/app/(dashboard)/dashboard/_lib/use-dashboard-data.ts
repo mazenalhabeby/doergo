@@ -20,6 +20,7 @@ import { assigneeIds } from "@/lib/task-assignment"
 import { getTodayString, isClockedIn } from "../_components/helpers"
 import type { AttendanceFacts } from "./build-workspace-boxes"
 import { buildPresenceDirectory } from "./presence-directory"
+import { useAuth } from "@/contexts/auth-context"
 
 /**
  * Everything the dashboard reads, and the shapes it reads it into.
@@ -62,7 +63,10 @@ export interface DashboardUser {
 }
 
 export function useDashboardData(user: DashboardUser | null | undefined) {
-  const isAdminOrDispatcher = user?.role === "ADMIN" || !!user?.canViewAllTasks
+  const { hasPermission } = useAuth()
+  // Space-aware: "view all tasks" held by a SPACE role counts here too, or a
+  // member whose only authority is a space gets the narrow employee dashboard.
+  const isAdminOrDispatcher = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
   // Access-Profile space scope: 'all' | 'own' | 'tasks'. Admins/managers always
   // see every space. Resolved before the queries because it decides whether the
   // spaces request is worth making at all.

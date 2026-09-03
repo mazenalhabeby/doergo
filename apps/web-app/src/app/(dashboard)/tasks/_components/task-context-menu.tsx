@@ -70,7 +70,7 @@ function TaskContextMenuInner({
   recentAssignees = [],
 }: TaskContextMenuProps) {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
 
   /*
     The statuses THIS task can be in — its own type's, not a fixed list. Same
@@ -92,7 +92,7 @@ function TaskContextMenuInner({
   const allowedTargets: string[] = usesFlow
     ? (currentFlowStatus?.transitions ?? [])
     : ((STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[])
-  const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
+  const isManager = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
   const router = useRouter()
 /*
     Modules are the SPACE's, and a board can show tasks from several spaces at

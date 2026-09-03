@@ -282,7 +282,7 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const { statuses: workflowStatuses, hasWorkflow } = useOrgWorkflow()
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
 
   /*
     What a card may do, decided by the same rule the service enforces.
@@ -291,7 +291,7 @@ export function KanbanBoard({
     finished one is held to its declared transitions — so a COMPLETED card
     still lifts, because it can be closed, while CANCELED and CLOSED do not.
   */
-  const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
+  const isManager = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
   const targetsFor = useCallback((status: string): string[] => {
     if (hasWorkflow) {
       const cur = workflowStatuses.find((st) => st.key === status)

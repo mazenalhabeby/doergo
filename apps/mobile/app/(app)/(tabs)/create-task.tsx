@@ -33,6 +33,7 @@ import {
 } from '../../../src/lib/constants';
 import { getPriorityStyle } from '../../../src/lib/styles';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { accessAllowsAnywhere } from '@hbcfield/shared/client';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 type Priority = typeof PRIORITIES[number];
@@ -58,7 +59,9 @@ export default function CreateTaskScreen() {
   // Dates follow the active language rather than a hardcoded en-US locale.
   const { locale } = useTimeFormat();
   const { pickFromGallery, takePhoto } = useImagePicker();
-  const canAssign = user?.canAssignTasks ?? false;
+  // Org-wide OR held in a space — the flat column carries only the first, so a
+  // member granted "assign tasks" in their workspace could not assign here.
+  const canAssign = user?.canAssignTasks === true || accessAllowsAnywhere(user?.access as never, 'canAssignTasks');
   const [photos, setPhotos] = useState<PickedImage[]>([]);
 
   // Load spaces and default to the org's "General" space (every task needs one).

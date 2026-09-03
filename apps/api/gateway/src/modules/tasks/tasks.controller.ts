@@ -14,7 +14,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents } from '@hbcfield/shared';
+import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -177,6 +177,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       // Cross-org shared spaces the caller may view (server-authoritative, from
@@ -199,6 +204,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       ...(spaceId && { spaceId }),
@@ -216,6 +226,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -230,6 +245,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       // Cross-org spaces shared with this caller (server-authoritative, from the
@@ -250,6 +270,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       access: req.user.access, // task-service enforces the real space for foreign tasks
@@ -266,6 +291,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       access: req.user.access, // task-service enforces the real space for foreign tasks
@@ -281,6 +311,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       access: req.user.access, // server-authoritative; task-service enforces the real space for foreign tasks
@@ -295,6 +330,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -309,6 +349,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -323,6 +368,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -337,6 +387,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -351,6 +406,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -372,6 +432,11 @@ export class TasksController {
       requestUserId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -391,6 +456,11 @@ export class TasksController {
       requestUserId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -411,6 +481,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -429,6 +504,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -449,6 +529,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -467,6 +552,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -498,6 +588,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -562,6 +657,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -583,6 +683,11 @@ export class TasksController {
       uploadedById: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -597,6 +702,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });
@@ -614,6 +724,11 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // "View all tasks" held in a SPACE means all tasks in THAT space. The
+      // flag above is the org-wide answer; without this a member granted it by
+      // a space role saw only what was assigned to them — including tasks they
+      // had just created themselves.
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
     });

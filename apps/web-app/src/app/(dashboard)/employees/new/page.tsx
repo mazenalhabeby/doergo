@@ -54,7 +54,7 @@ const SPECIALTY_OPTIONS = [
 export default function NewTechnicianPage() {
   const router = useRouter()
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const queryClient = useQueryClient()
 
   // Form state
@@ -133,7 +133,7 @@ export default function NewTechnicianPage() {
   }
 
   // Check if user can create employees (ADMIN or can-view-all-tasks)
-  const canCreateEmployees = user?.role === "ADMIN" || !!user?.canViewAllTasks
+  const canCreateEmployees = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
   if (!canCreateEmployees) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">

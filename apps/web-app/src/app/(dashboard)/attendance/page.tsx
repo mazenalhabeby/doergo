@@ -81,7 +81,7 @@ export default function AttendancePage() {
   // reportType and reportLocationId moved to ReportsTab component
 
   // Check role - only ADMIN and DISPATCHER can access
-  const canAccess = user?.role === "ADMIN" || !!user?.canViewSpaceAttendance || !!user?.canViewAllTasks
+  const canAccess = user?.role === "ADMIN" || hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
   const isAdmin = user?.role === "ADMIN"
   /*
     Correcting somebody else's shift — editing the times, adding a break they

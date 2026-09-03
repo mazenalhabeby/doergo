@@ -771,11 +771,35 @@ export class TasksService {
     userId: string;
     userRole: string;
     canViewAllTasks?: boolean;
+    /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
+    viewAllSpaceIds?: string[];
     organizationId: string;
   }): any {
-    const { userId, userRole, canViewAllTasks, organizationId } = opts;
+    const { userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds } = opts;
     if (userRole === Role.ADMIN || canViewAllTasks) {
       return { organizationId };
+    }
+    /*
+      "View all tasks" held in a SPACE means all tasks IN THAT SPACE.
+
+      The flag above is the org-wide answer, so a member whose grant comes from
+      a space role fell straight through to "only what is assigned to me" — they
+      could create a task in their workspace and then not see it, because they
+      had not assigned it to themselves. The grant was real; nothing widened the
+      query with it.
+
+      Their own work stays visible either way: this ADDS the spaces they may see
+      in full, it does not replace the assignment clause.
+    */
+    if (viewAllSpaceIds?.length) {
+      return {
+        organizationId,
+        OR: [
+          { spaceId: { in: viewAllSpaceIds } },
+          { assignedToId: userId },
+          { assignees: { some: { userId } } },
+        ],
+      };
     }
     // Assigned to them as LEAD (legacy assignedToId) OR as a co-assignee.
     return {
@@ -806,6 +830,7 @@ export class TasksService {
       organizationId,
       spaceId,
       sharedSpaceIds, // server-authoritative cross-org shared spaces (from the token grant)
+      viewAllSpaceIds, // spaces where canViewAllTasks is held by a SPACE role
     } = query;
     // Is this a query for a foreign space shared with the caller's org?
     const isSharedSpace = !!spaceId && Array.isArray(sharedSpaceIds) && sharedSpaceIds.includes(spaceId);
@@ -845,7 +870,7 @@ export class TasksService {
       where.spaceId = spaceId;
     } else {
       // Visibility — one rule, shared with getStatusCounts (see above).
-      const visibility = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId });
+      const visibility = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds });
       where.organizationId = visibility.organizationId;
       if (visibility.AND) where.AND = [...(where.AND || []), ...visibility.AND];
 
@@ -945,7 +970,7 @@ export class TasksService {
   /**
    * Find a single task by ID with authorization
    */
-  async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string; sharedSpaceIds?: string[] }) {
+  async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string; sharedSpaceIds?: string[]; viewAllSpaceIds?: string[] }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
@@ -1018,6 +1043,7 @@ export class TasksService {
       data.organizationId,
       (data as any).canViewAllTasks,
       data.sharedSpaceIds,
+      (data as any).viewAllSpaceIds,
     );
 
     // Derive task-time anchors from the status history (no schema change), so the
@@ -1842,8 +1868,10 @@ export class TasksService {
     organizationId: string,
     canViewAllTasks?: boolean,
     sharedSpaceIds?: string[],
+    /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
+    viewAllSpaceIds?: string[],
   ) {
-    const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds };
+    const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds };
 
     // Only hit the database when the answer is genuinely unknown — and only
     // once the task is known to be inside the boundary, so an out-of-org probe
@@ -2312,17 +2340,23 @@ export class TasksService {
     canViewAllTasks?: boolean;
     organizationId: string;
     spaceId?: string;
+    /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
+    viewAllSpaceIds?: string[];
     /** 'status' (default) or 'space'. */
     groupBy?: string;
   }) {
-    const { userId, userRole, canViewAllTasks, organizationId, spaceId, groupBy } = query;
+    const { userId, userRole, canViewAllTasks, organizationId, spaceId, groupBy, viewAllSpaceIds } = query;
 
     if (!userRole) {
       return success({});
     }
 
     // Check Redis cache first
-    const cacheKey = `status_counts:${groupBy === 'space' ? 'space' : 'status'}:${userRole}:${userId}:${organizationId}${spaceId ? `:${spaceId}` : ''}`;
+    // The space list is part of the key: two members with the same role and org
+    // now see different counts, and a key that ignores that serves one of them
+    // the other's numbers.
+    const scopeKey = viewAllSpaceIds?.length ? `:${[...viewAllSpaceIds].sort().join(',')}` : '';
+    const cacheKey = `status_counts:${groupBy === 'space' ? 'space' : 'status'}:${userRole}:${userId}:${organizationId}${spaceId ? `:${spaceId}` : ''}${scopeKey}`;
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
@@ -2333,7 +2367,7 @@ export class TasksService {
     }
 
     // Same visibility rule the list uses — see buildVisibilityWhere.
-    const where: any = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId });
+    const where: any = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds });
 
     // Space filter — verify it belongs to the user's org before applying
     if (spaceId) {

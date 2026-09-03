@@ -37,9 +37,9 @@ interface AuditLogEntry {
 
 /** True when the current user is allowed to view per-entity audit trails. */
 export function useCanViewAudit(): boolean {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   if (!user) return false
-  return user.role === "ADMIN" || user.canViewAllTasks === true
+  return user.role === "ADMIN" || hasPermission('canViewAllTasks')
 }
 
 // ---------------------------------------------------------------------------

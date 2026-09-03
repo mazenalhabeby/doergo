@@ -68,7 +68,7 @@ function TaskTableRowInner({
     organization's set. Cached per space by the hook, so a board of fifty rows
     from three spaces makes three lookups, not fifty.
   */
-  const { hasModule: orgHasModule, user } = useAuth()
+  const { hasModule: orgHasModule, user, hasPermission } = useAuth()
   const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
   const hasModule = task.spaceId ? spaceHasModule : orgHasModule
   const router = useRouter()
@@ -101,7 +101,7 @@ function TaskTableRowInner({
     ? (flowStatuses.find((st) => st.key === task.status)?.transitions ?? [])
     : ((STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[])
 
-  const isManager = user?.role === "ADMIN" || user?.canViewAllTasks === true
+  const isManager = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
 
   // Offered only when there is something to offer: an action to call, and a
   // task the server would actually move.

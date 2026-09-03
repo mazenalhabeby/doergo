@@ -655,7 +655,7 @@ function CalendarTab({
 // ============================================================================
 
 export default function ScheduleAndTimeOffPage() {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const initialTab = searchParams.get("tab") === "time-off" ? "time-off" : "calendar"
@@ -760,7 +760,7 @@ export default function ScheduleAndTimeOffPage() {
     return format(currentDate, "MMMM yyyy")
   }, [currentDate, viewMode])
 
-  const canManage = user?.role === "ADMIN" || !!user?.canViewAllTasks
+  const canManage = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
 
   if (!canManage) {
     return (

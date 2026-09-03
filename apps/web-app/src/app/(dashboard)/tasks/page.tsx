@@ -369,7 +369,7 @@ export default function TasksPage() {
   // Role-based space filtering:
   // Admin/Dispatcher → all spaces
   // Employee → only spaces from their assigned tasks
-  const isAdminOrManager = user?.role === "ADMIN" || !!user?.canViewAllTasks
+  const isAdminOrManager = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
   const spaces = useMemo(() => {
     if (isAdminOrManager) return allSpaces
     // Filter to spaces the employee has tasks in
@@ -590,7 +590,7 @@ export default function TasksPage() {
       to: newStatus,
       allowedTargets: (STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[],
       targetIsValidStatus: true,
-      isManager: user?.role === "ADMIN" || user?.canViewAllTasks === true,
+      isManager: user?.role === "ADMIN" || hasPermission('canViewAllTasks'),
       fromIsFinished: isFinishedStatus(task.status),
     })) {
       notify.error(t("tasks.notify.invalidTransition", {
@@ -908,7 +908,7 @@ export default function TasksPage() {
     create screen is part of this member's app at all.
   */
   const canCreateTasks = hasPermission("canCreateTasks") && hasAccessModule(user ?? {}, "create_task")
-  const canAssignTasks = user?.canAssignTasks ?? false
+  const canAssignTasks = hasPermission('canAssignTasks')
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useKeyboardShortcuts(

@@ -60,13 +60,13 @@ export default function TaskDetailPage({
   const { t } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { user, hasModule: orgHasModule } = useAuth()
+  const { user, hasModule: orgHasModule, hasPermission } = useAuth()
   const { setOverride, clearOverride } = useBreadcrumbOverride()
   const isAdmin = user?.role === "ADMIN"
   // Org-level, not task-scoped: reaching every task in the org is a flat grant.
-  const canViewAllTasks = isAdmin || user?.canViewAllTasks === true
+  const canViewAllTasks = isAdmin || hasPermission('canViewAllTasks')
   // The route map shows where a person physically went — its own capability now.
-  const canViewTracking = isAdmin || user?.canViewTracking === true || user?.canViewAllTasks === true
+  const canViewTracking = isAdmin || user?.canViewTracking === true || hasPermission('canViewAllTasks')
 
   const [showAssignModal, setShowAssignModal] = useState(false)
   // Reported by ActivitySection, which is the only thing that loads the

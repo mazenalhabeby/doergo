@@ -43,7 +43,7 @@ export interface TaskPermissions {
 }
 
 export function useTaskPermissions(task?: TaskPermissionSubject | null): TaskPermissions {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
 
   return useMemo(() => {
     const isAdmin = user?.role === "ADMIN"
@@ -56,7 +56,7 @@ export function useTaskPermissions(task?: TaskPermissionSubject | null): TaskPer
       (user as Record<string, unknown> | null)?.[key] === true ||
       accessAllowsInSpace(access as never, key, spaceId)
 
-    const canViewAll = isAdmin || user?.canViewAllTasks === true
+    const canViewAll = isAdmin || hasPermission('canViewAllTasks')
     const editable = !task?.isFinished
 
     const canEdit = holds("canCreateTasks") && editable

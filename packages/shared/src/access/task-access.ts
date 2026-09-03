@@ -35,6 +35,15 @@ export interface TaskAccessCaller {
   /** "View all tasks" grant — same reach as ADMIN, inside the boundary. */
   canViewAllTasks?: boolean;
   /**
+   * Spaces where the caller holds `canViewAllTasks` by a SPACE role.
+   *
+   * `canViewAllTasks` above is the ORG-wide answer, so without this a member
+   * granted "view all tasks" in their workspace fell through to "only what is
+   * assigned to me" — and could create a task in that workspace and then not be
+   * allowed to open it.
+   */
+  viewAllSpaceIds?: string[];
+  /**
    * Spaces another organization has shared with this caller's org. The ONLY
    * legitimate way across the boundary, and server-authoritative — resolved
    * from the token grant, never client input. Omit for same-org semantics.
@@ -94,5 +103,8 @@ export function canAccessTask(
   const assignee = assigneeOverride ?? isTaskAssignee(task, caller.userId);
   if (assignee === true) return true;
 
-  return caller.userRole === ADMIN_ROLE || caller.canViewAllTasks === true;
+  if (caller.userRole === ADMIN_ROLE || caller.canViewAllTasks === true) return true;
+  // Held in this task's own space. Narrower than the org-wide flag by
+  // construction: it grants nothing outside the spaces the caller was given.
+  return !!task.spaceId && (caller.viewAllSpaceIds ?? []).includes(task.spaceId);
 }
