@@ -981,6 +981,14 @@
     "customers": {
       "label": "Kunden",
       "desc": "Leads, Anrufe, Erinnerungen & Nachfassen"
+    },
+    "extraTime": {
+      "label": "Mehrarbeit",
+      "desc": "Überstunden freigeben"
+    },
+    "issues": {
+      "label": "Schichtprobleme",
+      "desc": "Vor Ort gemeldete Blocker"
     }
   },
   "components": {

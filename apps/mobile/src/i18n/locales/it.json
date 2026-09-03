@@ -981,6 +981,14 @@
     "customers": {
       "label": "Clienti",
       "desc": "Lead, chiamate, promemoria e follow-up"
+    },
+    "extraTime": {
+      "label": "Tempo extra",
+      "desc": "Approva gli straordinari"
+    },
+    "issues": {
+      "label": "Problemi di turno",
+      "desc": "Blocchi segnalati in cantiere"
     }
   },
   "components": {

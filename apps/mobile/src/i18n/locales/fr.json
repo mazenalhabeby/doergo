@@ -981,6 +981,14 @@
     "customers": {
       "label": "Clients",
       "desc": "Pistes, appels, rappels et relances"
+    },
+    "extraTime": {
+      "label": "Heures supplémentaires",
+      "desc": "Valider les demandes"
+    },
+    "issues": {
+      "label": "Incidents de poste",
+      "desc": "Blocages signalés sur site"
     }
   },
   "components": {

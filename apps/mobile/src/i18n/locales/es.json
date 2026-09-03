@@ -981,6 +981,14 @@
     "customers": {
       "label": "Clientes",
       "desc": "Oportunidades, llamadas, recordatorios y seguimiento"
+    },
+    "extraTime": {
+      "label": "Tiempo extra",
+      "desc": "Aprobar horas extra"
+    },
+    "issues": {
+      "label": "Incidencias de turno",
+      "desc": "Bloqueos reportados en obra"
     }
   },
   "components": {

@@ -981,6 +981,14 @@
     "attendance": {
       "label": "Attendance",
       "desc": "Approve hours and review shifts"
+    },
+    "extraTime": {
+      "label": "Extra time",
+      "desc": "Approve overtime requests"
+    },
+    "issues": {
+      "label": "Shift issues",
+      "desc": "Blockers reported on site"
     }
   },
   "components": {

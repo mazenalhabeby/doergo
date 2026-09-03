@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,8 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { ScreenContainer } from '../../../src/components';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
+import { holds } from '../../../src/lib/permissions';
+import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, ROUTES,
 } from '../../../src/lib/constants';
@@ -16,6 +18,14 @@ export default function ManageScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const rows = useMemo(() => manageRowsFor(user), [user]);
+  /*
+    Shift issues open here rather than on a route of their own: the list and the
+    thread are sheets, built for the clock screens that a supervisor does not
+    have. Hosting them from Manage gives the permission a door without a second
+    copy of either component.
+  */
+  const [issuesOpen, setIssuesOpen] = useState(false);
+  const [issueId, setIssueId] = useState<string | null>(null);
 
   return (
     <ScreenContainer width="content" style={{ backgroundColor: colors.surface }}>
@@ -28,7 +38,9 @@ export default function ManageScreen() {
         <TouchableOpacity
           key={item.route}
           style={[s.row, { backgroundColor: colors.card }]}
-          onPress={() => router.push(item.route as any)}
+          onPress={() =>
+            item.route === 'sheet:issues' ? setIssuesOpen(true) : router.push(item.route as any)
+          }
           activeOpacity={0.6}
         >
           <View style={[s.iconBox, { backgroundColor: item.color + '15' }]}>
@@ -42,6 +54,21 @@ export default function ManageScreen() {
         </TouchableOpacity>
       ))}
     </ScrollView>
+
+    <ShiftIssueListSheet
+      visible={issuesOpen}
+      onClose={() => setIssuesOpen(false)}
+      onOpen={(id) => { setIssuesOpen(false); setIssueId(id); }}
+    />
+    <ShiftIssueThreadSheet
+      visible={!!issueId}
+      issueId={issueId}
+      onClose={() => setIssueId(null)}
+      /* Whether the actions render is the server's call in the end; this only
+         decides what to draw, and it asks the same question the API does. */
+      canManage={holds(user, 'canViewAllTasks')}
+      currentUserId={user?.id}
+    />
     </ScreenContainer>
   );
 }

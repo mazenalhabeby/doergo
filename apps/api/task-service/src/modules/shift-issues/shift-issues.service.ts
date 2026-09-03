@@ -63,10 +63,24 @@ export class ShiftIssuesService {
   }
 
   /** Access: the reporter, the dispatched assignee, or a manager (canManage). */
-  private assertParticipant(issue: { reportedById: string; assignedToId: string | null }, callerUserId: string, canManage: boolean) {
+  /**
+   * May this caller open this issue?
+   *
+   * Reporter, dispatched worker, an org-wide manager — and now the person who
+   * oversees the SPACE it happened on. They are the one the notification goes
+   * to, so being refused the thread it points at was the whole feature failing
+   * for exactly the people it is for.
+   */
+  private assertParticipant(
+    issue: { reportedById: string; assignedToId: string | null; spaceId?: string | null },
+    callerUserId: string,
+    canManage: boolean,
+    ledSpaceIds?: string[],
+  ) {
     if (canManage) return;
     if (issue.reportedById === callerUserId) return;
     if (issue.assignedToId && issue.assignedToId === callerUserId) return;
+    if (issue.spaceId && ledSpaceIds?.includes(issue.spaceId)) return;
     throw new ForbiddenException('Not your issue');
   }
 
@@ -165,15 +179,30 @@ export class ShiftIssuesService {
   }
 
   // ── list ───────────────────────────────────────────────────────────────────
-  async list(data: { organizationId: string; callerUserId: string; canManage?: boolean; status?: string; scope?: string }) {
+  async list(data: {
+    organizationId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    /** Spaces where the caller oversees the work (space-role grant). */
+    ledSpaceIds?: string[];
+    status?: string;
+    scope?: string;
+  }) {
     const openish = ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'];
     const where: any = { organizationId: data.organizationId };
     if (data.status && data.status !== 'all') where.status = data.status;
     else if (data.scope === 'open') where.status = { in: openish };
 
-    // Managers see the whole org; everyone else sees issues they reported or are assigned.
+    /*
+      Managers see the whole org; everyone else sees their own issues — plus
+      everything on a site they lead, which is the case this used to miss.
+    */
     if (!data.canManage) {
-      where.OR = [{ reportedById: data.callerUserId }, { assignedToId: data.callerUserId }];
+      where.OR = [
+        { reportedById: data.callerUserId },
+        { assignedToId: data.callerUserId },
+        ...(data.ledSpaceIds?.length ? [{ spaceId: { in: data.ledSpaceIds } }] : []),
+      ];
     }
 
     const issues = await this.prisma.shiftIssue.findMany({
@@ -196,9 +225,9 @@ export class ShiftIssuesService {
   }
 
   // ── get (issue + full thread) ────────────────────────────────────────────────
-  async get(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean }) {
+  async get(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[] }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage);
+    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
 
     const events = await this.prisma.shiftIssueEvent.findMany({ where: { issueId: issue.id }, orderBy: { at: 'asc' }, take: 1000 });
     const actorIds = Array.from(new Set([issue.reportedById, issue.assignedToId, ...events.map((e) => e.actorId)].filter(Boolean) as string[]));
@@ -220,9 +249,9 @@ export class ShiftIssuesService {
   }
 
   // ── add a message to the thread ───────────────────────────────────────────────
-  async addMessage(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; body?: string; attachments?: Attachment[] }) {
+  async addMessage(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; body?: string; attachments?: Attachment[] }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage);
+    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     const body = (data.body ?? '').trim();
     const attachments = this.cleanAttachments(issue, data.attachments);
     if (!body && !attachments.length) throw new BadRequestException('Empty message');
@@ -237,7 +266,7 @@ export class ShiftIssuesService {
   }
 
   // ── acknowledge ──────────────────────────────────────────────────────────────
-  async acknowledge(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean }) {
+  async acknowledge(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[] }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     if (!data.canManage && issue.assignedToId !== data.callerUserId) throw new ForbiddenException('Only the responsible can acknowledge');
     const updated = await this.prisma.shiftIssue.update({
@@ -250,7 +279,7 @@ export class ShiftIssuesService {
   }
 
   // ── assign / dispatch someone ─────────────────────────────────────────────────
-  async assign(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; assignToId: string }) {
+  async assign(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; assignToId: string }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     if (!data.canManage) throw new ForbiddenException('Only the responsible can dispatch');
     const assignee = await this.prisma.user.findFirst({ where: { id: data.assignToId, organizationId: data.organizationId }, select: { id: true, firstName: true, lastName: true } });
@@ -269,7 +298,7 @@ export class ShiftIssuesService {
   }
 
   // ── status change / resolve ───────────────────────────────────────────────────
-  async setStatus(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; status: string; note?: string }) {
+  async setStatus(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; status: string; note?: string }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     // Reporter can only cancel their own; managers/assignee can drive the rest.
     const isAssignee = issue.assignedToId === data.callerUserId;
@@ -306,9 +335,9 @@ export class ShiftIssuesService {
   }
 
   // ── attachments (S3) ──────────────────────────────────────────────────────────
-  async presignAttachment(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; fileName: string; mimeType: string }) {
+  async presignAttachment(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; fileName: string; mimeType: string }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage);
+    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     if (!ALLOWED_FILE_TYPES.includes(data.mimeType)) throw new BadRequestException('File type not allowed');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
     const { key, url } = this.objectKey(data.organizationId, issue.id, data.mimeType);

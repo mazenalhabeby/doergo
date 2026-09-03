@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query, Request } from '@nestjs/common';
-import { Role } from '@hbcfield/shared';
+import { Role, spacesGranting } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ShiftIssuesService } from './shift-issues.service';
 
@@ -12,8 +12,27 @@ export class ShiftIssuesController {
   private canManage(req: any) {
     return !!(req.user?.canManageUsers || req.user?.canViewAllTasks);
   }
+  /*
+    The spaces where this caller oversees the work.
+
+    `canManage` reads the FLAT org columns, so a member whose authority comes
+    from a space counted as nobody here: a supervisor was notified the moment
+    somebody on their site hit a blocker, and then saw an empty list, because
+    the issue was neither reported by them nor assigned to them. Their spaces
+    travel with the request and the service widens the query by them —
+    server-resolved, never client-supplied.
+  */
+  private ledSpaces(req: any): string[] | undefined {
+    if (this.canManage(req)) return undefined; // already org-wide
+    return spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined;
+  }
   private ctx(req: any) {
-    return { organizationId: req.user?.organizationId, callerUserId: req.user?.id, canManage: this.canManage(req) };
+    return {
+      organizationId: req.user?.organizationId,
+      callerUserId: req.user?.id,
+      canManage: this.canManage(req),
+      ledSpaceIds: this.ledSpaces(req),
+    };
   }
 
   @Post()
