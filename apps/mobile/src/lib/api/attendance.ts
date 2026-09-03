@@ -165,6 +165,21 @@ export const attendanceApi = {
   },
 
   /**
+   * HOW MANY shifts are waiting — not which ones.
+   *
+   * The home screen shows a count, so it asks for a count: one row with the
+   * total in the envelope's meta, rather than pulling thirty entries (each with
+   * its user, its space and its breaks) to call `.length` on them.
+   */
+  countPendingApprovals: async (): Promise<number> => {
+    const result = await fetchWithAuth<any>('/attendance/approvals/pending?page=1&limit=1');
+    const total = result?.meta?.total;
+    if (typeof total === 'number') return total;
+    // Older shapes answered with a bare array; fall back to what arrived.
+    return Array.isArray(result) ? result.length : (result?.data?.length ?? 0);
+  },
+
+  /**
    * Correct a shift's times or note (`canReconcileAttendance`).
    *
    * `reason` is required by the server and kept with the entry: an edited shift

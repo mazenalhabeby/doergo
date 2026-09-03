@@ -279,7 +279,8 @@
       "clock": {
         "clockIn": "Timbra entrata",
         "onTheClock": "In servizio"
-      }
+      },
+      "greetingLine": "{{greeting}}, {{name}}"
     },
     "fullTime": {
       "clockedIn": "Entrata timbrata",
@@ -319,6 +320,28 @@
       "pending": "In attesa",
       "todaysJobs": "Interventi di oggi",
       "noJobsScheduled": "Nessun intervento pianificato per questo giorno"
+    },
+    "pulse": {
+      "nobodyIn": "In questo momento non c’è nessuno in servizio.",
+      "onShiftNow": "In servizio ora",
+      "sites": "{{count}} sedi",
+      "working": "{{count}} al lavoro adesso",
+      "yourWork": "Il tuo lavoro"
+    },
+    "needs": {
+      "activity": "Attività",
+      "allClear": "È tutto aggiornato.",
+      "blocked": "{{count}} lavoro bloccato",
+      "blockedPlural": "{{count}} lavori bloccati",
+      "doneToday": "{{count}} completati oggi",
+      "hours": "{{count}} turno da approvare",
+      "hoursDetail": "Apri la revisione presenze",
+      "hoursPlural": "{{count}} turni da approvare",
+      "openJobs": "{{count}} lavoro ancora aperto",
+      "openJobsPlural": "{{count}} lavori ancora aperti"
+    },
+    "crew": {
+      "link": "La squadra"
     }
   },
   "tasks": {

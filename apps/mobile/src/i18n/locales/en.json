@@ -279,7 +279,8 @@
       "clock": {
         "clockIn": "Clock in",
         "onTheClock": "On the clock"
-      }
+      },
+      "greetingLine": "{{greeting}}, {{name}}"
     },
     "fullTime": {
       "clockedIn": "Clocked In",
@@ -319,6 +320,28 @@
       "pending": "Pending",
       "todaysJobs": "Today's Jobs",
       "noJobsScheduled": "No jobs scheduled for this day"
+    },
+    "pulse": {
+      "nobodyIn": "Nobody is on shift right now.",
+      "onShiftNow": "On shift now",
+      "sites": "{{count}} sites",
+      "working": "{{count}} working right now",
+      "yourWork": "Your work"
+    },
+    "needs": {
+      "activity": "Activity",
+      "allClear": "Everything is up to date.",
+      "blocked": "{{count}} job is blocked",
+      "blockedPlural": "{{count}} jobs are blocked",
+      "doneToday": "{{count}} finished today",
+      "hours": "{{count}} shift needs approval",
+      "hoursDetail": "Open attendance review",
+      "hoursPlural": "{{count}} shifts need approval",
+      "openJobs": "{{count}} job still open",
+      "openJobsPlural": "{{count}} jobs still open"
+    },
+    "crew": {
+      "link": "The crew"
     }
   },
   "tasks": {

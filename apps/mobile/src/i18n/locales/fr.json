@@ -279,7 +279,8 @@
       "clock": {
         "clockIn": "Pointer l’arrivée",
         "onTheClock": "En service"
-      }
+      },
+      "greetingLine": "{{greeting}}, {{name}}"
     },
     "fullTime": {
       "clockedIn": "Pointage d'arrivée effectué",
@@ -319,6 +320,28 @@
       "pending": "En attente",
       "todaysJobs": "Interventions du jour",
       "noJobsScheduled": "Aucune intervention planifiée pour ce jour"
+    },
+    "pulse": {
+      "nobodyIn": "Personne n’est en poste en ce moment.",
+      "onShiftNow": "En poste maintenant",
+      "sites": "{{count}} sites",
+      "working": "{{count}} au travail en ce moment",
+      "yourWork": "Votre travail"
+    },
+    "needs": {
+      "activity": "Activité",
+      "allClear": "Tout est à jour.",
+      "blocked": "{{count}} tâche bloquée",
+      "blockedPlural": "{{count}} tâches bloquées",
+      "doneToday": "{{count}} terminées aujourd’hui",
+      "hours": "{{count}} poste à valider",
+      "hoursDetail": "Ouvrir le suivi de présence",
+      "hoursPlural": "{{count}} postes à valider",
+      "openJobs": "{{count}} tâche encore ouverte",
+      "openJobsPlural": "{{count}} tâches encore ouvertes"
+    },
+    "crew": {
+      "link": "L'équipe"
     }
   },
   "tasks": {

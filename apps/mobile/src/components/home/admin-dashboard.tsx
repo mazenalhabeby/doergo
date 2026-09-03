@@ -7,12 +7,8 @@ import {
   ScrollView,
   RefreshControl,
   Dimensions,
-  Animated,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -37,9 +33,13 @@ import { useExcursionSync } from '../../hooks/useExcursionSync';
 import type { GeofenceExcursion, CompanyLocation } from '../../lib/api/types';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
-import { hasAccessModule, isFieldWorker, canManageMembersInSpace } from '@hbcfield/shared/client';
+import { hasAccessModule, isFieldWorker, canManageMembersInSpace, TaskStatus } from '@hbcfield/shared/client';
+import { holds } from '../../lib/permissions';
 import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
+import { SitePulse } from './site-pulse';
+import { NeedsList, type NeedItem } from './needs-list';
+import { CrewLine, type CrewMember } from './crew-line';
 import { type PersonNodeData } from './workspace/person-node';
 import { ActivitySheet, type LiveEvent, type PendingActionItem } from './workspace/activity-sheet';
 import { AssignMemberSheet } from './workspace/assign-member-sheet';
@@ -75,6 +75,18 @@ function estimateHeight(box: WorkspaceBoxData): number {
   return h + 12; // marginBottom
 }
 
+/** Was this finished today, in the reader's own day? */
+function isToday(iso?: string | null): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
 /** Distribute boxes across two balanced columns (greedy shortest-column). */
 function splitColumns(boxes: WorkspaceBoxData[]): [WorkspaceBoxData[], WorkspaceBoxData[]] {
   const cols: [WorkspaceBoxData[], WorkspaceBoxData[]] = [[], []];
@@ -99,6 +111,16 @@ export function AdminDashboard() {
     [user?.id],
   );
 
+  /*
+    May this viewer act on attendance at all?
+
+    The same question `GET /attendance/approvals/pending` asks
+    (`@RequirePermissionInSpace('canViewSpaceAttendance')`), so the row, the
+    request behind it and the server's answer all agree — an admin org-wide, a
+    supervisor in their own space, nobody else.
+  */
+  const canReviewHours = holds(user, 'canViewSpaceAttendance');
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [locations, setLocations] = useState<LocationWithMembers[]>([]);
   const [members, setMembers] = useState<OrgMember[]>([]);
@@ -106,6 +128,8 @@ export function AdminDashboard() {
   const [activeBreaks, setActiveBreaks] = useState<Array<{ userId: string }>>([]);
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [rosters, setRosters] = useState<LocationAssignment[]>([]);
+  /* How many shifts are waiting on this viewer — a count, not the rows. */
+  const [pendingHours, setPendingHours] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -144,7 +168,7 @@ export function AdminDashboard() {
 
       // Single batch — locations now embed their member assignments, so there
       // is no per-location follow-up request (no N+1).
-      const [tasksRes, locationsRes, membersRes, entriesRes, breaksRes] = await Promise.all([
+      const [tasksRes, locationsRes, membersRes, entriesRes, breaksRes, pendingRes] = await Promise.all([
         tasksApi.list(),
         locationsApi.list().catch(() => [] as LocationWithMembers[]),
         canReadDirectory
@@ -154,6 +178,17 @@ export function AdminDashboard() {
         // overnight shift that started before midnight still counts as on-duty.
         attendanceApi.getActiveEntries().catch(() => [] as TimeEntry[]),
         attendanceApi.getActiveBreaks().catch(() => [] as Array<{ userId: string }>),
+        /*
+          The one number the screen cannot derive from what it already has.
+
+          Asked only when the viewer holds the permission the endpoint enforces
+          — otherwise it is a guaranteed 403 on every load — and asked as a
+          COUNT: page 1, limit 1, total from the envelope. A member without the
+          grant never sees the row, so never pays for the request.
+        */
+        canReviewHours
+          ? attendanceApi.countPendingApprovals().catch(() => 0)
+          : Promise.resolve(0),
       ]);
 
       const assignmentMap: Record<string, string[]> = {};
@@ -175,6 +210,7 @@ export function AdminDashboard() {
       setRosters(rostersRes || []);
       setEntries(entriesRes || []);
       setActiveBreaks(breaksRes || []);
+      setPendingHours(pendingRes || 0);
       setAssignments(assignmentMap);
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
@@ -184,7 +220,7 @@ export function AdminDashboard() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, [t, user?.canManageUsers]);
+  }, [t, user?.canManageUsers, canReviewHours]);
 
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
@@ -492,6 +528,63 @@ export function AdminDashboard() {
     viewerIsOrgWide, i18n.language,
   ]);
 
+  /*
+    The site in three numbers, all derived from what is already loaded.
+
+    `total` is the people rostered in the spaces this viewer was given, so the
+    denominator is their site rather than the company; `onShift` counts the
+    clocked-in among exactly those people, which is why an admin's number covers
+    everywhere and a supervisor's covers one place, with no branch here saying
+    so. Nothing is fetched for any of it.
+  */
+  const pulse = useMemo(() => {
+    const rostered = new Set<string>();
+    for (const loc of locations) {
+      if (!loc.isActive) continue;
+      for (const id of assignments[loc.id] || []) rostered.add(id);
+    }
+    // A viewer with attendance but no roster (possible: the grants are separate)
+    // still gets a truthful bar from the people actually on the clock.
+    if (rostered.size === 0) for (const id of clockedInUserIds) rostered.add(id);
+
+    let onShift = 0;
+    for (const id of rostered) if (clockedInUserIds.has(id)) onShift++;
+
+    return { total: rostered.size, onShift, rostered };
+  }, [locations, assignments, clockedInUserIds, entries]);
+
+  /*
+    What the number MEANS, said in one line.
+
+    Deliberately not "last person out at 16:31": the active-entries feed carries
+    only OPEN shifts, so that sentence would need a second query over today's
+    whole attendance to say something nobody asked for. The screen states what
+    it actually knows.
+  */
+  const pulseCaption = useMemo(
+    () =>
+      pulse.onShift > 0
+        ? i18n.t('home.pulse.working', { count: pulse.onShift })
+        : i18n.t('home.pulse.nobodyIn'),
+    [pulse.onShift, i18n.language],
+  );
+
+  /** The crew line: the rostered people, marked by who is on the clock. */
+  const crew: CrewMember[] = useMemo(() => {
+    const out: CrewMember[] = [];
+    for (const id of pulse.rostered) {
+      const m = memberMap.get(id);
+      if (!m || m.isActive === false) continue;
+      out.push({
+        userId: m.id,
+        initials: getInitials(m.firstName, m.lastName),
+        imageUrl: m.avatarUrl || undefined,
+        onShift: clockedInUserIds.has(m.id),
+      });
+    }
+    return out;
+  }, [pulse.rostered, memberMap, clockedInUserIds]);
+
   // ── Live events ──────────────────────────────────────────────────────────
   const liveEvents: LiveEvent[] = useMemo(() => {
     const events: LiveEvent[] = [];
@@ -524,6 +617,113 @@ export function AdminDashboard() {
     }
     return events.slice(0, 12);
   }, [tasks, entries, memberMap, i18n.language]);
+
+  /*
+    What is waiting, in the order it deserves attention.
+
+    Assembled rather than hard-coded so a row can only exist when its permission
+    AND its count both allow it: hours need `canViewSpaceAttendance`, the job
+    rows need tasks the viewer can already see. A member with one grant gets one
+    row, and the list says "all clear" instead of showing three zeros.
+  */
+  const needs: NeedItem[] = useMemo(() => {
+    /*
+      Plurals are chosen here, not by i18next.
+
+      The app's Hermes runtime does not carry `Intl.PluralRules`, so the whole
+      codebase pairs a key with a `…Plural` sibling and picks between them —
+      `tasks.taskCount` does it, and a lone screen relying on suffix plurals
+      would silently render the singular to everybody.
+    */
+    const plural = (key: string, count: number, params: Record<string, unknown> = {}) =>
+      i18n.t(count === 1 ? key : `${key}Plural`, { count, ...params });
+    const out: NeedItem[] = [];
+    const blocked = tasks.filter((tk) => tk.status === TaskStatus.BLOCKED);
+    const open = tasks.filter(
+      (tk) => ![TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(tk.status as never),
+    ).length;
+    const doneToday = tasks.filter(
+      (tk) =>
+        (tk.status === TaskStatus.COMPLETED || tk.status === TaskStatus.CLOSED) &&
+        isToday(tk.updatedAt),
+    ).length;
+
+    if (blocked.length > 0) {
+      const first = blocked[0];
+      out.push({
+        key: 'blocked',
+        icon: 'warning-outline',
+        tone: 'urgent',
+        title: plural('home.needs.blocked', blocked.length),
+        detail: first?.title,
+        count: blocked.length,
+        onPress: () =>
+          blocked.length === 1 && first
+            ? router.push(ROUTES.taskDetail(first.id) as never)
+            : router.push(ROUTES.tasks as never),
+      });
+    }
+
+    if (canReviewHours && pendingHours > 0) {
+      out.push({
+        key: 'hours',
+        icon: 'time-outline',
+        tone: 'attention',
+        title: plural('home.needs.hours', pendingHours),
+        detail: i18n.t('home.needs.hoursDetail'),
+        count: pendingHours,
+        onPress: () => router.push('/(app)/manage/attendance' as never),
+      });
+    }
+
+    /*
+      Activity, as a row rather than a floating button.
+
+      It used to be a purple circle hovering over the screen with a count on it,
+      which is where the important things were hidden — the whole reason the
+      dashboard read as empty. Nothing is lost: the same sheet opens, from a
+      line that says what last happened.
+    */
+    if (liveEvents.length > 0) {
+      const latest = liveEvents[0];
+      out.push({
+        key: 'activity',
+        icon: 'pulse-outline',
+        tone: 'neutral',
+        title: i18n.t('home.needs.activity'),
+        detail: latest ? `${latest.name} ${latest.action} · ${latest.time}` : undefined,
+        onPress: () => setActivityOpen(true),
+      });
+    }
+
+    if (open > 0) {
+      out.push({
+        key: 'jobs',
+        icon: 'list-outline',
+        tone: 'neutral',
+        title: plural('home.needs.openJobs', open),
+        detail: doneToday > 0 ? i18n.t('home.needs.doneToday', { count: doneToday }) : undefined,
+        count: open,
+        onPress: () => router.push(ROUTES.tasks as never),
+      });
+    }
+    return out;
+  }, [tasks, canReviewHours, pendingHours, liveEvents, i18n.language]);
+
+  /*
+    Which site this screen is about.
+
+    One space names itself; several are counted, because a supervisor's screen
+    and an owner's are the same screen and only the scope differs.
+  */
+  const siteTitle = useMemo(() => {
+    const active = locations.filter((l) => l.isActive);
+    if (active.length === 1) return active[0]?.name ?? '';
+    if (active.length === 0) return i18n.t('home.pulse.yourWork');
+    return i18n.t('home.pulse.sites', { count: active.length });
+  }, [locations, i18n.language]);
+
+  const openTeam = useCallback(() => router.push('/(app)/(tabs)/team' as never), []);
 
   // ── Pending actions ──────────────────────────────────────────────────────
   const pending: PendingActionItem[] = useMemo(() => {
@@ -649,23 +849,6 @@ export function AdminDashboard() {
     return tasks.filter((tk) => tk.assignedToId === selectedMemberId && ACTIVE.includes(tk.status));
   }, [selectedMemberId, tasks]);
 
-  // Activity FAB: slide it out of the way while the list is scrolling (so it
-  // never sits on top of a card's action row), and bring it back when the user
-  // stops or scrolls up. 1 = shown, 0 = hidden. NOTE: these hooks MUST stay
-  // above the early returns below (Rules of Hooks — same hook order every render).
-  const fabAnim = useRef(new Animated.Value(1)).current;
-  const lastScrollY = useRef(0);
-  const setFab = useCallback((toValue: number) => {
-    Animated.timing(fabAnim, { toValue, duration: 180, useNativeDriver: true }).start();
-  }, [fabAnim]);
-  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
-    const dy = y - lastScrollY.current;
-    if (dy > 6 && y > 40) setFab(0);        // scrolling down → hide
-    else if (dy < -6) setFab(1);            // scrolling up → reveal
-    lastScrollY.current = y;
-  }, [setFab]);
-  const fabTranslate = fabAnim.interpolate({ inputRange: [0, 1], outputRange: [96, 0] });
 
   // Admin/owner clock control + their own out-of-ring state. These hooks MUST
   // run on every render — i.e. BEFORE the isLoading/error early returns below —
@@ -707,10 +890,6 @@ export function AdminDashboard() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
-        scrollEventThrottle={16}
-        onScroll={onScroll}
-        onScrollEndDrag={() => setFab(1)}
-        onMomentumScrollEnd={() => setFab(1)}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -720,13 +899,29 @@ export function AdminDashboard() {
           />
         }
       >
-        {/* Header */}
+        {/*
+          Header, compressed to two short lines.
+
+          The greeting used to take the top of the screen at 22px and say
+          nothing about the work; the number below now owns that space. The
+          person keeps their name, and gains the one fact the old header never
+          gave them — WHICH site they are looking at.
+        */}
         <TourTarget name="home-greeting" style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting}</Text>
-          <Text style={[styles.welcome, { color: colors.textPrimary }]}>
-            {t('home.admin.welcomeBack', { name: user?.firstName })}
+          <Text style={[styles.greeting, { color: colors.textMuted }]}>
+            {t('home.admin.greetingLine', { greeting, name: user?.firstName ?? '' })}
+          </Text>
+          <Text style={[styles.siteName, { color: colors.textPrimary }]} numberOfLines={1}>
+            {siteTitle}
           </Text>
         </TourTarget>
+
+        {/* How the site is doing, and what is waiting on this person — the two
+            questions the screen used to answer with a roster and a gap. */}
+        <View style={styles.section}>
+          <SitePulse total={pulse.total} onShift={pulse.onShift} caption={pulseCaption} />
+          <NeedsList items={needs} />
+        </View>
 
       {/* Outstanding personal documents, once, at the top — see the component
           for why it is not on every screen. Renders nothing when there are
@@ -764,7 +959,15 @@ export function AdminDashboard() {
             </View>
           ) : (
             isSingleCard ? (
-              renderCard(boxes[0], false)
+              /*
+                One space needs no card around it.
+
+                The card's header repeats the site name already in the pulse
+                above, and its roster repeats the crew line below — so a
+                supervisor's whole screen was one box saying things twice. With
+                several spaces the grid still earns its keep.
+              */
+              <CrewLine people={crew} onPress={openTeam} />
             ) : (
             <View style={styles.columns}>
               {columns.map((column, ci) => (
@@ -779,31 +982,6 @@ export function AdminDashboard() {
       </ScrollView>
       </ScreenContainer>
 
-      {/* Activity FAB — compact circular button; slides away while scrolling */}
-      <Animated.View
-        style={[styles.fabWrap, { opacity: fabAnim, transform: [{ translateX: fabTranslate }] }]}
-        pointerEvents="box-none"
-      >
-        <TouchableOpacity
-          onPress={() => setActivityOpen(true)}
-          activeOpacity={0.9}
-          accessibilityLabel={t('home.admin.activityLabel')}
-        >
-          <LinearGradient
-            colors={['#6366f1', '#8b5cf6', '#a855f7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.fab}
-          >
-            <Ionicons name="flash" size={22} color="#fff" />
-          </LinearGradient>
-          {pending.length > 0 && (
-            <View style={styles.fabBadge}>
-              <Text style={styles.fabBadgeText}>{pending.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </Animated.View>
 
       <ActivitySheet
         visible={activityOpen}
@@ -843,6 +1021,14 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
   },
   greeting: { fontSize: 12, fontWeight: '500' },
+  // The gutter the header already uses, so the number lines up with the name.
+  section: { paddingHorizontal: SPACING.lg },
+  siteName: {
+    fontSize: 19,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    marginTop: 1,
+  },
   welcome: { fontSize: 21, fontWeight: '700', marginTop: 2 },
   grid: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
   columns: { flexDirection: 'row', alignItems: 'flex-start', gap: GRID_GAP },
@@ -857,36 +1043,4 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 16, fontWeight: '700', marginTop: 4 },
   emptySub: { fontSize: 13, textAlign: 'center', lineHeight: 19 },
-  fabWrap: {
-    position: 'absolute',
-    right: 18,
-    bottom: 24,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fabBadge: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#f59e0b',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  fabBadgeText: { color: '#1a1a24', fontSize: 10, fontWeight: '800' },
 });

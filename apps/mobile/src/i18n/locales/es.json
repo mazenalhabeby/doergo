@@ -279,7 +279,8 @@
       "clock": {
         "clockIn": "Fichar entrada",
         "onTheClock": "Fichado"
-      }
+      },
+      "greetingLine": "{{greeting}}, {{name}}"
     },
     "fullTime": {
       "clockedIn": "Entrada registrada",
@@ -319,6 +320,28 @@
       "pending": "Pendientes",
       "todaysJobs": "Trabajos de hoy",
       "noJobsScheduled": "No hay trabajos programados para este día"
+    },
+    "pulse": {
+      "nobodyIn": "Ahora mismo no hay nadie en turno.",
+      "onShiftNow": "En turno ahora",
+      "sites": "{{count}} sedes",
+      "working": "{{count}} trabajando ahora",
+      "yourWork": "Tu trabajo"
+    },
+    "needs": {
+      "activity": "Actividad",
+      "allClear": "Todo está al día.",
+      "blocked": "{{count}} trabajo bloqueado",
+      "blockedPlural": "{{count}} trabajos bloqueados",
+      "doneToday": "{{count}} terminados hoy",
+      "hours": "{{count}} turno necesita aprobación",
+      "hoursDetail": "Abrir revisión de asistencia",
+      "hoursPlural": "{{count}} turnos necesitan aprobación",
+      "openJobs": "{{count}} trabajo abierto",
+      "openJobsPlural": "{{count}} trabajos abiertos"
+    },
+    "crew": {
+      "link": "El equipo"
     }
   },
   "tasks": {

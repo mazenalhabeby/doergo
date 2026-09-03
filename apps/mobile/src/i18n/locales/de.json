@@ -279,7 +279,8 @@
       "clock": {
         "clockIn": "Einstempeln",
         "onTheClock": "Im Dienst"
-      }
+      },
+      "greetingLine": "{{greeting}}, {{name}}"
     },
     "fullTime": {
       "clockedIn": "Eingestempelt",
@@ -319,6 +320,28 @@
       "pending": "Ausstehend",
       "todaysJobs": "Heutige Einsätze",
       "noJobsScheduled": "Keine Einsätze für diesen Tag geplant"
+    },
+    "pulse": {
+      "nobodyIn": "Gerade ist niemand im Dienst.",
+      "onShiftNow": "Gerade im Dienst",
+      "sites": "{{count}} Standorte",
+      "working": "{{count}} arbeiten gerade",
+      "yourWork": "Ihre Arbeit"
+    },
+    "needs": {
+      "activity": "Aktivität",
+      "allClear": "Alles auf dem neuesten Stand.",
+      "blocked": "{{count}} Auftrag ist blockiert",
+      "blockedPlural": "{{count}} Aufträge sind blockiert",
+      "doneToday": "{{count}} heute abgeschlossen",
+      "hours": "{{count}} Schicht braucht eine Freigabe",
+      "hoursDetail": "Anwesenheit prüfen",
+      "hoursPlural": "{{count}} Schichten brauchen eine Freigabe",
+      "openJobs": "{{count}} Auftrag noch offen",
+      "openJobsPlural": "{{count}} Aufträge noch offen"
+    },
+    "crew": {
+      "link": "Das Team"
     }
   },
   "tasks": {
