@@ -84,11 +84,30 @@ export const attendanceApi = {
     return fetchWithAuth<BreakStatus>('/attendance/breaks/status', { method: 'GET' });
   },
 
-  /** Admin view: all org time entries for a day (who is clocked in). */
-  getAllEntries: async (params?: { date?: string; status?: string; limit?: number }): Promise<TimeEntry[]> => {
+  /**
+   * Time entries in the caller's spaces — one day, or a range.
+   *
+   * `date` and `startDate`/`endDate` are alternatives on the server: a single
+   * day stays a one-day query rather than a range of length one. `search`
+   * matches a member's name, and is applied in the query, so a phone asking
+   * about one person does not page through a month of everybody else.
+   */
+  getAllEntries: async (params?: {
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<TimeEntry[]> => {
     const endpoint = buildUrlWithQuery('/attendance/all-entries', {
       date: params?.date,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
       status: params?.status,
+      search: params?.search,
+      page: params?.page,
       limit: params?.limit ?? 500,
     });
     const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });

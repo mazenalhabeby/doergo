@@ -1887,13 +1887,18 @@
   "attendanceReview": {
     "segments": {
       "approvals": "Freigaben",
-      "today": "Heute",
-      "noshows": "Fehlzeiten"
+      "noshows": "Fehlzeiten",
+      "records": "Verlauf"
     },
     "empty": {
       "approvals": "Nichts offen — alle Schichten sind entschieden.",
-      "today": "Heute hat sich noch niemand eingestempelt.",
-      "noshows": "Keine versäumten Schichten in den letzten 7 Tagen."
+      "noshows": "Keine versäumten Schichten in den letzten 7 Tagen.",
+      "records": {
+        "month": "Keine Schichten in den letzten 30 Tagen.",
+        "today": "Heute hat sich noch niemand eingestempelt.",
+        "week": "Keine Schichten in den letzten 7 Tagen."
+      },
+      "noMatch": "Nichts für „{{name}}“ in diesem Zeitraum."
     },
     "onTheClock": "Im Dienst",
     "expected": "Erwartet {{from}} – {{to}}",
@@ -1918,6 +1923,18 @@
       "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
       "OVERTIME": "Überstunden",
       "UNSCHEDULED_DAY": "Nicht geplant"
+    },
+    "period": {
+      "month": "30 Tage",
+      "today": "Heute",
+      "week": "7 Tage"
+    },
+    "searchPlaceholder": "Nach Name suchen",
+    "outcome": {
+      "APPROVED": "Freigegeben",
+      "AUTO_APPROVED": "Automatisch freigegeben",
+      "PENDING": "Offen",
+      "REJECTED": "Zurückgeschickt"
     }
   }
 }

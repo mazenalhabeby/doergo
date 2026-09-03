@@ -1887,13 +1887,18 @@
   "attendanceReview": {
     "segments": {
       "approvals": "Aprobaciones",
-      "today": "Hoy",
-      "noshows": "Ausencias"
+      "noshows": "Ausencias",
+      "records": "Historial"
     },
     "empty": {
       "approvals": "Nada pendiente: todos los turnos están decididos.",
-      "today": "Hoy nadie ha fichado.",
-      "noshows": "Sin turnos perdidos en los últimos 7 días."
+      "noshows": "Sin turnos perdidos en los últimos 7 días.",
+      "records": {
+        "month": "Sin turnos en los últimos 30 días.",
+        "today": "Hoy nadie ha fichado.",
+        "week": "Sin turnos en los últimos 7 días."
+      },
+      "noMatch": "Nada de «{{name}}» en este periodo."
     },
     "onTheClock": "Fichado",
     "expected": "Previsto {{from}} – {{to}}",
@@ -1918,6 +1923,18 @@
       "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
       "OVERTIME": "Horas extra",
       "UNSCHEDULED_DAY": "Sin programar"
+    },
+    "period": {
+      "month": "30 días",
+      "today": "Hoy",
+      "week": "7 días"
+    },
+    "searchPlaceholder": "Buscar por nombre",
+    "outcome": {
+      "APPROVED": "Aprobado",
+      "AUTO_APPROVED": "Aprobado automáticamente",
+      "PENDING": "Pendiente",
+      "REJECTED": "Devuelto"
     }
   }
 }

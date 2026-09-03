@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   RefreshControl, ActivityIndicator, TextInput,
@@ -38,10 +38,15 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../
  * excuse are the decisions; the corrections stay at a desk.
  */
 
-type Segment = 'approvals' | 'today' | 'noshows';
-/** One screenful and a bit — the queue pages in as it is read. */
+type Segment = 'approvals' | 'records' | 'noshows';
+type Period = 'today' | 'week' | 'month';
+
+const SEGMENTS: Segment[] = ['approvals', 'records', 'noshows'];
+const PERIODS: Period[] = ['today', 'week', 'month'];
+/** One screenful and a bit — every list pages in as it is read. */
 const PAGE = 30;
-const SEGMENTS: Segment[] = ['approvals', 'today', 'noshows'];
+/** How far back the no-show sweep looks, matching the web default. */
+const NO_SHOW_DAYS = 7;
 
 /** Auto-approval flags, coloured by how much attention each deserves. */
 const FLAG_COLOR: Record<string, string> = {
@@ -53,6 +58,13 @@ const FLAG_COLOR: Record<string, string> = {
   EARLY_DEPARTURE: '#eab308',
   UNSCHEDULED_DAY: '#a855f7',
 };
+
+/** A list plus where it has got to. `done` means the server has no more rows. */
+interface Feed<T> {
+  rows: T[];
+  page: number;
+  done: boolean;
+}
 
 export default function AttendanceReviewScreen() {
   const { colors } = useTheme();
@@ -73,20 +85,60 @@ export default function AttendanceReviewScreen() {
   const canDecide = holds(user, 'canReconcileAttendance');
 
   const [segment, setSegment] = useState<Segment>('approvals');
-  const [pending, setPending] = useState<TimeEntry[] | null>(null);
-  const [today, setToday] = useState<TimeEntry[] | null>(null);
-  const [noShows, setNoShows] = useState<NoShow[] | null>(null);
+  const [period, setPeriod] = useState<Period>('today');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const [approvals, setApprovals] = useState<Feed<TimeEntry> | null>(null);
+  const [records, setRecords] = useState<Feed<TimeEntry> | null>(null);
+  const [noShows, setNoShows] = useState<Feed<NoShow> | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  /* Approvals page in; the rest are a day and a week, which arrive whole. */
-  const [pendingPage, setPendingPage] = useState(1);
-  const [pendingExhausted, setPendingExhausted] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const lastLoadedRef = useRef<Record<Segment, number>>({ approvals: 0, today: 0, noshows: 0 });
+  const lastLoadedRef = useRef<Record<Segment, number>>({ approvals: 0, records: 0, noshows: 0 });
+  const feedOf = { approvals, records, noshows: noShows }[segment];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  /*
+    Which days the History tab is asking about.
+
+    The endpoint takes either a single `date` or a `startDate`/`endDate` pair,
+    so "today" stays a one-day query rather than a range of length one — the
+    same request the dashboard makes, and the cheaper index for it.
+  */
+  const rangeParams = useCallback(() => {
+    if (period === 'today') return { date: dayISO(0) };
+    return { startDate: dayISO(period === 'week' ? 6 : 29), endDate: dayISO(0) };
+  }, [period]);
+
+  const fetchPage = useCallback(async (which: Segment, page: number) => {
+    if (which === 'approvals') return attendanceApi.getPendingApprovals({ page, limit: PAGE });
+    if (which === 'records') {
+      return attendanceApi.getAllEntries({
+        ...rangeParams(),
+        search: debouncedSearch || undefined,
+        page,
+        limit: PAGE,
+      });
+    }
+    // No-shows are a fixed window of a few days, and arrive whole.
+    return attendanceApi.listNoShows(NO_SHOW_DAYS);
+  }, [rangeParams, debouncedSearch]);
+
+  const setFeed = useCallback((which: Segment, feed: Feed<any> | null) => {
+    if (which === 'approvals') setApprovals(feed);
+    else if (which === 'records') setRecords(feed);
+    else setNoShows(feed);
+  }, []);
 
   /*
     One segment, one request, and only when it is actually looked at.
@@ -100,14 +152,8 @@ export default function AttendanceReviewScreen() {
     if (mode === 'refresh') setIsRefreshing(true);
     else setIsLoading(true);
     try {
-      if (which === 'approvals') {
-        const first = await attendanceApi.getPendingApprovals({ page: 1, limit: PAGE });
-        setPending(first);
-        setPendingPage(1);
-        setPendingExhausted(first.length < PAGE);
-      }
-      else if (which === 'today') setToday(await attendanceApi.getAllEntries({ date: todayISO() }));
-      else setNoShows(await attendanceApi.listNoShows(7));
+      const rows = await fetchPage(which, 1);
+      setFeed(which, { rows, page: 1, done: rows.length < PAGE });
       lastLoadedRef.current[which] = Date.now();
     } catch (err: any) {
       if (err?.statusCode === 401) return;
@@ -116,35 +162,43 @@ export default function AttendanceReviewScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [t, toast]);
+  }, [fetchPage, setFeed, t, toast]);
 
   /*
-    More of the queue, when the reader reaches the end of what they have.
+    More rows when the reader reaches the end of what they have.
 
-    A fixed limit would have been a silent cap: thirty decisions shown, the rest
-    invisible, and a screen that looks finished when it is not.
+    A fixed limit would be a silent cap: thirty rows shown, the rest invisible,
+    and a screen that looks finished when it is not. A month of attendance for a
+    real crew is hundreds of shifts.
   */
-  const loadMorePending = useCallback(async () => {
-    if (segment !== 'approvals' || pendingExhausted || loadingMore || isLoading) return;
-    const next = pendingPage + 1;
+  const loadMore = useCallback(async () => {
+    const feed = feedOf;
+    if (!feed || feed.done || loadingMore || isLoading || segment === 'noshows') return;
+    const next = feed.page + 1;
     setLoadingMore(true);
     try {
-      const more = await attendanceApi.getPendingApprovals({ page: next, limit: PAGE });
-      setPending((list) => [...(list || []), ...more]);
-      setPendingPage(next);
-      if (more.length < PAGE) setPendingExhausted(true);
+      const more = await fetchPage(segment, next);
+      setFeed(segment, { rows: [...feed.rows, ...more], page: next, done: more.length < PAGE });
     } catch {
-      // A failed page is not worth a toast — the pull-to-refresh is right there.
+      // A failed page is not worth a toast — pull-to-refresh is right there.
     } finally {
       setLoadingMore(false);
     }
-  }, [segment, pendingExhausted, loadingMore, isLoading, pendingPage]);
+  }, [feedOf, loadingMore, isLoading, segment, fetchPage, setFeed]);
 
   const show = useCallback((which: Segment) => {
     setSegment(which);
-    const loaded = { approvals: pending, today, noshows: noShows }[which];
-    if (loaded === null) load(which);
-  }, [load, pending, today, noShows]);
+    const feed = { approvals, records, noshows: noShows }[which];
+    if (feed === null) load(which);
+  }, [load, approvals, records, noShows]);
+
+  // A different window or a different name is a different question — ask it,
+  // from the first page.
+  useEffect(() => {
+    if (records === null) return; // History has not been opened yet.
+    load('records');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, debouncedSearch]);
 
   useFocusEffect(useCallback(() => {
     if (Date.now() - lastLoadedRef.current[segment] < 30000) return;
@@ -153,20 +207,23 @@ export default function AttendanceReviewScreen() {
 
   // ── Decisions ─────────────────────────────────────────────────────────────
 
+  /** Drop a decided row from every list holding it, without refetching. */
+  const forget = useCallback((id: string) => {
+    setApprovals((f) => (f ? { ...f, rows: f.rows.filter((e) => e.id !== id) } : f));
+  }, []);
+
   const approve = useCallback(async (entry: TimeEntry) => {
     setBusyId(entry.id);
     try {
       await attendanceApi.approveEntry(entry.id);
-      // Drop it from the queue rather than refetching the page: the decision is
-      // made, and a member watching a list they just acted on should see it go.
-      setPending((list) => (list || []).filter((e) => e.id !== entry.id));
+      forget(entry.id);
       toast.success(t('attendanceReview.approved'));
     } catch (err: any) {
       toast.error(t('common.error'), err?.message || t('attendanceReview.failedToApprove'));
     } finally {
       setBusyId(null);
     }
-  }, [t, toast]);
+  }, [forget, t, toast]);
 
   const confirmReject = useCallback(async () => {
     const entry = rejectTarget;
@@ -177,20 +234,20 @@ export default function AttendanceReviewScreen() {
     setBusyId(entry.id);
     try {
       await attendanceApi.rejectEntry(entry.id, reason);
-      setPending((list) => (list || []).filter((e) => e.id !== entry.id));
+      forget(entry.id);
       toast.success(t('attendanceReview.rejected'));
     } catch (err: any) {
       toast.error(t('common.error'), err?.message || t('attendanceReview.failedToReject'));
     } finally {
       setBusyId(null);
     }
-  }, [rejectTarget, rejectReason, t, toast]);
+  }, [rejectTarget, rejectReason, forget, t, toast]);
 
   const excuse = useCallback(async (row: NoShow) => {
     setBusyId(row.id);
     try {
       await attendanceApi.resolveNoShow(row.id, 'excuse');
-      setNoShows((list) => (list || []).filter((n) => n.id !== row.id));
+      setNoShows((f) => (f ? { ...f, rows: f.rows.filter((n) => n.id !== row.id) } : f));
       toast.success(t('attendanceReview.excused'));
     } catch (err: any) {
       toast.error(t('common.error'), err?.message || t('attendanceReview.failedToExcuse'));
@@ -215,7 +272,7 @@ export default function AttendanceReviewScreen() {
     abroad that their crew started at four in the morning.
   */
   const zoneOf = (e: TimeEntry) =>
-    (e as unknown as { timezone?: string | null; location?: { timezone?: string | null } }).timezone ??
+    (e as unknown as { timezone?: string | null }).timezone ??
     (e as unknown as { location?: { timezone?: string | null } }).location?.timezone ??
     undefined;
 
@@ -231,6 +288,18 @@ export default function AttendanceReviewScreen() {
             </View>
           );
         })}
+      </View>
+    );
+  };
+
+  /** Where a past shift ended up: approved, sent back, or still waiting. */
+  const Outcome = ({ entry }: { entry: TimeEntry }) => {
+    const status = entry.approvalStatus;
+    if (!status) return null;
+    const color = status === 'APPROVED' ? '#22c55e' : status === 'REJECTED' ? COLORS.error : '#f59e0b';
+    return (
+      <View style={[s.flag, { backgroundColor: color + '1f', borderColor: color + '55' }]}>
+        <Text style={[s.flagText, { color }]}>{t(`attendanceReview.outcome.${status}`, status)}</Text>
       </View>
     );
   };
@@ -263,6 +332,11 @@ export default function AttendanceReviewScreen() {
           </Text>
         </View>
 
+        <View style={s.flagRow}>
+          {/* History says how each shift ended; the queue is all pending by
+              definition, so the badge would be the same word on every card. */}
+          {!decidable && segment === 'records' && <Outcome entry={entry} />}
+        </View>
         <Flags reasons={entry.flagReasons} />
 
         {!!entry.notes && (
@@ -343,43 +417,77 @@ export default function AttendanceReviewScreen() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  // On the clock first — the people still working are the ones a decision might
-  // still affect today.
-  const todaySorted = useMemo(() => {
-    const list = today || [];
-    return [...list].sort((a, b) => {
+  // People still on the clock first: they are the ones a decision can still
+  // reach today. Past days are newest-first, which is how they arrive.
+  const rows: (TimeEntry | NoShow)[] = useMemo(() => {
+    const list = feedOf?.rows ?? [];
+    if (segment !== 'records' || period !== 'today') return list;
+    return [...(list as TimeEntry[])].sort((a, b) => {
       const openA = a.clockOutAt ? 1 : 0;
       const openB = b.clockOutAt ? 1 : 0;
       if (openA !== openB) return openA - openB;
       return new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime();
     });
-  }, [today]);
+  }, [feedOf, segment, period]);
 
-  const rows: (TimeEntry | NoShow)[] =
-    segment === 'approvals' ? (pending || []) : segment === 'today' ? todaySorted : (noShows || []);
-
+  const searching = segment === 'records' && !!debouncedSearch;
   const emptyCopy = {
     approvals: { icon: 'checkmark-done-outline' as const, text: t('attendanceReview.empty.approvals') },
-    today: { icon: 'time-outline' as const, text: t('attendanceReview.empty.today') },
+    records: {
+      icon: 'time-outline' as const,
+      text: searching
+        ? t('attendanceReview.empty.noMatch', { name: debouncedSearch })
+        : t(`attendanceReview.empty.records.${period}`),
+    },
     noshows: { icon: 'happy-outline' as const, text: t('attendanceReview.empty.noshows') },
   }[segment];
+
+  const segmentLabel = (seg: Segment) =>
+    seg === 'approvals' && approvals?.rows.length
+      ? `${t('attendanceReview.segments.approvals')} (${approvals.rows.length}${approvals.done ? '' : '+'})`
+      : t(`attendanceReview.segments.${seg}`);
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <View style={s.filterRow}>
         {SEGMENTS.map((seg) => (
-          <FilterChip
-            key={seg}
-            label={
-              seg === 'approvals' && pending?.length
-                ? `${t('attendanceReview.segments.approvals')} (${pending.length})`
-                : t(`attendanceReview.segments.${seg}`)
-            }
-            active={segment === seg}
-            onPress={() => show(seg)}
-          />
+          <FilterChip key={seg} label={segmentLabel(seg)} active={segment === seg} onPress={() => show(seg)} />
         ))}
       </View>
+
+      {/* History is the only list worth narrowing: the queue is short by
+          definition and the no-show sweep is already a fixed few days. */}
+      {segment === 'records' && (
+        <View style={s.controls}>
+          <View style={[s.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="search" size={16} color={colors.textMuted} />
+            <TextInput
+              style={[s.searchInput, { color: colors.textPrimary }]}
+              value={search}
+              onChangeText={setSearch}
+              placeholder={t('attendanceReview.searchPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+            {!!search && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={s.periodRow}>
+            {PERIODS.map((p) => (
+              <FilterChip
+                key={p}
+                label={t(`attendanceReview.period.${p}`)}
+                active={period === p}
+                onPress={() => setPeriod(p)}
+              />
+            ))}
+          </View>
+        </View>
+      )}
 
       <ScreenContainer width="content">
         {isLoading && rows.length === 0 ? (
@@ -395,12 +503,13 @@ export default function AttendanceReviewScreen() {
             }
             contentContainerStyle={s.list}
             showsVerticalScrollIndicator={false}
-            // The queue is short by nature; these keep a long day's records
-            // from mounting every row at once.
+            keyboardShouldPersistTaps="handled"
+            // A month of a real crew's shifts is hundreds of rows; these keep
+            // the list from mounting all of them.
             initialNumToRender={8}
             windowSize={7}
             removeClippedSubviews
-            onEndReached={loadMorePending}
+            onEndReached={loadMore}
             onEndReachedThreshold={0.4}
             ListFooterComponent={
               loadingMore ? <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={COLORS.primary} /> : null
@@ -451,9 +560,15 @@ export default function AttendanceReviewScreen() {
   );
 }
 
-/** Today in the device's own zone — the query is a calendar day, not an instant. */
-function todayISO(): string {
+/**
+ * A calendar day, `back` days ago, in the device's own zone.
+ *
+ * The query is a date, not an instant: the server resolves each day against the
+ * entry's own timezone, so what this has to send is which days the reader means.
+ */
+function dayISO(back: number): string {
   const d = new Date();
+  d.setDate(d.getDate() - back);
   const m = `${d.getMonth() + 1}`.padStart(2, '0');
   const day = `${d.getDate()}`.padStart(2, '0');
   return `${d.getFullYear()}-${m}-${day}`;
@@ -462,6 +577,14 @@ function todayISO(): string {
 const s = StyleSheet.create({
   container: { flex: 1 },
   filterRow: { flexDirection: 'row', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  controls: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md, gap: SPACING.sm },
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+    borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACING.md, height: 42,
+  },
+  searchInput: { flex: 1, fontSize: FONT_SIZE.base, paddingVertical: 0 },
+  periodRow: { flexDirection: 'row', gap: SPACING.sm },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   card: { borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: SPACING.md },

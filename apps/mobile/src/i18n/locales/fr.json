@@ -1887,13 +1887,18 @@
   "attendanceReview": {
     "segments": {
       "approvals": "Validations",
-      "today": "Aujourd'hui",
-      "noshows": "Absences"
+      "noshows": "Absences",
+      "records": "Historique"
     },
     "empty": {
       "approvals": "Rien en attente — tous les postes sont traités.",
-      "today": "Personne n'a pointé aujourd'hui.",
-      "noshows": "Aucun poste manqué ces 7 derniers jours."
+      "noshows": "Aucun poste manqué ces 7 derniers jours.",
+      "records": {
+        "month": "Aucun poste ces 30 derniers jours.",
+        "today": "Personne n'a pointé aujourd'hui.",
+        "week": "Aucun poste ces 7 derniers jours."
+      },
+      "noMatch": "Rien pour « {{name}} » sur cette période."
     },
     "onTheClock": "En poste",
     "expected": "Prévu {{from}} – {{to}}",
@@ -1918,6 +1923,18 @@
       "OUTSIDE_GEOFENCE_OUT": "Sortie hors zone",
       "OVERTIME": "Heures sup.",
       "UNSCHEDULED_DAY": "Non planifié"
+    },
+    "period": {
+      "month": "30 jours",
+      "today": "Aujourd'hui",
+      "week": "7 jours"
+    },
+    "searchPlaceholder": "Rechercher un nom",
+    "outcome": {
+      "APPROVED": "Validé",
+      "AUTO_APPROVED": "Validé automatiquement",
+      "PENDING": "En attente",
+      "REJECTED": "Renvoyé"
     }
   }
 }

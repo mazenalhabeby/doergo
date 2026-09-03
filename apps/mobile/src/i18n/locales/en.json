@@ -1887,13 +1887,18 @@
   "attendanceReview": {
     "segments": {
       "approvals": "Approvals",
-      "today": "Today",
-      "noshows": "No-shows"
+      "noshows": "No-shows",
+      "records": "History"
     },
     "empty": {
       "approvals": "Nothing waiting — every shift has been decided.",
-      "today": "Nobody has clocked in today.",
-      "noshows": "No missed shifts in the last 7 days."
+      "noshows": "No missed shifts in the last 7 days.",
+      "records": {
+        "month": "No shifts in the last 30 days.",
+        "today": "Nobody has clocked in today.",
+        "week": "No shifts in the last 7 days."
+      },
+      "noMatch": "Nothing for “{{name}}” in this period."
     },
     "onTheClock": "On the clock",
     "expected": "Expected {{from}} – {{to}}",
@@ -1918,6 +1923,18 @@
       "OUTSIDE_GEOFENCE_OUT": "Off-site out",
       "OVERTIME": "Overtime",
       "UNSCHEDULED_DAY": "Unscheduled"
+    },
+    "period": {
+      "month": "30 days",
+      "today": "Today",
+      "week": "7 days"
+    },
+    "searchPlaceholder": "Search by name",
+    "outcome": {
+      "APPROVED": "Approved",
+      "AUTO_APPROVED": "Auto-approved",
+      "PENDING": "Waiting",
+      "REJECTED": "Sent back"
     }
   }
 }

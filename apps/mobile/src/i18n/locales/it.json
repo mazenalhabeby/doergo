@@ -1887,13 +1887,18 @@
   "attendanceReview": {
     "segments": {
       "approvals": "Approvazioni",
-      "today": "Oggi",
-      "noshows": "Assenze"
+      "noshows": "Assenze",
+      "records": "Storico"
     },
     "empty": {
       "approvals": "Nulla in sospeso: tutti i turni sono decisi.",
-      "today": "Oggi non ha timbrato nessuno.",
-      "noshows": "Nessun turno saltato negli ultimi 7 giorni."
+      "noshows": "Nessun turno saltato negli ultimi 7 giorni.",
+      "records": {
+        "month": "Nessun turno negli ultimi 30 giorni.",
+        "today": "Oggi non ha timbrato nessuno.",
+        "week": "Nessun turno negli ultimi 7 giorni."
+      },
+      "noMatch": "Nessun risultato per «{{name}}» in questo periodo."
     },
     "onTheClock": "In servizio",
     "expected": "Previsto {{from}} – {{to}}",
@@ -1918,6 +1923,18 @@
       "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
       "OVERTIME": "Straordinario",
       "UNSCHEDULED_DAY": "Non pianificato"
+    },
+    "period": {
+      "month": "30 giorni",
+      "today": "Oggi",
+      "week": "7 giorni"
+    },
+    "searchPlaceholder": "Cerca per nome",
+    "outcome": {
+      "APPROVED": "Approvato",
+      "AUTO_APPROVED": "Approvato automaticamente",
+      "PENDING": "In attesa",
+      "REJECTED": "Rimandato"
     }
   }
 }
