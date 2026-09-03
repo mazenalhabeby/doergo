@@ -948,7 +948,16 @@
       "noRequestsAll": "No hay solicitudes"
     },
     "titles": {
-      "timeOffRequests": "Solicitudes de ausencias"
+      "timeOffRequests": "Solicitudes de ausencias",
+      "attendance": "Asistencia"
+    },
+    "attendance": {
+      "label": "Asistencia",
+      "desc": "Aprueba horas y revisa turnos"
+    },
+    "customers": {
+      "label": "Clientes",
+      "desc": "Oportunidades, llamadas, recordatorios y seguimiento"
     }
   },
   "components": {
@@ -1874,5 +1883,41 @@
       "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
     },
     "onBehalfOf": "Para {{name}}"
+  },
+  "attendanceReview": {
+    "segments": {
+      "approvals": "Aprobaciones",
+      "today": "Hoy",
+      "noshows": "Ausencias"
+    },
+    "empty": {
+      "approvals": "Nada pendiente: todos los turnos están decididos.",
+      "today": "Hoy nadie ha fichado.",
+      "noshows": "Sin turnos perdidos en los últimos 7 días."
+    },
+    "onTheClock": "Fichado",
+    "expected": "Previsto {{from}} – {{to}}",
+    "excuse": "Justificar",
+    "excusedBadge": "Justificado",
+    "approved": "Aprobado",
+    "rejected": "Devuelto",
+    "excused": "Justificado",
+    "failedToLoad": "No se pudo cargar la asistencia",
+    "failedToApprove": "No se pudo aprobar este turno",
+    "failedToReject": "No se pudo devolver este turno",
+    "failedToExcuse": "No se pudo justificar este turno",
+    "rejectTitle": "Devolver",
+    "rejectHint": "Dile a {{name}} qué corregir: lo verá.",
+    "rejectPlaceholder": "p. ej. la hora de salida parece incorrecta",
+    "someone": "Alguien",
+    "flags": {
+      "EARLY_DEPARTURE": "Salió antes",
+      "LATE_ARRIVAL": "Tarde",
+      "MISSED_CLOCK_OUT": "Sin salida",
+      "OUTSIDE_GEOFENCE_IN": "Entrada fuera",
+      "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
+      "OVERTIME": "Horas extra",
+      "UNSCHEDULED_DAY": "Sin programar"
+    }
   }
 }

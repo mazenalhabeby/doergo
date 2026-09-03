@@ -948,7 +948,16 @@
       "noRequestsAll": "Aucune demande"
     },
     "titles": {
-      "timeOffRequests": "Demandes de congé"
+      "timeOffRequests": "Demandes de congé",
+      "attendance": "Présence"
+    },
+    "attendance": {
+      "label": "Présence",
+      "desc": "Valider les heures et vérifier les postes"
+    },
+    "customers": {
+      "label": "Clients",
+      "desc": "Pistes, appels, rappels et relances"
     }
   },
   "components": {
@@ -1874,5 +1883,41 @@
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
     },
     "onBehalfOf": "Pour {{name}}"
+  },
+  "attendanceReview": {
+    "segments": {
+      "approvals": "Validations",
+      "today": "Aujourd'hui",
+      "noshows": "Absences"
+    },
+    "empty": {
+      "approvals": "Rien en attente — tous les postes sont traités.",
+      "today": "Personne n'a pointé aujourd'hui.",
+      "noshows": "Aucun poste manqué ces 7 derniers jours."
+    },
+    "onTheClock": "En poste",
+    "expected": "Prévu {{from}} – {{to}}",
+    "excuse": "Excuser",
+    "excusedBadge": "Excusé",
+    "approved": "Validé",
+    "rejected": "Renvoyé",
+    "excused": "Excusé",
+    "failedToLoad": "Impossible de charger la présence",
+    "failedToApprove": "Impossible de valider ce poste",
+    "failedToReject": "Impossible de renvoyer ce poste",
+    "failedToExcuse": "Impossible d’excuser ce poste",
+    "rejectTitle": "Renvoyer",
+    "rejectHint": "Indiquez à {{name}} ce qui doit être corrigé — la personne le verra.",
+    "rejectPlaceholder": "p. ex. l’heure de sortie semble incorrecte",
+    "someone": "Quelqu’un",
+    "flags": {
+      "EARLY_DEPARTURE": "Parti tôt",
+      "LATE_ARRIVAL": "En retard",
+      "MISSED_CLOCK_OUT": "Sans sortie",
+      "OUTSIDE_GEOFENCE_IN": "Entrée hors zone",
+      "OUTSIDE_GEOFENCE_OUT": "Sortie hors zone",
+      "OVERTIME": "Heures sup.",
+      "UNSCHEDULED_DAY": "Non planifié"
+    }
   }
 }

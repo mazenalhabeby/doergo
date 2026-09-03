@@ -12,6 +12,7 @@ import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/consta
 import { TourTarget, useTourTarget } from '../../../src/components/tour';
 import { Role, hasAccessModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
 import { oversees } from '../../../src/lib/permissions';
+import { hasManageSurface } from '../../../src/lib/manage-rows';
 import { resolveMediaUrl } from '../../../src/lib/api';
 
 // Maps a tab route name → guided-tour target key (only the tabs the tours spotlight).
@@ -234,8 +235,16 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       if (route.name === 'time-off') return false;
       return true;
     }
-    // Employees: no manage; create-task by module + permission; rest by module.
-    if (route.name === 'manage') return false;
+    /*
+      Manage is a PERMISSION, not a rank.
+
+      It was `isAdmin`, so the management surface was invisible to everyone
+      whose authority comes from a space — the shift leader who approves the
+      hours, the supervisor who signs them off. The tab now appears when at
+      least one row inside it would open (see manage-rows.ts), so it is never
+      an empty tab and never a wall of refusals.
+    */
+    if (route.name === 'manage') return hasManageSurface(user);
     if (route.name === 'create-task') return showCreate;
     if (route.name === 'tasks') return showTasks;
     if (route.name === 'attendance') return showAttendance;
@@ -370,12 +379,12 @@ export default function TabsLayout() {
             href: (isAdmin || showCreate) ? '/create-task' : null,
           }}
         />
-        {/* Manage tab - ADMIN only */}
+        {/* Manage tab — offered to whoever holds something inside it. */}
         <Tabs.Screen
           name="manage"
           options={{
             title: t('tabs.manage'),
-            href: isAdmin ? '/manage' : null,
+            href: hasManageSurface(user) ? '/manage' : null,
           }}
         />
         {/* Clock tab - TECHNICIAN only, based on enabledModules */}

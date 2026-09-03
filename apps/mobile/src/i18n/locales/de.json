@@ -948,7 +948,16 @@
       "noRequestsAll": "Keine Anträge"
     },
     "titles": {
-      "timeOffRequests": "Abwesenheitsanträge"
+      "timeOffRequests": "Abwesenheitsanträge",
+      "attendance": "Anwesenheit"
+    },
+    "attendance": {
+      "label": "Anwesenheit",
+      "desc": "Stunden freigeben und Schichten prüfen"
+    },
+    "customers": {
+      "label": "Kunden",
+      "desc": "Leads, Anrufe, Erinnerungen & Nachfassen"
     }
   },
   "components": {
@@ -1874,5 +1883,41 @@
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
     },
     "onBehalfOf": "Für {{name}}"
+  },
+  "attendanceReview": {
+    "segments": {
+      "approvals": "Freigaben",
+      "today": "Heute",
+      "noshows": "Fehlzeiten"
+    },
+    "empty": {
+      "approvals": "Nichts offen — alle Schichten sind entschieden.",
+      "today": "Heute hat sich noch niemand eingestempelt.",
+      "noshows": "Keine versäumten Schichten in den letzten 7 Tagen."
+    },
+    "onTheClock": "Im Dienst",
+    "expected": "Erwartet {{from}} – {{to}}",
+    "excuse": "Entschuldigen",
+    "excusedBadge": "Entschuldigt",
+    "approved": "Freigegeben",
+    "rejected": "Zurückgeschickt",
+    "excused": "Entschuldigt",
+    "failedToLoad": "Anwesenheit konnte nicht geladen werden",
+    "failedToApprove": "Diese Schicht konnte nicht freigegeben werden",
+    "failedToReject": "Diese Schicht konnte nicht zurückgeschickt werden",
+    "failedToExcuse": "Diese Schicht konnte nicht entschuldigt werden",
+    "rejectTitle": "Zurückschicken",
+    "rejectHint": "Sagen Sie {{name}}, was zu korrigieren ist — die Person sieht diesen Text.",
+    "rejectPlaceholder": "z. B. Ausstempelzeit scheint falsch",
+    "someone": "Jemand",
+    "flags": {
+      "EARLY_DEPARTURE": "Früher gegangen",
+      "LATE_ARRIVAL": "Verspätet",
+      "MISSED_CLOCK_OUT": "Kein Ausstempeln",
+      "OUTSIDE_GEOFENCE_IN": "Einstempeln außerhalb",
+      "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
+      "OVERTIME": "Überstunden",
+      "UNSCHEDULED_DAY": "Nicht geplant"
+    }
   }
 }

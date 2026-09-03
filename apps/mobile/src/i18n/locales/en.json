@@ -948,11 +948,16 @@
       "noRequestsAll": "No requests"
     },
     "titles": {
-      "timeOffRequests": "Time Off Requests"
+      "timeOffRequests": "Time Off Requests",
+      "attendance": "Attendance"
     },
     "customers": {
       "label": "Customers",
       "desc": "Leads, calls, reminders & follow-ups"
+    },
+    "attendance": {
+      "label": "Attendance",
+      "desc": "Approve hours and review shifts"
     }
   },
   "components": {
@@ -1878,5 +1883,41 @@
       "blocking": "You cannot be given work until this is supplied and approved."
     },
     "onBehalfOf": "For {{name}}"
+  },
+  "attendanceReview": {
+    "segments": {
+      "approvals": "Approvals",
+      "today": "Today",
+      "noshows": "No-shows"
+    },
+    "empty": {
+      "approvals": "Nothing waiting — every shift has been decided.",
+      "today": "Nobody has clocked in today.",
+      "noshows": "No missed shifts in the last 7 days."
+    },
+    "onTheClock": "On the clock",
+    "expected": "Expected {{from}} – {{to}}",
+    "excuse": "Excuse",
+    "excusedBadge": "Excused",
+    "approved": "Approved",
+    "rejected": "Sent back",
+    "excused": "Excused",
+    "failedToLoad": "Could not load attendance",
+    "failedToApprove": "Could not approve this shift",
+    "failedToReject": "Could not send this shift back",
+    "failedToExcuse": "Could not excuse this shift",
+    "rejectTitle": "Send back",
+    "rejectHint": "Tell {{name}} what to fix — they see this.",
+    "rejectPlaceholder": "e.g. clock-out time looks wrong",
+    "someone": "Someone",
+    "flags": {
+      "EARLY_DEPARTURE": "Left early",
+      "LATE_ARRIVAL": "Late",
+      "MISSED_CLOCK_OUT": "No clock-out",
+      "OUTSIDE_GEOFENCE_IN": "Off-site in",
+      "OUTSIDE_GEOFENCE_OUT": "Off-site out",
+      "OVERTIME": "Overtime",
+      "UNSCHEDULED_DAY": "Unscheduled"
+    }
   }
 }

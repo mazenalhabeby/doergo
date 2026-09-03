@@ -3,6 +3,22 @@ import { fetchWithAuth } from './client';
 import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, ClockOutInput, AttendanceHistoryParams, PaginatedResponse, GeofenceExcursion } from './types';
 import type { BreakType } from './types';
 
+/** A scheduled shift with no clock-in — the shape `/attendance/no-shows` returns. */
+export interface NoShow {
+  id: string;
+  userId: string;
+  userName: string;
+  avatarUrl?: string | null;
+  spaceId: string;
+  spaceName: string;
+  expectedClockInAt: string;
+  expectedClockOutAt: string;
+  state: string;
+  reminderCount: number;
+  localDate: string;
+  excuseReason?: string | null;
+}
+
 // Attendance API - clock-in/clock-out
 export const attendanceApi = {
   getStatus: async (): Promise<AttendanceStatus> => {
@@ -93,6 +109,55 @@ export const attendanceApi = {
     const result = await fetchWithAuth<any>('/attendance/breaks/active', { method: 'GET' });
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
+  },
+
+  // ── Review surface (whoever holds the attendance permissions) ─────────────
+  //
+  // Every route below is `@RequirePermissionInSpace`, so the server narrows the
+  // answer to the caller's own spaces: the same request returns the whole
+  // organization to an admin and one site to its supervisor. Nothing here is
+  // filtered on the client.
+
+  /** Completed entries waiting for a decision (`canViewSpaceAttendance`). */
+  getPendingApprovals: async (params?: { page?: number; limit?: number }): Promise<TimeEntry[]> => {
+    const endpoint = buildUrlWithQuery('/attendance/approvals/pending', {
+      page: params?.page,
+      limit: params?.limit ?? 30,
+    });
+    const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });
+    if (Array.isArray(result)) return result;
+    return result?.data ?? [];
+  },
+
+  /** Approve one entry (`canReconcileAttendance`). */
+  approveEntry: async (entryId: string, notes?: string): Promise<TimeEntry> => {
+    return fetchWithAuth<TimeEntry>(`/attendance/approvals/${entryId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  /** Reject one entry — the reason is required and is shown to the member. */
+  rejectEntry: async (entryId: string, reason: string): Promise<TimeEntry> => {
+    return fetchWithAuth<TimeEntry>(`/attendance/approvals/${entryId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  /** Scheduled shifts nobody clocked in for (`canViewSpaceAttendance`). */
+  listNoShows: async (days = 7): Promise<NoShow[]> => {
+    const result = await fetchWithAuth<any>(buildUrlWithQuery('/attendance/no-shows', { days }), { method: 'GET' });
+    if (Array.isArray(result)) return result;
+    return result?.data ?? [];
+  },
+
+  /** Excuse a no-show, or put it back on the list (`canReconcileAttendance`). */
+  resolveNoShow: async (id: string, action: 'excuse' | 'reopen', reason?: string): Promise<NoShow> => {
+    return fetchWithAuth<NoShow>(`/attendance/no-shows/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action, reason }),
+    });
   },
 
   // ── Shift reminder responses ──────────────────────────────────────────────

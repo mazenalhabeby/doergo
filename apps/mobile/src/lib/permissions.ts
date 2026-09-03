@@ -36,6 +36,22 @@ export function holds(
 }
 
 /**
+ * Does this member hold a permission ORG-WIDE?
+ *
+ * The narrower question, and the honest one for a screen behind
+ * `@RequirePermission` — that guard reads the flat columns and the resolved ORG
+ * access, and a grant held in one space does not satisfy it however senior the
+ * space role is. Offering such a screen to a space-scoped member produces a tab
+ * that only ever 403s.
+ */
+export function holdsOrgWide(user: Parameters<typeof holds>[0], key: string): boolean {
+  if (!user) return false;
+  if (isAdminRole(user as never)) return true;
+  if ((user as unknown as Record<string, unknown>)[key] === true) return true;
+  return (user.access?.org as Record<string, boolean> | undefined)?.[key] === true;
+}
+
+/**
  * Is this person OVERSEEING work rather than doing it?
  *
  * The question mobile actually asks in half a dozen places, currently phrased as

@@ -15,6 +15,7 @@ export default function ManageLayout() {
         headerShadowVisible: false,
       }}
     >
+      <Stack.Screen name="attendance" options={{ title: t('manage.titles.attendance') }} />
       <Stack.Screen name="time-off-requests" options={{ title: t('manage.titles.timeOffRequests') }} />
       <Stack.Screen name="members" options={{ title: t('manage.members.label') }} />
       <Stack.Screen name="join-requests" options={{ title: t('manage.joinRequests.label') }} />

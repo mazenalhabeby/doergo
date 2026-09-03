@@ -948,7 +948,16 @@
       "noRequestsAll": "Nessuna richiesta"
     },
     "titles": {
-      "timeOffRequests": "Richieste di ferie e permessi"
+      "timeOffRequests": "Richieste di ferie e permessi",
+      "attendance": "Presenze"
+    },
+    "attendance": {
+      "label": "Presenze",
+      "desc": "Approva le ore e controlla i turni"
+    },
+    "customers": {
+      "label": "Clienti",
+      "desc": "Lead, chiamate, promemoria e follow-up"
     }
   },
   "components": {
@@ -1874,5 +1883,41 @@
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
     },
     "onBehalfOf": "Per {{name}}"
+  },
+  "attendanceReview": {
+    "segments": {
+      "approvals": "Approvazioni",
+      "today": "Oggi",
+      "noshows": "Assenze"
+    },
+    "empty": {
+      "approvals": "Nulla in sospeso: tutti i turni sono decisi.",
+      "today": "Oggi non ha timbrato nessuno.",
+      "noshows": "Nessun turno saltato negli ultimi 7 giorni."
+    },
+    "onTheClock": "In servizio",
+    "expected": "Previsto {{from}} – {{to}}",
+    "excuse": "Giustifica",
+    "excusedBadge": "Giustificato",
+    "approved": "Approvato",
+    "rejected": "Rimandato",
+    "excused": "Giustificato",
+    "failedToLoad": "Impossibile caricare le presenze",
+    "failedToApprove": "Impossibile approvare questo turno",
+    "failedToReject": "Impossibile rimandare questo turno",
+    "failedToExcuse": "Impossibile giustificare questo turno",
+    "rejectTitle": "Rimanda",
+    "rejectHint": "Indica a {{name}} cosa correggere: lo vedrà.",
+    "rejectPlaceholder": "es. l’orario di uscita sembra sbagliato",
+    "someone": "Qualcuno",
+    "flags": {
+      "EARLY_DEPARTURE": "Uscito prima",
+      "LATE_ARRIVAL": "In ritardo",
+      "MISSED_CLOCK_OUT": "Senza uscita",
+      "OUTSIDE_GEOFENCE_IN": "Entrata fuori sede",
+      "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
+      "OVERTIME": "Straordinario",
+      "UNSCHEDULED_DAY": "Non pianificato"
+    }
   }
 }

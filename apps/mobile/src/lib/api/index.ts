@@ -74,6 +74,7 @@ export type { TasksListParams } from './tasks';
 export { reportsApi, reportAttachmentsApi } from './reports';
 export { taskAttachmentsApi, uploadToPresignedUrl } from './attachments';
 export { attendanceApi } from './attendance';
+export type { NoShow } from './attendance';
 export { techniciansApi, timeOffApi, availabilityApi, scheduleApi } from './technicians';
 export { onboardingApi, invitationsApi, pushApi } from './onboarding';
 export { joinRequestsApi, membersApi, adminInvitationsApi, orgSettingsApi, teamApi } from './admin';
