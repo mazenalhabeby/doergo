@@ -217,7 +217,7 @@ export class TasksController {
   }
 
   @Get(':id/suggested-employees')
-  @RequirePermission('canAssignTasks')
+  @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Get suggested employees for a task with scoring' })
   async getSuggestedEmployees(@Param('id') id: string, @Request() req: any) {
     // READ operation - use direct microservice call (faster, no queue overhead)
@@ -232,6 +232,10 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // Where this caller may ASSIGN, resolved from their role grants. The
+      // guard above accepts a grant held in any space; the service then checks
+      // it against the task's own space, which is the real decision.
+      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -419,7 +423,13 @@ export class TasksController {
   // ============ Assignee Endpoints ============
 
   @Post(':id/assignees')
-  @RequirePermission('canAssignTasks')
+  /*
+    Space-aware: the org-wide column refused a supervisor the right to add a
+    second person to a job at their OWN site, while that job sat on their task
+    list. The guard widens; `assertMayAssign` in the service decides, against
+    the task's real space — never a client-supplied one.
+  */
+  @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Add an assignee to a task' })
   async addAssignee(
     @Param('id') id: string,
@@ -438,12 +448,16 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // Where this caller may ASSIGN, resolved from their role grants. The
+      // guard above accepts a grant held in any space; the service then checks
+      // it against the task's own space, which is the real decision.
+      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
 
   @Delete(':id/assignees/:userId')
-  @RequirePermission('canAssignTasks')
+  @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Remove an assignee from a task' })
   async removeAssignee(
     @Param('id') id: string,
@@ -462,6 +476,10 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // Where this caller may ASSIGN, resolved from their role grants. The
+      // guard above accepts a grant held in any space; the service then checks
+      // it against the task's own space, which is the real decision.
+      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }

@@ -924,7 +924,7 @@ describe('TasksService', () => {
       const result = await service.getSuggestedTechnicians({
         taskId: 'task-123',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -932,6 +932,28 @@ describe('TasksService', () => {
       expect(result.data.technicians).toHaveLength(1);
       expect(result.data.technicians[0]).toHaveProperty('score');
       expect(result.data.technicians[0]).toHaveProperty('scoreBreakdown');
+    });
+
+    /*
+      Suggestions follow the ASSIGN grant, not the view one.
+
+      This endpoint returns names, ratings, workloads and last known positions,
+      and the route is `@RequirePermissionInSpace('canAssignTasks')` — so a
+      member who may merely SEE every task has no business here. The service
+      used to accept `canViewAllTasks` on its own, which was looser than the
+      door in front of it.
+    */
+    it('refuses a member who may view all tasks but not assign them', async () => {
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      await expect(
+        service.getSuggestedTechnicians({
+          taskId: 'task-123',
+          userId: 'user-123',
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          organizationId: 'org-123',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException for TECHNICIAN role', async () => {
@@ -952,7 +974,7 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'non-existent',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);

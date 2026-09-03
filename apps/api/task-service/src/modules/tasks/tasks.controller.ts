@@ -98,6 +98,9 @@ export class TasksController {
       userId: string;
       userRole: string;
       organizationId: string;
+      canAssignTasks?: boolean;
+      /** Spaces where the caller holds canAssignTasks by a SPACE role. */
+      assignSpaceIds?: string[];
     },
   ) {
     return this.tasksService.getSuggestedTechnicians(data);

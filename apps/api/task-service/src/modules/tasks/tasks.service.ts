@@ -2052,6 +2052,57 @@ export class TasksService {
   /**
    * Add an assignee to a task
    */
+  /**
+   * May this caller put somebody on THIS task?
+   *
+   * The three assignee routes were `@RequirePermission('canAssignTasks')` — the
+   * flat ORG column — so a supervisor who runs a site could not add a second
+   * person to a job at that site, while their own task list showed it. Widening
+   * the guard to accept a space grant moves the real decision here, where the
+   * task's own space is known: an org-wide holder may assign anywhere, a
+   * space-granted one only inside the spaces they hold.
+   *
+   * This is the enforcement, not a hint. The route takes a task id straight
+   * from the caller, so without it a member granted "assign" in one space could
+   * name any task in the organization.
+   */
+  private assertMayAssign(
+    task: { spaceId: string | null },
+    data: { userRole: string; canAssignTasks?: boolean; assignSpaceIds?: string[] },
+  ) {
+    if (data.userRole === Role.ADMIN) return;
+    if (data.canAssignTasks === true) return;
+    if (task.spaceId && data.assignSpaceIds?.includes(task.spaceId)) return;
+    throw new ForbiddenException('You do not have permission to assign work on this task');
+  }
+
+  /**
+   * A space-scoped assigner may only reach the people in that space.
+   *
+   * Their suggestion list is already narrowed to the site's roster, but the
+   * route accepts a user id directly — so the check has to be here too, or the
+   * narrowing is a suggestion rather than a boundary.
+   */
+  private async assertTargetIsInSpace(
+    task: { spaceId: string | null },
+    targetUserId: string,
+    data: { userRole: string; canAssignTasks?: boolean; assignSpaceIds?: string[] },
+  ) {
+    if (data.userRole === Role.ADMIN || data.canAssignTasks === true) return;
+    if (!task.spaceId) throw new ForbiddenException('You do not have permission to assign work on this task');
+    const rostered = await this.prisma.spaceAssignment.findFirst({
+      where: {
+        userId: targetUserId,
+        spaceId: task.spaceId,
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      },
+      select: { id: true },
+    });
+    if (!rostered) {
+      throw new ForbiddenException('That member is not in this workspace');
+    }
+  }
+
   async addAssignee(data: {
     taskId: string;
     userId: string;
@@ -2059,6 +2110,10 @@ export class TasksService {
     requestUserId: string;
     userRole: string;
     canViewAllTasks?: boolean;
+    /** The ORG-wide resolution of canAssignTasks. */
+    canAssignTasks?: boolean;
+    /** Spaces where the caller holds canAssignTasks through a SPACE role. */
+    assignSpaceIds?: string[];
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -2066,6 +2121,8 @@ export class TasksService {
     if (task.organizationId !== data.organizationId) {
       throw new ForbiddenException('You can only manage assignees for tasks in your organization');
     }
+    this.assertMayAssign(task, data);
+    await this.assertTargetIsInSpace(task, data.userId, data);
 
     // Verify the target user exists in the organization
     const user = await this.prisma.user.findFirst({
@@ -2135,6 +2192,8 @@ export class TasksService {
     requestUserId: string;
     userRole: string;
     canViewAllTasks?: boolean;
+    canAssignTasks?: boolean;
+    assignSpaceIds?: string[];
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -2142,6 +2201,8 @@ export class TasksService {
     if (task.organizationId !== data.organizationId) {
       throw new ForbiddenException('You can only manage assignees for tasks in your organization');
     }
+    // Taking somebody OFF a job is the same authority as putting them on it.
+    this.assertMayAssign(task, data);
 
     const existing = await this.prisma.taskAssignee.findUnique({
       where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
@@ -2512,6 +2573,8 @@ export class TasksService {
     userRole: string;
     canViewAllTasks?: boolean;
     canAssignTasks?: boolean;
+    /** Spaces where the caller holds canAssignTasks through a SPACE role. */
+    assignSpaceIds?: string[];
     organizationId: string;
   }) {
     // First verify task exists and user has access
@@ -2523,21 +2586,42 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    // Authorization: admins and members granted "assign tasks" can see suggestions.
-    if (data.userRole !== Role.ADMIN && !data.canAssignTasks && !data.canViewAllTasks) {
-      throw new ForbiddenException('You do not have permission to view suggested workers');
-    }
-
     if (task.organizationId !== data.organizationId) {
       throw new ForbiddenException('Task is not in your organization');
     }
 
-    // Get all active members in the organization (exclude ON_SITE workers who can't be assigned to tasks, exclude task creator)
+    // The same authority the assignment itself needs — asked against THIS task's
+    // space, so a space-granted assigner passes here and only here.
+    this.assertMayAssign(task, data);
+
+    /*
+      Who may be suggested.
+
+      An org-wide assigner sees the organization, as before. A space-granted one
+      sees the people rostered in the task's own space and nobody else: this
+      endpoint returns names, ratings, workloads and last known positions, so an
+      unnarrowed list would hand a client's supervisor the whole staff
+      directory — through the door marked "who should do this job".
+    */
+    const orgWide = data.userRole === Role.ADMIN || data.canAssignTasks === true;
+    const spaceRoster = orgWide
+      ? null
+      : (
+          await this.prisma.spaceAssignment.findMany({
+            where: {
+              spaceId: task.spaceId ?? '',
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+            },
+            select: { userId: true },
+          })
+        ).map((a) => a.userId);
+
     const technicians = await this.prisma.user.findMany({
       where: {
         organizationId: data.organizationId,
         isActive: true,
         id: { not: task.createdById ?? undefined },
+        ...(spaceRoster ? { id: { in: spaceRoster, not: task.createdById ?? undefined } } : {}),
       },
       take: TasksService.SUGGESTION_LIMIT, // Cap to prevent unbounded queries in large orgs
       select: {
