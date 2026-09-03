@@ -211,6 +211,15 @@ export function EditMemberDialog({
   // Empty string means "use the organization's default" — distinct from "0",
   // which is a real answer meaning no paid leave.
   const [leaveAllowance, setLeaveAllowance] = useState("")
+  /*
+    Works for a client or partner.
+
+    Everything below that this hides describes an EMPLOYMENT we do not have with
+    them: when they started here, the holiday we owe them, the hours we expect.
+    Asking an admin to fill those in for somebody else's employee is asking a
+    question with no true answer.
+  */
+  const isExternalMember = (member as { isExternal?: boolean } | null)?.isExternal === true
   const [employmentStartDate, setEmploymentStartDate] = useState("")
 
   // Initialize form whenever a (new) member is opened.
@@ -381,8 +390,16 @@ export function EditMemberDialog({
       employmentType,
       // "" clears the override back to the organization default; "0" is a real
       // value and must not be swallowed by a falsy check.
-      leaveAllowance: leaveAllowance.trim() === "" ? null : Number(leaveAllowance),
-      employmentStartDate: employmentStartDate || null,
+      /*
+        Cleared for an external member rather than carried.
+
+        The fields are hidden, but the state still holds whatever loaded — and a
+        member converted to external later would keep a start date and a holiday
+        entitlement nobody can see and nobody can correct. Hiding a control is
+        not clearing it.
+      */
+      leaveAllowance: isExternalMember ? null : leaveAllowance.trim() === "" ? null : Number(leaveAllowance),
+      employmentStartDate: isExternalMember ? null : employmentStartDate || null,
     }
     workerMutation.mutate(workerPatch)
   }
@@ -413,7 +430,19 @@ export function EditMemberDialog({
             <div className="flex items-center gap-3 text-left">
               <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="lg" />
               <div className="min-w-0">
-                <DialogTitle className="text-base truncate">{member.firstName} {member.lastName}</DialogTitle>
+                <DialogTitle className="text-base truncate flex items-center gap-2">
+                  <span className="truncate">{member.firstName} {member.lastName}</span>
+                  {/* Says why the employment fields are absent, rather than
+                      leaving an admin to wonder what happened to them. */}
+                  {isExternalMember && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 text-[10px] font-medium border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
+                    >
+                      {t("members.external.badge")}
+                    </Badge>
+                  )}
+                </DialogTitle>
                 <DialogDescription className="text-xs truncate">{member.email}</DialogDescription>
               </div>
             </div>
@@ -477,6 +506,7 @@ export function EditMemberDialog({
               </div>
             )}
 
+            {!isExternalMember && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
                 {t("members.memberEditor.startDateLabel")}
@@ -489,7 +519,9 @@ export function EditMemberDialog({
               />
               <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.startDateHint")}</p>
             </div>
+            )}
 
+            {!isExternalMember && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
                 {t("members.memberEditor.allowanceLabel")}
@@ -507,18 +539,26 @@ export function EditMemberDialog({
                   as "no holiday" and types a number they did not need to. */}
               <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.allowanceHint")}</p>
             </div>
+            )}
           </div>
 
-          <EditSection label={t("members.memberEditor.sectionWorkSchedule")} />
+          {/* A schedule is the hours WE expect. Theirs are their own employer's
+              business, and a rota line for somebody who never appears raises
+              no-shows against a company that owes us no attendance. */}
+          {!isExternalMember && (
+            <>
+              <EditSection label={t("members.memberEditor.sectionWorkSchedule")} />
 
-          <ScheduleFields
-            scheduleType={scheduleType}
-            onScheduleTypeChange={setScheduleType}
-            scheduleRows={scheduleRows}
-            onScheduleRowsChange={setScheduleRows}
-            monthlyHourBudget={monthlyHourBudget}
-            onMonthlyHourBudgetChange={setMonthlyHourBudget}
-          />
+              <ScheduleFields
+                scheduleType={scheduleType}
+                onScheduleTypeChange={setScheduleType}
+                scheduleRows={scheduleRows}
+                onScheduleRowsChange={setScheduleRows}
+                monthlyHourBudget={monthlyHourBudget}
+                onMonthlyHourBudgetChange={setMonthlyHourBudget}
+              />
+            </>
+          )}
 
           {/* Role & remote clock-in now live on the member's Access tab — the
               single home for role + permissions. This dialog stays profile-only. */}
