@@ -127,10 +127,12 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
         </View>
       )}
 
-      {/* Actions (fixed locations only) */}
-      {isFixed && (
+      {/* Actions (fixed locations only) — each one shown only if it was given a
+          handler: the caller withholds it from somebody the server would refuse. */}
+      {isFixed && (onAssign || onViewTasks) && (
         <View style={[styles.actions, { borderTopColor: colors.border }]}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onAssign?.(box.locationId)} activeOpacity={0.7}>
+          {onAssign && (
+          <TouchableOpacity style={styles.actionBtn} onPress={() => onAssign(box.locationId)} activeOpacity={0.7}>
             <Ionicons name="person-add-outline" size={15} color={COLORS.primary} />
             <Text
               style={[styles.actionText, { color: COLORS.primary }]}
@@ -141,8 +143,12 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
               {t('components.workspaceCard.assign')}
             </Text>
           </TouchableOpacity>
-          <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onViewTasks?.(box.locationId)} activeOpacity={0.7}>
+          )}
+          {onAssign && onViewTasks && (
+            <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
+          )}
+          {onViewTasks && (
+          <TouchableOpacity style={styles.actionBtn} onPress={() => onViewTasks(box.locationId)} activeOpacity={0.7}>
             <Ionicons name="list-outline" size={15} color={colors.textSecondary} />
             <Text
               style={[styles.actionText, { color: colors.textSecondary }]}
@@ -153,6 +159,7 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
               {t('components.workspaceCard.tasks')}
             </Text>
           </TouchableOpacity>
+          )}
         </View>
       )}
     </View>

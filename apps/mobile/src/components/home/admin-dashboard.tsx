@@ -26,6 +26,7 @@ import {
   type Task,
   type OrgMember,
   type LocationWithMembers,
+  type LocationAssignment,
 } from '../../lib/api';
 import type { TimeEntry } from '../../lib/api/types';
 import { ErrorState, Skeleton, ScreenContainer } from '../../components';
@@ -36,7 +37,7 @@ import { useExcursionSync } from '../../hooks/useExcursionSync';
 import type { GeofenceExcursion, CompanyLocation } from '../../lib/api/types';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
-import { hasAccessModule, isFieldWorker } from '@hbcfield/shared/client';
+import { hasAccessModule, isFieldWorker, canManageMembersInSpace } from '@hbcfield/shared/client';
 import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
 import { type PersonNodeData } from './workspace/person-node';
@@ -104,6 +105,7 @@ export function AdminDashboard() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activeBreaks, setActiveBreaks] = useState<Array<{ userId: string }>>([]);
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
+  const [rosters, setRosters] = useState<LocationAssignment[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -126,12 +128,28 @@ export function AdminDashboard() {
       else setIsLoading(true);
       setError(null);
 
+      /*
+        The member directory is an ORG-wide read (`@RequirePermission
+        ('canManageUsers')`), so a member whose authority comes from a SPACE —
+        a Space Manager, a client's supervisor — can only ever be refused it.
+        Asking anyway cost a guaranteed 403 on every load AND emptied the
+        board: every name on it is looked up in that directory, so their own
+        space rendered as "no one assigned yet" with eight people on its roster.
+
+        Ask only when the answer can come back, and read the names from the
+        space rosters otherwise (below) — which the server scopes to the spaces
+        this viewer may see.
+      */
+      const canReadDirectory = user?.canManageUsers === true;
+
       // Single batch — locations now embed their member assignments, so there
       // is no per-location follow-up request (no N+1).
       const [tasksRes, locationsRes, membersRes, entriesRes, breaksRes] = await Promise.all([
         tasksApi.list(),
         locationsApi.list().catch(() => [] as LocationWithMembers[]),
-        membersApi.list().catch(() => [] as OrgMember[]),
+        canReadDirectory
+          ? membersApi.list().catch(() => [] as OrgMember[])
+          : Promise.resolve([] as OrgMember[]),
         // "Who's on the clock right now" — date-independent (open entries), so an
         // overnight shift that started before midnight still counts as on-duty.
         attendanceApi.getActiveEntries().catch(() => [] as TimeEntry[]),
@@ -143,9 +161,18 @@ export function AdminDashboard() {
         assignmentMap[loc.id] = (loc.assignments || []).map((a) => a.userId);
       }
 
+      // One batched request for every visible space, and only for the viewer
+      // who has no directory to read — an admin already holds all these people.
+      const rostersRes = canReadDirectory
+        ? []
+        : await locationsApi
+            .getRosters((locationsRes || []).map((l) => l.id))
+            .catch(() => [] as LocationAssignment[]);
+
       setTasks(tasksRes || []);
       setLocations(locationsRes || []);
       setMembers(membersRes || []);
+      setRosters(rostersRes || []);
       setEntries(entriesRes || []);
       setActiveBreaks(breaksRes || []);
       setAssignments(assignmentMap);
@@ -157,7 +184,7 @@ export function AdminDashboard() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, [t]);
+  }, [t, user?.canManageUsers]);
 
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
@@ -176,9 +203,20 @@ export function AdminDashboard() {
   // ── Derived lookups ──────────────────────────────────────────────────────
   const memberMap = useMemo(() => {
     const map = new Map<string, OrgMember>();
+    /*
+      Rosters first, directory second: the roster carries a name, a face and
+      nothing else, so a fuller record always wins where both exist. For a
+      space-scoped viewer the roster is the only source there is — without it
+      every person on their board was skipped as "unknown member".
+    */
+    for (const a of rosters) {
+      if (a.user && !map.has(a.user.id)) {
+        map.set(a.user.id, { ...a.user, isActive: true, role: 'EMPLOYEE' } as unknown as OrgMember);
+      }
+    }
     for (const m of members) map.set(m.id, m);
     return map;
-  }, [members]);
+  }, [members, rosters]);
 
   const clockedInUserIds = useMemo(() => {
     const set = new Set<string>();
@@ -223,6 +261,15 @@ export function AdminDashboard() {
     }
     return map;
   }, [tasks]);
+
+  /*
+    Can this viewer see everybody, or only the spaces they hold?
+
+    The FLAT columns, deliberately — they carry the ORG-wide resolution, which
+    is exactly the question. `oversees(user)` cannot answer it: it is true of
+    somebody who oversees ONE space, which is precisely who this restricts.
+  */
+  const viewerIsOrgWide = user?.canViewAllTasks === true || user?.canManageUsers === true;
 
   // ── Build workspace boxes ────────────────────────────────────────────────
   const boxes: WorkspaceBoxData[] = useMemo(() => {
@@ -344,7 +391,21 @@ export function AdminDashboard() {
           isOnRoad: isFieldWorker(m),
         });
         onTask.push(toNode(m, status, tag));
-      } else if (task.assignedTo) {
+      } else if (task.assignedTo && viewerIsOrgWide) {
+        /*
+          Nobody this viewer was given — so not their person.
+
+          `memberMap` holds the rosters of the spaces the viewer can see. A
+          name missing from it belongs to somebody working at a site they
+          supervise while ROSTERED somewhere else: the task is theirs to see,
+          the person is not. Falling back to the assignee embedded in the task
+          put that person on the board anyway — a face, a status and a current
+          job, assembled from somebody the viewer was never shown.
+
+          An org-wide viewer keeps the fallback: their roster is everyone, so
+          the only person it can add is somebody with no space at all, which is
+          the case it was written for.
+        */
         onTask.push({
           userId: task.assignedTo.id,
           initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
@@ -411,7 +472,7 @@ export function AdminDashboard() {
   }, [
     locations, assignments, tasks, memberMap,
     clockedInUserIds, onBreakUserIds, attendanceLocationMap, attendanceRemoteMap, activeTaskMap, memberOnline,
-    i18n.language,
+    viewerIsOrgWide, i18n.language,
   ]);
 
   // ── Live events ──────────────────────────────────────────────────────────
@@ -663,7 +724,14 @@ export function AdminDashboard() {
                       box={box}
                       compact
                       onPersonPress={handlePersonPress}
-                      onAssign={setAssignLocationId}
+                      /*
+                        Assigning somebody to a space is
+                        `@RequirePermissionInSpace('canManageWorkspaces')`. A
+                        supervisor who oversees one site holds no such thing, so
+                        the button led straight to a refusal — no handler, no
+                        button.
+                      */
+                      onAssign={canManageMembersInSpace(user, box.locationId) ? setAssignLocationId : undefined}
                       onViewTasks={handleViewTasks}
                     />
                   ))}

@@ -7,7 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Plus, Users } from "lucide-react"
 
-import { getSpaceScope } from "@hbcfield/shared/client"
+import { getSpaceScope, canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import {
   tasksApi,
@@ -44,7 +44,6 @@ import { useDashboardData } from "../_lib/use-dashboard-data"
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"
-import { canManageSpace } from "@/lib/can-manage-space"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

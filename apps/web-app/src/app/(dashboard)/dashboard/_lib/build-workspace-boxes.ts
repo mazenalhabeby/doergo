@@ -1,12 +1,11 @@
 import i18n from "@/i18n"
-import { isTaskOverdue } from "@hbcfield/shared/client"
+import { isTaskOverdue, canManageSpace, canManageMembersInSpace } from "@hbcfield/shared/client"
 import type { OrgMember, Task } from "@/lib/api"
 import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 
 import { getAvatarColor, getInitials } from "../_components/helpers"
 
 import { getEmployeeStatus, isOnline, memberToPersonNode } from "./presence"
-import { canManageSpace, canManageMembersInSpace } from "@/lib/can-manage-space"
 
 /**
  * Build the dashboard's space cards.

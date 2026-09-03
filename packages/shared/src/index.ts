@@ -55,6 +55,7 @@ export * from './access/task-access';
 // Narrowing a query to the spaces a caller was granted — the other half of a
 // guard that can only widen. See the file for why [] and null differ.
 export * from './access/space-scope';
+export * from './access/space-manage';
 export * from './access/cross-org-chat';
 export * from './access/legacy-flag-migration';
 export * from './access/workflow-modules';

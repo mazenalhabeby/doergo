@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
-import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
+import { AVAILABLE_MODULES, canManageSpace } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceLifecycle } from "./_hooks/use-space-lifecycle"
@@ -51,7 +51,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { canManageSpace } from "@/lib/can-manage-space"
 import {
   AlertDialog,
   AlertDialogAction,

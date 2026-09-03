@@ -1,4 +1,11 @@
-import { accessAllows } from "@hbcfield/shared/client"
+/**
+ * May this member manage THIS space, and its people?
+ *
+ * Shared because both clients ask it: the rule lived in the web app, and the
+ * mobile dashboard — which grew the same Assign button — had no way to ask it
+ * without a second copy that would drift.
+ */
+import { accessAllows } from '../types/permissions';
 
 /**
  * May this member configure THIS space?
@@ -36,15 +43,22 @@ export function canManageSpace(
 /**
  * May this member add or remove people in THIS space?
  *
- * A different permission from configuring the space, and kept a separate
- * function so the two cannot be conflated again: the dashboard offered both
- * buttons on a "can view all tasks" check, which is neither of them.
+ * A different question from configuring the space, and kept a separate function
+ * so the two cannot be conflated again: the dashboard offered both buttons on a
+ * "can view all tasks" check, which is neither of them.
+ *
+ * It asks for the permission the endpoint actually enforces —
+ * `POST /locations/:id/members` is `@RequirePermissionInSpace
+ * ('canManageWorkspaces')`, and holding `canManageUsers` does not satisfy that
+ * guard. Asking for the wrong one showed the Assign button to a member the
+ * server then refused, which reads as a broken screen rather than a permission.
+ * Every admin holds both, so nobody who could use the button loses it.
  */
 export function canManageMembersInSpace(
-  user: { canManageUsers?: boolean; access?: unknown } | null | undefined,
+  user: { canManageWorkspaces?: boolean; access?: unknown } | null | undefined,
   spaceId?: string,
 ): boolean {
   if (!user) return false
-  if (user.canManageUsers === true) return true
-  return accessAllows(user.access as Parameters<typeof accessAllows>[0], "canManageUsers", spaceId)
+  if (user.canManageWorkspaces === true) return true
+  return accessAllows(user.access as Parameters<typeof accessAllows>[0], "canManageWorkspaces", spaceId)
 }

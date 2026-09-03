@@ -21,7 +21,7 @@ import {
   Workflow,
 } from "lucide-react"
 
-import { accessAllows } from "@hbcfield/shared/client"
+import { accessAllows, canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -30,7 +30,6 @@ import { PlanGate } from "@/components/plan-gate"
 import { cn } from "@/lib/utils"
 
 import dynamic from "next/dynamic"
-import { canManageSpace } from "@/lib/can-manage-space"
 
 // Every tab is lazy (audit S-C1). This page has ten of them and they reach ~6,400
 // lines with their dialogs — the asset-kind editor alone is 670, the rota 733 — and

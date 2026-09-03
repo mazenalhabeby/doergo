@@ -44,6 +44,8 @@ export * from './access/task-access';
 // Narrowing a query to the spaces a caller was granted — the other half of a
 // guard that can only widen. See the file for why [] and null differ.
 export * from './access/space-scope';
+// Who may configure a space, and add people to it — asked by web and mobile alike.
+export * from './access/space-manage';
 
 // Code lengths and charsets for invitations and org join codes. Pure data, and
 // the CLIENTS are what need them: the inputs that receive a code cap their

@@ -56,6 +56,21 @@ export const locationsApi = {
     });
   },
 
+  /**
+   * Rosters for several spaces in ONE request — the people, not just their ids.
+   *
+   * `/locations` embeds each space's assignments as bare user ids, and the
+   * member directory (`/organizations/members`) is an ORG-wide read: a member
+   * whose authority comes from a SPACE is refused it, so their own space's
+   * board came back with nobody on it. This endpoint answers with the people,
+   * scoped server-side to the spaces the caller may actually see.
+   */
+  getRosters: async (locationIds: string[]): Promise<LocationAssignment[]> => {
+    if (locationIds.length === 0) return [];
+    const result = await fetchWithAuth<any>(`/locations/rosters?ids=${locationIds.join(',')}`);
+    return Array.isArray(result) ? result : result?.data || [];
+  },
+
   getAssignedMembers: async (locationId: string): Promise<LocationAssignment[]> => {
     const result = await fetchWithAuth<any>(`/locations/${locationId}/members`);
     return Array.isArray(result) ? result : result?.data || [];
