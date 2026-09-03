@@ -161,12 +161,28 @@ export function TopNavbar() {
   const fullName = `${user.firstName} ${user.lastName}`
 
   // Build visible nav items based on permissions
+  /*
+    Read through hasPermission, not the flat columns.
+
+    Those columns are the ORG-wide resolution, so a member whose authority comes
+    from a SPACE role held none of them and this navbar rendered almost nothing
+    for them — the exact person we just gave a role to could not reach the
+    screen it applies to. hasPermission now answers "org-wide OR in any space",
+    and each screen narrows to the spaces they actually hold.
+  */
   const showTeam = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
   // Employees collaborate INSIDE their space (members appear in the space view),
   // so there is no separate employee "Team" nav item on web.
-  const showSpaces = user.canManageWorkspaces || user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
-  const showSchedule = user.canViewAllTasks
-  const showAttendance = user.canViewSpaceAttendance || user.canViewAllTasks
+  // The workspaces list carries no permission guard and is scoped per member,
+  // so anyone holding a task or rota grant IN a space can safely be shown the
+  // way to reach it — which for an external member is the only way in.
+  const showSpaces =
+    user.canManageWorkspaces ||
+    user.canManageUsers ||
+    hasPermission('canViewAllTasks') ||
+    hasPermission('canViewSpaceAttendance')
+  const showSchedule = hasPermission('canViewAllTasks') || hasPermission('canManageRota')
+  const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
   // CRM navbar tab: for members with CRM access who are NOT org-level managers.
   // Org admins/managers reach the CRM via the Spaces nav → a space's Customers tab,

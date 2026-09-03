@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
-import { hasFeatureModule, orgHasAddOn, isAddOn, isAdmin } from '@hbcfield/shared/client';
+import { hasFeatureModule, orgHasAddOn, isAddOn, isAdmin, accessAllowsAnywhere } from '@hbcfield/shared/client';
 import { DashboardSkeleton } from '@/components/skeletons';
 
 // User type
@@ -383,7 +383,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // The permission flags are named columns on the user; indexing by a
     // runtime string needs the record view of it, not a hole in the type.
     if ((user as unknown as Record<string, unknown>)[perm] === true) return true;
-    return user.access?.org?.[perm] === true;
+    /*
+      Held org-wide, OR in any single space.
+
+      This read `access.org` alone, and the org flags are built with no spaceId
+      — so a member whose authority comes from a SPACE role held none of them
+      and the app rendered almost nothing for them: no Duty Roster, no Tasks,
+      an empty shell for somebody who had just been given a role.
+
+      Any-space is the right test for what to RENDER. It cannot widen real
+      access: the server refuses independently, and every attendance read is
+      narrowed to the caller's own spaces, so an item shown here opens a screen
+      showing only what they were actually granted.
+    */
+    return accessAllowsAnywhere(user.access as never, perm as never);
   }, [user]);
 
   // Manual refresh function
