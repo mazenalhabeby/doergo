@@ -33,7 +33,17 @@ interface DatePickerModalProps {
   onSelect: (date: Date) => void;
   onClear: () => void;
   onClose: () => void;
+  /**
+   * Earliest day that may be chosen. ABSENT MEANS NO LIMIT.
+   *
+   * It used to default to today, which made this picker future-only whatever it
+   * was asked for — so attendance, which is always about days that have already
+   * happened, opened on a month with every day greyed out and no way to say so.
+   * A screen that wants "not in the past" says so; the calendar has no opinion.
+   */
   minDate?: Date;
+  /** Latest day that may be chosen. Absent means no limit. */
+  maxDate?: Date;
   title?: string;
 }
 
@@ -71,6 +81,7 @@ export function DatePickerModal({
   onClear,
   onClose,
   minDate,
+  maxDate,
   title,
 }: DatePickerModalProps) {
   const { colors, isDark } = useTheme();
@@ -116,8 +127,9 @@ export function DatePickerModal({
     onClose();
   }, [onSelect, onClose]);
 
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const minDateStart = minDate ? new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate()) : todayStart;
+  const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const minDateStart = minDate ? dayStart(minDate) : null;
+  const maxDateStart = maxDate ? dayStart(maxDate) : null;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -228,7 +240,9 @@ export function DatePickerModal({
 
                 const isToday = isSameDay(date, today);
                 const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
-                const isPast = date < minDateStart;
+                const outOfRange =
+                  (minDateStart !== null && date < minDateStart) ||
+                  (maxDateStart !== null && date > maxDateStart);
                 const isWeekend = colIdx >= 5;
 
                 return (
@@ -240,15 +254,15 @@ export function DatePickerModal({
                       isToday && !isSelected && [styles.dayCellToday, { borderColor: COLORS.primary }],
                     ]}
                     onPress={() => handleSelect(date)}
-                    disabled={isPast}
+                    disabled={outOfRange}
                     activeOpacity={0.6}
                   >
                     <Text
                       style={[
                         styles.dayText,
                         { color: colors.textPrimary },
-                        isPast && { color: colors.borderLight, opacity: 0.4 },
-                        isWeekend && !isPast && !isSelected && { color: colors.textMuted },
+                        outOfRange && { color: colors.borderLight, opacity: 0.4 },
+                        isWeekend && !outOfRange && !isSelected && { color: colors.textMuted },
                         isSelected && { color: '#ffffff', fontWeight: FONT_WEIGHT.bold },
                       ]}
                     >
@@ -265,6 +279,12 @@ export function DatePickerModal({
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
             <TouchableOpacity
+              // Not offered when today itself is outside the allowed range — a
+              // shortcut to a day the calendar refuses is worse than no shortcut.
+              disabled={
+                (minDateStart !== null && dayStart(today) < minDateStart) ||
+                (maxDateStart !== null && dayStart(today) > maxDateStart)
+              }
               onPress={() => { handleSelect(today); }}
               style={[styles.todayBtn, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9' }]}
               activeOpacity={0.7}

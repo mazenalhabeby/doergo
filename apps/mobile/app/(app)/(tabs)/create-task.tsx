@@ -291,6 +291,9 @@ export default function CreateTaskScreen() {
           onSelect={setDueDate}
           onClear={() => setDueDate(null)}
           onClose={() => setShowDatePicker(false)}
+          // A due date is not in the past. Said here now that the calendar
+          // itself has no opinion about which days are allowed.
+          minDate={new Date()}
           title={t('createTask.dueDateLabel')}
         />
 

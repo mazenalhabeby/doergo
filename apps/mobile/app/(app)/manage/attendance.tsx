@@ -108,6 +108,19 @@ export default function AttendanceReviewScreen() {
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
+  /** One Date for the calendars, so they do not re-render on every keystroke. */
+  const TODAY = useMemo(() => new Date(), []);
+  /*
+    Where the range picker goes after this pick.
+
+    The calendar closes itself after a selection — it calls `onSelect` and then
+    `onClose`, in that order. Setting the second step inside `onSelect` was
+    therefore undone a line later by the close handler, so choosing From simply
+    shut the calendar and To was never asked for. The step is parked here and
+    read by `onClose`, which is the one that runs last.
+  */
+  const nextRangeStepRef = useRef<'to' | null>(null);
+
   const lastLoadedRef = useRef<Record<Segment, number>>({ approvals: 0, records: 0, noshows: 0 });
   const feedOf = { approvals, records, noshows: noShows }[segment];
 
@@ -616,17 +629,35 @@ export default function AttendanceReviewScreen() {
           const iso = isoFromDate(d);
           if (pickingRange === 'from') {
             setCustomFrom(iso);
-            // The second half follows immediately — a range is one intention,
-            // not two errands.
+            // A one-day window until the second half says otherwise, so the
+            // range is always answerable even if they stop here.
             if (!customTo || customTo < iso) setCustomTo(iso);
-            setPickingRange('to');
+            // The second half follows immediately — a range is one intention,
+            // not two errands. Handed to onClose; see nextRangeStepRef.
+            nextRangeStepRef.current = 'to';
           } else {
-            setCustomTo(iso < (customFrom ?? iso) ? (customFrom as string) : iso);
-            setPickingRange(null);
+            // Picking an end before the start would be a window with no days in
+            // it; the earlier date wins and becomes the start.
+            if (customFrom && iso < customFrom) {
+              setCustomFrom(iso);
+              setCustomTo(customFrom);
+            } else {
+              setCustomTo(iso);
+            }
           }
         }}
-        onClear={() => setPickingRange(null)}
-        onClose={() => setPickingRange(null)}
+        onClear={() => {
+          nextRangeStepRef.current = null;
+          setPickingRange(null);
+        }}
+        onClose={() => {
+          const next = nextRangeStepRef.current;
+          nextRangeStepRef.current = null;
+          setPickingRange(next);
+        }}
+        // Attendance is always about days that have already happened; the other
+        // end is open, so last year's payroll question can be asked.
+        maxDate={TODAY}
         title={t(pickingRange === 'to' ? 'attendanceReview.rangeTo' : 'attendanceReview.rangeFrom')}
       />
     </View>

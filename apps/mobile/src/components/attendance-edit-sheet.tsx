@@ -143,6 +143,7 @@ export function AttendanceEditSheet({
   const [notes, setNotes] = useState('');
   const [reason, setReason] = useState('');
   const [picking, setPicking] = useState<'in' | 'out' | null>(null);
+  const today = useMemo(() => new Date(), []);
   const [saving, setSaving] = useState(false);
 
   // Reload the form from the entry each time it opens, so a cancelled edit
@@ -290,6 +291,8 @@ export function AttendanceEditSheet({
           setPicking(null);
         }}
         onClose={() => setPicking(null)}
+        // A shift that has not happened yet cannot be corrected.
+        maxDate={today}
         title={t(picking === 'out' ? 'attendanceReview.edit.clockOut' : 'attendanceReview.edit.clockIn')}
       />
     </>

@@ -458,6 +458,9 @@ export function SupplyDocumentSheet({
                   onSelect={(d) => { setExpiresOn(d); setShowDate(false); }}
                   onClear={() => { setExpiresOn(null); setShowDate(false); }}
                   onClose={() => setShowDate(false)}
+                  // An expiry date is in the future — the calendar no longer
+                  // assumes that for everybody.
+                  minDate={new Date()}
                   title={t('documents.supply.expiresOn')}
                 />
               </>
