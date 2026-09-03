@@ -51,6 +51,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { canManageSpace } from "@/lib/can-manage-space"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -198,6 +199,10 @@ export default function SpacesPage() {
                 space={location}
                 workflows={workflows || []}
                 isAdmin={isAdmin}
+                // Per SPACE, not per org: a Space Manager may configure their
+                // own space and no other, so one org-wide answer would be
+                // wrong in both directions.
+                canConfigure={canManageSpace(user, location.id)}
                 index={index}
                 onDelete={() => setArchiveTarget(location)}
                 onReactivate={() => lifecycle.restore.mutate(location.id)}
@@ -289,6 +294,7 @@ const SpaceCard = memo(function SpaceCard({
   onReactivate,
   onViewTasks,
   onOpenSettings,
+  canConfigure,
 }: {
   space: CompanyLocation
   workflows: StatusWorkflow[]
@@ -298,6 +304,8 @@ const SpaceCard = memo(function SpaceCard({
   onReactivate: () => void
   onViewTasks: () => void
   onOpenSettings: () => void
+  /** May this member configure THIS space — see canManageSpace. */
+  canConfigure: boolean
 }) {
   const { t } = useTranslation()
   const { data: assignments } = useQuery({
@@ -395,6 +403,10 @@ const SpaceCard = memo(function SpaceCard({
         <div className="flex items-center gap-2 shrink-0">
           {space.isActive && (
             <>
+              {/* Offered only to somebody who may actually use it. It used to be
+                  shown to everyone and landed them on a permission wall — the
+                  page refused correctly, but the button had already promised. */}
+              {canConfigure && (
               <Button
                 data-tour={index === 0 ? "spaces-card-configure" : undefined}
                 variant="outline"
@@ -405,6 +417,7 @@ const SpaceCard = memo(function SpaceCard({
                 <Settings2 className="h-3.5 w-3.5" />
                 {t("locations.configure")}
               </Button>
+              )}
               <Button
                 data-tour={index === 0 ? "spaces-card-viewtasks" : undefined}
                 variant="ghost"
@@ -425,10 +438,12 @@ const SpaceCard = memo(function SpaceCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onOpenSettings}>
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  {t("locations.spaceSettings")}
-                </DropdownMenuItem>
+                {canConfigure && (
+                  <DropdownMenuItem onClick={onOpenSettings}>
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    {t("locations.spaceSettings")}
+                  </DropdownMenuItem>
+                )}
                 {space.isActive ? (
                   <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
                     <ToggleLeft className="mr-2 h-4 w-4" />

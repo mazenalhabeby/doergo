@@ -30,6 +30,7 @@ import { PlanGate } from "@/components/plan-gate"
 import { cn } from "@/lib/utils"
 
 import dynamic from "next/dynamic"
+import { canManageSpace } from "@/lib/can-manage-space"
 
 // Every tab is lazy (audit S-C1). This page has ten of them and they reach ~6,400
 // lines with their dialogs — the asset-kind editor alone is 670, the rota 733 — and
@@ -63,12 +64,9 @@ export default function SpaceSettingsPage() {
   */
   // canManageWorkspaces is the capability this page actually needs; canManageUsers
   // is kept because it used to grant it, and every existing manager holds it.
-  const access = (user as { access?: Parameters<typeof accessAllows>[0] } | null)?.access
-  const canManage =
-    !!user?.canManageWorkspaces ||
-    !!user?.canManageUsers ||
-    accessAllows(access, "canManageWorkspaces", spaceId) ||
-    accessAllows(access, "canManageUsers", spaceId)
+  // Shared with the Configure button on the spaces list, so the control and the
+  // page it opens can never disagree about who may use it.
+  const canManage = canManageSpace(user, spaceId)
 
   /*
     The open tab lives in the URL, not only in state.
