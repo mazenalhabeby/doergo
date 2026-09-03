@@ -83,7 +83,7 @@ describe('organization ownership', () => {
         prevent, and a half-applied transfer is how you arrive there.
       */
       prisma.organization.findUnique.mockResolvedValue({ ownerId: OWNER });
-      prisma.user.findFirst.mockResolvedValue({ id: OTHER_ADMIN, role: 'EMPLOYEE', firstName: 'A', lastName: 'B' });
+      prisma.user.findFirst.mockResolvedValue({ id: OTHER_ADMIN, role: 'ADMIN', firstName: 'A', lastName: 'B', isExternal: false });
 
       const r: any = await service.transferOwnership({
         organizationId: ORG, requesterId: OWNER, newOwnerId: OTHER_ADMIN,
@@ -93,6 +93,44 @@ describe('organization ownership', () => {
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { role: 'ADMIN' } }),
       );
+    });
+
+    /*
+      The target must ALREADY be an admin.
+
+      This case used to assert the opposite — that a transfer to an EMPLOYEE
+      succeeded and promoted them. That is a privilege escalation performed by a
+      row menu: one click made any member an admin, and no audit line described
+      it as a promotion. Making somebody an admin and handing them the
+      organization are two decisions, taken one at a time.
+    */
+    it('refuses transferring to a member who is not already an admin', async () => {
+      prisma.organization.findUnique.mockResolvedValue({ ownerId: OWNER });
+      prisma.user.findFirst.mockResolvedValue({ id: OTHER_ADMIN, role: 'EMPLOYEE', firstName: 'A', lastName: 'B', isExternal: false });
+
+      const r: any = await service.transferOwnership({
+        organizationId: ORG, requesterId: OWNER, newOwnerId: OTHER_ADMIN,
+      });
+      expect(r.success).toBe(false);
+      expect(r.message).toMatch(/admin/i);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    /*
+      And never to somebody who works for another company. The transfer promotes
+      its target, so this would make a client's supervisor an admin AND the
+      owner of the organization, from a dropdown.
+    */
+    it('refuses transferring to an external member', async () => {
+      prisma.organization.findUnique.mockResolvedValue({ ownerId: OWNER });
+      prisma.user.findFirst.mockResolvedValue({ id: OTHER_ADMIN, role: 'ADMIN', firstName: 'A', lastName: 'B', isExternal: true });
+
+      const r: any = await service.transferOwnership({
+        organizationId: ORG, requesterId: OWNER, newOwnerId: OTHER_ADMIN,
+      });
+      expect(r.success).toBe(false);
+      expect(r.message).toMatch(/external/i);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('refuses transferring to the current owner', async () => {

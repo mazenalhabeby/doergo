@@ -1178,11 +1178,45 @@ export class UsersService {
 
     const target = await this.prisma.user.findFirst({
       where: { id: data.newOwnerId, organizationId: data.organizationId, isActive: true },
-      select: { id: true, role: true, firstName: true, lastName: true },
+      select: { id: true, role: true, firstName: true, lastName: true, isExternal: true },
     });
     // Scoped to the organization: an id from another tenant must read as "not a
     // member here", never as a transfer.
     if (!target) return refuse(HttpStatus.NOT_FOUND, 'That member is not part of this organization.');
+
+    /*
+      Never to somebody who works for a client or partner.
+
+      This transfer PROMOTES its target to ADMIN, so handing it to an external
+      member would make a client's supervisor an admin and the owner of the
+      organization in one step — the whole tenant, from a row menu. There is no
+      legitimate case for it, so it is refused outright rather than warned about.
+    */
+    if (target.isExternal) {
+      return refuse(
+        HttpStatus.BAD_REQUEST,
+        'Ownership cannot be transferred to an external member — they work for another company.',
+      );
+    }
+
+    /*
+      The new owner must ALREADY be an admin.
+
+      Ownership used to promote whoever received it, which meant one click on a
+      row menu turned any member into an admin — a privilege escalation that
+      nobody explicitly approved and that no audit line describes as one. Making
+      somebody an admin and handing them the organization are two decisions, and
+      an owner should have to take them one at a time.
+
+      The role write below stays: an admin who is already an admin is unchanged
+      by it, and it keeps the invariant true if the two ever drift.
+    */
+    if (target.role !== Role.ADMIN) {
+      return refuse(
+        HttpStatus.BAD_REQUEST,
+        'Ownership can only be transferred to an admin. Make them an admin first, then transfer.',
+      );
+    }
 
     if (!org.ownerId) {
       const requester = await this.prisma.user.findFirst({

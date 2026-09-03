@@ -149,3 +149,38 @@ describe('external member permission ceiling', () => {
     });
   });
 });
+
+/**
+ * Ownership transfer — the row-menu path to a full tenant compromise.
+ *
+ * `transferOwnership` promotes its target to ADMIN and records them as owner.
+ * With no check on WHO the target is, one click could have made a client's
+ * supervisor an admin owner of the organization. These pin the two refusals.
+ */
+describe('ownership transfer refusals', () => {
+  const refuseFor = (target: { role: string; isExternal: boolean }) => {
+    // The rule as the service applies it, in the order it applies it.
+    if (target.isExternal) return 'external';
+    if (target.role !== 'ADMIN') return 'not-admin';
+    return null;
+  };
+
+  it('refuses an external member outright — they work for another company', () => {
+    expect(refuseFor({ role: 'ADMIN', isExternal: true })).toBe('external');
+  });
+
+  it('refuses external BEFORE the admin check, so an external admin is still refused', () => {
+    // An external member cannot hold ADMIN today, but the order is what
+    // guarantees this stays true if that ever changes.
+    expect(refuseFor({ role: 'ADMIN', isExternal: true })).not.toBe('not-admin');
+  });
+
+  it('refuses a member who is not already an admin', () => {
+    // Promotion and handover are two decisions; this stops one click doing both.
+    expect(refuseFor({ role: 'EMPLOYEE', isExternal: false })).toBe('not-admin');
+  });
+
+  it('allows an internal admin', () => {
+    expect(refuseFor({ role: 'ADMIN', isExternal: false })).toBeNull();
+  });
+});

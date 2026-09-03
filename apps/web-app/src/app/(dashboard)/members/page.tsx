@@ -399,7 +399,15 @@ function RowActions({
               permission grants, because an admin who could take ownership could
               then remove the founder.
             */}
-            {canTransferOwnership && !member.isOwner && (
+            {/*
+              Only to an admin, and never to an external member.
+
+              The transfer makes its target the owner, and the server refuses
+              both cases — offering it here would be a menu item whose only
+              outcome is an error. An external member reaching it would mean
+              handing a client's supervisor the organization.
+            */}
+            {canTransferOwnership && !member.isOwner && !member.isExternal && member.role === "ADMIN" && (
               <DropdownMenuItem onClick={() => onTransfer(member)}>
                 <Crown className="h-4 w-4 mr-2" />
                 {t("members.owner.transfer", "Transfer ownership")}
