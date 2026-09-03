@@ -11,7 +11,8 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "prebuild": "expo prebuild",
-    "eas-build-post-install": "cd ../../packages/shared && npx tsc"
+    "eas-build-post-install": "cd ../../packages/shared && npx tsc",
+    "test": "jest"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",

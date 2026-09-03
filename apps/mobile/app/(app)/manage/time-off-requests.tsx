@@ -9,7 +9,7 @@ import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
-import { timeOffApi, techniciansApi } from '../../../src/lib/api';
+import { timeOffApi } from '../../../src/lib/api';
 import type { TimeOffRequest } from '../../../src/lib/api/types';
 import { FilterChip } from '../../../src/components/filter-chip';
 import {
@@ -40,20 +40,24 @@ export default function TimeOffRequestsScreen() {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      // Fetch all technicians, then get time-off for each
-      const techResult = await techniciansApi.list({ status: 'active', limit: 100 });
-      const techs = Array.isArray(techResult) ? techResult : (techResult as any)?.data || [];
+      /*
+        One request, not one per employee.
 
-      const allRequests: any[] = [];
-      for (const tech of techs) {
-        try {
-          const reqs = await timeOffApi.list(tech.id);
-          const list = Array.isArray(reqs) ? reqs : [];
-          list.forEach((r: any) => {
-            allRequests.push({ ...r, techName: `${tech.firstName} ${tech.lastName}`, techId: tech.id });
-          });
-        } catch { /* skip */ }
-      }
+        This listed the whole staff and then asked each of them for their leave
+        — a fan-out that grew with the payroll and capped silently at a hundred
+        people. It also could not work for a supervisor at all: the employee
+        directory is an org-wide read they are refused, so the loop had nobody
+        to ask about.
+
+        The org endpoint answers with what this caller may decide — everyone,
+        or their own crew — and brings the member with each row.
+      */
+      const rows = await timeOffApi.listOrg();
+      const allRequests = rows.map((r: any) => ({
+        ...r,
+        techName: `${r.technician?.firstName ?? ''} ${r.technician?.lastName ?? ''}`.trim(),
+        techId: r.technician?.id ?? r.technicianId,
+      }));
 
       // Sort: pending first, then by date
       allRequests.sort((a, b) => {

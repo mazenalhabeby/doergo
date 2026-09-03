@@ -11,9 +11,9 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, type CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser, type CurrentUserData, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { DocumentsGatewayService } from './documents.service';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor, requestContext } from './documents.actor';
 import {
@@ -230,10 +230,18 @@ export class DocumentsController {
   }
 
   @Get('compliance')
-  @RequirePermission('canAssignTasks')
-  @ApiOperation({ summary: 'Credential validity across the organization' })
+  // Space-aware, because assignment is: the board answers "why can this person
+  // not take the job", and that question now gets asked by someone who staffs
+  // one site. The service narrows the answer to the people they staff.
+  @RequirePermissionInSpace('canAssignTasks')
+  @ApiOperation({ summary: 'Credential validity for the people the caller assigns work to' })
   async compliance(@CurrentUser() user: CurrentUserData) {
-    return this.documents.compliance({ organizationId: user.organizationId });
+    return this.documents.compliance({
+      organizationId: user.organizationId,
+      scopeSpaceIds: isAdmin(user as never)
+        ? undefined
+        : spacesGranting(user.access as never, 'canAssignTasks') ?? undefined,
+    });
   }
 
   /**

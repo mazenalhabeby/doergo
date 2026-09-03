@@ -117,10 +117,16 @@ export class EmployeesController {
   // ============================================================================
 
   @Get('time-off')
-  @ApiOperation({ summary: 'Get all time-off requests for the organization' })
+  @ApiOperation({ summary: 'Time-off requests: the organization, or the spaces the caller leads' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELED'] })
   @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
-  @RequirePermission('canViewAllTasks')
+  /*
+    Space-aware. Leave belongs to a person and `TimeOff` has no space column, so
+    this read looked impossible to scope and stayed org-wide — a supervisor
+    could not see their own crew's leave, which is half of running a rota. The
+    claim is over the PEOPLE though, so the service narrows through the roster.
+  */
+  @RequirePermissionInSpace('canViewAllTasks')
   async getOrgTimeOff(
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
     @CurrentUser() user?: CurrentUserData,
@@ -130,6 +136,8 @@ export class EmployeesController {
         { cmd: 'get_org_time_off' },
         {
           organizationId: user?.organizationId,
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           status,
         },
       ),
@@ -144,7 +152,9 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Approve or reject a time-off request' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @ApiResponse({ status: 200, description: 'Time-off request processed' })
-  @RequirePermission('canManageRota')
+  // Space-aware: the service checks the request's OWN person against the spaces
+  // this approver leads, so widening the guard cannot widen the authority.
+  @RequirePermissionInSpace('canManageRota')
   async approveTimeOff(
     @Param('timeOffId') timeOffId: string,
     @Body() body: { approved: boolean; rejectionReason?: string },
@@ -157,6 +167,7 @@ export class EmployeesController {
           timeOffId,
           organizationId: user.organizationId,
           approverId: user.id,
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canManageRota') ?? undefined,
           approved: body.approved,
           rejectionReason: body.rejectionReason,
         },

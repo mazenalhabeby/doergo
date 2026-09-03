@@ -1,4 +1,8 @@
-import { TaskStatus, type Task } from './api';
+// TaskStatus from the shared package rather than the api barrel: the barrel
+// pulls the fetch client and with it React Native, which would make this rule
+// untestable outside a device for no reason. The type import is erased.
+import { TaskStatus } from '@hbcfield/shared/client';
+import type { Task } from './api';
 
 /**
  * Which of these jobs would I actually drive to?

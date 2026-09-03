@@ -707,14 +707,42 @@ export class TechniciansService {
   /**
    * Get all time-off requests for an organization
    */
-  async getOrgTimeOff(dto: GetOrgTimeOffDto) {
-    const { organizationId, status } = dto;
+  /**
+   * Time off across the organization — or across the spaces a member leads.
+   *
+   * Leave belongs to a PERSON, not to a site, which is why `TimeOff` has no
+   * space column and why this looked unscopeable. But a supervisor's claim was
+   * never over the leave: it is over the PEOPLE. So the query narrows through
+   * the roster — the crew of the spaces they hold — and needs no schema change
+   * to do it.
+   *
+   * `scopeSpaceIds` follows the three-state convention used everywhere else:
+   * undefined means org-wide, and an EMPTY array means granted nowhere and must
+   * match nothing. Collapsing those two is how a scoped read becomes an org-wide
+   * one by accident.
+   */
+  async getOrgTimeOff(dto: GetOrgTimeOffDto & { scopeSpaceIds?: string[] }) {
+    const { organizationId, status, scopeSpaceIds } = dto;
 
     const where: any = {
       technician: { organizationId },
     };
     if (status) {
       where.status = status;
+    }
+    if (scopeSpaceIds !== undefined) {
+      if (scopeSpaceIds.length === 0) return success([]);
+      // One relation filter, served by the space-assignment index — not a
+      // roster fetched first and used as an `in` list.
+      where.technician = {
+        organizationId,
+        spaceAssignments: {
+          some: {
+            spaceId: { in: scopeSpaceIds },
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+          },
+        },
+      };
     }
 
     const timeOffs = await this.prisma.timeOff.findMany({
@@ -739,15 +767,22 @@ export class TechniciansService {
   /**
    * Approve or reject a time-off request
    */
-  async approveTimeOff(dto: ApproveTimeOffDto) {
-    const { timeOffId, organizationId, approverId, approved, rejectionReason } = dto;
+  async approveTimeOff(dto: ApproveTimeOffDto & { scopeSpaceIds?: string[] }) {
+    const { timeOffId, organizationId, approverId, approved, rejectionReason, scopeSpaceIds } = dto;
 
-    // Find the time-off request
+    // Find the time-off request. The roster comes with it, so the scope check
+    // below costs no second query.
     const timeOff = await this.prisma.timeOff.findUnique({
       where: { id: timeOffId },
       include: {
         technician: {
-          select: { organizationId: true },
+          select: {
+            organizationId: true,
+            spaceAssignments: {
+              where: { OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] },
+              select: { spaceId: true },
+            },
+          },
         },
       },
     });
@@ -759,6 +794,21 @@ export class TechniciansService {
     // Verify the time-off belongs to the organization
     if (timeOff.technician.organizationId !== organizationId) {
       throw new ForbiddenException('You can only approve time-off requests in your organization');
+    }
+
+    /*
+      And that this approver has a claim on THIS person.
+
+      The list is narrowed to their crew, but the route takes a request id
+      directly — so without this a member who leads one site could approve leave
+      for anybody in the company by id. Undefined means org-wide; an empty array
+      means nowhere, and refuses.
+    */
+    if (scopeSpaceIds !== undefined) {
+      const theirSpaces = timeOff.technician.spaceAssignments.map((a) => a.spaceId);
+      if (!theirSpaces.some((id) => scopeSpaceIds.includes(id))) {
+        throw new ForbiddenException('That member does not work in a workspace you manage');
+      }
     }
 
     // Verify the request is pending

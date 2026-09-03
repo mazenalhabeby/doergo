@@ -228,10 +228,37 @@ export class CredentialExpiryService {
    * One grouped read, not one query per member — a fifty-person organization
    * would otherwise open this screen fifty times over.
    */
-  async listCompliance(data: { organizationId: string }) {
+  /**
+   * Credential validity for the people this caller is responsible for.
+   *
+   * The board is gated on `canAssignTasks` on purpose — whoever hands out work
+   * needs to know WHY somebody dropped out of the assignable pool — and it
+   * returns validity and dates, never the certificate itself.
+   *
+   * That reasoning now has to answer a second question: responsible for WHOM.
+   * Assignment became space-aware, so a supervisor who staffs one site was
+   * either refused this board entirely or, if let in, handed the credential
+   * standing of everybody in the company. The scope narrows it to the people
+   * rostered where they assign — undefined for an org-wide holder, and an empty
+   * array (granted nowhere) matching nothing rather than everything.
+   */
+  async listCompliance(data: { organizationId: string; scopeSpaceIds?: string[] }) {
+    if (data.scopeSpaceIds?.length === 0) return [];
     const rows = await this.prisma.document.findMany({
       where: {
         organizationId: data.organizationId,
+        ...(data.scopeSpaceIds
+          ? {
+              user: {
+                spaceAssignments: {
+                  some: {
+                    spaceId: { in: data.scopeSpaceIds },
+                    OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+                  },
+                },
+              },
+            }
+          : {}),
         type: { isCredential: true, isActive: true },
         // PENDING_VERIFICATION is here on purpose: a renewal somebody has
         // already sent in is the single most useful thing to see beside a

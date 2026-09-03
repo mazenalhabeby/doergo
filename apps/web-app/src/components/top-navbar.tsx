@@ -192,6 +192,12 @@ export function TopNavbar() {
   */
   const showSchedule = user.canViewAllTasks === true || user.canManageRota === true
   const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
+  /*
+    Shift issues: the responsible party's view. `canViewAllTasks` — org-wide or
+    in one space — is exactly what the API treats as "oversees this work", so
+    the nav and the answer agree.
+  */
+  const showIssues = hasPermission('canViewAllTasks') || user.canManageUsers === true
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
   // CRM navbar tab: for members with CRM access who are NOT org-level managers.
   // Org admins/managers reach the CRM via the Spaces nav → a space's Customers tab,
@@ -324,6 +330,7 @@ export function TopNavbar() {
         showSpaces={showSpaces}
         showSchedule={showSchedule}
         showAttendance={showAttendance}
+        showIssues={showIssues}
         showReports={showReports}
         showInvoices={showInvoices}
         showMyTimeOff={showMyTimeOff}
@@ -440,6 +447,7 @@ export function TopNavbar() {
             pathname={pathname}
             showSchedule={showSchedule}
             showAttendance={showAttendance}
+            showIssues={showIssues}
             showMyTimeOff={showMyTimeOff}
             onOpen={prefetch.prefetchAttendance}
           />
@@ -749,12 +757,14 @@ function TimeAttendanceDropdown({
   pathname,
   showSchedule,
   showAttendance,
+  showIssues,
   showMyTimeOff,
   onOpen,
 }: {
   pathname: string
   showSchedule: boolean
   showAttendance: boolean
+  showIssues: boolean
   showMyTimeOff: boolean
   onOpen?: () => void
 }) {
@@ -791,11 +801,22 @@ function TimeAttendanceDropdown({
             </Link>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-          <Link href="/issues" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            {t("nav.sidebar.issues", "Shift Issues")}
-          </Link>
-        </DropdownMenuItem>
+        {/*
+          Offered to whoever the issues list will actually answer for.
+
+          It was unconditional, so every member saw a menu entry that led to a
+          page listing, at most, blockers they had reported themselves. The
+          server now answers a supervisor with the issues on the sites they
+          oversee — the same question `showAttendance` asks — so the entry
+          follows that instead of being shown to everybody.
+        */}
+        {showIssues && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer">
+            <Link href="/issues" className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              {t("nav.sidebar.issues", "Shift Issues")}
+            </Link>
+          </DropdownMenuItem>
+        )}
         {showSchedule && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/schedule" className="flex items-center gap-2 px-2 py-1.5 text-sm">
@@ -846,12 +867,14 @@ function MobileMenu({
   showDocumentCompliance,
   showManage,
   showCrm,
+  showIssues,
 }: {
   pathname: string
   showTeam: boolean
   showSpaces: boolean
   showSchedule: boolean
   showAttendance: boolean
+  showIssues: boolean
   showReports: boolean
   showInvoices: boolean
   showMyTimeOff: boolean
@@ -977,16 +1000,18 @@ function MobileMenu({
                 </Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-              <Link
-                href="/issues"
-                onClick={() => setOpen(false)}
-                className={cn(mobileItemBase, "pl-5", isActive(pathname, "/issues") ? mobileItemActiveStyle : mobileItemInactive)}
-              >
-                <AlertTriangle className="h-4 w-4" />
-                {t("nav.sidebar.issues", "Shift Issues")}
-              </Link>
-            </DropdownMenuItem>
+            {showIssues && (
+              <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+                <Link
+                  href="/issues"
+                  onClick={() => setOpen(false)}
+                  className={cn(mobileItemBase, "pl-5", isActive(pathname, "/issues") ? mobileItemActiveStyle : mobileItemInactive)}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  {t("nav.sidebar.issues", "Shift Issues")}
+                </Link>
+              </DropdownMenuItem>
+            )}
             {showSchedule && (
               <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
                 <Link

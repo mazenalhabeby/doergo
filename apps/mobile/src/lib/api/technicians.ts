@@ -17,6 +17,22 @@ export const techniciansApi = {
 
 // Time-Off API
 export const timeOffApi = {
+  /**
+   * Every request the caller may decide, in ONE call.
+   *
+   * The approvals screen used to list the employees and then ask for each one's
+   * leave — a fan-out that grew with the payroll, and one that a supervisor
+   * could not run at all, because the employee directory is an org-wide read
+   * they are refused. This endpoint answers with the organization for an
+   * org-wide holder and with their own crew for a supervisor, from the same
+   * request, because the server narrows it through the roster.
+   */
+  listOrg: async (status?: string): Promise<TimeOffRequest[]> => {
+    const endpoint = buildUrlWithQuery('/employees/time-off', { status });
+    const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });
+    return Array.isArray(result) ? result : result?.data ?? [];
+  },
+
   list: async (technicianId: string, status?: string): Promise<TimeOffRequest[]> => {
     const endpoint = buildUrlWithQuery(`/employees/${technicianId}/time-off`, { status });
     return fetchWithAuth<TimeOffRequest[]>(endpoint, { method: 'GET' });
