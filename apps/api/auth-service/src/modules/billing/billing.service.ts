@@ -478,21 +478,26 @@ export class BillingService {
         ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - Date.now()) / 86_400_000))
         : 0;
 
-    const session = await this.stripe.createCheckoutSessionForLines({
-      customerId,
-      lines,
-      successUrl,
-      cancelUrl,
-      ...(trialDays > 0 ? { trialDays } : {}),
-      // Server-side from the organization's own record — a client cannot ask to
-      // be invoiced instead of charged.
-      ...(collectionMethodFor(org.billingMode as BillingMode)
-        ? {
-            collectionMethod: collectionMethodFor(org.billingMode as BillingMode)!,
-            invoiceDueDays: org.invoiceDueDays,
-          }
-        : {}),
-    });
+    /*
+      Wrapped, because a Stripe rejection here reached the customer as a bare
+      "Internal server error" with nothing written to any log. The cause was a
+      parameter Stripe refuses; finding it took a reproduction against the live
+      API rather than a stack trace, which is the wrong way round.
+    */
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await this.stripe.createCheckoutSessionForLines({
+        customerId,
+        lines,
+        successUrl,
+        cancelUrl,
+        ...(trialDays > 0 ? { trialDays } : {}),
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      this.logger.error(`Checkout failed for org ${organizationId}: ${message}`);
+      return fail(HttpStatus.BAD_GATEWAY, `Stripe could not start checkout: ${message}`);
+    }
 
     await this.prisma.subscription.updateMany({
       where: { organizationId },
@@ -836,6 +841,33 @@ export class BillingService {
     // (officeSeats reduce above intentionally unused for now; seats are authoritative
     // from our DB via reconcileSeats — kept for future item-level attribution.)
     void officeSeats;
+
+    /*
+      Apply the organization's collection method now that a subscription EXISTS.
+
+      Stripe Checkout cannot carry one — it refuses the parameter outright — so
+      an INVOICE customer completes an ordinary checkout and the subscription
+      arrives as charge_automatically. This is the first moment it can be
+      corrected, and it uses the same `setCollectionMethod` the operator console
+      calls, so there is one implementation rather than two.
+
+      Best-effort and last: a webhook that already recorded the subscription
+      must not fail over this, or Stripe retries an event whose work is done.
+    */
+    try {
+      const billing = await this.prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { billingMode: true, invoiceDueDays: true },
+      });
+      const want = collectionMethodFor((billing?.billingMode ?? 'AUTOMATIC') as BillingMode);
+      if (want && sub.collection_method !== want) {
+        await this.stripe.setCollectionMethod(sub.id, want, billing?.invoiceDueDays ?? 14);
+        this.logger.log(`Collection method for org ${orgId} set to ${want}`);
+      }
+    } catch (e) {
+      this.logger.error(`Could not set collection method for org ${orgId}: ${(e as Error).message}`);
+    }
+
     return orgId;
   }
 }

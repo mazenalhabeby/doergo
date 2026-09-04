@@ -203,13 +203,6 @@ export class StripeService {
     successUrl: string;
     cancelUrl: string;
     trialDays?: number;
-    /**
-     * INVOICE mode: Stripe issues the invoice and emails it, the customer pays
-     * by transfer, and Stripe marks it paid. `days_until_due` is the payment
-     * term and is REQUIRED by Stripe whenever the method is send_invoice.
-     */
-    collectionMethod?: 'charge_automatically' | 'send_invoice';
-    invoiceDueDays?: number;
   }): Promise<Stripe.Checkout.Session> {
     const priceIds = await this.resolvePriceIds(p.lines.map((l) => l.lookupKey));
     const missing = p.lines.map((l) => l.lookupKey).filter((k) => !priceIds.get(k));
@@ -221,7 +214,18 @@ export class StripeService {
           'Run the catalogue sync before this organization can be billed.',
       );
     }
-    const invoiceMode = p.collectionMethod === 'send_invoice';
+    /*
+      ⚠️ NO `collection_method` here. Stripe refuses it outright —
+      "Received unknown parameter: subscription_data[collection_method]" — and
+      passing it broke checkout for EVERY organization, card ones included,
+      because charge_automatically was sent too.
+
+      A Checkout Session always creates a charge_automatically subscription.
+      INVOICE mode is applied to the subscription once it EXISTS, in
+      `syncSubscription` off the webhook, using the same `setCollectionMethod`
+      the operator console calls. One place decides the collection method, and
+      it is the place that can actually set it.
+    */
     return this.stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: p.customerId,
@@ -232,12 +236,7 @@ export class StripeService {
       tax_id_collection: { enabled: true },
       customer_update: { address: 'auto', name: 'auto' },
       automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },
-      subscription_data: {
-        ...(p.trialDays ? { trial_period_days: p.trialDays } : {}),
-        ...(p.collectionMethod ? { collection_method: p.collectionMethod } : {}),
-        // Required by Stripe for send_invoice, and meaningless without it.
-        ...(invoiceMode ? { days_until_due: Math.max(1, p.invoiceDueDays ?? 14) } : {}),
-      },
+      ...(p.trialDays ? { subscription_data: { trial_period_days: p.trialDays } } : {}),
     });
   }
 

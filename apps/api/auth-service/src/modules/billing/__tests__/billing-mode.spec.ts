@@ -54,3 +54,42 @@ describe('billing modes', () => {
     }
   });
 });
+
+/**
+ * Where the collection method can and cannot be set.
+ *
+ * Checkout REFUSES it — verified against the live API:
+ *   "Received unknown parameter: subscription_data[collection_method]"
+ * Passing it broke checkout for every organization, card ones included, because
+ * charge_automatically was sent too. A Checkout Session always produces a
+ * charge_automatically subscription; INVOICE is applied afterwards, to a
+ * subscription that exists.
+ */
+describe('the collection method is applied where it can be', () => {
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const read = (p: string) => fs.readFileSync(path.join(__dirname, p), 'utf8');
+
+  it('is never sent to Checkout', () => {
+    const stripe = read('../stripe.service.ts');
+    const idx = stripe.indexOf('checkout.sessions.create');
+    expect(idx).toBeGreaterThan(-1);
+    // The Checkout call itself must not carry it.
+    expect(stripe.slice(idx, idx + 900)).not.toContain('collection_method:');
+  });
+
+  it('is applied when the subscription arrives from the webhook', () => {
+    const billing = read('../billing.service.ts');
+    expect(billing).toContain('setCollectionMethod(sub.id, want');
+    // Best-effort: a webhook whose work is recorded must not fail over this,
+    // or Stripe retries an event that already succeeded.
+    expect(billing).toContain('Could not set collection method');
+  });
+
+  it('reports a Checkout rejection instead of a bare 500', () => {
+    // The failure reached the customer as "Internal server error" with nothing
+    // in any log; the cause had to be reproduced against the live API.
+    const billing = read('../billing.service.ts');
+    expect(billing).toContain('Stripe could not start checkout');
+  });
+});
