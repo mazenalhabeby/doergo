@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react"
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Boxes, Building2, CheckCircle2, Loader2, MapPin, PauseCircle, Briefcase, Handshake } from "lucide-react"
+import { Boxes, Building2, CheckCircle2, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, ChevronRight } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -121,8 +122,39 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
     })
   }
 
+  /*
+    What this workspace HAS, as links rather than tabs.
+
+    Clients, assets and portals moved to their own pages — they are content, not
+    settings, and this page is settings. The path from a workspace survives as
+    one row: the same screens, pre-filtered to this one, a click away. Only what
+    the workspace actually runs appears.
+  */
+  const mods = (space.enabledModules ?? []) as string[]
+  const contentLinks = [
+    { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") },
+    { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") },
+    { href: "/portals", label: t("portal.title", "Client portal"), Icon: LayoutTemplate, show: mods.includes("b2c_portal") },
+  ].filter((l) => l.show)
+
   return (
     <div className="max-w-3xl space-y-5">
+      {contentLinks.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {contentLinks.map(({ href, label, Icon }) => (
+            <Link
+              key={href}
+              href={`${href}?space=${space.id}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+            >
+              <Icon className="h-4 w-4 text-muted-foreground" />
+              {label}
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* ── Space details ── */}
       <Card>
         <CardHeader className="pb-3">

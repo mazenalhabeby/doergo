@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
@@ -11,9 +11,7 @@ import {
   CalendarClock,
   ChevronRight as ChevronRightNav,
   FileText,
-  Contact,
   Home,
-  Package,
   Loader2,
   Share2,
   ShieldAlert,
@@ -40,11 +38,20 @@ const ModulesTab = dynamic(() => import("./_components/modules-tab").then((m) =>
 const WorkflowTab = dynamic(() => import("./_components/workflow-tab").then((m) => m.WorkflowTab), { ssr: false })
 const MembersTab = dynamic(() => import("./_components/members-tab").then((m) => m.MembersTab), { ssr: false })
 const InvoicesTab = dynamic(() => import("./_components/invoices-tab").then((m) => m.InvoicesTab), { ssr: false })
-const CustomersTab = dynamic(() => import("./_components/customers-tab").then((m) => m.CustomersTab), { ssr: false })
-const PortalTab = dynamic(() => import("./_components/portal-tab").then((m) => m.PortalTab), { ssr: false })
-const AssetsTab = dynamic(() => import("./_components/assets-tab").then((m) => m.AssetsTab), { ssr: false })
 const SharingTab = dynamic(() => import("./_components/sharing-tab").then((m) => m.SharingTab), { ssr: false })
 
+
+/**
+ * Tabs that are no longer here, and where their screen lives now.
+ *
+ * Kept as data rather than three ifs so adding or reversing a move is one line,
+ * and so the redirect and the removal cannot disagree about which tabs moved.
+ */
+const MOVED_TABS: Record<string, string> = {
+  customers: "/clients",
+  assets: "/assets",
+  portal: "/portals",
+}
 
 export default function SpaceSettingsPage() {
   const { t } = useTranslation()
@@ -82,6 +89,20 @@ export default function SpaceSettingsPage() {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general")
 
+  /*
+    Where the content tabs went.
+
+    Clients, assets and portals moved to their own addresses — they are what a
+    workspace HAS, not how it is configured, and this page is settings. The tabs
+    are gone, so every link and bookmark that named one is sent to the page that
+    now owns that screen, pre-filtered to this workspace. Silently dropping them
+    on the General tab would look like the feature had been deleted.
+  */
+  useEffect(() => {
+    const moved = MOVED_TABS[searchParams.get("tab") ?? ""]
+    if (moved) router.replace(`${moved}?space=${spaceId}`)
+  }, [searchParams, router, spaceId])
+
   const openTab = (tab: string) => {
     setActiveTab(tab)
     const next = new URLSearchParams(searchParams.toString())
@@ -108,9 +129,12 @@ export default function SpaceSettingsPage() {
     { value: "workflow", label: t("locations.tabs.workflow"), icon: Workflow, show: true },
     { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
     { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
-    { value: "customers", label: t("customers.title", "Customers"), icon: Contact, show: mods.includes("crm") },
-    { value: "assets", label: t("assetKinds.title", "Assets"), icon: Package, show: mods.includes("assets") },
-    { value: "portal", label: t("portal.title", "Client portal"), icon: Building2, show: mods.includes("b2c_portal") },
+    /*
+      Customers, Assets and Client portal used to sit here. They are the
+      workspace's CONTENT, not its configuration, and each now has its own
+      address where the same component is mounted — see MOVED_TABS above and the
+      links on the General tab. Invoices stays: per-space billing IS a setting.
+    */
     { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" },
   ].filter((s) => s.show)
 
@@ -238,25 +262,6 @@ export default function SpaceSettingsPage() {
               <TabsContent value="sharing" className="mt-0">
                 <SharingTab spaceId={spaceId} spaceName={space.name} />
               </TabsContent>
-              {space?.enabledModules?.includes("crm") && (
-                <TabsContent value="customers" className="mt-0">
-                  <PlanGate feature="crm" modules={space?.enabledModules}>
-                    <CustomersTab spaceId={spaceId} />
-                  </PlanGate>
-                </TabsContent>
-              )}
-              {space?.enabledModules?.includes("assets") && (
-                <TabsContent value="assets" className="mt-0">
-                  <AssetsTab spaceId={spaceId} />
-                </TabsContent>
-              )}
-              {space?.enabledModules?.includes("b2c_portal") && (
-                <TabsContent value="portal" className="mt-0">
-                  <PlanGate feature="crm" modules={space?.enabledModules}>
-                    <PortalTab spaceId={spaceId} hasApartments onOpenModules={() => openTab("modules")} />
-                  </PlanGate>
-                </TabsContent>
-              )}
               {space?.kind === "CUSTOMER" && (
                 <TabsContent value="invoices" className="mt-0">
                   <PlanGate feature="invoicing">
