@@ -30,16 +30,11 @@ export default function AssetsPage() {
 
   return (
     <div className="mx-auto max-w-[1000px] px-6 py-6">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-          <Package className="h-5 w-5" />
-        </span>
-        <div>
-          <h1 data-tour="page-assets" className="text-lg font-semibold text-foreground">{t("assets.title")}</h1>
-          <p className="text-xs text-muted-foreground">
-            {scope.space ? scope.space.name : t("assets.subtitle")}
-          </p>
-        </div>
+      <div className="mb-4">
+        <h1 data-tour="page-assets" className="text-2xl font-semibold text-foreground">{t("assets.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {scope.space ? scope.space.name : t("assets.subtitle")}
+        </p>
       </div>
 
       {scope.showTabs && (

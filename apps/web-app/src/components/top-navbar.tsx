@@ -202,15 +202,21 @@ export function TopNavbar() {
   const uAccess = (user as { role?: string; access?: { org?: Record<string, boolean> } })
 
   /*
-    Is a module worth offering in the bar at all?
+    Is a module actually RUNNING in a workspace this member can see?
 
-    Modules are bought PER WORKSPACE, so the organization's own list is only
-    half the answer — a company running Assets on one site has it on that site
-    and not on the org. `spaceModules` is the union across the workspaces this
-    member can see, resolved with the session, so this costs no request.
+    Not "has the organization got it" — that was the first version and it was
+    wrong in the direction that matters: an organization can carry `crm` on its
+    own record while every workspace has an explicit list without it, and the
+    entry then led to a page that could only say "no workspace has this switched
+    on yet". A nav item promising a screen with nothing behind it is worse than
+    no nav item.
+
+    `spaceModules` is the union across the workspaces this member can see, with
+    a never-configured workspace counted as inheriting the organization's list —
+    resolved server-side with the session, so this costs no request and the nav
+    and the pages cannot answer differently.
   */
-  const moduleAnywhere = (m: string) =>
-    (user.orgModules ?? []).includes(m) || (user.spaceModules ?? []).includes(m)
+  const moduleAnywhere = (m: string) => (user.spaceModules ?? []).includes(m)
 
   /*
     Clients, at their own address.

@@ -13,7 +13,6 @@
  * changed; the route to them has.
  */
 import { useTranslation } from "react-i18next"
-import { Contact } from "lucide-react"
 
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { SpaceTabs } from "@/components/space-tabs"
@@ -27,23 +26,18 @@ export default function ClientsPage() {
 
   return (
     <div className="mx-auto max-w-[1000px] px-6 py-6">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-          <Contact className="h-5 w-5" />
-        </span>
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">{t("nav.crm", "CRM")}</h1>
-          <p className="text-xs text-muted-foreground">
-            {/*
-              Which workspace, said in words when the tabs are not there to say
-              it. A single-workspace organization should still know where its
-              clients live.
-            */}
-            {scope.space
-              ? t("clients.inWorkspace", "In {{name}}", { name: scope.space.name })
-              : t("clients.subtitleAll", "Every client in the organization.")}
-          </p>
-        </div>
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold text-foreground">{t("nav.crm", "CRM")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {/*
+            Which workspace, said in words when the tabs are not there to say
+            it. A single-workspace organization should still know where its
+            clients live.
+          */}
+          {scope.space
+            ? t("clients.inWorkspace", "In {{name}}", { name: scope.space.name })
+            : t("clients.subtitleAll", "Every client in the organization.")}
+        </p>
       </div>
 
       {scope.showTabs && (

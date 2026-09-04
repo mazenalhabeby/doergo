@@ -246,6 +246,15 @@ export class AuthService {
     userId: string,
     organizationId: string,
     isAdminUser: boolean,
+    /*
+      What a workspace runs when it has never been configured.
+
+      A space's own list overrides the organization's; an ABSENT list inherits
+      it — the same precedence the module gates apply. Without the fallback a
+      brand-new workspace looks like it runs nothing, and the navigation hides
+      features the organization is paying for.
+    */
+    orgFallback: string[] = [],
   ): Promise<string[]> {
     try {
       const spaces = await this.prisma.companyLocation.findMany({
@@ -268,7 +277,8 @@ export class AuthService {
       });
       const out = new Set<string>();
       for (const s of spaces) {
-        for (const m of (s.enabledModules as string[] | null) ?? []) out.add(m);
+        const own = s.enabledModules as string[] | null;
+        for (const m of own?.length ? own : orgFallback) out.add(m);
       }
       return [...out];
     } catch {
@@ -808,7 +818,12 @@ export class AuthService {
             orgModules: (user.organization?.enabledModules as string[] | null) || [],
             // Modules switched on in workspaces this member can see — see
             // visibleSpaceModules. Drives which top-level nav entries exist.
-            spaceModules: await this.visibleSpaceModules(user.id, user.organizationId!, isAdmin(user as never)),
+            spaceModules: await this.visibleSpaceModules(
+              user.id,
+              user.organizationId!,
+              isAdmin(user as never),
+              (user.organization?.enabledModules as string[] | null) ?? [],
+            ),
             // Billing tier + subscription status (lowercase) — drives plan gating.
             subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
@@ -1125,6 +1140,7 @@ export class AuthService {
               storedToken.user.id,
               storedToken.user.organizationId!,
               isAdmin(storedToken.user as never),
+              (storedToken.user.organization?.enabledModules as string[] | null) ?? [],
             ),
             subStatus: storedToken.user.organization?.suspendedAt ? 'canceled' : (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
@@ -1575,7 +1591,12 @@ export class AuthService {
           enabledModules: (userModules ?? organization?.enabledModules) || [],
           // Org FEATURE modules — always the org's set (drives hasModule/hasFeature).
           orgModules: (organization?.enabledModules as string[] | null) || [],
-          spaceModules: await this.visibleSpaceModules(user.id, user.organizationId!, isAdmin(user as never)),
+          spaceModules: await this.visibleSpaceModules(
+            user.id,
+            user.organizationId!,
+            isAdmin(user as never),
+            (organization?.enabledModules as string[] | null) ?? [],
+          ),
           // Billing status carried on req.user so the SubscriptionGuard enforces
           // the read-only lock with zero extra DB reads (cached with the user).
           subStatus: organization?.suspendedAt ? 'canceled' : (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
