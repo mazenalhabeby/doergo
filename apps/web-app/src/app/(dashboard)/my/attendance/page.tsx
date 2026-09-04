@@ -5,13 +5,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat } from "@/hooks"
 import { toast } from "sonner"
-import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home, ListChecks } from "lucide-react"
+import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home, ListChecks, Calendar as CalendarIcon } from "lucide-react"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
 import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { ProgressRing } from "@/components/progress-ring"
 import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
@@ -92,6 +94,74 @@ function LiveShift({ since, target }: { since: string; target: { start: number; 
       </div>
     </div>
   )
+}
+
+/**
+ * One date, picked the way the rest of the app picks dates.
+ *
+ * This was `<input type="date">`, which hands the job to the browser: an
+ * unstyled year list that opens outside the card, ignores the theme and looks
+ * different on every platform. The app already had the answer — a button, a
+ * popover and the shared Calendar, as the sprint and task dialogs use — so this
+ * is that composition rather than a fourth way of asking for a day.
+ *
+ * Values stay "yyyy-MM-dd" strings, because that is what the API takes and what
+ * the URL would carry; the Date object exists only while the calendar is open.
+ */
+function DateField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  min?: string
+  max?: string
+}) {
+  const { locale } = useTimeFormat()
+  const selected = value ? new Date(`${value}T00:00:00`) : undefined
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn("h-9 w-[168px] justify-start rounded-lg text-left text-sm font-normal", !value && "text-muted-foreground")}
+          >
+            <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
+            {selected
+              ? selected.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
+              : label}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <CalendarPicker
+            mode="single"
+            selected={selected}
+            onSelect={(d) => d && onChange(toISODate(d))}
+            // Bounds so the pair can never describe a window that runs backwards,
+            // and so nobody picks a day that has not happened.
+            disabled={(d) =>
+              d > new Date() ||
+              (!!min && toISODate(d) < min) ||
+              (!!max && toISODate(d) > max)
+            }
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+/** Local calendar day as yyyy-MM-dd — never via toISOString, which shifts to UTC. */
+function toISODate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
 export default function MyAttendancePage() {
@@ -307,7 +377,7 @@ export default function MyAttendancePage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 data-tour="page-my-attendance" className="text-2xl font-semibold text-foreground">{t("attendance.my.title")}</h1>
+        <h1 data-tour="page-my-attendance" className="text-2xl font-semibold text-foreground">{t("nav.myShifts", "My shifts")}</h1>
         <p className="text-sm text-muted-foreground">{t("attendance.my.subtitle")}</p>
       </div>
 
@@ -481,34 +551,28 @@ export default function MyAttendancePage() {
         one of them is furniture nobody needed.
       */}
       {period === "custom" && (
-        <div className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-border bg-card p-4">
-          <label className="text-xs text-muted-foreground">
-            {t("attendance.my.from", "From")}
-            <Input
-              type="date"
-              value={customFrom}
-              max={customTo || undefined}
-              onChange={(e) => setCustomFrom(e.target.value)}
-              className="mt-1 h-9 w-[160px]"
-            />
-          </label>
-          <label className="text-xs text-muted-foreground">
-            {t("attendance.my.to", "To")}
-            <Input
-              type="date"
-              value={customTo}
-              min={customFrom || undefined}
-              onChange={(e) => setCustomTo(e.target.value)}
-              className="mt-1 h-9 w-[160px]"
-            />
-          </label>
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-4">
+          <DateField
+            label={t("attendance.my.from", "From")}
+            value={customFrom}
+            onChange={setCustomFrom}
+            max={customTo || undefined}
+          />
+          <span className="pt-5 text-muted-foreground">—</span>
+          <DateField
+            label={t("attendance.my.to", "To")}
+            value={customTo}
+            onChange={setCustomTo}
+            min={customFrom || undefined}
+          />
           {!range && (
-            <p className="pb-2 text-xs text-muted-foreground">
+            <p className="pt-5 text-xs text-muted-foreground">
               {t("attendance.my.pickBoth", "Pick both dates — showing the last 7 days until then.")}
             </p>
           )}
         </div>
       )}
+
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</div>
       ) : entries.length === 0 ? (
