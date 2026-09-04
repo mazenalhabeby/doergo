@@ -32,6 +32,7 @@ import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { hasAccessModule, resolveCrmCaps } from "@hbcfield/shared/client"
+import { useMySections } from "@/hooks/use-my-sections"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
@@ -253,7 +254,6 @@ export function TopNavbar() {
   // the per-user modules, not suppressed just because management nav is shown.
   // (My Attendance hides only when the management Attendance view is present, to
   // avoid two "Attendance" links.)
-  const showMyTimeOff = hasAccessModule(user, "time_off")
   /*
     Personal documents.
 
@@ -262,7 +262,19 @@ export function TopNavbar() {
     sees no link at all, which is why nothing about this feature is visible to
     an existing customer until they choose it.
   */
-  const showMyDocuments = hasPlanFeature("documents")
+  /*
+    The Documents menu is now the ADMIN side of documents.
+
+    With "My documents" moved to Me, a plain member would have been left with a
+    dropdown containing nothing — it was gated on merely having the documents
+    capability, which everyone in a paying organization does. It appears when
+    there is something inside it to reach.
+  */
+  const showMyDocuments =
+    hasPlanFeature("documents") &&
+    (hasPermission("canIssueDocuments") ||
+      hasPermission("canViewMemberDocuments") ||
+      hasPermission("canManageDocumentTemplates"))
   /*
     The admin surface. Needs the add-on AND the permission to issue — unlike
     /my/documents, which is nobody's permission because it is their own file.
@@ -297,7 +309,6 @@ export function TopNavbar() {
   // Measured overflow for the navigation row (see hooks/use-overflow-nav).
   // Re-measures whenever the language changes, because that changes every width.
   const { containerRef: navRef, overflow: navOverflow } = useOverflowNav(i18n.language)
-  const showMyAttendance = hasAccessModule(user, "clock") && !showAttendance
   // "Manage" is the management hub — redundant with "Team", so only show it when
   // the user doesn't already have Team (i.e. not managers/admins).
   const showManage = hasAccessModule(user, "manage") && !showTeam
@@ -362,8 +373,6 @@ export function TopNavbar() {
         showIssues={showIssues}
         showReports={showReports}
         showInvoices={showInvoices}
-        showMyTimeOff={showMyTimeOff}
-        showMyAttendance={showMyAttendance}
         showManage={showManage}
         showCrm={showCrm}
         showAssets={showAssets}
@@ -516,8 +525,7 @@ export function TopNavbar() {
             showSchedule={showSchedule}
             showAttendance={showAttendance}
             showIssues={showIssues}
-            showMyTimeOff={showMyTimeOff}
-            onOpen={prefetch.prefetchAttendance}
+                onOpen={prefetch.prefetchAttendance}
           />
         )}
 
@@ -560,15 +568,7 @@ export function TopNavbar() {
         {/* Employee module-driven items. Personal Time Off shows standalone only
             when the user has no Time & Attendance dropdown to host it (i.e. a
             non-management member); managers get it inside that dropdown. */}
-        {showMyTimeOff && (
-          <Link href="/my/time-off"
-          data-nav-item
-          data-nav-href="/my/time-off"
-          data-nav-label={t("nav.timeOff")}
-          data-nav-active={isActive(pathname, "/my/time-off")} data-tour="nav-my-timeoff" className={cn(navItemBase, isActive(pathname, "/my/time-off") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            {t("nav.timeOff")}
-          </Link>
-        )}
+        <MeDropdown pathname={pathname} />
         {showMyDocuments && (
           <DocumentsDropdown
             pathname={pathname}
@@ -577,15 +577,6 @@ export function TopNavbar() {
             showTemplates={showDocumentTemplates}
             showCompliance={showDocumentCompliance}
           />
-        )}
-        {showMyAttendance && (
-          <Link href="/my/attendance"
-          data-nav-item
-          data-nav-href="/my/attendance"
-          data-nav-label={t("nav.sidebar.attendance")}
-          data-nav-active={isActive(pathname, "/my/attendance")} data-tour="nav-my-attendance" className={cn(navItemBase, isActive(pathname, "/my/attendance") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive)}>
-            {t("nav.sidebar.attendance")}
-          </Link>
         )}
         {showManage && (
           <Link href="/manage"
@@ -721,7 +712,11 @@ function DocumentsDropdown({
     three of the four share a prefix.
   */
   const items = [
-    { href: "/my/documents", label: t("nav.myDocuments"), show: true },
+    /*
+      "My documents" moved to the Me menu, where the member's own things live.
+      What remains here is the admin side of documents — issuing, reviewing,
+      types — so the menu now means one thing rather than two.
+    */
     { href: "/documents", label: t("nav.issueDocuments"), show: showIssue },
     /*
       The register of what went out. Beside "Issue" because it answers the
@@ -821,19 +816,62 @@ function NavCountDot({ count, urgent }: { count: number; urgent: boolean }) {
 // ---------------------------------------------------------------------------
 // Time & Attendance Dropdown (management: attendance + schedule + time-off)
 // ---------------------------------------------------------------------------
+/**
+ * The member's own corner: their shifts, their leave, their documents.
+ *
+ * These were three separate entries — two standalone links plus "My documents"
+ * buried at the top of the admin Documents menu — which is three lines of bar
+ * for everybody and still no sense that they are one thing.
+ *
+ * Called Me, not HR: that word names the FUNCTION, the area for the people who
+ * run it, and it cannot also mean the employee's own file without one of the
+ * two being wrong later. Contents come from `useMySections`, the same
+ * definition the section's own tab strip reads.
+ */
+function MeDropdown({ pathname }: { pathname: string }) {
+  const { t } = useTranslation()
+  const sections = useMySections()
+  if (sections.length === 0) return null
+
+  const active = isDropdownActive(pathname, sections.map((s) => s.href))
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        data-tour="nav-me"
+        className={cn(
+          navItemBase,
+          "cursor-pointer select-none outline-none",
+          active ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+        )}
+      >
+        {t("nav.me", "Me")}
+        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">
+        {sections.map((s) => (
+          <DropdownMenuItem key={s.href} asChild className="rounded-md cursor-pointer">
+            <Link href={s.href} data-tour={s.tour} className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              {s.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function TimeAttendanceDropdown({
   pathname,
   showSchedule,
   showAttendance,
   showIssues,
-  showMyTimeOff,
   onOpen,
 }: {
   pathname: string
   showSchedule: boolean
   showAttendance: boolean
   showIssues: boolean
-  showMyTimeOff: boolean
   onOpen?: () => void
 }) {
   const { t } = useTranslation()
@@ -927,8 +965,6 @@ function MobileMenu({
   showAttendance,
   showReports,
   showInvoices,
-  showMyTimeOff,
-  showMyAttendance,
   showMyDocuments,
   showIssueDocuments,
   showDocumentTemplates,
@@ -947,8 +983,6 @@ function MobileMenu({
   showIssues: boolean
   showReports: boolean
   showInvoices: boolean
-  showMyTimeOff: boolean
-  showMyAttendance: boolean
   showManage: boolean
   showCrm?: boolean
   showAssets?: boolean
@@ -960,6 +994,8 @@ function MobileMenu({
 }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation()
+  // The same definition the desktop menu and the section's tabs read.
+  const mySections = useMySections()
 
   const teamItems = ["/members", "/invitations", "/join-requests"]
   const teamActive = isDropdownActive(pathname, teamItems)
@@ -1145,86 +1181,27 @@ function MobileMenu({
 
         {/* Employee module-driven items. Personal Time Off shows standalone only
             when there's no Time & Attendance group above to host it. */}
-        {showMyTimeOff && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/my/time-off" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/my/time-off") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <Calendar className="h-4 w-4" />
-              {t("nav.timeOff")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {showMyAttendance && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/my/attendance" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/my/attendance") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <Clock className="h-4 w-4" />
-              {t("nav.sidebar.attendance")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {/*
-          Documents. Flat here rather than a nested menu: this sheet is already a
-          vertical list, and a submenu inside it is one more tap for the same
-          four links.
-        */}
-        {showMyDocuments && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/my/documents" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/my/documents") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <FileText className="h-4 w-4" />
-              {t("nav.myDocuments")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {showIssueDocuments && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/documents" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/documents") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <FileText className="h-4 w-4" />
-              {t("nav.issueDocuments")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {showDocumentTemplates && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/documents/templates" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/documents/templates") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <FileText className="h-4 w-4" />
-              {t("documents.templates.title")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {showDocumentCompliance && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/documents/compliance" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/documents/compliance") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <ShieldCheck className="h-4 w-4" />
-              {t("documents.compliance.title")}
-            </Link>
-          </DropdownMenuItem>
+        {/* The member's own pages — the same three the Me menu holds on desktop. */}
+        {mySections.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="px-3 py-1 text-xs font-medium text-muted-foreground">
+              {t("nav.me", "Me")}
+            </DropdownMenuLabel>
+            {mySections.map((sec) => (
+              <DropdownMenuItem key={sec.href} asChild className="rounded-md cursor-pointer p-0">
+                <Link
+                  href={sec.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(mobileItemBase, "pl-5", isActive(pathname, sec.href) ? mobileItemActiveStyle : mobileItemInactive)}
+                >
+                  {sec.label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </>
         )}
 
-        {/* B2B "Customers" directory retired → a customer is now a Space (kind
-            CUSTOMER); client portals are managed per-space (no top-level item). */}
-        {showReports && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/reports" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/reports") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <BarChart3 className="h-4 w-4" />
-              {t("nav.reports", "Reports")}
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {showInvoices && (
-          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-            <Link href="/invoices" onClick={() => setOpen(false)}
-              className={cn(mobileItemBase, isActive(pathname, "/invoices") ? mobileItemActiveStyle : mobileItemInactive)}>
-              <FileText className="h-4 w-4" />
-              {t("nav.sidebar.invoices")}
-            </Link>
-          </DropdownMenuItem>
-        )}
         {showManage && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
             <Link href="/manage" onClick={() => setOpen(false)}

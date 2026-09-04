@@ -837,7 +837,9 @@
       "settings": "Paramètres",
       "helpCenter": "Centre d'aide",
       "billing": "Facturation",
-      "issues": "Problèmes de créneau"
+      "issues": "Problèmes de créneau",
+      "myDocuments": "Mes documents",
+      "timeOff": "Demandes de congés"
     },
     "userMenu": {
       "profile": "Profil",
@@ -876,7 +878,10 @@
     "myDocuments": "Mes documents",
     "sentDocuments": "Documents envoyés",
     "assets": "Équipements",
-    "portals": "Portails"
+    "portals": "Portails",
+    "me": "Moi",
+    "meSubtitle": "Vos postes, vos congés et vos documents.",
+    "myShifts": "Mes postes"
   },
   "dashboard": {
     "admin": {

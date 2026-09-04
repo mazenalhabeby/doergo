@@ -837,7 +837,9 @@
       "settings": "Impostazioni",
       "helpCenter": "Centro assistenza",
       "billing": "Fatturazione",
-      "issues": "Problemi del turno"
+      "issues": "Problemi del turno",
+      "myDocuments": "I miei documenti",
+      "timeOff": "Richieste di ferie"
     },
     "userMenu": {
       "profile": "Profilo",
@@ -876,7 +878,10 @@
     "myDocuments": "I miei documenti",
     "sentDocuments": "Documenti inviati",
     "assets": "Asset",
-    "portals": "Portali"
+    "portals": "Portali",
+    "me": "Io",
+    "meSubtitle": "I tuoi turni, le tue ferie e i tuoi documenti.",
+    "myShifts": "I miei turni"
   },
   "dashboard": {
     "admin": {

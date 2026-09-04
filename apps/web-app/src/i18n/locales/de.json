@@ -837,7 +837,9 @@
       "settings": "Einstellungen",
       "helpCenter": "Hilfe-Center",
       "billing": "Abrechnung",
-      "issues": "Schichtprobleme"
+      "issues": "Schichtprobleme",
+      "myDocuments": "Meine Dokumente",
+      "timeOff": "Urlaubsanträge"
     },
     "userMenu": {
       "profile": "Profil",
@@ -876,7 +878,10 @@
     "myDocuments": "Meine Dokumente",
     "sentDocuments": "Gesendete Dokumente",
     "assets": "Anlagen",
-    "portals": "Portale"
+    "portals": "Portale",
+    "me": "Ich",
+    "meSubtitle": "Ihre Schichten, Ihr Urlaub und Ihre Dokumente.",
+    "myShifts": "Meine Schichten"
   },
   "dashboard": {
     "admin": {

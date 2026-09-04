@@ -285,7 +285,7 @@ export default function MyTimeOffPage() {
   const monthLabel = cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" })
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+    <div>
       <header className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.timeOff")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("timeOff.my.subtitle")}</p>

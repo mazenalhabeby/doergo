@@ -837,7 +837,9 @@
       "settings": "Settings",
       "helpCenter": "Help Center",
       "billing": "Billing",
-      "issues": "Shift Issues"
+      "issues": "Shift Issues",
+      "myDocuments": "My documents",
+      "timeOff": "Vacation Requests"
     },
     "userMenu": {
       "profile": "Profile",
@@ -876,7 +878,10 @@
     "myDocuments": "My documents",
     "sentDocuments": "Sent documents",
     "assets": "Assets",
-    "portals": "Portals"
+    "portals": "Portals",
+    "me": "Me",
+    "meSubtitle": "Your shifts, your leave and your documents.",
+    "myShifts": "My shifts"
   },
   "dashboard": {
     "admin": {

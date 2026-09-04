@@ -837,7 +837,9 @@
       "settings": "Ajustes",
       "helpCenter": "Centro de ayuda",
       "billing": "Facturación",
-      "issues": "Incidencias de turno"
+      "issues": "Incidencias de turno",
+      "myDocuments": "Mis documentos",
+      "timeOff": "Solicitudes de vacaciones"
     },
     "userMenu": {
       "profile": "Perfil",
@@ -876,7 +878,10 @@
     "myDocuments": "Mis documentos",
     "sentDocuments": "Documentos enviados",
     "assets": "Activos",
-    "portals": "Portales"
+    "portals": "Portales",
+    "me": "Yo",
+    "meSubtitle": "Tus turnos, tus vacaciones y tus documentos.",
+    "myShifts": "Mis turnos"
   },
   "dashboard": {
     "admin": {

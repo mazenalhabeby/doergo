@@ -147,7 +147,7 @@ export default function MyAttendancePage() {
   const pending = clock.isPending
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
+    <div className="max-w-3xl">
       <div className="mb-6">
         <h1 data-tour="page-my-attendance" className="text-2xl font-semibold text-foreground">{t("attendance.my.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("attendance.my.subtitle")}</p>
