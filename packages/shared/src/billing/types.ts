@@ -114,3 +114,32 @@ export function collectionMethodFor(mode: BillingMode): 'charge_automatically' |
 export function modeRequiresBillingEmail(mode: BillingMode): boolean {
   return mode === 'INVOICE';
 }
+
+/**
+ * Is this fall in a bill worth telling somebody about?
+ *
+ * Two tests, joined by OR, because one threshold cannot cover both ends of the
+ * book:
+ *
+ *   • a PROPORTION catches the small customer — €90 → €60 is a third of their
+ *     bill and obviously worth a look, but no absolute threshold would flag it
+ *     without also flagging every ordinary seat removal;
+ *   • an ABSOLUTE amount catches the large one — €500 off a €10,000 bill is 5%,
+ *     which no percentage rule would notice, and it is the single most valuable
+ *     thing on the list.
+ *
+ * Both are floored by a minimum, so removing one seat never raises an alert.
+ * Someone leaving is normal; an organization dismantling itself is not, and an
+ * alert that fires on the first is ignored by the time the second happens.
+ */
+export const BILLING_ALERT_MIN_DROP_CENTS = 2000; // €20 — below this it is noise
+export const BILLING_ALERT_PROPORTION = 0.2; // a fifth of the bill
+export const BILLING_ALERT_ABSOLUTE_CENTS = 10_000; // €100, whatever the share
+
+export function isMaterialDrop(fromCents: number, toCents: number): boolean {
+  // Nothing to compare against: a first bill is not a fall.
+  if (fromCents <= 0) return false;
+  const drop = fromCents - toCents;
+  if (drop < BILLING_ALERT_MIN_DROP_CENTS) return false;
+  return drop / fromCents >= BILLING_ALERT_PROPORTION || drop >= BILLING_ALERT_ABSOLUTE_CENTS;
+}

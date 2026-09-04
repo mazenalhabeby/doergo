@@ -19,6 +19,12 @@ interface Me { user: { id: string; email: string; firstName: string; lastName: s
 interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number }
 type BillingMode = 'AUTOMATIC' | 'INVOICE' | 'EXTERNAL';
 
+interface BillingAlertRow {
+  id: string; organizationId: string; organizationName: string; billingMode: BillingMode;
+  fromCents: number; toCents: number; dropCents: number;
+  createdAt: string; acknowledgedAt: string | null;
+}
+
 /**
  * How each organization pays, shown as a badge rather than a word.
  *
@@ -57,10 +63,21 @@ export default function ControlCenter() {
   const [needs2fa, setNeeds2fa] = useState(false);
   const [security, setSecurity] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'orgs' | 'team' | 'pricing' | 'support' | 'teams' | 'library'>('orgs');
+  const [tab, setTab] = useState<'orgs' | 'revenue' | 'team' | 'pricing' | 'support' | 'teams' | 'library'>('orgs');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [mail, setMail] = useState<MailStatus | null>(null);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
+  /*
+    Bills that fell materially.
+
+    Loaded on EVERY tab, not only its own — the whole point is that nobody goes
+    looking for revenue leaving, so the count has to find them. Same reasoning as
+    the outbound-mail probe beside it.
+  */
+  const [alerts, setAlerts] = useState<BillingAlertRow[]>([]);
+  const loadAlerts = useCallback(async () => {
+    try { setAlerts((await api<{ data: BillingAlertRow[] }>('/platform/billing-alerts')).data ?? []); } catch { /* a console that cannot load one panel still shows the rest */ }
+  }, []);
   const [detail, setDetail] = useState<OrgDetail | null>(null);
   const [staff, setStaff] = useState<StaffUser[]>([]);
   const [search, setSearch] = useState('');
@@ -87,6 +104,9 @@ export default function ControlCenter() {
     api<{ data: Me }>('/platform/auth/me').then((r) => setMe(r.data)).catch(() => { TOKEN = ''; sessionStorage.removeItem('platformToken'); }).finally(() => setBooting(false));
   }, []);
   useEffect(() => { if (me && tab === 'orgs') loadOrgs(); if (me && tab === 'team') loadStaff(); }, [me, tab, loadOrgs, loadStaff]);
+  // Once per session, on whichever tab you land on — the count is the whole
+  // point, and it cannot do its job from behind its own tab.
+  useEffect(() => { if (me) loadAlerts(); }, [me, loadAlerts]);
 
   // Outbound mail health, on every tab. Deliberately not behind a click: the
   // outage this was built for lasted because nothing ever asked the question.
@@ -147,6 +167,10 @@ export default function ControlCenter() {
             <h1 className="text-xl font-semibold">Platform Control Center</h1>
             <div className="flex gap-1 rounded-lg border border-slate-800 p-0.5 text-sm">
               <button onClick={() => setTab('orgs')} className={`rounded px-3 py-1 ${tab === 'orgs' ? 'bg-slate-800' : 'text-slate-400'}`}>Organizations</button>
+              <button onClick={() => setTab('revenue')} className={`relative rounded px-3 py-1 ${tab === 'revenue' ? 'bg-slate-800' : 'text-slate-400'}`}>
+                Revenue
+                {alerts.length > 0 && <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">{alerts.length}</span>}
+              </button>
               <button onClick={() => setTab('pricing')} className={`rounded px-3 py-1 ${tab === 'pricing' ? 'bg-slate-800' : 'text-slate-400'}`}>Pricing</button>
               {can('manageLibrary') && <button onClick={() => setTab('library')} className={`rounded px-3 py-1 ${tab === 'library' ? 'bg-slate-800' : 'text-slate-400'}`}>Task-type library</button>}
               {can('manageSupport') && <button onClick={() => setTab('support')} className={`rounded px-3 py-1 ${tab === 'support' ? 'bg-slate-800' : 'text-slate-400'}`}>Support</button>}
@@ -187,7 +211,76 @@ export default function ControlCenter() {
         )}
         {error && <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">{error} <button onClick={() => setError(null)} className="ml-2 opacity-60">✕</button></div>}
 
-        {tab === 'orgs' ? (
+        {tab === 'revenue' ? (
+          <div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold">Bills that fell</h2>
+                <p className="text-xs text-slate-500">
+                  A material drop — a fifth of the bill, or €100 whichever comes first. Acknowledge once you have looked.
+                </p>
+              </div>
+              <button onClick={loadAlerts} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">Refresh</button>
+            </div>
+            {alerts.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 p-8 text-center text-sm text-slate-500">
+                Nothing to look at — no bill has fallen materially.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2">Organization</th>
+                      <th className="px-3 py-2">Billing</th>
+                      <th className="px-3 py-2 text-right">Was</th>
+                      <th className="px-3 py-2 text-right">Now</th>
+                      <th className="px-3 py-2 text-right">Drop</th>
+                      <th className="px-3 py-2">When</th>
+                      <th className="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {alerts.map((a) => (
+                      <tr key={a.id} className="hover:bg-slate-900/50">
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={async () => { setTab('orgs'); setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${a.organizationId}`)).data); }}
+                            className="font-medium hover:text-blue-400"
+                          >
+                            {a.organizationName}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] ${BILLING_BADGE[a.billingMode ?? 'AUTOMATIC'].cls}`}>
+                            {BILLING_BADGE[a.billingMode ?? 'AUTOMATIC'].label}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-slate-400">{eur(a.fromCents)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{eur(a.toCents)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-400">
+                          −{eur(a.dropCents)}
+                          <span className="ml-1 text-[11px] font-normal text-slate-500">
+                            {a.fromCents > 0 ? `${Math.round((a.dropCents / a.fromCents) * 100)}%` : ''}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-slate-400">{date(a.createdAt)}</td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            onClick={async () => { await api(`/platform/billing-alerts/${a.id}/ack`, { method: 'POST' }); await loadAlerts(); }}
+                            className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700"
+                          >
+                            Looked at it
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : tab === 'orgs' ? (
           <>
             {overview && (
               <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">

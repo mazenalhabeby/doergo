@@ -68,6 +68,22 @@ export class PlatformAdminController {
   async reactivate(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) })); }
 
   /**
+   * Bills that fell materially. The one thing on this console that nobody
+   * thinks to go and look for, so it also drives a count in the header.
+   */
+  @Get('billing-alerts')
+  @RequirePlatformPerm('manageOrgs')
+  async billingAlerts(@Query('all') all?: string) {
+    return this.unwrap(await this.svc.billingAlerts({ includeAcknowledged: all === '1' || all === 'true' }));
+  }
+
+  @Post('billing-alerts/:id/ack')
+  @RequirePlatformPerm('manageOrgs')
+  async ackBillingAlert(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.ackBillingAlert({ id, byUserId: this.actor(req) }));
+  }
+
+  /**
    * How this organization pays: card, invoice, or by agreement.
    *
    * The most consequential control on this console. Moving an organization TO

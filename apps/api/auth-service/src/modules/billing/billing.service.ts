@@ -11,6 +11,7 @@ import {
   ADD_ON_KEYS,
   DEFAULT_ORG_MODULES,
   collectionMethodFor,
+  isMaterialDrop,
   type BillingMode,
   countSeats,
   subscriptionTotalCents,
@@ -593,6 +594,39 @@ export class BillingService {
     */
     try {
       await this.stripe.setSubscriptionLines(sub.stripeSubscriptionId, lines, { invoiceNow: false });
+
+      /*
+        Revenue leaving is silent.
+
+        An organization dropping from four workspaces to one is a €300/month
+        loss that this method processes correctly, prorates fairly and never
+        mentions — and nobody finds out until the renewal conversation, by which
+        point the reason is a month cold.
+
+        Recorded HERE, at the one moment both numbers are in hand: what they
+        were billed and what they are about to be. A nightly job comparing
+        totals would have to store yesterday's anyway, and would miss a drop
+        that was reversed before it ran.
+
+        Only for a MATERIAL fall (see isMaterialDrop) — an alert that fires when
+        somebody removes one seat is ignored by the time one fires that matters.
+      */
+      const before = sub.lastBilledCents ?? 0;
+      if (isMaterialDrop(before, bill.monthlyCents)) {
+        await this.prisma.billingAlert.create({
+          data: {
+            organizationId,
+            fromCents: before,
+            toCents: bill.monthlyCents,
+            dropCents: before - bill.monthlyCents,
+          },
+        });
+        this.logger.warn(
+          `[BILLING] Org ${organizationId} bill fell ${(before - bill.monthlyCents) / 100}€ ` +
+            `(${before / 100}€ → ${bill.monthlyCents / 100}€)`,
+        );
+      }
+
       await this.prisma.subscription.update({
         where: { organizationId },
         data: { lastBilledCents: bill.monthlyCents },

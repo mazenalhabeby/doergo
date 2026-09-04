@@ -434,6 +434,7 @@ model Organization {
   billedExternally  Boolean            @default(false)
   /// HOW this organization pays. See BillingMode.
   billingMode       BillingMode        @default(AUTOMATIC)
+  billingAlerts     BillingAlert[]
   /// Payment terms for INVOICE mode — days from issue until due. Ignored in
   /// every other mode. Stripe enforces it and chases what is overdue.
   invoiceDueDays    Int                @default(14)
@@ -3659,6 +3660,40 @@ enum PlanTier {
 /// previously a boolean that could only say yes or not-at-all — and the useful
 /// middle case, a contract customer who still wants a proper invoice, had no way
 /// to be expressed.
+/// A material fall in what an organization is billed.
+///
+/// Revenue leaving is silent. A customer dropping from four workspaces to one
+/// is a €300/month loss that the system processes correctly, prorates fairly
+/// and never mentions — and nobody finds out until the renewal conversation, by
+/// which point the reason is a month cold.
+///
+/// Recorded rather than emailed: an alert nobody acknowledges is a mailing list,
+/// and the question an operator actually asks is "what changed recently, and
+/// have we looked at it?" — which is a list with a state, not a notification.
+model BillingAlert {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// What it was billed before, and what it is now — in monthly EUR cents.
+  fromCents      Int
+  toCents        Int
+  /// fromCents - toCents. Stored rather than derived so the console can sort
+  /// and filter on it without computing over the table.
+  dropCents      Int
+
+  /// Cleared by an operator once they have looked. Null = still needs a look.
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+
+  createdAt      DateTime     @default(now())
+
+  /// The console opens on "what is unacknowledged, newest first".
+  @@index([acknowledgedAt, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("billing_alerts")
+}
+
 enum BillingMode {
   /// Card on file, charged each month. The self-serve default.
   AUTOMATIC

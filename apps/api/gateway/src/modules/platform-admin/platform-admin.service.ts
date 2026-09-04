@@ -12,6 +12,8 @@ export class PlatformAdminService extends BaseGatewayService {
   listOrgs(data: { search?: string; status?: string }) { return this.send({ cmd: 'platform_list_orgs' }, data); }
   orgDetail(data: { organizationId: string }) { return this.send({ cmd: 'platform_org_detail' }, data); }
   suspend(data: { organizationId: string; byUserId?: string }) { return this.send({ cmd: 'platform_suspend' }, data); }
+  billingAlerts(data: { includeAcknowledged?: boolean }) { return this.send({ cmd: 'platform_billing_alerts' }, data); }
+  ackBillingAlert(data: { id: string; byUserId?: string }) { return this.send({ cmd: 'platform_ack_billing_alert' }, data); }
   setBillingMode(data: { organizationId: string; mode: string; invoiceDueDays?: number; byUserId?: string }) {
     return this.send({ cmd: 'platform_set_billing_mode' }, data);
   }

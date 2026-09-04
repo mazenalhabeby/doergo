@@ -207,6 +207,51 @@ export class PlatformAdminService {
    *     reports and scripts do, and a boolean that silently stops tracking its
    *     replacement is worse than one that is gone.
    */
+  /**
+   * Bills that fell, newest first.
+   *
+   * Unacknowledged by default: the question an operator asks is "what changed
+   * recently and have we looked at it?", which is a list with a state rather
+   * than a feed. Capped at 200 — a console that has to paginate a backlog this
+   * size has a bigger problem than pagination.
+   */
+  async listBillingAlerts(data: { includeAcknowledged?: boolean }) {
+    const rows = await this.prisma.billingAlert.findMany({
+      where: data.includeAcknowledged ? {} : { acknowledgedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      // The organization's NAME, not just its id: an alert identified by a cuid
+      // is one somebody has to go and look up before they can act on it.
+      include: { organization: { select: { id: true, name: true, billingMode: true } } },
+    });
+    return success(
+      rows.map((r) => ({
+        id: r.id,
+        organizationId: r.organizationId,
+        organizationName: r.organization?.name ?? '—',
+        billingMode: r.organization?.billingMode ?? 'AUTOMATIC',
+        fromCents: r.fromCents,
+        toCents: r.toCents,
+        dropCents: r.dropCents,
+        createdAt: r.createdAt,
+        acknowledgedAt: r.acknowledgedAt,
+        acknowledgedBy: r.acknowledgedBy,
+      })),
+    );
+  }
+
+  /** Mark one as looked at. Idempotent — acknowledging twice is not an error. */
+  async acknowledgeBillingAlert(data: { id: string; byUserId?: string }) {
+    const alert = await this.prisma.billingAlert.findUnique({ where: { id: data.id }, select: { id: true, acknowledgedAt: true } });
+    if (!alert) return { success: false, statusCode: 404, message: 'Alert not found' } as any;
+    if (alert.acknowledgedAt) return success({ id: alert.id, acknowledgedAt: alert.acknowledgedAt });
+    const updated = await this.prisma.billingAlert.update({
+      where: { id: data.id },
+      data: { acknowledgedAt: new Date(), acknowledgedBy: data.byUserId ?? null },
+    });
+    return success({ id: updated.id, acknowledgedAt: updated.acknowledgedAt });
+  }
+
   async setBillingMode(data: {
     organizationId: string;
     mode: 'AUTOMATIC' | 'INVOICE' | 'EXTERNAL';
