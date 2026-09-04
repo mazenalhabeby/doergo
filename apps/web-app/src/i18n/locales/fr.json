@@ -4677,13 +4677,17 @@
       "submitButton": "Demander à rejoindre",
       "codeMustBe8Chars": "Le code d'adhésion doit comporter 8 caractères.",
       "invalidCode": "Ce code n'est pas valide.",
-      "failedToSubmit": "Impossible de soumettre votre demande. Veuillez réessayer."
+      "failedToSubmit": "Impossible de soumettre votre demande. Veuillez réessayer.",
+      "isInvitation": "Il s'agit d'une invitation personnelle",
+      "isInvitationOrg": "Elle vous rattache à {{org}} immédiatement, sans validation.",
+      "isInvitationPlain": "Elle vous rattache immédiatement, sans validation.",
+      "codeUnrecognized": "Saisissez votre code d'accès à 8 caractères ou un code d'invitation personnel."
     },
     "useInvitation": {
       "title": "Utiliser une invitation",
       "subtitle": "Saisissez le code d'invitation que vous avez reçu.",
       "codeLabel": "Code d'invitation",
-      "codePlaceholder": "INVITE01",
+      "codePlaceholder": "INVITE0123",
       "verify": "Vérifier",
       "joiningAs": "Adhésion en tant que {{role}}",
       "submitButton": "Accepter et rejoindre",

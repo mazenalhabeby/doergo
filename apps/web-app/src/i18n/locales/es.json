@@ -4668,13 +4668,17 @@
       "submitButton": "Solicitar acceso",
       "codeMustBe8Chars": "El código de acceso debe tener 8 caracteres.",
       "invalidCode": "Ese código no es válido.",
-      "failedToSubmit": "No se pudo enviar tu solicitud. Vuelve a intentarlo."
+      "failedToSubmit": "No se pudo enviar tu solicitud. Vuelve a intentarlo.",
+      "isInvitation": "Es una invitación personal",
+      "isInvitationOrg": "Te une a {{org}} de inmediato, sin aprobación.",
+      "isInvitationPlain": "Te une de inmediato, sin aprobación.",
+      "codeUnrecognized": "Introduce tu código de acceso de 8 caracteres o un código de invitación personal."
     },
     "useInvitation": {
       "title": "Usar una invitación",
       "subtitle": "Ingresa el código de invitación que recibiste.",
       "codeLabel": "Código de invitación",
-      "codePlaceholder": "INVITE01",
+      "codePlaceholder": "INVITE0123",
       "verify": "Verificar",
       "joiningAs": "Te unes como {{role}}",
       "submitButton": "Aceptar y unirte",

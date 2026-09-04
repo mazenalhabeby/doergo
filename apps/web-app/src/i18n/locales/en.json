@@ -4668,13 +4668,17 @@
       "submitButton": "Request to join",
       "codeMustBe8Chars": "The join code must be 8 characters.",
       "invalidCode": "That code isn't valid.",
-      "failedToSubmit": "Couldn't submit your request. Please try again."
+      "failedToSubmit": "Couldn't submit your request. Please try again.",
+      "isInvitation": "That's a personal invitation",
+      "isInvitationOrg": "It joins you to {{org}} right away — no approval needed.",
+      "isInvitationPlain": "It joins you right away — no approval needed.",
+      "codeUnrecognized": "Enter your 8-character join code, or a personal invitation code."
     },
     "useInvitation": {
       "title": "Use an invitation",
       "subtitle": "Enter the invitation code you received.",
       "codeLabel": "Invitation code",
-      "codePlaceholder": "INVITE01",
+      "codePlaceholder": "INVITE0123",
       "verify": "Verify",
       "joiningAs": "Joining as {{role}}",
       "submitButton": "Accept & join",

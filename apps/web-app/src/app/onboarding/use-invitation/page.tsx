@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Ticket, CheckCircle2 } from 'lucide-react';
 import { Button, Input, Label, Spinner } from '@/components/ui';
@@ -9,7 +9,7 @@ import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
 import { onboardingApi, invitationsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { INVITATION_CODE_LENGTH, INVITATION_CODE_MIN_LENGTH } from '@hbcfield/shared/client'
+import { INVITATION_CODE_MIN_LENGTH, JOIN_CODE_MAX_LENGTH } from '@hbcfield/shared/client'
 import type { InvitationValidation } from '@hbcfield/shared/client'
 
 /*
@@ -22,12 +22,17 @@ import type { InvitationValidation } from '@hbcfield/shared/client'
 */
 type InvitationCheck = InvitationValidation;
 
-export default function UseInvitationPage() {
+function UseInvitationPageContent() {
   const router = useRouter();
   const { t } = useTranslation();
   const { refreshUser } = useAuth();
 
-  const [code, setCode] = useState('');
+  /*
+    Prefilled when the organization screen recognised an invitation and handed
+    it over — the code is already correct, so nobody retypes ten characters.
+  */
+  const searchParams = useSearchParams();
+  const [code, setCode] = useState((searchParams.get('code') ?? '').toUpperCase());
   const [validation, setValidation] = useState<InvitationCheck | null>(null);
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -96,7 +101,7 @@ export default function UseInvitationPage() {
               autoFocus
               placeholder={t('onboarding.useInvitation.codePlaceholder')}
               value={code}
-              maxLength={INVITATION_CODE_LENGTH}
+              maxLength={JOIN_CODE_MAX_LENGTH}
               onChange={(e) => {
                 setCode(e.target.value.toUpperCase());
                 setError('');
@@ -151,5 +156,17 @@ export default function UseInvitationPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/*
+  useSearchParams needs a Suspense boundary or the page cannot be prerendered.
+  Same wrapper the login page uses for the same reason.
+*/
+export default function UseInvitationPage() {
+  return (
+    <Suspense fallback={null}>
+      <UseInvitationPageContent />
+    </Suspense>
   );
 }

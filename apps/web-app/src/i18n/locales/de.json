@@ -4668,13 +4668,17 @@
       "submitButton": "Beitritt anfragen",
       "codeMustBe8Chars": "Der Beitrittscode muss 8 Zeichen lang sein.",
       "invalidCode": "Dieser Code ist ungültig.",
-      "failedToSubmit": "Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+      "failedToSubmit": "Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "isInvitation": "Das ist eine persönliche Einladung",
+      "isInvitationOrg": "Sie treten {{org}} damit sofort bei — ohne Freigabe.",
+      "isInvitationPlain": "Sie treten damit sofort bei — ohne Freigabe.",
+      "codeUnrecognized": "Geben Sie Ihren 8-stelligen Beitrittscode oder einen persönlichen Einladungscode ein."
     },
     "useInvitation": {
       "title": "Einladung verwenden",
       "subtitle": "Geben Sie den erhaltenen Einladungscode ein.",
       "codeLabel": "Einladungscode",
-      "codePlaceholder": "INVITE01",
+      "codePlaceholder": "INVITE0123",
       "verify": "Prüfen",
       "joiningAs": "Beitritt als {{role}}",
       "submitButton": "Annehmen & beitreten",

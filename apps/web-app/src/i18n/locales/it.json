@@ -4677,13 +4677,17 @@
       "submitButton": "Richiedi l'adesione",
       "codeMustBe8Chars": "Il codice di adesione deve essere di 8 caratteri.",
       "invalidCode": "Questo codice non è valido.",
-      "failedToSubmit": "Impossibile inviare la richiesta. Riprovare."
+      "failedToSubmit": "Impossibile inviare la richiesta. Riprovare.",
+      "isInvitation": "È un invito personale",
+      "isInvitationOrg": "Ti unisce a {{org}} subito, senza approvazione.",
+      "isInvitationPlain": "Ti unisce subito, senza approvazione.",
+      "codeUnrecognized": "Inserisci il codice di accesso di 8 caratteri o un codice di invito personale."
     },
     "useInvitation": {
       "title": "Usa un invito",
       "subtitle": "Inserire il codice di invito ricevuto.",
       "codeLabel": "Codice di invito",
-      "codePlaceholder": "INVITE01",
+      "codePlaceholder": "INVITE0123",
       "verify": "Verifica",
       "joiningAs": "Adesione in qualità di {{role}}",
       "submitButton": "Accetta e aderisci",

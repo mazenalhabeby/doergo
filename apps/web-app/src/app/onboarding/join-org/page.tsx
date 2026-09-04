@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Users, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle2, MailOpen, ChevronRight } from 'lucide-react';
 import { Button, Input, Label, Spinner } from '@/components/ui';
 import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/auth-context';
-import { onboardingApi, type OrgCodeValidation } from '@/lib/api';
+import { onboardingApi, invitationsApi, type OrgCodeValidation } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { ORG_CODE_LENGTH } from '@hbcfield/shared/client'
+import { JOIN_CODE_MAX_LENGTH, joinCodeCandidates } from '@hbcfield/shared/client'
 
 export default function JoinOrgPage() {
   const router = useRouter();
@@ -22,19 +22,46 @@ export default function JoinOrgPage() {
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /*
+    Set when what was typed here turns out to be a personal invitation.
+
+    Both onboarding cards say "code", so this screen receives invitation codes
+    routinely. Capped at the organization code's 8 characters, a 10-character
+    invitation simply stopped going in — no error, nothing on screen to say why.
+    That is what happened to a member on the phone on 2026-09-04; this is the
+    same screen on the web, and it had the same cap.
+  */
+  const [isInvitation, setIsInvitation] = useState<{ organizationName?: string } | null>(null);
 
   const handleValidate = async () => {
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length !== ORG_CODE_LENGTH) {
-      setError(t('onboarding.joinOrg.codeMustBe8Chars'));
+    const candidates = joinCodeCandidates(trimmed, 'ORG');
+    if (candidates.length === 0) {
+      setError(t('onboarding.joinOrg.codeUnrecognized'));
       return;
     }
     setIsValidating(true);
     setError('');
+    setIsInvitation(null);
     try {
-      const result = await onboardingApi.validateOrgCode(trimmed);
-      setValidation(result);
-      if (!result.valid) setError(result.message || t('onboarding.joinOrg.invalidCode'));
+      // In order: the code this screen is for, then the other kind. At 8
+      // characters both are possible, so a code is only ever offered as an
+      // invitation once it has failed as an organization code.
+      for (const kind of candidates) {
+        if (kind === 'ORG') {
+          const result = await onboardingApi.validateOrgCode(trimmed);
+          if (result.valid) { setValidation(result); return; }
+          setValidation(result);
+          continue;
+        }
+        const invite = await invitationsApi.validate(trimmed);
+        if (invite?.valid) {
+          setValidation(null);
+          setIsInvitation({ organizationName: invite.organizationName });
+          return;
+        }
+      }
+      setError(t('onboarding.joinOrg.invalidCode'));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.joinOrg.invalidCode'));
       setValidation(null);
@@ -93,11 +120,12 @@ export default function JoinOrgPage() {
               autoFocus
               placeholder={t('onboarding.joinOrg.codePlaceholder')}
               value={code}
-              maxLength={ORG_CODE_LENGTH}
+              maxLength={JOIN_CODE_MAX_LENGTH}
               onChange={(e) => {
                 setCode(e.target.value.toUpperCase());
                 setError('');
                 setValidation(null);
+                setIsInvitation(null);
               }}
               className={cn('h-11 text-center font-mono text-lg tracking-[0.3em]', error && 'border-error')}
               disabled={isValidating || isSubmitting}
@@ -105,7 +133,7 @@ export default function JoinOrgPage() {
             <Button
               type="button"
               onClick={handleValidate}
-              disabled={isValidating || code.trim().length !== ORG_CODE_LENGTH}
+              disabled={isValidating || joinCodeCandidates(code, 'ORG').length === 0}
               className="h-11 shrink-0 bg-blue-600 px-5 font-semibold text-white hover:bg-blue-700"
             >
               {isValidating ? <Spinner size="sm" /> : t('onboarding.joinOrg.verify')}
@@ -113,6 +141,34 @@ export default function JoinOrgPage() {
           </div>
           {error && <p className="text-xs text-error">{error}</p>}
         </div>
+
+        {/*
+          A personal invitation, typed on the organization screen.
+
+          It carries on rather than sending the person back to start again: the
+          code is already correct, so it is handed to the invitation screen
+          rather than retyped.
+        */}
+        {isInvitation && (
+          <button
+            type="button"
+            onClick={() => router.push(`/onboarding/use-invitation?code=${encodeURIComponent(code.trim().toUpperCase())}`)}
+            className="flex w-full items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-left transition-colors hover:bg-blue-100"
+          >
+            <MailOpen className="h-5 w-5 shrink-0 text-blue-600" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-slate-800">
+                {t('onboarding.joinOrg.isInvitation')}
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-500">
+                {isInvitation.organizationName
+                  ? t('onboarding.joinOrg.isInvitationOrg', { org: isInvitation.organizationName })
+                  : t('onboarding.joinOrg.isInvitationPlain')}
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+          </button>
+        )}
 
         {validation?.valid && (
           <>
