@@ -3478,7 +3478,7 @@
       "hint": "Unwiderrufliche und destruktive Aktionen.",
       "deleteTitle": "Diesen Space archivieren",
       "deleteHint": "Deaktiviert den Space und blendet ihn aus Auswahllisten aus. Der Verlauf bleibt erhalten, seine Aufgaben wandern in Ihren Standard-Space. Sie können ihn später reaktivieren.",
-      "lockedDefault": "Dies ist dein Standard-Arbeitsbereich – er enthält nicht zugewiesene Aufgaben und kann nicht gelöscht werden.",
+      "lockedDefault": "Dies ist Ihr Standard-Arbeitsbereich — er nimmt nicht zugeordnete Arbeit auf. Zum Löschen legen Sie zuerst im Reiter Allgemein einen anderen Arbeitsbereich als Standard fest.",
       "lockedRemote": "Dies ist der Remote-Arbeitsbereich – er wird für Remote-Zeiterfassung benötigt und kann nicht gelöscht werden.",
       "deleteButton": "Space archivieren",
       "dialogTitle": "„{{name}}“ archivieren?",
@@ -3537,7 +3537,15 @@
     "unsavedCount": "{{count}} nicht gespeicherte Änderung",
     "unsavedCount_other": "{{count}} nicht gespeicherte Änderungen",
     "logicalNoTimezone": "Kein fester Standort — die Anwesenheit nutzt die Zeitzone der jeweiligen Person. Fügen Sie einen Standort hinzu, um eine feste Zeitzone und einen Geofence zu setzen.",
-    "settingsNav": "Einstellungen"
+    "settingsNav": "Einstellungen",
+    "default": {
+      "title": "Standard-Arbeitsbereich",
+      "isCurrent": "Arbeit ohne bestimmten Arbeitsbereich landet hier.",
+      "canBe": "Diesen Arbeitsbereich zum Auffangen nicht zugeordneter Arbeit machen.",
+      "badge": "Standard",
+      "make": "Als Standard festlegen",
+      "done": "{{name}} ist jetzt der Standard-Arbeitsbereich."
+    }
   },
   "commandPalette": {
     "placeholder": "Befehl eingeben oder suchen...",

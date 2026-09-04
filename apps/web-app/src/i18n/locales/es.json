@@ -3478,7 +3478,7 @@
       "hint": "Acciones irreversibles y destructivas.",
       "deleteTitle": "Archivar este espacio de trabajo",
       "deleteHint": "Desactiva el espacio de trabajo y lo oculta de los selectores. El historial se conserva y sus tareas pasan a su espacio de trabajo predeterminado. Puede reactivarlo más tarde.",
-      "lockedDefault": "Este es tu espacio de trabajo predeterminado: contiene las tareas sin asignar y no se puede eliminar.",
+      "lockedDefault": "Este es tu espacio de trabajo predeterminado: recoge el trabajo sin asignar. Para eliminarlo, primero establece otro como predeterminado en la pestaña General.",
       "lockedRemote": "Este es el espacio de trabajo Remoto: es necesario para los fichajes remotos y no se puede eliminar.",
       "deleteButton": "Archivar espacio de trabajo",
       "dialogTitle": "¿Archivar “{{name}}”?",
@@ -3537,7 +3537,15 @@
     "unsavedCount": "{{count}} cambio sin guardar",
     "unsavedCount_other": "{{count}} cambios sin guardar",
     "logicalNoTimezone": "Sin ubicación fija: los fichajes usan la zona horaria de cada persona. Añade una ubicación para fijar la zona horaria del sitio y el geoperímetro.",
-    "settingsNav": "Ajustes"
+    "settingsNav": "Ajustes",
+    "default": {
+      "title": "Espacio predeterminado",
+      "isCurrent": "El trabajo que no pertenece a ningún espacio concreto llega aquí.",
+      "canBe": "Haz que este espacio recoja el trabajo sin espacio propio.",
+      "badge": "Predeterminado",
+      "make": "Establecer como predeterminado",
+      "done": "{{name}} es ahora el espacio predeterminado."
+    }
   },
   "commandPalette": {
     "placeholder": "Escribe un comando o busca...",

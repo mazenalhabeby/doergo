@@ -38,6 +38,8 @@ export class LocationsProcessor extends WorkerHost {
         return this.locationsService.remove(data);
       case LOCATION_JOB_TYPES.PURGE:
         return this.locationsService.purge(data);
+      case LOCATION_JOB_TYPES.SET_DEFAULT:
+        return this.locationsService.setDefault(data);
 
       // Member assignment operations
       case LOCATION_JOB_TYPES.ASSIGN_TECHNICIAN:

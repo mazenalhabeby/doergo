@@ -279,6 +279,58 @@ export class LocationsService {
   /**
    * Update a company location
    */
+  /**
+   * Move the "default" flag to another space.
+   *
+   * The flag decides where a task with no space of its own lands, and it was
+   * set ONCE when the first space was created and never again. Deleting the
+   * default was refused with "make another space the default first" — advice
+   * the product had no way to follow, so an organization whose first space
+   * turned out to be the wrong one was stuck with it permanently.
+   *
+   * Exactly one default, always. Cleared and set inside ONE transaction, so a
+   * crash between the two writes cannot leave an organization with two defaults
+   * (a task lands in whichever is found first) or none (it lands nowhere and
+   * disappears from every space view).
+   *
+   * The Remote bucket is refused: it is hidden from pickers and geofence-exempt,
+   * so making it the default would file unassigned work somewhere nobody looks.
+   */
+  async setDefault(data: { id: string; organizationId: string }) {
+    const target = await this.prisma.companyLocation.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true, name: true, isActive: true, isRemote: true, isDefault: true },
+    });
+    if (!target) throw new NotFoundException('Company location not found');
+
+    if (target.isDefault) {
+      // Not an error — the caller asked for a state that already holds.
+      return { id: target.id, isDefault: true, changed: false };
+    }
+    if (!target.isActive) {
+      throw new BadRequestException('An archived workspace cannot be the default — restore it first.');
+    }
+    if (target.isRemote) {
+      throw new BadRequestException(
+        'The Remote workspace cannot be the default — it is hidden from pickers, so unassigned work would land where nobody looks.',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.companyLocation.updateMany({
+        where: { organizationId: data.organizationId, isDefault: true },
+        data: { isDefault: false },
+      }),
+      this.prisma.companyLocation.update({
+        where: { id: target.id },
+        data: { isDefault: true },
+      }),
+    ]);
+
+    this.logger.log(`Default space for org ${data.organizationId} → "${target.name}" (${target.id})`);
+    return { id: target.id, isDefault: true, changed: true };
+  }
+
   async update(data: {
     id: string;
     organizationId: string;

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Boxes, Building2, CheckCircle2, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, ChevronRight } from "lucide-react"
+import { Boxes, Building2, CheckCircle2, Inbox, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, ChevronRight } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -38,6 +38,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
+  const [makingDefault, setMakingDefault] = useState(false)
   const [name, setName] = useState(space.name)
   // Type is derived from whether the space has coordinates (same implicit model
   // as the New-Space form — a physical site has a pin, a workspace doesn't).
@@ -154,6 +155,63 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
           ))}
         </div>
       )}
+
+      {/*
+        Which workspace catches work that belongs to no particular one.
+
+        The flag was set when the first space was created and could never move,
+        so an organization whose first space turned out to be the wrong one was
+        stuck — and the Danger zone refused to delete it with "make another
+        space the default first", which nothing in the product could do.
+
+        Here rather than in the Danger zone: choosing where unassigned work
+        lands is an ordinary setting. It is the REFUSAL to delete that is
+        dangerous, and that message now points at this card.
+      */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Inbox className="h-4 w-4 text-muted-foreground" />
+              {t("locations.default.title", "Default workspace")}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {space.isDefault
+                ? t("locations.default.isCurrent", "Work that belongs to no particular workspace lands here.")
+                : t("locations.default.canBe", "Make this the workspace that catches work belonging to no particular one.")}
+            </p>
+          </div>
+          {space.isDefault ? (
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+              {t("locations.default.badge", "Default")}
+            </span>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={makingDefault || !!space.isRemote}
+              onClick={async () => {
+                setMakingDefault(true);
+                try {
+                  await locationsApi.makeDefault(space.id);
+                  notify.success(t("locations.default.done", "{{name}} is now the default workspace.", { name: space.name }));
+                  // The badge moves on ANOTHER space too, so the list is
+                  // invalidated as well as this space.
+                  queryClient.invalidateQueries({ queryKey: ["location", space.id] });
+                  queryClient.invalidateQueries({ queryKey: ["locations"] });
+                } catch (e) {
+                  notify.error(e instanceof Error ? e.message : String(e));
+                } finally {
+                  setMakingDefault(false);
+                }
+              }}
+            >
+              {makingDefault && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              {t("locations.default.make", "Make default")}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ── Space details ── */}
       <Card>

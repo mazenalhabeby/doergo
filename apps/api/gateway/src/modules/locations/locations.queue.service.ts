@@ -46,6 +46,11 @@ export class LocationsQueueService extends BaseQueueService {
     return this.addJobAndWait(LOCATION_JOB_TYPES.PURGE, data);
   }
 
+  /** Move the org's default space. See LocationsService.setDefault. */
+  async setDefault(data: { id: string; organizationId: string }) {
+    return this.addJobAndWait(LOCATION_JOB_TYPES.SET_DEFAULT, data);
+  }
+
   /**
    * Assign a member to a location
    */

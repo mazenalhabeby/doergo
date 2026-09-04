@@ -3487,7 +3487,7 @@
       "hint": "Actions irréversibles et destructrices.",
       "deleteTitle": "Supprimer cet espace de travail",
       "deleteHint": "Archive l’espace de travail et le masque des sélecteurs. Ses tâches sont déplacées vers votre espace de travail par défaut. Irréversible.",
-      "lockedDefault": "Ceci est votre espace de travail par défaut : il contient les tâches non attribuées et ne peut pas être supprimé.",
+      "lockedDefault": "Ceci est votre espace de travail par défaut — il reçoit le travail non attribué. Pour le supprimer, définissez d'abord un autre espace par défaut dans l'onglet Général.",
       "lockedRemote": "Ceci est l’espace de travail À distance : il est requis pour les pointages à distance et ne peut pas être supprimé.",
       "deleteButton": "Supprimer l’espace de travail",
       "dialogTitle": "Supprimer « {{name}} » ?",
@@ -3546,7 +3546,15 @@
     "purge": "Supprimer définitivement",
     "purgeSpace": "Supprimer définitivement l’espace de travail",
     "restoreAction": "Restaurer",
-    "settingsNav": "Paramètres"
+    "settingsNav": "Paramètres",
+    "default": {
+      "title": "Espace par défaut",
+      "isCurrent": "Le travail n’appartenant à aucun espace précis arrive ici.",
+      "canBe": "Faire de cet espace celui qui reçoit le travail sans espace propre.",
+      "badge": "Par défaut",
+      "make": "Définir par défaut",
+      "done": "{{name}} est désormais l’espace par défaut."
+    }
   },
   "commandPalette": {
     "placeholder": "Saisissez une commande ou recherchez…",

@@ -160,6 +160,33 @@ export class LocationsController {
     });
   }
 
+  /**
+   * Make this the organization's default workspace.
+   *
+   * The flag decides where a task with no space of its own lands. It was set
+   * once, when the first space was created, and there was no way to move it —
+   * so deleting that space was refused with "make another space the default
+   * first", advice the product gave and could not follow.
+   *
+   * Its own route rather than a field on PATCH: it is not a property of this
+   * space so much as a choice ABOUT the organization, it clears the flag on a
+   * different row, and a field would let it ride along unnoticed in an
+   * unrelated edit.
+   */
+  @Post(':id/default')
+  @RequirePermission('canManageWorkspaces')
+  @ApiOperation({ summary: "Make this space the organization's default" })
+  async makeDefault(@Param('id') id: string, @Request() req: any) {
+    const result = await this.locationsQueueService.setDefault({
+      id,
+      // From the token, never the body: the space id is checked against THIS
+      // organization, so a guessed id from another tenant finds nothing.
+      organizationId: req.user.organizationId,
+    });
+    this.rebill(req.user.organizationId);
+    return result;
+  }
+
   @Patch(':id')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a company location' })

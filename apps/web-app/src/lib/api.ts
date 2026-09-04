@@ -4017,6 +4017,22 @@ export const locationsApi = {
     return response.data?.data;
   },
 
+  /**
+   * Make this the organization's default workspace.
+   *
+   * Its own call rather than a field on update: it clears the flag on a
+   * different space, so it is a choice about the organization rather than a
+   * property of this one.
+   */
+  makeDefault: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { id: string; isDefault: boolean } }>(
+      `/locations/${id}/default`,
+      {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
   /** Permanent delete — server rejects spaces that still carry history. */
   purge: async (id: string) => {
     const response = await api.delete<{ success: boolean; data: { id: string } }>(`/locations/${id}/permanent`);

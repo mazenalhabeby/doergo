@@ -85,6 +85,8 @@ export const LOCATION_JOB_TYPES = {
   UPDATE: 'location.update',
   DELETE: 'location.delete',
   PURGE: 'location.purge', // hard delete — only for spaces without history
+  // Move the "default" flag — where a task with no space of its own lands.
+  SET_DEFAULT: 'location.setDefault',
   // Technician assignment operations
   ASSIGN_TECHNICIAN: 'location.assignTechnician',
   UPDATE_ASSIGNMENT: 'location.updateAssignment',

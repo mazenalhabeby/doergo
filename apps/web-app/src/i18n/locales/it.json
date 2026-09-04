@@ -3487,7 +3487,7 @@
       "hint": "Azioni irreversibili e distruttive.",
       "deleteTitle": "Elimina questo spazio di lavoro",
       "deleteHint": "Archivia lo spazio di lavoro e lo nasconde dai selettori. Le sue attività vengono spostate nel tuo spazio di lavoro predefinito. Non annullabile.",
-      "lockedDefault": "Questo è il tuo spazio di lavoro predefinito: contiene le attività non assegnate e non può essere eliminato.",
+      "lockedDefault": "Questo è il tuo spazio di lavoro predefinito: raccoglie il lavoro non assegnato. Per eliminarlo, imposta prima un altro spazio come predefinito nella scheda Generale.",
       "lockedRemote": "Questo è lo spazio di lavoro Remoto: è necessario per le timbrature da remoto e non può essere eliminato.",
       "deleteButton": "Elimina spazio di lavoro",
       "dialogTitle": "Eliminare «{{name}}»?",
@@ -3546,7 +3546,15 @@
     "purge": "Elimina definitivamente",
     "purgeSpace": "Elimina definitivamente lo spazio di lavoro",
     "restoreAction": "Ripristina",
-    "settingsNav": "Impostazioni"
+    "settingsNav": "Impostazioni",
+    "default": {
+      "title": "Spazio predefinito",
+      "isCurrent": "Il lavoro che non appartiene a nessuno spazio arriva qui.",
+      "canBe": "Rendi questo lo spazio che raccoglie il lavoro senza spazio proprio.",
+      "badge": "Predefinito",
+      "make": "Imposta come predefinito",
+      "done": "{{name}} è ora lo spazio predefinito."
+    }
   },
   "commandPalette": {
     "placeholder": "Digiti un comando o cerchi...",
