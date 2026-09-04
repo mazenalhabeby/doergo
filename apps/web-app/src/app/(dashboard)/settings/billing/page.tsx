@@ -253,22 +253,24 @@ export default function BillingPage() {
               onSubscribe={() => go(() => billingApi.checkout(), 'checkout')}
               subscribeBusy={busy === 'checkout'}
               /*
-                No subscription on Stripe yet. `totalCents` is null until one
-                exists — the same signal the Portal fails on, read here to
-                offer the action that creates one instead of the one that
-                cannot work without it.
+                Two questions, deliberately separate — collapsing them into one
+                flag is what put "Payment & invoices" on a trialing account
+                with no billing account behind it.
 
-                NOT while trialing. Nothing is owed yet, and asking for a card
-                mid-trial asks a question the customer has not reached — the
-                trial exists precisely so they can decide later. An operator
-                ends the trial when the conversation about paying has actually
-                begun (admin.hbcfield.com → End trial), and the button appears
-                then. The trial line above already says how long is left.
+                `hasSubscription` — is there something for the Portal to
+                manage? `totalCents` is null until Stripe has a subscription,
+                and the trial has nothing to do with it.
 
-                EXTERNAL is excluded too: a contract customer has nothing to
-                check out, and the server refuses it anyway.
+                `canSubscribe` — should we ASK for a card? Not during a trial:
+                nothing is owed yet, and asking mid-trial asks a question the
+                customer has not reached. An operator ends the trial when the
+                conversation about paying has begun (admin.hbcfield.com → End
+                trial) and the button appears then. Not for a contract
+                customer either — EXTERNAL has nothing to check out and the
+                server refuses it.
               */
-              needsSubscription={
+              hasSubscription={sub?.totalCents != null}
+              canSubscribe={
                 sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && sub?.totalCents == null
               }
             />

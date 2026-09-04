@@ -38,15 +38,17 @@ export function OptionsRail({
   onSubscribe,
   subscribeBusy,
   /**
-   * No Stripe subscription yet — so there is nothing for the Customer Portal to
-   * manage, and the button that opens it can only say "No billing account yet".
+   * Is there a Stripe subscription for the Portal to manage?
    *
-   * The action that FIXES that had no button at all: `POST /billing/checkout`
-   * existed on the server, `billingApi.checkout()` existed in the client, and
-   * nothing in the product ever called either. An organization on a card plan
-   * could not start paying, which is why no real payment had ever completed.
+   * ⚠️ Two different questions, and collapsing them into one flag is what put
+   * "Payment & invoices" on a trialing account with no billing account behind
+   * it. "Should we offer checkout?" excludes a trial — nothing is owed yet.
+   * "Is there something to manage?" does not care about the trial at all: there
+   * is a subscription or there is not.
    */
-  needsSubscription,
+  hasSubscription,
+  /** Offer checkout: no subscription, not trialing, not a contract customer. */
+  canSubscribe,
 }: {
   bill: OrgCostBreakdown;
   isAdmin: boolean;
@@ -57,7 +59,8 @@ export function OptionsRail({
   showPortal: boolean;
   onSubscribe: () => void;
   subscribeBusy: boolean;
-  needsSubscription: boolean;
+  hasSubscription: boolean;
+  canSubscribe: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -131,7 +134,7 @@ export function OptionsRail({
             and the one action the page never offered. Shown only while there is
             no subscription; once there is one, the Portal below manages it.
           */}
-          {needsSubscription && (
+          {canSubscribe && (
             <Button className="w-full" size="sm" disabled={!isAdmin || subscribeBusy} onClick={onSubscribe}>
               {subscribeBusy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -144,13 +147,13 @@ export function OptionsRail({
           <Button
             className="w-full"
             size="sm"
-            variant={needsSubscription ? 'outline' : 'default'}
+            variant={canSubscribe ? 'outline' : 'default'}
             disabled={!isAdmin}
             onClick={() => setOpen(true)}
           >
             {t('billing.addOns.change', 'Change options')}
           </Button>
-          {showPortal && !needsSubscription && (
+          {showPortal && hasSubscription && (
             <Button variant="outline" className="w-full" size="sm" disabled={!isAdmin || portalBusy} onClick={onPortal}>
               {portalBusy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

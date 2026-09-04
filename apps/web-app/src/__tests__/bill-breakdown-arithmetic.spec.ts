@@ -122,13 +122,25 @@ describe('an organization with no subscription can start one', () => {
       billing account yet".
     */
     expect(page).toContain('billingApi.checkout()');
-    expect(rail).toContain('needsSubscription');
+    expect(rail).toContain('canSubscribe');
   });
 
   it('shows it only while there is no subscription', () => {
     // `totalCents` is null until Stripe has one — the same signal the Portal
     // fails on, used to offer the action that fixes it.
     expect(page).toContain('sub?.totalCents == null');
+  });
+
+  it('shows the Portal only when there is a subscription to manage', () => {
+    /*
+      The regression this replaces: `needsSubscription` answered BOTH "should we
+      offer checkout?" and "is there something to manage?". Suppressing checkout
+      during a trial therefore un-suppressed the Portal, and a trialing account
+      with no Stripe customer was handed a button that could only answer "No
+      billing account yet".
+    */
+    expect(rail).toContain('showPortal && hasSubscription');
+    expect(page).toContain('hasSubscription={sub?.totalCents != null}');
   });
 
   it('does not ask for a card while the trial is running', () => {
@@ -149,11 +161,7 @@ describe('an organization with no subscription can start one', () => {
     // this matched a single formatted line and broke the moment the condition
     // grew a third clause, which is a test about whitespace pretending to be a
     // test about behaviour.
-    const expr = page.slice(page.indexOf('needsSubscription={'), page.indexOf('needsSubscription={') + 240);
+    const expr = page.slice(page.indexOf('canSubscribe={'), page.indexOf('canSubscribe={') + 240);
     expect(expr).toContain("!== 'EXTERNAL'");
-  });
-
-  it('hides the Portal until there is something for it to manage', () => {
-    expect(rail).toContain('showPortal && !needsSubscription');
   });
 });

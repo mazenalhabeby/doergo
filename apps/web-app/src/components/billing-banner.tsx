@@ -76,8 +76,17 @@ export function BillingBanner() {
       accent: urgent ? 'text-amber-500' : 'text-primary',
       Icon: Clock,
       main: `${d} day${d === 1 ? '' : 's'} left in your free trial`,
-      sub: 'choose a plan to keep everything running',
-      cta: 'Choose plan',
+      /*
+        There are no plans to choose. Tiers were removed in August — the bill is
+        the sum of what the organization switched on — so "choose a plan" sent
+        somebody looking for a screen that does not exist, and implied a
+        decision they cannot make.
+
+        What is true during a trial: everything works, nothing is owed, and the
+        bill is already computable. So the banner points at the bill.
+      */
+      sub: 'everything is switched on — see what it will cost',
+      cta: 'View bill',
     };
   } else {
     return null; // active → no banner
