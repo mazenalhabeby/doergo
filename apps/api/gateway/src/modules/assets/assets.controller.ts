@@ -49,7 +49,18 @@ export class AssetsController {
   ) {}
 
   @Post()
-  @RequirePermission('canViewAllTasks')
+  /*
+    A WRITE, so it asks the WRITE permission.
+
+    These were `canViewAllTasks` — a read permission authorising changes to the
+    organization's equipment, which is how somebody given sight of the work
+    quietly gains the ability to edit the asset register. `canManageAssets`
+    exists precisely for this and was being bypassed.
+
+    Nobody loses the ability: the migration granted `canManageAssets` to every
+    role that already had it through the old gate.
+  */
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset' })
   async create(@Body() dto: CreateAssetDto, @Request() req: any) {
     return this.assetsQueueService.create({
@@ -125,7 +136,7 @@ export class AssetsController {
   }
 
   @Patch(':id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Update an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async update(
@@ -177,7 +188,7 @@ export class AssetsController {
   }
 
   @Post(':id/activities')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Write a note against this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async addActivity(
@@ -275,7 +286,7 @@ export class AssetsController {
   }
 
   @Post(':id/rows')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Add a row to one of this asset\'s tables' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   async addRow(@Param('id') id: string, @Body() dto: AssetListRowDto, @Request() req: any) {
@@ -291,7 +302,7 @@ export class AssetsController {
   }
 
   @Patch(':id/rows/:rowId')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Change one row' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiParam({ name: 'rowId', description: 'Row ID' })
@@ -312,7 +323,7 @@ export class AssetsController {
   }
 
   @Delete(':id/rows/:rowId')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Remove one row' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiParam({ name: 'rowId', description: 'Row ID' })

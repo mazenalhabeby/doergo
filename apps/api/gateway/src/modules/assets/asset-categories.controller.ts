@@ -56,7 +56,18 @@ export class AssetCategoriesController {
   // ============================================
 
   @Post()
-  @RequirePermission('canViewAllTasks')
+  /*
+    A WRITE, so it asks the WRITE permission.
+
+    These were `canViewAllTasks` — a read permission authorising changes to the
+    organization's equipment, which is how somebody given sight of the work
+    quietly gains the ability to edit the asset register. `canManageAssets`
+    exists precisely for this and was being bypassed.
+
+    Nobody loses the ability: the migration granted `canManageAssets` to every
+    role that already had it through the old gate.
+  */
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset category' })
   async createCategory(@Body() dto: CreateAssetCategoryDto, @Request() req: any) {
     return this.assetsQueueService.createCategory({
@@ -83,7 +94,7 @@ export class AssetCategoriesController {
   }
 
   @Patch(':id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Update a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   async updateCategory(
@@ -102,7 +113,7 @@ export class AssetCategoriesController {
   }
 
   @Delete(':id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Delete a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   async deleteCategory(@Param('id') id: string, @Request() req: any) {
@@ -120,7 +131,7 @@ export class AssetCategoriesController {
   // ============================================
 
   @Post(':categoryId/types')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset type in a category' })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
   async createType(
@@ -177,7 +188,7 @@ export class AssetTypesController {
   ) {}
 
   @Patch(':id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Update an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
   async updateType(
@@ -196,7 +207,7 @@ export class AssetTypesController {
   }
 
   @Delete(':id')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermission('canManageAssets')
   @ApiOperation({ summary: 'Delete an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
   async deleteType(@Param('id') id: string, @Request() req: any) {

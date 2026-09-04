@@ -86,18 +86,23 @@ describe('the External Observer role', () => {
  * role, because each moves who may act for EXISTING customers.
  */
 const KNOWN: Record<string, string> = {
-  // Closed to every external member by @DenyExternal, so an Observer cannot
-  // reach them at all. The remaining exposure is internal: a view-only member
-  // can create and edit the organization's equipment. `canManageAssets` exists
-  // and is the right gate; switching would change who may add an asset today.
-  'assets/assets.controller.ts': 'DenyExternal + should be canManageAssets',
-  'assets/asset-categories.controller.ts': 'DenyExternal + should be canManageAssets',
-  // Org-wide @RequirePermission, and an Observer holds canViewAllTasks only in
-  // a space — so the guard refuses them. Safe by accident of the gate rather
-  // than by intent, which is exactly why it is written down.
-  'epics/epics.controller.ts': 'org-wide gate; an agile manage permission is the right one',
-  // Cross-org, org-wide, and a REQUEST rather than a change: a guest who can
-  // see a shared space asking its host for more work. Defensible at view level.
+  /*
+    Agile planning — sprints, epics, phases, custom fields — uses
+    `canViewAllTasks` as its manager check across the whole family. There is no
+    finer permission to move to: unlike assets, which had `canManageAssets`
+    waiting unused, nothing exists that means "may plan the work".
+
+    Not a privilege escalation but a naming one: everyone who holds
+    canViewAllTasks is a manager by every other definition in the product.
+    Inventing a permission for it is a product decision about who plans, taken
+    on purpose, and not something to slip into a security tidy-up.
+
+    An External Observer cannot reach any of these — they are org-wide gates and
+    the Observer holds canViewAllTasks only in a space.
+  */
+  'epics/epics.controller.ts': 'agile family convention; org-wide gate keeps an Observer out',
+  // Cross-org, org-wide, and a REQUEST rather than a change: a guest who can see
+  // a shared space asking its host for more work. Defensible at view level.
   'space-sharing/space-sharing.controller.ts': 'asks the host for more work; changes nothing',
 };
 
