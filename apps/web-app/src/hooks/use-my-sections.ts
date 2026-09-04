@@ -12,10 +12,14 @@ import { useAuth } from "@/contexts/auth-context"
  * documents. It was three separate items in the navigation bar, which is three
  * lines of clutter for everybody and still no sense that they are one thing.
  *
- * Deliberately NOT called HR. That word names the FUNCTION — the admin area for
- * the people who run it — and the same word cannot also mean the employee's own
- * file without one of the two being wrong later. A field technician does not do
- * HR; they book leave and read their payslip.
+ * The menu is labelled HR, by the CEO's decision, and its CONTENTS are the
+ * compromise that keeps that honest: strictly self-service, nothing a manager
+ * does. The word normally names the FUNCTION — the admin area for the people who
+ * run it — so when that area is built it must be called People, or the product
+ * ends up with two things called HR meaning opposite ends of the same process.
+ *
+ * Everything else here still says "my": the route, this hook, the layout. What a
+ * member owns is their own, whatever the bar calls it.
  *
  * Manager surfaces stay out. Approving somebody's leave is not "me", and mixing
  * the two is what leaves people unsure whether a screen shows their own days off

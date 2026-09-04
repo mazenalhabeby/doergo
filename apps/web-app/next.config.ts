@@ -46,6 +46,25 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        /*
+          The document register moved from /documents/sent to /documents/all —
+          it holds every document in the organization, issued AND supplied, and
+          half of it is a filing cabinet rather than an outbox.
+
+          Here rather than as a page calling `redirect()`: that page prerenders,
+          so the "redirect" arrives as a 200 with a JavaScript navigation inside
+          it. This is a real 308 before any HTML is built — which is what a link
+          somebody bookmarked, or a crawler, actually needs.
+        */
+        source: '/documents/sent',
+        destination: '/documents/all',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     // In production nginx proxies /api and /uploads to the gateway BEFORE the
     // request reaches Next, so these rewrites are a dev/self-host convenience.
