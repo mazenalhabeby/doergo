@@ -116,12 +116,15 @@ interface SubtasksSectionProps {
   taskId: string
   subtasks?: Task[]
   subtaskCount?: number
+  /** May this viewer add subtasks? Space-aware, from the page. */
+  canEdit?: boolean
 }
 
 export const SubtasksSection = memo(function SubtasksSection({
   taskId,
   subtasks: initialSubtasks,
   subtaskCount,
+  canEdit = true,
 }: SubtasksSectionProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -179,7 +182,15 @@ export const SubtasksSection = memo(function SubtasksSection({
         }
       `}</style>
 
-      {/* Add button */}
+      {/*
+        Add — only for somebody who may actually add.
+
+        The control used to render for anyone who could SEE the task, and the
+        server refused on submit: a supervisor granted "create tasks" in their
+        space got a permission error from a button the app had offered them. A
+        control you are not allowed to use should not be there.
+      */}
+      {canEdit && (
       <div className="flex justify-end mb-2">
         <Button
           variant="ghost"
@@ -191,6 +202,7 @@ export const SubtasksSection = memo(function SubtasksSection({
           {t("common.add")}
         </Button>
       </div>
+      )}
 
       {/* Subtask list */}
       {subtasks.length > 0 && (

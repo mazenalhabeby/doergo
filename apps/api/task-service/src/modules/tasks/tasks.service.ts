@@ -2077,6 +2077,32 @@ export class TasksService {
   }
 
   /**
+   * May this caller add work UNDER an existing task?
+   *
+   * Subtasks and dependencies were `@RequirePermission('canCreateTasks')` — the
+   * flat ORG column — so a supervisor granted "create tasks" by a space role
+   * could open a job at their site and then be refused when breaking it into
+   * steps or ordering it. The control was offered and the action was not.
+   *
+   * Widening the guard puts the real decision here, where the PARENT task's own
+   * space is known. This is the enforcement, not a hint: the route takes a task
+   * id straight from the caller, so without it a member granted in one space
+   * could hang a subtask off any task in the organization.
+   *
+   * Same shape as assertMayAssign above, deliberately — one question asked one
+   * way, so a reader who understands one understands both.
+   */
+  private assertMayCreateUnder(
+    task: { spaceId: string | null },
+    data: { userRole?: string; canCreateTasks?: boolean; createSpaceIds?: string[] },
+  ) {
+    if (data.userRole === Role.ADMIN) return;
+    if (data.canCreateTasks === true) return;
+    if (task.spaceId && data.createSpaceIds?.includes(task.spaceId)) return;
+    throw new ForbiddenException('You do not have permission to add work to this task');
+  }
+
+  /**
    * A space-scoped assigner may only reach the people in that space.
    *
    * Their suggestion list is already narrowed to the site's roster, but the
@@ -2921,6 +2947,10 @@ export class TasksService {
       throw new ForbiddenException('Parent task is not in your organization');
     }
 
+    // The org is not the boundary for a space-granted member: their "create
+    // tasks" applies inside their own spaces only.
+    this.assertMayCreateUnder(parent, data);
+
     // Verify no circular parent-child relationship
     let current: string | null = data.parentId;
     const visited = new Set<string>();
@@ -3037,6 +3067,9 @@ export class TasksService {
     lagDays?: number;
     userId: string;
     organizationId: string;
+    userRole?: string;
+    canCreateTasks?: boolean;
+    createSpaceIds?: string[];
   }) {
     // Validate both tasks exist and belong to the same org
     const [predecessor, successor] = await Promise.all([
@@ -3057,6 +3090,17 @@ export class TasksService {
     if (successor.organizationId !== data.organizationId) {
       throw new ForbiddenException('Successor task is not in your organization');
     }
+
+    /*
+      BOTH ends, not just the one named in the route.
+
+      A dependency links two tasks, and linking is a change to each of them:
+      "B cannot start until A finishes" constrains A's schedule as much as B's.
+      Checking only the successor would let a member granted in one space reach
+      into a space they hold nothing in and order the work there.
+    */
+    this.assertMayCreateUnder(successor, data);
+    this.assertMayCreateUnder(predecessor, data);
 
     if (data.predecessorId === data.successorId) {
       throw new BadRequestException('A task cannot depend on itself');
@@ -3115,11 +3159,17 @@ export class TasksService {
     dependencyId: string;
     userId: string;
     organizationId: string;
+    userRole?: string;
+    canCreateTasks?: boolean;
+    createSpaceIds?: string[];
   }) {
     const dependency = await this.prisma.taskDependency.findUnique({
       where: { id: data.dependencyId },
       include: {
-        predecessor: { select: { organizationId: true } },
+        // spaceId on both ends: removing a link changes both tasks, so both are
+        // checked — the same rule addDependency applies to creating it.
+        predecessor: { select: { organizationId: true, spaceId: true } },
+        successor: { select: { organizationId: true, spaceId: true } },
       },
     });
 
@@ -3130,6 +3180,9 @@ export class TasksService {
     if (dependency.predecessor.organizationId !== data.organizationId) {
       throw new ForbiddenException('Dependency is not in your organization');
     }
+
+    this.assertMayCreateUnder(dependency.successor, data);
+    this.assertMayCreateUnder(dependency.predecessor, data);
 
     await this.prisma.taskDependency.delete({
       where: { id: data.dependencyId },

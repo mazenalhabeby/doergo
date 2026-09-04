@@ -583,7 +583,20 @@ export class TasksController {
   // ============ Subtask Endpoints ============
 
   @Post(':id/subtasks')
-  @RequirePermission('canCreateTasks')
+  /*
+    Space-aware, like the create route above it.
+
+    This asked the flat ORG column, so a supervisor who runs a site — granted
+    "create tasks" by their space role — could open a job at that site and be
+    refused when breaking it into steps. The button was there and the action
+    was not, which reads as a broken app rather than a permission.
+
+    Widening the guard moves the real decision into the service, where the
+    PARENT task's own space is known: the route takes a task id straight from
+    the caller, so without that check a member granted in one space could hang
+    a subtask off any task in the organization.
+  */
+  @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Create a subtask under a task' })
   async createSubtask(
     @Param('id') id: string,
@@ -594,6 +607,11 @@ export class TasksController {
       ...createTaskDto,
       parentId: id,
       userId: req.user.id,
+      userRole: req.user.role,
+      canCreateTasks: req.user.canCreateTasks,
+      createSpaceIds: isAdmin(req.user)
+        ? undefined
+        : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -619,7 +637,9 @@ export class TasksController {
   // ============ Dependency Endpoints ============
 
   @Post(':id/dependencies')
-  @RequirePermission('canCreateTasks')
+  // Space-aware for the same reason as subtasks: ordering the work is part of
+  // running the site, and the service checks the successor task's real space.
+  @RequirePermissionInSpace('canCreateTasks')
   // Dependencies is a per-space MODULE, not an org add-on. It was @RequirePlan
   // under the retired tier model; PlanGuard fails closed on a key that is not an
   // add-on, so every organization got a 402 here from the 2026-08-21 pricing
@@ -635,12 +655,17 @@ export class TasksController {
       ...createDependencyDto,
       successorId: id,
       userId: req.user.id,
+      userRole: req.user.role,
+      canCreateTasks: req.user.canCreateTasks,
+      createSpaceIds: isAdmin(req.user)
+        ? undefined
+        : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
 
   @Delete(':id/dependencies/:depId')
-  @RequirePermission('canCreateTasks')
+  @RequirePermissionInSpace('canCreateTasks')
   // Dependencies is a per-space MODULE, not an org add-on. It was @RequirePlan
   // under the retired tier model; PlanGuard fails closed on a key that is not an
   // add-on, so every organization got a 402 here from the 2026-08-21 pricing
@@ -655,6 +680,11 @@ export class TasksController {
     return this.tasksQueueService.removeDependency({
       dependencyId: depId,
       userId: req.user.id,
+      userRole: req.user.role,
+      canCreateTasks: req.user.canCreateTasks,
+      createSpaceIds: isAdmin(req.user)
+        ? undefined
+        : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }

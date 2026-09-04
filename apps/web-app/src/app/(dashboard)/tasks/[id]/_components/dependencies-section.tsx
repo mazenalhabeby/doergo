@@ -72,12 +72,14 @@ const DependencyRow = memo(function DependencyRow({
   direction,
   onRemove,
   isRemoving,
+  canEdit,
 }: {
   dep: TaskDependency
   taskId: string
   direction: "predecessor" | "successor"
   onRemove: (depId: string) => void
   isRemoving: boolean
+  canEdit: boolean
 }) {
   const linked =
     direction === "predecessor" ? dep.predecessor : dep.successor
@@ -102,13 +104,15 @@ const DependencyRow = memo(function DependencyRow({
           {dep.lagDays > 0 ? `+${dep.lagDays}d` : `${dep.lagDays}d`}
         </span>
       )}
-      <button
-        onClick={() => onRemove(dep.id)}
-        disabled={isRemoving}
-        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 transition-all shrink-0"
-      >
-        <X className="size-3.5" />
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => onRemove(dep.id)}
+          disabled={isRemoving}
+          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 transition-all shrink-0"
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
     </div>
   )
 })
@@ -243,12 +247,15 @@ interface DependenciesSectionProps {
   taskId: string
   predecessors?: TaskDependency[]
   successors?: TaskDependency[]
+  /** May this viewer change the ordering? Space-aware, from the page. */
+  canEdit?: boolean
 }
 
 export const DependenciesSection = memo(function DependenciesSection({
   taskId,
   predecessors = [],
   successors = [],
+  canEdit = true,
 }: DependenciesSectionProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -286,7 +293,12 @@ export const DependenciesSection = memo(function DependenciesSection({
         existingDepIds={existingDepIds}
       />
 
-      {/* Add button */}
+      {/*
+        Add — and the remove buttons on each row — only for somebody who may
+        actually change the ordering. Both used to render for any viewer and
+        fail at the server.
+      */}
+      {canEdit && (
       <div className="flex justify-end mb-2">
         <Button
           variant="ghost"
@@ -298,6 +310,7 @@ export const DependenciesSection = memo(function DependenciesSection({
           {t("common.add")}
         </Button>
       </div>
+      )}
 
       {/* Predecessors (Blocked by) */}
       {predecessors.length > 0 && (
@@ -316,6 +329,7 @@ export const DependenciesSection = memo(function DependenciesSection({
               direction="predecessor"
               onRemove={(id) => removeMutation.mutate(id)}
               isRemoving={removeMutation.isPending}
+              canEdit={canEdit}
             />
           ))}
         </div>
@@ -338,6 +352,7 @@ export const DependenciesSection = memo(function DependenciesSection({
               direction="successor"
               onRemove={(id) => removeMutation.mutate(id)}
               isRemoving={removeMutation.isPending}
+              canEdit={canEdit}
             />
           ))}
         </div>

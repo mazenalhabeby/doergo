@@ -67,6 +67,16 @@ export default function TaskDetailPage({
   const canViewAllTasks = isAdmin || hasPermission('canViewAllTasks')
   // The route map shows where a person physically went — its own capability now.
   const canViewTracking = isAdmin || user?.canViewTracking === true || hasPermission('canViewAllTasks')
+  /*
+    May this viewer add work under the task — subtasks, and the dependencies
+    that order them?
+
+    The same question the server now asks: `hasPermission` is satisfied by an
+    org-wide flag OR a grant held in any space, and the endpoints re-check the
+    task's real space. Before this, the Add controls rendered for anyone who
+    could SEE the task and failed on submit with a permission error.
+  */
+  const canAddWork = isAdmin || hasPermission('canCreateTasks')
 
   const [showAssignModal, setShowAssignModal] = useState(false)
   // Reported by ActivitySection, which is the only thing that loads the
@@ -358,7 +368,7 @@ export default function TaskDetailPage({
             {hasModule("subtasks") && (
               <div data-tour="task-subtasks">
               <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={subtaskCount || undefined} defaultOpen={openIfPresent(subtaskCount)}>
-                <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} />
+                <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} canEdit={canAddWork} />
               </CollapsibleSection>
               </div>
             )}
@@ -385,7 +395,7 @@ export default function TaskDetailPage({
             {hasModule("dependencies") && (
               <div data-tour="task-dependencies">
               <CollapsibleSection id="dependencies" icon={Link2} title={t("tasks.sections.dependencies")} count={depCount || undefined} defaultOpen={openIfPresent(depCount)}>
-                <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} />
+                <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} canEdit={canAddWork} />
               </CollapsibleSection>
               </div>
             )}
