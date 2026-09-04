@@ -6477,13 +6477,25 @@
       "addOnsBought": "Options",
       "estimate": "Au tarif public",
       "observerSeats": "Observateurs externes",
-      "externalSeats": "Superviseurs externes"
+      "externalSeats": "Superviseurs externes",
+      "exVat": "Hors TVA — la taxe est ajoutée au paiement, au taux de votre pays.",
+      "whatsActive": "Ce qui est actif",
+      "spacesSummary": "{{count}} espaces de travail · {{price}}",
+      "peopleSummary": "{{count}} comptes · {{price}}",
+      "staffSeats": "Personnel",
+      "externalTag": "personnel du client",
+      "observerTag": "observe seulement"
     },
     "addOns": {
       "title": "Options",
       "subtitle": "Souscrites une fois pour toute l’organisation, pas par espace de travail",
       "perMonth": "/mois",
-      "unsaved": "Modifications non enregistrées"
+      "unsaved": "Modifications non enregistrées",
+      "change": "Modifier les options",
+      "railCount": "{{count}} choisies · une fois pour l’organisation",
+      "railNone": "Aucune choisie pour l’instant",
+      "railNoteTitle": "Choisies une fois, utilisées partout",
+      "railNote": "Une option est facturée pour toute l’organisation — contrairement à un module, facturé pour chaque espace de travail qui l’active."
     },
     "status": {
       "trialing": "Essai",
@@ -6501,7 +6513,8 @@
     "cancelsOn": "Se termine le {{date}}",
     "modulesElsewhere": "Les modules appartiennent à un espace de travail — activez-les dans l’onglet Modules de cet espace de travail, à côté du décompte qui les facture.",
     "byAgreement": "Facturation par accord",
-    "byAgreementHint": "Rien n’est prélevé automatiquement. Les chiffres ci-dessous correspondent au tarif public — utiles pour un renouvellement, ce n’est pas une facture."
+    "byAgreementHint": "Rien n’est prélevé automatiquement. Les chiffres ci-dessous correspondent au tarif public — utiles pour un renouvellement, ce n’est pas une facture.",
+    "renewsOn": "Renouvellement le {{date}}"
   },
   "assetKinds": {
     "title": "Biens",

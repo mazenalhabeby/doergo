@@ -6468,13 +6468,25 @@
       "addOnsBought": "Optionen",
       "estimate": "Zum Listenpreis",
       "observerSeats": "Externe Beobachter",
-      "externalSeats": "Externe Supervisoren"
+      "externalSeats": "Externe Supervisoren",
+      "exVat": "Zzgl. USt. — die Steuer wird beim Bezahlen zum für Ihr Land geltenden Satz ergänzt.",
+      "whatsActive": "Was aktiv ist",
+      "spacesSummary": "{{count}} Arbeitsbereiche · {{price}}",
+      "peopleSummary": "{{count}} Konten · {{price}}",
+      "staffSeats": "Mitarbeitende",
+      "externalTag": "Kundenpersonal",
+      "observerTag": "nur lesend"
     },
     "addOns": {
       "title": "Optionen",
       "subtitle": "Einmal für die gesamte Organisation gebucht, nicht pro Arbeitsbereich",
       "perMonth": "/Mon.",
-      "unsaved": "Nicht gespeicherte Änderungen"
+      "unsaved": "Nicht gespeicherte Änderungen",
+      "change": "Optionen ändern",
+      "railCount": "{{count}} gewählt · einmal für die Organisation",
+      "railNone": "Noch keine gewählt",
+      "railNoteTitle": "Einmal gewählt, überall nutzbar",
+      "railNote": "Eine Option wird für die gesamte Organisation berechnet — anders als ein Modul, das je Arbeitsbereich berechnet wird, der es aktiviert."
     },
     "status": {
       "trialing": "Testphase",
@@ -6492,7 +6504,8 @@
     "cancelsOn": "Endet am {{date}}",
     "modulesElsewhere": "Module gehören zu einem Arbeitsbereich — aktivieren Sie sie im Reiter „Module“ des Arbeitsbereichs, direkt neben der Anzahl, nach der sie berechnet werden.",
     "byAgreement": "Abrechnung nach Vereinbarung",
-    "byAgreementHint": "Es wird nichts automatisch abgebucht. Die Zahlen unten zeigen, was diese Organisation zum Listenpreis kosten würde — hilfreich für eine Verlängerung, keine Rechnung."
+    "byAgreementHint": "Es wird nichts automatisch abgebucht. Die Zahlen unten zeigen, was diese Organisation zum Listenpreis kosten würde — hilfreich für eine Verlängerung, keine Rechnung.",
+    "renewsOn": "Verlängert am {{date}}"
   },
   "assetKinds": {
     "title": "Objekte",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, ExternalLink } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notify } from '@/lib/toast';
 import { errorMessage } from '@/lib/errors';
@@ -11,7 +11,7 @@ import { billingApi } from '@/lib/api';
 import type { OrgCostBreakdown, SubscriptionView } from '@hbcfield/shared/client';
 
 import { BillBreakdown } from './_components/bill-breakdown';
-import { AddOnPicker } from './_components/add-on-picker';
+import { OptionsRail } from './_components/options-rail';
 
 /**
  * Billing & plan.
@@ -22,9 +22,14 @@ import { AddOnPicker } from './_components/add-on-picker';
  * of them. Now the bill is the sum of what the organization actually switched
  * on, and this page's job is to say so and let an admin change it.
  *
- * The two halves answer the two questions people arrive with:
+ * The two halves answer the two questions people arrive with, and they sit
+ * side by side rather than stacked:
  *   "why is my bill this?"  → the breakdown, itemised down to each space
- *   "how do I get X?"       → the add-on list, each with its own price
+ *   "how do I get X?"       → the options rail, each with its own price
+ *
+ * Side by side because the two are priced differently — an option is bought
+ * once for the organization, a module by each space that switches it on — and
+ * one column made them look like the same kind of purchase.
  *
  * Modules are deliberately NOT bought here. A module belongs to a space and is
  * switched on in that space's Modules tab, next to the count it is priced by —
@@ -108,7 +113,12 @@ export default function BillingPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="mx-auto max-w-3xl space-y-5 px-4 py-8 sm:px-6">
+      {/*
+        Wider than the 3xl it was. The page carries a second column now, and at
+        3xl the rail and the workspace list were each too narrow to read — the
+        module chips wrapped one per line and the option names truncated.
+      */}
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {t('billing.title', 'Billing')}
@@ -121,101 +131,109 @@ export default function BillingPage() {
           </p>
         </div>
 
-        {/* ── subscription status ───────────────────────────────────────────── */}
-        {sub && (
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
+        {/*
+          Content, then the options rail.
+
+          One column below lg: a sticky sidebar on a phone is a strip of screen
+          that never scrolls away, and the rail is reference rather than
+          navigation.
+        */}
+        <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="space-y-4">
+            {/* ── status, on one line ─────────────────────────────────────── */}
+            {sub && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${st.cls}`}>
                   {t(st.key, st.fallback)}
                 </span>
+
+                {/*
+                  Only what the server actually sends. A renewal date, a card
+                  and a VAT rate would all be useful here — SubscriptionView
+                  carries the first and not the other two, and a billing page
+                  that invents a payment method is worse than one that omits it.
+                */}
+                {sub.currentPeriodEnd && !sub.cancelAtPeriodEnd && (
+                  <span className="text-xs text-muted-foreground">
+                    {t('billing.renewsOn', 'Renews {{date}}', {
+                      date: new Date(sub.currentPeriodEnd).toLocaleDateString(),
+                    })}
+                  </span>
+                )}
                 {sub.status === 'trialing' && sub.trialDaysLeft != null && (
-                  <p className="mt-2 text-sm font-medium text-primary">
+                  <span className="text-xs font-medium text-primary">
                     {t('billing.trialDaysLeft', '{{count}} days left in your trial', { count: sub.trialDaysLeft })}
-                  </p>
+                  </span>
                 )}
                 {sub.cancelAtPeriodEnd && sub.currentPeriodEnd && (
-                  <p className="mt-2 text-sm text-amber-500">
+                  <span className="text-xs text-amber-500">
                     {t('billing.cancelsOn', 'Cancels on {{date}}', {
                       date: new Date(sub.currentPeriodEnd).toLocaleDateString(),
                     })}
-                  </p>
+                  </span>
+                )}
+
+                {isAdmin && !sub.billedExternally && sub.status !== 'canceled' && !sub.cancelAtPeriodEnd && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-7 text-xs text-muted-foreground"
+                    disabled={busy !== null}
+                    onClick={() => go(() => billingApi.cancel(), 'cancel')}
+                  >
+                    {t('billing.cancel', 'Cancel')}
+                  </Button>
                 )}
               </div>
+            )}
 
-              {isAdmin && !sub.billedExternally && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={busy !== null}
-                    onClick={() => go(() => billingApi.portal(), 'portal')}
-                  >
-                    {busy === 'portal' ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                    )}
-                    {t('billing.paymentAndInvoices', 'Payment & invoices')}
-                  </Button>
-                  {sub.status !== 'canceled' && !sub.cancelAtPeriodEnd && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy !== null}
-                      onClick={() => go(() => billingApi.cancel(), 'cancel')}
-                    >
-                      {t('billing.cancel', 'Cancel')}
-                    </Button>
+            {/*
+              A contract customer is not paying this. Saying so ABOVE the
+              breakdown matters: the numbers below are real and useful — they are
+              what a renewal conversation is about — but presenting them without
+              this would read as a bill nobody sent.
+            */}
+            {sub?.billedExternally && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <p className="text-sm font-medium text-foreground">
+                  {t('billing.byAgreement', 'Billed by agreement')}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t(
+                    'billing.byAgreementHint',
+                    'Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice.',
                   )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                </p>
+              </div>
+            )}
 
-        {/*
-          A contract customer is not paying this. Saying so ABOVE the breakdown
-          matters: the numbers below are real and useful — they are what a
-          renewal conversation is about — but presenting them without this would
-          read as a bill nobody sent.
-        */}
-        {sub?.billedExternally && (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <p className="text-sm font-medium text-foreground">
-              {t('billing.byAgreement', 'Billed by agreement')}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            {!isAdmin && (
+              <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                {t('billing.adminOnly', 'Only an organization admin can change what you pay for.')}
+              </div>
+            )}
+
+            {bill && <BillBreakdown bill={bill} estimate={sub?.billedExternally} />}
+
+            <p className="text-xs text-muted-foreground">
               {t(
-                'billing.byAgreementHint',
-                'Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice.',
+                'billing.modulesElsewhere',
+                "Modules belong to a space — switch them on in that space's Modules tab, next to the count they are priced by.",
               )}
             </p>
           </div>
-        )}
 
-        {!isAdmin && (
-          <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-            {t('billing.adminOnly', 'Only an organization admin can change what you pay for.')}
-          </div>
-        )}
-
-        {bill && <BillBreakdown bill={bill} estimate={sub?.billedExternally} />}
-
-        {bill && (
-          <AddOnPicker
-            purchased={bill.addOns.map((a) => a.key)}
-            disabled={!isAdmin}
-            onSave={saveAddOns}
-          />
-        )}
-
-        <p className="text-xs text-muted-foreground">
-          {t(
-            'billing.modulesElsewhere',
-            "Modules belong to a space — switch them on in that space's Modules tab, next to the count they are priced by.",
+          {bill && (
+            <OptionsRail
+              bill={bill}
+              isAdmin={isAdmin}
+              onSave={saveAddOns}
+              onPortal={() => go(() => billingApi.portal(), 'portal')}
+              portalBusy={busy === 'portal'}
+              showPortal={!sub?.billedExternally}
+            />
           )}
-        </p>
+        </div>
       </div>
     </div>
   );

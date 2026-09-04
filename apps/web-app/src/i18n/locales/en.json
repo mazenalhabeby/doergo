@@ -6468,13 +6468,25 @@
       "addOnsBought": "Options",
       "estimate": "At list price",
       "observerSeats": "External observers",
-      "externalSeats": "External supervisors"
+      "externalSeats": "External supervisors",
+      "exVat": "Excludes VAT — tax is added at checkout, at the rate for your country.",
+      "whatsActive": "What's active",
+      "spacesSummary": "{{count}} workspaces · {{price}}",
+      "peopleSummary": "{{count}} accounts · {{price}}",
+      "staffSeats": "Staff",
+      "externalTag": "client staff",
+      "observerTag": "watches only"
     },
     "addOns": {
       "title": "Options",
       "subtitle": "Bought once for the whole organization, not per workspace",
       "perMonth": "/mo",
-      "unsaved": "Unsaved changes"
+      "unsaved": "Unsaved changes",
+      "change": "Change options",
+      "railCount": "{{count}} chosen · once for the organization",
+      "railNone": "None chosen yet",
+      "railNoteTitle": "Chosen once, used everywhere",
+      "railNote": "An option is priced for the whole organization — unlike a module, which is priced for each workspace that switches it on."
     },
     "status": {
       "trialing": "Trial",
@@ -6492,7 +6504,8 @@
     "cancelsOn": "Cancels on {{date}}",
     "modulesElsewhere": "Modules belong to a workspace — switch them on in that workspace's Modules tab, next to the count they are priced by.",
     "byAgreement": "Billed by agreement",
-    "byAgreementHint": "Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice."
+    "byAgreementHint": "Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice.",
+    "renewsOn": "Renews {{date}}"
   },
   "assetKinds": {
     "title": "Assets",

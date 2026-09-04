@@ -6468,13 +6468,25 @@
       "addOnsBought": "Opciones",
       "estimate": "A precio de tarifa",
       "observerSeats": "Observadores externos",
-      "externalSeats": "Supervisores externos"
+      "externalSeats": "Supervisores externos",
+      "exVat": "IVA no incluido — el impuesto se añade al pagar, al tipo de tu país.",
+      "whatsActive": "Qué está activo",
+      "spacesSummary": "{{count}} espacios de trabajo · {{price}}",
+      "peopleSummary": "{{count}} cuentas · {{price}}",
+      "staffSeats": "Personal",
+      "externalTag": "personal del cliente",
+      "observerTag": "solo observa"
     },
     "addOns": {
       "title": "Opciones",
       "subtitle": "Se contratan una vez para toda la organización, no por espacio de trabajo",
       "perMonth": "/mes",
-      "unsaved": "Cambios sin guardar"
+      "unsaved": "Cambios sin guardar",
+      "change": "Cambiar opciones",
+      "railCount": "{{count}} elegidas · una vez para la organización",
+      "railNone": "Ninguna elegida todavía",
+      "railNoteTitle": "Elegidas una vez, usadas en todas partes",
+      "railNote": "Una opción se cobra para toda la organización, a diferencia de un módulo, que se cobra por cada espacio de trabajo que lo activa."
     },
     "status": {
       "trialing": "Prueba",
@@ -6492,7 +6504,8 @@
     "cancelsOn": "Se cancela el {{date}}",
     "modulesElsewhere": "Los módulos pertenecen a un espacio de trabajo: actívalos en la pestaña Módulos de ese espacio de trabajo, junto al recuento por el que se cobran.",
     "byAgreement": "Facturación por acuerdo",
-    "byAgreementHint": "No se cobra nada automáticamente. Las cifras siguientes son lo que costaría a precio de tarifa: útil para una renovación, no es una factura."
+    "byAgreementHint": "No se cobra nada automáticamente. Las cifras siguientes son lo que costaría a precio de tarifa: útil para una renovación, no es una factura.",
+    "renewsOn": "Se renueva el {{date}}"
   },
   "assetKinds": {
     "title": "Activos",
