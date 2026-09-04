@@ -3622,7 +3622,9 @@
     "featureTabs": {
       "tasks": "Tareas",
       "clock": "Fichaje",
-      "timeOff": "Ausencias"
+      "timeOff": "Ausencias",
+      "externalBlocked": "No disponible para un miembro externo: no está empleado aquí, así que no hay horas que fichar ni vacaciones que solicitar.",
+      "externalHint": "Fichaje y Vacaciones no están disponibles: un miembro externo trabaja para un cliente o socio, así que aquí no hay horas que fichar ni vacaciones que solicitar."
     },
     "platforms": {
       "webOnly": "Solo web",

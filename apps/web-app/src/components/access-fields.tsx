@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Smartphone, Monitor, Layers, MessageCircle, Check } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
-import { ACCESS_PERMISSION_SCHEMA } from "@hbcfield/shared/client"
+import { ACCESS_PERMISSION_SCHEMA, moduleAllowedForExternal } from "@hbcfield/shared/client"
 import type { AccessDraft, MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -383,21 +383,44 @@ export function AccessFields({
         <div className="flex flex-wrap gap-2">
           {FEATURE_TABS.map((m) => {
             const on = value.modules.includes(m.key)
+            /*
+              Clock and Time off describe an EMPLOYMENT — hours we owe payment
+              for, leave asked of us — so an external member cannot hold them,
+              and the server strips them on save.
+
+              They used to be offered anyway: the click registered, the tab lit
+              up, and the toggle silently bounced back after saving with nothing
+              said. Shown disabled with the reason instead. Still shown, not
+              hidden — an admin looking for Clock should find out why it is not
+              available, not be left wondering where it went.
+            */
+            const blocked = external && !moduleAllowedForExternal(m.key)
             return (
               <button
                 key={m.key}
                 type="button"
-                onClick={() => toggleModule(m.key)}
+                disabled={blocked}
+                title={blocked ? t("accessBuilder.featureTabs.externalBlocked", "Not available for an external member — they are not employed here, so there are no hours to clock and no leave to request.") : undefined}
+                onClick={() => { if (!blocked) toggleModule(m.key) }}
                 className={cn(
                   "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                  on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+                  blocked
+                    ? "cursor-not-allowed border-dashed border-border text-muted-foreground/50"
+                    : on
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground",
                 )}
               >
-                {t(m.labelKey)} {on ? "✓" : ""}
+                {t(m.labelKey)} {blocked ? "—" : on ? "✓" : ""}
               </button>
             )
           })}
         </div>
+        {external && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {t("accessBuilder.featureTabs.externalHint", "Clock and Time off are not available: an external member works for a client or partner, so there are no hours to clock and no leave to request here.")}
+          </p>
+        )}
       </Field>
 
       {/* Attendance — remote clock-in. Always shown; disabled with a hint when

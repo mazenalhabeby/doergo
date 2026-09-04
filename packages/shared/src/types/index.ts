@@ -19,7 +19,7 @@ export {
   DEFAULT_MODULES, ALL_MODULES,
   // Modules an external member cannot hold — clock and time_off describe an
   // employment we do not have with them.
-  filterExternalModules,
+  filterExternalModules, moduleAllowedForExternal, EXTERNAL_FORBIDDEN_MODULES,
   // Editable access draft — shared by member-edit, invite pre-config, backend accept
   FEATURE_TAB_MODULES, defaultAccessDraft, readAccessDraft, serializeAccessDraft, normalizeAccessProfile,
   type AccessDraft, type AccessPersisted,

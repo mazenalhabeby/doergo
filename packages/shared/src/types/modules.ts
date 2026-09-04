@@ -31,12 +31,25 @@ export const ALL_MODULES: MobileModule[] = ['tasks', 'clock', 'time_off', 'creat
  * access panel is deliberately identical for everybody, so the rule cannot live
  * in a checkbox — it has to survive whatever the panel offers.
  */
-const EXTERNAL_FORBIDDEN_MODULES: MobileModule[] = ['clock', 'time_off'];
+export const EXTERNAL_FORBIDDEN_MODULES: MobileModule[] = ['clock', 'time_off'];
+
+/**
+ * May an external member hold this module?
+ *
+ * Exported so the ACCESS PANEL can ask the same question the save enforces.
+ * It could not, and so it offered Clock and Time off to an external member,
+ * accepted the click, and let the server drop them on save — the toggle simply
+ * bounced back with nothing said. A rule the UI cannot see is a rule the UI
+ * will contradict.
+ */
+export function moduleAllowedForExternal(m: MobileModule): boolean {
+  return !EXTERNAL_FORBIDDEN_MODULES.includes(m);
+}
 
 /** An external member's module list, with the ones that cannot apply removed. */
 export function filterExternalModules(modules: unknown): MobileModule[] {
   if (!Array.isArray(modules)) return [];
-  return (modules as MobileModule[]).filter((m) => !EXTERNAL_FORBIDDEN_MODULES.includes(m));
+  return (modules as MobileModule[]).filter(moduleAllowedForExternal);
 }
 
 // ── Access Profile ───────────────────────────────────────────────────────────

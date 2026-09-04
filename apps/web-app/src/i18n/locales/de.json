@@ -3622,7 +3622,9 @@
     "featureTabs": {
       "tasks": "Aufgaben",
       "clock": "Zeiterfassung",
-      "timeOff": "Abwesenheit"
+      "timeOff": "Abwesenheit",
+      "externalBlocked": "Für externe Mitglieder nicht verfügbar — sie sind hier nicht angestellt, es gibt also keine Zeiten zu erfassen und keinen Urlaub zu beantragen.",
+      "externalHint": "Zeiterfassung und Urlaub sind nicht verfügbar: Ein externes Mitglied arbeitet für einen Kunden oder Partner — hier gibt es keine Zeiten zu erfassen und keinen Urlaub zu beantragen."
     },
     "platforms": {
       "webOnly": "Nur Web",
