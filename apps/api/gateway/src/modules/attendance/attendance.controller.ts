@@ -115,12 +115,29 @@ export class AttendanceController {
     return !!(req.user?.canManageUsers || req.user?.canViewAllTasks);
   }
 
+  /**
+   * The spaces whose sessions this caller may manage the log of.
+   *
+   * `canManage` above is the ORG-wide answer, read from the flat columns, so a
+   * supervisor whose authority comes from a space role counted as nobody and
+   * was refused their own crew's work log. This carries the spaces they
+   * actually oversee — server-resolved from the token, never client-supplied —
+   * and the service accepts a session clocked at one of them.
+   *
+   * undefined for an admin (org-wide); [] means granted nowhere and must match
+   * nothing.
+   */
+  private manageSpaces(req: any): string[] | undefined {
+    if (isAdmin(req.user)) return undefined;
+    return spacesGranting(req.user?.access, 'canViewSpaceAttendance') ?? undefined;
+  }
+
   @Post('entries/:entryId/worklog')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Add a work-log note to an attendance session' })
   async worklogAdd(@Param('entryId') entryId: string, @Body() body: { body: string; at?: string; taskId?: string }, @Request() req: any) {
     return this.attendanceService.worklogAddNote({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       timeEntryId: entryId, body: body?.body, at: body?.at, taskId: body?.taskId,
     });
   }
@@ -130,7 +147,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Batch-add work-log notes (offline flush)' })
   async worklogBatch(@Param('entryId') entryId: string, @Body() body: { notes: any[] }, @Request() req: any) {
     return this.attendanceService.worklogAddNotesBatch({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       timeEntryId: entryId, notes: body?.notes ?? [],
     });
   }
@@ -140,7 +157,7 @@ export class AttendanceController {
   @ApiOperation({ summary: "An attendance session's work-log (notes + photos)" })
   async worklogList(@Param('entryId') entryId: string, @Request() req: any) {
     return this.attendanceService.worklogList({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       timeEntryId: entryId,
     });
   }
@@ -150,7 +167,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Delete a work-log note' })
   async worklogDelete(@Param('noteId') noteId: string, @Request() req: any) {
     return this.attendanceService.worklogDeleteNote({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), noteId,
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req), noteId,
     });
   }
 
@@ -159,7 +176,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Presigned upload URL for a work-log photo/file' })
   async worklogPresign(@Param('noteId') noteId: string, @Body() body: { fileName: string; mimeType: string }, @Request() req: any) {
     return this.attendanceService.worklogPresignAttachment({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       noteId, fileName: body?.fileName, mimeType: body?.mimeType,
     });
   }
@@ -169,7 +186,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Confirm a work-log photo/file upload' })
   async worklogConfirm(@Param('noteId') noteId: string, @Body() body: any, @Request() req: any) {
     return this.attendanceService.worklogConfirmAttachment({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req),
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       noteId, fileKey: body?.fileKey, fileUrl: body?.fileUrl, fileName: body?.fileName,
       fileSize: body?.fileSize, mimeType: body?.mimeType, width: body?.width, height: body?.height,
     });
@@ -180,7 +197,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Delete a work-log attachment' })
   async worklogDeleteAttachment(@Param('attachmentId') attachmentId: string, @Request() req: any) {
     return this.attendanceService.worklogDeleteAttachment({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), attachmentId,
+      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req), attachmentId,
     });
   }
 

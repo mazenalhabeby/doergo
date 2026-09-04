@@ -52,24 +52,44 @@ export class WorklogService {
 
   // ── Ownership ──────────────────────────────────────────────────────────────
 
-  /** Load a session (org-scoped) and assert the caller may act on it. */
-  private async session(timeEntryId: string, organizationId: string, callerUserId: string, canManage: boolean): Promise<Session> {
+  /**
+   * Load a session (org-scoped) and assert the caller may act on it.
+   *
+   * `canManage` is the ORG-wide answer. A supervisor whose authority comes from
+   * a space role has it false and was refused their own crew's log — the same
+   * shape as the shift-issues list, which read the flat columns and counted a
+   * space-granted member as nobody.
+   *
+   * `manageSpaceIds` carries the spaces they oversee (server-resolved, never
+   * client-supplied), and a session is theirs to manage when it was clocked at
+   * one of them. `undefined` means the caller was not scoped — org-wide — and
+   * `[]` means granted nowhere, which must match NOTHING rather than everything.
+   */
+  private async session(
+    timeEntryId: string,
+    organizationId: string,
+    callerUserId: string,
+    canManage: boolean,
+    manageSpaceIds?: string[],
+  ): Promise<Session> {
     const te = await this.prisma.timeEntry.findFirst({
       where: { id: timeEntryId, organizationId },
-      select: { id: true, userId: true, organizationId: true, clockInAt: true },
+      select: { id: true, userId: true, organizationId: true, clockInAt: true, locationId: true },
     });
     if (!te) throw new NotFoundException('Attendance session not found');
-    if (te.userId !== callerUserId && !canManage) throw new ForbiddenException('Not your session');
+    const mine = te.userId === callerUserId;
+    const inMySpace = !!manageSpaceIds?.includes(te.locationId);
+    if (!mine && !canManage && !inMySpace) throw new ForbiddenException('Not your session');
     return te;
   }
 
-  private async sessionForNote(noteId: string, organizationId: string, callerUserId: string, canManage: boolean) {
+  private async sessionForNote(noteId: string, organizationId: string, callerUserId: string, canManage: boolean, manageSpaceIds?: string[]) {
     const note = await this.prisma.timeEntryNote.findFirst({
       where: { id: noteId, organizationId },
       select: { id: true, timeEntryId: true },
     });
     if (!note) throw new NotFoundException('Note not found');
-    const te = await this.session(note.timeEntryId, organizationId, callerUserId, canManage);
+    const te = await this.session(note.timeEntryId, organizationId, callerUserId, canManage, manageSpaceIds);
     return { note, te };
   }
 
@@ -112,9 +132,11 @@ export class WorklogService {
 
   // ── Notes ──────────────────────────────────────────────────────────────────
 
-  async addNote(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean; body: string; at?: string; taskId?: string }) {
+  async addNote(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean;
+    /** Spaces the caller oversees; undefined = org-wide, [] = none. */
+    manageSpaceIds?: string[]; body: string; at?: string; taskId?: string }) {
     // Writable by the session owner (the member) OR a manager/responsible party (canManage).
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage);
+    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds);
     const note = await this.prisma.timeEntryNote.create({
       data: {
         timeEntryId: te.id,
@@ -130,8 +152,10 @@ export class WorklogService {
   }
 
   /** Offline flush: many notes in one round-trip. Session validated once. */
-  async addNotesBatch(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean; notes: Array<{ body: string; at?: string; taskId?: string }> }) {
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
+  async addNotesBatch(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean;
+    /** Spaces the caller oversees; undefined = org-wide, [] = none. */
+    manageSpaceIds?: string[]; notes: Array<{ body: string; at?: string; taskId?: string }> }) {
+    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
     const items = Array.isArray(data.notes) ? data.notes.slice(0, BATCH_MAX) : [];
     const rows = [];
     for (const n of items) {
@@ -151,8 +175,8 @@ export class WorklogService {
     return success({ inserted: rows.length });
   }
 
-  async listNotes(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean }) {
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage);
+  async listNotes(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
+    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds);
     const notes = await this.prisma.timeEntryNote.findMany({
       where: { timeEntryId: data.timeEntryId, organizationId: data.organizationId },
       orderBy: { at: 'asc' },
@@ -189,8 +213,8 @@ export class WorklogService {
     return success(withUrls);
   }
 
-  async deleteNote(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean }) {
-    const { note } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
+  async deleteNote(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
+    const { note } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
     const atts = await this.prisma.timeEntryNoteAttachment.findMany({ where: { noteId: note.id }, select: { fileKey: true } });
     await this.prisma.timeEntryNote.delete({ where: { id: note.id } }); // cascades attachment rows
     for (const a of atts) void this.deleteObject(a.fileKey);
@@ -199,8 +223,10 @@ export class WorklogService {
 
   // ── Attachments (S3) ────────────────────────────────────────────────────────
 
-  async presignAttachment(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean; fileName: string; mimeType: string }) {
-    const { te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
+  async presignAttachment(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean;
+    /** Spaces the caller oversees; undefined = org-wide, [] = none. */
+    manageSpaceIds?: string[]; fileName: string; mimeType: string }) {
+    const { te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
     if (!data.mimeType || !/^[a-z]+\/[a-z0-9\-.+]+$/i.test(data.mimeType) || !ALLOWED_FILE_TYPES.includes(data.mimeType)) {
       throw new BadRequestException('File type not allowed');
     }
@@ -214,9 +240,11 @@ export class WorklogService {
 
   async confirmAttachment(data: {
     organizationId: string; noteId: string; callerUserId: string; canManage?: boolean;
+    /** Spaces the caller oversees; undefined = org-wide, [] = none. */
+    manageSpaceIds?: string[];
     fileKey?: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number;
   }) {
-    const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
+    const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
     // The confirmed object MUST live under THIS session's prefix (anti-IDOR / cross-tenant).
     if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(this.sessionPrefix(te))) {
       throw new BadRequestException('Invalid file URL');
@@ -246,13 +274,13 @@ export class WorklogService {
     return success({ ...att, url: await this.signedGet(att.fileKey) });
   }
 
-  async deleteAttachment(data: { organizationId: string; attachmentId: string; callerUserId: string; canManage?: boolean }) {
+  async deleteAttachment(data: { organizationId: string; attachmentId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
     const att = await this.prisma.timeEntryNoteAttachment.findFirst({
       where: { id: data.attachmentId, organizationId: data.organizationId },
       select: { id: true, fileKey: true, noteId: true },
     });
     if (!att) throw new NotFoundException('Attachment not found');
-    await this.sessionForNote(att.noteId, data.organizationId, data.callerUserId, !!data.canManage); // owner or manager (canManage)
+    await this.sessionForNote(att.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
     await this.prisma.timeEntryNoteAttachment.delete({ where: { id: att.id } });
     void this.deleteObject(att.fileKey);
     return success({ success: true });

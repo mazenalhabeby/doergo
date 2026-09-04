@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { useAuth } from "@/contexts/auth-context"
 import { useTimeFormat } from "@/hooks"
 import { notify } from "@/lib/toast"
 import { format, formatDistanceToNow } from "date-fns"
@@ -92,6 +93,7 @@ export default function OvertimePage() {
 
 function OvertimePageInner() {
   const { t } = useTranslation()
+  const { user, hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState("pending")
 
@@ -188,6 +190,28 @@ function OvertimePageInner() {
 
   const history = historyData?.data || []
   const historyMeta = historyData?.meta
+
+  /*
+    This page had no permission check of any kind: 478 lines of approve and
+    reject controls rendered for anyone who reached the URL, and every request
+    behind them 403s without `canApproveOvertime` — the exact "the app offered
+    it and the server refused" shape.
+
+    `hasPermission` is space-aware, matching `@RequirePermissionInSpace` on all
+    four routes, so a shift leader or site supervisor granted it by a space role
+    passes here exactly as they do at the API.
+  */
+  if (!(user?.role === "ADMIN" || hasPermission("canApproveOvertime"))) {
+    return (
+      <div className="min-h-full flex items-center justify-center bg-background">
+        <div className="text-center">
+          <XCircle className="size-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground">{t("common.accessDenied")}</h2>
+          <p className="text-muted-foreground mt-2">{t("common.noPermissionView")}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-full bg-background">

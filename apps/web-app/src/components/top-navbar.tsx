@@ -193,6 +193,8 @@ export function TopNavbar() {
   */
   const showSchedule = user.canViewAllTasks === true || user.canManageRota === true
   const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
+  // Every overtime route asks this one, reads included — so the link does too.
+  const showOvertime = hasPermission('canApproveOvertime')
   /*
     Shift issues: the responsible party's view. `canViewAllTasks` — org-wide or
     in one space — is exactly what the API treats as "oversees this work", so
@@ -398,6 +400,7 @@ export function TopNavbar() {
         showSpaces={showSpaces}
         showSchedule={showSchedule}
         showAttendance={showAttendance}
+        showOvertime={showOvertime}
         showIssues={showIssues}
         showReports={showReports}
         showInvoices={showInvoices}
@@ -547,11 +550,12 @@ export function TopNavbar() {
         )}
 
         {/* Time & Attendance dropdown (attendance + schedule + personal time-off) */}
-        {(showSchedule || showAttendance) && (
+        {(showSchedule || showAttendance || showOvertime) && (
           <TimeAttendanceDropdown
             pathname={pathname}
             showSchedule={showSchedule}
             showAttendance={showAttendance}
+            showOvertime={showOvertime}
             showIssues={showIssues}
                 onOpen={prefetch.prefetchAttendance}
           />
@@ -893,12 +897,14 @@ function TimeAttendanceDropdown({
   pathname,
   showSchedule,
   showAttendance,
+  showOvertime,
   showIssues,
   onOpen,
 }: {
   pathname: string
   showSchedule: boolean
   showAttendance: boolean
+  showOvertime: boolean
   showIssues: boolean
   onOpen?: () => void
 }) {
@@ -958,10 +964,18 @@ function TimeAttendanceDropdown({
             </Link>
           </DropdownMenuItem>
         )}
-        {/* Overtime requests and approvals. This page had 478 lines of UI and NO
-            link anywhere in the web app — reachable only by typing the URL. It
-            belongs here: the fourth manager-facing working-time tool. */}
-        {showAttendance && (
+        {/*
+          Overtime requests and approvals.
+
+          Gated on `canApproveOvertime` — the permission every route behind it
+          asks, including the two READS (`pending-approvals`, `history`). It
+          used to follow `showAttendance`, which is a different question, and
+          got both directions wrong: somebody who could see attendance but not
+          approve was sent to a page whose every request 403s, while somebody
+          holding only `canApproveOvertime` had no link at all and could reach
+          their own approvals queue only by typing the URL.
+        */}
+        {showOvertime && (
           <DropdownMenuItem asChild className="rounded-md cursor-pointer">
             <Link href="/overtime" className="flex items-center gap-2 px-2 py-1.5 text-sm">
               {t("nav.sidebar.overtime", "Overtime")}
@@ -991,6 +1005,7 @@ function MobileMenu({
   showSpaces,
   showSchedule,
   showAttendance,
+  showOvertime,
   showReports,
   showInvoices,
   showMyDocuments,
@@ -1008,6 +1023,7 @@ function MobileMenu({
   showSpaces: boolean
   showSchedule: boolean
   showAttendance: boolean
+  showOvertime: boolean
   showIssues: boolean
   showReports: boolean
   showInvoices: boolean
@@ -1144,7 +1160,7 @@ function MobileMenu({
           </DropdownMenuItem>
         )}
 
-        {(showSchedule || showAttendance) && (
+        {(showSchedule || showAttendance || showOvertime) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -1193,7 +1209,9 @@ function MobileMenu({
               </DropdownMenuItem>
             )}
             {/* Personal time-off (distinct page); management time-off is a tab on Schedule. */}
-            {showAttendance && (
+            {/* Same gate as the wide bar: every overtime route asks
+                `canApproveOvertime`, reads included. */}
+            {showOvertime && (
               <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
                 <Link
                   href="/overtime"

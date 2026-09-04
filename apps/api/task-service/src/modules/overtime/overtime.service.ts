@@ -209,17 +209,54 @@ export class OvertimeService {
   }) {
     const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
 
-    // Verify the approver is an ADMIN or DISPATCHER in the same org
+    /*
+      Is the person whose signature this is allowed to approve it?
+
+      Path B is signed on the TECHNICIAN's device, so the request is
+      authenticated as the technician and names the approver in the body. This
+      is the only thing standing between that and any member naming anyone.
+
+      It used to test `canViewAllTasks` — the wrong permission, and read from
+      the flat ORG column. Two consequences: somebody who may merely SEE all
+      tasks counted as an approver, and a shift leader or site supervisor whose
+      `canApproveOvertime` comes from a SPACE role was refused outright, which
+      is exactly the person standing next to the technician holding the phone.
+      They are the whole reason Path B exists.
+
+      Now it asks the permission the other approval routes ask, and accepts it
+      held org-wide OR in the space this request belongs to.
+    */
     const approver = await this.prisma.user.findFirst({
-      where: {
-        id: data.approverId,
-        organizationId: data.organizationId,
-        OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
-        isActive: true,
-      },
+      where: { id: data.approverId, organizationId: data.organizationId, isActive: true },
+      // `canApproveOvertime` is not a column — the five flat ones are the legacy
+      // set. It lives in a role's permission JSON, org-wide via memberRole or
+      // per-space via the assignment's role.
+      select: { id: true, role: true, memberRole: { select: { permissions: true } } },
     });
     if (!approver) {
-      throw new BadRequestException('Invalid approver — must be an active admin or dispatcher in the same organization');
+      throw new BadRequestException('Invalid approver — must be an active member of this organization');
+    }
+
+    const orgWide =
+      approver.role === 'ADMIN' ||
+      (approver.memberRole?.permissions as Record<string, unknown> | null)?.canApproveOvertime === true;
+
+    if (!orgWide) {
+      // Does a space role grant it where this overtime actually happened?
+      const grantedHere = request.locationId
+        ? await this.prisma.spaceAssignment.findFirst({
+            where: {
+              userId: approver.id,
+              spaceId: request.locationId,
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+              role: { permissions: { path: ['canApproveOvertime'], equals: true } },
+            },
+            select: { id: true },
+          })
+        : null;
+      if (!grantedHere) {
+        throw new BadRequestException('That person may not approve overtime here');
+      }
     }
 
     return this.approveRequest(request, {

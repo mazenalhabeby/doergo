@@ -134,7 +134,14 @@ export function TrackingTab({
         )}
 
         {/* Out-of-Ring approver panel (geofence excursions) */}
-        <OutOfRingPanel canApprove={isAdmin} />
+        {/*
+          Approving an out-of-ring request follows the permission, not the
+          title. `PATCH /attendance/excursions/:id/approve` and `/reject` are
+          both `@RequirePermissionInSpace('canReconcileAttendance')`, so gating
+          the panel on isAdmin left that grant unreachable — a permission that
+          exists, is granted, and can never be used is decorative.
+        */}
+        <OutOfRingPanel canApprove={canReconcile} />
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (
