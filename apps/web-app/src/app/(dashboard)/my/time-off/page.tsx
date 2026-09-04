@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { employeesApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { ProgressRing } from "@/components/progress-ring"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { hasAccessModule } from "@hbcfield/shared/client"
@@ -294,9 +295,11 @@ export default function MyTimeOffPage() {
       {/* The allowance, and what is actually left of it. */}
       <div className="mb-5 grid gap-3 sm:grid-cols-[auto_1fr]">
         <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
-          <AllowanceRing
-            remaining={balance?.remaining ?? 0}
-            allowance={balance?.allowance ?? 0}
+          <ProgressRing
+            tone="low"
+            value={balance?.remaining ?? 0}
+            total={balance?.allowance ?? 0}
+            caption={(balance?.allowance ?? 0) > 0 ? `/ ${balance?.allowance}` : ""}
             loading={!balance}
           />
           <div>
@@ -572,34 +575,3 @@ function Legend({ className, label }: { className: string; label: string }) {
  * words rather than shaded in, because a half-shaded ring reads as "already
  * gone" for days a manager has not yet agreed to.
  */
-function AllowanceRing({ remaining, allowance, loading }: {
-  remaining: number; allowance: number; loading?: boolean
-}) {
-  const pct = allowance > 0 ? Math.max(0, Math.min(1, remaining / allowance)) : 0
-  const r = 26
-  const circumference = 2 * Math.PI * r
-  return (
-    <div className="relative size-[68px] shrink-0">
-      <svg viewBox="0 0 64 64" className="size-full -rotate-90">
-        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="6" className="stroke-muted" />
-        <circle
-          cx="32" cy="32" r={r} fill="none" strokeWidth="6" strokeLinecap="round"
-          className={cn(
-            "transition-[stroke-dashoffset] duration-700 ease-out",
-            pct > 0.25 ? "stroke-primary" : "stroke-amber-500",
-          )}
-          strokeDasharray={circumference}
-          strokeDashoffset={loading ? circumference : circumference * (1 - pct)}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-semibold leading-none tabular-nums text-foreground">
-          {loading ? "—" : remaining}
-        </span>
-        <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
-          {allowance > 0 ? `/ ${allowance}` : ""}
-        </span>
-      </div>
-    </div>
-  )
-}

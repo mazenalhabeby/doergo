@@ -3121,7 +3121,9 @@
       "remote": "Remoto",
       "clockInOnsite": "In sede",
       "clockInRemote": "Timbra da remoto",
-      "gpsHintRemote": "«In sede» verifica che tu sia sul posto. «Da remoto» registra la città da cui lavori. Funziona anche con VPN."
+      "gpsHintRemote": "«In sede» verifica che tu sia sul posto. «Da remoto» registra la città da cui lavori. Funziona anche con VPN.",
+      "thisWeek": "Ultimi 7 giorni",
+      "sinceAt": "Dalle {{time}}"
     },
     "management": {
       "title": "Gestione delle presenze",
@@ -7789,6 +7791,17 @@
       "email": "Il tuo indirizzo e-mail",
       "send": "Mandami un nuovo link",
       "sent": "Se a quell’indirizzo risultano documenti, il link è in arrivo."
+    }
+  },
+  "attendanceReview": {
+    "flags": {
+      "OVERTIME": "Straordinario",
+      "MISSED_CLOCK_OUT": "Senza uscita",
+      "LATE_ARRIVAL": "In ritardo",
+      "EARLY_DEPARTURE": "Uscito prima",
+      "OUTSIDE_GEOFENCE_IN": "Entrata fuori sede",
+      "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
+      "UNSCHEDULED_DAY": "Non pianificato"
     }
   }
 }

@@ -3121,7 +3121,9 @@
       "remote": "À distance",
       "clockInOnsite": "Sur site",
       "clockInRemote": "Pointer à distance",
-      "gpsHintRemote": "« Sur site » vérifie que vous êtes au lieu de travail. « À distance » enregistre la ville d’où vous travaillez. Fonctionne via VPN."
+      "gpsHintRemote": "« Sur site » vérifie que vous êtes au lieu de travail. « À distance » enregistre la ville d’où vous travaillez. Fonctionne via VPN.",
+      "thisWeek": "7 derniers jours",
+      "sinceAt": "Depuis {{time}}"
     },
     "management": {
       "title": "Gestion des présences",
@@ -7789,6 +7791,17 @@
       "email": "Votre adresse e-mail",
       "send": "Envoyez-moi un nouveau lien",
       "sent": "Si cette adresse a des documents chez nous, un lien est en route."
+    }
+  },
+  "attendanceReview": {
+    "flags": {
+      "OVERTIME": "Heures sup.",
+      "MISSED_CLOCK_OUT": "Sans sortie",
+      "LATE_ARRIVAL": "En retard",
+      "EARLY_DEPARTURE": "Parti tôt",
+      "OUTSIDE_GEOFENCE_IN": "Entrée hors zone",
+      "OUTSIDE_GEOFENCE_OUT": "Sortie hors zone",
+      "UNSCHEDULED_DAY": "Non planifié"
     }
   }
 }

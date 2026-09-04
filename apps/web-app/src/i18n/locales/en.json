@@ -3121,7 +3121,9 @@
       "remote": "Remote",
       "clockInOnsite": "On-site",
       "clockInRemote": "Clock in remotely",
-      "gpsHintRemote": "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN."
+      "gpsHintRemote": "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.",
+      "thisWeek": "Last 7 days",
+      "sinceAt": "Since {{time}}"
     },
     "management": {
       "title": "Attendance Management",
@@ -7780,6 +7782,17 @@
       "email": "Your email address",
       "send": "Send me a new link",
       "sent": "If that address has documents with us, a link is on its way."
+    }
+  },
+  "attendanceReview": {
+    "flags": {
+      "OVERTIME": "Overtime",
+      "MISSED_CLOCK_OUT": "No clock-out",
+      "LATE_ARRIVAL": "Late",
+      "EARLY_DEPARTURE": "Left early",
+      "OUTSIDE_GEOFENCE_IN": "Off-site in",
+      "OUTSIDE_GEOFENCE_OUT": "Off-site out",
+      "UNSCHEDULED_DAY": "Unscheduled"
     }
   }
 }

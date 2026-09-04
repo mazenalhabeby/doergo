@@ -3121,7 +3121,9 @@
       "remote": "Remote",
       "clockInOnsite": "Vor Ort",
       "clockInRemote": "Remote einstempeln",
-      "gpsHintRemote": "Vor Ort bestätigt, dass Sie am Standort sind. Remote erfasst die Stadt, aus der Sie arbeiten. Funktioniert auch über VPN."
+      "gpsHintRemote": "Vor Ort bestätigt, dass Sie am Standort sind. Remote erfasst die Stadt, aus der Sie arbeiten. Funktioniert auch über VPN.",
+      "thisWeek": "Letzte 7 Tage",
+      "sinceAt": "Seit {{time}}"
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
@@ -7780,6 +7782,17 @@
       "email": "Ihre E-Mail-Adresse",
       "send": "Neuen Link senden",
       "sent": "Wenn zu dieser Adresse Dokumente vorliegen, ist ein Link unterwegs."
+    }
+  },
+  "attendanceReview": {
+    "flags": {
+      "OVERTIME": "Überstunden",
+      "MISSED_CLOCK_OUT": "Kein Ausstempeln",
+      "LATE_ARRIVAL": "Verspätet",
+      "EARLY_DEPARTURE": "Früher gegangen",
+      "OUTSIDE_GEOFENCE_IN": "Einstempeln außerhalb",
+      "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
+      "UNSCHEDULED_DAY": "Nicht geplant"
     }
   }
 }

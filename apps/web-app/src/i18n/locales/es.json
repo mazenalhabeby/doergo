@@ -3121,7 +3121,9 @@
       "remote": "Remoto",
       "clockInOnsite": "En sitio",
       "clockInRemote": "Fichar en remoto",
-      "gpsHintRemote": "«En el sitio» verifica que estás en la ubicación. «Remoto» registra la ciudad desde la que trabajas. Funciona con VPN."
+      "gpsHintRemote": "«En el sitio» verifica que estás en la ubicación. «Remoto» registra la ciudad desde la que trabajas. Funciona con VPN.",
+      "thisWeek": "Últimos 7 días",
+      "sinceAt": "Desde {{time}}"
     },
     "management": {
       "title": "Gestión de asistencia",
@@ -7780,6 +7782,17 @@
       "email": "Tu dirección de correo",
       "send": "Envíame un enlace nuevo",
       "sent": "Si esa dirección tiene documentos con nosotros, el enlace va en camino."
+    }
+  },
+  "attendanceReview": {
+    "flags": {
+      "OVERTIME": "Horas extra",
+      "MISSED_CLOCK_OUT": "Sin salida",
+      "LATE_ARRIVAL": "Tarde",
+      "EARLY_DEPARTURE": "Salió antes",
+      "OUTSIDE_GEOFENCE_IN": "Entrada fuera",
+      "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
+      "UNSCHEDULED_DAY": "Sin programar"
     }
   }
 }
