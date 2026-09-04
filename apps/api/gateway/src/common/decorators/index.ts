@@ -2,3 +2,4 @@ export * from './roles.decorator';
 export * from './public.decorator';
 export { SkipOnboardingCheck, IS_SKIP_ONBOARDING_KEY } from '@hbcfield/shared';
 export { RequirePermission, RequirePermissionInSpace, PERMISSIONS_KEY, PERMISSIONS_IN_SPACE_KEY, type PermissionField } from '@hbcfield/shared';
+export * from './deny-external.decorator';

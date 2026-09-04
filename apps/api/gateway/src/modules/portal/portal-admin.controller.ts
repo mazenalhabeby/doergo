@@ -1,3 +1,4 @@
+import { DenyExternal } from '../../common/decorators';
 import {
   Controller,
   Get,
@@ -30,6 +31,16 @@ import { StorageService } from '../../common/storage/storage.service';
  */
 @ApiTags('portal-admin')
 @ApiBearerAuth()
+/*
+  The organization's own property, not the work at a site.
+
+  An external supervisor holds `canViewAllTasks` in their space — it is how they
+  follow the work they are there to supervise — and this surface was gated on
+  that same permission, so granting the first silently granted the second and an
+  outsider could list the organization's records. The relationship disqualifies
+  them, not the permission, so the rule is stated about the relationship.
+*/
+@DenyExternal()
 @Controller('portal/admin')
 export class PortalAdminController {
   constructor(

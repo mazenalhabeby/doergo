@@ -18,7 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -33,6 +33,16 @@ import {
 
 @ApiTags('asset-categories')
 @ApiBearerAuth()
+/*
+  The organization's own property, not the work at a site.
+
+  An external supervisor holds `canViewAllTasks` in their space — it is how they
+  follow the work they are there to supervise — and this surface was gated on
+  that same permission, so granting the first silently granted the second and an
+  outsider could list the organization's records. The relationship disqualifies
+  them, not the permission, so the rule is stated about the relationship.
+*/
+@DenyExternal()
 @Controller('asset-categories')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetCategoriesController {
@@ -149,6 +159,16 @@ export class AssetCategoriesController {
 // Separate controller for type updates/deletes (not nested under category)
 @ApiTags('asset-types')
 @ApiBearerAuth()
+/*
+  The organization's own property, not the work at a site.
+
+  An external supervisor holds `canViewAllTasks` in their space — it is how they
+  follow the work they are there to supervise — and this surface was gated on
+  that same permission, so granting the first silently granted the second and an
+  outsider could list the organization's records. The relationship disqualifies
+  them, not the permission, so the rule is stated about the relationship.
+*/
+@DenyExternal()
 @Controller('asset-types')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetTypesController {

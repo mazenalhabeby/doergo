@@ -18,7 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
-import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
+import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -30,6 +30,16 @@ import {
 
 @ApiTags('assets')
 @ApiBearerAuth()
+/*
+  The organization's own property, not the work at a site.
+
+  An external supervisor holds `canViewAllTasks` in their space — it is how they
+  follow the work they are there to supervise — and this surface was gated on
+  that same permission, so granting the first silently granted the second and an
+  outsider could list the organization's records. The relationship disqualifies
+  them, not the permission, so the rule is stated about the relationship.
+*/
+@DenyExternal()
 @Controller('assets')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetsController {

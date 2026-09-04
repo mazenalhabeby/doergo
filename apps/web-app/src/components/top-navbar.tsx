@@ -240,15 +240,30 @@ export function TopNavbar() {
     click journey the top-level page exists to remove. Whoever may see clients
     now has one place to see them.
   */
-  const showCrm = moduleAnywhere("crm") && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
+  /*
+    None of these three for an EXTERNAL member.
+
+    The organization's clients, its equipment and its portals are its own
+    property — not a client's supervisor's to see. Assets asked
+    `hasPermission("canViewAllTasks")`, which an external supervisor
+    legitimately holds IN their space: it is how they follow the work they are
+    there for. One permission was doing duty for two different things, so the
+    bar offered an outsider the asset register.
+
+    The server now refuses these routes outright (`@DenyExternal`), and the data
+    was reachable by URL, not just by this menu. This stops offering a door that
+    would only 403.
+  */
+  const isExternalMember = user.isExternal === true
+  const showCrm = !isExternalMember && moduleAnywhere("crm") && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
 
   /*
     Assets and portals follow the same shape: the module on somewhere visible,
     plus the permission the screens behind them need. Nothing appears for an
     organization that does not run them.
   */
-  const showAssets = moduleAnywhere("assets") && hasPermission("canViewAllTasks")
-  const showPortals = moduleAnywhere("b2c_portal") && (user.canManagePortals === true || hasPermission("canManagePortals"))
+  const showAssets = !isExternalMember && moduleAnywhere("assets") && hasPermission("canViewAllTasks")
+  const showPortals = !isExternalMember && moduleAnywhere("b2c_portal") && (user.canManagePortals === true || hasPermission("canManagePortals"))
   // Invoices: admins bill their customers. Shown for admins regardless of tier —
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.

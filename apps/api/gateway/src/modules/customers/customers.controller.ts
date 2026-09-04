@@ -16,7 +16,7 @@ import { OrgEventsService } from '../../common/events/org-events.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { RequirePermission } from '../../common/decorators';
+import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 
 interface CustomerDto {
@@ -50,6 +50,16 @@ interface CustomerDto {
  */
 @ApiTags('customers')
 @ApiBearerAuth()
+/*
+  The organization's own property, not the work at a site.
+
+  An external supervisor holds `canViewAllTasks` in their space — it is how they
+  follow the work they are there to supervise — and this surface was gated on
+  that same permission, so granting the first silently granted the second and an
+  outsider could list the organization's records. The relationship disqualifies
+  them, not the permission, so the rule is stated about the relationship.
+*/
+@DenyExternal()
 @Controller('customers')
 export class CustomersController {
   constructor(

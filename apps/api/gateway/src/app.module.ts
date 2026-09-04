@@ -52,6 +52,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthCacheModule } from './common/cache/auth-cache.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OnboardingCompleteGuard } from './common/guards/onboarding-complete.guard';
+import { ExternalMemberGuard } from './common/guards/external-member.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { AccessModuleGuard } from './common/guards/access-module.guard';
 import { ClientPlatformGuard } from './common/guards/client-platform.guard';
@@ -189,6 +190,13 @@ import { StorageModule } from './common/storage/storage.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      // After the identity guards, before the permission ones: an external
+      // member is refused an org-property route regardless of what they hold,
+      // so there is nothing for PermissionsGuard to weigh.
+      provide: APP_GUARD,
+      useClass: ExternalMemberGuard,
     },
     {
       provide: APP_GUARD,

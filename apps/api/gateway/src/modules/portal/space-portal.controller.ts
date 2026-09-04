@@ -1,3 +1,4 @@
+import { DenyExternal } from '../../common/decorators';
 import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -12,6 +13,16 @@ import { RequirePermission } from '@hbcfield/shared';
  */
 @ApiTags('space-portal')
 @ApiBearerAuth()
+/*
+  The organization's own property, not the work at a site.
+
+  An external supervisor holds `canViewAllTasks` in their space — it is how they
+  follow the work they are there to supervise — and this surface was gated on
+  that same permission, so granting the first silently granted the second and an
+  outsider could list the organization's records. The relationship disqualifies
+  them, not the permission, so the rule is stated about the relationship.
+*/
+@DenyExternal()
 @Controller('spaces/:spaceId/portal')
 export class SpacePortalController {
   constructor(
