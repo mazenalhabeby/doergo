@@ -212,8 +212,13 @@ export class AssetsService {
     typeId?: string;
     status?: string;
     search?: string;
+    /** Narrow to one workspace — intersected with what the caller holds. */
+    spaceId?: string;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
+    /** Workspaces where the caller holds canViewAllTasks by a SPACE role. */
+    viewAllSpaceIds?: string[];
     organizationId: string;
   }) {
     this.access.assertMay(query as any, 'view assets');
@@ -225,6 +230,16 @@ export class AssetsService {
     const where: any = {
       organizationId: query.organizationId,
     };
+
+    /*
+      Which workspaces this list may show.
+
+      Undefined for an org-wide caller with no workspace chosen, so their query
+      is exactly what it was. A space-scoped one always gets a clause — see
+      spaceFilter, which intersects rather than replaces.
+    */
+    const category = this.access.spaceFilter(query as any, query.spaceId);
+    if (category) where.category = category;
 
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.typeId) where.typeId = query.typeId;

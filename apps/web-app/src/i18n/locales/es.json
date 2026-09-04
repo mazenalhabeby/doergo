@@ -874,7 +874,9 @@
     "documents": "Documentos",
     "issueDocuments": "Emitir documentos",
     "myDocuments": "Mis documentos",
-    "sentDocuments": "Documentos enviados"
+    "sentDocuments": "Documentos enviados",
+    "assets": "Activos",
+    "portals": "Portales"
   },
   "dashboard": {
     "admin": {
@@ -3991,7 +3993,8 @@
     },
     "toast": {
       "deleted": "Activo eliminado"
-    }
+    },
+    "noWorkspace": "Ningún espacio tiene activos activados todavía."
   },
   "invoices": {
     "title": "Facturas",
@@ -5827,7 +5830,9 @@
     "triageTitle": "Derivar solicitud",
     "triageUnassigned": "Dejar sin asignar",
     "triageWorker": "Asignar trabajador",
-    "uploadCover": "Subir portada"
+    "uploadCover": "Subir portada",
+    "noWorkspace": "Ningún espacio tiene portal de cliente activado todavía.",
+    "subtitle": "Lo que ven tus clientes cuando inician sesión."
   },
   "scheduling": {
     "title": "Ajustes del espacio de trabajo",
@@ -6671,7 +6676,9 @@
   "clients": {
     "empty": "Aún no tienes clientes asignados.",
     "subtitleAll": "Todos los clientes de la organización.",
-    "subtitleOwn": "Clientes asignados a ti."
+    "subtitleOwn": "Clientes asignados a ti.",
+    "inWorkspace": "En {{name}}",
+    "allSpaces": "Todos"
   },
   "worklog": {
     "add": "Añadir",
@@ -6804,7 +6811,8 @@
     "updated": "Cliente actualizado",
     "vatId": "NIF / IVA",
     "website": "Sitio web",
-    "yesterday": "Ayer"
+    "yesterday": "Ayer",
+    "introAll": "Todos los clientes que puedes ver. Ventas los trabaja con tareas; los invitados también usan la app."
   },
   "reports": {
     "addSchedule": "Añadir programación",

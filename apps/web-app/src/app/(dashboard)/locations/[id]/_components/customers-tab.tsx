@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import { customersApi, type Customer, type CompanyLocation, type CustomerDetail } from "@/lib/api"
+import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -37,25 +37,52 @@ type Filter = "all" | "crm" | "app"
 
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 
-export function CustomersTab({ space }: { space: CompanyLocation }) {
+/**
+ * The clients list — one workspace's, or the organization's.
+ *
+ * Takes an id rather than the space object because `space.id` was the only
+ * field it ever read, and an optional one because this same list is now the
+ * body of the top-level Clients page: no workspace means the whole book, which
+ * the API already supports.
+ *
+ * That top-level page used to be a SECOND copy of these rows — same avatar
+ * square, same stage line, same App-access badge, same chevron into the client
+ * record — and the two had already drifted apart in what they offered. One
+ * component, two mounts.
+ */
+export function CustomersTab({ spaceId }: { spaceId?: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const router = useRouter()
-  const spaceId = space.id
 
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<Filter>("all")
 
   const listQ = useQuery({
-    queryKey: ["space-customers", spaceId, search],
-    queryFn: () => customersApi.list({ spaceId, search: search || undefined, limit: 100 }),
+    queryKey: ["space-customers", spaceId ?? "all", search],
+    queryFn: () =>
+      customersApi.list({
+        spaceId,
+        /*
+          Org-wide means the CRM book, not every portal resident.
+
+          A B2C organization can have thousands of residents; they are people
+          with a login to a client portal, not clients being worked. Excluded in
+          the QUERY rather than filtered after, so the request stays small — and
+          the App-users filter below is hidden to match, since it would then
+          select from nothing.
+        */
+        portalResident: spaceId ? undefined : false,
+        search: search || undefined,
+        limit: 100,
+      }),
   })
   const customers = listQ.data?.data ?? []
   const rows = useMemo(
     () => customers.filter((c) => filter === "all" || (filter === "app" ? c.isPortalResident : !c.isPortalResident)),
     [customers, filter],
   )
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["space-customers", spaceId] })
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["space-customers", spaceId ?? "all"] })
 
   return (
     <div className="space-y-4">
@@ -63,7 +90,11 @@ export function CustomersTab({ space }: { space: CompanyLocation }) {
         icon={Contact}
         accent="blue"
         title={t("customers.title", "Customers")}
-        description={t("customers.intro", "People & companies for this workspace. Sales works them with tasks; invited ones also use the app.")}
+        description={
+          spaceId
+            ? t("customers.intro", "People & companies for this workspace. Sales works them with tasks; invited ones also use the app.")
+            : t("customers.introAll", "Every client you can see. Sales works them with tasks; invited ones also use the app.")
+        }
         action={<CustomerForm spaceId={spaceId} onSaved={invalidate} trigger={
           <Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("customers.add", "Add customer")}</Button>
         } />}
@@ -72,7 +103,7 @@ export function CustomersTab({ space }: { space: CompanyLocation }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Input placeholder={t("common.search", "Search…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 max-w-xs" />
         <div className="inline-flex rounded-lg bg-muted p-0.5">
-          {(["all", "crm", "app"] as Filter[]).map((f) => (
+          {((spaceId ? ["all", "crm", "app"] : ["all", "crm"]) as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 filter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>

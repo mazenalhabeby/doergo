@@ -74,7 +74,7 @@ import {
 */
 const NAV_HREFS = [
   "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
-  "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
+  "/locations", "/members", "/clients", "/assets", "/portals", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/settings", "/settings/billing",
   "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance",
 ] as const
@@ -199,13 +199,36 @@ export function TopNavbar() {
   */
   const showIssues = hasPermission('canViewAllTasks') || user.canManageUsers === true
   const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
-  // CRM navbar tab: for members with CRM access who are NOT org-level managers.
-  // Org admins/managers reach the CRM via the Spaces nav → a space's Customers tab,
-  // so they don't need this top-level entry. Per-space-only managers (who have no
-  // Spaces nav) DO get it, otherwise they'd have no way to reach the CRM at all.
   const uAccess = (user as { role?: string; access?: { org?: Record<string, boolean> } })
-  const isOrgManager = user.role === "ADMIN" || user.canManageUsers || uAccess.access?.org?.canManageUsers === true
-  const showCrm = !isOrgManager && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
+
+  /*
+    Is a module worth offering in the bar at all?
+
+    Modules are bought PER WORKSPACE, so the organization's own list is only
+    half the answer — a company running Assets on one site has it on that site
+    and not on the org. `spaceModules` is the union across the workspaces this
+    member can see, resolved with the session, so this costs no request.
+  */
+  const moduleAnywhere = (m: string) =>
+    (user.orgModules ?? []).includes(m) || (user.spaceModules ?? []).includes(m)
+
+  /*
+    Clients, at their own address.
+
+    This used to be hidden from admins and managers on the reasoning that they
+    "reach the CRM via Spaces → a space → Customers tab" — which is the four-
+    click journey the top-level page exists to remove. Whoever may see clients
+    now has one place to see them.
+  */
+  const showCrm = moduleAnywhere("crm") && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
+
+  /*
+    Assets and portals follow the same shape: the module on somewhere visible,
+    plus the permission the screens behind them need. Nothing appears for an
+    organization that does not run them.
+  */
+  const showAssets = moduleAnywhere("assets") && hasPermission("canViewAllTasks")
+  const showPortals = moduleAnywhere("b2c_portal") && (user.canManagePortals === true || hasPermission("canManagePortals"))
   // Invoices: admins bill their customers. Shown for admins regardless of tier —
   // the /invoices page enforces the Professional+ 'invoicing' capability (and
   // shows an upgrade panel under-tier), so this stays discoverable.
@@ -337,6 +360,8 @@ export function TopNavbar() {
         showMyAttendance={showMyAttendance}
         showManage={showManage}
         showCrm={showCrm}
+        showAssets={showAssets}
+        showPortals={showPortals}
         showMyDocuments={showMyDocuments}
         showIssueDocuments={showIssueDocuments}
         showDocumentTemplates={showDocumentTemplates}
@@ -414,6 +439,43 @@ export function TopNavbar() {
             )}
           >
             {t("nav.crm", "CRM")}
+          </Link>
+        )}
+
+        {/* Assets — the workspace's Assets tab at its own address. The page
+            existed and was linked from nowhere; the only door was Spaces → a
+            workspace → Configure → Assets. */}
+        {showAssets && (
+          <Link
+            href="/assets"
+            data-nav-item
+            data-nav-href="/assets"
+            data-nav-label={t("nav.assets", "Assets")}
+            data-nav-active={isActive(pathname, "/assets")}
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/assets") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+            )}
+          >
+            {t("nav.assets", "Assets")}
+          </Link>
+        )}
+
+        {/* Client portals — likewise. A portal belongs to one workspace, which
+            is a fact about the data, not a reason to bury the screen. */}
+        {showPortals && (
+          <Link
+            href="/portals"
+            data-nav-item
+            data-nav-href="/portals"
+            data-nav-label={t("nav.portals", "Portals")}
+            data-nav-active={isActive(pathname, "/portals")}
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/portals") ? cn(navItemActiveStyle, bottomIndicator) : navItemInactive,
+            )}
+          >
+            {t("nav.portals", "Portals")}
           </Link>
         )}
 
@@ -868,6 +930,8 @@ function MobileMenu({
   showManage,
   showCrm,
   showIssues,
+  showAssets,
+  showPortals,
 }: {
   pathname: string
   showTeam: boolean
@@ -881,6 +945,8 @@ function MobileMenu({
   showMyAttendance: boolean
   showManage: boolean
   showCrm?: boolean
+  showAssets?: boolean
+  showPortals?: boolean
   showMyDocuments: boolean
   showIssueDocuments: boolean
   showDocumentTemplates: boolean
@@ -929,6 +995,32 @@ function MobileMenu({
               className={cn(mobileItemBase, isActive(pathname, "/clients") ? mobileItemActiveStyle : mobileItemInactive)}
             >
               {t("nav.crm", "CRM")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+
+        {/* Assets and Portals — added here at the same time as the desktop bar,
+            so neither is reachable on one width and missing on the other. */}
+        {showAssets && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link
+              href="/assets"
+              onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/assets") ? mobileItemActiveStyle : mobileItemInactive)}
+            >
+              {t("nav.assets", "Assets")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+
+        {showPortals && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link
+              href="/portals"
+              onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/portals") ? mobileItemActiveStyle : mobileItemInactive)}
+            >
+              {t("nav.portals", "Portals")}
             </Link>
           </DropdownMenuItem>
         )}

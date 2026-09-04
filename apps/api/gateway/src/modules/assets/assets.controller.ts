@@ -17,8 +17,8 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
-import { RequirePermission } from '../../common/decorators';
+import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -51,15 +51,23 @@ export class AssetsController {
     });
   }
 
+  /*
+    Space-aware: assets belong to a workspace through their kind, and the person
+    who runs a workspace runs its equipment. The org-wide column alone refused
+    them the list — while whoever passed it saw every workspace's assets. The
+    service narrows by the caller's own spaces, so this widens the door and
+    tightens what is behind it.
+  */
   @Get()
-  @RequirePermission('canViewAllTasks')
-  @ApiOperation({ summary: 'List all assets' })
+  @RequirePermissionInSpace('canViewAllTasks')
+  @ApiOperation({ summary: 'List assets — the organization’s, or one workspace’s' })
   async findAll(@Query() query: AssetQueryDto, @Request() req: any) {
     return this.assetsService.findAll({
       ...query,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }

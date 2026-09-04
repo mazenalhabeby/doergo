@@ -874,7 +874,9 @@
     "documents": "Documenti",
     "issueDocuments": "Emetti documenti",
     "myDocuments": "I miei documenti",
-    "sentDocuments": "Documenti inviati"
+    "sentDocuments": "Documenti inviati",
+    "assets": "Asset",
+    "portals": "Portali"
   },
   "dashboard": {
     "admin": {
@@ -4000,7 +4002,8 @@
     },
     "toast": {
       "deleted": "Asset eliminato"
-    }
+    },
+    "noWorkspace": "Nessuno spazio ha ancora attivato gli asset."
   },
   "invoices": {
     "title": "Fatture",
@@ -5836,7 +5839,9 @@
     "triageTitle": "Instrada la richiesta",
     "triageUnassigned": "Lascia non assegnata",
     "triageWorker": "Assegna operatore",
-    "uploadCover": "Carica copertina"
+    "uploadCover": "Carica copertina",
+    "noWorkspace": "Nessuno spazio ha ancora attivato il portale clienti.",
+    "subtitle": "Ciò che i tuoi clienti vedono quando accedono."
   },
   "scheduling": {
     "title": "Impostazioni spazio di lavoro",
@@ -6680,7 +6685,9 @@
   "clients": {
     "empty": "Non ti è ancora stato assegnato alcun cliente.",
     "subtitleAll": "Tutti i clienti dell’organizzazione.",
-    "subtitleOwn": "Clienti assegnati a te."
+    "subtitleOwn": "Clienti assegnati a te.",
+    "inWorkspace": "In {{name}}",
+    "allSpaces": "Tutti"
   },
   "worklog": {
     "add": "Aggiungi",
@@ -6813,7 +6820,8 @@
     "updated": "Cliente aggiornato",
     "vatId": "P. IVA",
     "website": "Sito web",
-    "yesterday": "Ieri"
+    "yesterday": "Ieri",
+    "introAll": "Tutti i clienti che puoi vedere. Le vendite li lavorano con le attività; quelli invitati usano anche l’app."
   },
   "reports": {
     "addSchedule": "Aggiungi pianificazione",

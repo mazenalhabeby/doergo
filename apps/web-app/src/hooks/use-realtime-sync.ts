@@ -176,11 +176,14 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // on another admin's list. Ids only — a rep who cannot reach the client refetches
   // and gets back what they are allowed to see.
   // NOTE: these are the keys the screens ACTUALLY use — `["customers"]` looks like
-  // the obvious one and matches no query at all; the list is `["my-clients"]`.
-  // A key that matches nothing is silent, which is the whole failure mode here.
+  // the obvious one and matches no query at all. A key that matches nothing is
+  // silent, which is the whole failure mode here.
+  //
+  // `["my-clients"]` was here until /clients stopped having a list of its own:
+  // it now mounts the workspace's Customers tab, so both the page and the tab
+  // live under `["space-customers", spaceId ?? "all"]` — one key for one list.
   [Events.CUSTOMER_CHANGED]: [
-    ["my-clients"],            // /clients list
-    ["space-customers"],       // a space's Customers tab
+    ["space-customers"],       // the clients list, per workspace and org-wide
     ["customersAll"],          // the reports picker
     ["customer"],              // /customers/[id]
     ["customer-activities"],

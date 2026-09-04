@@ -35,6 +35,7 @@ import {
   type ProfileBadgesConfig,
   runWithCronLock,
   canUsePlatform,
+  isAdmin,
 } from '@hbcfield/shared';
 
 // Hash a token using SHA-256 for secure storage
@@ -228,6 +229,55 @@ export class AuthService {
   }
 
   /** Whether the SMTP transport will accept a connection at all. */
+  /**
+   * Every feature module switched on in a workspace this member can see.
+   *
+   * Modules are bought and enabled PER WORKSPACE, so the organization's own list
+   * is not the answer: a company that runs Assets on one site has it on that
+   * site's row and nowhere else. The navigation needs "is this worth offering at
+   * all", and asking it per page would mean loading the workspace list on every
+   * screen for every member.
+   *
+   * So it is answered once, with the session. One bounded query — module names
+   * only, from the spaces this member is on (all of them for an admin, whose
+   * reach is the organization). The union is a handful of short strings.
+   */
+  private async visibleSpaceModules(
+    userId: string,
+    organizationId: string,
+    isAdminUser: boolean,
+  ): Promise<string[]> {
+    try {
+      const spaces = await this.prisma.companyLocation.findMany({
+        where: {
+          organizationId,
+          isActive: true,
+          ...(isAdminUser
+            ? {}
+            : {
+                spaceAssignments: {
+                  some: {
+                    userId,
+                    OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+                  },
+                },
+              }),
+        },
+        select: { enabledModules: true },
+        take: 200,
+      });
+      const out = new Set<string>();
+      for (const s of spaces) {
+        for (const m of (s.enabledModules as string[] | null) ?? []) out.add(m);
+      }
+      return [...out];
+    } catch {
+      // Never fail a login over navigation garnish: an empty list simply means
+      // the nav falls back to the organization's own modules.
+      return [];
+    }
+  }
+
   private async canSendMail(): Promise<boolean> {
     if (!this.mailRoutes.length) return false;
     const ttl = this.transportHealth?.ok ? 60_000 : 15_000;
@@ -756,6 +806,9 @@ export class AuthService {
             // Org FEATURE modules (sprints, checklists, tracking…) — always the
             // org's set, never the user's access profile. Drives hasModule/hasFeature.
             orgModules: (user.organization?.enabledModules as string[] | null) || [],
+            // Modules switched on in workspaces this member can see — see
+            // visibleSpaceModules. Drives which top-level nav entries exist.
+            spaceModules: await this.visibleSpaceModules(user.id, user.organizationId!, isAdmin(user as never)),
             // Billing tier + subscription status (lowercase) — drives plan gating.
             subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
@@ -1068,6 +1121,11 @@ export class AuthService {
             profileBadges: resolveProfileBadges(storedToken.user.profileBadges, storedToken.user.organization?.profileBadges),
             enabledModules: (storedToken.user.enabledModules ?? storedToken.user.organization?.enabledModules) || [],
             orgModules: (storedToken.user.organization?.enabledModules as string[] | null) || [],
+            spaceModules: await this.visibleSpaceModules(
+              storedToken.user.id,
+              storedToken.user.organizationId!,
+              isAdmin(storedToken.user as never),
+            ),
             subStatus: storedToken.user.organization?.suspendedAt ? 'canceled' : (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
             orgAddOns: storedToken.user.organization?.addOns ?? [],
@@ -1517,6 +1575,7 @@ export class AuthService {
           enabledModules: (userModules ?? organization?.enabledModules) || [],
           // Org FEATURE modules — always the org's set (drives hasModule/hasFeature).
           orgModules: (organization?.enabledModules as string[] | null) || [],
+          spaceModules: await this.visibleSpaceModules(user.id, user.organizationId!, isAdmin(user as never)),
           // Billing status carried on req.user so the SubscriptionGuard enforces
           // the read-only lock with zero extra DB reads (cached with the user).
           subStatus: organization?.suspendedAt ? 'canceled' : (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),

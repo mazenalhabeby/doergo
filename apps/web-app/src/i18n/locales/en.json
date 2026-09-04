@@ -874,7 +874,9 @@
     "documents": "Documents",
     "issueDocuments": "Issue documents",
     "myDocuments": "My documents",
-    "sentDocuments": "Sent documents"
+    "sentDocuments": "Sent documents",
+    "assets": "Assets",
+    "portals": "Portals"
   },
   "dashboard": {
     "admin": {
@@ -3991,7 +3993,8 @@
     },
     "toast": {
       "deleted": "Asset deleted"
-    }
+    },
+    "noWorkspace": "No workspace has assets switched on yet."
   },
   "invoices": {
     "title": "Invoices",
@@ -5827,7 +5830,9 @@
     "triageTitle": "Route request",
     "triageUnassigned": "Leave unassigned",
     "triageWorker": "Assign worker",
-    "uploadCover": "Upload cover"
+    "uploadCover": "Upload cover",
+    "noWorkspace": "No workspace has a client portal switched on yet.",
+    "subtitle": "What your clients see when they log in."
   },
   "scheduling": {
     "title": "Workspace settings",
@@ -6671,7 +6676,9 @@
   "clients": {
     "empty": "No clients assigned to you yet.",
     "subtitleAll": "Every client in the organization.",
-    "subtitleOwn": "Clients assigned to you."
+    "subtitleOwn": "Clients assigned to you.",
+    "inWorkspace": "In {{name}}",
+    "allSpaces": "All"
   },
   "worklog": {
     "add": "Add",
@@ -6804,7 +6811,8 @@
     "updated": "Customer updated",
     "vatId": "VAT / UID",
     "website": "Website",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "introAll": "Every client you can see. Sales works them with tasks; invited ones also use the app."
   },
   "reports": {
     "addSchedule": "Add schedule",

@@ -199,6 +199,11 @@ export class AssetQueryDto {
   @Min(1)
   limit?: number;
 
+  @ApiPropertyOptional({ description: 'Filter by workspace — intersected with the caller’s own' })
+  @IsString()
+  @IsOptional()
+  spaceId?: string;
+
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsString()
   @IsOptional()

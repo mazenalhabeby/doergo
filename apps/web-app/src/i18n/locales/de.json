@@ -874,7 +874,9 @@
     "documents": "Dokumente",
     "issueDocuments": "Dokumente ausstellen",
     "myDocuments": "Meine Dokumente",
-    "sentDocuments": "Gesendete Dokumente"
+    "sentDocuments": "Gesendete Dokumente",
+    "assets": "Anlagen",
+    "portals": "Portale"
   },
   "dashboard": {
     "admin": {
@@ -3991,7 +3993,8 @@
     },
     "toast": {
       "deleted": "Anlage gelöscht"
-    }
+    },
+    "noWorkspace": "Noch kein Workspace hat Anlagen aktiviert."
   },
   "invoices": {
     "title": "Rechnungen",
@@ -5827,7 +5830,9 @@
     "triageTitle": "Anfrage zuordnen",
     "triageUnassigned": "Unzugewiesen lassen",
     "triageWorker": "Mitarbeiter zuweisen",
-    "uploadCover": "Titelbild hochladen"
+    "uploadCover": "Titelbild hochladen",
+    "noWorkspace": "Noch kein Workspace hat ein Kundenportal aktiviert.",
+    "subtitle": "Was Ihre Kunden sehen, wenn sie sich anmelden."
   },
   "scheduling": {
     "title": "Arbeitsbereichseinstellungen",
@@ -6671,7 +6676,9 @@
   "clients": {
     "empty": "Ihnen sind noch keine Kunden zugewiesen.",
     "subtitleAll": "Alle Kunden der Organisation.",
-    "subtitleOwn": "Ihnen zugewiesene Kunden."
+    "subtitleOwn": "Ihnen zugewiesene Kunden.",
+    "inWorkspace": "In {{name}}",
+    "allSpaces": "Alle"
   },
   "worklog": {
     "add": "Hinzufügen",
@@ -6804,7 +6811,8 @@
     "updated": "Kunde aktualisiert",
     "vatId": "USt-IdNr. / UID",
     "website": "Website",
-    "yesterday": "Gestern"
+    "yesterday": "Gestern",
+    "introAll": "Alle Kunden, die Sie sehen können. Der Vertrieb bearbeitet sie mit Aufgaben; eingeladene nutzen auch die App."
   },
   "reports": {
     "addSchedule": "Zeitplan hinzufügen",

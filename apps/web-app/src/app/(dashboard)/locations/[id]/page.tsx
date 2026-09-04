@@ -241,7 +241,7 @@ export default function SpaceSettingsPage() {
               {space?.enabledModules?.includes("crm") && (
                 <TabsContent value="customers" className="mt-0">
                   <PlanGate feature="crm" modules={space?.enabledModules}>
-                    <CustomersTab space={space} />
+                    <CustomersTab spaceId={spaceId} />
                   </PlanGate>
                 </TabsContent>
               )}

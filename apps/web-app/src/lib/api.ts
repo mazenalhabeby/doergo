@@ -393,6 +393,8 @@ export const authApi = {
         canManageUsers: boolean;
         enabledModules?: string[] | Record<string, unknown>;
         orgModules?: string[];
+        /** Modules on in workspaces this member can see — see auth.service. */
+        spaceModules?: string[];
       };
     }>('/auth/me');
 
@@ -1703,6 +1705,8 @@ export interface OrphanAsset {
 }
 
 export interface AssetsQueryParams {
+  /** One workspace. The server intersects it with the caller's own. */
+  spaceId?: string;
   categoryId?: string;
   typeId?: string;
   status?: AssetStatus;

@@ -26,11 +26,49 @@ export class AssetAccessService {
    * admitted the flag it was reading.
    */
   assertMay(
-    actor: { userRole: string; canViewAllTasks?: boolean },
+    actor: { userRole: string; canViewAllTasks?: boolean; viewAllSpaceIds?: string[] },
     doing: string,
   ): void {
-    if (actor.userRole === Role.ADMIN || actor.canViewAllTasks) return;
+    if (this.isOrgWide(actor)) return;
+    /*
+      A grant held in a SPACE counts too — for the spaces it covers.
+
+      Assets belong to a workspace through their kind, and whoever runs that
+      workspace runs its equipment. Reading the flat column alone refused them
+      the list entirely, which is why the assets page could not be opened by the
+      person standing next to the forklift. WHICH assets they then see is
+      narrowed by `spaceFilter` below; this only decides that the door opens.
+    */
+    if ((actor.viewAllSpaceIds?.length ?? 0) > 0) return;
     throw new ForbiddenException(`You do not have permission to ${doing}`);
+  }
+
+  /** Everything, or only certain workspaces? */
+  isOrgWide(actor: { userRole: string; canViewAllTasks?: boolean }): boolean {
+    return actor.userRole === Role.ADMIN || actor.canViewAllTasks === true;
+  }
+
+  /**
+   * The `category` clause that keeps a list inside the caller's workspaces.
+   *
+   * An asset reaches a workspace through its KIND (`AssetCategory.spaceId`), so
+   * the filter goes there rather than on the asset. Returns undefined for an
+   * org-wide caller — no clause, no cost — and for a space-scoped one an
+   * explicitly requested workspace is INTERSECTED with what they hold rather
+   * than replacing it, so `?spaceId=` can narrow their view and never widen it.
+   */
+  spaceFilter(
+    actor: { userRole: string; canViewAllTasks?: boolean; viewAllSpaceIds?: string[] },
+    requestedSpaceId?: string,
+  ): { spaceId: string | { in: string[] } } | undefined {
+    if (this.isOrgWide(actor)) {
+      return requestedSpaceId ? { spaceId: requestedSpaceId } : undefined;
+    }
+    const held = actor.viewAllSpaceIds ?? [];
+    const allowed = requestedSpaceId ? held.filter((id) => id === requestedSpaceId) : held;
+    // Empty means "granted nowhere", and must match nothing rather than
+    // everything — the distinction this codebase has been bitten by before.
+    return { spaceId: { in: allowed } };
   }
 
   /**

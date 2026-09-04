@@ -66,6 +66,15 @@ export interface User {
   enabledModules: string[] | Record<string, unknown>;
   // Org FEATURE modules (sprints, checklists, tracking…) — drives hasModule().
   orgModules?: string[];
+  /*
+    Modules switched on in workspaces this member can see.
+
+    Modules are bought PER WORKSPACE, so the organization's own list answers a
+    different question: a company running Assets on one site has it there and
+    not on the org. Resolved with the session so the navigation can decide what
+    to offer without loading the workspace list on every page.
+  */
+  spaceModules?: string[];
   // Billing tier + subscription status (lowercase) — drives hasPlanFeature().
   planTier?: string | null; // LEGACY — nothing reads it to decide access
   orgAddOns?: string[] | null;
@@ -209,6 +218,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
           orgModules: userData.orgModules || [],
+          spaceModules: userData.spaceModules || [],
         });
         updateTokenInfo();
       }
@@ -303,6 +313,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           avatarUrl: userData.avatarUrl || null,
           enabledModules: userData.enabledModules || [],
           orgModules: userData.orgModules || [],
+          spaceModules: userData.spaceModules || [],
         });
       }
     } catch {
