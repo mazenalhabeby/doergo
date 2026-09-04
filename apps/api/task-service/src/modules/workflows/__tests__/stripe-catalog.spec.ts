@@ -130,10 +130,51 @@ describe('what Stripe is told', () => {
     expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
   });
 
-  it('bills a module once per space that switched it on', () => {
-    const lines = stripeLinesForBill(bill());
-    expect(lines.find(l => l.lookupKey === stripeLookupKey('module', 'tracking'))?.quantity).toBe(2);
-    expect(lines.find(l => l.lookupKey === stripeLookupKey('module', 'crm'))?.quantity).toBe(1);
+  it('never sends more lines than Stripe will take', () => {
+    /*
+      Stripe refuses more than 20 recurring prices on a Checkout Session —
+      verified against the live API. Itemised per module and per option, an
+      organization with TWO workspaces already produced 19; one more module
+      anywhere and nobody could pay, with a Stripe error on the payment screen.
+
+      A shape that fails as a customer grows is the worst direction for it to
+      fail in, so the bill is now at most five lines whatever its size.
+    */
+    const huge = orgMonthlyCost({
+      seatCount: 400,
+      observerSeatCount: 40,
+      spaces: Array.from({ length: 25 }, (_, i) => ({
+        spaceId: `s${i}`,
+        spaceName: `S${i}`,
+        enabledModules: ['crm', 'assets', 'tracking', 'time_tracking', 'service_reports', 'b2c_portal'],
+        usage: { crm: 900, assets: 400, b2c_portal: 6 },
+      })),
+      addOns: [...AVAILABLE_ADD_ONS.map((a) => a.key)],
+    });
+    const lines = stripeLinesForBill(huge);
+    expect(lines.length).toBeLessThanOrEqual(5);
+    expect(lines.length).toBeLessThan(20);
+    // And it still adds up, at that size.
+    expect(charged(lines)).toBe(huge.monthlyCents);
+  });
+
+  it('stays inside Stripe’s per-item quantity limit at a realistic size', () => {
+    /*
+      The aggregate lines carry cents in the quantity, and a subscription item's
+      quantity caps at 999,999 — so one line can express up to €9,999.99. Worth
+      knowing rather than discovering: it is two orders of magnitude beyond the
+      largest bill this product has produced, and it is a ceiling on ONE line,
+      not on the account.
+    */
+    const huge = orgMonthlyCost({
+      seatCount: 400,
+      spaces: Array.from({ length: 25 }, (_, i) => ({
+        spaceId: `s${i}`, spaceName: `S${i}`,
+        enabledModules: ['crm', 'assets', 'tracking', 'time_tracking'], usage: {},
+      })),
+      addOns: [...AVAILABLE_ADD_ONS.map((a) => a.key)],
+    });
+    for (const l of stripeLinesForBill(huge)) expect(l.quantity).toBeLessThan(1_000_000);
   });
 
   it('never sends a zero-quantity line', () => {
@@ -163,17 +204,23 @@ describe('what Stripe is told', () => {
 });
 
 describe('the Stripe catalogue', () => {
-  it('covers every priced module, every add-on, the seat and every ladder', () => {
-    const c = stripeCatalog();
-    const keys = new Set(c.map(e => e.lookupKey));
-    expect(keys.has('hbcfield_seat_monthly')).toBe(true);
-    for (const m of AVAILABLE_MODULES) {
-      if ((MODULE_MONTHLY_CENTS[m.key as string] ?? 0) <= 0) continue;
-      expect(keys.has(stripeLookupKey('module', m.key as string))).toBe(true);
-    }
-    for (const a of AVAILABLE_ADD_ONS) {
-      expect(keys.has(stripeLookupKey('addon', a.key))).toBe(true);
-    }
+  it('holds exactly the four lines a bill can produce', () => {
+    /*
+      Four, not thirty-three. The per-module, per-option and per-usage prices
+      were 31 of the old catalogue and are what put an organization at 19 of
+      Stripe's 20-line ceiling.
+
+      The itemisation is not lost — /settings/billing shows every workspace,
+      every module and every option, reconciling to the cent, which is more
+      detail than a Stripe invoice ever carried.
+    */
+    const keys = stripeCatalog().map((e) => e.lookupKey).sort();
+    expect(keys).toEqual([
+      'hbcfield_options_monthly',
+      'hbcfield_seat_monthly',
+      'hbcfield_seat_observer_monthly',
+      'hbcfield_workspaces_monthly',
+    ]);
   });
 
   it('gives every entry a unique lookup key', () => {

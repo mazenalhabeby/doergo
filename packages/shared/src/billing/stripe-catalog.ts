@@ -35,15 +35,18 @@
  * "Assets — usage ×4,800 = €48.00" rather than an opaque total.
  */
 
-import { AVAILABLE_MODULES } from '../types';
-import { MODULE_MONTHLY_CENTS, SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS } from './module-pricing';
-import { AVAILABLE_ADD_ONS } from './add-ons';
-import { MODULE_USAGE_PRICING } from './usage-pricing';
+import { SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS } from './module-pricing';
 
 /** Every price this system creates is prefixed, so a shared Stripe account stays legible. */
 export const STRIPE_LOOKUP_PREFIX = 'hbcfield';
 
-export type StripeLineKind = 'seat' | 'seat_observer' | 'module' | 'addon' | 'usage';
+export type StripeLineKind =
+  | 'seat'
+  | 'seat_observer'
+  /** Everything the workspaces cost, as one line. See stripeLinesForBill. */
+  | 'workspaces'
+  /** Everything bought once for the organization, as one line. */
+  | 'options';
 
 /**
  * The stable lookup key for one billable line. Same function, script and runtime.
@@ -55,14 +58,19 @@ export type StripeLineKind = 'seat' | 'seat_observer' | 'module' | 'addon' | 'us
  * redundant now that monthly is the only interval — that is the cost of keeping
  * a customer's subscription resolvable, and it is the cheaper side of the trade.
  */
-export function stripeLookupKey(kind: StripeLineKind, key: string): string {
-  // The staff seat's key is the frozen one — it must keep resolving to the
-  // price live subscriptions already reference. The observer seat is a NEW
-  // price with its own key, additive and safe: the sync script only ever
-  // creates, so adding one cannot disturb the thirty-one that exist.
+export function stripeLookupKey(kind: StripeLineKind, _key = ''): string {
+  /*
+    Four keys, one per line the bill can produce. `_key` survives as a parameter
+    only so the hundred call sites reading `stripeLookupKey('seat', '')` keep
+    compiling; nothing uses it, because there is no longer a price per module or
+    per option to distinguish.
+
+    The staff seat's key stays the frozen literal — it must keep resolving to the
+    price a live subscription would reference.
+  */
   if (kind === 'seat') return `${STRIPE_LOOKUP_PREFIX}_seat_monthly`;
   if (kind === 'seat_observer') return `${STRIPE_LOOKUP_PREFIX}_seat_observer_monthly`;
-  return `${STRIPE_LOOKUP_PREFIX}_${kind}_${key}_monthly`;
+  return `${STRIPE_LOOKUP_PREFIX}_${kind}_monthly`;
 }
 
 /** One product/price pair the account is expected to hold. */
@@ -102,33 +110,41 @@ export function stripeCatalog(): StripeCatalogEntry[] {
 
   push('seat', '', 'HBCField — User seat', SEAT_MONTHLY_CENTS);
   push('seat_observer', '', 'HBCField — External observer seat', OBSERVER_SEAT_MONTHLY_CENTS);
+  /*
+    Two aggregate lines at ONE CENT each, carrying their amount in the quantity.
 
-  for (const m of AVAILABLE_MODULES) {
-    const price = MODULE_MONTHLY_CENTS[m.key as string] ?? 0;
-    if (price <= 0) continue; // a €0 module would be an invoice line nobody can cancel
-    push('module', m.key as string, `HBCField — ${m.label}`, price);
-  }
+    Stripe refuses more than 20 recurring prices on a Checkout Session, and an
+    itemised bill reached 19 for an organization with two workspaces — one more
+    module switched on anywhere and nobody could pay at all, with a Stripe error
+    on the payment screen. Itemising per module and per option is a shape that
+    fails as a customer grows, which is the worst possible direction for it to
+    fail in.
 
-  for (const a of AVAILABLE_ADD_ONS) {
-    push('addon', a.key, `HBCField — ${a.label}`, a.monthlyCents);
-  }
+    So the bill is FIVE lines at most, whatever its size: staff seats, observer
+    seats, everything the workspaces cost, everything bought once, and nothing
+    else. The cent-priced aggregate is the pattern the usage ladders already
+    used — it is not a new idea here, only applied one level up.
 
-  // One cent per unit; the quantity carries what the ladder came to. See the
-  // note at the top for why Stripe's own tiered pricing cannot express a
-  // per-space graduated ladder.
-  for (const key of Object.keys(MODULE_USAGE_PRICING)) {
-    const label = AVAILABLE_MODULES.find((m) => m.key === key)?.label ?? key;
-    out.push({
-      kind: 'usage',
-      key,
-      lookupKey: stripeLookupKey('usage', key),
-      productName: `HBCField — ${label} usage`,
-      // One cent a unit; the quantity carries the ladder's cents.
-      unitAmountCents: 1,
-      recurring: 'month',
-    });
-  }
+    What is lost is the per-module breakdown ON THE STRIPE INVOICE. It is not
+    lost to the customer: /settings/billing itemises every workspace, every
+    module and every option, and the totals reconcile to the cent — which is
+    more detail than the invoice ever carried.
+  */
+  push('workspaces', '', 'HBCField — Workspaces (modules & usage)', 1);
+  push('options', '', 'HBCField — Options', 1);
 
+  /*
+    No per-module, per-option or per-usage prices any more.
+
+    They were 31 of the 33, and they are what put an organization at 19 of
+    Stripe's 20-line ceiling. The two aggregate prices above carry the same
+    money in their quantity, and the itemisation lives in the product, where it
+    is richer and where people actually look at it.
+
+    The prices already on the account are left alone — the sync never archives
+    unless asked, and a price nothing references costs nothing. They are also
+    the way back if this is ever reversed.
+  */
   return out;
 }
 
@@ -157,7 +173,7 @@ export function stripeLinesForBill(
     observerSeatCount?: number;
     spaces: Array<{ cost: { lines: Array<{ moduleKey: string; monthlyCents: number }> } }>;
     usage: Array<{ moduleKey: string; monthlyCents: number }>;
-    addOns: Array<{ key: string }>;
+    addOns: Array<{ key: string; monthlyCents?: number }>;
   },
 ): StripeLine[] {
   const lines: StripeLine[] = [];
@@ -180,43 +196,38 @@ export function stripeLinesForBill(
     });
   }
 
-  // A module is billed once per SPACE that switched it on — the same shape
-  // seats already had, so one quantity change covers switching it off anywhere.
-  const spacesPerModule = new Map<string, number>();
-  for (const space of bill.spaces) {
-    for (const line of space.cost.lines) {
-      spacesPerModule.set(line.moduleKey, (spacesPerModule.get(line.moduleKey) ?? 0) + 1);
-    }
-  }
-  for (const [moduleKey, count] of [...spacesPerModule].sort(([a], [b]) => a.localeCompare(b))) {
+  /*
+    Everything the workspaces cost, as ONE line, priced at a cent a unit with
+    the amount in the quantity.
+
+    It was a line per module and a line per usage ladder, which reached 19 of
+    Stripe's 20-line ceiling for an organization with two workspaces. One more
+    module anywhere and checkout failed outright — a shape that breaks as a
+    customer grows.
+
+    Modules and usage are summed together because they are the same answer to
+    the same question: what do the workspaces cost? Splitting them would buy a
+    second line and explain nothing the billing page does not already show
+    per workspace, per module, to the cent.
+  */
+  const workspaceCents =
+    bill.spaces.reduce((sum, sp) => sum + sp.cost.lines.reduce((n, l) => n + l.monthlyCents, 0), 0) +
+    bill.usage.reduce((sum, u) => sum + Math.max(0, u.monthlyCents), 0);
+  if (workspaceCents > 0) {
     lines.push({
-      lookupKey: stripeLookupKey('module', moduleKey),
-      quantity: count,
-      describe: `${moduleKey} × ${count} space(s)`,
+      lookupKey: stripeLookupKey('workspaces', ''),
+      quantity: workspaceCents,
+      describe: `workspaces — ${workspaceCents}c`,
     });
   }
 
-  // Ladders, aggregated per module across every space, in cents.
-  const usagePerModule = new Map<string, number>();
-  for (const u of bill.usage) {
-    if (u.monthlyCents <= 0) continue;
-    usagePerModule.set(u.moduleKey, (usagePerModule.get(u.moduleKey) ?? 0) + u.monthlyCents);
-  }
-  for (const [moduleKey, cents] of [...usagePerModule].sort(([a], [b]) => a.localeCompare(b))) {
+  // Everything bought once for the organization, likewise.
+  const optionCents = bill.addOns.reduce((sum, a) => sum + Math.max(0, a.monthlyCents ?? 0), 0);
+  if (optionCents > 0) {
     lines.push({
-      lookupKey: stripeLookupKey('usage', moduleKey),
-      // Annual charges ten months of the same monthly ladder, matching every
-      // other line — the discount lives in the price, not in the quantity.
-      quantity: cents,
-      describe: `${moduleKey} usage — ${cents}c`,
-    });
-  }
-
-  for (const a of [...bill.addOns].sort((x, y) => x.key.localeCompare(y.key))) {
-    lines.push({
-      lookupKey: stripeLookupKey('addon', a.key),
-      quantity: 1,
-      describe: a.key,
+      lookupKey: stripeLookupKey('options', ''),
+      quantity: optionCents,
+      describe: `options — ${optionCents}c`,
     });
   }
 
