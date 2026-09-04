@@ -3631,9 +3631,7 @@
     "featureTabs": {
       "tasks": "Tâches",
       "clock": "Pointage",
-      "timeOff": "Congés",
-      "externalBlocked": "Indisponible pour un membre externe : il n'est pas employé ici, donc il n'y a ni heures à pointer ni congés à demander.",
-      "externalHint": "Pointage et Congés sont indisponibles : un membre externe travaille pour un client ou un partenaire — il n'y a donc ici ni heures à pointer ni congés à demander."
+      "timeOff": "Congés"
     },
     "platforms": {
       "webOnly": "Web uniquement",

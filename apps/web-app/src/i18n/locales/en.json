@@ -3622,9 +3622,7 @@
     "featureTabs": {
       "tasks": "Tasks",
       "clock": "Clock",
-      "timeOff": "Time Off",
-      "externalBlocked": "Not available for an external member — they are not employed here, so there are no hours to clock and no leave to request.",
-      "externalHint": "Clock and Time off are not available: an external member works for a client or partner, so there are no hours to clock and no leave to request here."
+      "timeOff": "Time Off"
     },
     "platforms": {
       "webOnly": "Web only",

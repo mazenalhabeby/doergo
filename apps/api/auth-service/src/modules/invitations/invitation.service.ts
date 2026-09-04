@@ -25,6 +25,7 @@ import {
   permissionsExceed,
   externalMayHold,
 } from '@hbcfield/shared';
+import { defaultSpaceRoleId } from './invitation-space-role';
 import { memberFieldsFromInvitation } from './invitation-apply';
 
 function hashCode(code: string): string {
@@ -484,6 +485,7 @@ export class InvitationService {
     userId: string,
     organizationId: string,
     spaceId: string | null | undefined,
+    isExternal = false,
   ) {
     if (!spaceId) return;
     const space = await tx.companyLocation.findFirst({
@@ -491,10 +493,14 @@ export class InvitationService {
       select: { id: true },
     });
     if (!space) return;
+    // An external member's authority is their SPACE role and nothing else, so
+    // arriving without one leaves them holding nothing at all. Only on create —
+    // `update` deliberately leaves an existing roleId alone.
+    const roleId = await defaultSpaceRoleId(tx, organizationId, { isExternal });
     await tx.spaceAssignment.upsert({
       where: { userId_spaceId: { userId, spaceId } },
       update: { isPrimary: true, effectiveTo: null },
-      create: { organizationId, userId, spaceId, isPrimary: true },
+      create: { organizationId, userId, spaceId, isPrimary: true, roleId },
     });
   }
 
@@ -628,7 +634,7 @@ export class InvitationService {
       }
 
       // Pre-assigned space: assign the new user to it (if it still exists in the org).
-      await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId);
+      await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId, invitation.isExternal);
 
       await tx.invitation.update({
         where: { id: invitation.id },

@@ -182,6 +182,24 @@ const allPermissions = (): PermissionSet =>
   Object.fromEntries(PERMISSION_KEYS.map((k) => [k, true])) as PermissionSet;
 
 /**
+ * The role an external member gets in their space when nobody picks one.
+ *
+ * An external invitation carries no org-wide role — the server refuses that
+ * combination — and the invite form offered no space role either, so an
+ * external member arrived holding NOTHING: they could sign in, and every
+ * supervisor surface was gated on permissions they did not have. The screen was
+ * empty and correct, which is the hardest kind of empty to diagnose.
+ *
+ * This role exists for exactly this person, so it is the default rather than a
+ * question. Chosen by SLUG, never by name: the name is editable per
+ * organization and translations of it exist.
+ *
+ * Only ever a DEFAULT. An explicitly chosen role always wins, and an assignment
+ * that already has a role is never overwritten.
+ */
+export const EXTERNAL_DEFAULT_ROLE_SLUG = 'external-supervisor';
+
+/**
  * Built-in roles seeded once per organization. Space slugs (space-manager,
  * shift-leader, team-leader) deliberately match the legacy `SpaceRole` built-ins
  * so backfill MERGES them rather than duplicating.

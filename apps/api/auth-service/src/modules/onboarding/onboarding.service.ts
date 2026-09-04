@@ -20,6 +20,7 @@ import {
   generateSecureCode,
   industryUsesExternalWorkers,
 } from '@hbcfield/shared';
+import { defaultSpaceRoleId } from '../invitations/invitation-space-role';
 import { memberFieldsFromInvitation } from '../invitations/invitation-apply';
 
 @Injectable()
@@ -464,10 +465,17 @@ export class OnboardingService {
           select: { id: true },
         });
         if (space) {
+          // Same default the register path applies — an external member whose
+          // space assignment carries no role holds nothing at all. Resolved by
+          // the shared helper so the two accept paths cannot drift, which is
+          // exactly how `isExternal` went missing on this one before.
+          const roleId = await defaultSpaceRoleId(tx, invitation.organizationId, {
+            isExternal: invitation.isExternal,
+          });
           await tx.spaceAssignment.upsert({
             where: { userId_spaceId: { userId, spaceId: invitation.spaceId } },
             update: { isPrimary: true, effectiveTo: null },
-            create: { organizationId: invitation.organizationId, userId, spaceId: invitation.spaceId, isPrimary: true },
+            create: { organizationId: invitation.organizationId, userId, spaceId: invitation.spaceId, isPrimary: true, roleId },
           });
         }
       }

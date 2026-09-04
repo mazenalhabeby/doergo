@@ -3631,9 +3631,7 @@
     "featureTabs": {
       "tasks": "Attività",
       "clock": "Timbratura",
-      "timeOff": "Ferie e permessi",
-      "externalBlocked": "Non disponibile per un membro esterno: non è impiegato qui, quindi non ci sono ore da timbrare né ferie da richiedere.",
-      "externalHint": "Timbratura e Ferie non sono disponibili: un membro esterno lavora per un cliente o un partner, quindi qui non ci sono ore da timbrare né ferie da richiedere."
+      "timeOff": "Ferie e permessi"
     },
     "platforms": {
       "webOnly": "Solo web",
