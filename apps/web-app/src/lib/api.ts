@@ -6551,6 +6551,9 @@ export const documentsApi = {
     limit?: number
   }) => {
     const response = await api.get<{ success: boolean; data: IssuedRegister }>(
+      // `/sent` is the API path, and it stays: renaming a live endpoint 404s for
+      // every browser still running the previous bundle. The screen it feeds is
+      // the register — issued AND supplied — and is named that way.
       buildUrlWithQuery("/documents/sent", {
         tab: params?.tab,
         typeId: params?.typeId,

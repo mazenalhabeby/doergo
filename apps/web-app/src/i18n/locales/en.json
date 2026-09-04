@@ -876,12 +876,12 @@
     "documents": "Documents",
     "issueDocuments": "Issue documents",
     "myDocuments": "My documents",
-    "sentDocuments": "Sent documents",
     "assets": "Assets",
     "portals": "Portals",
     "me": "Me",
     "meSubtitle": "Your shifts, your leave and your documents.",
-    "myShifts": "My shifts"
+    "myShifts": "My shifts",
+    "allDocuments": "All documents"
   },
   "dashboard": {
     "admin": {
@@ -7677,9 +7677,10 @@
       "partSign": "{{count}} to sign",
       "blocking": "You cannot be given work until this is supplied and approved."
     },
-    "sent": {
-      "title": "Sent documents",
-      "subtitle": "Everything issued to members, and where it got to.",
+    "onBehalfOf": "For {{name}}",
+    "all": {
+      "title": "All documents",
+      "subtitle": "Every document in the organization — issued and supplied — and where each one got to.",
       "searchPlaceholder": "Search by title",
       "open": "Open",
       "openFailed": "Could not open the document",
@@ -7726,8 +7727,7 @@
         "complete_one": "{{count}} signature collected",
         "complete_other": "All {{count}} signatures collected"
       }
-    },
-    "onBehalfOf": "For {{name}}"
+    }
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry."

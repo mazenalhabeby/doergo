@@ -876,12 +876,12 @@
     "documents": "Documenti",
     "issueDocuments": "Emetti documenti",
     "myDocuments": "I miei documenti",
-    "sentDocuments": "Documenti inviati",
     "assets": "Asset",
     "portals": "Portali",
     "me": "Io",
     "meSubtitle": "I tuoi turni, le tue ferie e i tuoi documenti.",
-    "myShifts": "I miei turni"
+    "myShifts": "I miei turni",
+    "allDocuments": "Tutti i documenti"
   },
   "dashboard": {
     "admin": {
@@ -7686,9 +7686,10 @@
       "partSign": "{{count}} da firmare",
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
     },
-    "sent": {
-      "title": "Documenti inviati",
-      "subtitle": "Tutto ciò che è stato emesso ai membri e dove è arrivato.",
+    "onBehalfOf": "Per {{name}}",
+    "all": {
+      "title": "Tutti i documenti",
+      "subtitle": "Ogni documento dell’organizzazione — emessi e forniti — e a che punto è ciascuno.",
       "searchPlaceholder": "Cerca per titolo",
       "open": "Apri",
       "openFailed": "Impossibile aprire il documento",
@@ -7735,8 +7736,7 @@
         "complete_one": "{{count}} firma raccolta",
         "complete_other": "Tutte le {{count}} firme raccolte"
       }
-    },
-    "onBehalfOf": "Per {{name}}"
+    }
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Questo dipendente ha già un’assenza dal {{from}} al {{to}} ({{status}}). Scegli altre date o modifica quella voce."

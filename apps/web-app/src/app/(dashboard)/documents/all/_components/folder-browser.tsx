@@ -82,11 +82,11 @@ export function FolderBrowser() {
       if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
     },
     onError: (e: any) =>
-      notify.error(e?.message ?? t("documents.sent.openFailed", "Could not open the document")),
+      notify.error(e?.message ?? t("documents.all.openFailed", "Could not open the document")),
   })
 
   const folderLabel = (f: BrowseFolder) =>
-    f.undated ? t("documents.sent.undated", "No period") : (f.label ?? f.key)
+    f.undated ? t("documents.all.undated", "No period") : (f.label ?? f.key)
 
   const enter = (f: BrowseFolder) =>
     setPath((p) => [...p, { kind: f.kind, key: f.key, label: folderLabel(f), undated: f.undated }])
@@ -96,7 +96,7 @@ export function FolderBrowser() {
       {/* How to file it — a different way through the same shelf, not a filter */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-          {t("documents.sent.groupByLabel", "Browse by")}
+          {t("documents.all.groupByLabel", "Browse by")}
         </span>
         <div className="inline-flex rounded-lg border border-border/80 bg-card p-0.5">
           {GROUPS.map(({ key, icon: Icon }) => (
@@ -114,7 +114,7 @@ export function FolderBrowser() {
               )}
             >
               <Icon className="h-3.5 w-3.5" />
-              {t(`documents.sent.groupBy.${key}`)}
+              {t(`documents.all.groupBy.${key}`)}
             </button>
           ))}
         </div>
@@ -131,7 +131,7 @@ export function FolderBrowser() {
               : "text-muted-foreground hover:bg-accent/40 hover:text-foreground",
           )}
         >
-          {t("documents.sent.allFiles", "All files")}
+          {t("documents.all.allFiles", "All files")}
         </button>
         {path.map((c, i) => (
           <span key={`${c.kind}:${c.key}`} className="flex items-center gap-0.5">
@@ -236,7 +236,7 @@ function Empty() {
         <FolderOpen className="h-6 w-6 text-muted-foreground/60" />
       </div>
       <p className="text-sm text-muted-foreground">
-        {t("documents.sent.emptyFolder", "This folder is empty.")}
+        {t("documents.all.emptyFolder", "This folder is empty.")}
       </p>
     </div>
   )
@@ -275,14 +275,14 @@ function DocumentRow({
       </div>
       {!doc.openedAt && (
         <span className="hidden shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary sm:inline-block">
-          {t("documents.sent.state.unopened", "Not opened")}
+          {t("documents.all.state.unopened", "Not opened")}
         </span>
       )}
       <Button
         variant="ghost" size="icon"
         className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
         disabled={busy} onClick={onOpen}
-        aria-label={t("documents.sent.open", "Open")}
+        aria-label={t("documents.all.open", "Open")}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
       </Button>

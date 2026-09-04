@@ -213,9 +213,18 @@ export class DocumentsController {
     });
   }
 
+  /*
+    The register. Named `sent` for one reason: this path is live, and renaming it
+    would 404 for every browser still running the previous bundle.
+
+    The word is wrong and the screen it serves has been renamed — it holds every
+    document in the organization, ISSUED and SUPPLIED, and half of it is a filing
+    cabinet rather than an outbox. Nothing here was posted anywhere. Read the
+    summary, not the path.
+  */
   @Get('sent')
   @RequirePermission('canViewMemberDocuments')
-  @ApiOperation({ summary: 'Every document the organization has issued, by state' })
+  @ApiOperation({ summary: 'The register: every document in the organization — issued and supplied — by state' })
   async listIssued(@CurrentUser() user: CurrentUserData, @Query() query: ListIssuedQueryDto) {
     return this.documents.listIssued({
       actor: documentActor(user),

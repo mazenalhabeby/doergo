@@ -285,7 +285,7 @@ export function TopNavbar() {
     documents — deliberately NOT the permission to issue them. A manager who
     chases signatures should not have to be given the ability to send payslips.
   */
-  const showSentDocuments = hasPlanFeature("documents") && hasPermission("canViewMemberDocuments")
+  const showAllDocuments = hasPlanFeature("documents") && hasPermission("canViewMemberDocuments")
   const showDocumentTemplates = hasPlanFeature("documents") && hasPermission("canManageDocumentTemplates")
   /*
     Credential validity rides on canAssignTasks, not on a document permission:
@@ -573,7 +573,7 @@ export function TopNavbar() {
           <DocumentsDropdown
             pathname={pathname}
             showIssue={showIssueDocuments}
-            showSent={showSentDocuments}
+            showAllDocuments={showAllDocuments}
             showTemplates={showDocumentTemplates}
             showCompliance={showDocumentCompliance}
           />
@@ -682,13 +682,13 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
 function DocumentsDropdown({
   pathname,
   showIssue,
-  showSent,
+  showAllDocuments,
   showTemplates,
   showCompliance,
 }: {
   pathname: string
   showIssue: boolean
-  showSent: boolean
+  showAllDocuments: boolean
   showTemplates: boolean
   showCompliance: boolean
 }) {
@@ -724,7 +724,7 @@ function DocumentsDropdown({
       and gated on seeing member documents, not on issuing them: chasing a
       signature is a different job from sending one.
     */
-    { href: "/documents/sent", label: t("nav.sentDocuments"), show: showSent },
+    { href: "/documents/all", label: t("nav.allDocuments"), show: showAllDocuments },
     { href: "/documents/review", label: t("documents.review.title"), show: showIssue },
     { href: "/documents/types", label: t("documents.types.title"), show: showTemplates },
     { href: "/documents/templates", label: t("documents.templates.title"), show: showTemplates },

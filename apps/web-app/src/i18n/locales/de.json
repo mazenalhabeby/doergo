@@ -876,12 +876,12 @@
     "documents": "Dokumente",
     "issueDocuments": "Dokumente ausstellen",
     "myDocuments": "Meine Dokumente",
-    "sentDocuments": "Gesendete Dokumente",
     "assets": "Anlagen",
     "portals": "Portale",
     "me": "Ich",
     "meSubtitle": "Ihre Schichten, Ihr Urlaub und Ihre Dokumente.",
-    "myShifts": "Meine Schichten"
+    "myShifts": "Meine Schichten",
+    "allDocuments": "Alle Dokumente"
   },
   "dashboard": {
     "admin": {
@@ -7677,9 +7677,10 @@
       "partSign": "{{count}} unterschreiben",
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
     },
-    "sent": {
-      "title": "Gesendete Dokumente",
-      "subtitle": "Alles, was an Mitarbeitende ausgestellt wurde – und wo es gelandet ist.",
+    "onBehalfOf": "Für {{name}}",
+    "all": {
+      "title": "Alle Dokumente",
+      "subtitle": "Jedes Dokument der Organisation — ausgestellt und eingereicht — und wo es steht.",
       "searchPlaceholder": "Nach Titel suchen",
       "open": "Öffnen",
       "openFailed": "Dokument konnte nicht geöffnet werden",
@@ -7726,8 +7727,7 @@
         "complete_one": "{{count}} Unterschrift vorhanden",
         "complete_other": "Alle {{count}} Unterschriften vorhanden"
       }
-    },
-    "onBehalfOf": "Für {{name}}"
+    }
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag."

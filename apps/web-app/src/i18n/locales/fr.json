@@ -876,12 +876,12 @@
     "documents": "Documents",
     "issueDocuments": "Émettre des documents",
     "myDocuments": "Mes documents",
-    "sentDocuments": "Documents envoyés",
     "assets": "Équipements",
     "portals": "Portails",
     "me": "Moi",
     "meSubtitle": "Vos postes, vos congés et vos documents.",
-    "myShifts": "Mes postes"
+    "myShifts": "Mes postes",
+    "allDocuments": "Tous les documents"
   },
   "dashboard": {
     "admin": {
@@ -7686,9 +7686,10 @@
       "partSign": "{{count}} à signer",
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
     },
-    "sent": {
-      "title": "Documents envoyés",
-      "subtitle": "Tout ce qui a été émis aux membres, et où cela en est.",
+    "onBehalfOf": "Pour {{name}}",
+    "all": {
+      "title": "Tous les documents",
+      "subtitle": "Tous les documents de l'organisation — émis et fournis — et où en est chacun.",
       "searchPlaceholder": "Rechercher par titre",
       "open": "Ouvrir",
       "openFailed": "Impossible d'ouvrir le document",
@@ -7735,8 +7736,7 @@
         "complete_one": "{{count}} signature recueillie",
         "complete_other": "Les {{count}} signatures recueillies"
       }
-    },
-    "onBehalfOf": "Pour {{name}}"
+    }
   },
   "serverErrors": {
     "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée."

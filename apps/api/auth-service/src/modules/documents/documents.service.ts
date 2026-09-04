@@ -2863,7 +2863,12 @@ export class DocumentsService {
    * capabilities and would make "opened" mean nothing.
    */
   /**
-   * Everything the organization has issued, as one register.
+   * Every document in the organization, as one register.
+   *
+   * Issued AND supplied: a member's uploaded licence is in here beside the
+   * payslips, because "what do we hold about this person" is one question. The
+   * screen was called "Sent documents" until that was noticed — nothing here
+   * was posted anywhere, and the folder view is a filing cabinet.
    *
    * The gap this closes: every other list here answers "what does THIS PERSON
    * have" — `listForMember` takes one user id and defaults to the caller. So an
