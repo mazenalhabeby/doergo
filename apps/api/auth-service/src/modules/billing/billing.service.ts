@@ -516,12 +516,27 @@ export class BillingService {
         );
       }
       try {
-        await this.stripe.createInvoiceSubscription({
+        const created = await this.stripe.createInvoiceSubscription({
           customerId,
           lines,
           invoiceDueDays: org.invoiceDueDays,
           ...(trialDays > 0 ? { trialDays } : {}),
         });
+        /*
+          Record it NOW rather than waiting for the webhook.
+
+          `stripeSubscriptionId` and the status are what the page reads to decide
+          between "Start monthly invoicing" and "Payment & invoices". The webhook
+          writes them, and it arrives after the caller has already reloaded — so
+          the button stayed on the old answer until somebody refreshed again,
+          which reads as the action not having worked.
+
+          The webhook is for changes made OUTSIDE the app. This one we made, and
+          we are holding the subscription object. Same `syncSubscription` either
+          way, which is idempotent, so the webhook landing a second later writes
+          the same thing and nothing is duplicated.
+        */
+        await this.syncSubscription(created);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         this.logger.error(`Invoice subscription failed for org ${organizationId}: ${message}`);

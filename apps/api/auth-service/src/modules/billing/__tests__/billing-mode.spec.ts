@@ -134,6 +134,22 @@ describe('the collection method is applied where it can be', () => {
     expect(stripe).toContain('if (differs)');
   });
 
+  it('records the subscription immediately, not on the webhook', () => {
+    /*
+      `stripeSubscriptionId` and the status are what the page reads to choose
+      between "Start monthly invoicing" and "Payment & invoices". Left to the
+      webhook they arrive AFTER the caller has reloaded, so the button kept the
+      old answer until somebody refreshed again — which reads as the action not
+      having worked.
+
+      The webhook is for changes made outside the app. This one we made, and we
+      are holding the subscription object. Same `syncSubscription`, which is
+      idempotent, so the webhook landing a second later writes the same thing.
+    */
+    const billing = read('../billing.service.ts');
+    expect(billing).toContain('await this.syncSubscription(created)');
+  });
+
   it('refuses a missing country in our words, before Stripe’s', () => {
     // "The customer's location isn't recognized" is accurate and names neither
     // the organization nor the screen that fixes it.
