@@ -15,6 +15,9 @@ export class PlatformAdminController {
   @MessagePattern({ cmd: 'platform_org_detail' })
   orgDetail(@Payload() d: { organizationId: string }) { return this.svc.orgDetail(d.organizationId); }
 
+  @MessagePattern({ cmd: 'platform_end_trial' })
+  endTrial(@Payload() d: any) { return this.svc.endTrial(d); }
+
   @MessagePattern({ cmd: 'platform_billing_alerts' })
   billingAlerts(@Payload() d: any) { return this.svc.listBillingAlerts(d ?? {}); }
 

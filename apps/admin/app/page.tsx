@@ -354,6 +354,22 @@ export default function ControlCenter() {
                       <td className="px-3 py-2 text-slate-400">{date(o.trialEndsAt)}</td>
                       <td className="px-3 py-2 text-right"><div className="flex justify-end gap-1">
                         {can('extendTrial') && <button disabled={busy === o.id} onClick={() => act(o.id, '/extend-trial', { body: JSON.stringify({ days: 14 }) })} className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700">+14d</button>}
+                        {/*
+                          End the trial now — the operator's cue that the
+                          conversation about paying has begun. The customer sees
+                          no "Set up payment" while trialing, so this is what
+                          puts it in front of them. Only for an org actually on
+                          one; the server refuses the rest.
+                        */}
+                        {can('extendTrial') && o.subStatus?.toLowerCase() === 'trialing' && (
+                          <button
+                            disabled={busy === o.id}
+                            onClick={() => { if (confirm(`End ${o.name}'s trial now? They will be asked to set up payment.`)) act(o.id, '/end-trial'); }}
+                            className="rounded bg-slate-800 px-2 py-1 text-[11px] text-amber-400 hover:bg-slate-700"
+                          >
+                            End trial
+                          </button>
+                        )}
                         {can('manageOrgs') && (o.suspendedAt
                           ? <button disabled={busy === o.id} onClick={() => act(o.id, '/reactivate')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Reactivate</button>
                           : <button disabled={busy === o.id} onClick={() => act(o.id, '/suspend')} className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Suspend</button>)}

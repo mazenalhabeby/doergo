@@ -131,10 +131,26 @@ describe('an organization with no subscription can start one', () => {
     expect(page).toContain('sub?.totalCents == null');
   });
 
+  it('does not ask for a card while the trial is running', () => {
+    /*
+      Nothing is owed yet, and asking mid-trial asks a question the customer
+      has not reached — the trial exists so they can decide later. An operator
+      ends the trial (admin.hbcfield.com → End trial) when the conversation
+      about paying has actually begun, and the button appears then.
+    */
+    expect(page).toContain("sub?.status !== 'trialing'");
+  });
+
   it('never offers it to a contract customer', () => {
     // EXTERNAL has nothing to check out and the server refuses it, so the
     // button must not appear and then fail.
-    expect(page).toMatch(/needsSubscription=\{sub\?\.billingMode !== 'EXTERNAL'/);
+    //
+    // Asserted on the EXPRESSION, not its line breaks: the first version of
+    // this matched a single formatted line and broke the moment the condition
+    // grew a third clause, which is a test about whitespace pretending to be a
+    // test about behaviour.
+    const expr = page.slice(page.indexOf('needsSubscription={'), page.indexOf('needsSubscription={') + 240);
+    expect(expr).toContain("!== 'EXTERNAL'");
   });
 
   it('hides the Portal until there is something for it to manage', () => {

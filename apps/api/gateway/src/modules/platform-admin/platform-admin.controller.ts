@@ -59,6 +59,13 @@ export class PlatformAdminController {
     return this.unwrap(await this.svc.extendTrial({ organizationId: id, days: Number(body?.days) || 14, byUserId: this.actor(req) }));
   }
 
+  /** End a trial now — the mirror of extend, and the operator's cue to the customer. */
+  @Post('orgs/:id/end-trial')
+  @RequirePlatformPerm('extendTrial')
+  async endTrial(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.endTrial({ organizationId: id, byUserId: this.actor(req) }));
+  }
+
   @Post('orgs/:id/suspend')
   @RequirePlatformPerm('manageOrgs')
   async suspend(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.suspend({ organizationId: id, byUserId: this.actor(req) })); }

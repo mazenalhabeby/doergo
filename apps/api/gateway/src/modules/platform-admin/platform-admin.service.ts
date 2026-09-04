@@ -19,6 +19,7 @@ export class PlatformAdminService extends BaseGatewayService {
   }
   reactivate(data: { organizationId: string; byUserId?: string }) { return this.send({ cmd: 'platform_reactivate' }, data); }
   extendTrial(data: { organizationId: string; days: number; byUserId?: string }) { return this.send({ cmd: 'platform_extend_trial' }, data); }
+  endTrial(data: { organizationId: string; byUserId?: string }) { return this.send({ cmd: 'platform_end_trial' }, data); }
 
   // Auth + staff management
   login(data: { email: string; password: string; code?: string }) { return this.send({ cmd: 'platform_login' }, data); }

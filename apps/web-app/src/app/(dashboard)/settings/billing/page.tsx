@@ -162,7 +162,7 @@ export default function BillingPage() {
                 )}
                 {sub.status === 'trialing' && sub.trialDaysLeft != null && (
                   <span className="text-xs font-medium text-primary">
-                    {t('billing.trialDaysLeft', '{{count}} days left in your trial', { count: sub.trialDaysLeft })}
+                    {t('billing.trialDaysLeft', '{{count}} days left in your trial — nothing to pay yet', { count: sub.trialDaysLeft })}
                   </span>
                 )}
                 {sub.cancelAtPeriodEnd && sub.currentPeriodEnd && (
@@ -258,10 +258,19 @@ export default function BillingPage() {
                 offer the action that creates one instead of the one that
                 cannot work without it.
 
-                EXTERNAL is excluded: a contract customer has nothing to check
-                out, and the server refuses it anyway.
+                NOT while trialing. Nothing is owed yet, and asking for a card
+                mid-trial asks a question the customer has not reached — the
+                trial exists precisely so they can decide later. An operator
+                ends the trial when the conversation about paying has actually
+                begun (admin.hbcfield.com → End trial), and the button appears
+                then. The trial line above already says how long is left.
+
+                EXTERNAL is excluded too: a contract customer has nothing to
+                check out, and the server refuses it anyway.
               */
-              needsSubscription={sub?.billingMode !== 'EXTERNAL' && sub?.totalCents == null}
+              needsSubscription={
+                sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && sub?.totalCents == null
+              }
             />
           )}
         </div>

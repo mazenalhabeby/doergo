@@ -6517,7 +6517,7 @@
     "paymentAndInvoices": "Pagamenti e fatture",
     "cancel": "Annulla",
     "adminOnly": "Solo un amministratore dell’organizzazione può cambiare ciò per cui si paga.",
-    "trialDaysLeft": "Ti restano {{count}} giorni di prova",
+    "trialDaysLeft": "{{count}} giorni rimasti di prova — ancora nulla da pagare",
     "cancelsOn": "Termina il {{date}}",
     "modulesElsewhere": "I moduli appartengono a uno spazio di lavoro: attivali nella scheda Moduli di quello spazio di lavoro, accanto al conteggio con cui vengono addebitati.",
     "byAgreement": "Fatturazione su accordo",

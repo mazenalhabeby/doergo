@@ -6508,7 +6508,7 @@
     "paymentAndInvoices": "Payment & invoices",
     "cancel": "Cancel",
     "adminOnly": "Only an organization admin can change what you pay for.",
-    "trialDaysLeft": "{{count}} days left in your trial",
+    "trialDaysLeft": "{{count}} days left in your trial — nothing to pay yet",
     "cancelsOn": "Cancels on {{date}}",
     "modulesElsewhere": "Modules belong to a workspace — switch them on in that workspace's Modules tab, next to the count they are priced by.",
     "byAgreement": "Billed by agreement",
