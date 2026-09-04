@@ -6492,7 +6492,7 @@
       "perMonth": "/mois",
       "unsaved": "Modifications non enregistrées",
       "change": "Modifier les options",
-      "railCount": "{{count}} choisies · une fois pour l’organisation",
+      "railCount": "{{count}} choisies · facturées une fois, pas par espace",
       "railNone": "Aucune choisie pour l’instant",
       "railNoteTitle": "Choisies une fois, utilisées partout",
       "railNote": "Une option est facturée pour toute l’organisation — contrairement à un module, facturé pour chaque espace de travail qui l’active."
@@ -6514,7 +6514,12 @@
     "modulesElsewhere": "Les modules appartiennent à un espace de travail — activez-les dans l’onglet Modules de cet espace de travail, à côté du décompte qui les facture.",
     "byAgreement": "Facturation par accord",
     "byAgreementHint": "Rien n’est prélevé automatiquement. Les chiffres ci-dessous correspondent au tarif public — utiles pour un renouvellement, ce n’est pas une facture.",
-    "renewsOn": "Renouvellement le {{date}}"
+    "renewsOn": "Renouvellement le {{date}}",
+    "scope": {
+      "perWorkspace": "Par espace",
+      "perPerson": "Par personne",
+      "wholeOrg": "Toute l’organisation"
+    }
   },
   "assetKinds": {
     "title": "Biens",

@@ -6483,7 +6483,7 @@
       "perMonth": "/Mon.",
       "unsaved": "Nicht gespeicherte Änderungen",
       "change": "Optionen ändern",
-      "railCount": "{{count}} gewählt · einmal für die Organisation",
+      "railCount": "{{count}} gewählt · einmal berechnet, nicht je Arbeitsbereich",
       "railNone": "Noch keine gewählt",
       "railNoteTitle": "Einmal gewählt, überall nutzbar",
       "railNote": "Eine Option wird für die gesamte Organisation berechnet — anders als ein Modul, das je Arbeitsbereich berechnet wird, der es aktiviert."
@@ -6505,7 +6505,12 @@
     "modulesElsewhere": "Module gehören zu einem Arbeitsbereich — aktivieren Sie sie im Reiter „Module“ des Arbeitsbereichs, direkt neben der Anzahl, nach der sie berechnet werden.",
     "byAgreement": "Abrechnung nach Vereinbarung",
     "byAgreementHint": "Es wird nichts automatisch abgebucht. Die Zahlen unten zeigen, was diese Organisation zum Listenpreis kosten würde — hilfreich für eine Verlängerung, keine Rechnung.",
-    "renewsOn": "Verlängert am {{date}}"
+    "renewsOn": "Verlängert am {{date}}",
+    "scope": {
+      "perWorkspace": "Je Arbeitsbereich",
+      "perPerson": "Je Person",
+      "wholeOrg": "Ganze Organisation"
+    }
   },
   "assetKinds": {
     "title": "Objekte",

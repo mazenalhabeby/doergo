@@ -171,6 +171,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
         <section>
           <SectionHead
             title={t('billing.bill.whatsActive', "What's active")}
+            scope={t('billing.scope.perWorkspace', 'Per workspace')}
             aside={t('billing.bill.spacesSummary', '{{count}} workspaces · {{price}}', {
               count: bill.spaces.length,
               price: formatCents(spacesCents),
@@ -244,6 +245,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
       <section>
         <SectionHead
           title={t('billing.bill.seats', 'People')}
+          scope={t('billing.scope.perPerson', 'Per person')}
           aside={t('billing.bill.peopleSummary', '{{count}} accounts · {{price}}', {
             count: headcount,
             price: formatCents(peopleCents),
@@ -284,10 +286,24 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
 
 // ── pieces ────────────────────────────────────────────────────────────────
 
-function SectionHead({ title, aside }: { title: string; aside: string }) {
+/**
+ * A heading that states what it is priced BY.
+ *
+ * Three things are billed three different ways — per person, per workspace,
+ * once for the organization — and that is the single hardest thing to see on
+ * this page. Explaining it in a sentence underneath worked only for people who
+ * read the sentence. Saying it beside every heading means the model can be read
+ * off the page without reading anything: three sections, three scopes.
+ */
+function SectionHead({ title, scope, aside }: { title: string; scope: string; aside: string }) {
   return (
-    <div className="mb-2.5 flex items-baseline justify-between gap-3">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+    <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <span className="flex items-baseline gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+        <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {scope}
+        </span>
+      </span>
       <span className="text-xs tabular-nums text-muted-foreground">{aside}</span>
     </div>
   );

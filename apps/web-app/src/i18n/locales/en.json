@@ -6483,7 +6483,7 @@
       "perMonth": "/mo",
       "unsaved": "Unsaved changes",
       "change": "Change options",
-      "railCount": "{{count}} chosen · once for the organization",
+      "railCount": "{{count}} chosen · charged once, not per workspace",
       "railNone": "None chosen yet",
       "railNoteTitle": "Chosen once, used everywhere",
       "railNote": "An option is priced for the whole organization — unlike a module, which is priced for each workspace that switches it on."
@@ -6505,7 +6505,12 @@
     "modulesElsewhere": "Modules belong to a workspace — switch them on in that workspace's Modules tab, next to the count they are priced by.",
     "byAgreement": "Billed by agreement",
     "byAgreementHint": "Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice.",
-    "renewsOn": "Renews {{date}}"
+    "renewsOn": "Renews {{date}}",
+    "scope": {
+      "perWorkspace": "Per workspace",
+      "perPerson": "Per person",
+      "wholeOrg": "Whole organization"
+    }
   },
   "assetKinds": {
     "title": "Assets",

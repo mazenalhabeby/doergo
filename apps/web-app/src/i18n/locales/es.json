@@ -6483,7 +6483,7 @@
       "perMonth": "/mes",
       "unsaved": "Cambios sin guardar",
       "change": "Cambiar opciones",
-      "railCount": "{{count}} elegidas · una vez para la organización",
+      "railCount": "{{count}} elegidas · se cobra una vez, no por espacio",
       "railNone": "Ninguna elegida todavía",
       "railNoteTitle": "Elegidas una vez, usadas en todas partes",
       "railNote": "Una opción se cobra para toda la organización, a diferencia de un módulo, que se cobra por cada espacio de trabajo que lo activa."
@@ -6505,7 +6505,12 @@
     "modulesElsewhere": "Los módulos pertenecen a un espacio de trabajo: actívalos en la pestaña Módulos de ese espacio de trabajo, junto al recuento por el que se cobran.",
     "byAgreement": "Facturación por acuerdo",
     "byAgreementHint": "No se cobra nada automáticamente. Las cifras siguientes son lo que costaría a precio de tarifa: útil para una renovación, no es una factura.",
-    "renewsOn": "Se renueva el {{date}}"
+    "renewsOn": "Se renueva el {{date}}",
+    "scope": {
+      "perWorkspace": "Por espacio",
+      "perPerson": "Por persona",
+      "wholeOrg": "Toda la organización"
+    }
   },
   "assetKinds": {
     "title": "Activos",

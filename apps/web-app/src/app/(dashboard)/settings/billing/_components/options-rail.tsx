@@ -60,16 +60,26 @@ export function OptionsRail({
     <aside className="lg:sticky lg:top-4">
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border bg-gradient-to-b from-pink-500/[0.07] to-transparent px-4 py-3.5">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-pink-600 dark:text-pink-400">
+          {/*
+            The scope is part of the heading, not a footnote under it.
+
+            This is the section people misread — "am I paying for audit log in
+            every workspace?" — and the answer belongs where the eye lands, in
+            the same pill the other two sections carry.
+          */}
+          <p className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-pink-600 dark:text-pink-400">
             <Puzzle className="h-3.5 w-3.5" />
             {t('billing.addOns.title', 'Options')}
+            <span className="rounded border border-pink-500/30 px-1.5 py-0.5 text-[10px] font-medium tracking-wide">
+              {t('billing.scope.wholeOrg', 'Whole organization')}
+            </span>
           </p>
           <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight text-foreground">
             {formatCents(bill.addOnsMonthlyCents)}
           </p>
           <p className="text-xs text-muted-foreground">
             {options.length > 0
-              ? t('billing.addOns.railCount', '{{count}} chosen · once for the organization', {
+              ? t('billing.addOns.railCount', '{{count}} chosen · charged once, not per workspace', {
                   count: options.length,
                 })
               : t('billing.addOns.railNone', 'None chosen yet')}
