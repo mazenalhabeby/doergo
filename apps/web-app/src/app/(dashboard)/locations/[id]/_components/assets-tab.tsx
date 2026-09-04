@@ -47,10 +47,18 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
 
   const showKind = (id: string | null) => {
     const next = new URLSearchParams(searchParams.toString())
-    next.set("tab", "assets")
+    /*
+      No `tab=assets` any more.
+
+      That existed to keep the space's settings page on this tab across the
+      replace. The tab has moved to its own page, so the parameter now names
+      nothing — and this component is mounted from both places, so writing it
+      would leave a dead parameter in the address of the one that has no tabs.
+    */
     if (id) next.set("type", id)
     else next.delete("type")
-    router.replace(`${pathname}?${next.toString()}`, { scroll: false })
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }
 
   const kindsQ = useQuery({

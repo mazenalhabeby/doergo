@@ -118,7 +118,9 @@ export default function AssetRecordPage() {
   // Falls back to the spaces list for an asset whose type was deleted out from
   // under it — an orphan, which has no list to go back to.
   const backHref = kind?.spaceId
-    ? `/locations/${kind.spaceId}?tab=assets&type=${kind.id}`
+    // The kind's own list, on the page that now owns it — carrying `type` so
+    // Back lands on the kind you came from rather than the list of kinds.
+    ? `/assets?space=${kind.spaceId}&type=${kind.id}`
     : "/locations"
   const rows = detailRowsForKind(shape, asset.details).filter((r) => r.value)
   const holders = asset.holders ?? []

@@ -100,7 +100,17 @@ export default function SpaceSettingsPage() {
   */
   useEffect(() => {
     const moved = MOVED_TABS[searchParams.get("tab") ?? ""]
-    if (moved) router.replace(`${moved}?space=${spaceId}`)
+    if (!moved) return
+    /*
+      Carry the sub-view across.
+
+      The assets tab addressed an open KIND as `&type=`, and an old link that
+      names one means to land on that kind, not on the list of kinds. Dropping
+      it would make every bookmark and Back button one step less useful than it
+      was before the move.
+    */
+    const type = searchParams.get("type")
+    router.replace(`${moved}?space=${spaceId}${type ? `&type=${type}` : ""}`)
   }, [searchParams, router, spaceId])
 
   const openTab = (tab: string) => {

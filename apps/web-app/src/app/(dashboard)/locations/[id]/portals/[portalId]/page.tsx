@@ -55,9 +55,9 @@ export default function PortalDetailPage() {
   const qc = useQueryClient()
   const router = useRouter()
   const { t } = useTranslation()
-  // Back button + post-delete return land on THIS space's portal tab (not a
-  // navbar route — the standalone Clients Portals page was removed).
-  const backToSpace = () => router.push(`/locations/${spaceId}?tab=portal`)
+  // Back button + post-delete return land on this workspace's portals — which
+  // is a navbar route again: the portal tab moved out of the space settings.
+  const backToSpace = () => router.push(`/portals?space=${spaceId}`)
   // The Apartment entity used to need the Apartments module; that module is
   // retired and its records live in Assets now. A portal's own units are part
   // of the portal, so this gates on the portal itself.
