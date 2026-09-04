@@ -3123,7 +3123,16 @@
       "clockInRemote": "Timbra da remoto",
       "gpsHintRemote": "«In sede» verifica che tu sia sul posto. «Da remoto» registra la città da cui lavori. Funziona anche con VPN.",
       "thisWeek": "Ultimi 7 giorni",
-      "sinceAt": "Dalle {{time}}"
+      "sinceAt": "Dalle {{time}}",
+      "hoursIn": "Ore lavorate",
+      "overDays": "{{days}} giorni · media {{avg}}",
+      "period7": "7 giorni",
+      "period30": "30 giorni",
+      "periodCustom": "Personalizzato",
+      "from": "Dal",
+      "to": "Al",
+      "pickBoth": "Scegli entrambe le date: fino ad allora, gli ultimi 7 giorni.",
+      "noneInRange": "Nessun turno tra il {{from}} e il {{to}}."
     },
     "management": {
       "title": "Gestione delle presenze",

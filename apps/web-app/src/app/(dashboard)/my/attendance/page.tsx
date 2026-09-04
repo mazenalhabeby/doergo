@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
 import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { ProgressRing } from "@/components/progress-ring"
 import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
@@ -107,10 +108,53 @@ export default function MyAttendancePage() {
     staleTime: 15_000,
   })
 
+  /*
+    Which stretch of time the page is about.
+
+    It used to be "the last 60 entries", which is not a period anybody thinks
+    in: a part-timer's 60 entries reach back six months and a full-timer's three
+    weeks, so the same screen meant something different to each of them and
+    neither could ask "how did last month go".
+
+    The window drives the totals, the bars AND the list, so there is one answer
+    on the page rather than three that happen to be near each other.
+  */
+  const [period, setPeriod] = useState<"7" | "30" | "custom">("7")
+  const [customFrom, setCustomFrom] = useState("")
+  const [customTo, setCustomTo] = useState("")
+
+  const range = (() => {
+    const iso = (d: Date) => d.toISOString().slice(0, 10)
+    if (period === "custom") {
+      // Half a range is not a question yet — until both ends are set the page
+      // keeps showing the last week rather than an empty screen.
+      if (!customFrom || !customTo) return null
+      return customFrom <= customTo
+        ? { startDate: customFrom, endDate: customTo }
+        : { startDate: customTo, endDate: customFrom }
+    }
+    const to = new Date()
+    const from = new Date()
+    from.setDate(from.getDate() - (period === "7" ? 6 : 29))
+    return { startDate: iso(from), endDate: iso(to) }
+  })()
+
+  const effectiveRange = range ?? (() => {
+    const iso = (d: Date) => d.toISOString().slice(0, 10)
+    const to = new Date()
+    const from = new Date()
+    from.setDate(from.getDate() - 6)
+    return { startDate: iso(from), endDate: iso(to) }
+  })()
+
   const { data: history, isLoading } = useQuery({
-    queryKey: ["my-attendance-history"],
-    queryFn: () => attendanceApi.getMyHistory({ limit: 60 }),
+    // The range is IN the key: a different window is a different question, and
+    // the answer to the old one must not be shown while this one loads.
+    queryKey: ["my-attendance-history", effectiveRange.startDate, effectiveRange.endDate],
+    queryFn: () => attendanceApi.getMyHistory({ ...effectiveRange, limit: 200 }),
     enabled: canSee,
+    // A finished period does not change; only one that includes today does.
+    staleTime: 30_000,
   })
 
   // Org work locations — needed to resolve which site the user is clocking in at.
@@ -182,32 +226,58 @@ export default function MyAttendancePage() {
   }
 
   /*
-    The last seven days, as days rather than as a list.
+    The chosen window, as days rather than as a list.
 
     A column of rows answers "what did I do on the 3rd"; it does not answer "how
-    is my week going", which is the question somebody opens their own shifts to
-    ask. Both come from the history already fetched — no extra request, one pass.
+    did the month go", which is the question somebody opens their own shifts to
+    ask. Both come from the one request — no second call for the totals.
+
+    Bars stay readable at any length: a fortnight is drawn day by day, a quarter
+    week by week. Thirty hairlines would be a texture, not information.
   */
-  const week = (() => {
-    const days: { key: string; date: Date; minutes: number }[] = []
-    const today = new Date()
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today)
-      d.setDate(d.getDate() - i)
-      d.setHours(0, 0, 0, 0)
-      days.push({ key: d.toISOString().slice(0, 10), date: d, minutes: 0 })
+  const window_ = (() => {
+    const day = 86_400_000
+    const from = new Date(`${effectiveRange.startDate}T00:00:00`)
+    const to = new Date(`${effectiveRange.endDate}T00:00:00`)
+    const dayCount = Math.max(1, Math.round((to.getTime() - from.getTime()) / day) + 1)
+    const groupWeekly = dayCount > 16
+
+    const buckets: { key: string; start: Date; minutes: number; label: string }[] = []
+    for (let i = 0; i < dayCount; i += groupWeekly ? 7 : 1) {
+      const d = new Date(from.getTime() + i * day)
+      buckets.push({
+        key: d.toISOString().slice(0, 10),
+        start: d,
+        minutes: 0,
+        label: groupWeekly
+          ? d.toLocaleDateString(locale, { day: "numeric", month: "short" })
+          : d.toLocaleDateString(locale, { weekday: "narrow" }),
+      })
     }
-    const byKey = new Map(days.map((d) => [d.key, d]))
+
+    let worked = 0
+    let daysWorked = 0
+    const seenDays = new Set<string>()
     for (const e of entries) {
       if (!e.clockInAt) continue
-      const day = byKey.get(new Date(e.clockInAt).toISOString().slice(0, 10))
-      if (!day) continue
-      const to = e.clockOutAt ? new Date(e.clockOutAt).getTime() : Date.now()
-      day.minutes += Math.max(0, (to - new Date(e.clockInAt).getTime()) / 60000)
+      const at = new Date(e.clockInAt)
+      const offset = Math.floor((at.getTime() - from.getTime()) / day)
+      if (offset < 0 || offset >= dayCount) continue
+      const idx = groupWeekly ? Math.floor(offset / 7) : offset
+      const to_ = e.clockOutAt ? new Date(e.clockOutAt).getTime() : Date.now()
+      const mins = Math.max(0, (to_ - at.getTime()) / 60000)
+      const bucket = buckets[idx]
+      if (bucket) bucket.minutes += mins
+      worked += mins
+      const dayKey = at.toISOString().slice(0, 10)
+      if (!seenDays.has(dayKey)) {
+        seenDays.add(dayKey)
+        daysWorked++
+      }
     }
-    const total = days.reduce((a, d) => a + d.minutes, 0)
-    const peak = Math.max(60, ...days.map((d) => d.minutes))
-    return { days, total, peak }
+
+    const peak = Math.max(60, ...buckets.map((b) => b.minutes))
+    return { buckets, peak, worked, daysWorked, dayCount, groupWeekly, todayKey: new Date().toISOString().slice(0, 10) }
   })()
 
   const hm = (mins: number) => {
@@ -309,42 +379,53 @@ export default function MyAttendancePage() {
           </p>
         </div>
         {/*
-          The week, as seven bars.
+          The window, as bars — and the two numbers that describe it.
 
           "Hours in the last 60 entries" was a true number that answered no
-          question anybody has. This says how the week is going and which day was
-          heavy, at a glance, from the same data.
+          question anybody has. This says how the chosen stretch went, which day
+          was heavy, and what a working day averaged.
         */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <Clock className="h-4 w-4 text-slate-400" />
-            {t("attendance.my.thisWeek", "Last 7 days")}
+            {t("attendance.my.hoursIn", "Hours worked")}
           </div>
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{hm(week.total)}</p>
+
+          <div className="mt-2 flex items-baseline gap-3">
+            <p className="text-2xl font-semibold tabular-nums text-foreground">{hm(window_.worked)}</p>
+            {window_.daysWorked > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {t("attendance.my.overDays", "{{days}} days · {{avg}} avg", {
+                  days: window_.daysWorked,
+                  avg: hm(window_.worked / window_.daysWorked),
+                })}
+              </p>
+            )}
+          </div>
 
           <div className="mt-4 flex items-end justify-between gap-1.5" aria-hidden>
-            {week.days.map((d) => {
-              const pct = d.minutes / week.peak
-              const isToday = d.key === new Date().toISOString().slice(0, 10)
+            {window_.buckets.map((b) => {
+              const pct = b.minutes / window_.peak
+              const isNow = !window_.groupWeekly && b.key === window_.todayKey
               return (
-                <div key={d.key} className="flex flex-1 flex-col items-center gap-1.5">
+                <div key={b.key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
                   <div className="flex h-16 w-full items-end">
                     <div
                       className={cn(
                         "w-full rounded-md transition-[height] duration-700 ease-out",
-                        d.minutes === 0 ? "bg-muted" : isToday ? "bg-primary" : "bg-primary/35",
+                        b.minutes === 0 ? "bg-muted" : isNow ? "bg-primary" : "bg-primary/35",
                       )}
-                      style={{ height: `${Math.max(d.minutes === 0 ? 4 : 10, pct * 100)}%` }}
-                      title={hm(d.minutes)}
+                      style={{ height: `${Math.max(b.minutes === 0 ? 4 : 10, pct * 100)}%` }}
+                      title={`${b.label} · ${hm(b.minutes)}`}
                     />
                   </div>
                   <span
                     className={cn(
-                      "text-[10px] leading-none",
-                      isToday ? "font-semibold text-foreground" : "text-muted-foreground",
+                      "truncate text-[10px] leading-none",
+                      isNow ? "font-semibold text-foreground" : "text-muted-foreground",
                     )}
                   >
-                    {d.date.toLocaleDateString(locale, { weekday: "narrow" })}
+                    {b.label}
                   </span>
                 </div>
               )
@@ -364,12 +445,81 @@ export default function MyAttendancePage() {
         </div>
       )}
 
-      {/* History */}
-      <h2 data-tour="my-attn-history" className="text-sm font-semibold text-foreground mb-3">{t("attendance.my.recentEntries")}</h2>
+      {/* History, and the window it belongs to */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 data-tour="my-attn-history" className="text-sm font-semibold text-foreground">
+          {t("attendance.my.recentEntries")}
+          <span className="ml-2 font-normal text-muted-foreground tabular-nums">{entries.length}</span>
+        </h2>
+
+        {/* The house segmented control, as used by the customers list. */}
+        <div className="inline-flex rounded-lg bg-muted p-0.5">
+          {(["7", "30", "custom"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                period === p ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {p === "7"
+                ? t("attendance.my.period7", "7 days")
+                : p === "30"
+                  ? t("attendance.my.period30", "30 days")
+                  : t("attendance.my.periodCustom", "Custom")}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/*
+        Two dates, and only when they are asked for.
+
+        Revealed by the Custom tab rather than sitting there permanently: most
+        visits are "how was my week", and a pair of empty date fields above every
+        one of them is furniture nobody needed.
+      */}
+      {period === "custom" && (
+        <div className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-border bg-card p-4">
+          <label className="text-xs text-muted-foreground">
+            {t("attendance.my.from", "From")}
+            <Input
+              type="date"
+              value={customFrom}
+              max={customTo || undefined}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="mt-1 h-9 w-[160px]"
+            />
+          </label>
+          <label className="text-xs text-muted-foreground">
+            {t("attendance.my.to", "To")}
+            <Input
+              type="date"
+              value={customTo}
+              min={customFrom || undefined}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="mt-1 h-9 w-[160px]"
+            />
+          </label>
+          {!range && (
+            <p className="pb-2 text-xs text-muted-foreground">
+              {t("attendance.my.pickBoth", "Pick both dates — showing the last 7 days until then.")}
+            </p>
+          )}
+        </div>
+      )}
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</div>
       ) : entries.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">{t("attendance.my.noRecords")}</div>
+        <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+          {/* Which window is empty — "no records" alone reads as "you have never
+              worked here", when it usually means "not in these dates". */}
+          {t("attendance.my.noneInRange", "No shifts between {{from}} and {{to}}.", {
+            from: new Date(`${effectiveRange.startDate}T00:00:00`).toLocaleDateString(locale, { day: "numeric", month: "short" }),
+            to: new Date(`${effectiveRange.endDate}T00:00:00`).toLocaleDateString(locale, { day: "numeric", month: "short" }),
+          })}
+        </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {entries.map((e, i) => (

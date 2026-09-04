@@ -3123,7 +3123,16 @@
       "clockInRemote": "Pointer à distance",
       "gpsHintRemote": "« Sur site » vérifie que vous êtes au lieu de travail. « À distance » enregistre la ville d’où vous travaillez. Fonctionne via VPN.",
       "thisWeek": "7 derniers jours",
-      "sinceAt": "Depuis {{time}}"
+      "sinceAt": "Depuis {{time}}",
+      "hoursIn": "Heures travaillées",
+      "overDays": "{{days}} jours · moy. {{avg}}",
+      "period7": "7 jours",
+      "period30": "30 jours",
+      "periodCustom": "Personnalisé",
+      "from": "Du",
+      "to": "Au",
+      "pickBoth": "Choisissez les deux dates — en attendant, les 7 derniers jours.",
+      "noneInRange": "Aucun poste entre le {{from}} et le {{to}}."
     },
     "management": {
       "title": "Gestion des présences",

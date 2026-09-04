@@ -3123,7 +3123,16 @@
       "clockInRemote": "Fichar en remoto",
       "gpsHintRemote": "«En el sitio» verifica que estás en la ubicación. «Remoto» registra la ciudad desde la que trabajas. Funciona con VPN.",
       "thisWeek": "Últimos 7 días",
-      "sinceAt": "Desde {{time}}"
+      "sinceAt": "Desde {{time}}",
+      "hoursIn": "Horas trabajadas",
+      "overDays": "{{days}} días · media {{avg}}",
+      "period7": "7 días",
+      "period30": "30 días",
+      "periodCustom": "Personalizado",
+      "from": "Desde",
+      "to": "Hasta",
+      "pickBoth": "Elige ambas fechas: mientras tanto, los últimos 7 días.",
+      "noneInRange": "Sin turnos entre {{from}} y {{to}}."
     },
     "management": {
       "title": "Gestión de asistencia",

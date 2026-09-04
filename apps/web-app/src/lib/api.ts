@@ -2382,7 +2382,15 @@ export const attendanceApi = {
   },
 
   // Employee self-service: my own time-entry history (paginated envelope)
-  getMyHistory: async (params?: { page?: number; limit?: number }) => {
+  /**
+   * The member's own shifts, for a window they chose.
+   *
+   * `startDate`/`endDate` have always been supported by the endpoint; the page
+   * asked for "the last 60 entries" instead, which is not a period anybody
+   * thinks in — a part-timer's sixty reach back six months and a full-timer's
+   * three weeks.
+   */
+  getMyHistory: async (params?: { startDate?: string; endDate?: string; page?: number; limit?: number }) => {
     const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
     const response = await api.get<{ data: TimeEntry[]; meta?: unknown }>(endpoint);
     if (response.error) throw new Error(response.error);

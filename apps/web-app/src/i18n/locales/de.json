@@ -3123,7 +3123,16 @@
       "clockInRemote": "Remote einstempeln",
       "gpsHintRemote": "Vor Ort bestätigt, dass Sie am Standort sind. Remote erfasst die Stadt, aus der Sie arbeiten. Funktioniert auch über VPN.",
       "thisWeek": "Letzte 7 Tage",
-      "sinceAt": "Seit {{time}}"
+      "sinceAt": "Seit {{time}}",
+      "hoursIn": "Gearbeitete Stunden",
+      "overDays": "{{days}} Tage · Ø {{avg}}",
+      "period7": "7 Tage",
+      "period30": "30 Tage",
+      "periodCustom": "Zeitraum",
+      "from": "Von",
+      "to": "Bis",
+      "pickBoth": "Beide Daten wählen — bis dahin die letzten 7 Tage.",
+      "noneInRange": "Keine Schichten zwischen {{from}} und {{to}}."
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
