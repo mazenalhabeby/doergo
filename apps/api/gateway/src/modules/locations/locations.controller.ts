@@ -288,13 +288,25 @@ export class LocationsController {
     @Body() dto: AssignMemberDto,
     @Request() req: any,
   ) {
-    return this.locationsQueueService.assignMember({
+    const result = await this.locationsQueueService.assignMember({
       ...dto,
       locationId,
       requestingUserId: req.user.id,
       organizationId: req.user.organizationId,
       access: req.user.access, // server-authoritative; service enforces the real space
     });
+    /*
+      A space assignment carries a ROLE, and an external member's seat price is
+      read from the permissions that role grants — an Observer is €2, a
+      Supervisor €9.99. So assigning somebody, or moving them between roles,
+      moves the bill.
+
+      Without this the change was only picked up by the nightly sweep: up to a
+      day billed at the wrong rate, and — worse to use — a price that does not
+      move when you change the thing that sets it.
+    */
+    this.rebill(req.user.organizationId);
+    return result;
   }
 
   @Patch(':id/members/:assignmentId')
@@ -306,11 +318,14 @@ export class LocationsController {
     @Body() dto: UpdateAssignmentDto,
     @Request() req: any,
   ) {
-    return this.locationsQueueService.updateAssignment({
+    const result = await this.locationsQueueService.updateAssignment({
       ...dto,
       assignmentId,
       organizationId: req.user.organizationId,
     });
+    // Same reason as assignMember: this route can change the assignment's role.
+    this.rebill(req.user.organizationId);
+    return result;
   }
 
   @Delete(':id/members/:assignmentId')
@@ -321,9 +336,12 @@ export class LocationsController {
     @Param('assignmentId') assignmentId: string,
     @Request() req: any,
   ) {
-    return this.locationsQueueService.removeAssignment({
+    const result = await this.locationsQueueService.removeAssignment({
       assignmentId,
       organizationId: req.user.organizationId,
     });
+    // Losing a space role can move an external member back to the full seat.
+    this.rebill(req.user.organizationId);
+    return result;
   }
 }
