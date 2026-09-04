@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,7 +12,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { onboardingApi, invitationsApi, type InvitationValidation } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { INVITATION_CODE_LENGTH, INVITATION_CODE_MIN_LENGTH } from '@hbcfield/shared/client';
+import { INVITATION_CODE_MIN_LENGTH, JOIN_CODE_MAX_LENGTH } from '@hbcfield/shared/client';
 
 export default function UseInvitationScreen() {
   const router = useRouter();
@@ -22,7 +22,12 @@ export default function UseInvitationScreen() {
   const toast = useToast();
   const { t } = useTranslation();
 
-  const [code, setCode] = useState('');
+  /*
+    Prefilled when the organization screen recognised an invitation and handed
+    it over — the code is already correct, so nobody retypes ten characters.
+  */
+  const params = useLocalSearchParams<{ code?: string }>();
+  const [code, setCode] = useState((params.code ?? '').toString().toUpperCase());
   const [isValidating, setIsValidating] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [validation, setValidation] = useState<InvitationValidation | null>(null);
@@ -92,7 +97,7 @@ export default function UseInvitationScreen() {
                     onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
                     autoCapitalize="characters"
                     autoCorrect={false}
-                    maxLength={INVITATION_CODE_LENGTH}
+                    maxLength={JOIN_CODE_MAX_LENGTH}
                   />
                 </View>
                 <TouchableOpacity

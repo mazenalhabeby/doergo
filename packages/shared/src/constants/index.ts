@@ -12,3 +12,4 @@ export * from './attendance';
 export * from './overtime';
 export * from './invitation';
 export * from './onboarding';
+export * from './join-code';

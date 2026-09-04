@@ -7,12 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { JoinOrgIcon, ScreenContainer } from '../../src/components';
-import { onboardingApi } from '../../src/lib/api';
+import { onboardingApi, invitationsApi } from '../../src/lib/api';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
-import { ORG_CODE_LENGTH } from '@hbcfield/shared/client';
+import { JOIN_CODE_MAX_LENGTH, joinCodeCandidates } from '@hbcfield/shared/client';
 
 export default function JoinOrgScreen() {
   const router = useRouter();
@@ -28,17 +28,44 @@ export default function JoinOrgScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validation, setValidation] = useState<{ valid: boolean; organizationName?: string; message?: string } | null>(null);
   const [error, setError] = useState('');
+  /*
+    Set when what was typed here turns out to be a personal invitation.
+
+    Both onboarding cards say "code", so this screen receives invitation codes
+    routinely. It used to cap the field at the organization code's 8 characters,
+    so a 10-character invitation simply stopped going in — no error, no hint,
+    just a keyboard that appeared to stop working. The field now takes the
+    longest code either flow issues and this screen says what it found.
+  */
+  const [isInvitation, setIsInvitation] = useState<{ organizationName?: string } | null>(null);
 
   const handleValidate = async () => {
     const trimmedCode = code.trim().toUpperCase();
-    if (trimmedCode.length !== ORG_CODE_LENGTH) { setError(t('onboarding.joinOrg.codeMustBe8Chars')); return; }
+    const candidates = joinCodeCandidates(trimmedCode, 'ORG');
+    if (candidates.length === 0) { setError(t('onboarding.joinOrg.codeUnrecognized')); return; }
 
     setIsValidating(true);
     setError('');
+    setIsInvitation(null);
     try {
-      const result = await onboardingApi.validateOrgCode(trimmedCode);
-      setValidation(result);
-      if (!result.valid) setError(result.message || t('onboarding.joinOrg.invalidCode'));
+      // In order: the code this screen is for, then the other kind. At 8
+      // characters both are possible, so a code is only ever offered as an
+      // invitation once it has failed as an organization code.
+      for (const kind of candidates) {
+        if (kind === 'ORG') {
+          const result = await onboardingApi.validateOrgCode(trimmedCode);
+          if (result.valid) { setValidation(result); return; }
+          setValidation(result);
+          continue;
+        }
+        const invite = await invitationsApi.validate(trimmedCode);
+        if (invite?.valid) {
+          setValidation(null);
+          setIsInvitation({ organizationName: invite.organizationName });
+          return;
+        }
+      }
+      setError(t('onboarding.joinOrg.invalidCode'));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.joinOrg.failedToValidate'));
       setValidation(null);
@@ -99,16 +126,16 @@ export default function JoinOrgScreen() {
                     placeholder={t('onboarding.joinOrg.codePlaceholder')}
                     placeholderTextColor={colors.textMuted}
                     value={code}
-                    onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); }}
+                    onChangeText={(t) => { setCode(t.toUpperCase()); setError(''); setValidation(null); setIsInvitation(null); }}
                     autoCapitalize="characters"
                     autoCorrect={false}
-                    maxLength={ORG_CODE_LENGTH}
+                    maxLength={JOIN_CODE_MAX_LENGTH}
                   />
                 </View>
                 <TouchableOpacity
-                  style={[styles.verifyButton, (isValidating || code.trim().length !== ORG_CODE_LENGTH) && styles.verifyButtonDisabled]}
+                  style={[styles.verifyButton, (isValidating || joinCodeCandidates(code, 'ORG').length === 0) && styles.verifyButtonDisabled]}
                   onPress={handleValidate}
-                  disabled={isValidating || code.trim().length !== ORG_CODE_LENGTH}
+                  disabled={isValidating || joinCodeCandidates(code, 'ORG').length === 0}
                 >
                   {isValidating ? <ActivityIndicator color={COLORS.white} size="small" /> : <Text style={styles.verifyButtonText}>{t('common.verify')}</Text>}
                 </TouchableOpacity>
@@ -122,6 +149,34 @@ export default function JoinOrgScreen() {
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
                 <Text style={[styles.validBadgeText, { color: colors.textPrimary }]}>{validation.organizationName}</Text>
               </View>
+            )}
+
+            {/*
+              A personal invitation, typed on the organization screen.
+
+              It carries straight on rather than telling the person to go back
+              and start again: the code is already correct, and it is handed to
+              the invitation screen so nobody retypes ten characters.
+            */}
+            {isInvitation && (
+              <TouchableOpacity
+                style={[styles.inviteFound, { backgroundColor: colors.card, borderColor: COLORS.primary }]}
+                onPress={() => router.replace({ pathname: ROUTES.useInvitation, params: { code: code.trim().toUpperCase() } } as Href)}
+                accessibilityRole="button"
+              >
+                <Ionicons name="mail-open-outline" size={20} color={COLORS.primary} />
+                <View style={styles.inviteFoundText}>
+                  <Text style={[styles.inviteFoundTitle, { color: colors.textPrimary }]}>
+                    {t('onboarding.joinOrg.isInvitation', 'That is a personal invitation')}
+                  </Text>
+                  <Text style={[styles.inviteFoundBody, { color: colors.textSecondary }]}>
+                    {isInvitation.organizationName
+                      ? t('onboarding.joinOrg.isInvitationOrg', 'It joins you to {{org}} right away — no approval needed.', { org: isInvitation.organizationName })
+                      : t('onboarding.joinOrg.isInvitationPlain', 'It joins you right away — no approval needed.')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
             )}
 
             {/* Message */}
@@ -189,6 +244,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md,
     borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.successBorder,
   },
+  inviteFound: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+  },
+  inviteFoundText: { flex: 1 },
+  inviteFoundTitle: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
+  inviteFoundBody: { fontSize: FONT_SIZE.xs, marginTop: 2, lineHeight: 16 },
   validBadgeText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
   textAreaContainer: { height: 100 },
   textArea: { flex: 1, fontSize: FONT_SIZE.lg, padding: SPACING.md },

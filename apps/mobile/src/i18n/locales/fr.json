@@ -179,13 +179,17 @@
       "codeMustBe8Chars": "Le code doit comporter 8 caractères",
       "invalidCode": "Code invalide",
       "failedToValidate": "Échec de la validation du code",
-      "failedToSubmit": "Échec de l'envoi de la demande"
+      "failedToSubmit": "Échec de l'envoi de la demande",
+      "isInvitation": "Il s'agit d'une invitation personnelle",
+      "isInvitationOrg": "Elle vous rattache à {{org}} immédiatement, sans validation.",
+      "isInvitationPlain": "Elle vous rattache immédiatement, sans validation.",
+      "codeUnrecognized": "Saisissez votre code d'organisation à 8 caractères ou un code d'invitation personnel"
     },
     "useInvitation": {
       "title": "Utiliser un code d'invitation",
       "subtitle": "Saisissez le code communiqué par l'administrateur de votre organisation",
       "codeLabel": "Code d'invitation",
-      "codePlaceholder": "XK7M2P",
+      "codePlaceholder": "XK7M2PQ4RT",
       "submitButton": "Accepter et rejoindre",
       "joiningAs": "Vous rejoignez en tant que {{role}}",
       "codeMustBe6Chars": "Le code doit comporter au moins 6 caractères",

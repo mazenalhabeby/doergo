@@ -179,13 +179,17 @@
       "codeMustBe8Chars": "Il codice deve avere 8 caratteri",
       "invalidCode": "Codice non valido",
       "failedToValidate": "Impossibile validare il codice",
-      "failedToSubmit": "Impossibile inviare la richiesta"
+      "failedToSubmit": "Impossibile inviare la richiesta",
+      "isInvitation": "È un invito personale",
+      "isInvitationOrg": "Ti unisce a {{org}} subito, senza approvazione.",
+      "isInvitationPlain": "Ti unisce subito, senza approvazione.",
+      "codeUnrecognized": "Inserisci il codice organizzazione di 8 caratteri o un codice di invito personale"
     },
     "useInvitation": {
       "title": "Usa il codice di invito",
       "subtitle": "Inserisci il codice fornito dall'amministratore della tua organizzazione",
       "codeLabel": "Codice di invito",
-      "codePlaceholder": "XK7M2P",
+      "codePlaceholder": "XK7M2PQ4RT",
       "submitButton": "Accetta e unisciti",
       "joiningAs": "Ti unisci come {{role}}",
       "codeMustBe6Chars": "Il codice deve avere almeno 6 caratteri",

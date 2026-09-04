@@ -179,13 +179,17 @@
       "codeMustBe8Chars": "Der Code muss 8 Zeichen lang sein",
       "invalidCode": "Ungültiger Code",
       "failedToValidate": "Code konnte nicht überprüft werden",
-      "failedToSubmit": "Anfrage konnte nicht gesendet werden"
+      "failedToSubmit": "Anfrage konnte nicht gesendet werden",
+      "isInvitation": "Das ist eine persönliche Einladung",
+      "isInvitationOrg": "Sie treten {{org}} damit sofort bei — ohne Freigabe.",
+      "isInvitationPlain": "Sie treten damit sofort bei — ohne Freigabe.",
+      "codeUnrecognized": "Geben Sie Ihren 8-stelligen Organisationscode oder einen persönlichen Einladungscode ein"
     },
     "useInvitation": {
       "title": "Einladungscode verwenden",
       "subtitle": "Geben Sie den Code ein, den Sie von Ihrem Organisationsadministrator erhalten haben",
       "codeLabel": "Einladungscode",
-      "codePlaceholder": "XK7M2P",
+      "codePlaceholder": "XK7M2PQ4RT",
       "submitButton": "Annehmen & Beitreten",
       "joiningAs": "Beitritt als {{role}}",
       "codeMustBe6Chars": "Der Code muss mindestens 6 Zeichen lang sein",

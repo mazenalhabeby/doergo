@@ -54,6 +54,9 @@ export * from './access/space-manage';
 // import the root entry, which carries Node-only crypto.
 export * from './constants/invitation';
 export * from './constants/onboarding';
+// …and the helper that tells the two apart, because the person typing cannot:
+// both onboarding cards say "code", so each entry screen receives the other's.
+export * from './constants/join-code';
 
 // Personnel file — document types, retention/credential rules and contract
 // merge fields. Pure data + pure functions, so both entries carry it.
