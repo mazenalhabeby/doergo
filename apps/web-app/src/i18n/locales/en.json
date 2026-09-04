@@ -3590,7 +3590,8 @@
     "billingUpdated": "Billing updated.",
     "checkoutFailed": "Couldn't start checkout.",
     "accessUpdated": "Your access was updated",
-    "addOnsUpdated": "Options updated."
+    "addOnsUpdated": "Options updated.",
+    "invoicingStarted": "Monthly invoicing started — your first invoice is on its way."
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",

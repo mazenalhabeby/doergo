@@ -70,7 +70,16 @@ export default function BillingPage() {
       .finally(() => setLoading(false));
   }, [load, t]);
 
-  const go = async (fn: () => Promise<{ url?: string } | void>, key: string) => {
+  /**
+   * `done` is what to say when the action finishes HERE rather than at Stripe.
+   *
+   * Most of these redirect, so the message is never seen. Starting invoicing
+   * does not — it creates the subscription server-side and comes back — and it
+   * said "Billing updated.", which is true of everything on this page and
+   * describes nothing. Somebody who has just started being invoiced wants to
+   * know an invoice is coming.
+   */
+  const go = async (fn: () => Promise<{ url?: string } | void>, key: string, done?: string) => {
     setBusy(key);
     try {
       const res = await fn();
@@ -79,7 +88,7 @@ export default function BillingPage() {
         return;
       }
       await load();
-      notify.success(t('toast.billingUpdated', 'Billing updated.'));
+      notify.success(done ?? t('toast.billingUpdated', 'Billing updated.'));
     } catch (e) {
       notify.error(errorMessage(e));
     } finally {
@@ -250,7 +259,15 @@ export default function BillingPage() {
               onPortal={() => go(() => billingApi.portal(), 'portal')}
               portalBusy={busy === 'portal'}
               showPortal={sub?.billingMode !== 'EXTERNAL'}
-              onSubscribe={() => go(() => billingApi.checkout(), 'checkout')}
+              onSubscribe={() =>
+                go(
+                  () => billingApi.checkout(),
+                  'checkout',
+                  // Only reached in INVOICE mode; the card flow redirects to
+                  // Stripe and never returns here to show a message.
+                  t('toast.invoicingStarted', 'Monthly invoicing started — your first invoice is on its way.'),
+                )
+              }
               subscribeBusy={busy === 'checkout'}
               /*
                 Two questions, deliberately separate — collapsing them into one

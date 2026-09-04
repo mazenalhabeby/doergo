@@ -3590,7 +3590,8 @@
     "billingUpdated": "Facturación actualizada.",
     "checkoutFailed": "No se pudo iniciar el pago.",
     "accessUpdated": "Se actualizaron tus permisos de acceso",
-    "addOnsUpdated": "Opciones actualizadas."
+    "addOnsUpdated": "Opciones actualizadas.",
+    "invoicingStarted": "Facturación mensual iniciada: tu primera factura está en camino."
   },
   "errors": {
     "somethingWentWrong": "Algo salió mal",

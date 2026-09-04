@@ -3599,7 +3599,8 @@
     "billingUpdated": "Fatturazione aggiornata.",
     "checkoutFailed": "Impossibile avviare il pagamento.",
     "accessUpdated": "I tuoi permessi di accesso sono stati aggiornati",
-    "addOnsUpdated": "Opzioni aggiornate."
+    "addOnsUpdated": "Opzioni aggiornate.",
+    "invoicingStarted": "Fatturazione mensile avviata — la prima fattura è in arrivo."
   },
   "errors": {
     "somethingWentWrong": "Qualcosa è andato storto",

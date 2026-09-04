@@ -3590,7 +3590,8 @@
     "billingUpdated": "Abrechnung aktualisiert.",
     "checkoutFailed": "Bezahlvorgang konnte nicht gestartet werden.",
     "accessUpdated": "Deine Zugriffsrechte wurden aktualisiert",
-    "addOnsUpdated": "Optionen aktualisiert."
+    "addOnsUpdated": "Optionen aktualisiert.",
+    "invoicingStarted": "Monatliche Rechnungsstellung gestartet — Ihre erste Rechnung ist unterwegs."
   },
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",
