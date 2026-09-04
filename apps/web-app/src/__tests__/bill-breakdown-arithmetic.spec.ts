@@ -125,10 +125,17 @@ describe('an organization with no subscription can start one', () => {
     expect(rail).toContain('canSubscribe');
   });
 
-  it('shows it only while there is no subscription', () => {
-    // `totalCents` is null until Stripe has one — the same signal the Portal
-    // fails on, used to offer the action that fixes it.
-    expect(page).toContain('sub?.totalCents == null');
+  it('asks Stripe, not the amount, whether a billing account exists', () => {
+    /*
+      `totalCents` is NOT the signal. The subscription row is created when the
+      trial starts with `lastBilledCents: 0`, so "0 = never billed" is a real
+      value and `totalCents != null` answers true for an organization that has
+      never had a Stripe account at all. Reading it that way is what put
+      "Payment & invoices" in front of somebody and answered them "No billing
+      account yet" — the one button that could not possibly work.
+    */
+    expect(page).toContain('!sub?.hasBillingAccount');
+    expect(page).not.toContain('sub?.totalCents == null');
   });
 
   it('shows the Portal only when there is a subscription to manage', () => {
@@ -140,7 +147,7 @@ describe('an organization with no subscription can start one', () => {
       billing account yet".
     */
     expect(rail).toContain('showPortal && hasSubscription');
-    expect(page).toContain('hasSubscription={sub?.totalCents != null}');
+    expect(page).toContain('hasSubscription={sub?.hasBillingAccount === true}');
   });
 
   it('does not ask for a card while the trial is running', () => {

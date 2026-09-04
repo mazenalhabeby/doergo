@@ -406,6 +406,9 @@ export class BillingService {
       // What was last actually billed, rather than a figure recomputed here —
       // a second implementation of the bill is a second answer.
       totalCents: org.subscription?.lastBilledCents ?? null,
+      // The Stripe id, not the amount: the row exists from the moment the trial
+      // starts, and its `lastBilledCents` is 0 until something is billed.
+      hasBillingAccount: !!org.subscription?.stripeSubscriptionId,
       trialEndsAt: org.trialEndsAt ? org.trialEndsAt.toISOString() : null,
       currentPeriodEnd: org.currentPeriodEnd ? org.currentPeriodEnd.toISOString() : null,
       cancelAtPeriodEnd: org.cancelAtPeriodEnd,

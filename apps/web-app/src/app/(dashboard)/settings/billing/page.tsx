@@ -257,9 +257,13 @@ export default function BillingPage() {
                 flag is what put "Payment & invoices" on a trialing account
                 with no billing account behind it.
 
-                `hasSubscription` — is there something for the Portal to
-                manage? `totalCents` is null until Stripe has a subscription,
-                and the trial has nothing to do with it.
+                `hasBillingAccount` — is there something for the Portal to
+                manage? ⚠️ NOT `totalCents`: the subscription row is created
+                when the trial starts with `lastBilledCents: 0`, so
+                `totalCents != null` answers true for an organization that has
+                never had a Stripe account. Reading it that way is what put
+                "Payment & invoices" in front of somebody and answered them
+                "No billing account yet".
 
                 `canSubscribe` — should we ASK for a card? Not during a trial:
                 nothing is owed yet, and asking mid-trial asks a question the
@@ -269,9 +273,9 @@ export default function BillingPage() {
                 customer either — EXTERNAL has nothing to check out and the
                 server refuses it.
               */
-              hasSubscription={sub?.totalCents != null}
+              hasSubscription={sub?.hasBillingAccount === true}
               canSubscribe={
-                sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && sub?.totalCents == null
+                sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && !sub?.hasBillingAccount
               }
             />
           )}

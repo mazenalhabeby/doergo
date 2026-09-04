@@ -24,6 +24,17 @@ export interface SubscriptionView {
   seats: number;
   /** What the bill last came to, monthly EUR cents. 0 = never billed. */
   totalCents: number | null;
+  /**
+   * Is there a subscription on STRIPE — something the Customer Portal can open?
+   *
+   * ⚠️ Not derivable from `totalCents`. The subscription ROW is created when the
+   * trial starts, with `lastBilledCents: 0`, so "0 = never billed" is a real
+   * value and `totalCents != null` answers true for an organization that has
+   * never had a Stripe account at all. Reading it that way is what put
+   * "Payment & invoices" in front of somebody and answered them "No billing
+   * account yet" — the one button that could not work.
+   */
+  hasBillingAccount: boolean;
   trialEndsAt: string | null; // ISO
   currentPeriodEnd: string | null; // ISO
   cancelAtPeriodEnd: boolean;
