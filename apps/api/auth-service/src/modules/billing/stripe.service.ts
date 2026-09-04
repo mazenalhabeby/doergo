@@ -363,24 +363,55 @@ export class StripeService {
     } | null;
     orgId: string;
   }): Promise<string> {
-    if (params.customerId) return params.customerId;
     const hasCountry = !!params.address?.country;
+    const address = hasCountry
+      ? {
+          line1: params.address?.line1 ?? undefined,
+          line2: params.address?.line2 ?? undefined,
+          city: params.address?.city ?? undefined,
+          postal_code: params.address?.postal_code ?? undefined,
+          country: params.address?.country ?? undefined,
+        }
+      : undefined;
+
+    if (params.customerId) {
+      /*
+        An existing customer was returned untouched, so it kept whatever it was
+        created with — and a customer created before addresses were sent has
+        none, permanently. Stripe Tax then refuses with "The customer's location
+        isn't recognized", and filling the address in on the organization
+        changed nothing, because nothing ever wrote it across.
+
+        Only when the address would actually change: a needless write on every
+        checkout is an API call and an event for nothing.
+      */
+      if (address) {
+        try {
+          const existing = await this.stripe.customers.retrieve(params.customerId);
+          const current = (existing as Stripe.Customer).address ?? null;
+          const differs =
+            current?.country !== address.country ||
+            current?.postal_code !== address.postal_code ||
+            current?.city !== address.city ||
+            current?.line1 !== address.line1;
+          if (differs) {
+            await this.stripe.customers.update(params.customerId, { address });
+          }
+        } catch {
+          // A customer that cannot be read or updated must not stop billing —
+          // the create path below is not an option for an id that exists, and
+          // Stripe will say so plainly if the address is genuinely required.
+        }
+      }
+      return params.customerId;
+    }
+
     const customer = await this.stripe.customers.create({
       email: params.email ?? undefined,
       name: params.name,
       // Only when there is a country: a partial address without one tells
       // Stripe Tax nothing and reads as a filled-in field that is not.
-      ...(hasCountry
-        ? {
-            address: {
-              line1: params.address?.line1 ?? undefined,
-              line2: params.address?.line2 ?? undefined,
-              city: params.address?.city ?? undefined,
-              postal_code: params.address?.postal_code ?? undefined,
-              country: params.address?.country ?? undefined,
-            },
-          }
-        : {}),
+      ...(address ? { address } : {}),
       metadata: { organizationId: params.orgId },
     });
     return customer.id;

@@ -119,6 +119,29 @@ describe('the collection method is applied where it can be', () => {
     expect(stripe).toContain('hasCountry');
   });
 
+  it('keeps an existing customer’s address in step', () => {
+    /*
+      `ensureCustomer` returned an existing id untouched, so a customer created
+      before addresses were sent kept none — permanently. Stripe Tax then
+      refused, and filling the address in on the organization changed nothing,
+      because nothing ever wrote it across. Happened on the first real invoice
+      attempt.
+    */
+    const stripe = read('../stripe.service.ts');
+    expect(stripe).toContain('customers.update(params.customerId, { address })');
+    // Only when it would actually change — a write on every checkout is an API
+    // call and an event for nothing.
+    expect(stripe).toContain('if (differs)');
+  });
+
+  it('refuses a missing country in our words, before Stripe’s', () => {
+    // "The customer's location isn't recognized" is accurate and names neither
+    // the organization nor the screen that fixes it.
+    const billing = read('../billing.service.ts');
+    expect(billing).toContain('if (!org.country)');
+    expect(billing).toContain('Settings → General');
+  });
+
   it('reports a Checkout rejection instead of a bare 500', () => {
     // The failure reached the customer as "Internal server error" with nothing
     // in any log; the cause had to be reproduced against the live API.

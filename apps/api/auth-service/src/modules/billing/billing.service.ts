@@ -500,6 +500,21 @@ export class BillingService {
       page shows the subscription that now exists.
     */
     if (org.billingMode === 'INVOICE') {
+      /*
+        Refused here, in our words, rather than by Stripe in its own.
+
+        Without a country `automatic_tax` fails with "The customer's location
+        isn't recognized. Set a valid customer address..." — accurate, and it
+        names neither the organization nor the screen that fixes it. Checkout
+        never has this problem because it collects an address itself; the
+        invoice flow has to be given one.
+      */
+      if (!org.country) {
+        return fail(
+          HttpStatus.BAD_REQUEST,
+          'Add this organization’s address — country included — in Settings → General before invoicing it. Tax cannot be calculated without it.',
+        );
+      }
       try {
         await this.stripe.createInvoiceSubscription({
           customerId,
