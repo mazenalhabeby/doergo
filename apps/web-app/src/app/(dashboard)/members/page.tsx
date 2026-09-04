@@ -30,6 +30,7 @@ import {
 import { notify } from "@/lib/toast"
 import { errorMessage } from "@/lib/errors"
 import { useTranslation } from "react-i18next"
+import { useBillingLock } from "@/hooks/use-billing-lock"
 
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/contexts/auth-context"
@@ -527,6 +528,9 @@ const MemberRow = memo(function MemberRow({
 // ---------------------------------------------------------------------------
 
 export default function MembersPage() {
+  // Adding a member is a write AND the thing that moves the bill — doubly
+  // worth refusing before the dialog rather than at submit.
+  const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -882,6 +886,8 @@ export default function MembersPage() {
             {/* Invite */}
             {isAdmin && (
               <Button
+                disabled={billingLocked}
+                title={billingLocked ? billingLockReason : undefined}
                 onClick={() => setInviteOpen(true)}
                 size="sm"
                 data-tour="members-invite"
@@ -1021,7 +1027,9 @@ export default function MembersPage() {
                 {t("members.empty.description")}
               </p>
               {isAdmin && (
-                <Button onClick={() => setInviteOpen(true)} className="rounded-lg">
+                <Button disabled={billingLocked}
+                title={billingLocked ? billingLockReason : undefined}
+                onClick={() => setInviteOpen(true)} className="rounded-lg">
                   <UserPlus className="h-4 w-4 mr-2" />
                   {t("members.inviteMember")}
                 </Button>

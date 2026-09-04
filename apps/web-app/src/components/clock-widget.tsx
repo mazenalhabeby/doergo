@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
+import { useBillingLock } from "@/hooks/use-billing-lock"
 import { toast } from "sonner"
 import { LogIn, LogOut, Home, Loader2, ChevronDown, MapPin } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -57,6 +58,10 @@ function useElapsed(sinceIso?: string | null): string {
  * (device location, VPN-safe); the backend enforces the geofence.
  */
 export function ClockWidget() {
+  // Clocking in is a write; the server returns 402 while the account is
+  // read-only. Refusing here means somebody does not press it, wait, and then
+  // read an error about billing they were not looking for.
+  const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const { user } = useAuth()
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -140,7 +145,8 @@ export function ClockWidget() {
           size="sm"
           variant="ghost"
           className="h-6 gap-1 px-2 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
-          disabled={pending}
+          disabled={pending || billingLocked}
+          title={billingLocked ? billingLockReason : undefined}
           onClick={() => clock.mutate("out")}
         >
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><LogOut className="h-3.5 w-3.5" />{t("attendance.my.clockOut", "Clock Out")}</>}
@@ -154,7 +160,7 @@ export function ClockWidget() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700" disabled={pending}>
+          <Button size="sm" className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700" disabled={pending || billingLocked} title={billingLocked ? billingLockReason : undefined}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
             {t("attendance.my.clockIn", "Clock In")}
             <ChevronDown className="h-3.5 w-3.5 opacity-80" />

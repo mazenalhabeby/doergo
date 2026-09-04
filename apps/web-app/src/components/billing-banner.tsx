@@ -42,18 +42,33 @@ export function BillingBanner() {
     main: string;
     sub: string;
     cta: string;
+    /** Solid, not tinted: a read-only account must not read as a suggestion. */
+    hard?: boolean;
   } | null = null;
 
   if (sub.status === 'incomplete' || sub.status === 'canceled') {
+    /*
+      The account is READ-ONLY, and this is the only thing that says so.
+
+      Every write returns 402 while the app still shows New Task, Clock In and
+      Add member — you find out at submit, after typing. That was reported as
+      "I can still add tasks in an inactive organization"; the server had
+      refused every one of them.
+
+      So this state is not a tinted strip like the others. It is solid, it says
+      what is actually true — you can read everything, you can change nothing —
+      and it does not scroll away.
+    */
     variant = {
       grad: 'from-red-500/15 via-red-500/5',
       border: 'border-red-500/20',
       iconBg: 'bg-red-500/15 text-red-500',
       accent: 'text-red-500',
       Icon: Lock,
-      main: 'Your subscription is inactive',
-      sub: 'add a payment method to unlock full access',
-      cta: 'Reactivate',
+      main: 'This account is read-only',
+      sub: 'everything is visible, nothing can be changed until payment is set up',
+      cta: 'Set up payment',
+      hard: true,
     };
   } else if (sub.status === 'past_due') {
     variant = {
@@ -97,15 +112,37 @@ export function BillingBanner() {
   return (
     <Link
       href="/settings/billing"
-      className={`group flex items-center justify-center gap-2.5 border-b ${variant.border} bg-gradient-to-r ${variant.grad} to-transparent px-4 py-2 backdrop-blur-sm transition-colors`}
+      className={
+        variant.hard
+          ? 'group flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 border-b border-red-600 bg-red-600 px-4 py-2.5 text-white transition-colors hover:bg-red-700'
+          : `group flex items-center justify-center gap-2.5 border-b ${variant.border} bg-gradient-to-r ${variant.grad} to-transparent px-4 py-2 backdrop-blur-sm transition-colors`
+      }
     >
-      <span className={`flex size-5 shrink-0 items-center justify-center rounded-full ${variant.iconBg}`}>
+      <span
+        className={
+          variant.hard
+            ? 'flex size-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-white'
+            : `flex size-5 shrink-0 items-center justify-center rounded-full ${variant.iconBg}`
+        }
+      >
         <Icon className="h-3 w-3" strokeWidth={2.5} />
       </span>
-      <span className="text-[13px] font-medium text-foreground">{variant.main}</span>
-      <span className="hidden text-[13px] text-muted-foreground sm:inline">— {variant.sub}</span>
+      <span className={variant.hard ? 'text-[13px] font-semibold' : 'text-[13px] font-medium text-foreground'}>
+        {variant.main}
+      </span>
       <span
-        className={`ml-0.5 inline-flex items-center gap-1 text-[12px] font-semibold ${variant.accent} transition-all group-hover:gap-1.5`}
+        className={
+          variant.hard ? 'text-[13px] text-white/80' : 'hidden text-[13px] text-muted-foreground sm:inline'
+        }
+      >
+        — {variant.sub}
+      </span>
+      <span
+        className={
+          variant.hard
+            ? 'ml-0.5 inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-[12px] font-semibold text-red-700 transition-all group-hover:gap-1.5'
+            : `ml-0.5 inline-flex items-center gap-1 text-[12px] font-semibold ${variant.accent} transition-all group-hover:gap-1.5`
+        }
       >
         {variant.cta}
         <ArrowRight className="h-3.5 w-3.5" />

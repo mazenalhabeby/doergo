@@ -23,6 +23,7 @@ import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette, type CommandAction } from "@/contexts/command-palette-context"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
+import { useBillingLock } from "@/hooks/use-billing-lock"
 import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
 import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Phase, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
@@ -909,6 +910,7 @@ export default function TasksPage() {
     create screen is part of this member's app at all.
   */
   const canCreateTasks = hasPermission("canCreateTasks") && hasAccessModule(user ?? {}, "create_task")
+  const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const canAssignTasks = hasPermission('canAssignTasks')
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
@@ -1140,10 +1142,18 @@ export default function TasksPage() {
             </Button>
           )}
 
-          {/* Create Task */}
+          {/*
+            Create Task — disabled while the account is read-only.
+
+            The server already refuses the write with 402; this only moves the
+            refusal to before the typing. A locked account with a bug in the
+            hook is still locked.
+          */}
           {canCreateTasks && (
             <Button
               size="sm"
+              disabled={billingLocked}
+              title={billingLocked ? billingLockReason : undefined}
               onClick={() => setCreateDialogOpen(true)}
               data-tour="tasks-create"
               className="h-8 px-3.5 rounded-lg font-medium text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-150"
