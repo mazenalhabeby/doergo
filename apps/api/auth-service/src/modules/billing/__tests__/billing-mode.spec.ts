@@ -86,6 +86,39 @@ describe('the collection method is applied where it can be', () => {
     expect(billing).toContain('Could not set collection method');
   });
 
+  it('never opens Checkout for an invoice customer', () => {
+    /*
+      Checkout in subscription mode ALWAYS collects a payment method. For a
+      customer whose accounts department pays by transfer that is exactly
+      wrong: they would hand over a card that is then never charged, and the
+      reason they are on invoice is that they do not want to.
+
+      The subscription is created through the API instead, where send_invoice
+      is accepted and Stripe issues the first invoice itself.
+    */
+    const billing = read('../billing.service.ts');
+    expect(billing).toContain("if (org.billingMode === 'INVOICE')");
+    expect(billing).toContain('createInvoiceSubscription');
+    const stripe = read('../stripe.service.ts');
+    expect(stripe).toContain("collection_method: 'send_invoice'");
+    // days_until_due is required by Stripe whenever the method is send_invoice.
+    expect(stripe).toContain('days_until_due');
+  });
+
+  it('gives the customer an address, because tax needs one', () => {
+    /*
+      Checkout collects an address on the card flow; the invoice flow never
+      opens Checkout, so without this `automatic_tax` fails with
+      "customer_tax_location_invalid" — at the moment of billing, for the
+      customer who least expects friction.
+    */
+    const stripe = read('../stripe.service.ts');
+    expect(stripe).toContain('customer_tax_location_invalid');
+    // Only when a country is known: a partial address without one tells Stripe
+    // Tax nothing and reads as a filled-in field that is not.
+    expect(stripe).toContain('hasCountry');
+  });
+
   it('reports a Checkout rejection instead of a bare 500', () => {
     // The failure reached the customer as "Internal server error" with nothing
     // in any log; the cause had to be reproduced against the live API.

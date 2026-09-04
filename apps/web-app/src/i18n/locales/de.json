@@ -6521,7 +6521,8 @@
     },
     "byInvoice": "Zahlung per Rechnung",
     "byInvoiceHint": "Wir senden monatlich eine Rechnung, zahlbar innerhalb von {{days}} Tagen. Es wird keine Karte belastet.",
-    "subscribe": "Zahlung einrichten"
+    "subscribe": "Zahlung einrichten",
+    "subscribeInvoice": "Monatliche Rechnung starten"
   },
   "assetKinds": {
     "title": "Objekte",

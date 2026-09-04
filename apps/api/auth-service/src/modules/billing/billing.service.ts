@@ -466,6 +466,15 @@ export class BillingService {
       email: org.billingEmail ?? org.email,
       name: org.name,
       orgId: organizationId,
+      // Only the invoice path needs this — Checkout collects its own — but a
+      // customer created with an address is correct either way.
+      address: {
+        line1: org.addressLine1 ?? org.address,
+        line2: org.addressLine2,
+        city: org.city,
+        postal_code: org.postalCode,
+        country: org.country,
+      },
     });
     if (customerId !== org.stripeCustomerId) {
       await this.prisma.organization.update({ where: { id: organizationId }, data: { stripeCustomerId: customerId } });
@@ -477,6 +486,38 @@ export class BillingService {
       org.subStatus === 'TRIALING' && org.trialEndsAt
         ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - Date.now()) / 86_400_000))
         : 0;
+
+    /*
+      INVOICE mode never opens Checkout.
+
+      Checkout in subscription mode always collects a payment method, which is
+      exactly wrong for a customer whose accounts department pays by transfer:
+      they would hand over a card that is then never charged. The subscription
+      is created through the API instead, where send_invoice is accepted, and
+      Stripe issues and emails the first invoice itself.
+
+      Nothing to redirect to, so no url comes back — the caller reloads and the
+      page shows the subscription that now exists.
+    */
+    if (org.billingMode === 'INVOICE') {
+      try {
+        await this.stripe.createInvoiceSubscription({
+          customerId,
+          lines,
+          invoiceDueDays: org.invoiceDueDays,
+          ...(trialDays > 0 ? { trialDays } : {}),
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        this.logger.error(`Invoice subscription failed for org ${organizationId}: ${message}`);
+        return fail(HttpStatus.BAD_GATEWAY, `Stripe could not start the subscription: ${message}`);
+      }
+      await this.prisma.subscription.updateMany({
+        where: { organizationId },
+        data: { lastBilledCents: bill.monthlyCents },
+      });
+      return ok({ url: undefined });
+    }
 
     /*
       Wrapped, because a Stripe rejection here reached the customer as a bare

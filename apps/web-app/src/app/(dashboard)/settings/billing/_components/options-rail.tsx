@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, CreditCard, ExternalLink, Loader2, Puzzle } from 'lucide-react';
+import { Check, CreditCard, ExternalLink, FileText, Loader2, Puzzle } from 'lucide-react';
 import { addOnDef, addOnI18n, formatCents, type OrgCostBreakdown } from '@hbcfield/shared/client';
 
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,12 @@ export function OptionsRail({
   hasSubscription,
   /** Offer checkout: no subscription, not trialing, not a contract customer. */
   canSubscribe,
+  /**
+   * INVOICE mode asks for no card — the subscription is created through the
+   * API and Stripe emails the first invoice. Same button, different promise,
+   * so it must not say "Set up payment" and then take nothing.
+   */
+  invoiceMode,
 }: {
   bill: OrgCostBreakdown;
   isAdmin: boolean;
@@ -61,6 +67,7 @@ export function OptionsRail({
   subscribeBusy: boolean;
   hasSubscription: boolean;
   canSubscribe: boolean;
+  invoiceMode: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -138,10 +145,14 @@ export function OptionsRail({
             <Button className="w-full" size="sm" disabled={!isAdmin || subscribeBusy} onClick={onSubscribe}>
               {subscribeBusy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : invoiceMode ? (
+                <FileText className="mr-2 h-4 w-4" />
               ) : (
                 <CreditCard className="mr-2 h-4 w-4" />
               )}
-              {t('billing.subscribe', 'Set up payment')}
+              {invoiceMode
+                ? t('billing.subscribeInvoice', 'Start monthly invoicing')
+                : t('billing.subscribe', 'Set up payment')}
             </Button>
           )}
           <Button

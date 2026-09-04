@@ -6521,7 +6521,8 @@
     },
     "byInvoice": "Paid by invoice",
     "byInvoiceHint": "We email an invoice each month, due within {{days}} days. No card is charged.",
-    "subscribe": "Set up payment"
+    "subscribe": "Set up payment",
+    "subscribeInvoice": "Start monthly invoicing"
   },
   "assetKinds": {
     "title": "Assets",

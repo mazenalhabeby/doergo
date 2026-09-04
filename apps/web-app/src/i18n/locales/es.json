@@ -6521,7 +6521,8 @@
     },
     "byInvoice": "Pago por factura",
     "byInvoiceHint": "Enviamos una factura cada mes, con vencimiento a {{days}} días. No se cobra ninguna tarjeta.",
-    "subscribe": "Configurar el pago"
+    "subscribe": "Configurar el pago",
+    "subscribeInvoice": "Iniciar facturación mensual"
   },
   "assetKinds": {
     "title": "Activos",

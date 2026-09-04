@@ -274,6 +274,7 @@ export default function BillingPage() {
                 server refuses it.
               */
               hasSubscription={sub?.hasBillingAccount === true}
+              invoiceMode={sub?.billingMode === 'INVOICE'}
               canSubscribe={
                 sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && !sub?.hasBillingAccount
               }

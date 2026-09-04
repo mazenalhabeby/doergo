@@ -241,6 +241,43 @@ export class StripeService {
   }
 
   /**
+   * Start an INVOICE-mode subscription — no Checkout, and no card.
+   *
+   * Checkout in subscription mode always collects a payment method, which is
+   * exactly wrong here: an invoice customer would hand over a card that is then
+   * never charged, and the whole reason they are on invoice is that their
+   * accounts department pays by transfer.
+   *
+   * So the subscription is created through the API, where `send_invoice` is
+   * accepted, and Stripe issues and emails the first invoice itself.
+   *
+   * `days_until_due` is required by Stripe whenever the method is send_invoice.
+   */
+  async createInvoiceSubscription(p: {
+    customerId: string;
+    lines: StripeLine[];
+    invoiceDueDays: number;
+    trialDays?: number;
+  }): Promise<Stripe.Subscription> {
+    const priceIds = await this.resolvePriceIds(p.lines.map((l) => l.lookupKey));
+    const missing = p.lines.map((l) => l.lookupKey).filter((k) => !priceIds.get(k));
+    if (missing.length) {
+      throw new Error(
+        `Stripe is missing ${missing.length} price(s): ${[...new Set(missing)].join(', ')}. ` +
+          'Run the catalogue sync before this organization can be billed.',
+      );
+    }
+    return this.stripe.subscriptions.create({
+      customer: p.customerId,
+      items: p.lines.map((l) => ({ price: priceIds.get(l.lookupKey)!, quantity: l.quantity })),
+      collection_method: 'send_invoice',
+      days_until_due: Math.max(1, p.invoiceDueDays),
+      automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },
+      ...(p.trialDays ? { trial_period_days: p.trialDays } : {}),
+    });
+  }
+
+  /**
    * Move a live subscription between collection methods.
    *
    * Switching an existing customer rather than re-checking them out: the
@@ -311,12 +348,39 @@ export class StripeService {
     customerId?: string | null;
     email?: string | null;
     name: string;
+    /**
+     * Stripe Tax computes VAT from where the customer IS. Checkout collects it
+     * on the card flow; the invoice flow never opens Checkout, so it has to
+     * come from the organization's own record or automatic_tax fails with
+     * "customer_tax_location_invalid".
+     */
+    address?: {
+      line1?: string | null;
+      line2?: string | null;
+      city?: string | null;
+      postal_code?: string | null;
+      country?: string | null;
+    } | null;
     orgId: string;
   }): Promise<string> {
     if (params.customerId) return params.customerId;
+    const hasCountry = !!params.address?.country;
     const customer = await this.stripe.customers.create({
       email: params.email ?? undefined,
       name: params.name,
+      // Only when there is a country: a partial address without one tells
+      // Stripe Tax nothing and reads as a filled-in field that is not.
+      ...(hasCountry
+        ? {
+            address: {
+              line1: params.address?.line1 ?? undefined,
+              line2: params.address?.line2 ?? undefined,
+              city: params.address?.city ?? undefined,
+              postal_code: params.address?.postal_code ?? undefined,
+              country: params.address?.country ?? undefined,
+            },
+          }
+        : {}),
       metadata: { organizationId: params.orgId },
     });
     return customer.id;
