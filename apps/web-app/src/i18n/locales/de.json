@@ -6467,7 +6467,8 @@
       "noModules": "Nichts aktiviert — dieser Arbeitsbereich ist kostenlos",
       "addOnsBought": "Zusatzmodule",
       "estimate": "Zum Listenpreis",
-      "observerSeats": "Externe Beobachter"
+      "observerSeats": "Externe Beobachter",
+      "externalSeats": "Externe Supervisoren"
     },
     "addOns": {
       "title": "Zusatzmodule",

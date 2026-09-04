@@ -87,6 +87,32 @@ describe('what Stripe is told', () => {
     expect(stripeLookupKey('seat_observer', '')).toBe('hbcfield_seat_observer_monthly');
   });
 
+  it('splits the seat row for the screen without changing what is charged', () => {
+    /*
+      An external SUPERVISOR costs the same €9.99 as staff, so they sit inside
+      `seatCount` and Stripe is told one quantity. The screen shows the
+      composition — otherwise "People: 11 × €9.99" hides that two of the eleven
+      work for a client, which is the first thing anybody asks about a bill.
+
+      The halves must always sum to the whole, or the page stops adding up.
+    */
+    const b = bill({ seatCount: 11, externalSeatCount: 2 });
+    expect(b.staffSeatCount + b.externalSeatCount).toBe(b.seatCount);
+    expect(b.seatMonthlyCents).toBe(11 * SEAT_MONTHLY_CENTS);
+    // One seat line, quantity 11 — the split is display only.
+    const lines = stripeLinesForBill(b);
+    expect(lines.filter((l) => l.lookupKey === stripeLookupKey('seat', ''))).toHaveLength(1);
+    expect(charged(lines)).toBe(b.monthlyCents);
+  });
+
+  it('never lets the split exceed the seats it describes', () => {
+    // A caller passing nonsense must not produce a negative staff count that
+    // renders as "-1 × €9.99".
+    const b = bill({ seatCount: 3, externalSeatCount: 99 });
+    expect(b.externalSeatCount).toBe(3);
+    expect(b.staffSeatCount).toBe(0);
+  });
+
   it('holds when every count sits inside its free allowance', () => {
     const b = bill({
       spaces: [{ spaceId: 'a', spaceName: 'A', enabledModules: ['crm', 'assets'], usage: { crm: 10, assets: 3 } }],

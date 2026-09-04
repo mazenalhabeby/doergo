@@ -6467,7 +6467,8 @@
       "noModules": "Nada activado: este espacio de trabajo es gratuito",
       "addOnsBought": "Complementos",
       "estimate": "A precio de tarifa",
-      "observerSeats": "Observadores externos"
+      "observerSeats": "Observadores externos",
+      "externalSeats": "Supervisores externos"
     },
     "addOns": {
       "title": "Complementos",

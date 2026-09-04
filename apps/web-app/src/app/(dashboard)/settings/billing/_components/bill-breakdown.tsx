@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Boxes, Users, Puzzle, Eye } from 'lucide-react';
+import { Boxes, Users, Puzzle, Eye, UserCog } from 'lucide-react';
 import {
   AVAILABLE_MODULES,
   formatCents,
@@ -58,17 +58,37 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
           </div>
         </div>
 
-        {/* The three parts, so the total can be checked rather than trusted. */}
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        {/* Every part, so the total can be checked rather than trusted. */}
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {/*
+            Our own staff, counted apart from the outsiders.
+
+            The row used to say "People — 11 × €9.99" with two of the eleven
+            working for a client. Same total, same Stripe line; the bill just
+            stops hiding who is on it, which is the first thing anybody asks
+            when they read one.
+          */}
           <Part
             icon={<Users className="h-4 w-4" />}
             label={t('billing.bill.seats', 'People')}
             detail={t('billing.bill.seatsDetail', '{{count}} × {{price}}', {
-              count: bill.seatCount,
+              count: bill.staffSeatCount,
               price: formatCents(SEAT_MONTHLY_CENTS),
             })}
-            cents={bill.seatMonthlyCents}
+            cents={bill.staffSeatCount * SEAT_MONTHLY_CENTS}
           />
+          {/* External supervisors: the same price as staff, and not staff. */}
+          {bill.externalSeatCount > 0 && (
+            <Part
+              icon={<UserCog className="h-4 w-4" />}
+              label={t('billing.bill.externalSeats', 'External supervisors')}
+              detail={t('billing.bill.seatsDetail', '{{count}} × {{price}}', {
+                count: bill.externalSeatCount,
+                price: formatCents(SEAT_MONTHLY_CENTS),
+              })}
+              cents={bill.externalSeatCount * SEAT_MONTHLY_CENTS}
+            />
+          )}
           {/*
             Its own row, shown only when there are any.
 

@@ -6467,7 +6467,8 @@
       "noModules": "Nothing switched on — this workspace is free",
       "addOnsBought": "Add-ons",
       "estimate": "At list price",
-      "observerSeats": "External observers"
+      "observerSeats": "External observers",
+      "externalSeats": "External supervisors"
     },
     "addOns": {
       "title": "Add-ons",

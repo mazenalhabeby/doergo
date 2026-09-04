@@ -6476,7 +6476,8 @@
       "noModules": "Niente attivato — questo spazio di lavoro è gratuito",
       "addOnsBought": "Componenti aggiuntivi",
       "estimate": "A listino",
-      "observerSeats": "Osservatori esterni"
+      "observerSeats": "Osservatori esterni",
+      "externalSeats": "Supervisori esterni"
     },
     "addOns": {
       "title": "Componenti aggiuntivi",

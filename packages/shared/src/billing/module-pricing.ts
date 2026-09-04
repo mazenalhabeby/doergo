@@ -197,8 +197,22 @@ export interface SpaceModules {
 }
 
 export interface OrgCostBreakdown {
+  /** Full-price seats — what Stripe is billed. staff + externalFullPrice. */
   seatCount: number;
   seatMonthlyCents: number;
+  /*
+    The composition of that number, for the screen only.
+
+    An external SUPERVISOR costs the same €9.99 as our own staff — they approve
+    hours and follow the work — so they sit inside `seatCount` and Stripe is
+    told one quantity, as before. But "People: 11 × €9.99" then hides that two
+    of the eleven work for a client, which is the first thing anybody asks when
+    they read the bill.
+
+    These two always sum to `seatCount`; they never change what is charged.
+  */
+  staffSeatCount: number;
+  externalSeatCount: number;
   /** External observers — read one site, raise a job. Priced separately. */
   observerSeatCount: number;
   observerSeatMonthlyCents: number;
@@ -226,6 +240,8 @@ export function orgMonthlyCost(input: {
   seatCount: number;
   /** Observer seats. Omitted = none, so every existing caller is unchanged. */
   observerSeatCount?: number;
+  /** How many of `seatCount` are external. Display only; omitted = none. */
+  externalSeatCount?: number;
   spaces: SpaceModules[];
   /** Capabilities bought once for the organization — see add-ons.ts. */
   addOns?: string[] | null;
@@ -259,6 +275,12 @@ export function orgMonthlyCost(input: {
   return {
     seatCount: input.seatCount,
     seatMonthlyCents,
+    // Clamped so the two halves can never sum to more than the whole, whatever
+    // a caller passes.
+    externalSeatCount: Math.min(Math.max(0, input.externalSeatCount ?? 0), Math.max(0, input.seatCount)),
+    staffSeatCount:
+      Math.max(0, input.seatCount) -
+      Math.min(Math.max(0, input.externalSeatCount ?? 0), Math.max(0, input.seatCount)),
     observerSeatCount,
     observerSeatMonthlyCents,
     spacesMonthlyCents,

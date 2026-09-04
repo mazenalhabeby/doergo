@@ -160,6 +160,10 @@ export class OrgBillService {
     return orgMonthlyCost({
       seatCount: Math.max(0, seatCount - observerSeatCount),
       observerSeatCount,
+      // The externals who are NOT observers — supervisors, at the full seat
+      // price. Shown separately so "People × €9.99" does not quietly include
+      // somebody else's employees.
+      externalSeatCount: Math.max(0, externals.length - observerSeatCount),
       spaces: spaceInput,
       addOns: org?.addOns ?? [],
     });
