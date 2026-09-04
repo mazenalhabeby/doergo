@@ -3129,10 +3129,9 @@
       "period7": "7 giorni",
       "period30": "30 giorni",
       "periodCustom": "Personalizzato",
-      "from": "Dal",
-      "to": "Al",
       "pickBoth": "Scegli entrambe le date: fino ad allora, gli ultimi 7 giorni.",
-      "noneInRange": "Nessun turno tra il {{from}} e il {{to}}."
+      "noneInRange": "Nessun turno tra il {{from}} e il {{to}}.",
+      "pickRange": "Scegli un intervallo"
     },
     "management": {
       "title": "Gestione delle presenze",

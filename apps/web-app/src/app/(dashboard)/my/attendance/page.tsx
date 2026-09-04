@@ -11,13 +11,13 @@ import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
 import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { ProgressRing } from "@/components/progress-ring"
 import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
+import type { DateRange } from "react-day-picker"
 import type { TFunction } from "i18next"
 import { mayClockInRemotely } from "@hbcfield/shared/client"
 
@@ -97,65 +97,69 @@ function LiveShift({ since, target }: { since: string; target: { start: number; 
 }
 
 /**
- * One date, picked the way the rest of the app picks dates.
+ * The window, chosen once.
  *
- * This was `<input type="date">`, which hands the job to the browser: an
- * unstyled year list that opens outside the card, ignores the theme and looks
- * different on every platform. The app already had the answer — a button, a
- * popover and the shared Calendar, as the sprint and task dialogs use — so this
- * is that composition rather than a fourth way of asking for a day.
+ * Two separate pickers asked the same person the same question twice and let
+ * them answer it inconsistently — a "to" before its "from" is a state the form
+ * has to catch and explain, and the second popover made picking a fortnight
+ * four clicks and two menus.
  *
- * Values stay "yyyy-MM-dd" strings, because that is what the API takes and what
- * the URL would carry; the Date object exists only while the calendar is open.
+ * `mode="range"` is one gesture: click the first day, click the last, done. The
+ * calendar cannot express a backwards range, so the validation it replaces has
+ * nothing left to catch. Same composition the member's time-off dialog already
+ * uses — Button, Popover, the shared Calendar.
+ *
+ * Values stay "yyyy-MM-dd" strings, because that is what the API takes; the
+ * Date objects exist only while the calendar is open.
  */
-function DateField({
-  label,
-  value,
+function RangeField({
+  from,
+  to,
   onChange,
-  min,
-  max,
+  placeholder,
 }: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  min?: string
-  max?: string
+  from: string
+  to: string
+  onChange: (from: string, to: string) => void
+  placeholder: string
 }) {
   const { locale } = useTimeFormat()
-  const selected = value ? new Date(`${value}T00:00:00`) : undefined
+  const selected: DateRange | undefined = from
+    ? { from: new Date(`${from}T00:00:00`), to: to ? new Date(`${to}T00:00:00`) : undefined }
+    : undefined
+
+  const show = (d: Date) => d.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
 
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn("h-9 w-[168px] justify-start rounded-lg text-left text-sm font-normal", !value && "text-muted-foreground")}
-          >
-            <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-            {selected
-              ? selected.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
-              : label}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <CalendarPicker
-            mode="single"
-            selected={selected}
-            onSelect={(d) => d && onChange(toISODate(d))}
-            // Bounds so the pair can never describe a window that runs backwards,
-            // and so nobody picks a day that has not happened.
-            disabled={(d) =>
-              d > new Date() ||
-              (!!min && toISODate(d) < min) ||
-              (!!max && toISODate(d) > max)
-            }
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn("h-9 justify-start rounded-lg text-left text-sm font-normal", !from && "text-muted-foreground")}
+        >
+          <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
+          {selected?.from
+            ? selected.to
+              ? `${show(selected.from)} — ${show(selected.to)}`
+              : show(selected.from)
+            : placeholder}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <CalendarPicker
+          mode="range"
+          selected={selected}
+          onSelect={(r) => onChange(r?.from ? toISODate(r.from) : "", r?.to ? toISODate(r.to) : "")}
+          // Two months, because a range that crosses one is the common case —
+          // "the last fortnight" should not need a click into the previous page.
+          numberOfMonths={2}
+          // Nothing that has not happened: this is a record, not a plan.
+          disabled={{ after: new Date() }}
+          defaultMonth={selected?.from}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -551,22 +555,18 @@ export default function MyAttendancePage() {
         one of them is furniture nobody needed.
       */}
       {period === "custom" && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-4">
-          <DateField
-            label={t("attendance.my.from", "From")}
-            value={customFrom}
-            onChange={setCustomFrom}
-            max={customTo || undefined}
-          />
-          <span className="pt-5 text-muted-foreground">—</span>
-          <DateField
-            label={t("attendance.my.to", "To")}
-            value={customTo}
-            onChange={setCustomTo}
-            min={customFrom || undefined}
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
+          <RangeField
+            from={customFrom}
+            to={customTo}
+            onChange={(f, t2) => {
+              setCustomFrom(f)
+              setCustomTo(t2)
+            }}
+            placeholder={t("attendance.my.pickRange", "Pick a date range")}
           />
           {!range && (
-            <p className="pt-5 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t("attendance.my.pickBoth", "Pick both dates — showing the last 7 days until then.")}
             </p>
           )}

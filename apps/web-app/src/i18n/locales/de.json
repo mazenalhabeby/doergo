@@ -3129,10 +3129,9 @@
       "period7": "7 Tage",
       "period30": "30 Tage",
       "periodCustom": "Zeitraum",
-      "from": "Von",
-      "to": "Bis",
       "pickBoth": "Beide Daten wählen — bis dahin die letzten 7 Tage.",
-      "noneInRange": "Keine Schichten zwischen {{from}} und {{to}}."
+      "noneInRange": "Keine Schichten zwischen {{from}} und {{to}}.",
+      "pickRange": "Zeitraum wählen"
     },
     "management": {
       "title": "Anwesenheitsverwaltung",

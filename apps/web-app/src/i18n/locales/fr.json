@@ -3129,10 +3129,9 @@
       "period7": "7 jours",
       "period30": "30 jours",
       "periodCustom": "Personnalisé",
-      "from": "Du",
-      "to": "Au",
       "pickBoth": "Choisissez les deux dates — en attendant, les 7 derniers jours.",
-      "noneInRange": "Aucun poste entre le {{from}} et le {{to}}."
+      "noneInRange": "Aucun poste entre le {{from}} et le {{to}}.",
+      "pickRange": "Choisir une période"
     },
     "management": {
       "title": "Gestion des présences",

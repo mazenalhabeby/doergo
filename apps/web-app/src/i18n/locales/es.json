@@ -3129,10 +3129,9 @@
       "period7": "7 días",
       "period30": "30 días",
       "periodCustom": "Personalizado",
-      "from": "Desde",
-      "to": "Hasta",
       "pickBoth": "Elige ambas fechas: mientras tanto, los últimos 7 días.",
-      "noneInRange": "Sin turnos entre {{from}} y {{to}}."
+      "noneInRange": "Sin turnos entre {{from}} y {{to}}.",
+      "pickRange": "Elige un intervalo"
     },
     "management": {
       "title": "Gestión de asistencia",
