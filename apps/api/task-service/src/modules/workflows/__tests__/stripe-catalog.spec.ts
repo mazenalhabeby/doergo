@@ -6,6 +6,8 @@ import {
   AVAILABLE_MODULES,
   AVAILABLE_ADD_ONS,
   MODULE_MONTHLY_CENTS,
+  SEAT_MONTHLY_CENTS,
+  OBSERVER_SEAT_MONTHLY_CENTS,
 } from '@hbcfield/shared';
 
 /** unit price of a lookup key, from the catalogue */
@@ -45,6 +47,44 @@ describe('what Stripe is told', () => {
   it('holds for an organization with nothing but seats', () => {
     const b = bill({ spaces: [], addOns: [] });
     expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
+  });
+
+  it('holds when an organization has observer seats too', () => {
+    // Two prices for two kinds of person: the arithmetic on screen and the
+    // arithmetic Stripe is sent must still land on the same cent.
+    const b = bill({ observerSeatCount: 3 });
+    expect(charged(stripeLinesForBill(b))).toBe(b.monthlyCents);
+  });
+
+  it('prices an observer at a fifth of a seat, not at a seat', () => {
+    const withObservers = bill({ seatCount: 8, observerSeatCount: 2 });
+    const allStaff = bill({ seatCount: 10, observerSeatCount: 0 });
+    // Ten people either way — the two outsiders must cost less than staff.
+    expect(withObservers.monthlyCents).toBeLessThan(allStaff.monthlyCents);
+    expect(withObservers.observerSeatMonthlyCents).toBe(2 * OBSERVER_SEAT_MONTHLY_CENTS);
+    expect(withObservers.seatMonthlyCents).toBe(8 * SEAT_MONTHLY_CENTS);
+  });
+
+  it('sends the observer seat as its OWN line, never folded into the seat count', () => {
+    // An invoice reading "12 seats" when two of them cost two euros is a
+    // support ticket, and it hides the discount the customer was given.
+    const lines = stripeLinesForBill(bill({ seatCount: 8, observerSeatCount: 2 }));
+    const seat = lines.find((l) => l.lookupKey === stripeLookupKey('seat', ''));
+    const obs = lines.find((l) => l.lookupKey === stripeLookupKey('seat_observer', ''));
+    expect(seat?.quantity).toBe(8);
+    expect(obs?.quantity).toBe(2);
+  });
+
+  it('omits the observer line entirely when there are none', () => {
+    const lines = stripeLinesForBill(bill({ observerSeatCount: 0 }));
+    expect(lines.some((l) => l.lookupKey === stripeLookupKey('seat_observer', ''))).toBe(false);
+  });
+
+  it('keeps the staff seat on its frozen lookup key', () => {
+    // Live subscriptions resolve by this exact string. Adding a second seat
+    // price must not have moved it.
+    expect(stripeLookupKey('seat', '')).toBe('hbcfield_seat_monthly');
+    expect(stripeLookupKey('seat_observer', '')).toBe('hbcfield_seat_observer_monthly');
   });
 
   it('holds when every count sits inside its free allowance', () => {

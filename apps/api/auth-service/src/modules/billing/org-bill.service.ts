@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   orgMonthlyCost,
+  isObserverSeat,
   billsByUsage,
   BILLABLE_ASSET_WHERE,
   BILLABLE_CLIENT_WHERE,
@@ -44,7 +45,7 @@ export class OrgBillService {
    * round trips. These group once across the org and fold onto spaces in memory.
    */
   async compute(organizationId: string): Promise<OrgCostBreakdown> {
-    const [org, seatCount, spaces, assetTypes, assetRows, clientRows, portalRows] = await Promise.all([
+    const [org, seatCount, externals, spaces, assetTypes, assetRows, clientRows, portalRows] = await Promise.all([
       this.prisma.organization.findUnique({
         where: { id: organizationId },
         select: { addOns: true },
@@ -53,6 +54,28 @@ export class OrgBillService {
       // somebody was on used to need their access profile, their employment
       // type, and a reconcile job to notice when either changed.
       this.prisma.user.count({ where: { organizationId, isActive: true } }),
+      /*
+        Candidates for the reduced OBSERVER seat, with the permissions they
+        actually hold — the union of their org role and every space role, since
+        the price follows the grant and not the name of a role.
+
+        A separate query restricted to external members rather than an include
+        on the count above. An organization has a handful of outsiders and can
+        have hundreds of staff; joining two role tables onto every staff row to
+        answer a question that can only be true for an outsider is work done for
+        nothing on the row count that actually grows.
+      */
+      this.prisma.user.findMany({
+        where: { organizationId, isActive: true, isExternal: true },
+        select: {
+          isExternal: true,
+          memberRole: { select: { permissions: true } },
+          spaceAssignments: {
+            where: { OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] },
+            select: { role: { select: { permissions: true } } },
+          },
+        },
+      }),
       this.prisma.companyLocation.findMany({
         where: { organizationId, isActive: true },
         select: { id: true, name: true, enabledModules: true },
@@ -112,8 +135,31 @@ export class OrgBillService {
       return { spaceId: s.id, spaceName: s.name, enabledModules: enabled, usage };
     });
 
+    /*
+      An observer is not ALSO a full seat.
+
+      `seatCount` counted every active member, these included, so the reduced
+      seats come back out of the full total. Billing both would charge the same
+      person twice — once at each price — and the invoice would add up to more
+      people than the organization has.
+    */
+    let observerSeatCount = 0;
+    for (const u of externals) {
+      const held = new Set<string>();
+      const add = (perms: unknown) => {
+        if (!perms || typeof perms !== 'object') return;
+        for (const [k, v] of Object.entries(perms as Record<string, unknown>)) {
+          if (v === true) held.add(k);
+        }
+      };
+      add(u.memberRole?.permissions);
+      for (const a of u.spaceAssignments) add(a.role?.permissions);
+      if (isObserverSeat(u, [...held])) observerSeatCount += 1;
+    }
+
     return orgMonthlyCost({
-      seatCount,
+      seatCount: Math.max(0, seatCount - observerSeatCount),
+      observerSeatCount,
       spaces: spaceInput,
       addOns: org?.addOns ?? [],
     });

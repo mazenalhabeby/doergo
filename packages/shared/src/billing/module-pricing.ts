@@ -36,8 +36,27 @@ import { AVAILABLE_MODULES } from '../types';
 import { billsByUsage, usageCost, type UsageCost } from './usage-pricing';
 import { addOnsMonthlyCost, type AddOnCostLine } from './add-ons';
 
-/** Per user, per month. The same for everyone. */
+/** Per user, per month. The same for everyone who works here. */
 export const SEAT_MONTHLY_CENTS = 999;
+
+/**
+ * The observer seat: an outsider who watches, and can raise a job.
+ *
+ * A client's representative is not a user of the product in the sense a seat
+ * prices. They read one site's board and open the occasional task; they clock
+ * nothing, approve nothing, assign nothing, and cannot reach anything the
+ * organization owns. Charging a full staff seat for that is the same mistake as
+ * charging for a portal login, which has always been free.
+ *
+ * Two euros rather than one on purpose: a euro reads as free-with-friction and
+ * invites a conversation about waiving it. A fifth of a seat is a real number
+ * that holds its value.
+ *
+ * ⚠️ Priced from the permissions the member actually HOLDS, never from the name
+ * of their role — see `isObserverSeat`. Roles are editable per organization, so
+ * a price that followed the label would be set by the customer.
+ */
+export const OBSERVER_SEAT_MONTHLY_CENTS = 200;
 
 /*
   THERE IS NO ANNUAL INTERVAL. Everything here is monthly, and that is the whole
@@ -180,6 +199,9 @@ export interface SpaceModules {
 export interface OrgCostBreakdown {
   seatCount: number;
   seatMonthlyCents: number;
+  /** External observers — read one site, raise a job. Priced separately. */
+  observerSeatCount: number;
+  observerSeatMonthlyCents: number;
   spacesMonthlyCents: number;
   /** The volume ladders — assets and anything else billed by a count. */
   usageMonthlyCents: number;
@@ -202,6 +224,8 @@ export interface OrgCostBreakdown {
  */
 export function orgMonthlyCost(input: {
   seatCount: number;
+  /** Observer seats. Omitted = none, so every existing caller is unchanged. */
+  observerSeatCount?: number;
   spaces: SpaceModules[];
   /** Capabilities bought once for the organization — see add-ons.ts. */
   addOns?: string[] | null;
@@ -219,13 +243,24 @@ export function orgMonthlyCost(input: {
   const addOnCost = addOnsMonthlyCost(input.addOns);
 
   const seatMonthlyCents = Math.max(0, input.seatCount) * seatPrice;
+  const observerSeatCount = Math.max(0, input.observerSeatCount ?? 0);
+  // Not affected by a negotiated seat price: `seatMonthlyCents` overrides the
+  // STAFF seat, and a contract that discounts staff says nothing about this.
+  const observerSeatMonthlyCents = observerSeatCount * OBSERVER_SEAT_MONTHLY_CENTS;
   const spacesMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.baseMonthlyCents, 0);
   const usageMonthlyCents = spaces.reduce((sum, s) => sum + s.cost.usageMonthlyCents, 0);
-  const monthlyCents = seatMonthlyCents + spacesMonthlyCents + usageMonthlyCents + addOnCost.monthlyCents;
+  const monthlyCents =
+    seatMonthlyCents +
+    observerSeatMonthlyCents +
+    spacesMonthlyCents +
+    usageMonthlyCents +
+    addOnCost.monthlyCents;
 
   return {
     seatCount: input.seatCount,
     seatMonthlyCents,
+    observerSeatCount,
+    observerSeatMonthlyCents,
     spacesMonthlyCents,
     usageMonthlyCents,
     addOnsMonthlyCents: addOnCost.monthlyCents,

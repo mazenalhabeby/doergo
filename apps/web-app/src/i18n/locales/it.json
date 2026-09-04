@@ -6475,7 +6475,8 @@
       "usageLine": "Utilizzo {{module}} {{price}}",
       "noModules": "Niente attivato — questo spazio di lavoro è gratuito",
       "addOnsBought": "Componenti aggiuntivi",
-      "estimate": "A listino"
+      "estimate": "A listino",
+      "observerSeats": "Osservatori esterni"
     },
     "addOns": {
       "title": "Componenti aggiuntivi",

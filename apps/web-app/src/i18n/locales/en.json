@@ -6466,7 +6466,8 @@
       "usageLine": "{{module}} usage {{price}}",
       "noModules": "Nothing switched on — this workspace is free",
       "addOnsBought": "Add-ons",
-      "estimate": "At list price"
+      "estimate": "At list price",
+      "observerSeats": "External observers"
     },
     "addOns": {
       "title": "Add-ons",

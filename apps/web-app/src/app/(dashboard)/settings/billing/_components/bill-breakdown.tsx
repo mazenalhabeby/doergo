@@ -1,12 +1,12 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Boxes, Users, Puzzle } from 'lucide-react';
+import { Boxes, Users, Puzzle, Eye } from 'lucide-react';
 import {
   AVAILABLE_MODULES,
   formatCents,
   moduleI18n,
-  SEAT_MONTHLY_CENTS,
+  SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS,
   addOnDef,
   addOnI18n,
   type OrgCostBreakdown,
@@ -69,6 +69,26 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
             })}
             cents={bill.seatMonthlyCents}
           />
+          {/*
+            Its own row, shown only when there are any.
+
+            Folding two-euro seats into "People × €9.99" would make the total
+            disagree with its own detail line — the arithmetic on this screen is
+            the arithmetic Stripe is sent, and a reader has to be able to check
+            it. An organization with no outsiders sees exactly what it saw
+            before.
+          */}
+          {bill.observerSeatCount > 0 && (
+            <Part
+              icon={<Eye className="h-4 w-4" />}
+              label={t('billing.bill.observerSeats', 'External observers')}
+              detail={t('billing.bill.seatsDetail', '{{count}} × {{price}}', {
+                count: bill.observerSeatCount,
+                price: formatCents(OBSERVER_SEAT_MONTHLY_CENTS),
+              })}
+              cents={bill.observerSeatMonthlyCents}
+            />
+          )}
           <Part
             icon={<Boxes className="h-4 w-4" />}
             label={t('billing.bill.spaces', 'Workspaces')}

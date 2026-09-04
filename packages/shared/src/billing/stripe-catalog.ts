@@ -36,14 +36,14 @@
  */
 
 import { AVAILABLE_MODULES } from '../types';
-import { MODULE_MONTHLY_CENTS, SEAT_MONTHLY_CENTS } from './module-pricing';
+import { MODULE_MONTHLY_CENTS, SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS } from './module-pricing';
 import { AVAILABLE_ADD_ONS } from './add-ons';
 import { MODULE_USAGE_PRICING } from './usage-pricing';
 
 /** Every price this system creates is prefixed, so a shared Stripe account stays legible. */
 export const STRIPE_LOOKUP_PREFIX = 'hbcfield';
 
-export type StripeLineKind = 'seat' | 'module' | 'addon' | 'usage';
+export type StripeLineKind = 'seat' | 'seat_observer' | 'module' | 'addon' | 'usage';
 
 /**
  * The stable lookup key for one billable line. Same function, script and runtime.
@@ -56,9 +56,13 @@ export type StripeLineKind = 'seat' | 'module' | 'addon' | 'usage';
  * a customer's subscription resolvable, and it is the cheaper side of the trade.
  */
 export function stripeLookupKey(kind: StripeLineKind, key: string): string {
-  return kind === 'seat'
-    ? `${STRIPE_LOOKUP_PREFIX}_seat_monthly`
-    : `${STRIPE_LOOKUP_PREFIX}_${kind}_${key}_monthly`;
+  // The staff seat's key is the frozen one — it must keep resolving to the
+  // price live subscriptions already reference. The observer seat is a NEW
+  // price with its own key, additive and safe: the sync script only ever
+  // creates, so adding one cannot disturb the thirty-one that exist.
+  if (kind === 'seat') return `${STRIPE_LOOKUP_PREFIX}_seat_monthly`;
+  if (kind === 'seat_observer') return `${STRIPE_LOOKUP_PREFIX}_seat_observer_monthly`;
+  return `${STRIPE_LOOKUP_PREFIX}_${kind}_${key}_monthly`;
 }
 
 /** One product/price pair the account is expected to hold. */
@@ -97,6 +101,7 @@ export function stripeCatalog(): StripeCatalogEntry[] {
   };
 
   push('seat', '', 'HBCField — User seat', SEAT_MONTHLY_CENTS);
+  push('seat_observer', '', 'HBCField — External observer seat', OBSERVER_SEAT_MONTHLY_CENTS);
 
   for (const m of AVAILABLE_MODULES) {
     const price = MODULE_MONTHLY_CENTS[m.key as string] ?? 0;
@@ -149,6 +154,7 @@ export interface StripeLine {
 export function stripeLinesForBill(
   bill: {
     seatCount: number;
+    observerSeatCount?: number;
     spaces: Array<{ cost: { lines: Array<{ moduleKey: string; monthlyCents: number }> } }>;
     usage: Array<{ moduleKey: string; monthlyCents: number }>;
     addOns: Array<{ key: string }>;
@@ -161,6 +167,16 @@ export function stripeLinesForBill(
       lookupKey: stripeLookupKey('seat', ''),
       quantity: bill.seatCount,
       describe: `${bill.seatCount} seat(s)`,
+    });
+  }
+
+  // Its own line, not folded into the seat count: an invoice that says "12
+  // seats" when two of them cost two euros is a support ticket.
+  if ((bill.observerSeatCount ?? 0) > 0) {
+    lines.push({
+      lookupKey: stripeLookupKey('seat_observer', ''),
+      quantity: bill.observerSeatCount!,
+      describe: `${bill.observerSeatCount} observer seat(s)`,
     });
   }
 

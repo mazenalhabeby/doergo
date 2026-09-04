@@ -130,7 +130,43 @@ export function isBillableSeat(user: SeatClassifiable): boolean {
   return (user.role ?? '').toUpperCase() !== 'CUSTOMER';
 }
 
+/**
+ * The permissions an OBSERVER seat may hold, and no more.
+ *
+ * Watching the work and raising a job. Anything beyond this — approving hours,
+ * reconciling attendance, assigning, managing anything at all — is a full seat.
+ */
+export const OBSERVER_SEAT_PERMISSIONS: readonly string[] = ['canViewAllTasks', 'canCreateTasks'];
+
+/**
+ * Does this member cost the reduced seat?
+ *
+ * Two conditions, and the first is what makes it ungameable in practice:
+ *
+ *   1. they are EXTERNAL — somebody else's employee. An external member holds
+ *      no clock, no leave, no personnel file, and nothing the organization
+ *      owns, so a business cannot run itself on cheap seats by relabelling its
+ *      own staff. The restriction IS the anti-abuse mechanism;
+ *   2. every permission they actually hold is in the list above.
+ *
+ * ⚠️ `held` is the EFFECTIVE permission set — the union of their org role and
+ * every space role they carry — never the name of a role. Roles are editable
+ * per organization: were the price to follow the label, an admin would add
+ * `canApproveOvertime` to a role called "Observer" and buy a supervisor for two
+ * euros. Reading what they hold makes the price follow the grant automatically:
+ * widen their access, the seat re-prices on the next reconcile.
+ */
+export function isObserverSeat(
+  user: { isExternal?: boolean | null },
+  held: readonly string[],
+): boolean {
+  if (user.isExternal !== true) return false;
+  return held.every((p) => OBSERVER_SEAT_PERMISSIONS.includes(p));
+}
+
 export interface SeatCounts {
+  /** External observers — the reduced seat. Never counted in `total`. */
+  observer?: number;
   office: number;
   /** External/freelancer field seats (€15). */
   field: number;

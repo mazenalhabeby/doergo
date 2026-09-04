@@ -141,6 +141,29 @@ export class StripeService {
     opts?: { invoiceNow?: boolean },
   ): Promise<Stripe.Subscription> {
     const priceIds = await this.resolvePriceIds(lines.map((l) => l.lookupKey));
+
+    /*
+      Every line must resolve to a real price before ANY of them is applied.
+
+      This was a non-null assertion. A key the account does not hold yet — a
+      price added in code and not yet synced — resolved to undefined, went into
+      the map as an undefined key, and was pushed as `{ price: undefined }`.
+      Stripe then rejects the whole update, so the org's subscription stops
+      tracking ANY change, including ordinary seat moves, and the error names
+      neither the line nor the key.
+
+      Refusing here fails in the same place but says what is missing, and it
+      fails before the item list is half-built. The fix is always the same: run
+      the catalogue sync.
+    */
+    const missing = lines.map((l) => l.lookupKey).filter((k) => !priceIds.get(k));
+    if (missing.length) {
+      throw new Error(
+        `Stripe is missing ${missing.length} price(s): ${[...new Set(missing)].join(', ')}. ` +
+          'Run the catalogue sync before this organization can be billed.',
+      );
+    }
+
     const wanted = new Map(lines.map((l) => [priceIds.get(l.lookupKey)!, l.quantity]));
 
     const sub = await this.stripe.subscriptions.retrieve(subscriptionId);

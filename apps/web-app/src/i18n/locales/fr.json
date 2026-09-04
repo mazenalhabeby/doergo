@@ -6475,7 +6475,8 @@
       "usageLine": "Usage {{module}} {{price}}",
       "noModules": "Rien d’activé — cet espace de travail est gratuit",
       "addOnsBought": "Options",
-      "estimate": "Au tarif public"
+      "estimate": "Au tarif public",
+      "observerSeats": "Observateurs externes"
     },
     "addOns": {
       "title": "Options",
