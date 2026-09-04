@@ -6510,7 +6510,9 @@
       "perWorkspace": "Por espacio",
       "perPerson": "Por persona",
       "wholeOrg": "Toda la organización"
-    }
+    },
+    "byInvoice": "Pago por factura",
+    "byInvoiceHint": "Enviamos una factura cada mes, con vencimiento a {{days}} días. No se cobra ninguna tarjeta."
   },
   "assetKinds": {
     "title": "Activos",

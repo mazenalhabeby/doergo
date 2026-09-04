@@ -15,6 +15,9 @@ export class PlatformAdminController {
   @MessagePattern({ cmd: 'platform_org_detail' })
   orgDetail(@Payload() d: { organizationId: string }) { return this.svc.orgDetail(d.organizationId); }
 
+  @MessagePattern({ cmd: 'platform_set_billing_mode' })
+  setBillingMode(@Payload() d: any) { return this.svc.setBillingMode(d); }
+
   @MessagePattern({ cmd: 'platform_suspend' })
   suspend(@Payload() d: any) { return this.svc.suspend(d); }
 

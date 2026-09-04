@@ -17,7 +17,22 @@ const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—
 
 interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string; twoFactorEnabled?: boolean; isSupportSupervisor?: boolean; supportTeamIds?: string[] }; permissions: Cap[] }
 interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number }
-interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number }
+type BillingMode = 'AUTOMATIC' | 'INVOICE' | 'EXTERNAL';
+
+/**
+ * How each organization pays, shown as a badge rather than a word.
+ *
+ * On the LIST as well as the detail: "who is on invoice?" is a question about
+ * the whole book, and answering it by opening organizations one at a time is
+ * how a contract customer gets missed at renewal.
+ */
+const BILLING_BADGE: Record<BillingMode, { label: string; cls: string; hint: string }> = {
+  AUTOMATIC: { label: 'card', cls: 'bg-emerald-500/15 text-emerald-400', hint: 'Card on file, charged each month' },
+  INVOICE: { label: 'invoice', cls: 'bg-blue-500/15 text-blue-400', hint: 'Stripe issues an invoice; paid by transfer' },
+  EXTERNAL: { label: 'agreement', cls: 'bg-amber-500/15 text-amber-400', hint: 'Nothing charged — figures are list price only' },
+};
+
+interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number; billingMode: BillingMode; invoiceDueDays: number }
 interface OrgDetail extends OrgRow { enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
 interface MailRouteStatus { label: string; host: string; port: number; ok: boolean; error: string | null }
 interface MailStatus { configured: boolean; ok: boolean; routes?: MailRouteStatus[]; host: string | null; port: number | null; error: string | null }
@@ -191,7 +206,7 @@ export default function ControlCenter() {
             </div>
             <div className="overflow-x-auto rounded-xl border border-slate-800">
               <table className="w-full text-sm">
-                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Add-ons</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
+                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Billing</th><th className="px-3 py-2">Options</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
                 <tbody className="divide-y divide-slate-800">
                   {orgs.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-900/50">
@@ -203,6 +218,14 @@ export default function ControlCenter() {
                         a column and nothing else. What an org can actually do is
                         its add-ons.
                       */}
+                      <td className="px-3 py-2">
+                        <span
+                          title={BILLING_BADGE[o.billingMode ?? 'AUTOMATIC'].hint}
+                          className={`rounded px-1.5 py-0.5 text-[11px] ${BILLING_BADGE[o.billingMode ?? 'AUTOMATIC'].cls}`}
+                        >
+                          {BILLING_BADGE[o.billingMode ?? 'AUTOMATIC'].label}
+                        </span>
+                      </td>
                       <td className="px-3 py-2">
                         {o.addOns?.length
                           ? <span className="text-xs text-slate-300" title={o.addOns.join(', ')}>{o.addOns.length}</span>
@@ -249,7 +272,73 @@ export default function ControlCenter() {
               <div><div className="text-xs text-slate-500">Trial ends</div>{date(detail.trialEndsAt)}</div>
               <div><div className="text-xs text-slate-500">Period ends</div>{date(detail.currentPeriodEnd)}</div>
             </div>
-            <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Add-ons ({detail.addOns?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.addOns ?? []).length === 0 ? <span className="text-[11px] text-slate-600">none purchased</span> : (detail.addOns ?? []).map((a) => <span key={a} className="rounded bg-blue-500/15 px-1.5 py-0.5 text-[11px] text-blue-300">{a}</span>)}</div></div>
+            {/*
+              How this organization pays — the most consequential control here.
+
+              Moving TO card starts charging a real customer; moving away stops
+              revenue arriving. So it is not a toggle: each mode is its own
+              button, the current one is inert, and the two that change money
+              confirm first. The server refuses INVOICE without a billing email
+              and moves the LIVE Stripe subscription rather than recreating it.
+            */}
+            {can('manageOrgs') && (
+              <div className="mb-4 rounded-lg border border-slate-800 p-3">
+                <div className="mb-2 flex items-baseline justify-between gap-2">
+                  <span className="text-xs text-slate-500">How they pay</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] ${BILLING_BADGE[detail.billingMode ?? 'AUTOMATIC'].cls}`}>
+                    {BILLING_BADGE[detail.billingMode ?? 'AUTOMATIC'].label}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(['AUTOMATIC', 'INVOICE', 'EXTERNAL'] as BillingMode[]).map((m) => {
+                    const current = (detail.billingMode ?? 'AUTOMATIC') === m;
+                    return (
+                      <button
+                        key={m}
+                        disabled={current || busy === detail.id}
+                        title={BILLING_BADGE[m].hint}
+                        onClick={() => {
+                          const days =
+                            m === 'INVOICE'
+                              ? Number(prompt('Payment terms — days until the invoice is due:', String(detail.invoiceDueDays ?? 14)))
+                              : undefined;
+                          if (m === 'INVOICE' && (!days || days < 1)) return;
+                          if (
+                            !confirm(
+                              m === 'AUTOMATIC'
+                                ? `Charge ${detail.name}'s card automatically from now on?`
+                                : m === 'INVOICE'
+                                  ? `Invoice ${detail.name} instead of charging a card? Stripe will email the invoice, due in ${days} days.`
+                                  : `Stop charging ${detail.name} entirely? Nothing will be billed and no invoice raised.`,
+                            )
+                          )
+                            return;
+                          act(detail.id, '/billing-mode', {
+                            body: JSON.stringify({ mode: m, ...(days ? { invoiceDueDays: days } : {}) }),
+                          });
+                        }}
+                        className={`rounded px-2 py-1 text-[11px] ${
+                          current ? 'bg-slate-700 text-slate-300' : 'bg-slate-800 hover:bg-slate-700'
+                        } disabled:opacity-60`}
+                      >
+                        {BILLING_BADGE[m].label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-500">
+                  {BILLING_BADGE[detail.billingMode ?? 'AUTOMATIC'].hint}
+                  {detail.billingMode === 'INVOICE' && ` · due in ${detail.invoiceDueDays ?? 14} days`}
+                </p>
+                {!detail.billingEmail && (
+                  <p className="mt-1 text-[11px] text-amber-400">
+                    No billing email — invoicing is refused until one is set.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Options ({detail.addOns?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.addOns ?? []).length === 0 ? <span className="text-[11px] text-slate-600">none purchased</span> : (detail.addOns ?? []).map((a) => <span key={a} className="rounded bg-blue-500/15 px-1.5 py-0.5 text-[11px] text-blue-300">{a}</span>)}</div></div>
             <div className="mb-3"><div className="mb-1 text-xs text-slate-500">Org default modules ({detail.enabledModules?.length ?? 0})</div><div className="flex flex-wrap gap-1">{(detail.enabledModules ?? []).map((m) => <span key={m} className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px]">{m}</span>)}</div></div>
             <div><div className="mb-1 text-xs text-slate-500">Members ({detail.members.length})</div><div className="divide-y divide-slate-800 rounded-lg border border-slate-800">{detail.members.map((m) => <div key={m.id} className="flex items-center justify-between px-3 py-2 text-sm"><div><span className={m.isActive ? '' : 'text-slate-500 line-through'}>{m.firstName} {m.lastName}</span> <span className="text-xs text-slate-500">{m.email}</span></div><span className="text-xs text-slate-400">{m.role?.toLowerCase()}</span></div>)}</div></div>
           </div>

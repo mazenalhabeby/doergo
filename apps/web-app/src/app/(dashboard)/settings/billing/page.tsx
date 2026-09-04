@@ -173,7 +173,7 @@ export default function BillingPage() {
                   </span>
                 )}
 
-                {isAdmin && !sub.billedExternally && sub.status !== 'canceled' && !sub.cancelAtPeriodEnd && (
+                {isAdmin && sub.billingMode !== 'EXTERNAL' && sub.status !== 'canceled' && !sub.cancelAtPeriodEnd && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -193,7 +193,26 @@ export default function BillingPage() {
               what a renewal conversation is about — but presenting them without
               this would read as a bill nobody sent.
             */}
-            {sub?.billedExternally && (
+            {/*
+              INVOICE mode: a real Stripe invoice, emailed and paid by transfer.
+              Distinct from EXTERNAL, which charges nothing at all — telling a
+              customer "nothing is charged automatically" when an invoice is on
+              its way is how a payment gets missed.
+            */}
+            {sub?.billingMode === 'INVOICE' && (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-medium text-foreground">
+                  {t('billing.byInvoice', 'Paid by invoice')}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t('billing.byInvoiceHint', 'We email an invoice each month, due within {{days}} days. No card is charged.', {
+                    days: sub.invoiceDueDays,
+                  })}
+                </p>
+              </div>
+            )}
+
+            {sub?.billingMode === 'EXTERNAL' && (
               <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                 <p className="text-sm font-medium text-foreground">
                   {t('billing.byAgreement', 'Billed by agreement')}
@@ -213,7 +232,7 @@ export default function BillingPage() {
               </div>
             )}
 
-            {bill && <BillBreakdown bill={bill} estimate={sub?.billedExternally} />}
+            {bill && <BillBreakdown bill={bill} estimate={sub?.billingMode === 'EXTERNAL'} />}
 
             <p className="text-xs text-muted-foreground">
               {t(
@@ -230,7 +249,7 @@ export default function BillingPage() {
               onSave={saveAddOns}
               onPortal={() => go(() => billingApi.portal(), 'portal')}
               portalBusy={busy === 'portal'}
-              showPortal={!sub?.billedExternally}
+              showPortal={sub?.billingMode !== 'EXTERNAL'}
             />
           )}
         </div>

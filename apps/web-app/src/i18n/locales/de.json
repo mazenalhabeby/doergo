@@ -6510,7 +6510,9 @@
       "perWorkspace": "Je Arbeitsbereich",
       "perPerson": "Je Person",
       "wholeOrg": "Ganze Organisation"
-    }
+    },
+    "byInvoice": "Zahlung per Rechnung",
+    "byInvoiceHint": "Wir senden monatlich eine Rechnung, zahlbar innerhalb von {{days}} Tagen. Es wird keine Karte belastet."
   },
   "assetKinds": {
     "title": "Objekte",

@@ -37,6 +37,10 @@ export interface SubscriptionView {
   billedExternally: boolean;
   /** Convenience: days left in trial (null if not trialing). */
   trialDaysLeft: number | null;
+  /** How this organization pays — card, invoice, or by agreement. */
+  billingMode: BillingMode;
+  /** Payment terms in INVOICE mode. Meaningless in the others. */
+  invoiceDueDays: number;
 }
 
 /**
@@ -69,4 +73,44 @@ export function trialDaysLeft(trialEndsAt: string | Date | null | undefined, now
   const end = typeof trialEndsAt === 'string' ? new Date(trialEndsAt) : trialEndsAt;
   const ms = end.getTime() - now.getTime();
   return ms <= 0 ? 0 : Math.ceil(ms / 86_400_000);
+}
+
+/**
+ * How an organization pays us.
+ *
+ * `billedExternally` was a boolean, so it could only say "charge the card" or
+ * "charge nothing at all". The case in between — a contract customer who still
+ * wants a proper, numbered, VAT-correct invoice — had no way to be expressed,
+ * and the workaround was to bill them nothing and send something by hand.
+ *
+ * INVOICE is not a second invoicing system. It is Stripe's own
+ * `collection_method: 'send_invoice'`: same subscription, same prices, same
+ * tax, same webhook. Only the collection differs, so nothing about the bill is
+ * hand-built and nothing can drift from what the screen shows.
+ */
+export const BILLING_MODES = ['AUTOMATIC', 'INVOICE', 'EXTERNAL'] as const;
+export type BillingMode = (typeof BILLING_MODES)[number];
+
+/** Does this mode put a subscription on Stripe at all? */
+export function billsThroughStripe(mode: BillingMode): boolean {
+  return mode === 'AUTOMATIC' || mode === 'INVOICE';
+}
+
+/** Stripe's collection method for a mode. Null when Stripe is not involved. */
+export function collectionMethodFor(mode: BillingMode): 'charge_automatically' | 'send_invoice' | null {
+  if (mode === 'AUTOMATIC') return 'charge_automatically';
+  if (mode === 'INVOICE') return 'send_invoice';
+  return null;
+}
+
+/**
+ * An organization must have somewhere to send an invoice before it can be put
+ * into INVOICE mode.
+ *
+ * Checked where the mode is SET rather than where the invoice is sent: a
+ * missing address discovered at billing time is an invoice nobody receives and
+ * a payment nobody makes, found a month later.
+ */
+export function modeRequiresBillingEmail(mode: BillingMode): boolean {
+  return mode === 'INVOICE';
 }

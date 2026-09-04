@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { StripeService } from '../billing/stripe.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success } from '@hbcfield/shared';
 
@@ -7,6 +8,10 @@ const ORG_SELECT = {
   id: true, name: true, planTier: true, subStatus: true, billingInterval: true,
   trialEndsAt: true, currentPeriodEnd: true, suspendedAt: true, usesExternalWorkers: true,
   isActive: true, createdAt: true, stripeCustomerId: true, addOns: true,
+  // How they pay. On the LIST, not only the detail: "who is on invoice?" is a
+  // question about the whole book, and answering it by opening organizations
+  // one at a time is how a contract customer gets missed at renewal.
+  billingMode: true, invoiceDueDays: true,
   // What this org was last billed. MRR reads THIS rather than recomputing from
   // a plan: with modules and usage there is no formula an operator console can
   // re-derive, and a second implementation of the bill is a second answer.
@@ -44,7 +49,12 @@ function orgMrrCents(org: { subscription?: { lastBilledCents: number } | null })
 @Injectable()
 export class PlatformAdminService {
   private readonly logger = new Logger(PlatformAdminService.name);
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    // Moving a live subscription between collection methods — the one thing on
+    // this console that reaches Stripe.
+    private readonly stripe: StripeService,
+  ) {}
 
   /**
    * Seats per org — one per active member, exactly as the invoice counts them.
@@ -131,6 +141,8 @@ export class PlatformAdminService {
           // the webhook's fallback; nothing reads it to decide access any more,
           // so the console reports the add-ons that do.
           addOns: (o as any).addOns ?? [],
+          billingMode: (o as any).billingMode ?? 'AUTOMATIC',
+          invoiceDueDays: (o as any).invoiceDueDays ?? 14,
           mrrCents: (o.subStatus ?? '').toLowerCase() === 'active' && !o.suspendedAt ? orgMrrCents(o) : 0,
         };
       }),
@@ -174,6 +186,84 @@ export class PlatformAdminService {
     await this.prisma.organization.update({ where: { id: org.id }, data: { suspendedAt: null } });
     this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) REACTIVATED by ${data.byUserId ?? 'operator'}`);
     return success({ id: org.id, suspendedAt: null });
+  }
+
+  /**
+   * How an organization pays us.
+   *
+   * The most consequential switch on this console, so it is written to be hard
+   * to use by accident:
+   *
+   *   • INVOICE is refused without a billing email. An invoice with nowhere to
+   *     go is discovered a month later, as a payment that never arrived —
+   *     checked where the mode is SET, not where the invoice is sent.
+   *   • A LIVE subscription is moved, not recreated. Its prices, history and
+   *     period stay put, so this is a billing decision rather than a migration,
+   *     and a customer mid-month is not re-charged.
+   *   • Stripe first, database second. If Stripe refuses, nothing is written
+   *     and the console still shows the truth; the reverse order would leave a
+   *     row claiming a collection method Stripe never accepted.
+   *   • `billedExternally` is written in step. Nothing reads it any more, but
+   *     reports and scripts do, and a boolean that silently stops tracking its
+   *     replacement is worse than one that is gone.
+   */
+  async setBillingMode(data: {
+    organizationId: string;
+    mode: 'AUTOMATIC' | 'INVOICE' | 'EXTERNAL';
+    invoiceDueDays?: number;
+    byUserId?: string;
+  }) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: {
+        id: true, name: true, billingMode: true, billingEmail: true, email: true,
+        invoiceDueDays: true, subscription: { select: { stripeSubscriptionId: true } },
+      },
+    });
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+
+    if (data.mode === 'INVOICE' && !(org.billingEmail || org.email)) {
+      return {
+        success: false,
+        statusCode: 400,
+        message: 'Set a billing email on this organization before invoicing it — there is nowhere to send the invoice.',
+      } as any;
+    }
+
+    // 1–365: a term of zero is due immediately (which is not an invoice) and a
+    // term of years is a data-entry slip nobody would notice.
+    const dueDays = Math.max(1, Math.min(365, Math.floor(data.invoiceDueDays ?? org.invoiceDueDays ?? 14)));
+
+    const subId = org.subscription?.stripeSubscriptionId;
+    const method = data.mode === 'AUTOMATIC' ? 'charge_automatically' : data.mode === 'INVOICE' ? 'send_invoice' : null;
+
+    if (subId && method && this.stripe.isConfigured) {
+      try {
+        await this.stripe.setCollectionMethod(subId, method, dueDays);
+      } catch (e) {
+        this.logger.error(`[PLATFORM] Stripe refused collection method ${method} for org ${org.id}: ${String(e)}`);
+        return {
+          success: false,
+          statusCode: 502,
+          message: `Stripe refused the change: ${e instanceof Error ? e.message : 'unknown error'}`,
+        } as any;
+      }
+    }
+
+    await this.prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        billingMode: data.mode,
+        invoiceDueDays: dueDays,
+        billedExternally: data.mode === 'EXTERNAL',
+      },
+    });
+
+    this.logger.warn(
+      `[PLATFORM] Org "${org.name}" (${org.id}) billing mode ${org.billingMode} → ${data.mode}` +
+        `${data.mode === 'INVOICE' ? ` (due in ${dueDays}d)` : ''} by ${data.byUserId ?? 'operator'}`,
+    );
+    return success({ id: org.id, billingMode: data.mode, invoiceDueDays: dueDays });
   }
 
   async extendTrial(data: { organizationId: string; days: number; byUserId?: string }) {

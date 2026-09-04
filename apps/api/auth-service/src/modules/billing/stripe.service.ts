@@ -203,8 +203,25 @@ export class StripeService {
     successUrl: string;
     cancelUrl: string;
     trialDays?: number;
+    /**
+     * INVOICE mode: Stripe issues the invoice and emails it, the customer pays
+     * by transfer, and Stripe marks it paid. `days_until_due` is the payment
+     * term and is REQUIRED by Stripe whenever the method is send_invoice.
+     */
+    collectionMethod?: 'charge_automatically' | 'send_invoice';
+    invoiceDueDays?: number;
   }): Promise<Stripe.Checkout.Session> {
     const priceIds = await this.resolvePriceIds(p.lines.map((l) => l.lookupKey));
+    const missing = p.lines.map((l) => l.lookupKey).filter((k) => !priceIds.get(k));
+    if (missing.length) {
+      // Same refusal as setSubscriptionQuantities: never build a line list
+      // around a price the account does not hold.
+      throw new Error(
+        `Stripe is missing ${missing.length} price(s): ${[...new Set(missing)].join(', ')}. ` +
+          'Run the catalogue sync before this organization can be billed.',
+      );
+    }
+    const invoiceMode = p.collectionMethod === 'send_invoice';
     return this.stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: p.customerId,
@@ -215,7 +232,36 @@ export class StripeService {
       tax_id_collection: { enabled: true },
       customer_update: { address: 'auto', name: 'auto' },
       automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },
-      ...(p.trialDays ? { subscription_data: { trial_period_days: p.trialDays } } : {}),
+      subscription_data: {
+        ...(p.trialDays ? { trial_period_days: p.trialDays } : {}),
+        ...(p.collectionMethod ? { collection_method: p.collectionMethod } : {}),
+        // Required by Stripe for send_invoice, and meaningless without it.
+        ...(invoiceMode ? { days_until_due: Math.max(1, p.invoiceDueDays ?? 14) } : {}),
+      },
+    });
+  }
+
+  /**
+   * Move a live subscription between collection methods.
+   *
+   * Switching an existing customer rather than re-checking them out: the
+   * subscription, its prices and its history stay put, which is what makes this
+   * a billing decision rather than a migration.
+   *
+   * `days_until_due` must be SET when moving to send_invoice and CLEARED when
+   * moving away — Stripe rejects the pair being inconsistent, and a stale term
+   * left behind is the kind of thing only an angry customer discovers.
+   */
+  async setCollectionMethod(
+    subscriptionId: string,
+    method: 'charge_automatically' | 'send_invoice',
+    invoiceDueDays = 14,
+  ): Promise<void> {
+    await this.stripe.subscriptions.update(subscriptionId, {
+      collection_method: method,
+      ...(method === 'send_invoice'
+        ? { days_until_due: Math.max(1, invoiceDueDays) }
+        : { days_until_due: null as unknown as undefined }),
     });
   }
 

@@ -426,7 +426,17 @@ model Organization {
   /// Stripe subscription, and checkout refuses. The bill is still COMPUTED and
   /// shown, because it is what the contract conversation is about — it is just
   /// labelled as an estimate rather than presented as a charge.
+  ///
+  /// ⚠️ SUPERSEDED by `billingMode`, and kept in step with it rather than read.
+  /// It is still written on every mode change so any query, report or script
+  /// against it keeps telling the truth; new code asks `billingMode`. Dropping
+  /// it is a separate change from introducing the enum.
   billedExternally  Boolean            @default(false)
+  /// HOW this organization pays. See BillingMode.
+  billingMode       BillingMode        @default(AUTOMATIC)
+  /// Payment terms for INVOICE mode — days from issue until due. Ignored in
+  /// every other mode. Stripe enforces it and chases what is overdue.
+  invoiceDueDays    Int                @default(14)
   subStatus         SubscriptionStatus @default(TRIALING)
   billingInterval   BillingInterval    @default(MONTHLY)
   trialEndsAt       DateTime?
@@ -3641,6 +3651,24 @@ enum PlanTier {
   PROFESSIONAL
   BUSINESS
   ENTERPRISE
+}
+
+/// How an organization pays us.
+///
+/// One column, three answers, because "do we charge this customer's card?" was
+/// previously a boolean that could only say yes or not-at-all — and the useful
+/// middle case, a contract customer who still wants a proper invoice, had no way
+/// to be expressed.
+enum BillingMode {
+  /// Card on file, charged each month. The self-serve default.
+  AUTOMATIC
+  /// Stripe issues a real invoice and emails it; the customer pays by transfer
+  /// and Stripe marks it paid. Same subscription, same prices, same tax — only
+  /// the collection method differs, so nothing about the bill is hand-built.
+  INVOICE
+  /// Nothing is charged and no invoice is raised. The bill is still computed and
+  /// shown at list price, for the renewal conversation.
+  EXTERNAL
 }
 
 enum SubscriptionStatus {

@@ -1,9 +1,9 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
-import { ADD_ON_KEYS, isAddOn } from '@hbcfield/shared';
+import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode } from '@hbcfield/shared';
 
 /**
  * PLATFORM Control Center (company super-admin). `@Public()` skips the customer
@@ -66,6 +66,38 @@ export class PlatformAdminController {
   @Post('orgs/:id/reactivate')
   @RequirePlatformPerm('manageOrgs')
   async reactivate(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) })); }
+
+  /**
+   * How this organization pays: card, invoice, or by agreement.
+   *
+   * The most consequential control on this console. Moving an organization TO
+   * automatic starts charging a real customer's card; moving one away stops
+   * revenue arriving. So it takes an explicit mode rather than a toggle, the
+   * service refuses a mode the organization cannot support, and every change is
+   * written to the audit log with who did it.
+   */
+  @Post('orgs/:id/billing-mode')
+  @RequirePlatformPerm('manageOrgs')
+  async setBillingMode(
+    @Param('id') id: string,
+    @Body() body: { mode?: string; invoiceDueDays?: number },
+    @Request() req: any,
+  ) {
+    const mode = String(body?.mode ?? '').toUpperCase();
+    // Validated here as well as in the service: an unknown mode must never
+    // reach a Stripe call, and the enum is the whole safety of this endpoint.
+    if (!BILLING_MODES.includes(mode as BillingMode)) {
+      throw new BadRequestException(`mode must be one of ${BILLING_MODES.join(', ')}`);
+    }
+    return this.unwrap(
+      await this.svc.setBillingMode({
+        organizationId: id,
+        mode: mode as BillingMode,
+        invoiceDueDays: Number(body?.invoiceDueDays) || undefined,
+        byUserId: this.actor(req),
+      }),
+    );
+  }
 
   /**
    * Grant an organization its capabilities. Replaces setting a tier — a

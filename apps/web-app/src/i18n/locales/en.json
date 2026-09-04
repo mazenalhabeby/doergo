@@ -6510,7 +6510,9 @@
       "perWorkspace": "Per workspace",
       "perPerson": "Per person",
       "wholeOrg": "Whole organization"
-    }
+    },
+    "byInvoice": "Paid by invoice",
+    "byInvoiceHint": "We email an invoice each month, due within {{days}} days. No card is charged."
   },
   "assetKinds": {
     "title": "Assets",

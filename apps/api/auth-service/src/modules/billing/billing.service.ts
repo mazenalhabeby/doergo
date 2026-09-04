@@ -10,6 +10,8 @@ import {
   isAddOn,
   ADD_ON_KEYS,
   DEFAULT_ORG_MODULES,
+  collectionMethodFor,
+  type BillingMode,
   countSeats,
   subscriptionTotalCents,
   isLocked,
@@ -409,6 +411,8 @@ export class BillingService {
       locked: isLocked(status),
       trialDaysLeft: trialDaysLeft(org.trialEndsAt, new Date()),
       billedExternally: org.billedExternally,
+      billingMode: org.billingMode as BillingMode,
+      invoiceDueDays: org.invoiceDueDays,
     };
     return ok(view);
   }
@@ -431,7 +435,16 @@ export class BillingService {
     if (!this.stripe.isConfigured) return fail(HttpStatus.SERVICE_UNAVAILABLE, 'Billing is not configured');
     const org = await this.prisma.organization.findUnique({ where: { id: organizationId } });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
-    if (org.billedExternally) {
+    /*
+      EXTERNAL is the only mode with nothing to check out.
+
+      INVOICE still goes through Checkout — Stripe needs the subscription, the
+      tax details and the VAT id exactly as it does for a card; it simply
+      collects by sending an invoice afterwards instead of charging. Refusing
+      here on `billedExternally` would have blocked that, which is why the mode
+      is read rather than the old boolean.
+    */
+    if (org.billingMode === 'EXTERNAL') {
       return fail(HttpStatus.CONFLICT, 'This organization is billed by agreement — talk to us rather than paying by card.');
     }
 
@@ -467,6 +480,14 @@ export class BillingService {
       successUrl,
       cancelUrl,
       ...(trialDays > 0 ? { trialDays } : {}),
+      // Server-side from the organization's own record — a client cannot ask to
+      // be invoiced instead of charged.
+      ...(collectionMethodFor(org.billingMode as BillingMode)
+        ? {
+            collectionMethod: collectionMethodFor(org.billingMode as BillingMode)!,
+            invoiceDueDays: org.invoiceDueDays,
+          }
+        : {}),
     });
 
     await this.prisma.subscription.updateMany({
@@ -537,7 +558,12 @@ export class BillingService {
       them the computed amount. Refusing here means that cannot happen by
       accident, only by deliberately clearing the flag.
     */
-    if (org?.billedExternally) return ok(bill);
+    /*
+      EXTERNAL never reaches Stripe. INVOICE does — its subscription is real and
+      must track seats and modules like any other; the difference is only how it
+      is collected, which is set on the subscription itself.
+    */
+    if (org?.billingMode === 'EXTERNAL') return ok(bill);
 
     const sub = org?.subscription;
     if (!sub) return ok(bill);
