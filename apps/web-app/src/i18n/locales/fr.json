@@ -6529,7 +6529,8 @@
       "wholeOrg": "Toute l’organisation"
     },
     "byInvoice": "Paiement sur facture",
-    "byInvoiceHint": "Nous envoyons une facture chaque mois, payable sous {{days}} jours. Aucune carte n’est débitée."
+    "byInvoiceHint": "Nous envoyons une facture chaque mois, payable sous {{days}} jours. Aucune carte n’est débitée.",
+    "subscribe": "Configurer le paiement"
   },
   "assetKinds": {
     "title": "Biens",

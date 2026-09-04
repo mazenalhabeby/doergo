@@ -250,6 +250,18 @@ export default function BillingPage() {
               onPortal={() => go(() => billingApi.portal(), 'portal')}
               portalBusy={busy === 'portal'}
               showPortal={sub?.billingMode !== 'EXTERNAL'}
+              onSubscribe={() => go(() => billingApi.checkout(), 'checkout')}
+              subscribeBusy={busy === 'checkout'}
+              /*
+                No subscription on Stripe yet. `totalCents` is null until one
+                exists — the same signal the Portal fails on, read here to
+                offer the action that creates one instead of the one that
+                cannot work without it.
+
+                EXTERNAL is excluded: a contract customer has nothing to check
+                out, and the server refuses it anyway.
+              */
+              needsSubscription={sub?.billingMode !== 'EXTERNAL' && sub?.totalCents == null}
             />
           )}
         </div>

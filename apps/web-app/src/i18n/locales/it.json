@@ -6529,7 +6529,8 @@
       "wholeOrg": "Intera organizzazione"
     },
     "byInvoice": "Pagamento con fattura",
-    "byInvoiceHint": "Inviamo una fattura ogni mese, con scadenza a {{days}} giorni. Nessuna carta viene addebitata."
+    "byInvoiceHint": "Inviamo una fattura ogni mese, con scadenza a {{days}} giorni. Nessuna carta viene addebitata.",
+    "subscribe": "Configura il pagamento"
   },
   "assetKinds": {
     "title": "Beni",

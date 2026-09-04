@@ -6520,7 +6520,8 @@
       "wholeOrg": "Whole organization"
     },
     "byInvoice": "Paid by invoice",
-    "byInvoiceHint": "We email an invoice each month, due within {{days}} days. No card is charged."
+    "byInvoiceHint": "We email an invoice each month, due within {{days}} days. No card is charged.",
+    "subscribe": "Set up payment"
   },
   "assetKinds": {
     "title": "Assets",

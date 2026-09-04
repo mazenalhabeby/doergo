@@ -102,3 +102,42 @@ describe('the options rail', () => {
     expect(src).toMatch(/<Dialog open=\{open\}/);
   });
 });
+
+describe('an organization with no subscription can start one', () => {
+  const rail = fs.readFileSync(
+    path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/_components/options-rail.tsx'),
+    'utf8',
+  );
+  const page = fs.readFileSync(
+    path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/page.tsx'),
+    'utf8',
+  );
+
+  it('offers checkout, which nothing in the product used to call', () => {
+    /*
+      `POST /billing/checkout` existed on the server and `billingApi.checkout()`
+      in the client, and no screen ever invoked either. An organization on a
+      card plan could not begin paying — which is why no real card payment had
+      ever completed, and why the Portal button could only ever answer "No
+      billing account yet".
+    */
+    expect(page).toContain('billingApi.checkout()');
+    expect(rail).toContain('needsSubscription');
+  });
+
+  it('shows it only while there is no subscription', () => {
+    // `totalCents` is null until Stripe has one — the same signal the Portal
+    // fails on, used to offer the action that fixes it.
+    expect(page).toContain('sub?.totalCents == null');
+  });
+
+  it('never offers it to a contract customer', () => {
+    // EXTERNAL has nothing to check out and the server refuses it, so the
+    // button must not appear and then fail.
+    expect(page).toMatch(/needsSubscription=\{sub\?\.billingMode !== 'EXTERNAL'/);
+  });
+
+  it('hides the Portal until there is something for it to manage', () => {
+    expect(rail).toContain('showPortal && !needsSubscription');
+  });
+});

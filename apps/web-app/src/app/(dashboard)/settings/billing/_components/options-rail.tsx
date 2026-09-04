@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, ExternalLink, Loader2, Puzzle } from 'lucide-react';
+import { Check, CreditCard, ExternalLink, Loader2, Puzzle } from 'lucide-react';
 import { addOnDef, addOnI18n, formatCents, type OrgCostBreakdown } from '@hbcfield/shared/client';
 
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,18 @@ export function OptionsRail({
   onPortal,
   portalBusy,
   showPortal,
+  onSubscribe,
+  subscribeBusy,
+  /**
+   * No Stripe subscription yet — so there is nothing for the Customer Portal to
+   * manage, and the button that opens it can only say "No billing account yet".
+   *
+   * The action that FIXES that had no button at all: `POST /billing/checkout`
+   * existed on the server, `billingApi.checkout()` existed in the client, and
+   * nothing in the product ever called either. An organization on a card plan
+   * could not start paying, which is why no real payment had ever completed.
+   */
+  needsSubscription,
 }: {
   bill: OrgCostBreakdown;
   isAdmin: boolean;
@@ -43,6 +55,9 @@ export function OptionsRail({
   portalBusy: boolean;
   /** Hidden for a contract customer — there is no Stripe portal to open. */
   showPortal: boolean;
+  onSubscribe: () => void;
+  subscribeBusy: boolean;
+  needsSubscription: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -111,10 +126,31 @@ export function OptionsRail({
         )}
 
         <div className="space-y-2 border-t border-border p-3">
-          <Button className="w-full" size="sm" disabled={!isAdmin} onClick={() => setOpen(true)}>
+          {/*
+            Start paying — the first thing an organization on a card plan needs
+            and the one action the page never offered. Shown only while there is
+            no subscription; once there is one, the Portal below manages it.
+          */}
+          {needsSubscription && (
+            <Button className="w-full" size="sm" disabled={!isAdmin || subscribeBusy} onClick={onSubscribe}>
+              {subscribeBusy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CreditCard className="mr-2 h-4 w-4" />
+              )}
+              {t('billing.subscribe', 'Set up payment')}
+            </Button>
+          )}
+          <Button
+            className="w-full"
+            size="sm"
+            variant={needsSubscription ? 'outline' : 'default'}
+            disabled={!isAdmin}
+            onClick={() => setOpen(true)}
+          >
             {t('billing.addOns.change', 'Change options')}
           </Button>
-          {showPortal && (
+          {showPortal && !needsSubscription && (
             <Button variant="outline" className="w-full" size="sm" disabled={!isAdmin || portalBusy} onClick={onPortal}>
               {portalBusy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -6520,7 +6520,8 @@
       "wholeOrg": "Ganze Organisation"
     },
     "byInvoice": "Zahlung per Rechnung",
-    "byInvoiceHint": "Wir senden monatlich eine Rechnung, zahlbar innerhalb von {{days}} Tagen. Es wird keine Karte belastet."
+    "byInvoiceHint": "Wir senden monatlich eine Rechnung, zahlbar innerhalb von {{days}} Tagen. Es wird keine Karte belastet.",
+    "subscribe": "Zahlung einrichten"
   },
   "assetKinds": {
     "title": "Objekte",
