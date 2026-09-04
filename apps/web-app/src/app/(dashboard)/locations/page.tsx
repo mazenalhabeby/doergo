@@ -21,6 +21,7 @@ import {
   Share2,
   Check,
   X,
+  Inbox,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { AVAILABLE_MODULES, canManageSpace } from "@hbcfield/shared/client"
@@ -348,6 +349,21 @@ const SpaceCard = memo(function SpaceCard({
             >
               {space.isActive ? t("common.active") : t("locations.archived", "Archived")}
             </Badge>
+            {/*
+              Which workspace catches work belonging to no particular one.
+
+              On the LIST, not only inside the space: it is a property of the
+              ORGANIZATION — exactly one space has it — and a fact about the set
+              is unreadable when it is only visible one card at a time. It is
+              also what makes a space undeletable, so seeing it here explains a
+              refusal before somebody meets it.
+            */}
+            {space.isDefault && (
+              <Badge variant="outline" className="gap-1 text-xs font-medium border-primary/30 bg-primary/10 text-primary">
+                <Inbox className="h-3 w-3" />
+                {t("locations.default.badge", "Default")}
+              </Badge>
+            )}
             {/* Ownership kind — badge the non-default kinds (COMPANY is implicit). */}
             {space.kind === "CUSTOMER" && (
               <Badge variant="outline" className="gap-1 text-xs font-medium border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
