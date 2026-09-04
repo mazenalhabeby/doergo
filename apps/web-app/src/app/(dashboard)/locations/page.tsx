@@ -38,6 +38,7 @@ import {
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useBillingLock } from "@/hooks/use-billing-lock"
 import { SpaceForm } from "./_components/space-form"
 import {
   Dialog,
@@ -82,6 +83,7 @@ function getModuleLabel(key: string): string {
 // ============================================================================
 
 export default function SpacesPage() {
+  const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -148,7 +150,21 @@ export default function SpacesPage() {
                   {resyncAllMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   <span className="hidden sm:inline">{t("locations.resyncAllTasks")}</span>
                 </Button>
-                <Button onClick={() => setCreateOpen(true)} data-tour="spaces-create" className="h-10 gap-2 rounded-xl shadow-sm">
+                {/*
+                  Disabled while the account is read-only.
+
+                  A workspace is the thing modules are billed AGAINST, so this
+                  is the write most worth refusing before the dialog: somebody
+                  naming a space and picking its modules, only to be told at
+                  submit that nothing can be saved.
+                */}
+                <Button
+                  disabled={billingLocked}
+                  title={billingLocked ? billingLockReason : undefined}
+                  onClick={() => setCreateOpen(true)}
+                  data-tour="spaces-create"
+                  className="h-10 gap-2 rounded-xl shadow-sm"
+                >
                   <Plus className="h-4 w-4" />
                   {t("locations.newSpace")}
                 </Button>
@@ -190,7 +206,7 @@ export default function SpacesPage() {
             ))}
           </div>
         ) : locations.length === 0 ? (
-          <EmptyState onCreateClick={() => setCreateOpen(true)} isAdmin={isAdmin} />
+          <EmptyState onCreateClick={() => setCreateOpen(true)} isAdmin={isAdmin} locked={billingLocked} lockReason={billingLockReason} />
         ) : (
           <div className="grid gap-4">
             {locations.map((location, index) => (
@@ -260,7 +276,22 @@ export default function SpacesPage() {
 // EMPTY STATE
 // ============================================================================
 
-function EmptyState({ onCreateClick, isAdmin }: { onCreateClick: () => void; isAdmin: boolean }) {
+/*
+  The empty state offers the same action as the header, so it obeys the same
+  rule. A control disabled in one place and live in another is worse than one
+  that is live everywhere: it looks like a bug rather than a policy.
+*/
+function EmptyState({
+  onCreateClick,
+  isAdmin,
+  locked,
+  lockReason,
+}: {
+  onCreateClick: () => void;
+  isAdmin: boolean;
+  locked?: boolean;
+  lockReason?: string;
+}) {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -272,7 +303,7 @@ function EmptyState({ onCreateClick, isAdmin }: { onCreateClick: () => void; isA
         {t("locations.empty.description")}
       </p>
       {isAdmin && (
-        <Button onClick={onCreateClick} className="mt-6 gap-2">
+        <Button onClick={onCreateClick} disabled={locked} title={locked ? lockReason : undefined} className="mt-6 gap-2">
           <Plus className="h-4 w-4" />
           {t("locations.createSpace")}
         </Button>

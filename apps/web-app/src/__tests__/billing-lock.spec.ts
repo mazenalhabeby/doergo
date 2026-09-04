@@ -54,6 +54,9 @@ describe('the surfaces that refuse before the typing', () => {
     ['New Task', 'src/app/(dashboard)/tasks/page.tsx'],
     ['Clock in', 'src/components/clock-widget.tsx'],
     ['Add member', 'src/app/(dashboard)/members/page.tsx'],
+    // A workspace is what modules are billed AGAINST, so this is the write
+    // most worth refusing before somebody names a space and picks its modules.
+    ['New Workspace', 'src/app/(dashboard)/locations/page.tsx'],
   ])('%s is disabled while the account is read-only', (_name, file) => {
     const src = read(file);
     expect(src).toContain('useBillingLock');
