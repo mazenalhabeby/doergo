@@ -323,6 +323,7 @@ export class PlatformAdminService {
       where: { id: data.organizationId },
       select: {
         id: true, name: true, billingMode: true, billingEmail: true, email: true,
+        stripeCustomerId: true,
         invoiceDueDays: true, subscription: { select: { stripeSubscriptionId: true } },
       },
     });
@@ -342,6 +343,29 @@ export class PlatformAdminService {
 
     const subId = org.subscription?.stripeSubscriptionId;
     const method = data.mode === 'AUTOMATIC' ? 'charge_automatically' : data.mode === 'INVOICE' ? 'send_invoice' : null;
+
+    /*
+      Moving to CARD needs a card.
+
+      Stripe accepts the switch whether or not one exists, and then the next
+      invoice fails and the organization lands in past_due — days later, for a
+      change an operator made on their behalf, announced by a dunning email.
+
+      An invoice customer has never been asked for one: their flow deliberately
+      collects no payment method. So this is the normal case, not the edge one,
+      and it is refused with the thing that fixes it.
+    */
+    if (data.mode === 'AUTOMATIC' && subId && org.stripeCustomerId && this.stripe.isConfigured) {
+      const payable = await this.stripe.hasPaymentMethod(org.stripeCustomerId).catch(() => true);
+      if (!payable) {
+        return {
+          success: false,
+          statusCode: 400,
+          message:
+            'This organization has no card on file, so charging automatically would fail at the next invoice. Ask an admin to add one from Billing → Payment & invoices first.',
+        } as any;
+      }
+    }
 
     if (subId && method && this.stripe.isConfigured) {
       try {

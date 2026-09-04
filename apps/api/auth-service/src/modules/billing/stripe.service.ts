@@ -293,12 +293,38 @@ export class StripeService {
     method: 'charge_automatically' | 'send_invoice',
     invoiceDueDays = 14,
   ): Promise<void> {
+    /*
+      ⚠️ `days_until_due` is OMITTED when moving to charge_automatically, not
+      set to null. Null is rejected — "Invalid integer" — and the comment that
+      used to sit here claimed it had to be CLEARED, which is what sent a null.
+
+      Stripe drops the term itself when the collection method stops being
+      send_invoice; the field is only valid alongside it.
+    */
     await this.stripe.subscriptions.update(subscriptionId, {
       collection_method: method,
-      ...(method === 'send_invoice'
-        ? { days_until_due: Math.max(1, invoiceDueDays) }
-        : { days_until_due: null as unknown as undefined }),
+      ...(method === 'send_invoice' ? { days_until_due: Math.max(1, invoiceDueDays) } : {}),
     });
+  }
+
+  /**
+   * Can this customer actually be charged?
+   *
+   * Moving to card is accepted by Stripe whether or not one exists — and then
+   * the next invoice fails and the organization lands in past_due, days later,
+   * for a change an operator made on their behalf. Asked BEFORE the switch so
+   * the refusal names the cause instead of a dunning email doing it.
+   */
+  async hasPaymentMethod(customerId: string): Promise<boolean> {
+    const customer = await this.stripe.customers.retrieve(customerId, {
+      expand: ['invoice_settings.default_payment_method'],
+    });
+    if ((customer as Stripe.DeletedCustomer).deleted) return false;
+    const c = customer as Stripe.Customer;
+    if (c.invoice_settings?.default_payment_method) return true;
+    if (c.default_source) return true;
+    const methods = await this.stripe.paymentMethods.list({ customer: customerId, limit: 1 });
+    return methods.data.length > 0;
   }
 
   // ── C3 pricing-sync primitives ──────────────────────────────────────────────

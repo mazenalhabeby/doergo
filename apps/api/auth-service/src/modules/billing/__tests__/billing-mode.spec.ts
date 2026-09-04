@@ -134,6 +134,35 @@ describe('the collection method is applied where it can be', () => {
     expect(stripe).toContain('if (differs)');
   });
 
+  it('omits the payment term when moving to card, rather than nulling it', () => {
+    /*
+      Stripe rejects `days_until_due: null` with "Invalid integer" — which is
+      what an operator saw converting an invoice customer to card. The field is
+      only valid alongside send_invoice; Stripe drops the term itself when the
+      collection method changes, so it is omitted, not cleared.
+    */
+    const stripe = read('../stripe.service.ts');
+    expect(stripe).not.toContain('days_until_due: null');
+    expect(stripe).toContain("method === 'send_invoice' ? { days_until_due:");
+  });
+
+  it('refuses a switch to card when there is no card', () => {
+    /*
+      Stripe accepts it either way, and the next invoice then fails — days
+      later, for a change an operator made on the customer's behalf, announced
+      by a dunning email.
+
+      An invoice customer has NEVER been asked for a card: their flow
+      deliberately collects none. So this is the normal case, not the edge one.
+    */
+    const svc = read('../../platform-admin/platform-admin.service.ts');
+    expect(svc).toContain('hasPaymentMethod');
+    expect(svc).toContain('no card on file');
+    // Never block the switch because Stripe was unreachable — default to
+    // allowing it and let the dunning process be the backstop.
+    expect(svc).toContain('.catch(() => true)');
+  });
+
   it('records the subscription immediately, not on the webhook', () => {
     /*
       `stripeSubscriptionId` and the status are what the page reads to choose
