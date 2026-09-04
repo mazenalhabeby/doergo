@@ -9,8 +9,8 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
-import { RequirePermission } from '../../common/decorators';
+import { Role, spacesGranting, isAdmin } from '@hbcfield/shared';
+import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { CreateRecurringTaskDto, UpdateRecurringTaskDto } from './dto';
@@ -24,11 +24,22 @@ export class RecurringTasksController {
   constructor(private readonly recurringTasksService: RecurringTasksService) {}
 
   @Get()
-  @RequirePermission('canViewAllTasks')
+  /*
+    Space-aware. A template names the space its tasks are created in, so the
+    repeating work at a site is part of running it — and the gate asked the
+    org-wide column, so a supervisor saw none of it.
+
+    Narrowed in the query on the indexed `spaceId`. undefined = org-wide;
+    [] = granted nowhere and matches nothing.
+  */
+  @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: 'List organization recurring task templates' })
   async findAll(@Request() req: any) {
     return this.recurringTasksService.findAll({
       organizationId: req.user.organizationId,
+      scopeSpaceIds: isAdmin(req.user)
+        ? undefined
+        : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
     });
   }
 

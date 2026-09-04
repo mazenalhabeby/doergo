@@ -1,11 +1,15 @@
 export class GetEmployeeStatsDto {
   id: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
 }
 
 export class GetEmployeePerformanceDto {
   id: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   startDate?: string;
   endDate?: string;
 }
@@ -13,6 +17,8 @@ export class GetEmployeePerformanceDto {
 export class GetEmployeeTaskHistoryDto {
   id: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   status?: string;
   page?: number;
   limit?: number;
@@ -33,6 +39,8 @@ export interface ScheduleEntryInput {
 export class SetScheduleDto {
   technicianId: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   requesterId: string;
   schedule: ScheduleEntryInput[];
 }
@@ -40,6 +48,8 @@ export class SetScheduleDto {
 export class GetScheduleDto {
   technicianId: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
 }
 
 // ===========================
@@ -49,6 +59,8 @@ export class GetScheduleDto {
 export class RequestTimeOffDto {
   technicianId: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   startDate: string; // ISO date string
   endDate: string; // ISO date string
   reason?: string;
@@ -57,17 +69,23 @@ export class RequestTimeOffDto {
 export class GetTimeOffDto {
   technicianId: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 }
 
 export class GetOrgTimeOffDto {
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 }
 
 export class ApproveTimeOffDto {
   timeOffId: string;
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   approverId: string;
   approved: boolean;
   rejectionReason?: string;
@@ -84,6 +102,8 @@ export class CancelTimeOffDto {
 
 export class GetAvailabilityDto {
   organizationId: string;
+  /** Spaces the caller may read; undefined = org-wide, [] = none. */
+  scopeSpaceIds?: string[];
   date?: string; // Specific date (defaults to today)
   startDate?: string; // For range query
   endDate?: string; // For range query

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request, For
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { RequirePermission } from '@hbcfield/shared';
+import { RequirePermission, RequirePermissionInSpace, spacesGranting, isAdmin } from '@hbcfield/shared';
 
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
@@ -38,9 +38,19 @@ export class SpaceUnitsController {
   }
 
   @Get()
-  @RequirePermission('canViewAllTasks')
+  /*
+    Space-aware. The units of a site are part of running it, and the gate asked
+    the org-wide column — so a supervisor could not list the flats at their own
+    site. The space is named in the path, so the check completes here with no
+    lookup: `null` = org-wide, `[]` = granted nowhere and matches nothing.
+  */
+  @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: "The space's apartments / units" })
   async list(@Param('spaceId') spaceId: string, @Request() req: any) {
+    const scope = isAdmin(req.user) ? null : spacesGranting(req.user?.access, 'canViewAllTasks');
+    if (scope !== null && !scope.includes(spaceId)) {
+      throw new ForbiddenException('You do not have access to this workspace');
+    }
     await this.requireModule(spaceId, req.user.organizationId);
     return this.auth('portal_list_space_units', { organizationId: req.user.organizationId, spaceId });
   }
@@ -100,17 +110,19 @@ export class UnitDetailController {
   constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
 
   @Get(':id')
-  @RequirePermission('canViewAllTasks')
+  // Space-aware; the unit carries its own space, so the service is the boundary.
+  @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: 'Get one apartment / unit with its resident' })
   get(@Param('id') id: string, @Request() req: any) {
-    return firstValueFrom(this.authClient.send({ cmd: 'portal_get_unit' }, { id, organizationId: req.user.organizationId }));
+    return firstValueFrom(this.authClient.send({ cmd: 'portal_get_unit' }, { id, organizationId: req.user.organizationId, scopeSpaceIds: isAdmin(req.user) ? undefined : spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined }));
   }
 
   @Get(':id/activities')
-  @RequirePermission('canViewAllTasks')
+  // Space-aware; the unit carries its own space, so the service is the boundary.
+  @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: "An apartment's activity timeline (notes + system events)" })
   activities(@Param('id') id: string, @Request() req: any) {
-    return firstValueFrom(this.authClient.send({ cmd: 'portal_list_unit_activities' }, { id, organizationId: req.user.organizationId }));
+    return firstValueFrom(this.authClient.send({ cmd: 'portal_list_unit_activities' }, { id, organizationId: req.user.organizationId, scopeSpaceIds: isAdmin(req.user) ? undefined : spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined }));
   }
 
   @Post(':id/activities')

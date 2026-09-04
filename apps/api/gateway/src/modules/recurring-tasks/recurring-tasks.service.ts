@@ -14,7 +14,7 @@ export class RecurringTasksService extends BaseGatewayService {
     super(taskClient, RecurringTasksService.name);
   }
 
-  async findAll(data: { organizationId: string }) {
+  async findAll(data: { organizationId: string; scopeSpaceIds?: string[] }) {
     return this.send({ cmd: 'find_all_recurring_tasks' }, data);
   }
 

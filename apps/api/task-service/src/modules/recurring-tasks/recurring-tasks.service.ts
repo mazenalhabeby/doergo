@@ -40,9 +40,19 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
   /**
    * List all recurring task templates for an organization
    */
-  async findAll(data: { organizationId: string; limit?: number; offset?: number }) {
+  async findAll(data: { organizationId: string; limit?: number; offset?: number; scopeSpaceIds?: string[] }) {
     const templates = await this.prisma.recurringTaskTemplate.findMany({
-      where: { organizationId: data.organizationId },
+      where: {
+        organizationId: data.organizationId,
+        /*
+          A space-granted caller sees the templates for their own spaces. In the
+          query on the indexed `spaceId`, not filtered afterwards.
+
+          undefined adds nothing (org-wide). `[]` — granted nowhere — becomes
+          `in: []`, which matches nothing, and that is the intended answer.
+        */
+        ...(data.scopeSpaceIds === undefined ? {} : { spaceId: { in: data.scopeSpaceIds } }),
+      },
       orderBy: { createdAt: 'desc' },
       take: data.limit || 100,
       skip: data.offset || 0,

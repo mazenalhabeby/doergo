@@ -44,12 +44,12 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_get_unit' })
-  getUnit(@Payload() data: { id: string; organizationId: string }) {
+  getUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
     return this.portalService.getUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_unit_activities' })
-  listUnitActivities(@Payload() data: { id: string; organizationId: string }) {
+  listUnitActivities(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
     return this.portalService.listUnitActivities(data);
   }
 

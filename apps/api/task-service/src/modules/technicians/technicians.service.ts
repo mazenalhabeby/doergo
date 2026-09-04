@@ -1,3 +1,4 @@
+import { assertMemberInScope } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService, TaskStatus, success } from '@hbcfield/shared';
 import {
@@ -22,6 +23,13 @@ export class TechniciansService {
    * Get basic stats for an employee
    */
   async getStats(dto: GetEmployeeStatsDto) {
+    // A space-granted caller may only read their own crew. The route takes a
+    // member id straight from the caller, so this is the boundary.
+    await assertMemberInScope(this.prisma, {
+      userId: dto.id,
+      organizationId: dto.organizationId,
+      scopeSpaceIds: (dto as { scopeSpaceIds?: string[] }).scopeSpaceIds,
+    });
     const { id, organizationId } = dto;
 
     // Aggregate in the DB instead of loading every task and counting in JS (M5).
@@ -74,6 +82,13 @@ export class TechniciansService {
    * Get detailed performance metrics for an employee
    */
   async getPerformance(dto: GetEmployeePerformanceDto) {
+    // A space-granted caller may only read their own crew. The route takes a
+    // member id straight from the caller, so this is the boundary.
+    await assertMemberInScope(this.prisma, {
+      userId: dto.id,
+      organizationId: dto.organizationId,
+      scopeSpaceIds: (dto as { scopeSpaceIds?: string[] }).scopeSpaceIds,
+    });
     const { id, organizationId, startDate, endDate } = dto;
 
     // Default to last 30 days if no date range provided
@@ -187,6 +202,13 @@ export class TechniciansService {
    * Get task history for an employee
    */
   async getTaskHistory(dto: GetEmployeeTaskHistoryDto) {
+    // A space-granted caller may only read their own crew. The route takes a
+    // member id straight from the caller, so this is the boundary.
+    await assertMemberInScope(this.prisma, {
+      userId: dto.id,
+      organizationId: dto.organizationId,
+      scopeSpaceIds: (dto as { scopeSpaceIds?: string[] }).scopeSpaceIds,
+    });
     const { id, organizationId, status, page = 1, limit = 20 } = dto;
 
     const where: any = {

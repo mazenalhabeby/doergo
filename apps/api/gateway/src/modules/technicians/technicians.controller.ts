@@ -55,7 +55,16 @@ export class EmployeesController {
   @Get()
   @ApiOperation({ summary: 'List employees with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Employees list retrieved' })
-  @RequirePermission('canViewAllTasks')
+  /*
+    Space-aware. "View all tasks" held by a SPACE role means all of that
+    space's work — and its people. Asking the org-wide column refused a
+    supervisor the roster of the site they run.
+
+    The scope narrows the QUERY, not its result: this route is counted and
+    paged, so a filter applied afterwards would leave `total` describing a
+    different set than the page.
+  */
+  @RequirePermissionInSpace('canViewAllTasks')
   async listEmployees(
     @Query() query: ListEmployeesDto,
     @CurrentUser() user: CurrentUserData,
@@ -66,6 +75,8 @@ export class EmployeesController {
         {
           ...query,
           organizationId: user.organizationId,
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
         },
       ),
     );
@@ -78,7 +89,7 @@ export class EmployeesController {
   @Get('availability')
   @ApiOperation({ summary: 'Get all employees availability for a date or date range' })
   @ApiResponse({ status: 200, description: 'Availability retrieved' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   async getAvailability(
     @Query('date') date?: string,
     @Query('startDate') startDate?: string,
@@ -103,6 +114,8 @@ export class EmployeesController {
       this.taskClient.send(
         { cmd: 'get_technicians_availability' },
         {
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           organizationId: user?.organizationId,
           date,
           startDate,
@@ -331,7 +344,7 @@ export class EmployeesController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Employee detail retrieved' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeDetail(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -381,7 +394,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee basic task stats' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Stats retrieved' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeStats(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -391,6 +404,8 @@ export class EmployeesController {
       this.taskClient.send(
         { cmd: 'get_technician_stats' },
         {
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           id,
           organizationId: user.organizationId,
         },
@@ -469,7 +484,7 @@ export class EmployeesController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Performance metrics retrieved' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeePerformance(
     @Param('id') id: string,
     @Query('startDate') startDate?: string,
@@ -481,6 +496,8 @@ export class EmployeesController {
       this.taskClient.send(
         { cmd: 'get_technician_performance' },
         {
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           id,
           organizationId: user?.organizationId,
           startDate,
@@ -498,7 +515,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee task history' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Task history retrieved' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeTasks(
     @Param('id') id: string,
     @Query('status') status?: string,
@@ -511,6 +528,8 @@ export class EmployeesController {
       this.taskClient.send(
         { cmd: 'get_technician_task_history' },
         {
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           id,
           organizationId: user?.organizationId,
           status,
@@ -562,7 +581,7 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Get employee location assignments' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Assignments retrieved' })
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeAssignments(
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
@@ -571,6 +590,8 @@ export class EmployeesController {
       this.taskClient.send(
         { cmd: 'get_technician_assignments' },
         {
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           userId: id,
           organizationId: user.organizationId,
         },

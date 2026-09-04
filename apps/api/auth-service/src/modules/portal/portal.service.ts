@@ -391,9 +391,33 @@ export class PortalService {
   // ── Units ──
 
   /** A single unit (apartment) with its resident — for the apartment detail page. */
-  async getUnit(data: { id: string; organizationId: string }) {
+  /**
+   * Narrow a unit lookup to the spaces the caller holds.
+   *
+   * A unit has no space column of its own — it reaches one through its client
+   * (`Customer.spaceId`) or through its portal (`Portal.spaceId`). Either link
+   * is enough, so the filter is an OR across both.
+   *
+   * undefined = org-wide (adds nothing). `[]` = granted nowhere and matches
+   * nothing — written out rather than left to a truthiness check, because
+   * collapsing it into "org-wide" is the failure this whole scoping exists to
+   * prevent. A unit attached to neither a client nor a portal is unreachable
+   * for a scoped caller, which is the safe answer: nothing ties it to a site
+   * they run.
+   */
+  private unitScope(scopeSpaceIds?: string[]): Record<string, unknown> {
+    if (scopeSpaceIds === undefined) return {};
+    return {
+      OR: [
+        { customer: { spaceId: { in: scopeSpaceIds } } },
+        { portal: { spaceId: { in: scopeSpaceIds } } },
+      ],
+    };
+  }
+
+  async getUnit(data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
     const unit = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) },
       include: { customer: { select: { id: true, name: true, email: true, phone: true } } },
     });
     if (!unit) throw new NotFoundException('Unit not found');
@@ -440,8 +464,8 @@ export class PortalService {
     return null;
   }
 
-  async listUnitActivities(data: { id: string; organizationId: string }) {
-    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId }, select: { id: true } });
+  async listUnitActivities(data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
+    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) }, select: { id: true } });
     if (!unit) throw new NotFoundException('Unit not found');
     const rows = await this.prisma.unitActivity.findMany({ where: { unitId: data.id }, orderBy: { createdAt: 'desc' }, take: 200 });
     const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];

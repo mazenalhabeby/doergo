@@ -9,6 +9,7 @@ import {
   Query,
   Request,
   Inject,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -19,7 +20,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
-import { getSpaceScope } from '@hbcfield/shared';
+import { getSpaceScope, spacesGranting, isAdmin } from '@hbcfield/shared';
 import { capModulesToCatalogue } from '../../common/entitlements';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
@@ -208,9 +209,23 @@ export class LocationsController {
   }
 
   @Get(':id/modules')
-  @RequirePermission('canViewAllTasks')
+  /*
+    Space-aware. A supervisor who runs a site could not read which modules that
+    site has on, because the gate asked the org-wide column.
+
+    The resource here IS the space named in the path, so the check completes in
+    the controller with no lookup and no round trip: the grant list is already
+    on the request. `undefined` = org-wide; `[]` = granted nowhere and matches
+    nothing, which is why the empty case is written out.
+  */
+  @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: 'Get effective modules for a space (falls back to org defaults)' })
   async getEffectiveModules(@Param('id') id: string, @Request() req: any) {
+    // spacesGranting returns null for an org-wide holder, a list otherwise.
+    const scope = isAdmin(req.user) ? null : spacesGranting(req.user?.access, 'canViewAllTasks');
+    if (scope !== null && !scope.includes(id)) {
+      throw new ForbiddenException('You do not have access to this workspace');
+    }
     return this.locationsService.getEffectiveModules({
       id,
       organizationId: req.user.organizationId,

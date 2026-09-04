@@ -1,3 +1,4 @@
+import { memberScopeFilter } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -234,6 +235,16 @@ export class UsersService {
     const where: any = {
       role: Role.EMPLOYEE,
       organizationId,
+      /*
+        "View all tasks" held by a SPACE role means that space's work — and its
+        people. IN the query, never after it: this read is counted and paged, so
+        a filter applied to the page would leave `total` describing a different
+        set, and would still have read every row it meant to exclude.
+
+        undefined = org-wide (adds nothing); [] = granted nowhere and matches
+        nothing. One indexed lookup via @@index([spaceId]).
+      */
+      ...memberScopeFilter((dto as { scopeSpaceIds?: string[] }).scopeSpaceIds),
     };
 
     // Status filter
