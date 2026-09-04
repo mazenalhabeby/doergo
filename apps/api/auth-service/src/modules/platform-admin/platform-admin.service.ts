@@ -218,7 +218,9 @@ export class PlatformAdminService {
   async listBillingAlerts(data: { includeAcknowledged?: boolean }) {
     const rows = await this.prisma.billingAlert.findMany({
       where: data.includeAcknowledged ? {} : { acknowledgedAt: null },
-      orderBy: { createdAt: 'desc' },
+      // By LAST SEEN, not first: a sync that failed again a minute ago matters
+      // more than one that opened last week and stopped.
+      orderBy: { lastSeenAt: 'desc' },
       take: 200,
       // The organization's NAME, not just its id: an alert identified by a cuid
       // is one somebody has to go and look up before they can act on it.
@@ -227,12 +229,16 @@ export class PlatformAdminService {
     return success(
       rows.map((r) => ({
         id: r.id,
+        kind: r.kind,
         organizationId: r.organizationId,
         organizationName: r.organization?.name ?? '—',
         billingMode: r.organization?.billingMode ?? 'AUTOMATIC',
         fromCents: r.fromCents,
         toCents: r.toCents,
         dropCents: r.dropCents,
+        detail: r.detail,
+        occurrences: r.occurrences,
+        lastSeenAt: r.lastSeenAt,
         createdAt: r.createdAt,
         acknowledgedAt: r.acknowledgedAt,
         acknowledgedBy: r.acknowledgedBy,

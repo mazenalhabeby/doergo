@@ -66,3 +66,40 @@ describe('what counts as a material drop', () => {
     expect(isMaterialDrop(eur(100_000), eur(100_000) - BILLING_ALERT_ABSOLUTE_CENTS)).toBe(true);
   });
 });
+
+/**
+ * A Stripe sync that fails is swallowed on purpose — a member must stay
+ * addable when Stripe is unreachable. That is right for the request and wrong
+ * for the business: the only trace was a log line nobody reads, and a
+ * subscription could drift for weeks while every screen looked healthy.
+ */
+describe('sync failures, deduped into one open row', () => {
+  /** `recordSyncFailure`'s decision, as the service applies it. */
+  const decide = (open: { id: string; occurrences: number } | null) =>
+    open ? { action: 'increment', to: open.occurrences + 1 } : { action: 'create', to: 1 };
+
+  it('opens a row the first time', () => {
+    expect(decide(null)).toEqual({ action: 'create', to: 1 });
+  });
+
+  it('counts up instead of opening a second row', () => {
+    // A failing sync retries on every member change. An operator needs one row
+    // saying "47 times since Tuesday", not 47 rows saying the same thing —
+    // the second is a feed people learn to scroll past.
+    expect(decide({ id: 'a', occurrences: 46 })).toEqual({ action: 'increment', to: 47 });
+  });
+
+  it('opens a fresh row once the last one was acknowledged', () => {
+    // The lookup is scoped to acknowledgedAt: null, so acknowledging closes the
+    // episode and the next failure is genuinely new information.
+    expect(decide(null)).toEqual({ action: 'create', to: 1 });
+  });
+
+  it('keeps the LATEST message, not the first', () => {
+    // The first failure is often a symptom; the current one is usually the
+    // cause. `detail` is overwritten on every increment for that reason.
+    const detail = (incoming: string) => incoming.slice(0, 300);
+    expect(detail('Stripe is missing 1 price(s): hbcfield_seat_observer_monthly.')).toContain('missing 1 price');
+    expect(detail('x'.repeat(500))).toHaveLength(300);
+  });
+});

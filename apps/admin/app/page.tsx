@@ -20,8 +20,10 @@ interface Overview { totalOrgs: number; trialing: number; suspended: number; new
 type BillingMode = 'AUTOMATIC' | 'INVOICE' | 'EXTERNAL';
 
 interface BillingAlertRow {
-  id: string; organizationId: string; organizationName: string; billingMode: BillingMode;
-  fromCents: number; toCents: number; dropCents: number;
+  id: string; kind: 'DROP' | 'SYNC_FAILED';
+  organizationId: string; organizationName: string; billingMode: BillingMode;
+  fromCents: number | null; toCents: number | null; dropCents: number | null;
+  detail: string | null; occurrences: number; lastSeenAt: string;
   createdAt: string; acknowledgedAt: string | null;
 }
 
@@ -215,16 +217,16 @@ export default function ControlCenter() {
           <div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold">Bills that fell</h2>
+                <h2 className="text-sm font-semibold">Billing needs a look</h2>
                 <p className="text-xs text-slate-500">
-                  A material drop — a fifth of the bill, or €100 whichever comes first. Acknowledge once you have looked.
+                  A bill that fell materially — a fifth, or €100 — or a Stripe sync that failed. Acknowledge once you have looked.
                 </p>
               </div>
               <button onClick={loadAlerts} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700">Refresh</button>
             </div>
             {alerts.length === 0 ? (
               <div className="rounded-xl border border-slate-800 p-8 text-center text-sm text-slate-500">
-                Nothing to look at — no bill has fallen materially.
+                Nothing to look at — no bill has fallen and every sync is landing.
               </div>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-800">
@@ -232,6 +234,7 @@ export default function ControlCenter() {
                   <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="px-3 py-2">Organization</th>
+                      <th className="px-3 py-2">What</th>
                       <th className="px-3 py-2">Billing</th>
                       <th className="px-3 py-2 text-right">Was</th>
                       <th className="px-3 py-2 text-right">Now</th>
@@ -252,19 +255,40 @@ export default function ControlCenter() {
                           </button>
                         </td>
                         <td className="px-3 py-2">
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] ${a.kind === 'SYNC_FAILED' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                            {a.kind === 'SYNC_FAILED' ? 'sync failed' : 'bill fell'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
                           <span className={`rounded px-1.5 py-0.5 text-[11px] ${BILLING_BADGE[a.billingMode ?? 'AUTOMATIC'].cls}`}>
                             {BILLING_BADGE[a.billingMode ?? 'AUTOMATIC'].label}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-slate-400">{eur(a.fromCents)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{eur(a.toCents)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-400">
-                          −{eur(a.dropCents)}
-                          <span className="ml-1 text-[11px] font-normal text-slate-500">
-                            {a.fromCents > 0 ? `${Math.round((a.dropCents / a.fromCents) * 100)}%` : ''}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-slate-400">{date(a.createdAt)}</td>
+                        {a.kind === 'DROP' ? (
+                          <>
+                            <td className="px-3 py-2 text-right tabular-nums text-slate-400">{eur(a.fromCents ?? 0)}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{eur(a.toCents ?? 0)}</td>
+                            <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-400">
+                              −{eur(a.dropCents ?? 0)}
+                              <span className="ml-1 text-[11px] font-normal text-slate-500">
+                                {a.fromCents ? `${Math.round(((a.dropCents ?? 0) / a.fromCents) * 100)}%` : ''}
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          // A sync failure is not about an amount. The three
+                          // money columns carry Stripe's own words instead —
+                          // the reason is the whole content of this row.
+                          <td colSpan={3} className="px-3 py-2 text-red-300">
+                            <span className="text-xs">{a.detail ?? 'Stripe sync failed'}</span>
+                            {a.occurrences > 1 && (
+                              <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">
+                                ×{a.occurrences}
+                              </span>
+                            )}
+                          </td>
+                        )}
+                        <td className="px-3 py-2 text-slate-400">{date(a.lastSeenAt ?? a.createdAt)}</td>
                         <td className="px-3 py-2 text-right">
                           <button
                             onClick={async () => { await api(`/platform/billing-alerts/${a.id}/ack`, { method: 'POST' }); await loadAlerts(); }}

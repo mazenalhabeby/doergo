@@ -636,9 +636,58 @@ export class BillingService {
       // must still be addable when Stripe is unreachable; the next reconcile —
       // or the nightly one — repairs the subscription.
       this.logger.error(`Stripe reconcile failed for org ${organizationId}: ${(e as Error).message}`);
+      /*
+        …but somebody has to be told.
+
+        Swallowing the error is right for the request and wrong for the
+        business: the only trace was a log line nobody reads, so a subscription
+        could drift for weeks while every screen looked healthy. This is the
+        same blind spot the drop alert closed in the other direction.
+
+        Deduped into ONE open row per organization. A failing sync retries on
+        every member change, and an operator needs a row saying "47 times since
+        Tuesday" rather than 47 rows saying the same thing — the second is a
+        feed people learn to scroll past.
+
+        Recording the failure must never fail the caller either, so it is
+        wrapped: a database that cannot take the alert is not a reason to
+        refuse the member who triggered it.
+      */
+      try {
+        await this.recordSyncFailure(organizationId, (e as Error).message);
+      } catch (inner) {
+        this.logger.error(`Could not record billing sync failure: ${(inner as Error).message}`);
+      }
     }
 
     return ok(bill);
+  }
+
+  /**
+   * One open row per organization, counting up.
+   *
+   * `detail` is truncated: an error is a clue for a human, not a log file, and
+   * a Stripe stack trace in a console table helps nobody.
+   */
+  private async recordSyncFailure(organizationId: string, message: string) {
+    const detail = (message || 'Unknown error').slice(0, 300);
+    const open = await this.prisma.billingAlert.findFirst({
+      where: { organizationId, kind: 'SYNC_FAILED', acknowledgedAt: null },
+      select: { id: true, occurrences: true },
+    });
+    if (open) {
+      await this.prisma.billingAlert.update({
+        where: { id: open.id },
+        // The LATEST message: the first failure is often a symptom and the
+        // current one is the cause.
+        data: { occurrences: open.occurrences + 1, lastSeenAt: new Date(), detail },
+      });
+      return;
+    }
+    await this.prisma.billingAlert.create({
+      data: { organizationId, kind: 'SYNC_FAILED', detail },
+    });
+    this.logger.warn(`[BILLING] Sync failure alert opened for org ${organizationId}`);
   }
 
   // ── webhook (verified event applied idempotently) ──────────────────────────────

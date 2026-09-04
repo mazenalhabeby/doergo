@@ -3671,16 +3671,29 @@ enum PlanTier {
 /// and the question an operator actually asks is "what changed recently, and
 /// have we looked at it?" — which is a list with a state, not a notification.
 model BillingAlert {
-  id             String       @id @default(cuid())
+  id             String           @id @default(cuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// What kind of thing happened. See BillingAlertKind.
+  kind           BillingAlertKind @default(DROP)
 
   /// What it was billed before, and what it is now — in monthly EUR cents.
-  fromCents      Int
-  toCents        Int
+  /// Null for kinds that are not about an amount.
+  fromCents      Int?
+  toCents        Int?
   /// fromCents - toCents. Stored rather than derived so the console can sort
   /// and filter on it without computing over the table.
-  dropCents      Int
+  dropCents      Int?
+
+  /// Why, in the words of whatever refused — Stripe's own message for a sync
+  /// failure. Truncated at write: an error is a clue, not a log file.
+  detail         String?
+  /// How many times this has happened since it was first seen and last looked
+  /// at. A failing sync retries on every member change, and an operator needs
+  /// ONE row saying "47 times" rather than 47 rows saying the same thing.
+  occurrences    Int              @default(1)
+  lastSeenAt     DateTime         @default(now())
 
   /// Cleared by an operator once they have looked. Null = still needs a look.
   acknowledgedAt DateTime?
@@ -3691,7 +3704,21 @@ model BillingAlert {
   /// The console opens on "what is unacknowledged, newest first".
   @@index([acknowledgedAt, createdAt])
   @@index([organizationId, createdAt])
+  /// The dedupe lookup: is there already an open alert of this kind for this org?
+  @@index([organizationId, kind, acknowledgedAt])
   @@map("billing_alerts")
+}
+
+/// What a billing alert is about.
+enum BillingAlertKind {
+  /// A material fall in what an organization is billed.
+  DROP
+  /// Stripe refused, or was unreachable, while syncing a subscription.
+  ///
+  /// The reconcile deliberately swallows these — a member must stay addable
+  /// when Stripe is down — so without a record the only trace is a log line
+  /// nobody reads, and a subscription can drift for weeks in silence.
+  SYNC_FAILED
 }
 
 enum BillingMode {
