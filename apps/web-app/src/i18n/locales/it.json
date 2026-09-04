@@ -2353,7 +2353,10 @@
       "sendInvitation": "Invia invito",
       "generateCode": "Genera codice",
       "accessTitle": "Accesso e autorizzazioni",
-      "accessFeatureCount": "{{count}} funzioni"
+      "accessFeatureCount": "{{count}} funzioni",
+      "externalRoleLabel": "Ruolo in questo spazio di lavoro",
+      "externalRoleDefault": "Predefinito (Supervisore esterno)",
+      "externalRoleHint": "L'accesso di un membro esterno è questo ruolo, solo in questo spazio di lavoro."
     }
   },
   "joinRequests": {

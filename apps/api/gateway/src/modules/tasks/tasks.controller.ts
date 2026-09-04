@@ -14,7 +14,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents, isAdmin, spacesGranting, accessAllowsAnywhere } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -113,6 +113,33 @@ export class TasksController {
       }
       // SPACE scope: assignee validation handled by task-service (space membership)
       // ORG scope: no restrictions on assignee
+    }
+
+    /*
+      Creating is not assigning.
+
+      An External Observer — a client's representative who follows the work —
+      may raise a job and nothing else. `canCreateTasks` and `canAssignTasks`
+      are separate permissions and always were; this is the one place they were
+      allowed to blur, because the create route accepts an assignee.
+
+      Stripped rather than refused: the task they meant to raise is still
+      raised, unassigned, which is what happens to any job nobody has picked up
+      yet. Refusing the whole request would turn "you may not choose who does
+      this" into "you may not report the fault", which is the opposite of the
+      point.
+
+      Server-side and unconditional — the picker is hidden for them too, but a
+      hidden control is a courtesy, not a boundary. Admins and holders of
+      `canAssignTasks` (org-wide OR in the target space) are unaffected.
+    */
+    if (
+      createTaskDto.assignedToId &&
+      !isAdmin(req.user) &&
+      req.user.canAssignTasks !== true &&
+      !accessAllowsAnywhere(req.user?.access, 'canAssignTasks')
+    ) {
+      createTaskDto.assignedToId = undefined;
     }
 
     return this.tasksQueueService.createTask({

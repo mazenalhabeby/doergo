@@ -288,6 +288,39 @@ export const BUILTIN_ROLES: RolePreset[] = [
     appears for certain people is a rule hidden in a dropdown, and the real rule
     already lives on the server where it can refuse.
   */
+  /*
+    The other kind of outsider: one who WATCHES.
+
+    A client rep who follows the job and raises a fault, and does nothing else.
+    They read their space's board — the workflow IS the process, so status and
+    progress come free — and they can open a task. They cannot assign it, cannot
+    approve anything, and never see an hour: no attendance, no rota, no
+    overtime. The Time & Attendance menu does not appear for them at all,
+    because it is gated on permissions they simply do not hold, rather than
+    hidden by a rule that could be forgotten.
+
+    Signing is deliberately absent from this list and still works. A signature
+    is authorised by being NAMED on the document — the signer chain — never by a
+    permission, so a document routed to the client's representative reaches them
+    whichever external role they hold. Gating signing on a permission would
+    break that chain; it must stay outside this set.
+
+    Both permissions are inside EXTERNAL_ALLOWED_PERMISSIONS, so the grant
+    cannot trip the ceiling.
+  */
+  {
+    slug: 'external-observer',
+    name: 'External Observer',
+    description: "A client's representative who follows the work and can raise a job — no hours, no approvals, no assigning",
+    // The same amber as the External badge and the supervisor role: one colour
+    // for everyone who does not work here.
+    color: '#b45309',
+    scope: 'SPACE',
+    permissions: {
+      canViewAllTasks: true,
+      canCreateTasks: true,
+    },
+  },
   {
     slug: 'external-supervisor',
     name: 'External Supervisor',

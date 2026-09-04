@@ -7,7 +7,7 @@ import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, locationsApi, type CreateInvitationInput, type CompanyLocation } from "@/lib/api"
+import { invitationsApi, locationsApi, organizationsApi, type CreateInvitationInput, type CompanyLocation, type AccessRole } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -51,6 +51,18 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
   const [spaceId, setSpaceId] = useState("none")
+  /*
+    Which kind of outsider.
+
+    An external member's whole authority is one space role, so which one they
+    are IS the invitation. Two answers in practice: a Supervisor who approves
+    our hours and follows the work, and an Observer who watches and can raise a
+    job — no hours, no approvals, no assigning.
+
+    Left unset the server applies its default (Supervisor), so an invite sent
+    without touching this behaves exactly as before.
+  */
+  const [externalRoleId, setExternalRoleId] = useState("default")
 
   // Access Profile pre-config — applied to the member on accept, so their first
   // screen already matches their final access (no post-registration change).
@@ -83,6 +95,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     to disagree with it.
   */
   const hasSpace = isExternal && spaceId !== "none" && !!spaceId
+  // Space-scoped roles only — an org role reaches every space, which is exactly
+  // what an outsider must never have. The server refuses one regardless.
+  const { data: spaceRoles = [] } = useQuery({
+    queryKey: ["access-roles", "space"],
+    queryFn: () => organizationsApi.getRoles("space"),
+    staleTime: 300000,
+    enabled: open && isExternal,
+  })
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
@@ -119,9 +139,10 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     // Pre-assigned role (validated server-side) + pre-configured access → both
     // applied to the new member on accept, so their first screen already matches.
     if (isExternal) {
-      // Their authority comes from a space role, never an org-wide one — the
-      // server refuses the combination, so the form does not send it either.
+      // Their authority comes from a SPACE role, never an org-wide one. The
+      // server validates the scope and refuses anything else.
       input.isExternal = true
+      if (externalRoleId !== "default") input.memberRoleId = externalRoleId
     } else if (access.memberRoleId) {
       input.memberRoleId = access.memberRoleId
     }
@@ -379,6 +400,32 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
               monthlyHourBudget={monthlyHourBudget}
               onMonthlyHourBudgetChange={setMonthlyHourBudget}
             />
+          )}
+
+          {/* Which kind of outsider — only meaningful for an external invite. */}
+          {isExternal && spaceRoles.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("invitations.inviteDialog.externalRoleLabel", "Role in this workspace")}
+              </Label>
+              <Select value={externalRoleId} onValueChange={setExternalRoleId}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">
+                    {t("invitations.inviteDialog.externalRoleDefault", "Default (External Supervisor)")}
+                  </SelectItem>
+                  {spaceRoles.map((r: AccessRole) => (
+                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                {t(
+                  "invitations.inviteDialog.externalRoleHint",
+                  "An external member's access is this role, in this workspace only.",
+                )}
+              </p>
+            </div>
           )}
 
           {/* Space (optional) */}

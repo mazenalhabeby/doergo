@@ -471,6 +471,9 @@ export class OnboardingService {
           // exactly how `isExternal` went missing on this one before.
           const roleId = await defaultSpaceRoleId(tx, invitation.organizationId, {
             isExternal: invitation.isExternal,
+            // The role the invitation named, if the admin chose one — Observer
+            // or Supervisor. Falls back to the default when they did not.
+            chosenRoleId: invitation.memberRoleId,
           });
           await tx.spaceAssignment.upsert({
             where: { userId_spaceId: { userId, spaceId: invitation.spaceId } },

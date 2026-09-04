@@ -210,12 +210,41 @@ export class InvitationService {
       holding one — the accept path applies what the invite says.
     */
     const inviteIsExternal = data.isExternal === true;
+    /*
+      An external invitation may name a role — it must simply be a SPACE role.
+
+      There are two kinds of outsider now: a Supervisor who approves our hours
+      and follows the work, and an Observer who watches and can raise a job.
+      Which one they are is the whole difference between them, so it has to be
+      chosen when they are invited rather than corrected afterwards.
+
+      The rule that matters is unchanged and is what is actually checked below:
+      never an ORG-scoped role. An org role applies in every space, present and
+      future, which is precisely what somebody who works for a client must not
+      have. The refusal used to be "no role at all", which was a blunt way of
+      enforcing it and left every external member arriving with nothing.
+
+      The value lands on their SPACE ASSIGNMENT, never on `User.memberRoleId` —
+      `memberFieldsFromInvitation` forces that null for an external member, so
+      the org-wide field cannot be reached even if this validation were wrong.
+    */
     if (inviteIsExternal && data.memberRoleId) {
-      return {
-        success: false,
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: 'An external member cannot be given an organization-wide role',
-      };
+      const spaceRole = await this.prisma.accessRole.findFirst({
+        where: {
+          id: data.memberRoleId,
+          organizationId: data.organizationId,
+          isActive: true,
+          scope: 'SPACE',
+        },
+        select: { id: true },
+      });
+      if (!spaceRole) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'An external member can only be given a workspace role',
+        };
+      }
     }
 
     // Validate a pre-assigned org role (EMPLOYEE invites only): must be an
@@ -486,6 +515,8 @@ export class InvitationService {
     organizationId: string,
     spaceId: string | null | undefined,
     isExternal = false,
+    /** The space role the invitation named, if any — it wins over the default. */
+    chosenRoleId?: string | null,
   ) {
     if (!spaceId) return;
     const space = await tx.companyLocation.findFirst({
@@ -496,7 +527,7 @@ export class InvitationService {
     // An external member's authority is their SPACE role and nothing else, so
     // arriving without one leaves them holding nothing at all. Only on create —
     // `update` deliberately leaves an existing roleId alone.
-    const roleId = await defaultSpaceRoleId(tx, organizationId, { isExternal });
+    const roleId = await defaultSpaceRoleId(tx, organizationId, { isExternal, chosenRoleId });
     await tx.spaceAssignment.upsert({
       where: { userId_spaceId: { userId, spaceId } },
       update: { isPrimary: true, effectiveTo: null },
@@ -634,7 +665,7 @@ export class InvitationService {
       }
 
       // Pre-assigned space: assign the new user to it (if it still exists in the org).
-      await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId, invitation.isExternal);
+      await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId, invitation.isExternal, invitation.memberRoleId);
 
       await tx.invitation.update({
         where: { id: invitation.id },

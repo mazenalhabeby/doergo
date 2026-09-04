@@ -171,7 +171,7 @@ type AssigneeOption = {
 
 export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId }: CreateTaskDialogProps) {
   const { t } = useTranslation()
-  const { user, hasModule: orgHasModule, hasPlanFeature } = useAuth()
+  const { user, hasModule: orgHasModule, hasPlanFeature, hasPermission } = useAuth()
   const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
   const canCustomFields = hasPlanFeature("custom_fields") // Custom Fields = Professional+
   const queryClient = useQueryClient()
@@ -328,7 +328,19 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   // ── Fetch members for assignee picker ──
   const taskCreationScope = user?.taskCreationScope || "NONE"
   const isSelfScope = taskCreationScope === "SELF"
-  const showAssigneePicker = taskCreationScope === "SPACE" || taskCreationScope === "ORG"
+  /*
+    Creating is not assigning.
+
+    Both are needed to offer this control. A creation scope of SPACE says WHERE
+    somebody may open a task, not that they may hand it to anyone — an External
+    Observer holds `canCreateTasks` through a space role, which resolves to
+    SPACE, and would have been shown a picker whose value the server strips.
+
+    `hasPermission` is space-aware, matching what the create route accepts.
+  */
+  const canAssign = user?.role === "ADMIN" || hasPermission("canAssignTasks")
+  const showAssigneePicker =
+    canAssign && (taskCreationScope === "SPACE" || taskCreationScope === "ORG")
 
   /*
     Who can be given this work.
