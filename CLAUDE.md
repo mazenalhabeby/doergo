@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-08-22 (Module pricing LIVE — tiers replaced)
+> **Last Updated**: 2026-09-04 (External Observer + €2 seat, three billing modes, billing alerts)
 
 ---
 
@@ -118,6 +118,13 @@ hbcfield/
 | **DISPATCHER** | WEB only | Office manager, operation coordinator. Can view all tasks and assign technicians. |
 | **TECHNICIAN** | MOBILE only | Field worker, task executor. Can only see and execute assigned tasks. |
 
+**External members** (`User.isExternal`) work for a client or partner, not for you. Their whole authority is ONE space role; an org-wide role is refused, because it would reach every space. They hold no clock, no time off and no personnel file, and `@DenyExternal()` closes the organization's own property to them regardless of permission. Two built-in space roles:
+
+| Space role | Grants | Seat |
+|---|---|---|
+| **External Supervisor** | canViewAllTasks, canApproveOvertime, canReconcileAttendance, canViewSpaceAttendance | €9.99 |
+| **External Observer** | canViewAllTasks, canCreateTasks — watches, and can raise a job | **€2** |
+
 > **Note**: The `CLIENT` role has been deprecated and migrated to `ADMIN`. A backward compatibility layer (`LegacyRoleMap`, `normalizeRole()`) handles legacy data.
 
 ### Granular Permission System
@@ -192,7 +199,8 @@ Organizations can grant access to other organizations:
 
 ### Core Models
 ```
-Organization { id, name, isActive, grantedAccess[], receivedAccess[], companyLocations[] }
+Organization { id, name, isActive, addOns[], billingMode, invoiceDueDays, billedExternally (kept in step, read by nothing), grantedAccess[], receivedAccess[], companyLocations[] }
+BillingAlert { id, organizationId, kind (DROP|SYNC_FAILED), fromCents?, toCents?, dropCents?, detail?, occurrences, lastSeenAt, acknowledgedAt?, acknowledgedBy? }
 OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, canAssignWorkers, canViewWorkers, canViewTracking }
 User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil, platform, canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers, technicianType, workMode }
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
@@ -227,6 +235,8 @@ AttachmentType: IMAGE | DOCUMENT | OTHER
 ReportAttachmentType: BEFORE | AFTER
 TimeOffStatus: PENDING | APPROVED | REJECTED | CANCELED
 InvitationStatus: PENDING | ACCEPTED | EXPIRED | REVOKED
+BillingMode: AUTOMATIC | INVOICE | EXTERNAL   // card / Stripe-issued invoice / by agreement
+BillingAlertKind: DROP | SYNC_FAILED
 ```
 
 ### Task Status Flow
@@ -308,6 +318,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | GET | `/locations/:id` | Get location details | ADMIN, DISPATCHER |
 | PATCH | `/locations/:id` | Update location | ADMIN |
 | DELETE | `/locations/:id` | Deactivate location (soft delete) | ADMIN |
+| POST | `/locations/:id/default` | Make this the org's default workspace (one transaction, Remote/archived refused) | canManageWorkspaces |
 
 ### Technicians (`/technicians`)
 | Method | Endpoint | Description | Roles |
@@ -385,6 +396,9 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/billing/cancel` | Cancel at period end | ADMIN |
 | POST | `/billing/webhooks/stripe` | Stripe webhook (HMAC + rawBody + idempotency; 6 events) | Public (signature-verified) |
 | POST | `/billing/admin/org-add-ons` | **Operator**: grant an org its capabilities (secret-gated) | Platform key |
+| POST | `/platform/orgs/:id/billing-mode` | **Operator**: card / invoice / agreement (audited, Stripe moved first) | Platform key |
+| GET | `/platform/billing-alerts` | **Operator**: bills that fell + Stripe syncs that failed | Platform key |
+| POST | `/platform/billing-alerts/:id/ack` | **Operator**: mark one as looked at | Platform key |
 
 > `/billing/bill` and `/billing/subscription` are deliberately separate: switching a module on moves the bill and not the status; a failed card moves the status and not the bill.
 
@@ -903,26 +917,32 @@ pnpm build            # Build all packages
   - [ ] Web dashboard for attendance tracking
   - [ ] Export functionality
 
-### Phase 8: SaaS Billing ✅ COMPLETE — module model LIVE (2026-08-21)
+### Phase 8: SaaS Billing ✅ COMPLETE — module model LIVE (2026-08-21), observer seat + billing modes (2026-09-04)
 
 > **Tiers are gone.** Starter/Professional/Business were replaced because they answered the wrong question: "which bundle covers the four things I need?" made a customer upgrade every seat to reach one feature, and left eleven capabilities gated with no price attached to any of them. **A thing is now bought, or it is not.**
 
 **The bill** — three parts, each priced where it is actually used:
 
 ```
-bill = seats × €9.99
+bill = staff seats     × €9.99
+     + observer seats  × €2.00        ← external, watch-only (2026-09-04)
      + Σ spaces ( modules + usage ladders )
-     + Σ org add-ons
+     + Σ org options
 ```
 
-- [x] **Seat** flat €9.99, everyone the same. No office/field/in-house classification — that whole category of argument and code is gone.
+- [x] **Seat** flat €9.99 for everyone who works here. No office/field/in-house classification — that whole category of argument and code is gone.
+- [x] **Observer seat €2** (2026-09-04) — an EXTERNAL member who only watches the work and can raise a job. `isObserverSeat(user, held)` reads the **effective permission set** (org role ∪ every space role), ⚠️ **never the name of a role**: roles are editable per organization, so a price following the label would let an admin add `canApproveOvertime` to a role called "Observer" and buy a supervisor for €2. Widening access re-prices the seat on the next reconcile with no billing code touched. Restricted to `isExternal`, and that restriction IS the anti-abuse mechanism — nobody can run a business on external members (no clock, no leave, no personnel file, nothing the org owns).
+  - ⚠️ **Space-assignment routes must `rebill()`** — `assignMember` / `updateAssignment` / `removeAssignment` set the role that sets the price.
+  - The bill splits `seatCount` into `staffSeatCount` + `externalSeatCount` for the SCREEN only; Stripe is still told one seat quantity, because an external supervisor costs the same €9.99 on the same price ID.
 - [x] **Modules** per SPACE (`billing/module-pricing.ts`). Switching one on **is** the purchase; the space is billed for it. Tracking €25, Time Tracking €25, Space Sharing €29, Service Reports €15, CRM €15 base, Client Portal €49 base, Assets €9 base, task/agile from €3.
 - [x] **Usage ladders** per space, graduated like tax bands (`billing/usage-pricing.ts`) — crossing into a cheaper band re-prices only the units in it, so a bill can never FALL when you add one:
   - Assets — 10 free, then €1.20 → €0.30
   - CRM — 50 clients free, then €0.30 → €0.05. *First band is €0.30 on purpose: €15 ÷ 50 = €0.30, so client 51 costs what clients 1–50 implicitly did. No cliff at the allowance.*
   - Client Portal — first included, then €29 each
-- [x] **Org add-ons** (`billing/add-ons.ts`, 11 keys) — capabilities bought ONCE for the organization: workflows €29, invoicing €19, shift_scheduling €19, reports_builder €19, priority_routing €19, audit_log €15, recurring €12, overtime €9, report_scheduling €9, live_chat €29, dedicated_support €99. ⚠️ **Org-wide things must never be per-space** — one audit log billed four times to a four-site customer.
+- [x] **Org add-ons** (`billing/add-ons.ts`, 11 keys) — **called "Options" everywhere a customer reads** since 2026-09-04 (display only: `addOns` stays the column, the API route `PUT /billing/add-ons` and half the Stripe lookup keys). Capabilities bought ONCE for the organization: workflows €29, invoicing €19, shift_scheduling €19, reports_builder €19, priority_routing €19, audit_log €15, recurring €12, overtime €9, report_scheduling €9, live_chat €29, dedicated_support €99. ⚠️ **Org-wide things must never be per-space** — one audit log billed four times to a four-site customer.
 - [x] **Gating**: `PlanGuard` → `orgHasAddOn(user.orgAddOns, key)`, **fails closed on an unknown key** (a typo in `@RequirePlan` must 402, not grant the feature to everyone). `ModuleGuard` → the space's module list, no tier. Both still 402 (not 403) and **let reads through**.
+- [x] **Billing modes** (2026-09-04) — `Organization.billingMode`: **AUTOMATIC** (card charged), **INVOICE** (Stripe's own `collection_method: 'send_invoice'` — it issues and emails the invoice, customer pays by transfer, `invoice.paid` reconciles it), **EXTERNAL** (nothing charged; the bill is shown at list price). Set per org on admin.hbcfield.com. INVOICE is refused without a billing email — checked where the mode is SET, not where the invoice is sent. Moves the LIVE subscription (`setCollectionMethod`), never recreates it; `days_until_due` SET moving in and CLEARED moving out. **Stripe first, database second.** ⚠️ `billedExternally` is kept in step but read by nothing — new code asks `billingMode`.
+- [x] **Billing alerts** (`BillingAlert`, 2026-09-04) — the two silent failures. **DROP**: a material fall, `isMaterialDrop` = drop ≥ €20 AND (≥20% OR ≥ €100) — two tests ORed because one threshold cannot cover a €90 customer and a €10,000 one. **SYNC_FAILED**: reconcile swallows Stripe errors on purpose (a member must stay addable when Stripe is down) and now records them, **deduped into one open row per org, counting up**. Surfaced as the Revenue tab on admin.hbcfield.com, whose count loads on every tab.
 - [x] `orgAddOns` resolved server-side in `validateToken`. ⚠️ **THREE** places build a request context in `auth.service.ts` — all three must set it, or that path 402s every premium mutation.
 - [x] **Stripe by lookup key**, no env vars: 62 prices (`billing/stripe-catalog.ts`), e.g. `hbcfield_module_crm_monthly`. Sixty-two Price IDs in env would be a second price list that drifts. Usage lines are €0.01/unit × ladder-cents — Stripe's own tiered pricing can't express a PER-SPACE ladder and refuses duplicate prices in one subscription. **Annual usage is €0.10/unit** (leaving it at 1c charged a year at one month's rate).
 - [x] `reconcileSeats` recomputes the WHOLE line-up rather than diffing; a line that leaves the bill is **deleted**, not left at its old quantity. `lastBilledCents` decides whether an annual change is an increase — line counts can't, since €29→€9 is fewer euros and the same count.
@@ -930,7 +950,7 @@ bill = seats × €9.99
 - [x] **`billedExternally`** — organizations on negotiated contracts are never charged automatically. Checked FIRST in reconcile, before any Stripe call, and refuses checkout. The bill is still computed and shown, labelled "At list price".
 - [x] 14-day trial grants **every** add-on (`ADD_ON_KEYS`) — a trial that hides half the product cannot tell anyone whether the product is worth buying.
 - [x] Migrations `20260821180000_org_addons` (backfills each org's add-ons **from its old tier**, so nobody loses access at the switch) and `20260821200000_billed_externally`.
-- [x] **LIVE**: 31 products / 62 prices on the live account, all `tax_behavior: exclusive`; re-running the sync reports `62 already correct`.
+- [x] **LIVE**: **33 prices** on the live account (31 → 32 documents → 33 observer seat, `hbcfield_seat_observer_monthly` €2 created 2026-09-04), all `tax_behavior: exclusive`; re-running the sync reports `33 already correct`. ⚠️ VAT is added ON TOP — the billing page says "Excludes VAT" and deliberately does NOT print a rate, because cross-border EU B2B is reverse-charged to zero and Stripe decides at checkout.
 - [ ] One real live purchase (real card) — pending, user-driven
 
 > ⚠️ **`plans.ts` still exists and is VESTIGIAL.** Nothing in it decides access or price. It survives only for the operator price book (`platform-pricing.service.ts`, C2) and its Stripe sync (C3), which are working tier-based operator features. **Do not add a caller** — ask `orgHasAddOn` or the space's module list.
@@ -980,7 +1000,13 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `STATUS_TRANSITIONS`, `isValidStatusTransition()` | Task status state machine |
 | `orgMonthlyCost()`, `spaceMonthlyCost()` | The whole bill / one space's bill (billing/module-pricing.ts) |
 | `usageCost()`, `marginalUnitCents()`, `nextUsageBreak()` | Volume ladders — what a count costs, what the NEXT one costs |
-| `AVAILABLE_ADD_ONS`, `orgHasAddOn()`, `addOnDef()` | Org-wide capabilities and the gate that reads them |
+| `AVAILABLE_ADD_ONS`, `orgHasAddOn()`, `addOnDef()` | Org-wide capabilities ("Options" to a customer) and the gate that reads them |
+| `isObserverSeat()`, `OBSERVER_SEAT_MONTHLY_CENTS` | The €2 external seat — priced from permissions HELD, never a role's name |
+| `BILLING_MODES`, `collectionMethodFor()`, `billsThroughStripe()` | Card / invoice / agreement, and what each means to Stripe |
+| `isMaterialDrop()` | Is this fall in a bill worth an alert? (≥€20 AND (≥20% OR ≥€100)) |
+| `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
+| `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
+| `moduleAllowedForExternal()`, `filterExternalModules()` | An external member holds no clock and no time_off |
 | `stripeCatalog()`, `stripeLinesForBill()`, `stripeLookupKey()` | What Stripe must hold, and a bill as subscription lines |
 | `BCRYPT_COST_FACTOR`, `MAX_FAILED_ATTEMPTS`, etc. | Auth constants |
 | `EmailField`, `PasswordField`, `NameField`, etc. | Validation decorators |
@@ -1130,7 +1156,22 @@ docker exec -it hbcfield-redis redis-cli
 
 ## 17. NEXT IMMEDIATE TASKS
 
-**Current Sprint**: Phase 7.3 - Technician Assignment (next up)
+**Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) one real card payment has never completed — pending since July; (2) INVOICE billing mode has never run against a real customer; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-09-04) — External members, billing modes, billing alerts
+
+**PROD `f72d766e`** (rollback chain from `4b96142b`; 34 commits, 13 deploys, 5 migrations, DB backups `pre-billing-mode_*` and `pre-billing-alerts_*`). Full detail in memory `deploy-20260904-external-billing`.
+
+- **Two kinds of external member.** `external-supervisor` (approves hours, follows the work) and the new `external-observer` (watches, can raise a job — `canViewAllTasks` + `canCreateTasks`, no hours at all, **€2 seat**). ⚠️ Built-in roles **self-seed on the next `listAccessRoles`**, so adding one needs no migration.
+- ⚠️ **An external invitation carries a SPACE role** now (`Invitation.memberRoleId`, validated `scope: 'SPACE'`); unset falls back to `defaultSpaceRoleId`. Before this an external invite granted NO role, so the member arrived able to sign in and see nothing — correct on every screen and impossible to diagnose.
+- ⚠️ **`@DenyExternal()`** — a global guard for the organization's own property (assets, asset categories/types, customers, portal admin). `GET /assets` was `@RequirePermissionInSpace('canViewAllTasks')`, a permission an external supervisor legitimately holds, so **one permission was doing duty for two different things** and an outsider could list the org's equipment. A permission ceiling cannot fix that — the relationship disqualifies them, so the rule is stated about the relationship.
+- **`canViewAllTasks` held in a space now means that space** — 10 read routes (employees ×7, space-units ×3, locations modules, recurring). Pattern every time: widen the guard to `@RequirePermissionInSpace` → forward `spacesGranting(...)` → **narrow in the SERVICE**, which is the actual boundary. Three states: `undefined` = org-wide, `[ids]` = narrow, `[]` = **matches nothing**. Shared `assertMemberInScope` / `memberScopeFilter`.
+- **Asset WRITES moved to `canManageAssets`** (12 routes) — a read permission was authorising a change to the org's equipment. ⚠️ The migration grants the permission to the 8 roles that already had the ability through the old gate (excluding the external built-ins): a straight swap would have removed asset creation from every Manager and Space Manager.
+- **A test walks every gateway controller** and fails if a mutation is gated on `canViewAllTasks` (`external-observer-writes.spec.ts`). Remaining exceptions are named with reasons — the agile family (sprints/epics/phases/custom-fields) has no finer permission to move to, which is a product decision about who plans rather than a security fix.
+- **Invitation codes truncated at 8.** Each screen capped the field at the length IT expected, so a 10-character invitation lost two characters with no error. `JOIN_CODE_MAX_LENGTH` + `joinCodeCandidates()`; the org screen now recognises an invitation and hands it over. ⚠️ Mobile OTA: `app.config.ts` pins `version: '1.0.4'`, so a default publish targets 1.0.4 — reaching the 1.0.3 train means temporarily setting the version.
+- **The default workspace could never be moved.** `isDefault` was written once at creation and the delete refusal said "make another space the default first", which nothing in the product could do. `POST /locations/:id/default`, one transaction (two defaults or none are both silent breakage), Remote and archived refused, badge on the workspaces list.
+- **Assignee picker read `GET /organizations/members`** (`canManageUsers`) — a permission an external member can never hold, so the list rendered empty. It reads the space's roster when a workspace is chosen, which also removes a silent 50-member cap.
+- **Billing page rebuilt** — total + proportion bar, each workspace's modules priced, **"Excludes VAT"**, and every section labelled by scope (Per person / Per workspace / Whole organization). Options pinned in their own rail because they are bought ONCE while modules are bought per space.
 
 ### Recently Completed (2026-08-21) — Module Pricing LIVE (tiers replaced)
 
