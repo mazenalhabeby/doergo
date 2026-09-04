@@ -555,7 +555,7 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                 Three price cards, not four plan columns.
 
                 There is nothing to choose between any more — the bill is people
-                plus what each site switched on plus company add-ons — so the job
+                plus what each site switched on plus company options — so the job
                 of this block is to say what each of those three costs, and get
                 out of the way of the full price list below it.
               */}

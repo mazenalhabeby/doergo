@@ -89,7 +89,7 @@ export default function BillingPage() {
       // add-ons, and a total the page computed itself is exactly the drift this
       // model exists to remove.
       await load();
-      notify.success(t('toast.addOnsUpdated', 'Add-ons updated.'));
+      notify.success(t('toast.addOnsUpdated', 'Options updated.'));
     } catch (e) {
       notify.error(errorMessage(e));
       throw e;
@@ -116,7 +116,7 @@ export default function BillingPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {t(
               'billing.subtitle',
-              'You pay for the people who use HBCField, what each workspace switches on, and any add-ons.',
+              'You pay for the people who use HBCField, what each workspace switches on, and any options.',
             )}
           </p>
         </div>

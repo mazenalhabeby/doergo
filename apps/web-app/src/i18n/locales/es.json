@@ -3582,7 +3582,7 @@
     "billingUpdated": "Facturación actualizada.",
     "checkoutFailed": "No se pudo iniciar el pago.",
     "accessUpdated": "Se actualizaron tus permisos de acceso",
-    "addOnsUpdated": "Complementos actualizados."
+    "addOnsUpdated": "Opciones actualizadas."
   },
   "errors": {
     "somethingWentWrong": "Algo salió mal",
@@ -4469,7 +4469,7 @@
     },
     "s5": {
       "title": "5. Suscripciones, licencias y qué pagas",
-      "intro": "El Servicio se ofrece mediante suscripción mensual. No hay niveles de plan: todas las capacidades están disponibles para todos los clientes al precio indicado en nuestra página de precios, y pagas la suma de personas, módulos y extras activos.",
+      "intro": "El Servicio se ofrece mediante suscripción mensual. No hay niveles de plan: todas las capacidades están disponibles para todos los clientes al precio indicado en nuestra página de precios, y pagas la suma de personas, módulos y opciones activas.",
       "seats": "Se factura por persona, no por paquete. Cada Miembro activo cuenta como una licencia a la misma tarifa, sea cual sea su acceso: no hay distinción entre oficina y campo. Los módulos se activan por sede y se cobran por cada sede que los activa; algunos se cobran además por cantidad (por ejemplo activos o registros de clientes), según tarifas de volumen publicadas.",
       "plansTitle": "Qué se cobra (sin IVA)",
       "plansNote": "Los precios no incluyen IVA y pueden actualizarse para periodos futuros con aviso previo. La lista completa de precios es pública en hbcfield.com/pricing, y tu factura actual siempre está desglosada en Ajustes → Facturación.",
@@ -4477,12 +4477,12 @@
       "seatText": "9,99 € por Miembro / mes.",
       "moduleLabel": "Por módulo",
       "moduleText": "desde 3 € por sede / mes, por cada sede que lo active.",
-      "addOnLabel": "Por extra",
+      "addOnLabel": "Por opción",
       "addOnText": "desde 9 € / mes, comprado una vez para toda la Organización."
     },
     "s6": {
       "title": "6. Tarifas, facturación y prorrateo",
-      "intro": "Las tarifas se cobran en euros (EUR) por mes y por adelantado, según las personas, módulos y extras activos. Si algo cambia a mitad de periodo, se prorratea así:",
+      "intro": "Las tarifas se cobran en euros (EUR) por mes y por adelantado, según las personas, módulos y opciones activas. Si algo cambia a mitad de periodo, se prorratea así:",
       "monthlyLabel": "Al añadir — ",
       "monthlyText": "los cambios se prorratean y se aplican a tu siguiente factura; añadir una persona o activar un módulo no genera un cargo inmediato aparte, pero el importe prorrateado por el resto del mes en curso se suma a la factura siguiente.",
       "decreaseLabel": "Quitar licencias — ",
@@ -6459,19 +6459,19 @@
       "spaces": "Espacios de trabajo",
       "spacesDetail_one": "{{count}} espacio de trabajo",
       "spacesDetail_other": "{{count}} espacios de trabajo",
-      "addOns": "Complementos",
+      "addOns": "Opciones",
       "addOnsDetail_one": "{{count}} contratado",
       "addOnsDetail_other": "{{count}} contratados",
       "bySpace": "Por espacio de trabajo",
       "usageLine": "Uso de {{module}} {{price}}",
       "noModules": "Nada activado: este espacio de trabajo es gratuito",
-      "addOnsBought": "Complementos",
+      "addOnsBought": "Opciones",
       "estimate": "A precio de tarifa",
       "observerSeats": "Observadores externos",
       "externalSeats": "Supervisores externos"
     },
     "addOns": {
-      "title": "Complementos",
+      "title": "Opciones",
       "subtitle": "Se contratan una vez para toda la organización, no por espacio de trabajo",
       "perMonth": "/mes",
       "unsaved": "Cambios sin guardar"
@@ -6484,7 +6484,7 @@
       "incomplete": "Inactivo"
     },
     "title": "Facturación",
-    "subtitle": "Pagas por las personas que usan HBCField, por lo que cada espacio de trabajo activa y por los complementos.",
+    "subtitle": "Pagas por las personas que usan HBCField, por lo que cada espacio de trabajo activa y por las opciones.",
     "paymentAndInvoices": "Pago y facturas",
     "cancel": "Cancelar",
     "adminOnly": "Solo un administrador de la organización puede cambiar lo que se paga.",

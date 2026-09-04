@@ -3582,7 +3582,7 @@
     "billingUpdated": "Billing updated.",
     "checkoutFailed": "Couldn't start checkout.",
     "accessUpdated": "Your access was updated",
-    "addOnsUpdated": "Add-ons updated."
+    "addOnsUpdated": "Options updated."
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -4469,7 +4469,7 @@
     },
     "s5": {
       "title": "5. Subscriptions, Seats & What You Pay For",
-      "intro": "The Service is offered on a monthly subscription. There are no plan tiers: every capability is available to every customer at the price listed on our pricing page, and what you pay is the sum of the people, modules and add-ons in effect.",
+      "intro": "The Service is offered on a monthly subscription. There are no plan tiers: every capability is available to every customer at the price listed on our pricing page, and what you pay is the sum of the people, modules and options in effect.",
       "seats": "Billing is per person, not per bundle. Every active Member counts as one seat at the same rate, whatever their access — there is no office/field distinction. Modules are enabled per site and billed for each site that enables them; some are additionally billed by a count (for example assets or customer records), on published volume rates.",
       "plansTitle": "What is charged (excl. VAT)",
       "plansNote": "Prices exclude VAT and may be updated for future terms with notice. The full price list is public at hbcfield.com/pricing, and your current bill is always itemised in Settings → Billing.",
@@ -4477,12 +4477,12 @@
       "seatText": "€9.99 per Member / month.",
       "moduleLabel": "Each module",
       "moduleText": "from €3 per site / month, for each site that switches it on.",
-      "addOnLabel": "Each add-on",
+      "addOnLabel": "Each option",
       "addOnText": "from €9 / month, purchased once for the whole Organization."
     },
     "s6": {
       "title": "6. Fees, Billing & Proration",
-      "intro": "Fees are charged in euro (EUR) monthly in advance, based on the people, modules and add-ons in effect. When something changes mid-period, the amount is prorated as follows:",
+      "intro": "Fees are charged in euro (EUR) monthly in advance, based on the people, modules and options in effect. When something changes mid-period, the amount is prorated as follows:",
       "monthlyLabel": "Adding — ",
       "monthlyText": "changes are prorated and applied to your next invoice; adding a person or switching a module on does not trigger an immediate separate charge, but the prorated amount for the remainder of the current month is added to the following invoice.",
       "decreaseLabel": "Removing seats — ",
@@ -6459,19 +6459,19 @@
       "spaces": "Workspaces",
       "spacesDetail_one": "{{count}} workspace",
       "spacesDetail_other": "{{count}} workspaces",
-      "addOns": "Add-ons",
+      "addOns": "Options",
       "addOnsDetail_one": "{{count}} bought",
       "addOnsDetail_other": "{{count}} bought",
       "bySpace": "By workspace",
       "usageLine": "{{module}} usage {{price}}",
       "noModules": "Nothing switched on — this workspace is free",
-      "addOnsBought": "Add-ons",
+      "addOnsBought": "Options",
       "estimate": "At list price",
       "observerSeats": "External observers",
       "externalSeats": "External supervisors"
     },
     "addOns": {
-      "title": "Add-ons",
+      "title": "Options",
       "subtitle": "Bought once for the whole organization, not per workspace",
       "perMonth": "/mo",
       "unsaved": "Unsaved changes"
@@ -6484,7 +6484,7 @@
       "incomplete": "Inactive"
     },
     "title": "Billing",
-    "subtitle": "You pay for the people who use HBCField, what each workspace switches on, and any add-ons.",
+    "subtitle": "You pay for the people who use HBCField, what each workspace switches on, and any options.",
     "paymentAndInvoices": "Payment & invoices",
     "cancel": "Cancel",
     "adminOnly": "Only an organization admin can change what you pay for.",

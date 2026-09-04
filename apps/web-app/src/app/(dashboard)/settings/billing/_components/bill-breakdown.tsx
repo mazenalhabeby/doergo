@@ -117,7 +117,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
           />
           <Part
             icon={<Puzzle className="h-4 w-4" />}
-            label={t('billing.bill.addOns', 'Add-ons')}
+            label={t('billing.bill.addOns', 'Options')}
             detail={t('billing.bill.addOnsDetail_other', '{{count}} bought', { count: bill.addOns.length })}
             cents={bill.addOnsMonthlyCents}
           />
@@ -176,7 +176,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
       {bill.addOns.length > 0 && (
         <div className="rounded-xl border border-border bg-card">
           <p className="border-b border-border px-5 py-3 text-sm font-semibold text-foreground">
-            {t('billing.bill.addOnsBought', 'Add-ons')}
+            {t('billing.bill.addOnsBought', 'Options')}
           </p>
           <ul className="divide-y divide-border">
             {bill.addOns.map((a) => (

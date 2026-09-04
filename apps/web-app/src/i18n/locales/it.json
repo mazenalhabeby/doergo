@@ -3591,7 +3591,7 @@
     "billingUpdated": "Fatturazione aggiornata.",
     "checkoutFailed": "Impossibile avviare il pagamento.",
     "accessUpdated": "I tuoi permessi di accesso sono stati aggiornati",
-    "addOnsUpdated": "Componenti aggiornati."
+    "addOnsUpdated": "Opzioni aggiornate."
   },
   "errors": {
     "somethingWentWrong": "Qualcosa è andato storto",
@@ -4478,7 +4478,7 @@
     },
     "s5": {
       "title": "5. Abbonamenti, postazioni e cosa paghi",
-      "intro": "Il Servizio è offerto con abbonamento mensile. Non esistono livelli di piano: ogni funzionalità è disponibile per tutti i clienti al prezzo indicato nella nostra pagina prezzi, e paghi la somma di persone, moduli ed extra attivi.",
+      "intro": "Il Servizio è offerto con abbonamento mensile. Non esistono livelli di piano: ogni funzionalità è disponibile per tutti i clienti al prezzo indicato nella nostra pagina prezzi, e paghi la somma di persone, moduli e opzioni attive.",
       "seats": "La fatturazione è per persona, non per pacchetto. Ogni Membro attivo conta come una postazione alla stessa tariffa, qualunque sia il suo accesso: non c'è distinzione tra ufficio e campo. I moduli si attivano per sede e sono addebitati per ogni sede che li attiva; alcuni sono inoltre addebitati a quantità (per esempio beni o schede cliente), secondo scaglioni pubblicati.",
       "plansTitle": "Cosa viene addebitato (IVA esclusa)",
       "plansNote": "I prezzi sono IVA esclusa e possono essere aggiornati per periodi futuri con preavviso. Il listino completo è pubblico su hbcfield.com/pricing, e la tua fattura corrente è sempre dettagliata in Impostazioni → Fatturazione.",
@@ -4486,12 +4486,12 @@
       "seatText": "9,99 € per Membro / mese.",
       "moduleLabel": "Per modulo",
       "moduleText": "da 3 € per sede / mese, per ogni sede che lo attiva.",
-      "addOnLabel": "Per extra",
+      "addOnLabel": "Per opzione",
       "addOnText": "da 9 € / mese, acquistato una volta per l'intera Organizzazione."
     },
     "s6": {
       "title": "6. Tariffe, fatturazione e ripartizione",
-      "intro": "Le tariffe sono addebitate in euro (EUR) ogni mese in anticipo, in base a persone, moduli ed extra attivi. Se qualcosa cambia a metà periodo, il calcolo è proporzionale come segue:",
+      "intro": "Le tariffe sono addebitate in euro (EUR) ogni mese in anticipo, in base a persone, moduli e opzioni attive. Se qualcosa cambia a metà periodo, il calcolo è proporzionale come segue:",
       "monthlyLabel": "Aggiunte — ",
       "monthlyText": "le modifiche sono calcolate in proporzione e applicate alla fattura successiva; aggiungere una persona o attivare un modulo non genera un addebito immediato separato, ma l'importo proporzionale per il resto del mese in corso viene aggiunto alla fattura successiva.",
       "decreaseLabel": "Rimozione di postazioni — ",
@@ -6468,19 +6468,19 @@
       "spaces": "Spazi di lavoro",
       "spacesDetail_one": "{{count}} spazio di lavoro",
       "spacesDetail_other": "{{count}} spazi di lavoro",
-      "addOns": "Componenti aggiuntivi",
+      "addOns": "Opzioni",
       "addOnsDetail_one": "{{count}} attivo",
       "addOnsDetail_other": "{{count}} attivi",
       "bySpace": "Per spazio di lavoro",
       "usageLine": "Utilizzo {{module}} {{price}}",
       "noModules": "Niente attivato — questo spazio di lavoro è gratuito",
-      "addOnsBought": "Componenti aggiuntivi",
+      "addOnsBought": "Opzioni",
       "estimate": "A listino",
       "observerSeats": "Osservatori esterni",
       "externalSeats": "Supervisori esterni"
     },
     "addOns": {
-      "title": "Componenti aggiuntivi",
+      "title": "Opzioni",
       "subtitle": "Si attivano una volta per tutta l’organizzazione, non per spazio di lavoro",
       "perMonth": "/mese",
       "unsaved": "Modifiche non salvate"
@@ -6493,7 +6493,7 @@
       "incomplete": "Inattivo"
     },
     "title": "Fatturazione",
-    "subtitle": "Paghi per le persone che usano HBCField, per ciò che ogni spazio di lavoro attiva e per i componenti aggiuntivi.",
+    "subtitle": "Paghi per le persone che usano HBCField, per ciò che ogni spazio di lavoro attiva e per le opzioni.",
     "paymentAndInvoices": "Pagamenti e fatture",
     "cancel": "Annulla",
     "adminOnly": "Solo un amministratore dell’organizzazione può cambiare ciò per cui si paga.",

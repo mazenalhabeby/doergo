@@ -551,7 +551,7 @@ Den vollständigen Funktionsvergleich finden Sie auf unserer Preisseite.`,
 Every new organization starts on a **14-day trial with no card required**, with everything switched on — including the parts that cost extra — so you can judge the whole product rather than a sample. When the trial ends, add a payment method to carry on; until you do, the account is limited.
 
 ### What you pay for
-There are no plans to choose between. Your bill is three things added together: **€9.99 for each person**, whatever each of your **sites switches on**, and any **add-ons** bought once for the company. The full price list is public at [hbcfield.com/pricing](/pricing), where you can also work out your own bill.
+There are no plans to choose between. Your bill is three things added together: **€9.99 for each person**, whatever each of your **sites switches on**, and any **options** bought once for the company. The full price list is public at [hbcfield.com/pricing](/pricing), where you can also work out your own bill.
 
 ### Subscribing
 From **Billing**, check out securely — the subscription is built from what your organization already has, so there is nothing to configure twice. You can enter a **VAT ID (UID)** at checkout: for cross-border EU business customers this applies the reverse-charge, so VAT is handled correctly.

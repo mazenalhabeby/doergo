@@ -3582,7 +3582,7 @@
     "billingUpdated": "Abrechnung aktualisiert.",
     "checkoutFailed": "Bezahlvorgang konnte nicht gestartet werden.",
     "accessUpdated": "Deine Zugriffsrechte wurden aktualisiert",
-    "addOnsUpdated": "Zusatzmodule aktualisiert."
+    "addOnsUpdated": "Optionen aktualisiert."
   },
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",
@@ -4469,7 +4469,7 @@
     },
     "s5": {
       "title": "5. Abonnements, Plätze und wofür Sie zahlen",
-      "intro": "Der Dienst wird als monatliches Abonnement angeboten. Es gibt keine Tarifstufen: Jede Funktion steht jedem Kunden zu dem auf unserer Preisseite genannten Preis offen, und Sie zahlen die Summe aus Personen, Modulen und Zusatzfunktionen.",
+      "intro": "Der Dienst wird als monatliches Abonnement angeboten. Es gibt keine Tarifstufen: Jede Funktion steht jedem Kunden zu dem auf unserer Preisseite genannten Preis offen, und Sie zahlen die Summe aus Personen, Modulen und Optionen.",
       "seats": "Abgerechnet wird pro Person, nicht pro Paket. Jedes aktive Mitglied zählt als ein Platz zum selben Satz, unabhängig von seinem Zugriff — eine Unterscheidung zwischen Büro und Außendienst gibt es nicht. Module werden je Standort aktiviert und für jeden Standort berechnet, der sie einschaltet; einige werden zusätzlich nach Anzahl abgerechnet (etwa Objekte oder Kundendatensätze), zu veröffentlichten Mengensätzen.",
       "plansTitle": "Was berechnet wird (zzgl. USt.)",
       "plansNote": "Preise verstehen sich zzgl. USt. und können für künftige Laufzeiten mit Vorankündigung angepasst werden. Die vollständige Preisliste ist öffentlich unter hbcfield.com/pricing, und Ihre aktuelle Rechnung ist stets unter Einstellungen → Abrechnung aufgeschlüsselt.",
@@ -4477,12 +4477,12 @@
       "seatText": "9,99 € pro Mitglied / Monat.",
       "moduleLabel": "Je Modul",
       "moduleText": "ab 3 € pro Standort / Monat, für jeden Standort, der es einschaltet.",
-      "addOnLabel": "Je Zusatzfunktion",
+      "addOnLabel": "Je Option",
       "addOnText": "ab 9 € / Monat, einmal für die gesamte Organisation."
     },
     "s6": {
       "title": "6. Entgelte, Abrechnung & anteilige Berechnung",
-      "intro": "Die Entgelte werden monatlich im Voraus in Euro (EUR) berechnet, auf Basis der aktiven Personen, Module und Zusatzfunktionen. Ändert sich etwas mitten in der Periode, wird anteilig wie folgt abgerechnet:",
+      "intro": "Die Entgelte werden monatlich im Voraus in Euro (EUR) berechnet, auf Basis der aktiven Personen, Module und Optionen. Ändert sich etwas mitten in der Periode, wird anteilig wie folgt abgerechnet:",
       "monthlyLabel": "Hinzufügen — ",
       "monthlyText": "Änderungen werden anteilig berechnet und Ihrer nächsten Rechnung hinzugefügt; eine Person hinzuzufügen oder ein Modul einzuschalten löst keine sofortige separate Abbuchung aus, der anteilige Betrag für den Rest des laufenden Monats erscheint aber auf der folgenden Rechnung.",
       "decreaseLabel": "Plätze entfernen — ",
@@ -6459,19 +6459,19 @@
       "spaces": "Arbeitsbereiche",
       "spacesDetail_one": "{{count}} Arbeitsbereich",
       "spacesDetail_other": "{{count}} Arbeitsbereiche",
-      "addOns": "Zusatzmodule",
+      "addOns": "Optionen",
       "addOnsDetail_one": "{{count}} gebucht",
       "addOnsDetail_other": "{{count}} gebucht",
       "bySpace": "Nach Arbeitsbereich",
       "usageLine": "{{module}} Nutzung {{price}}",
       "noModules": "Nichts aktiviert — dieser Arbeitsbereich ist kostenlos",
-      "addOnsBought": "Zusatzmodule",
+      "addOnsBought": "Optionen",
       "estimate": "Zum Listenpreis",
       "observerSeats": "Externe Beobachter",
       "externalSeats": "Externe Supervisoren"
     },
     "addOns": {
-      "title": "Zusatzmodule",
+      "title": "Optionen",
       "subtitle": "Einmal für die gesamte Organisation gebucht, nicht pro Arbeitsbereich",
       "perMonth": "/Mon.",
       "unsaved": "Nicht gespeicherte Änderungen"
@@ -6484,7 +6484,7 @@
       "incomplete": "Inaktiv"
     },
     "title": "Abrechnung",
-    "subtitle": "Sie zahlen für die Personen, die HBCField nutzen, für das, was jeder Arbeitsbereich aktiviert hat, und für Zusatzmodule.",
+    "subtitle": "Sie zahlen für die Personen, die HBCField nutzen, für das, was jeder Arbeitsbereich aktiviert hat, und für Optionen.",
     "paymentAndInvoices": "Zahlung & Rechnungen",
     "cancel": "Kündigen",
     "adminOnly": "Nur ein Organisations-Admin kann ändern, wofür Sie zahlen.",
