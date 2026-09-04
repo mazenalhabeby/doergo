@@ -3944,6 +3944,9 @@ export interface LocationAssignment {
     email: string;
     workMode?: string;
     avatarUrl?: string | null;
+    isExternal?: boolean;
+    /** Access profile — the assignee picker asks canReceiveTasks with it. */
+    enabledModules?: unknown;
   };
   location?: CompanyLocation;
   // Server-computed presence: the member's current active task at this location

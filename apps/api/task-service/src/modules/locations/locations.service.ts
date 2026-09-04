@@ -812,6 +812,17 @@ export class LocationsService {
             // Badged in the roster, and the flag the attendance and rota views
             // filter on — an external supervisor never clocks in here.
             isExternal: true,
+            /*
+              Whether this person can be GIVEN work.
+
+              The assignee picker asks `canReceiveTasks`, which reads the
+              `tasks` module out of the access profile. Without it here the
+              helper falls back to "no profile stored → full access" and offers
+              somebody who would never see the task on their phone.
+
+              Cheap: one JSON column already on the row being read.
+            */
+            enabledModules: true,
           },
         },
       },

@@ -155,6 +155,20 @@ interface CreateTaskDialogProps {
 // ---------------------------------------------------------------------------
 // CreateTaskDialog
 // ---------------------------------------------------------------------------
+/**
+ * What the assignee picker actually needs from a person.
+ *
+ * Both sources supply it — a space roster entry and an organization member —
+ * and naming the shape keeps that union honest rather than casting the narrower
+ * one to the wider.
+ */
+type AssigneeOption = {
+  id: string
+  firstName?: string
+  lastName?: string
+  enabledModules?: unknown
+}
+
 export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId }: CreateTaskDialogProps) {
   const { t } = useTranslation()
   const { user, hasModule: orgHasModule, hasPlanFeature } = useAuth()
@@ -316,19 +330,48 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const isSelfScope = taskCreationScope === "SELF"
   const showAssigneePicker = taskCreationScope === "SPACE" || taskCreationScope === "ORG"
 
+  /*
+    Who can be given this work.
+
+    The WORKSPACE's roster when one is chosen, and the organization directory
+    only when none is. Two reasons, and the first is why the picker came up
+    empty for a site supervisor:
+
+      • `GET /organizations/members` is `@RequirePermission('canManageUsers')`
+        — a permission an external member can never hold, and a space-scoped
+        manager holds org-wide only if somebody made them an admin. The request
+        403s, the list renders empty, and the dialog offers a control that
+        cannot be used. `GET /locations/:id/members` needs no permission: it is
+        a space's own roster, org-scoped in the service.
+
+      • It is the better answer anyway. Work at a site goes to the people at
+        that site, and the roster is a handful of rows rather than a directory
+        truncated at fifty — beyond which a member simply could not be picked.
+  */
+  // "none" is this dialog's unset sentinel, not an empty string.
+  const hasSpace = !!spaceId && spaceId !== "none"
+  const { data: rosterData } = useQuery({
+    queryKey: ["space-roster", spaceId],
+    queryFn: () => locationsApi.getAssignedMembers(spaceId),
+    staleTime: 60000,
+    enabled: open && showAssigneePicker && hasSpace,
+  })
   const { data: membersData } = useQuery({
     queryKey: ["orgMembers", { limit: 50 }],
     queryFn: () => organizationsApi.getMembers({ limit: 50 }),
     staleTime: 60000,
-    enabled: open && showAssigneePicker,
+    // Only when no workspace is chosen — otherwise the roster above answers it.
+    enabled: open && showAssigneePicker && !hasSpace,
   })
   // A member can only receive tasks if their Access Profile includes the
   // `tasks` module — clock-only members would never see the task on mobile.
   // Assignable members first, then the rest (rendered disabled with a hint).
-  const members = useMemo(() => {
-    const list = membersData?.data ?? []
+  const members: AssigneeOption[] = useMemo(() => {
+    const list = hasSpace
+      ? (rosterData ?? []).flatMap((a) => (a.user ? [a.user] : []))
+      : (membersData?.data ?? [])
     return [...list].sort(byAssignableFirst)
-  }, [membersData])
+  }, [hasSpace, rosterData, membersData])
 
   // ── Fetch spaces ──
   const { data: spacesData } = useQuery({
@@ -891,7 +934,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                     {assigneeIds.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 pb-1">
                         {assigneeIds.map((id) => {
-                          const m = members.find((mm: OrgMember) => mm.id === id)
+                          const m = members.find((mm) => mm.id === id)
                           if (!m) return null
                           return (
                             <span
@@ -933,7 +976,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         <SelectValue placeholder={t("tasks.create.selectTeamMember")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {members.map((member: OrgMember) => {
+                        {members.map((member) => {
                           const assignable = canReceiveTasks(member) && !assigneeIds.includes(member.id)
                           return (
                             <SelectItem key={member.id} value={member.id} disabled={!assignable}>
