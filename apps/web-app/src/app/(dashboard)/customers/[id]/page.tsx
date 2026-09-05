@@ -287,19 +287,14 @@ export default function CustomerRecordPage() {
             than "who owns this account?".
           */}
           {/*
-            BOTH panels on every client, and no check of the `type` column.
-
-            Gating on type made the whole feature invisible: a book of clients
-            reads "BILLA AG", "Siemens AG", "voestalpine" — every one of them
-            saved as PERSON, because the Person/Company toggle is an afterthought
-            when somebody is adding a client in a hurry. The panels ask two
-            different questions and either can be empty:
-
-              Contact people — who do I deal with AT this client?
-              Works at       — which clients does this one work for?
+            One panel each, because they are one relationship read from its two
+            ends: a company HAS contact people, a person WORKS AT companies.
+            Showing both on the same record would invite somebody to make a
+            client the contact of itself in two clicks.
           */}
-          <ContactsPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />
-          <WorksAtPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />
+          {isCompany
+            ? <ContactsPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />
+            : <WorksAtPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />}
 
           {/* Sales managers — only while the customer is worked by sales (no app access). */}
           {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} />}

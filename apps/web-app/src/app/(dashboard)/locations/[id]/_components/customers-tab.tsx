@@ -180,8 +180,22 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                         : t("customers.contactTag", "Contact")
                       : customerStageLabel(c.status || "LEAD"),
                     !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
-                    c.contactCount ? t("customers.contactCount", "{{count}} contact people", { count: c.contactCount }) : null,
-                    c.contactName,
+                    /*
+                      Who to ring, by name — and the typed `contactName` only
+                      while there is nobody real to name instead.
+
+                      That old field is printed here and NOWHERE else: it is not
+                      on the client record and there is no input for it in any
+                      form, so somebody reading "Lead · Klaus Berger" here could
+                      open the client and never find Klaus. Once he is a real
+                      contact person the row says so and the dead string steps
+                      aside rather than being printed beside him.
+                    */
+                    c.primaryContact
+                      ? c.contactCount && c.contactCount > 1
+                        ? `${c.primaryContact.name} +${c.contactCount - 1}`
+                        : c.primaryContact.name
+                      : c.contactName,
                     c.phone || c.email,
                   ]
                     .filter(Boolean)

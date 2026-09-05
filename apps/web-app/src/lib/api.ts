@@ -5437,6 +5437,8 @@ export interface Customer {
   isContact?: boolean;
   /** On a COMPANY row: how many contact people it has. */
   contactCount?: number;
+  /** On a COMPANY row: who to ring — the primary contact, or the first added. */
+  primaryContact?: { id: string; name: string; role?: string | null } | null;
   /** On a PERSON row: the company they contact, primary first. */
   contactOf?: { id: string; name: string; role?: string | null } | null;
   createdAt: string;

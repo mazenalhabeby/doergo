@@ -198,23 +198,28 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
   const [form, setForm] = useState({ name: startName ?? "", email: "", phone: "" })
 
   const searchQ = useQuery({
-    // Only people, and contacts included — somebody who already contacts another
-    // company is exactly who you are looking for, and hiding them is how a
-    // duplicate gets created.
-    queryKey: ["contact-search", search],
-    queryFn: () => customersApi.list({ search, limit: 8, contacts: "all", portalResident: false }),
+    /*
+      The right kind, asked of the server.
+
+      On a company you are choosing a PERSON; on a person you are choosing a
+      COMPANY. Filtering a fetched page instead would return eight rows and show
+      two of them.
+
+      Contacts are included on purpose: somebody who already contacts another
+      company is exactly who you are looking for, and hiding them is how a
+      duplicate gets created.
+    */
+    queryKey: ["contact-search", search, mine ? "COMPANY" : "PERSON"],
+    queryFn: () =>
+      customersApi.list({
+        search, limit: 8, contacts: "all", portalResident: false,
+        type: mine ? "COMPANY" : "PERSON",
+      }),
     // Two characters, because one matches most of the book and the request is
     // wasted; the dialog is unusable without any search at all.
     enabled: open && search.trim().length >= 2,
   })
-  /*
-    Everything except this record itself.
-
-    The `type` column used to filter this list, and it hid almost everything:
-    a book full of firms saved as PERSON is the normal case, not the odd one.
-    What somebody is choosing here is stated by the panel they opened, not by a
-    field they may never have set.
-  */
+  // Everything the server returned, minus this record itself.
   const selfId = mine?.personId ?? companyId
   const results = (searchQ.data?.data ?? []).filter((c) => c.id !== selfId)
 

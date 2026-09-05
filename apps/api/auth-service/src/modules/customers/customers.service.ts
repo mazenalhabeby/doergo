@@ -152,14 +152,20 @@ export class CustomersService {
       select: {
         companyId: true, personId: true, isPrimary: true, role: true,
         company: { select: { id: true, name: true } },
+        person: { select: { id: true, name: true } },
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
 
     const counts = new Map<string, number>();
+    const primary = new Map<string, { id: string; name: string; role: string | null }>();
     const worksAt = new Map<string, { id: string; name: string; role: string | null }>();
     for (const l of links) {
       counts.set(l.companyId, (counts.get(l.companyId) ?? 0) + 1);
+      // Primary-first ordering above means the first one seen is the one to name.
+      if (!primary.has(l.companyId)) {
+        primary.set(l.companyId, { id: l.person.id, name: l.person.name, role: l.role });
+      }
       // Ordered primary-first above, so the first one seen is the one to show.
       if (!worksAt.has(l.personId)) {
         worksAt.set(l.personId, { id: l.company.id, name: l.company.name, role: l.role });
@@ -169,6 +175,8 @@ export class CustomersService {
     return items.map((c) => ({
       ...c,
       contactCount: c.type === 'COMPANY' ? counts.get(c.id as string) ?? 0 : 0,
+      // Who to ring at this company — the name the row prints.
+      primaryContact: c.type === 'COMPANY' ? primary.get(c.id as string) ?? null : null,
       contactOf: c.type === 'COMPANY' ? null : worksAt.get(c.id as string) ?? null,
     }));
   }
