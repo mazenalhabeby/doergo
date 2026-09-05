@@ -206,6 +206,7 @@ User { id, email, passwordHash, firstName, lastName, role, organizationId, faile
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance, assetId }
+CustomerContact { id, organizationId, companyId, personId, role?, isPrimary }  # a person who works at a company (@@unique companyId+personId)
 Comment { id, content, taskId, userId }
 Attachment { id, fileName, fileUrl, fileType, fileSize, taskId, uploadedById }
 TaskEvent { id, eventType, metadata, taskId, userId }
@@ -389,6 +390,20 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ A space with **no coordinates is geofence-exempt and clocks in fine**. Never filter those out client-side — an org that never set coordinates could otherwise not clock in at all.
 >
 > ⚠️ **CUSTOMER spaces are workplaces.** A first version excluded them as "somebody else's premises"; in a field-service product people spend the day at a customer site and clock in there, and the clock-in has always accepted it. Excluding them made the list stricter than the check and hid two of three workspaces from a member assigned to all three. Only the Remote bucket is filtered.
+
+### CRM contact people (`/customers`)
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/customers/:id/contacts` | Who works at this company | CRM caps |
+| GET | `/customers/:id/companies` | Which companies this person contacts | CRM caps |
+| POST | `/customers/:id/contacts` | Attach a person — existing (`personId`) or new (`person`) | `editInfo` / `manage` |
+| PATCH | `/customers/contacts/:linkId` | Change the role, or make them primary | `editInfo` |
+| DELETE | `/customers/contacts/:linkId` | Detach — **the person record is kept** | `editInfo` |
+| POST | `/customers/:id/promote` | Make a contact a client in their own right | `manage` |
+
+> ⚠️ **A contact is not a client.** `Customer.isContact` keeps them out of the client list AND out of `BILLABLE_CLIENT_WHERE` — the CRM ladder charges per active client, and a firm with six contacts is not six clients.
+>
+> ⚠️ **Linking is not gated on `Customer.type`.** A real book of clients reads "BILLA AG", "Siemens AG" — all saved as PERSON, because the Person/Company toggle is an afterthought. The two ends are told apart by their POSITION in the link; the panels split by type, the service does not. A↔B both ways round is refused.
 
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
@@ -1028,6 +1043,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `isOrganizationSuspended()`, `ORG_SUSPENDED_MESSAGE` | The organization off switch, read at all three doors into the product |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
+| `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
 | `moduleAllowedForExternal()`, `filterExternalModules()` | An external member holds no clock and no time_off |
 | `stripeCatalog()`, `stripeLinesForBill()`, `stripeLookupKey()` | What Stripe must hold, and a bill as subscription lines |
@@ -1180,6 +1196,17 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-09-06) — CRM contact people, workspace fixes, two stale gates
+
+**PROD `78b6afeb`** (rollback tags `prod-pre-crm-contacts` → `5de81f3d`, `prod-pre-ws-move` → `e6bb984f`). Migration `20260905180000_customer_contacts`. Detail in memory `crm-contact-people`.
+
+- **Contact people** — a person RECORD linked to a company, with a role and a primary, readable from both ends. See the endpoint table above for the two warnings that matter.
+- ⚠️ **A new client could land in no workspace at all.** Adding from `/clients` on the **All** tab wrote `spaceId = NULL` — invisible in every workspace tab and outside the per-space CRM. The form asks now, and **edit shows it** so an orphan can be filed. `assertRefsInOrg` already validated the org; what it missed was an ARCHIVED space (now refused) and moving an app user out from under their portal.
+- ⚠️ **An asset has no `spaceId`** — it inherits its KIND's (`AssetCategory.spaceId`). Moving one between workspaces is a change of kind, and fields the destination does not ask for are **deleted** (`keepFieldsForKind`).
+- ⚠️ **The Apartment portal entity demanded an `apartments` module that no longer exists** — apartments moved into ASSETS, so the gate could never pass and its error named a module nobody can switch on. A gate that outlives the thing it gates fails permanently, not open. The UI meanwhile passed `hasApartments` as a hard-coded `true`, so the option was offered and the server always refused it.
+- ⚠️ **A company's Addresses panel read "Workspaces"** because it fetched the SPACE's portal for any client in a space that ran one and borrowed its `entityLabel` — a client inheriting the vocabulary of a product it has nothing to do with, in a word this product already uses for the space. Now only for an actual resident.
+- ⚠️ **`GenericContentSkeleton` drew a DASHBOARD.** Every route that is not tasks/dashboard falls back to it, so CRM, assets, portals and members all flashed a stat grid on reload. Now neutral. `RouteSkeleton` must NOT predict a module-gated route's layout while `user` is null — those routes may not exist for the account.
 
 ### Recently Completed (2026-09-05) — Agreed price, the org off switch, clock-in choice
 
