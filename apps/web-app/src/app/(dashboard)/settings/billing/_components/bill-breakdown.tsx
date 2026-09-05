@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Boxes, Users, Eye, UserCog } from 'lucide-react';
+import { BadgeCheck, Boxes, Users, Eye, UserCog } from 'lucide-react';
 import {
   AVAILABLE_MODULES,
   formatCents,
@@ -52,15 +52,25 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
     on and nobody in it would otherwise divide by zero and render NaN% widths —
     an unstyled sliver rather than an empty bar.
   */
+  /*
+    What the parts add up to — which is NOT always what is charged.
+
+    An organization on an agreed price pays €120 against €863 of product. The
+    segments below are the real prices of the real things, so they must be
+    divided by their own total; using the charged number would give three bands
+    summing to 719% and a bar that ran off its own container.
+  */
+  const listTotal = bill.listMonthlyCents ?? bill.monthlyCents;
+
   const share = useMemo(() => {
-    const total = bill.monthlyCents;
+    const total = listTotal;
     if (total <= 0) return { people: 0, spaces: 0, options: 0 };
     return {
       people: ((bill.seatMonthlyCents + bill.observerSeatMonthlyCents) / total) * 100,
       spaces: ((bill.spacesMonthlyCents + bill.usageMonthlyCents) / total) * 100,
       options: (bill.addOnsMonthlyCents / total) * 100,
     };
-  }, [bill]);
+  }, [bill, listTotal]);
 
   return (
     <div className="space-y-4">
@@ -80,7 +90,42 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
             <span className="ml-1 text-base font-normal text-muted-foreground">
               {t('billing.bill.perMonth', '/month')}
             </span>
+            {/*
+              The list price beside the agreed one, struck.
+
+              Shown, not hidden. A customer who can see they are on €120 against
+              a list price of €863 knows what their renewal conversation is
+              about — and finding that out for the first time at renewal is the
+              version of this that costs an account.
+            */}
+            {bill.agreement && listTotal !== bill.monthlyCents && (
+              <span className="ml-2 align-middle text-base font-normal text-muted-foreground line-through">
+                {formatCents(listTotal)}
+              </span>
+            )}
           </p>
+
+          {bill.agreement && (
+            <div className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3.5 py-2.5">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                <BadgeCheck className="h-3.5 w-3.5" />
+                {t('billing.agreed.title', 'You are on an agreed price')}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {t('billing.agreed.body', 'Your usage would otherwise come to {{list}} a month.', {
+                  list: formatCents(listTotal),
+                })}
+                {bill.agreement.until && (
+                  <>
+                    {' '}
+                    {t('billing.agreed.until', 'This rate holds until {{date}}.', {
+                      date: new Date(bill.agreement.until).toLocaleDateString(),
+                    })}
+                  </>
+                )}
+              </p>
+            </div>
+          )}
           {/*
             Said here rather than at checkout.
 
@@ -104,7 +149,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
             glance; the legend names every band, because a coloured segment
             nobody can name is decoration.
           */}
-          {bill.monthlyCents > 0 && (
+          {listTotal > 0 && (
             <>
               <div className="mt-5 flex h-2.5 overflow-hidden rounded-full bg-muted" role="presentation">
                 <span className="block bg-violet-500" style={{ width: `${share.spaces}%` }} />

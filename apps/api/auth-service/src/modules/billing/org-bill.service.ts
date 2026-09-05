@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   orgMonthlyCost,
+  applyAgreement,
+  agreementFrom,
   isObserverSeat,
   billsByUsage,
   BILLABLE_ASSET_WHERE,
@@ -48,7 +50,14 @@ export class OrgBillService {
     const [org, seatCount, externals, spaces, assetTypes, assetRows, clientRows, portalRows] = await Promise.all([
       this.prisma.organization.findUnique({
         where: { id: organizationId },
-        select: { addOns: true },
+        // The agreed-price columns come along on a query that already runs —
+        // an override that cost an extra round trip on every billing screen
+        // would be a strange price to pay for something almost no org has.
+        select: {
+          addOns: true,
+          agreedMonthlyCents: true, agreedListCents: true, agreedUntil: true,
+          agreedNote: true, agreedSetAt: true, agreedSetById: true,
+        },
       }),
       // A seat is an active member. No office/field split — deciding which side
       // somebody was on used to need their access profile, their employment
@@ -157,7 +166,17 @@ export class OrgBillService {
       if (isObserverSeat(u, [...held])) observerSeatCount += 1;
     }
 
-    return orgMonthlyCost({
+    /*
+      The list price first, then the deal — in that order, once, here.
+
+      This is the ONLY place an agreed price is applied. Every consumer reads
+      the object this method returns: the Stripe lines, the stored
+      `lastBilledCents` (and so MRR on the operator console), the customer's
+      billing page. Applying it anywhere else would create a second answer to
+      "what does this organization pay?", and the two would eventually disagree
+      on an invoice.
+    */
+    const list = orgMonthlyCost({
       seatCount: Math.max(0, seatCount - observerSeatCount),
       observerSeatCount,
       // The externals who are NOT observers — supervisors, at the full seat
@@ -167,5 +186,7 @@ export class OrgBillService {
       spaces: spaceInput,
       addOns: org?.addOns ?? [],
     });
+
+    return applyAgreement(list, agreementFrom(org));
   }
 }

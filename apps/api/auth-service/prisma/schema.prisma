@@ -447,6 +447,25 @@ model Organization {
   suspendedAt       DateTime?
   cancelAtPeriodEnd Boolean            @default(false)
   billingEmail      String?
+
+  /// ── An agreed price ────────────────────────────────────────────────────────
+  /// A fixed monthly amount, in EUR cents, that REPLACES this organization's
+  /// computed bill. Set only by a platform operator; no customer route touches
+  /// these columns. Null = they pay the price list, like everyone else.
+  agreedMonthlyCents Int?
+  /// What the bill computed to when the price was agreed — the baseline the
+  /// drift alert measures against. ⚠️ NOT the agreed price: €120 against €863 is
+  /// the deal, not drift, and comparing those two would alert every night.
+  agreedListCents    Int?
+  /// End of the agreed term. ⚠️ Does NOT expire the price — it raises an alert
+  /// 30 days out and an operator decides. A price that reverts itself would take
+  /// a customer from €120 to €863 on one invoice with nobody having spoken.
+  agreedUntil        DateTime?
+  /// Why, and with whom. An override nobody can explain is the one that survives
+  /// three renewals by accident.
+  agreedNote         String?
+  agreedSetAt        DateTime?
+  agreedSetById      String?
   vatId             String?
 
   // Customer invoicing: default billable labor rate (what you CHARGE a customer
@@ -3719,6 +3738,13 @@ enum BillingAlertKind {
   /// when Stripe is down — so without a record the only trace is a log line
   /// nobody reads, and a subscription can drift for weeks in silence.
   SYNC_FAILED
+  /// A contracted customer has grown well past what their agreed price was
+  /// struck against. Nothing is wrong; somebody should decide whether the deal
+  /// still holds before the next renewal, rather than after it.
+  CONTRACT_DRIFT
+  /// An agreed term is ending (or has ended). The price is still being honoured
+  /// — this exists so that is a decision rather than an oversight.
+  CONTRACT_EXPIRING
 }
 
 enum BillingMode {

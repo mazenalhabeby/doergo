@@ -221,7 +221,30 @@ export interface OrgCostBreakdown {
   usageMonthlyCents: number;
   /** Capabilities bought once for the whole organization, not per space. */
   addOnsMonthlyCents: number;
+  /**
+   * What is actually charged.
+   *
+   * Equal to `listMonthlyCents` for every organization on the price list. When
+   * an operator has agreed a fixed price, this is that price — see
+   * `applyAgreement`, which is the ONLY thing that may make the two differ.
+   */
   monthlyCents: number;
+  /**
+   * What the price list says this organization's usage comes to.
+   *
+   * Always computed, even for a customer who does not pay it: it is what the
+   * renewal conversation is about, what the drift alert watches, and what the
+   * customer sees struck through on their own billing page.
+   */
+  listMonthlyCents: number;
+  /** Set only when a fixed price has been agreed with this organization. */
+  agreement?: {
+    monthlyCents: number;
+    until: string | null;
+    note: string | null;
+    /** The list price when the deal was struck — the baseline drift is measured from. */
+    listCentsAtAgreement: number | null;
+  } | null;
   spaces: Array<{ spaceId: string; spaceName: string; cost: SpaceCost }>;
   /** Every space's counted modules, flattened — one entry per space per module. */
   usage: UsageCost[];
@@ -287,6 +310,10 @@ export function orgMonthlyCost(input: {
     usageMonthlyCents,
     addOnsMonthlyCents: addOnCost.monthlyCents,
     monthlyCents,
+    // No agreement has been applied at this point, so the two are the same
+    // number. `applyAgreement` is the only thing that may separate them, and it
+    // runs once, at the end of the bill computation.
+    listMonthlyCents: monthlyCents,
     spaces,
     usage: spaces.flatMap((s) => s.cost.usage),
     addOns: addOnCost.lines,

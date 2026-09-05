@@ -6532,7 +6532,12 @@
     "byInvoice": "Pagamento con fattura",
     "byInvoiceHint": "Inviamo una fattura ogni mese, con scadenza a {{days}} giorni. Nessuna carta viene addebitata.",
     "subscribe": "Configura il pagamento",
-    "subscribeInvoice": "Avvia la fatturazione mensile"
+    "subscribeInvoice": "Avvia la fatturazione mensile",
+    "agreed": {
+      "title": "Hai un prezzo concordato",
+      "body": "Il tuo utilizzo ammonterebbe altrimenti a {{list}} al mese.",
+      "until": "Questa tariffa è valida fino al {{date}}."
+    }
   },
   "assetKinds": {
     "title": "Beni",

@@ -27,6 +27,12 @@ export class PlatformAdminController {
   @MessagePattern({ cmd: 'platform_set_billing_mode' })
   setBillingMode(@Payload() d: any) { return this.svc.setBillingMode(d); }
 
+  @MessagePattern({ cmd: 'platform_set_agreed_price' })
+  setAgreedPrice(@Payload() d: any) { return this.svc.setAgreedPrice(d); }
+
+  @MessagePattern({ cmd: 'platform_clear_agreed_price' })
+  clearAgreedPrice(@Payload() d: any) { return this.svc.clearAgreedPrice(d); }
+
   @MessagePattern({ cmd: 'platform_suspend' })
   suspend(@Payload() d: any) { return this.svc.suspend(d); }
 

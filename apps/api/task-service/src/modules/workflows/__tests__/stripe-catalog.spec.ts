@@ -227,11 +227,14 @@ describe('what Stripe is told', () => {
 });
 
 describe('the Stripe catalogue', () => {
-  it('holds exactly the four lines a bill can produce', () => {
+  it('holds exactly the lines a bill can produce', () => {
     /*
-      Four, not thirty-three. The per-module, per-option and per-usage prices
+      Five, not thirty-three. The per-module, per-option and per-usage prices
       were 31 of the old catalogue and are what put an organization at 19 of
       Stripe's 20-line ceiling.
+
+      The fifth is the agreed price, which replaces all four of the others for a
+      customer who is not on the price list.
 
       The itemisation is not lost — /settings/billing shows every workspace,
       every module and every option, reconciling to the cent, which is more
@@ -239,6 +242,7 @@ describe('the Stripe catalogue', () => {
     */
     const keys = stripeCatalog().map((e) => e.lookupKey).sort();
     expect(keys).toEqual([
+      'hbcfield_agreed_monthly',
       'hbcfield_options_monthly',
       'hbcfield_seat_monthly',
       'hbcfield_seat_observer_monthly',

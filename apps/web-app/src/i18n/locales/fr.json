@@ -6532,7 +6532,12 @@
     "byInvoice": "Paiement sur facture",
     "byInvoiceHint": "Nous envoyons une facture chaque mois, payable sous {{days}} jours. Aucune carte n’est débitée.",
     "subscribe": "Configurer le paiement",
-    "subscribeInvoice": "Démarrer la facturation mensuelle"
+    "subscribeInvoice": "Démarrer la facturation mensuelle",
+    "agreed": {
+      "title": "Vous bénéficiez d’un tarif convenu",
+      "body": "Votre utilisation reviendrait sinon à {{list}} par mois.",
+      "until": "Ce tarif est valable jusqu’au {{date}}."
+    }
   },
   "assetKinds": {
     "title": "Biens",

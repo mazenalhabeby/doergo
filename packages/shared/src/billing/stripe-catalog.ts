@@ -46,7 +46,16 @@ export type StripeLineKind =
   /** Everything the workspaces cost, as one line. See stripeLinesForBill. */
   | 'workspaces'
   /** Everything bought once for the organization, as one line. */
-  | 'options';
+  | 'options'
+  /**
+   * A price agreed with this customer, replacing everything above.
+   *
+   * Its own product so the invoice says what it is. A customer paying an agreed
+   * rate who receives an invoice itemised "Workspaces €546.02, Options €297.00"
+   * totalling €120 has been sent a document that does not add up, and they will
+   * ask — reasonably — which number is real.
+   */
+  | 'agreed';
 
 /**
  * The stable lookup key for one billable line. Same function, script and runtime.
@@ -132,6 +141,12 @@ export function stripeCatalog(): StripeCatalogEntry[] {
   */
   push('workspaces', '', 'HBCField — Workspaces (modules & usage)', 1);
   push('options', '', 'HBCField — Options', 1);
+  /*
+    The agreed price. One cent here too, for the same reason the aggregates are:
+    the price object exists to NAME A PRODUCT, and the real amount rides on the
+    line (see StripeLine.amountCents). Nothing is ever charged at a cent.
+  */
+  push('agreed', '', 'HBCField — Agreed monthly price', 1);
 
   /*
     No per-module, per-option or per-usage prices any more.
@@ -191,8 +206,30 @@ export function stripeLinesForBill(
     spaces: Array<{ cost: { lines: Array<{ moduleKey: string; monthlyCents: number }> } }>;
     usage: Array<{ moduleKey: string; monthlyCents: number }>;
     addOns: Array<{ key: string; monthlyCents?: number }>;
+    /** Set when a fixed price has been agreed — see applyAgreement. */
+    agreement?: { monthlyCents: number } | null;
   },
 ): StripeLine[] {
+  /*
+    An agreed price is the WHOLE subscription, not a line added to it.
+
+    Checked first, and it returns — the seats and the aggregates below are the
+    price list, and this customer is not on the price list. Emitting both would
+    charge them the sum of the two.
+
+    A zero agreed price is still a line, at €0.00. Dropping it would leave the
+    subscription with no items at all, which Stripe refuses, and would make a
+    deliberately free customer indistinguishable from a broken sync.
+  */
+  if (bill.agreement) {
+    return [{
+      lookupKey: stripeLookupKey('agreed', ''),
+      quantity: 1,
+      amountCents: Math.max(0, Math.round(bill.agreement.monthlyCents)),
+      describe: `agreed price — ${bill.agreement.monthlyCents}c`,
+    }];
+  }
+
   const lines: StripeLine[] = [];
 
   if (bill.seatCount > 0) {

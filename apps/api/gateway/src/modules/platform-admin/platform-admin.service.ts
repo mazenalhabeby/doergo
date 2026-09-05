@@ -11,6 +11,12 @@ export class PlatformAdminService extends BaseGatewayService {
   overview() { return this.send({ cmd: 'platform_overview' }, {}); }
   listOrgs(data: { search?: string; status?: string }) { return this.send({ cmd: 'platform_list_orgs' }, data); }
   orgDetail(data: { organizationId: string }) { return this.send({ cmd: 'platform_org_detail' }, data); }
+  setAgreedPrice(data: { organizationId: string; monthlyCents: number; until?: string | null; note?: string | null; byUserId?: string }) {
+    return this.send({ cmd: 'platform_set_agreed_price' }, data);
+  }
+  clearAgreedPrice(data: { organizationId: string; byUserId?: string }) {
+    return this.send({ cmd: 'platform_clear_agreed_price' }, data);
+  }
   suspend(data: { organizationId: string; byUserId?: string }) { return this.send({ cmd: 'platform_suspend' }, data); }
   billingAlerts(data: { includeAcknowledged?: boolean }) { return this.send({ cmd: 'platform_billing_alerts' }, data); }
   ackBillingAlert(data: { id: string; byUserId?: string }) { return this.send({ cmd: 'platform_ack_billing_alert' }, data); }

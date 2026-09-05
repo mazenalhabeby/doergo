@@ -12,6 +12,9 @@ import {
   DEFAULT_ORG_MODULES,
   collectionMethodFor,
   isMaterialDrop,
+  agreementFrom,
+  agreementEndsWithin,
+  isMaterialAgreementDrift,
   type BillingMode,
   countSeats,
   subscriptionTotalCents,
@@ -339,6 +342,102 @@ export class BillingService {
       }
     }
     this.logger.log(`Nightly usage reconcile: ${synced}/${orgs.length} organizations`);
+
+    // Same sweep, different question: not "is Stripe in step?" but "does this
+    // deal still make sense?". Kept out of the loop above because it must also
+    // reach contracted organizations that have no Stripe subscription at all.
+    await this.sweepAgreements().catch((e) =>
+      this.logger.error(`Agreement sweep failed: ${(e as Error).message}`),
+    );
+  }
+
+  /**
+   * Watch the deals: has a contracted customer outgrown their price, and is a
+   * term about to end?
+   *
+   * Nightly rather than on every change, deliberately. Neither question is
+   * urgent — nobody acts on "they added a seat" — and computing a bill per
+   * contracted organization on every member edit would be real work for an
+   * answer that only matters once a day. The partial index means this reads the
+   * contracted rows and not the table.
+   *
+   * Never throws into the sweep that calls it: an alert that cannot be written
+   * is not a reason to fail the nightly reconcile.
+   */
+  async sweepAgreements() {
+    const orgs = await this.prisma.organization.findMany({
+      where: { agreedMonthlyCents: { not: null } },
+      select: {
+        id: true, name: true,
+        agreedMonthlyCents: true, agreedListCents: true, agreedUntil: true,
+        agreedNote: true, agreedSetAt: true, agreedSetById: true,
+      },
+    });
+    if (!orgs.length) return;
+
+    for (const org of orgs) {
+      const agreement = agreementFrom(org);
+      if (!agreement) continue;
+
+      try {
+        // The term first: it needs no bill, so an organization whose bill fails
+        // to compute still gets its expiry warning.
+        if (agreementEndsWithin(agreement)) {
+          await this.openAgreementAlert(org.id, 'CONTRACT_EXPIRING', {
+            fromCents: agreement.listCentsAtAgreement,
+            toCents: agreement.monthlyCents,
+            detail:
+              `Agreed €${(agreement.monthlyCents / 100).toFixed(2)} ends ` +
+              `${agreement.until ? new Date(agreement.until).toISOString().slice(0, 10) : 'unknown'}` +
+              `${agreement.note ? ` — ${agreement.note}` : ''}`,
+          });
+        }
+
+        const bill = await this.bill.compute(org.id);
+        if (isMaterialAgreementDrift(agreement.listCentsAtAgreement, bill.listMonthlyCents)) {
+          await this.openAgreementAlert(org.id, 'CONTRACT_DRIFT', {
+            fromCents: agreement.listCentsAtAgreement,
+            toCents: bill.listMonthlyCents,
+            detail:
+              `Agreed €${(agreement.monthlyCents / 100).toFixed(2)}; list was ` +
+              `€${((agreement.listCentsAtAgreement ?? 0) / 100).toFixed(2)} at the agreement and is now ` +
+              `€${(bill.listMonthlyCents / 100).toFixed(2)}`,
+          });
+        }
+      } catch (e) {
+        this.logger.error(`Agreement check failed for org ${org.id}: ${(e as Error).message}`);
+      }
+    }
+  }
+
+  /**
+   * One OPEN row per organization per kind, counting up — the same discipline as
+   * a sync failure, and for the same reason: both of these are true every night
+   * until somebody acts, and a nightly duplicate is a feed people learn to
+   * scroll past. Acknowledging closes the episode; if it is still true tomorrow
+   * a fresh row opens, which is the signal that nothing was done.
+   */
+  private async openAgreementAlert(
+    organizationId: string,
+    kind: 'CONTRACT_DRIFT' | 'CONTRACT_EXPIRING',
+    data: { fromCents: number | null; toCents: number; detail: string },
+  ) {
+    const detail = data.detail.slice(0, 300);
+    const open = await this.prisma.billingAlert.findFirst({
+      where: { organizationId, kind, acknowledgedAt: null },
+      select: { id: true, occurrences: true },
+    });
+    if (open) {
+      await this.prisma.billingAlert.update({
+        where: { id: open.id },
+        data: { occurrences: open.occurrences + 1, lastSeenAt: new Date(), detail, toCents: data.toCents },
+      });
+      return;
+    }
+    await this.prisma.billingAlert.create({
+      data: { organizationId, kind, fromCents: data.fromCents, toCents: data.toCents, detail },
+    });
+    this.logger.warn(`[BILLING] ${kind} alert opened for org ${organizationId}: ${detail}`);
   }
 
   /**
@@ -691,7 +790,18 @@ export class BillingService {
         somebody removes one seat is ignored by the time one fires that matters.
       */
       const before = sub.lastBilledCents ?? 0;
-      if (isMaterialDrop(before, bill.monthlyCents)) {
+      /*
+        …but not when the fall IS the deal.
+
+        Setting an agreed price takes a bill from €863 to €120 in one reconcile,
+        which is a material drop by every measure — and alerting on it would
+        report an operator's own deliberate act back to them as revenue leaving,
+        thirty seconds after they pressed the button on a screen that showed them
+        both numbers. Growth past the deal is watched instead, by the nightly
+        sweep, which is where the interesting question actually lives.
+      */
+      const fallIsTheAgreement = bill.agreement != null && bill.monthlyCents === bill.agreement.monthlyCents;
+      if (!fallIsTheAgreement && isMaterialDrop(before, bill.monthlyCents)) {
         await this.prisma.billingAlert.create({
           data: {
             organizationId,

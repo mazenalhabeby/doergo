@@ -6523,7 +6523,12 @@
     "byInvoice": "Zahlung per Rechnung",
     "byInvoiceHint": "Wir senden monatlich eine Rechnung, zahlbar innerhalb von {{days}} Tagen. Es wird keine Karte belastet.",
     "subscribe": "Zahlung einrichten",
-    "subscribeInvoice": "Monatliche Rechnung starten"
+    "subscribeInvoice": "Monatliche Rechnung starten",
+    "agreed": {
+      "title": "Sie haben einen vereinbarten Preis",
+      "body": "Ihre Nutzung würde sonst {{list}} pro Monat betragen.",
+      "until": "Dieser Preis gilt bis {{date}}."
+    }
   },
   "assetKinds": {
     "title": "Objekte",

@@ -13,14 +13,24 @@ type Cap = 'view' | 'extendTrial' | 'manageOrgs' | 'editPricing' | 'billingOps' 
 const ROLES = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'] as const;
 
 const eur = (c?: number | null) => (c == null ? '—' : `€${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
+/*
+  Exact euros and cents, for the places where the number IS the subject.
+
+  `eur` rounds for tables and headline stats, where €4,187 reads better than
+  €4,186.73. An agreed price is not one of those places: it is a figure somebody
+  said out loud to a customer, and reading it back rounded is how a console and
+  an invoice come to disagree by 47 cents.
+*/
+const eur2 = (c?: number | null) =>
+  c == null ? '—' : `€${(c / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—');
 
 interface Me { user: { id: string; email: string; firstName: string; lastName: string; role: string; twoFactorEnabled?: boolean; isSupportSupervisor?: boolean; supportTeamIds?: string[] }; permissions: Cap[] }
-interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number }
+interface Overview { totalOrgs: number; trialing: number; suspended: number; newLast30: number; byStatus: Record<string, number>; seats: number; mrrCents: number; arrCents: number; agreedCount: number; agreedAwayCents: number; listMrrCents: number }
 type BillingMode = 'AUTOMATIC' | 'INVOICE' | 'EXTERNAL';
 
 interface BillingAlertRow {
-  id: string; kind: 'DROP' | 'SYNC_FAILED';
+  id: string; kind: 'DROP' | 'SYNC_FAILED' | 'CONTRACT_DRIFT' | 'CONTRACT_EXPIRING';
   organizationId: string; organizationName: string; billingMode: BillingMode;
   fromCents: number | null; toCents: number | null; dropCents: number | null;
   detail: string | null; occurrences: number; lastSeenAt: string;
@@ -40,8 +50,23 @@ const BILLING_BADGE: Record<BillingMode, { label: string; cls: string; hint: str
   EXTERNAL: { label: 'agreement', cls: 'bg-amber-500/15 text-amber-400', hint: 'Nothing charged — figures are list price only' },
 };
 
-interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number; billingMode: BillingMode; invoiceDueDays: number }
-interface OrgDetail extends OrgRow { enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
+/*
+  What each kind of billing alert is called, in one table.
+
+  Four kinds is exactly where a chain of nested ternaries stops being readable
+  and starts being a place a fifth kind can be forgotten — it would render its
+  own enum name, which is at least honest, rather than borrowing another kind's
+  label.
+*/
+const ALERT_BADGE: Record<string, { label: string; cls: string }> = {
+  DROP: { label: 'bill fell', cls: 'bg-amber-500/15 text-amber-400' },
+  SYNC_FAILED: { label: 'sync failed', cls: 'bg-red-500/15 text-red-400' },
+  CONTRACT_DRIFT: { label: 'outgrew deal', cls: 'bg-amber-500/15 text-amber-400' },
+  CONTRACT_EXPIRING: { label: 'deal ending', cls: 'bg-blue-500/15 text-blue-400' },
+};
+
+interface OrgRow { id: string; name: string; planTier: string | null; subStatus: string; trialEndsAt: string | null; suspendedAt: string | null; createdAt: string; memberCount: number; seats: number; addOns: string[]; mrrCents: number; billingMode: BillingMode; invoiceDueDays: number; agreedMonthlyCents: number | null; agreedListCents: number | null; agreedUntil: string | null; agreedNote: string | null; agreedSetAt: string | null }
+interface OrgDetail extends OrgRow { listMonthlyCents: number | null; enabledModules: string[]; billingEmail: string | null; vatId: string | null; currentPeriodEnd: string | null; members: Array<{ id: string; firstName: string; lastName: string; email: string; role: string; isActive: boolean; employmentType: string | null }> }
 interface MailRouteStatus { label: string; host: string; port: number; ok: boolean; error: string | null }
 interface MailStatus { configured: boolean; ok: boolean; routes?: MailRouteStatus[]; host: string | null; port: number | null; error: string | null }
 interface StaffUser { id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean; lastLoginAt: string | null }
@@ -280,8 +305,8 @@ export default function ControlCenter() {
                           </button>
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`rounded px-1.5 py-0.5 text-[11px] ${a.kind === 'SYNC_FAILED' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>
-                            {a.kind === 'SYNC_FAILED' ? 'sync failed' : 'bill fell'}
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] ${ALERT_BADGE[a.kind]?.cls ?? 'bg-slate-700'}`}>
+                            {ALERT_BADGE[a.kind]?.label ?? a.kind}
                           </span>
                         </td>
                         <td className="px-3 py-2">
@@ -300,6 +325,32 @@ export default function ControlCenter() {
                               </span>
                             </td>
                           </>
+                        ) : a.kind === 'CONTRACT_DRIFT' ? (
+                          /*
+                            The same three columns read the other way round: what
+                            the list price was when the deal was struck, what it
+                            is now, and the growth. The AGREED price is not here
+                            on purpose — it has not changed, and putting it in a
+                            column headed "now" is how somebody reads it as a
+                            price rise the customer was charged.
+                          */
+                          <>
+                            <td className="px-3 py-2 text-right tabular-nums text-slate-400">{eur(a.fromCents ?? 0)}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{eur(a.toCents ?? 0)}</td>
+                            <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-400">
+                              +{eur(Math.max(0, (a.toCents ?? 0) - (a.fromCents ?? 0)))}
+                              <span className="ml-1 text-[11px] font-normal text-slate-500">
+                                {a.fromCents ? `${Math.round((((a.toCents ?? 0) - a.fromCents) / a.fromCents) * 100)}%` : ''}
+                              </span>
+                            </td>
+                          </>
+                        ) : a.kind === 'CONTRACT_EXPIRING' ? (
+                          <td colSpan={3} className="px-3 py-2 text-amber-300">
+                            <span className="text-xs">{a.detail ?? 'An agreed price is ending'}</span>
+                            {/* The half an operator will otherwise assume the
+                                wrong way round: nothing happens on the date. */}
+                            <span className="ml-2 text-[11px] text-slate-500">the price holds until you change it</span>
+                          </td>
                         ) : (
                           // A sync failure is not about an amount. The three
                           // money columns carry Stripe's own words instead —
@@ -339,6 +390,13 @@ export default function ControlCenter() {
                 <Stat label="Trialing" value={String(overview.trialing)} />
                 <Stat label="Deactivated" value={String(overview.suspended)} />
                 <Stat label="Seats" value={String(overview.seats)} sub="one price, all members" />
+                {overview.agreedCount > 0 && (
+                  <Stat
+                    label="Agreed away"
+                    value={eur(overview.agreedAwayCents)}
+                    sub={`${overview.agreedCount} on an agreed price`}
+                  />
+                )}
               </div>
             )}
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -348,11 +406,17 @@ export default function ControlCenter() {
             </div>
             <div className="overflow-x-auto rounded-xl border border-slate-800">
               <table className="w-full text-sm">
-                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Billing</th><th className="px-3 py-2">Options</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">MRR</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
+                <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2">Organization</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Billing</th><th className="px-3 py-2">Options</th><th className="px-3 py-2 text-right">Members</th><th className="px-3 py-2 text-right">Seats</th><th className="px-3 py-2 text-right">Charged</th><th className="px-3 py-2 text-right">List</th><th className="px-3 py-2">Trial ends</th><th className="px-3 py-2"></th></tr></thead>
                 <tbody className="divide-y divide-slate-800">
                   {orgs.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-900/50">
-                      <td className="px-3 py-2"><button onClick={async () => setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${o.id}`)).data)} className="font-medium hover:text-blue-400">{o.name}</button>{o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">DEACTIVATED</span>}</td>
+                      <td className="px-3 py-2"><button onClick={async () => setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${o.id}`)).data)} className="font-medium hover:text-blue-400">{o.name}</button>{o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">DEACTIVATED</span>}
+                        {o.agreedMonthlyCents != null && (
+                          <span
+                            title={`Agreed ${eur(o.agreedMonthlyCents)}/mo${o.agreedNote ? ` — ${o.agreedNote}` : ''}`}
+                            className="ml-2 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-400"
+                          >AGREED</span>
+                        )}</td>
                       <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[o.subStatus?.toLowerCase()] ?? 'bg-slate-700'}`}>{o.subStatus?.toLowerCase()}</span></td>
                       {/*
                         This was a tier picker. Tiers stopped deciding access when
@@ -375,7 +439,16 @@ export default function ControlCenter() {
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">{o.memberCount}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-slate-400">{o.seats}</td>
+                      {/*
+                        Two money columns, not one. `Charged` is revenue;
+                        `List` is what the product is worth to this customer.
+                        A single column hides the only interesting number about a
+                        contracted organization, which is the gap between them.
+                      */}
                       <td className="px-3 py-2 text-right tabular-nums">{eur(o.mrrCents)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-slate-500">
+                        {o.agreedMonthlyCents != null ? eur(o.agreedListCents ?? 0) : eur(o.mrrCents)}
+                      </td>
                       <td className="px-3 py-2 text-slate-400">{date(o.trialEndsAt)}</td>
                       <td className="px-3 py-2 text-right"><div className="flex justify-end gap-1">
                         {can('extendTrial') && <button disabled={busy === o.id} onClick={() => act(o.id, '/extend-trial', { body: JSON.stringify({ days: 14 }) })} className="rounded bg-slate-800 px-2 py-1 text-[11px] hover:bg-slate-700">+14d</button>}
@@ -407,7 +480,7 @@ export default function ControlCenter() {
                       </div></td>
                     </tr>
                   ))}
-                  {orgs.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-500">No organizations.</td></tr>}
+                  {orgs.length === 0 && <tr><td colSpan={10} className="px-3 py-8 text-center text-slate-500">No organizations.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -436,6 +509,15 @@ export default function ControlCenter() {
               <div><div className="text-xs text-slate-500">Trial ends</div>{date(detail.trialEndsAt)}</div>
               <div><div className="text-xs text-slate-500">Period ends</div>{date(detail.currentPeriodEnd)}</div>
             </div>
+            {/*
+              What they pay — a fixed price agreed with this customer.
+
+              Under Access and above billing mode, which is the order the three
+              questions are actually asked in: can they use it, what do they pay,
+              how do they pay it.
+            */}
+            {can('billingOps') && <AgreedPrice org={detail} busy={busy === detail.id} act={act} onError={setError} />}
+
             {/*
               Can they use the product at all?
 
@@ -595,6 +677,192 @@ function SecurityModal({ me, onClose, onError, onMe }: { me: Me; onClose: () => 
             <button disabled={busy === 'setup'} onClick={startSetup} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500">Set up 2FA</button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * The agreed price for one organization: read it, set it, remove it.
+ *
+ * The list price sits beside the agreed one wherever it is shown, because every
+ * question an operator has here is about the DIFFERENCE — is this deal still
+ * sensible, what would they pay without it, how much has it grown. A screen that
+ * shows only what they pay cannot answer any of them.
+ *
+ * The form is a separate state rather than always-open inputs: this control
+ * changes what a real customer is charged, and a text box sitting live in a
+ * panel is a control that gets changed while somebody meant to read it.
+ */
+function AgreedPrice({
+  org,
+  busy,
+  act,
+  onError,
+}: {
+  org: OrgDetail;
+  busy: boolean;
+  act: (id: string, path: string, init?: RequestInit) => Promise<void>;
+  onError: (s: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [until, setUntil] = useState('');
+  const [note, setNote] = useState('');
+
+  const agreed = org.agreedMonthlyCents;
+  const list = org.listMonthlyCents;
+
+  const open = () => {
+    // Prefilled from the current deal when there is one; from nothing when there
+    // is not. Prefilling a new agreement with the LIST price would invite
+    // somebody to press save on a number they did not choose.
+    setAmount(agreed != null ? (agreed / 100).toFixed(2) : '');
+    setUntil(org.agreedUntil ? String(org.agreedUntil).slice(0, 10) : '');
+    setNote(org.agreedNote ?? '');
+    setEditing(true);
+  };
+
+  const save = async () => {
+    /*
+      Euros in, cents out — and refused rather than rounded if it is not a
+      number. `Math.round` on a NaN would send 0, which is a free customer
+      created by a typo. The server validates this again; this only spares the
+      operator a round trip.
+    */
+    const euros = Number(String(amount).replace(',', '.').trim());
+    if (!Number.isFinite(euros) || euros < 0) {
+      onError('Enter the agreed price in euros, for example 120 or 120.50.');
+      return;
+    }
+    await act(org.id, '/agreed-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        monthlyCents: Math.round(euros * 100),
+        until: until || null,
+        note: note.trim() || null,
+      }),
+    });
+    setEditing(false);
+  };
+
+  const remove = () => {
+    const ok = confirm(
+      `Put ${org.name} back on the price list?\n\n` +
+        `They pay ${eur2(agreed)} a month today. Their usage comes to ${eur2(list)}, ` +
+        `and that is what they would be invoiced from the next cycle.`,
+    );
+    if (ok) act(org.id, '/agreed-price', { method: 'DELETE' });
+  };
+
+  if (editing) {
+    return (
+      <div className="mb-4 rounded-lg border border-amber-500/30 p-3">
+        <div className="mb-2 text-xs text-slate-500">
+          {agreed == null ? 'Agree a price' : 'Change the agreed price'} · {org.name}
+        </div>
+
+        <label className="mb-2 block">
+          <span className="mb-1 block text-[10.5px] text-slate-500">Monthly amount in euros, excluding VAT</span>
+          <input
+            autoFocus
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="120.00"
+            inputMode="decimal"
+            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-sm outline-none focus:border-amber-500"
+          />
+        </label>
+
+        <div className="mb-2 grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="mb-1 block text-[10.5px] text-slate-500">Until (optional)</span>
+            <input
+              type="date"
+              value={until}
+              onChange={(e) => setUntil(e.target.value)}
+              className="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-sm outline-none focus:border-amber-500"
+            />
+          </label>
+          <div>
+            <span className="mb-1 block text-[10.5px] text-slate-500">List price today</span>
+            <div className="rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-sm text-slate-400 tabular-nums">
+              {eur2(list)}
+            </div>
+          </div>
+        </div>
+
+        <label className="mb-2 block">
+          <span className="mb-1 block text-[10.5px] text-slate-500">Why (recorded with your name)</span>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={500}
+            placeholder="Pilot rate agreed with…"
+            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-sm outline-none focus:border-amber-500"
+          />
+        </label>
+
+        {/* What is about to happen, in the units the customer will see it in. */}
+        <p className="mb-2 text-[11px] leading-relaxed text-slate-500">
+          They will be charged <b className="text-slate-200">{amount ? `€${amount}` : '—'}</b> a month instead of{' '}
+          <b className="text-slate-200">{eur2(list)}</b>, from their next invoice. Their access does not change.
+        </p>
+
+        <div className="flex flex-wrap gap-1.5">
+          <button disabled={busy} onClick={save} className="rounded bg-amber-600/85 px-2.5 py-1 text-[11px] hover:bg-amber-600">
+            {agreed == null ? 'Set price' : 'Save'}
+          </button>
+          <button disabled={busy} onClick={() => setEditing(false)} className="rounded bg-slate-800 px-2.5 py-1 text-[11px] text-slate-300 hover:bg-slate-700">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-lg border border-slate-800 p-3">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <span className="text-xs text-slate-500">What they pay</span>
+        <span className={`rounded px-1.5 py-0.5 text-[11px] ${agreed != null ? 'bg-amber-500/15 text-amber-400' : 'bg-blue-500/15 text-blue-400'}`}>
+          {agreed != null ? 'Agreed price' : 'List price'}
+        </span>
+      </div>
+
+      <div className="mb-2 flex flex-wrap items-baseline gap-2">
+        <b className="text-2xl font-semibold tabular-nums tracking-tight">{eur2(agreed ?? list)}</b>
+        <span className="text-xs text-slate-500">/ month</span>
+        {/* The list price, struck, only when it differs — otherwise it is the
+            same number twice and reads like a mistake. */}
+        {agreed != null && list != null && list !== agreed && (
+          <span className="text-xs text-slate-500 line-through tabular-nums">{eur2(list)}</span>
+        )}
+      </div>
+
+      <p className="mb-2.5 text-[11px] leading-relaxed text-slate-500">
+        {agreed != null ? (
+          <>
+            {org.agreedUntil ? <>Until <b className="text-slate-400">{date(org.agreedUntil)}</b> · </> : <>Open-ended · </>}
+            set {org.agreedSetAt ? date(org.agreedSetAt) : 'unknown'}
+            {org.agreedNote && <><br />“{org.agreedNote}”</>}
+          </>
+        ) : (
+          'Charged the computed bill — it moves whenever their seats, workspaces or options do.'
+        )}
+      </p>
+
+      <div className="flex flex-wrap gap-1.5">
+        <button disabled={busy} onClick={open} className={`rounded px-2.5 py-1 text-[11px] ${agreed != null ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-amber-600/85 hover:bg-amber-600'}`}>
+          {agreed != null ? 'Edit' : 'Set an agreed price'}
+        </button>
+        {agreed != null && (
+          <button disabled={busy} onClick={remove} className="rounded bg-red-600/80 px-2.5 py-1 text-[11px] hover:bg-red-600">
+            Remove agreement
+          </button>
+        )}
       </div>
     </div>
   );

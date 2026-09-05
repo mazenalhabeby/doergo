@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
@@ -64,6 +64,43 @@ export class PlatformAdminController {
   @RequirePlatformPerm('extendTrial')
   async endTrial(@Param('id') id: string, @Request() req: any) {
     return this.unwrap(await this.svc.endTrial({ organizationId: id, byUserId: this.actor(req) }));
+  }
+
+  /**
+   * Agree a fixed monthly price with this organization.
+   *
+   * `billingOps`, not `manageOrgs` — this decides what a customer is charged,
+   * and the role that may switch an account off is not automatically the role
+   * that may discount one.
+   *
+   * The organization is the PATH parameter and the operator comes from the
+   * verified platform session; neither is read from the body, so a crafted
+   * request cannot price somebody else's organization or attribute the change
+   * to another operator.
+   */
+  @Post('orgs/:id/agreed-price')
+  @RequirePlatformPerm('billingOps')
+  async setAgreedPrice(
+    @Param('id') id: string,
+    @Body() body: { monthlyCents?: number; until?: string | null; note?: string | null },
+    @Request() req: any,
+  ) {
+    return this.unwrap(
+      await this.svc.setAgreedPrice({
+        organizationId: id,
+        monthlyCents: Number(body?.monthlyCents),
+        until: body?.until ?? null,
+        note: body?.note ?? null,
+        byUserId: this.actor(req),
+      }),
+    );
+  }
+
+  /** Put them back on the price list. Can multiply what they pay — confirmed on the console. */
+  @Delete('orgs/:id/agreed-price')
+  @RequirePlatformPerm('billingOps')
+  async clearAgreedPrice(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.clearAgreedPrice({ organizationId: id, byUserId: this.actor(req) }));
   }
 
   @Post('orgs/:id/suspend')

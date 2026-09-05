@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { StripeService } from '../billing/stripe.service';
+import { BillingService } from '../billing/billing.service';
+import { OrgBillService } from '../billing/org-bill.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success } from '@hbcfield/shared';
+import { success, validateAgreedPrice } from '@hbcfield/shared';
 
 // Lean shapes — select only what billing/seat classification needs (perf).
 const ORG_SELECT = {
@@ -12,6 +14,12 @@ const ORG_SELECT = {
   // question about the whole book, and answering it by opening organizations
   // one at a time is how a contract customer gets missed at renewal.
   billingMode: true, invoiceDueDays: true,
+  // An agreed price, if one was struck. On the LIST for the same reason the
+  // billing mode is: "who is not on the price list?" is a question about the
+  // whole book, and answering it one organization at a time is how a discount
+  // outlives the person who agreed it.
+  agreedMonthlyCents: true, agreedListCents: true, agreedUntil: true,
+  agreedNote: true, agreedSetAt: true, agreedSetById: true,
   // What this org was last billed. MRR reads THIS rather than recomputing from
   // a plan: with modules and usage there is no formula an operator console can
   // re-derive, and a second implementation of the bill is a second answer.
@@ -21,6 +29,9 @@ type LeanOrg = {
   id: string; name: string; planTier: string | null; subStatus: string;
   suspendedAt: Date | null; usesExternalWorkers: boolean; createdAt: Date;
   addOns?: string[];
+  agreedMonthlyCents?: number | null;
+  agreedListCents?: number | null;
+  agreedUntil?: Date | null;
   subscription?: { lastBilledCents: number } | null;
 };
 
@@ -54,6 +65,12 @@ export class PlatformAdminService {
     // Moving a live subscription between collection methods — the one thing on
     // this console that reaches Stripe.
     private readonly stripe: StripeService,
+    // What the price list says this organization owes — the number an agreed
+    // price is struck against, and the baseline drift is later measured from.
+    private readonly bill: OrgBillService,
+    // Pushes a changed price to Stripe the moment it is agreed, rather than at
+    // whatever the customer happens to do next.
+    private readonly billing: BillingService,
   ) {}
 
   /**
@@ -90,6 +107,17 @@ export class PlatformAdminService {
 
     const byStatus: Record<string, number> = {};
     let suspended = 0, trialing = 0, mrrCents = 0, seatTotal = 0;
+    /*
+      What the agreed prices cost us, and how many organizations are on one.
+
+      Measured against the list price AS IT WAS AT THE AGREEMENT — the number
+      stored with the deal — rather than recomputing every contracted bill here.
+      This method runs on every tab of the console, and a fresh bill per
+      contracted organization would put eight queries each behind a header.
+      Growth since the handshake is a different question with a different
+      answer: the nightly drift alert.
+    */
+    let agreedCount = 0, agreedAwayCents = 0;
     const now = Date.now();
     let newLast30 = 0;
     for (const o of orgs) {
@@ -99,8 +127,14 @@ export class PlatformAdminService {
       if (st === 'trialing') trialing += 1;
       if (o.createdAt && now - new Date(o.createdAt).getTime() < 30 * 86_400_000) newLast30 += 1;
       seatTotal += seatMap.get(o.id) ?? 0;
-      // MRR from ACTIVE, non-suspended orgs only.
+      // MRR from ACTIVE, non-suspended orgs only. It reads `lastBilledCents`,
+      // which IS the agreed price once one is set — so MRR stays the truth with
+      // no arithmetic of its own.
       if (st === 'active' && !o.suspendedAt) mrrCents += orgMrrCents(o);
+      if (o.agreedMonthlyCents != null) {
+        agreedCount += 1;
+        agreedAwayCents += Math.max(0, (o.agreedListCents ?? 0) - o.agreedMonthlyCents);
+      }
     }
     return success({
       totalOrgs: orgs.length,
@@ -111,6 +145,10 @@ export class PlatformAdminService {
       seats: seatTotal,
       mrrCents,
       arrCents: mrrCents * 12,
+      agreedCount,
+      agreedAwayCents,
+      // What the book would bill at list. Only meaningful beside the two above.
+      listMrrCents: mrrCents + agreedAwayCents,
       currency: 'eur',
     });
   }
@@ -135,6 +173,11 @@ export class PlatformAdminService {
           billingInterval: (o as any).billingInterval, trialEndsAt: o.trialEndsAt,
           currentPeriodEnd: (o as any).currentPeriodEnd, suspendedAt: o.suspendedAt,
           createdAt: o.createdAt, stripeCustomerId: (o as any).stripeCustomerId ?? null,
+          agreedMonthlyCents: o.agreedMonthlyCents ?? null,
+          agreedListCents: o.agreedListCents ?? null,
+          agreedUntil: o.agreedUntil ?? null,
+          agreedNote: (o as any).agreedNote ?? null,
+          agreedSetAt: (o as any).agreedSetAt ?? null,
           memberCount: memberCount.get(o.id) ?? 0,
           seats,
           // What this org has actually BOUGHT. `planTier` is a vestige kept for
@@ -163,9 +206,27 @@ export class PlatformAdminService {
       orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
       take: 1000,
     });
+    /*
+      What the price list says they owe TODAY.
+
+      Computed here and not on the list, because this is the screen where a price
+      is agreed and the operator needs the live number to agree it against — the
+      one stored with an old deal has aged. One bill for one organization the
+      operator deliberately opened is cheap; the same on a 500-row table would
+      not be.
+
+      Never allowed to fail the panel: a bill that cannot be computed is a reason
+      to hide a number, not to hide the members and the controls beside it.
+    */
+    const listMonthlyCents = await this.bill
+      .compute(organizationId)
+      .then((b) => b.listMonthlyCents)
+      .catch(() => null);
+
     return success({
       ...org,
       seats,
+      listMonthlyCents,
       mrrCents: (org.subStatus ?? '').toLowerCase() === 'active' && !org.suspendedAt ? orgMrrCents(org) : 0,
       members,
     });
@@ -394,6 +455,130 @@ export class PlatformAdminService {
         `${data.mode === 'INVOICE' ? ` (due in ${dueDays}d)` : ''} by ${data.byUserId ?? 'operator'}`,
     );
     return success({ id: org.id, billingMode: data.mode, invoiceDueDays: dueDays });
+  }
+
+  /**
+   * Agree a fixed monthly price with one organization.
+   *
+   * The most powerful control on this console: it decides what a real customer
+   * is charged, directly, with no computation between the operator's keystroke
+   * and the invoice. So it is written to refuse rather than to interpret.
+   *
+   * SECURITY. Reached only through the platform-admin gate, and there is no
+   * customer-facing route anywhere that writes these columns — an organization's
+   * own admin reads their agreed price on their billing page and cannot
+   * influence it. `byUserId` is the operator, recorded with the row; it is never
+   * taken from the request body.
+   */
+  async setAgreedPrice(data: {
+    organizationId: string;
+    monthlyCents: number;
+    until?: string | null;
+    note?: string | null;
+    byUserId?: string;
+  }) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true, agreedMonthlyCents: true },
+    });
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+
+    const parsed = validateAgreedPrice(data);
+    if (!parsed.ok) return { success: false, statusCode: 400, message: parsed.message } as any;
+
+    /*
+      The list price AT THIS MOMENT, stored with the deal.
+
+      This is the baseline the drift alert measures against, and it can only be
+      captured here — a month from now nobody can reconstruct what the bill came
+      to on the day the price was agreed. Computed from the live bill rather than
+      taken from the request, so what is recorded is what the system believes and
+      not what a stale screen sent.
+
+      Deliberately BEFORE the price is written, so `compute` still returns the
+      list price rather than the agreement about to replace it.
+    */
+    const listCents = (await this.bill.compute(org.id)).listMonthlyCents;
+
+    await this.prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        agreedMonthlyCents: parsed.monthlyCents,
+        agreedListCents: listCents,
+        agreedUntil: parsed.until,
+        agreedNote: parsed.note,
+        agreedSetAt: new Date(),
+        agreedSetById: data.byUserId ?? null,
+      },
+    });
+
+    /*
+      Push it to Stripe now, not at the next member change.
+
+      An agreed price that only took effect the next time somebody was added
+      would leave the operator reading €120 on this console while the customer is
+      invoiced €863 — the exact disagreement this billing system exists to make
+      impossible. reconcileSeats swallows Stripe failures and records them as an
+      alert, so a Stripe outage cannot lose the agreement itself.
+    */
+    await this.billing.reconcileSeats(org.id).catch((e) =>
+      this.logger.error(`[PLATFORM] Agreed price stored but Stripe sync failed for ${org.id}: ${String(e)}`),
+    );
+
+    this.logger.warn(
+      `[PLATFORM] Org "${org.name}" (${org.id}) agreed price ` +
+        `${org.agreedMonthlyCents == null ? 'set' : 'changed'} to EUR${(parsed.monthlyCents / 100).toFixed(2)} ` +
+        `(list EUR${(listCents / 100).toFixed(2)})${parsed.until ? ` until ${parsed.until.toISOString().slice(0, 10)}` : ''} ` +
+        `by ${data.byUserId ?? 'operator'}`,
+    );
+    return success({
+      id: org.id,
+      agreedMonthlyCents: parsed.monthlyCents,
+      agreedListCents: listCents,
+      agreedUntil: parsed.until,
+    });
+  }
+
+  /**
+   * Put an organization back on the price list.
+   *
+   * This can multiply what a customer pays — 120 back to 863 — so it is a
+   * deliberate, confirmed act on the console rather than something that happens
+   * to a date. Any open drift or expiry alert is closed with it: the alert asked
+   * a question, and this is an answer.
+   */
+  async clearAgreedPrice(data: { organizationId: string; byUserId?: string }) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true, agreedMonthlyCents: true },
+    });
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (org.agreedMonthlyCents == null) return success({ id: org.id, agreedMonthlyCents: null });
+
+    await this.prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        agreedMonthlyCents: null, agreedListCents: null, agreedUntil: null,
+        agreedNote: null, agreedSetAt: null, agreedSetById: null,
+      },
+    });
+    await this.prisma.billingAlert.updateMany({
+      where: {
+        organizationId: org.id,
+        kind: { in: ['CONTRACT_DRIFT', 'CONTRACT_EXPIRING'] },
+        acknowledgedAt: null,
+      },
+      data: { acknowledgedAt: new Date(), acknowledgedBy: data.byUserId ?? 'operator' },
+    });
+    await this.billing.reconcileSeats(org.id).catch((e) =>
+      this.logger.error(`[PLATFORM] Agreed price cleared but Stripe sync failed for ${org.id}: ${String(e)}`),
+    );
+
+    this.logger.warn(
+      `[PLATFORM] Org "${org.name}" (${org.id}) agreed price REMOVED ` +
+        `(was EUR${(org.agreedMonthlyCents / 100).toFixed(2)}) by ${data.byUserId ?? 'operator'}`,
+    );
+    return success({ id: org.id, agreedMonthlyCents: null });
   }
 
   async extendTrial(data: { organizationId: string; days: number; byUserId?: string }) {

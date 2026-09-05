@@ -6523,7 +6523,12 @@
     "byInvoice": "Paid by invoice",
     "byInvoiceHint": "We email an invoice each month, due within {{days}} days. No card is charged.",
     "subscribe": "Set up payment",
-    "subscribeInvoice": "Start monthly invoicing"
+    "subscribeInvoice": "Start monthly invoicing",
+    "agreed": {
+      "title": "You are on an agreed price",
+      "body": "Your usage would otherwise come to {{list}} a month.",
+      "until": "This rate holds until {{date}}."
+    }
   },
   "assetKinds": {
     "title": "Assets",
