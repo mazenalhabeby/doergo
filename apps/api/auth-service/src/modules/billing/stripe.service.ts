@@ -135,6 +135,43 @@ export class StripeService {
    * The idempotency key is derived from the target line-up, so a retry of the
    * same change is free and a different change is not mistaken for one.
    */
+  /**
+   * One subscription item from a billing line.
+   *
+   * A line with `amountCents` is charged as that exact amount at quantity ONE,
+   * through an ad-hoc price under the product its lookup key already names.
+   * The alternative — a €0.01 price with the amount in the quantity — is
+   * arithmetically identical and reads as "Qty 7700 @ €0.01 each" on the
+   * customer's invoice, which is an implementation detail with no business
+   * meaning.
+   *
+   * The PRODUCT is stable, so a subscription still diffs cleanly: the item is
+   * matched by product rather than by price id, and only the price changes when
+   * the amount does.
+   */
+  private async lineToItem(line: StripeLine, priceId: string): Promise<{
+    price?: string;
+    price_data?: Stripe.SubscriptionCreateParams.Item.PriceData;
+    quantity: number;
+    productId: string;
+  }> {
+    const price = await this.stripe.prices.retrieve(priceId);
+    const productId = typeof price.product === 'string' ? price.product : price.product.id;
+    if (line.amountCents == null) {
+      return { price: priceId, quantity: line.quantity, productId };
+    }
+    return {
+      price_data: {
+        currency: price.currency,
+        product: productId,
+        unit_amount: line.amountCents,
+        recurring: { interval: 'month' },
+      },
+      quantity: 1,
+      productId,
+    };
+  }
+
   async setSubscriptionLines(
     subscriptionId: string,
     lines: StripeLine[],
@@ -164,23 +201,52 @@ export class StripeService {
       );
     }
 
-    const wanted = new Map(lines.map((l) => [priceIds.get(l.lookupKey)!, l.quantity]));
+    /*
+      Matched by PRODUCT, not by price id.
+
+      An aggregate line carries its exact amount and is sent as an ad-hoc price,
+      so its price id changes whenever the amount does. Diffing on the price
+      would therefore delete and re-add the line on every change — churn on the
+      invoice, and a proration pair where one adjustment belongs.
+
+      The product is stable, so "the Workspaces line" stays the same line while
+      its amount moves.
+    */
+    const built = await Promise.all(lines.map((l) => this.lineToItem(l, priceIds.get(l.lookupKey)!)));
+    const wanted = new Map(built.map((b) => [b.productId, b]));
 
     const sub = await this.stripe.subscriptions.retrieve(subscriptionId);
     const items: Stripe.SubscriptionUpdateParams.Item[] = [];
 
     // Update or delete what is already there.
     for (const item of sub.items.data) {
-      const qty = wanted.get(item.price.id);
-      if (qty == null) {
+      const productId = typeof item.price.product === 'string' ? item.price.product : item.price.product.id;
+      const want = wanted.get(productId);
+      if (!want) {
         items.push({ id: item.id, deleted: true });
-      } else {
-        if (item.quantity !== qty) items.push({ id: item.id, quantity: qty });
-        wanted.delete(item.price.id);
+        continue;
+      }
+      wanted.delete(productId);
+      if (want.price_data) {
+        // Only when the amount actually moved: re-pricing an unchanged line
+        // would mint a price and a proration for nothing.
+        if (item.price.unit_amount !== want.price_data.unit_amount || item.quantity !== 1) {
+          items.push({ id: item.id, price_data: want.price_data, quantity: 1 });
+        }
+      } else if (item.price.id !== want.price) {
+        items.push({ id: item.id, price: want.price, quantity: want.quantity });
+      } else if (item.quantity !== want.quantity) {
+        items.push({ id: item.id, quantity: want.quantity });
       }
     }
     // Whatever is left is new.
-    for (const [price, quantity] of wanted) items.push({ price, quantity });
+    for (const want of wanted.values()) {
+      items.push(
+        want.price_data
+          ? { price_data: want.price_data, quantity: 1 }
+          : { price: want.price!, quantity: want.quantity },
+      );
+    }
 
     if (!items.length) return sub; // nothing moved — do not bill a no-op
 
@@ -229,7 +295,12 @@ export class StripeService {
     return this.stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: p.customerId,
-      line_items: p.lines.map((l) => ({ price: priceIds.get(l.lookupKey)!, quantity: l.quantity })),
+      line_items: await Promise.all(
+        p.lines.map(async (l) => {
+          const { productId: _p, ...i } = await this.lineToItem(l, priceIds.get(l.lookupKey)!);
+          return i as Stripe.Checkout.SessionCreateParams.LineItem;
+        }),
+      ),
       success_url: p.successUrl,
       cancel_url: p.cancelUrl,
       allow_promotion_codes: true,
@@ -267,9 +338,10 @@ export class StripeService {
           'Run the catalogue sync before this organization can be billed.',
       );
     }
+    const items = await Promise.all(p.lines.map((l) => this.lineToItem(l, priceIds.get(l.lookupKey)!)));
     return this.stripe.subscriptions.create({
       customer: p.customerId,
-      items: p.lines.map((l) => ({ price: priceIds.get(l.lookupKey)!, quantity: l.quantity })),
+      items: items.map(({ productId: _p, ...i }) => i),
       collection_method: 'send_invoice',
       days_until_due: Math.max(1, p.invoiceDueDays),
       automatic_tax: { enabled: this.config.get<string>('STRIPE_AUTOMATIC_TAX') === 'true' },

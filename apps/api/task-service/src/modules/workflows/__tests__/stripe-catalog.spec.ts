@@ -16,7 +16,13 @@ const priceOf = (lookupKey: string) =>
 
 /** what Stripe would actually charge for a set of lines */
 const charged = (lines: ReturnType<typeof stripeLinesForBill>) =>
-  lines.reduce((sum, l) => sum + priceOf(l.lookupKey) * l.quantity, 0);
+  lines.reduce(
+    (sum, l) =>
+      // An aggregate line carries its exact amount and is charged once; a seat
+      // line is a real catalogue price times a real count.
+      sum + (l.amountCents != null ? l.amountCents * l.quantity : priceOf(l.lookupKey) * l.quantity),
+    0,
+  );
 
 describe('what Stripe is told', () => {
   /*
@@ -156,6 +162,23 @@ describe('what Stripe is told', () => {
     expect(lines.length).toBeLessThan(20);
     // And it still adds up, at that size.
     expect(charged(lines)).toBe(huge.monthlyCents);
+  });
+
+  it('never puts an amount in a quantity', () => {
+    /*
+      "Workspaces — Qty 7700 @ €0.01 each" is arithmetically right and
+      meaningless to the person paying it: nobody buys seven thousand of
+      anything, and a customer should not multiply to check their own bill.
+
+      An aggregate carries its amount and is charged ONCE. Seats keep a real
+      count against a real price, because "2 × €9.99" is how seats are sold and
+      is the one line where the multiplication means something.
+    */
+    const lines = stripeLinesForBill(bill());
+    for (const l of lines) {
+      if (l.amountCents != null) expect(l.quantity).toBe(1);
+      else expect(l.lookupKey).toMatch(/seat/);
+    }
   });
 
   it('stays inside Stripe’s per-item quantity limit at a realistic size', () => {

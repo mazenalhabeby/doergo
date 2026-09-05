@@ -154,6 +154,23 @@ export interface StripeLine {
   quantity: number;
   /** For logs and for the dry-run report — never sent to Stripe. */
   describe: string;
+  /**
+   * An exact amount for this line, in cents, charged ONCE per month.
+   *
+   * Set only on the aggregate lines. They used a €0.01 price with the amount in
+   * the quantity, which is arithmetically right and unreadable on an invoice:
+   * "Workspaces — Qty 7700 @ €0.01 each". Nobody buys seven thousand of
+   * anything, and a customer should not have to multiply to check their own
+   * bill.
+   *
+   * When present, the Stripe layer builds the line from the amount at quantity
+   * ONE, under the product the lookup key already names — so the invoice reads
+   * "Workspaces €77.00" and the subscription still diffs by product.
+   *
+   * Seats keep a real catalogue price: "2 × €9.99" is how seats are actually
+   * sold, and it is the one line where the multiplication means something.
+   */
+  amountCents?: number;
 }
 
 /**
@@ -216,7 +233,8 @@ export function stripeLinesForBill(
   if (workspaceCents > 0) {
     lines.push({
       lookupKey: stripeLookupKey('workspaces', ''),
-      quantity: workspaceCents,
+      quantity: 1,
+      amountCents: workspaceCents,
       describe: `workspaces — ${workspaceCents}c`,
     });
   }
@@ -226,7 +244,8 @@ export function stripeLinesForBill(
   if (optionCents > 0) {
     lines.push({
       lookupKey: stripeLookupKey('options', ''),
-      quantity: optionCents,
+      quantity: 1,
+      amountCents: optionCents,
       describe: `options — ${optionCents}c`,
     });
   }
