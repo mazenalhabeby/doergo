@@ -199,7 +199,7 @@ Organizations can grant access to other organizations:
 
 ### Core Models
 ```
-Organization { id, name, isActive, addOns[], billingMode, invoiceDueDays, billedExternally (kept in step, read by nothing), grantedAccess[], receivedAccess[], companyLocations[] }
+Organization { id, name, isActive, addOns[], billingMode, invoiceDueDays, billedExternally (kept in step, read by nothing), agreedMonthlyCents?, agreedListCents?, agreedUntil?, agreedNote?, agreedSetAt?, agreedSetById?, suspendedAt?, grantedAccess[], receivedAccess[], companyLocations[] }
 BillingAlert { id, organizationId, kind (DROP|SYNC_FAILED), fromCents?, toCents?, dropCents?, detail?, occurrences, lastSeenAt, acknowledgedAt?, acknowledgedBy? }
 OrganizationAccess { id, grantorOrgId, granteeOrgId, accessLevel, canViewTasks, canAssignWorkers, canViewWorkers, canViewTracking }
 User { id, email, passwordHash, firstName, lastName, role, organizationId, failedLoginAttempts, lockedUntil, platform, canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers, technicianType, workMode }
@@ -236,7 +236,7 @@ ReportAttachmentType: BEFORE | AFTER
 TimeOffStatus: PENDING | APPROVED | REJECTED | CANCELED
 InvitationStatus: PENDING | ACCEPTED | EXPIRED | REVOKED
 BillingMode: AUTOMATIC | INVOICE | EXTERNAL   // card / Stripe-issued invoice / by agreement
-BillingAlertKind: DROP | SYNC_FAILED
+BillingAlertKind: DROP | SYNC_FAILED | CONTRACT_DRIFT | CONTRACT_EXPIRING
 ```
 
 ### Task Status Flow
@@ -399,6 +399,9 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/platform/orgs/:id/billing-mode` | **Operator**: card / invoice / agreement (audited, Stripe moved first) | Platform key |
 | GET | `/platform/billing-alerts` | **Operator**: bills that fell + Stripe syncs that failed | Platform key |
 | POST | `/platform/billing-alerts/:id/ack` | **Operator**: mark one as looked at | Platform key |
+| POST | `/platform/orgs/:id/agreed-price` | **Operator**: a fixed monthly price replacing the bill (`billingOps`) | Platform key |
+| DELETE | `/platform/orgs/:id/agreed-price` | **Operator**: back onto the price list | Platform key |
+| POST | `/platform/orgs/:id/suspend` · `/reactivate` | **Operator**: switch an organization off / on — refuses sign-in, refresh AND every request | Platform key |
 
 > `/billing/bill` and `/billing/subscription` are deliberately separate: switching a module on moves the bill and not the status; a failed card moves the status and not the bill.
 
@@ -924,7 +927,7 @@ pnpm build            # Build all packages
 **The bill** — three parts, each priced where it is actually used:
 
 ```
-bill = staff seats     × €9.99
+bill = staff seats     × €9.99                  ← unless an AGREED PRICE replaces the whole total
      + observer seats  × €2.00        ← external, watch-only (2026-09-04)
      + Σ spaces ( modules + usage ladders )
      + Σ org options
@@ -951,6 +954,8 @@ bill = staff seats     × €9.99
 - [x] 14-day trial grants **every** add-on (`ADD_ON_KEYS`) — a trial that hides half the product cannot tell anyone whether the product is worth buying.
 - [x] Migrations `20260821180000_org_addons` (backfills each org's add-ons **from its old tier**, so nobody loses access at the switch) and `20260821200000_billed_externally`.
 - [x] **LIVE**: **33 prices** on the live account (31 → 32 documents → 33 observer seat, `hbcfield_seat_observer_monthly` €2 created 2026-09-04), all `tax_behavior: exclusive`; re-running the sync reports `33 already correct`. ⚠️ VAT is added ON TOP — the billing page says "Excludes VAT" and deliberately does NOT print a rate, because cross-border EU B2B is reverse-charged to zero and Stripe decides at checkout.
+- [x] **Agreed price** (2026-09-05) — `Organization.agreedMonthlyCents` **replaces** the computed total for a negotiated customer (€863 of product for €120). Applied at the END of `OrgBillService.compute()` and nowhere else, so the Stripe lines, `lastBilledCents`/operator MRR and the customer's billing page all read one number. Stripe gets ONE line at the exact amount under `hbcfield_agreed_monthly` (catalogue **5**), and a contracted org stops generating prorations entirely. ⚠️ **Not a coupon** — a coupon moves when they add a seat and would make the screen model Stripe's discount maths. ⚠️ **`agreedListCents` is the drift baseline, not the agreed price** — €120 vs €863 is the deal, and comparing those two alerts every night forever. ⚠️ **The term never auto-reverts**: `CONTRACT_EXPIRING` fires 30 days out and an operator decides, because a date silently taking a customer from €120 to €863 is a chargeback. Operator-only on `billingOps`; a source-scanning test fails if anything outside platform-admin writes the columns.
+- [x] **Organization off switch** (2026-09-05) — "Suspend" used to refuse WRITES only (it mapped `subStatus` to `canceled`), so a suspended company still signed in and read everything. `suspendedAt` now refuses sign-in, refuses **and deletes** the refresh token, and fails `validateToken` — so it bites within the gateway's auth cache TTL. The billing read-only lock is unchanged, for the case it was built for.
 - [ ] One real live purchase (real card) — pending, user-driven
 
 > ⚠️ **`plans.ts` still exists and is VESTIGIAL.** Nothing in it decides access or price. It survives only for the operator price book (`platform-pricing.service.ts`, C2) and its Stripe sync (C3), which are working tier-based operator features. **Do not add a caller** — ask `orgHasAddOn` or the space's module list.
@@ -1004,6 +1009,9 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `isObserverSeat()`, `OBSERVER_SEAT_MONTHLY_CENTS` | The €2 external seat — priced from permissions HELD, never a role's name |
 | `BILLING_MODES`, `collectionMethodFor()`, `billsThroughStripe()` | Card / invoice / agreement, and what each means to Stripe |
 | `isMaterialDrop()` | Is this fall in a bill worth an alert? (≥€20 AND (≥20% OR ≥€100)) |
+| `applyAgreement()`, `agreementFrom()`, `validateAgreedPrice()` | An agreed price — the ONE place a computed bill's total is replaced |
+| `isMaterialAgreementDrift()`, `agreementEndsWithin()` | Has a contracted customer outgrown the deal, and is the term ending? |
+| `isOrganizationSuspended()`, `ORG_SUSPENDED_MESSAGE` | The organization off switch, read at all three doors into the product |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
 | `moduleAllowedForExternal()`, `filterExternalModules()` | An external member holds no clock and no time_off |
