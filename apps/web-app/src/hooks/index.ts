@@ -1,6 +1,7 @@
 export { useIsMobile } from "./use-mobile"
 export { useBillingLock } from "./use-billing-lock"
 export { useTimeFormat } from "./use-time-format"
+export { useClockIn, geoErrorMessage, type ClockAction } from "./use-clock-in"
 export { useMyDocumentRequirements } from "./use-document-requirements"
 export {
   useOrgWorkflow,

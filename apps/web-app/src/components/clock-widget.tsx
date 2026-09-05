@@ -1,15 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { useBillingLock } from "@/hooks/use-billing-lock"
-import { toast } from "sonner"
+import { useBillingLock, useClockIn } from "@/hooks"
 import { LogIn, LogOut, Home, Loader2, ChevronDown, MapPin } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { attendanceApi } from "@/lib/api"
-import { getBrowserPosition, distanceMeters, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { hasAccessModule, mayClockInRemotely } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -17,25 +13,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import type { TFunction } from "i18next"
-import { mayClockInRemotely } from "@hbcfield/shared/client"
-
-type ClockLocation = { id: string; name: string; lat?: number | null; lng?: number | null }
-
-function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
-  switch (reason) {
-    case "denied":
-      return t("attendance.my.geo.denied", "Location permission denied. Allow location access in your browser to clock in.")
-    case "insecure":
-      return t("attendance.my.geo.insecure", "Clock-in requires a secure (HTTPS) connection.")
-    case "unsupported":
-      return t("attendance.my.geo.unsupported", "Your browser does not support location services.")
-    case "timeout":
-      return t("attendance.my.geo.timeout", "Timed out getting your location. Please try again.")
-    default:
-      return t("attendance.my.geo.unavailable", "Could not determine your location. Please try again.")
-  }
-}
+import { ClockInPicker } from "@/components/clock-in-picker"
 
 /** Live "HH:MM:SS" elapsed since an ISO timestamp, ticking every second. */
 function useElapsed(sinceIso?: string | null): string {
@@ -52,10 +30,19 @@ function useElapsed(sinceIso?: string | null): string {
 }
 
 /**
- * Persistent clock-in/out control for the top navbar. Shows only for members
- * with clock access. Clocked out → Clock In (on-site nearest, plus Remote when
- * eligible). Clocked in → a live timer + Clock Out. GPS from the browser
- * (device location, VPN-safe); the backend enforces the geofence.
+ * Persistent clock-in/out control for the top navbar.
+ *
+ * Presentation only. Everything about how a clock-in works — the status, the
+ * workspaces this member may use, choosing between them, the geolocation
+ * failures — belongs to `useClockIn`, which the shift page mounts too.
+ *
+ * ⚠️ This file used to carry its own copy of all of it, and the copies drifted:
+ * the workspace picker was added to the page and not here, so the same member
+ * choosing "On-site" from the navbar was still silently clocked in at whichever
+ * site the GPS liked. Behaviour that exists twice gets fixed once.
+ *
+ * Shown only for members with clock access. Clocked out → Clock In (plus Remote
+ * when eligible). Clocked in → a live timer + Clock Out.
  */
 export function ClockWidget() {
   // Clocking in is a write; the server returns 402 while the account is
@@ -64,7 +51,6 @@ export function ClockWidget() {
   const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const { user } = useAuth()
   const { t } = useTranslation()
-  const qc = useQueryClient()
   // Clock access is module-driven, not role-locked: anyone whose Access Profile
   // includes the `clock` module can punch in — including an admin/owner who also
   // works on site. It's optional (a button they can ignore), never required, and
@@ -72,62 +58,17 @@ export function ClockWidget() {
   // backend already allows both ADMIN and EMPLOYEE clock-in.
   const canClock = !!user && hasAccessModule(user, "clock")
 
-  const { data: status } = useQuery({
-    queryKey: ["my-attendance-status"],
-    queryFn: () => attendanceApi.getMyStatus(),
+  const { clockedIn, activeEntry, pending, startOnSite, clockOut, clockInRemotely, pickerProps } = useClockIn({
     enabled: canClock,
-    staleTime: 15_000,
-    refetchInterval: 60_000,
-  })
-  const { data: locationsData } = useQuery({
-    queryKey: ["my-attendance-locations"],
-    queryFn: () => attendanceApi.getLocations(),
-    enabled: canClock,
-    staleTime: 5 * 60_000,
   })
 
-  const st = (status ?? {}) as Record<string, unknown>
-  const activeEntry = (st.currentEntry ?? st.activeEntry ?? st.entry) as { clockInAt?: string; clockOutAt?: string | null; isRemote?: boolean; clockInPlace?: string | null; location?: { name?: string } } | undefined
-  const clockedIn = Boolean(st.isClockedIn) || st.status === "CLOCKED_IN" || Boolean(activeEntry && !activeEntry.clockOutAt)
   const elapsed = useElapsed(clockedIn ? activeEntry?.clockInAt ?? null : null)
-  const locations = (locationsData ?? []) as ClockLocation[]
 
   const where = activeEntry?.isRemote
     ? `${t("attendance.my.remote", "Remote")}${activeEntry.clockInPlace ? ` · ${activeEntry.clockInPlace}` : ""}`
     : activeEntry?.location?.name || ""
 
-  const clock = useMutation({
-    mutationFn: async (mode: "out" | "onsite" | "remote") => {
-      const pos = await getBrowserPosition()
-      if (mode === "out") return attendanceApi.clockOut({ lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
-      if (mode === "remote") return attendanceApi.clockIn({ isRemote: true, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
-      const geo = locations.filter(
-        (l): l is ClockLocation & { lat: number; lng: number } => typeof l.lat === "number" && typeof l.lng === "number",
-      )
-      if (geo.length === 0) {
-        throw new Error(t("attendance.my.noLocations", "No work location with GPS is set up. Ask your admin to add one before clocking in."))
-      }
-      let nearest = geo[0]
-      let best = distanceMeters(pos, { lat: nearest.lat, lng: nearest.lng })
-      for (const l of geo.slice(1)) {
-        const d = distanceMeters(pos, { lat: l.lat, lng: l.lng })
-        if (d < best) { best = d; nearest = l }
-      }
-      return attendanceApi.clockIn({ locationId: nearest.id, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
-    },
-    onSuccess: (_data, mode) => {
-      qc.invalidateQueries({ queryKey: ["my-attendance-status"] })
-      qc.invalidateQueries({ queryKey: ["my-attendance-history"] })
-      toast.success(mode === "out" ? t("attendance.my.clockedOutToast", "Clocked out") : t("attendance.my.clockedInToast", "Clocked in"))
-    },
-    onError: (err: unknown) => {
-      if (err instanceof GeolocationError) toast.error(geoErrorMessage(t, err.reason))
-      else toast.error(err instanceof Error ? err.message : t("common.error", "Something went wrong"))
-    },
-  })
-
   if (!canClock) return null
-  const pending = clock.isPending
 
   // ── Clocked in → live timer + Clock Out ─────────────────────────────
   if (clockedIn) {
@@ -147,7 +88,7 @@ export function ClockWidget() {
           className="h-6 gap-1 px-2 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
           disabled={pending || billingLocked}
           title={billingLocked ? billingLockReason : undefined}
-          onClick={() => clock.mutate("out")}
+          onClick={clockOut}
         >
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><LogOut className="h-3.5 w-3.5" />{t("attendance.my.clockOut", "Clock Out")}</>}
         </Button>
@@ -155,36 +96,52 @@ export function ClockWidget() {
     )
   }
 
-  // ── Clocked out + remote-eligible → Clock In split menu ─────────────
-  if (mayClockInRemotely(user)) {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="sm" className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700" disabled={pending || billingLocked} title={billingLocked ? billingLockReason : undefined}>
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-            {t("attendance.my.clockIn", "Clock In")}
-            <ChevronDown className="h-3.5 w-3.5 opacity-80" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => clock.mutate("onsite")}>
-            <MapPin className="h-4 w-4" />
-            {t("attendance.my.clockInOnsite", "On-site")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => clock.mutate("remote")}>
-            <Home className="h-4 w-4" />
-            {t("attendance.my.clockInRemote", "Clock in remotely")}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )
-  }
-
-  // ── Clocked out (on-site only) → Clock In ───────────────────────────
   return (
-    <Button size="sm" className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700" disabled={pending} onClick={() => clock.mutate("onsite")}>
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-      {t("attendance.my.clockIn", "Clock In")}
-    </Button>
+    <>
+      {/* One picker, whichever button opened it. */}
+      <ClockInPicker {...pickerProps} />
+
+      {mayClockInRemotely(user) ? (
+        // ── Clocked out + remote-eligible → Clock In split menu ─────────
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700"
+              disabled={pending || billingLocked}
+              title={billingLocked ? billingLockReason : undefined}
+            >
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+              {t("attendance.my.clockIn", "Clock In")}
+              <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={startOnSite}>
+              <MapPin className="h-4 w-4" />
+              {t("attendance.my.clockInOnsite", "On-site")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={clockInRemotely}>
+              <Home className="h-4 w-4" />
+              {t("attendance.my.clockInRemote", "Clock in remotely")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        // ── Clocked out (on-site only) → Clock In ───────────────────────
+        <Button
+          size="sm"
+          className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700"
+          // ⚠️ This button alone used to ignore the billing lock, so the one
+          // member who cannot clock in remotely was the one who got a 402.
+          disabled={pending || billingLocked}
+          title={billingLocked ? billingLockReason : undefined}
+          onClick={startOnSite}
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+          {t("attendance.my.clockIn", "Clock In")}
+        </Button>
+      )}
+    </>
   )
 }

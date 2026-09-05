@@ -1,15 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { useTimeFormat } from "@/hooks"
-import { toast } from "sonner"
+import { useClockIn, useTimeFormat } from "@/hooks"
 import { Clock, MapPin, CircleDot, LogIn, LogOut, Loader2, Home, ListChecks, Calendar as CalendarIcon } from "lucide-react"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
-import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
@@ -18,10 +16,9 @@ import { ProgressRing } from "@/components/progress-ring"
 import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import type { DateRange } from "react-day-picker"
-import type { TFunction } from "i18next"
 import { mayClockInRemotely } from "@hbcfield/shared/client"
 
-import { ClockInPicker, type ClockLocation } from "./_components/clock-in-picker"
+import { ClockInPicker } from "@/components/clock-in-picker"
 
 /** Human-readable duration between two ISO timestamps (or to now). */
 function duration(fromIso?: string | null, toIso?: string | null): string {
@@ -38,21 +35,6 @@ function fmtDate(iso?: string | null): string {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
 }
-function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
-  switch (reason) {
-    case "denied":
-      return t("attendance.my.geo.denied", "Location permission denied. Allow location access in your browser to clock in.")
-    case "insecure":
-      return t("attendance.my.geo.insecure", "Clock-in requires a secure (HTTPS) connection.")
-    case "unsupported":
-      return t("attendance.my.geo.unsupported", "Your browser does not support location services.")
-    case "timeout":
-      return t("attendance.my.geo.timeout", "Timed out getting your location. Please try again.")
-    default:
-      return t("attendance.my.geo.unavailable", "Could not determine your location. Please try again.")
-  }
-}
-
 /**
  * The clock that is actually running.
  *
@@ -172,15 +154,21 @@ export default function MyAttendancePage() {
   const { t } = useTranslation()
   const { formatTime, locale } = useTimeFormat()
   const { user } = useAuth()
-  const qc = useQueryClient()
   const canSee = !user || hasAccessModule(user, "clock")
 
-  const { data: status } = useQuery({
-    queryKey: ["my-attendance-status"],
-    queryFn: () => attendanceApi.getMyStatus(),
-    enabled: canSee,
-    staleTime: 15_000,
-  })
+  /*
+    Clocking in and out lives in `useClockIn`, shared with the navbar widget.
+
+    Both surfaces used to carry their own copy — two status queries, two
+    locations queries, two sets of geolocation messages and two rules for
+    choosing a workspace. The copies drifted, which is how the workspace picker
+    came to exist on this page and not in the navbar.
+
+    They share query keys, so mounting the hook twice is still one status
+    request and one locations request.
+  */
+  const { clockedIn, activeEntry, locations, pending, action, startOnSite, clockOut, clockInRemotely, pickerProps } =
+    useClockIn({ enabled: canSee })
 
   /*
     Which stretch of time the page is about.
@@ -231,80 +219,7 @@ export default function MyAttendancePage() {
     staleTime: 30_000,
   })
 
-  /*
-    Where this member may clock in — assignments, not visibility.
-
-    This read `GET /locations`, which answers "what can I see". A manager sees
-    the whole directory, so the nearest workspace could be one they are not
-    assigned to, and the clock-in came back "You are not assigned to this
-    location" with nothing they could do about it.
-  */
-  const { data: locationsData } = useQuery({
-    queryKey: ["my-clock-in-locations"],
-    queryFn: () => attendanceApi.getClockInLocations(),
-    enabled: canSee,
-    staleTime: 5 * 60_000,
-  })
-
   const entries: TimeEntry[] = (history as { data?: TimeEntry[] })?.data ?? []
-  const st = (status ?? {}) as Record<string, unknown>
-  const activeEntry = (st.currentEntry ?? st.activeEntry ?? st.entry) as TimeEntry | undefined
-  const clockedIn = Boolean(st.isClockedIn) || st.status === "CLOCKED_IN" || Boolean(activeEntry && !activeEntry.clockOutAt)
-  const locations = (locationsData ?? []) as ClockLocation[]
-  const [pickerOpen, setPickerOpen] = useState(false)
-
-  /*
-    One workspace is not a choice.
-
-    Asking somebody with a single site to confirm it every morning is a tap they
-    have to make and can never get wrong — the definition of a dialog that
-    should not exist. The picker appears only when there is something to decide.
-  */
-  const startOnSite = () => {
-    if (locations.length === 1) {
-      clock.mutate({ locationId: locations[0].id })
-      return
-    }
-    setPickerOpen(true)
-  }
-
-  // Clock in/out. GPS is read from the browser (device location, VPN-proof); the
-  // backend re-checks the geofence and records whether the fix was within it.
-  const clock = useMutation({
-    mutationFn: async (arg: "out" | "remote" | { locationId: string }) => {
-      const pos = await getBrowserPosition()
-      if (arg === "out") {
-        return attendanceApi.clockOut({ lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
-      }
-      if (arg === "remote") {
-        // No location — geofence-exempt; the backend captures a coarse place.
-        return attendanceApi.clockIn({ isRemote: true, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
-      }
-      /*
-        An explicit workspace, always.
-
-        This used to choose the NEAREST site itself and say nothing about it. A
-        member working across two places was silently clocked in at whichever
-        one the GPS liked better — a payroll error that surfaces weeks later on
-        a queried timesheet, if at all. The workspace is now either the only one
-        they have or the one they picked.
-      */
-      return attendanceApi.clockIn({ locationId: arg.locationId, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
-    },
-    onSuccess: (_data, mode) => {
-      qc.invalidateQueries({ queryKey: ["my-attendance-status"] })
-      qc.invalidateQueries({ queryKey: ["my-attendance-history"] })
-      setPickerOpen(false)
-      toast.success(mode === "out" ? t("attendance.my.clockedOutToast", "Clocked out") : t("attendance.my.clockedInToast", "Clocked in"))
-    },
-    onError: (err: unknown) => {
-      if (err instanceof GeolocationError) {
-        toast.error(geoErrorMessage(t, err.reason))
-      } else {
-        toast.error(err instanceof Error ? err.message : t("common.error", "Something went wrong"))
-      }
-    },
-  })
 
   if (!canSee) {
     return (
@@ -391,8 +306,6 @@ export default function MyAttendancePage() {
     return { start, totalMins: (end - start) / 60000 }
   })()
 
-  const pending = clock.isPending
-
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
@@ -430,7 +343,7 @@ export default function MyAttendancePage() {
           </div>
 
           {clockedIn ? (
-            <Button onClick={() => clock.mutate("out")} disabled={pending} variant="outline" className="mt-4 w-full">
+            <Button onClick={clockOut} disabled={pending} variant="outline" className="mt-4 w-full">
               {pending ? (
                 <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
               ) : (
@@ -444,7 +357,7 @@ export default function MyAttendancePage() {
                 disabled={pending || locations.length === 0}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                {pending && typeof clock.variables === "object" ? (
+                {pending && typeof action === "object" ? (
                   <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
                 ) : (
                   <><LogIn className="h-4 w-4" />{t("attendance.my.clockIn", "Clock In")}</>
@@ -464,8 +377,8 @@ export default function MyAttendancePage() {
                 </p>
               )}
               {mayClockInRemotely(user) && (
-                <Button onClick={() => clock.mutate("remote")} disabled={pending} variant="outline" className="w-full">
-                  {pending && clock.variables === "remote" ? (
+                <Button onClick={clockInRemotely} disabled={pending} variant="outline" className="w-full">
+                  {pending && action === "remote" ? (
                     <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
                   ) : (
                     <><Home className="h-4 w-4" />{t("attendance.my.clockInRemote", "Clock in remotely")}</>
@@ -474,14 +387,8 @@ export default function MyAttendancePage() {
               )}
             </div>
           )}
-          <ClockInPicker
-            open={pickerOpen}
-            onOpenChange={setPickerOpen}
-            locations={locations}
-            pending={pending}
-            geoErrorMessage={(reason) => geoErrorMessage(t, reason)}
-            onPick={(locationId) => clock.mutate({ locationId })}
-          />
+          {/* The same picker the navbar widget opens — one component, one hook. */}
+          <ClockInPicker {...pickerProps} />
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
             {mayClockInRemotely(user)
               ? t("attendance.my.gpsHintRemote", "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.")
