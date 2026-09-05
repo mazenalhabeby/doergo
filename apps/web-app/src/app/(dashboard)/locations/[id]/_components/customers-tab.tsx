@@ -42,7 +42,7 @@ const INDUSTRIES = [
   are excluded by default — a firm with six contacts would otherwise turn one
   client into seven rows and bury the pipeline.
 */
-type Filter = "all" | "crm" | "app" | "contacts"
+type Filter = "all" | "companies" | "people" | "contacts" | "app"
 
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 
@@ -68,13 +68,17 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
   const [filter, setFilter] = useState<Filter>("all")
 
   const listQ = useQuery({
-    queryKey: ["space-customers", spaceId ?? "all", search, filter === "contacts" ? "contacts" : "clients"],
+    // The filter is IN the key: a different segment is a different question, and
+    // the server answers each one — filtering a fetched page in the browser
+    // would show twelve rows of a hundred and a total that disagreed with them.
+    queryKey: ["space-customers", spaceId ?? "all", search, filter],
     queryFn: () =>
       customersApi.list({
         spaceId,
-        // The segment decides what the SERVER returns, because contacts are not
-        // in the default result set to be filtered out of.
+        // Contacts are withheld by default, so this asks for them rather than
+        // filtering a result set they were never in.
         contacts: filter === "contacts" ? "only" : undefined,
+        type: filter === "companies" ? "COMPANY" : filter === "people" ? "PERSON" : undefined,
         /*
           Org-wide means the CRM book, not every portal resident.
 
@@ -90,14 +94,10 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       }),
   })
   const customers = listQ.data?.data ?? []
+  // Only the App-users split is still done here: it is a property of the row
+  // rather than a different question for the server.
   const rows = useMemo(
-    () =>
-      customers.filter(
-        (c) =>
-          filter === "all" ||
-          filter === "contacts" ||
-          (filter === "app" ? c.isPortalResident : !c.isPortalResident),
-      ),
+    () => customers.filter((c) => filter !== "app" || c.isPortalResident),
     [customers, filter],
   )
   const invalidate = () => qc.invalidateQueries({ queryKey: ["space-customers", spaceId ?? "all"] })
@@ -120,18 +120,20 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Input placeholder={t("common.search", "Search…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 max-w-xs" />
-        <div className="inline-flex rounded-lg bg-muted p-0.5">
-          {((spaceId ? ["all", "crm", "contacts", "app"] : ["all", "crm", "contacts"]) as Filter[]).map((f) => (
+        <div className="inline-flex flex-wrap rounded-lg bg-muted p-0.5">
+          {((spaceId ? ["all", "companies", "people", "contacts", "app"] : ["all", "companies", "people", "contacts"]) as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 filter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
               {f === "all"
                 ? t("customers.filter.all", "All")
-                : f === "crm"
-                  ? t("customers.filter.crm", "CRM only")
-                  : f === "contacts"
-                    ? t("customers.filter.contacts", "Contacts")
-                    : t("customers.filter.app", "App users")}
+                : f === "companies"
+                  ? t("customers.filter.companies", "Companies")
+                  : f === "people"
+                    ? t("customers.filter.people", "People")
+                    : f === "contacts"
+                      ? t("customers.filter.contacts", "Contacts")
+                      : t("customers.filter.app", "App users")}
             </button>
           ))}
         </div>
@@ -151,7 +153,17 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                 // of your clients. Still readable, plainly not the same thing.
                 c.isContact && "opacity-70",
               )}>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">{initials(c.name)}</span>
+              {/*
+                Square for a company, round for a person — the same shape
+                language the client record's own header uses, so the two kinds
+                are told apart before anybody reads a word.
+              */}
+              <span className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center bg-muted text-sm font-semibold text-muted-foreground",
+                c.type === "COMPANY" ? "rounded-lg" : "rounded-full",
+              )}>
+                {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : initials(c.name)}
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
                 <span className="block truncate text-xs text-muted-foreground">

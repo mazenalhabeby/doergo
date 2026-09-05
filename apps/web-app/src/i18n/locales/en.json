@@ -6818,7 +6818,9 @@
       "all": "All",
       "app": "App users",
       "crm": "CRM only",
-      "contacts": "Contacts"
+      "contacts": "Contacts",
+      "companies": "Companies",
+      "people": "People"
     },
     "hide": "Hide",
     "industry": "Industry",
@@ -6912,7 +6914,13 @@
     "contactCount": "{{count}} contact people",
     "contactOnlyNote": "Added as a contact — not in your client list, and not counted towards your client total.",
     "promote": "Make them a client",
-    "promoted": "Now a client in their own right"
+    "promoted": "Now a client in their own right",
+    "addCompany": "Add a company",
+    "addCompanyAction": "Add company",
+    "findCompany": "Find a company",
+    "findCompanyPh": "Company name…",
+    "myRoleThere": "Their role there",
+    "noCompanies": "Not linked to a company yet."
   },
   "reports": {
     "addSchedule": "Add schedule",

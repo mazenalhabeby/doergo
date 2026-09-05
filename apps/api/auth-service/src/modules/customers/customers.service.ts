@@ -268,15 +268,42 @@ export class CustomersService {
     if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
 
     const company = await this.reachable(data.companyId, data.organizationId, caps, data.caller);
-    if (company.type !== 'COMPANY') {
-      throw new BadRequestException('Contact people can only be added to a company.');
-    }
 
+    /*
+      ⚠️ The `type` column is NOT a gate here, deliberately.
+
+      It was, and that made the feature invisible: organizations record firms as
+      PERSON all the time — a book of clients reading "BILLA AG", "Siemens AG",
+      "voestalpine", every one of them typed as a person — because the toggle is
+      an afterthought when somebody is adding a client in a hurry. Refusing those
+      would have meant the panel appeared on none of the records that need it,
+      and the customer would have had to re-type their whole book to earn it.
+
+      So the relationship is stated the way people state it — this one works at
+      that one — and the two ends are told apart by their POSITION in the link,
+      not by a field somebody may never have set.
+    */
     let personId = data.personId;
     if (personId) {
       const person = await this.reachable(personId, data.organizationId, caps, data.caller);
-      if (person.type === 'COMPANY') throw new BadRequestException('A company cannot be a contact person.');
       if (person.id === company.id) throw new BadRequestException('A client cannot be its own contact.');
+      /*
+        Not both ways round.
+
+        A and B cannot each be the other's contact person: it renders as two
+        panels each claiming the other reports to it, and there is no reading of
+        the relationship in which both are true. The existing pair is the one
+        that stands; reverse it by removing that one first.
+      */
+      const reverse = await this.prisma.customerContact.findUnique({
+        where: { companyId_personId: { companyId: person.id, personId: company.id } },
+        select: { id: true },
+      });
+      if (reverse) {
+        throw new BadRequestException(
+          `${company.name} is already a contact of ${person.name}. Remove that first if you want it the other way round.`,
+        );
+      }
       /*
         Same workspace.
 
@@ -442,6 +469,8 @@ export class CustomersService {
       segment; 'all' is search, which should find a person wherever they live.
     */
     contacts?: 'exclude' | 'only' | 'all';
+    /** PERSON | COMPANY — the two kinds of client the CRM holds. */
+    type?: string;
     page?: number;
     limit?: number;
     caller?: CrmCaller;
@@ -463,6 +492,14 @@ export class CustomersService {
     if (typeof data.portalResident === 'boolean') where.isPortalResident = data.portalResident;
     if (data.portalId) where.portalId = data.portalId;
     if (data.spaceId) where.spaceId = data.spaceId;
+    /*
+      People and companies, told apart.
+
+      Filtered in the QUERY and not after it: a page of 100 filtered down to the
+      twelve companies in it is a page that looks nearly empty and a total that
+      lies about how many there are.
+    */
+    if (data.type === 'PERSON' || data.type === 'COMPANY') where.type = data.type;
     // Indexed boolean on the same table — a filter, not a second query.
     if (!isPortalPath) {
       if (data.contacts === 'only') where.isContact = true;

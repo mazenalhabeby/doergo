@@ -6827,7 +6827,9 @@
       "all": "Tous",
       "app": "Utilisateurs de l’app",
       "crm": "CRM uniquement",
-      "contacts": "Interlocuteurs"
+      "contacts": "Interlocuteurs",
+      "companies": "Entreprises",
+      "people": "Personnes"
     },
     "hide": "Masquer",
     "industry": "Secteur",
@@ -6921,7 +6923,13 @@
     "contactCount": "{{count}} interlocuteurs",
     "contactOnlyNote": "Ajouté comme interlocuteur — absent de votre liste de clients et non compté dans votre total.",
     "promote": "En faire un client",
-    "promoted": "Désormais un client à part entière"
+    "promoted": "Désormais un client à part entière",
+    "addCompany": "Ajouter une entreprise",
+    "addCompanyAction": "Ajouter l’entreprise",
+    "findCompany": "Rechercher une entreprise",
+    "findCompanyPh": "Nom de l’entreprise…",
+    "myRoleThere": "Sa fonction là-bas",
+    "noCompanies": "Pas encore rattaché à une entreprise."
   },
   "reports": {
     "addSchedule": "Ajouter une planification",

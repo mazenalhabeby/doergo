@@ -175,10 +175,18 @@ function ContactRow({ link, canEdit, onPrimary, onRemove }: {
  * is that a contact is a person you already have. A dialog that opened on a
  * blank form would produce a second Anna every time somebody was in a hurry.
  */
-function AddContactDialog({ companyId, onSaved, trigger, startName }: {
+function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
   companyId: string; onSaved: () => void; trigger: React.ReactNode
   /** Opens straight into the create form with this name — see the note below. */
   startName?: string
+  /**
+   * Adding from the OTHER end.
+   *
+   * On a person's record you pick the company they work at, so this record is
+   * the `personId` and the one you choose becomes the `companyId`. Same link,
+   * same endpoint, same checks — only which end is being chosen changes.
+   */
+  mine?: { personId: string }
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -199,7 +207,16 @@ function AddContactDialog({ companyId, onSaved, trigger, startName }: {
     // wasted; the dialog is unusable without any search at all.
     enabled: open && search.trim().length >= 2,
   })
-  const results = (searchQ.data?.data ?? []).filter((c) => c.type !== "COMPANY" && c.id !== companyId)
+  /*
+    Everything except this record itself.
+
+    The `type` column used to filter this list, and it hid almost everything:
+    a book full of firms saved as PERSON is the normal case, not the odd one.
+    What somebody is choosing here is stated by the panel they opened, not by a
+    field they may never have set.
+  */
+  const selfId = mine?.personId ?? companyId
+  const results = (searchQ.data?.data ?? []).filter((c) => c.id !== selfId)
 
   const reset = () => {
     setMode(startName ? "create" : "find"); setSearch(""); setPersonId(null); setRole(""); setIsPrimary(false)
@@ -208,16 +225,20 @@ function AddContactDialog({ companyId, onSaved, trigger, startName }: {
 
   const save = useMutation({
     mutationFn: () =>
-      customersApi.addContact(companyId, {
-        ...(mode === "find" ? { personId: personId! } : { person: { name: form.name.trim(), email: form.email.trim() || undefined, phone: form.phone.trim() || undefined } }),
-        role: role.trim() || undefined,
-        isPrimary,
-      }),
+      mine
+        // From the person's side: the record they chose is the company, and THIS
+        // record is the person.
+        ? customersApi.addContact(personId!, { personId: mine.personId, role: role.trim() || undefined, isPrimary })
+        : customersApi.addContact(companyId, {
+            ...(mode === "find" ? { personId: personId! } : { person: { name: form.name.trim(), email: form.email.trim() || undefined, phone: form.phone.trim() || undefined } }),
+            role: role.trim() || undefined,
+            isPrimary,
+          }),
     onSuccess: () => { notify.success(t("customers.contactAdded", "Contact added")); onSaved(); setOpen(false); reset() },
     onError: (e: Error) => notify.error(e.message || "Could not add contact"),
   })
 
-  const canSave = mode === "find" ? !!personId : !!form.name.trim()
+  const canSave = mine ? !!personId : mode === "find" ? !!personId : !!form.name.trim()
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
@@ -225,17 +246,23 @@ function AddContactDialog({ companyId, onSaved, trigger, startName }: {
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {mode === "find" ? t("customers.addContact", "Add contact person") : t("customers.newContact", "New contact person")}
+            {mine
+              ? t("customers.addCompany", "Add a company")
+              : mode === "find"
+                ? t("customers.addContact", "Add contact person")
+                : t("customers.newContact", "New contact person")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-3">
-          {mode === "find" ? (
+          {mine || mode === "find" ? (
             <>
               <div className="space-y-1">
-                <Label>{t("customers.findPerson", "Find a person")}</Label>
+                <Label>
+                  {mine ? t("customers.findCompany", "Find a company") : t("customers.findPerson", "Find a person")}
+                </Label>
                 <Input autoFocus value={search} onChange={(e) => { setSearch(e.target.value); setPersonId(null) }}
-                  placeholder={t("customers.findPersonPh", "Name or email…")} />
+                  placeholder={mine ? t("customers.findCompanyPh", "Company name…") : t("customers.findPersonPh", "Name or email…")} />
               </div>
 
               {search.trim().length >= 2 && (
@@ -299,7 +326,7 @@ function AddContactDialog({ companyId, onSaved, trigger, startName }: {
           )}
 
           <div className="space-y-1">
-            <Label>{t("customers.contactRole", "Their role here")}</Label>
+            <Label>{mine ? t("customers.myRoleThere", "Their role there") : t("customers.contactRole", "Their role here")}</Label>
             <Input value={role} onChange={(e) => setRole(e.target.value)} maxLength={120}
               placeholder={t("customers.contactRolePh", "e.g. Facility Manager")} />
           </div>
@@ -309,18 +336,20 @@ function AddContactDialog({ companyId, onSaved, trigger, startName }: {
             {t("customers.primaryContact", "Primary contact")}
           </label>
 
+          {!mine && (
           <button type="button" onClick={() => { setMode(mode === "find" ? "create" : "find"); setPersonId(null) }}
             className="inline-flex items-center gap-1 self-start text-xs font-medium text-primary hover:underline">
             {mode === "find"
               ? <><Plus className="h-3.5 w-3.5" /> {t("customers.createPerson", "Create a new person")}</>
               : <><Building2 className="h-3.5 w-3.5" /> {t("customers.backToSearch", "Back to search")}</>}
           </button>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
           <Button disabled={!canSave || save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? t("common.saving", "Saving…") : t("customers.addContactAction", "Add contact")}
+            {save.isPending ? t("common.saving", "Saving…") : mine ? t("customers.addCompanyAction", "Add company") : t("customers.addContactAction", "Add contact")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -336,7 +365,7 @@ function AddContactDialog({ companyId, onSaved, trigger, startName }: {
  * is the record that owns it, so there is one place to change it rather than two
  * that can disagree.
  */
-export function WorksAtPanel({ customer }: { customer: Customer }) {
+export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdit?: boolean }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const promote = useMutation({
@@ -353,23 +382,50 @@ export function WorksAtPanel({ customer }: { customer: Customer }) {
     queryFn: () => customersApi.contactCompanies(customer.id),
   })
   const companies = q.data ?? []
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["customer-companies", customer.id] })
+    qc.invalidateQueries({ queryKey: ["space-customers"] })
+  }
+  const detach = useMutation({
+    mutationFn: (linkId: string) => customersApi.removeContact(linkId),
+    onSuccess: () => { notify.success(t("customers.contactRemoved", "Contact removed")); invalidate() },
+    onError: (e: Error) => notify.error(e.message || "Could not remove"),
+  })
 
-  // Nothing to say for a person who contacts nobody — an empty card in a rail of
-  // real ones is noise on every person record in the book.
-  if (!q.isLoading && companies.length === 0 && !customer.isContact) return null
+  /*
+    Hidden only for a reader who cannot add anything.
+
+    It used to hide whenever it was empty, which quietly removed the one control
+    that answers "assign this person to a company" — the panel you add from
+    cannot be a panel that only appears once something has been added.
+  */
+  if (!q.isLoading && companies.length === 0 && !customer.isContact && !canEdit) return null
 
   return (
     <div className="rounded-2xl border border-border/70 bg-card p-4">
-      <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        <Building2 className="h-3.5 w-3.5" /> {t("customers.worksAt", "Works at")}
-      </p>
+      <div className="mb-2.5 flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <Building2 className="h-3.5 w-3.5" /> {t("customers.worksAt", "Works at")}
+        </p>
+        {canEdit && (
+          <AddContactDialog companyId="" mine={{ personId: customer.id }} onSaved={invalidate} trigger={
+            <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <Plus className="h-3.5 w-3.5" /> {t("customers.addCompany", "Add a company")}
+            </button>
+          } />
+        )}
+      </div>
       {q.isLoading ? (
         <Skeleton className="h-10 w-full rounded-lg" />
+      ) : companies.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {t("customers.noCompanies", "Not linked to a company yet.")}
+        </p>
       ) : (
         <ul className="divide-y divide-border/60">
           {companies.map((c) => (
-            <li key={c.id} className="py-2.5 first:pt-0.5">
-              <a href={`/customers/${c.company.id}`} className="flex items-start gap-2.5 hover:text-primary">
+            <li key={c.id} className="group flex items-start gap-2 py-2.5 first:pt-0.5">
+              <a href={`/customers/${c.company.id}`} className="flex min-w-0 flex-1 items-start gap-2.5 hover:text-primary">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-muted-foreground">
                   {initials(c.company.name)}
                 </span>
@@ -385,6 +441,12 @@ export function WorksAtPanel({ customer }: { customer: Customer }) {
                   {c.role && <span className="block truncate text-[11.5px] text-muted-foreground">{c.role}</span>}
                 </span>
               </a>
+              {canEdit && (
+                <button onClick={() => detach.mutate(c.id)} title={t("common.remove", "Remove")}
+                  className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-within:opacity-100 group-hover:opacity-100">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
             </li>
           ))}
         </ul>

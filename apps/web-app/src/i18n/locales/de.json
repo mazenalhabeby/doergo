@@ -6818,7 +6818,9 @@
       "all": "Alle",
       "app": "App-Nutzer",
       "crm": "Nur CRM",
-      "contacts": "Ansprechpartner"
+      "contacts": "Ansprechpartner",
+      "companies": "Unternehmen",
+      "people": "Personen"
     },
     "hide": "Ausblenden",
     "industry": "Branche",
@@ -6912,7 +6914,13 @@
     "contactCount": "{{count}} Ansprechpartner",
     "contactOnlyNote": "Als Ansprechpartner angelegt — nicht in Ihrer Kundenliste und nicht im Kundenkontingent enthalten.",
     "promote": "Zu einem Kunden machen",
-    "promoted": "Jetzt ein eigener Kunde"
+    "promoted": "Jetzt ein eigener Kunde",
+    "addCompany": "Unternehmen hinzufügen",
+    "addCompanyAction": "Unternehmen hinzufügen",
+    "findCompany": "Unternehmen suchen",
+    "findCompanyPh": "Firmenname…",
+    "myRoleThere": "Funktion dort",
+    "noCompanies": "Noch mit keinem Unternehmen verknüpft."
   },
   "reports": {
     "addSchedule": "Zeitplan hinzufügen",

@@ -286,8 +286,20 @@ export default function CustomerRecordPage() {
             are ours, and the question "who do I ring?" is asked far more often
             than "who owns this account?".
           */}
-          {isCompany && <ContactsPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />}
-          {!isCompany && <WorksAtPanel customer={customer} />}
+          {/*
+            BOTH panels on every client, and no check of the `type` column.
+
+            Gating on type made the whole feature invisible: a book of clients
+            reads "BILLA AG", "Siemens AG", "voestalpine" — every one of them
+            saved as PERSON, because the Person/Company toggle is an afterthought
+            when somebody is adding a client in a hurry. The panels ask two
+            different questions and either can be empty:
+
+              Contact people — who do I deal with AT this client?
+              Works at       — which clients does this one work for?
+          */}
+          <ContactsPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />
+          <WorksAtPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />
 
           {/* Sales managers — only while the customer is worked by sales (no app access). */}
           {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} />}

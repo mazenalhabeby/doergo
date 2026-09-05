@@ -6818,7 +6818,9 @@
       "all": "Todos",
       "app": "Usuarios de la app",
       "crm": "Solo CRM",
-      "contacts": "Contactos"
+      "contacts": "Contactos",
+      "companies": "Empresas",
+      "people": "Personas"
     },
     "hide": "Ocultar",
     "industry": "Sector",
@@ -6912,7 +6914,13 @@
     "contactCount": "{{count}} personas de contacto",
     "contactOnlyNote": "Añadida como contacto: no está en tu lista de clientes ni cuenta para tu total de clientes.",
     "promote": "Convertir en cliente",
-    "promoted": "Ahora es cliente por derecho propio"
+    "promoted": "Ahora es cliente por derecho propio",
+    "addCompany": "Añadir una empresa",
+    "addCompanyAction": "Añadir empresa",
+    "findCompany": "Buscar una empresa",
+    "findCompanyPh": "Nombre de la empresa…",
+    "myRoleThere": "Su cargo allí",
+    "noCompanies": "Aún no está vinculada a ninguna empresa."
   },
   "reports": {
     "addSchedule": "Añadir programación",

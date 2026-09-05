@@ -23,7 +23,7 @@ describe('contact people', () => {
   const prisma: Record<string, any> = {
     customer: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     customerContact: {
-      findMany: jest.fn(), findFirst: jest.fn(), upsert: jest.fn(),
+      findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), upsert: jest.fn(),
       update: jest.fn(), updateMany: jest.fn(), delete: jest.fn(),
     },
     user: { findFirst: jest.fn() },
@@ -53,6 +53,8 @@ describe('contact people', () => {
     jest.clearAllMocks();
     prisma.$transaction.mockImplementation((cb: (tx: Record<string, any>) => unknown) => cb(prisma));
     prisma.customerContact.upsert.mockResolvedValue({ id: 'lnk-1', role: null, isPrimary: false, person: person() });
+    // No reverse link unless a test says there is one.
+    prisma.customerContact.findUnique.mockResolvedValue(null);
     const module: TestingModule = await Test.createTestingModule({
       providers: [CustomersService, { provide: PrismaService, useValue: prisma }],
     }).compile();
@@ -83,13 +85,27 @@ describe('contact people', () => {
       await expect(add({ caller: { userId: 'u1', role: 'MEMBER' } })).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('will not make a company somebody’s contact person', async () => {
-      records(company(), company({ id: 'pe-1', name: 'Other Ltd' }));
-      await expect(add()).rejects.toBeInstanceOf(BadRequestException);
+    it('does NOT refuse a client saved with the wrong type', async () => {
+      /*
+        The `type` column used to gate this, and it made the whole feature
+        invisible: a real book of clients reads "BILLA AG", "Siemens AG",
+        "voestalpine" — every one saved as PERSON, because the Person/Company
+        toggle is an afterthought when somebody adds a client in a hurry.
+
+        Refusing those would have meant the panel appeared on none of the records
+        that need it, and the customer would have had to re-type their whole book
+        to earn the feature. The two ends are told apart by their POSITION in the
+        link, not by a field that may never have been set.
+      */
+      records(person({ id: 'co-1', name: 'BILLA AG' }), person());
+      await expect(add()).resolves.toBeDefined();
     });
 
-    it('will not add contacts to a person', async () => {
-      records(person({ id: 'co-1' }), person());
+    it('will not let two clients each be the other’s contact', async () => {
+      // It renders as two panels each claiming the other reports to it, and
+      // there is no reading of the relationship in which both are true.
+      records(company(), person());
+      prisma.customerContact.findUnique.mockResolvedValue({ id: 'existing' });
       await expect(add()).rejects.toBeInstanceOf(BadRequestException);
     });
 

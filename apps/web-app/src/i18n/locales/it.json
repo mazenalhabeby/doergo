@@ -6827,7 +6827,9 @@
       "all": "Tutti",
       "app": "Utenti dell’app",
       "crm": "Solo CRM",
-      "contacts": "Referenti"
+      "contacts": "Referenti",
+      "companies": "Aziende",
+      "people": "Persone"
     },
     "hide": "Nascondi",
     "industry": "Settore",
@@ -6921,7 +6923,13 @@
     "contactCount": "{{count}} referenti",
     "contactOnlyNote": "Aggiunta come referente — non nel tuo elenco clienti e non conteggiata nel totale.",
     "promote": "Rendila un cliente",
-    "promoted": "Ora è un cliente a tutti gli effetti"
+    "promoted": "Ora è un cliente a tutti gli effetti",
+    "addCompany": "Aggiungi un’azienda",
+    "addCompanyAction": "Aggiungi azienda",
+    "findCompany": "Cerca un’azienda",
+    "findCompanyPh": "Nome azienda…",
+    "myRoleThere": "Il suo ruolo lì",
+    "noCompanies": "Non ancora collegata a un’azienda."
   },
   "reports": {
     "addSchedule": "Aggiungi pianificazione",

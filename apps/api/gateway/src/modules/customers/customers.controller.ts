@@ -119,9 +119,11 @@ export class CustomersController {
     @Query('portalResident') portalResident?: string,
     @Query('spaceId') spaceId?: string,
     @Query('contacts') contacts?: 'exclude' | 'only' | 'all',
+    @Query('type') type?: string,
   ) {
     return this.auth('list_customers', {
       contacts,
+      type,
       organizationId: req.user.organizationId,
       search,
       status,
