@@ -213,7 +213,7 @@ export class CustomersService {
     const c = await this.prisma.customer.findFirst({
       where: { id, organizationId },
       select: {
-        id: true, name: true, type: true, spaceId: true, isContact: true,
+        id: true, name: true, type: true, spaceId: true, isContact: true, contactName: true,
         ownerId: true, managerIds: true, isPortalResident: true,
       },
     });
@@ -363,6 +363,30 @@ export class CustomersService {
           data: { isPrimary: false },
         });
       }
+      /*
+        The typed note becomes the person, and then stops existing.
+
+        `contactName` is a free-text field printed in the client list. Once the
+        same name is a real contact person there are two copies of it, and they
+        disagree the moment anybody edits one — remove the contact and the row
+        resurrects the string, which reads as the removal having failed.
+
+        Cleared only when it IS this person, compared without case or edge
+        spacing. A note saying something else ("Reception", "ask for Klaus") is
+        somebody's information and is not ours to delete.
+      */
+      const linkedName = (data.person?.name ?? '').trim() || null;
+      const noteName = (company.contactName ?? '').trim();
+      if (noteName) {
+        const personName =
+          linkedName ??
+          (await tx.customer.findUnique({ where: { id: personId! }, select: { name: true } }))?.name ??
+          '';
+        if (noteName.toLowerCase() === personName.trim().toLowerCase()) {
+          await tx.customer.update({ where: { id: company.id }, data: { contactName: null } });
+        }
+      }
+
       const link = await tx.customerContact.upsert({
         // The unique pair is what makes a double-click safe: a second identical
         // request updates the row it already created instead of failing.
