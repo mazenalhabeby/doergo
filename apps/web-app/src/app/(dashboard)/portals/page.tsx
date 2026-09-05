@@ -17,15 +17,20 @@ import { useRouter } from "next/navigation"
 import { LayoutTemplate } from "lucide-react"
 
 import { useSpaceScope } from "@/hooks/use-space-scope"
+import { useAuth } from "@/contexts/auth-context"
 import { SpaceTabs } from "@/components/space-tabs"
 import { PortalTab } from "../locations/[id]/_components/portal-tab"
 
 export default function PortalsPage() {
   const { t } = useTranslation()
   const router = useRouter()
+  const { user } = useAuth()
   // `b2c_portal` is what puts a portal on a workspace; CRM is its prerequisite,
   // enforced where modules are chosen rather than restated here.
   const scope = useSpaceScope({ module: "b2c_portal", allowAll: false })
+  // A space's own module list wins; an absent one inherits the organization's —
+  // the same precedence the server's gate applies.
+  const hasAssets = ((scope.space?.enabledModules as string[] | null) ?? user?.orgModules ?? []).includes("assets")
 
   return (
     <div className="mx-auto max-w-[1000px] px-6 py-6">
@@ -55,7 +60,18 @@ export default function PortalsPage() {
       ) : scope.spaceId ? (
         <PortalTab
           spaceId={scope.spaceId}
-          hasApartments
+          /*
+            The Apartment entity keeps its apartments in ASSETS — that is where
+            they went when units became asset records.
+
+            ⚠️ This was a hard-coded `true`, so the option was always offered and
+            the server always refused it, naming a module (`apartments`) the
+            product no longer has. A lock that is never applied in the UI and
+            always applied on the server is worse than either alone: it turns a
+            missing prerequisite into an error message about something that
+            cannot be switched on.
+          */
+          hasApartments={hasAssets}
           /*
             Switching the module on is a workspace setting, so "turn it on" has
             to lead to that workspace's Modules tab — the tab's own callback,

@@ -136,7 +136,7 @@ function CreatePortalDialog({ spaceId, hasApartments, onOpenModules, open, onOpe
                       </span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">
                         {locked
-                          ? t("portal.apartmentModuleNeeded", "Needs the Apartments module — this portal manages apartments as its entity.")
+                          ? t("portal.apartmentModuleNeeded", "Needs the Assets module — this portal manages apartments, and apartments are assets.")
                           : t(`portal.blurb.${x.key}`, x.blurb)}
                       </span>
                     </span>

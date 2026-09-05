@@ -5829,7 +5829,7 @@
     "catIssuesPlaceholder": "Ne refroidit pas, Pas de courant",
     "andItsFlow": "et hérite de son flux de travail.",
     "apartmentLockHint": "Pour créer un portail Location / Immobilier (logements), activez d’abord le module Logements sur cet espace de travail.",
-    "apartmentModuleNeeded": "Nécessite le module Logements — ce portail gère des logements.",
+    "apartmentModuleNeeded": "Nécessite le module Équipements — ce portail gère des appartements, et les appartements sont des équipements.",
     "apartmentModuleRequired": "Activez le module Logements sur cet espace de travail pour utiliser ce type.",
     "changeCover": "Changer",
     "changeType": "Changer de type",

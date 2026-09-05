@@ -5829,7 +5829,7 @@
     "catIssuesPlaceholder": "Non raffredda, Assenza di corrente",
     "andItsFlow": "e ne eredita il flusso di lavoro.",
     "apartmentLockHint": "Per creare un portale Affitti / Immobili (appartamenti), attiva prima il modulo Appartamenti su questo spazio di lavoro.",
-    "apartmentModuleNeeded": "Richiede il modulo Appartamenti: questo portale gestisce appartamenti.",
+    "apartmentModuleNeeded": "Richiede il modulo Asset — questo portale gestisce appartamenti, e gli appartamenti sono asset.",
     "apartmentModuleRequired": "Attiva il modulo Appartamenti su questo spazio di lavoro per usare questo tipo.",
     "changeCover": "Cambia",
     "changeType": "Cambia tipo",

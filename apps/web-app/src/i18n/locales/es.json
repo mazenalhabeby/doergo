@@ -5820,7 +5820,7 @@
     "catIssuesPlaceholder": "No enfría, Sin corriente",
     "andItsFlow": "y hereda su flujo de trabajo.",
     "apartmentLockHint": "Para crear un portal de alquiler/inmuebles (apartamentos), activa antes el módulo Apartamentos en este espacio de trabajo.",
-    "apartmentModuleNeeded": "Necesita el módulo Apartamentos: este portal gestiona apartamentos.",
+    "apartmentModuleNeeded": "Necesita el módulo Activos: este portal gestiona apartamentos, y los apartamentos son activos.",
     "apartmentModuleRequired": "Activa el módulo Apartamentos en este espacio de trabajo para usar este tipo.",
     "changeCover": "Cambiar",
     "changeType": "Cambiar tipo",

@@ -130,22 +130,32 @@ export class PortalService {
   /** Create a portal bound to a space (a space can run several). Mirrors
    *  createPortal but stamps spaceId on the portal + its seeded categories. */
   /**
-   * The Apartment (rental) entity REQUIRES the space's Apartments module — that's
-   * where its catalog/residents live. Fail closed if it's off. Called ONLY when a
-   * portal is created or switched to the rental entity; other entities (Order/
-   * Workspace…) never need it. Enforced server-side (the UI also gates the option).
+   * The Apartment (rental) entity needs somewhere for its apartments to live,
+   * and since the migration that is ASSETS: a `CustomerUnit` became an Asset of
+   * an "Apartments" kind in the same space, and everything pointing at the unit
+   * was re-pointed at the asset.
+   *
+   * ⚠️ This asked for a module called `apartments`, which no longer exists —
+   * it is not in AVAILABLE_MODULES and no space can have it switched on. So the
+   * check could not pass for anybody: creating or switching a portal to the
+   * Apartment entity failed with "Enable the Apartments module for this space",
+   * naming a module the product had already removed. A gate that outlives the
+   * thing it gates does not fail open, it fails permanently.
    */
   private async assertApartmentsModule(organizationId: string, spaceId: string) {
     const space = await this.prisma.companyLocation.findFirst({
       where: { id: spaceId, organizationId },
       select: { enabledModules: true, organization: { select: { enabledModules: true } } },
     });
+    // A space's own list wins; an absent one means the space has never been
+    // configured and inherits the organization's — the same precedence every
+    // other module gate here applies.
     const effective =
       (space?.enabledModules as string[] | null) ??
       (space?.organization?.enabledModules as string[] | null) ??
       [];
-    if (!effective.includes('apartments')) {
-      throw new BadRequestException('Enable the Apartments module for this space before using the Apartment entity.');
+    if (!effective.includes('assets')) {
+      throw new BadRequestException('Switch on the Assets module for this workspace before using the Apartment entity — that is where apartments live.');
     }
   }
 
@@ -156,7 +166,7 @@ export class PortalService {
     });
     if (!space) throw new NotFoundException('Space not found');
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
-    // Apartment entity ⇒ the Apartments module must be on (fail before creating).
+    // Apartment entity ⇒ the Assets module must be on (fail before creating).
     if (template.key === 'rental') await this.assertApartmentsModule(data.organizationId, data.spaceId);
     const portal = await this.prisma.portal.create({
       data: {
@@ -290,7 +300,7 @@ export class PortalService {
       select: { id: true, spaceId: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
-    // Switching to the Apartment entity requires the space's Apartments module.
+    // Switching to the Apartment entity requires the space's Assets module.
     if (data.templateKey === 'rental' && portal.spaceId) {
       await this.assertApartmentsModule(data.organizationId, portal.spaceId);
     }

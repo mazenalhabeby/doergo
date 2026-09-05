@@ -5820,7 +5820,7 @@
     "catIssuesPlaceholder": "Not cooling, No power",
     "andItsFlow": "and inherit its workflow.",
     "apartmentLockHint": "To create a Rental / Property (Apartment) portal, turn on the Apartments module for this workspace first.",
-    "apartmentModuleNeeded": "Needs the Apartments module — this portal manages apartments as its entity.",
+    "apartmentModuleNeeded": "Needs the Assets module — this portal manages apartments, and apartments are assets.",
     "apartmentModuleRequired": "Enable the Apartments module for this workspace to use this type.",
     "changeCover": "Change",
     "changeType": "Change type",

@@ -267,7 +267,9 @@ export default function SpaceSettingsPage() {
                 <WorkflowTab space={space} />
               </TabsContent>
               <TabsContent value="members" className="mt-0">
-                <MembersTab spaceId={spaceId} hasApartments />
+                {/* Apartments live in Assets since units became asset records — so this
+                    asks about the module that actually exists. */}
+                <MembersTab spaceId={spaceId} hasApartments={mods.includes("assets")} />
               </TabsContent>
               <TabsContent value="sharing" className="mt-0">
                 <SharingTab spaceId={spaceId} spaceName={space.name} />

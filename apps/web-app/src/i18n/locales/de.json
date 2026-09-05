@@ -5820,7 +5820,7 @@
     "catIssuesPlaceholder": "Kühlt nicht, Kein Strom",
     "andItsFlow": "und dessen Workflow übernehmen.",
     "apartmentLockHint": "Um ein Miet-/Immobilien-Portal (Wohnungen) anzulegen, aktivieren Sie zuerst das Modul „Wohnungen“ für diesen Arbeitsbereich.",
-    "apartmentModuleNeeded": "Benötigt das Modul „Wohnungen“ — dieses Portal verwaltet Wohnungen.",
+    "apartmentModuleNeeded": "Benötigt das Modul Objekte — dieses Portal verwaltet Wohnungen, und Wohnungen sind Objekte.",
     "apartmentModuleRequired": "Aktivieren Sie das Modul „Wohnungen“ für diesen Arbeitsbereich, um diesen Typ zu nutzen.",
     "changeCover": "Ändern",
     "changeType": "Typ ändern",
