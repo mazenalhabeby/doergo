@@ -359,17 +359,26 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
           )}
 
           <Field label={isCompany ? t("customers.companyName", "Company name") : t("customers.name", "Name")} required value={form.name} onChange={(v) => set("name", v)} />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label>{isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")}</Label>
-              <Input type="email" inputMode="email" value={form.email} onChange={(e) => set("email", e.target.value)}
-                aria-invalid={emailInvalid} className={cn(emailInvalid && "border-destructive focus-visible:ring-destructive")} />
-              {emailInvalid && <p className="text-[11px] text-destructive">{t("customers.emailInvalid", "Enter a valid email")}</p>}
-            </div>
-            <div className="space-y-1">
-              <Label>{isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")}</Label>
-              <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} />
-            </div>
+          <div className="space-y-1">
+            <Label>{isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")}</Label>
+            <Input type="email" inputMode="email" value={form.email} onChange={(e) => set("email", e.target.value)}
+              aria-invalid={emailInvalid} className={cn(emailInvalid && "border-destructive focus-visible:ring-destructive")} />
+            {emailInvalid && <p className="text-[11px] text-destructive">{t("customers.emailInvalid", "Enter a valid email")}</p>}
+          </div>
+
+          {/*
+            The phone gets the whole line.
+
+            Sharing a two-column row with the email left it about 200px wide, and
+            a phone field spends the first third of that on the country selector
+            — so an international number scrolled out of sight as it was typed,
+            and there was no way to read back what had been entered without
+            dragging through the field. It is the one input here that cannot be
+            checked at a glance if it does not fit.
+          */}
+          <div className="space-y-1">
+            <Label>{isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")}</Label>
+            <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} />
           </div>
 
           {/* Company-only fields */}

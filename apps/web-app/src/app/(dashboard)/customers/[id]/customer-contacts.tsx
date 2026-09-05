@@ -325,15 +325,15 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
                 <Label>{t("customers.name", "Name")}<span className="text-destructive"> *</span></Label>
                 <Input autoFocus value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>{t("customers.email", "Email")}</Label>
-                  <Input type="email" inputMode="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-                </div>
-                <div className="space-y-1">
-                  <Label>{t("customers.phone", "Phone")}</Label>
-                  <PhoneInput value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
-                </div>
+              <div className="space-y-1">
+                <Label>{t("customers.email", "Email")}</Label>
+                <Input type="email" inputMode="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+              </div>
+              {/* Its own line here too — same reason as the client form: half a
+                  dialog is not enough to read a number back. */}
+              <div className="space-y-1">
+                <Label>{t("customers.phone", "Phone")}</Label>
+                <PhoneInput value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
               </div>
               {/* The sentence that makes this safe to use freely. */}
               <p className="rounded-lg bg-muted/50 p-2.5 text-[11.5px] leading-relaxed text-muted-foreground">
