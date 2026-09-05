@@ -35,6 +35,7 @@ import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
 import { AddressesPanel } from "./customer-addresses"
 import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
 import { Truncated } from "@/components/truncated"
+import { ActivityFeedSkeleton, ClientRecordSkeleton } from "@/components/skeletons/crm"
 import { ManagersPanel } from "./customer-managers"
 
 // stage tone → dot color
@@ -166,87 +167,9 @@ export default function CustomerRecordPage() {
     onError: (e: Error) => notify.error(e.message || "Could not update status"),
   })
 
-  if (customerQ.isLoading) {
-    /*
-      The record's own shape, at its own size.
-
-      Two stacked slabs were standing in for a page that is a header card above a
-      300px rail and a main column — so the whole layout rearranged the moment
-      the client arrived, which is the one thing a skeleton exists to prevent.
-
-      Same container, same grid, same rounded cards in the same places. Nothing
-      here is a guess about the design: it is the design, unfilled.
-    */
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <Skeleton className="mb-4 h-4 w-16" />
-
-        <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-14 w-14 rounded-xl" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-52" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-9 w-9 rounded-lg" />
-              <Skeleton className="h-9 w-9 rounded-lg" />
-              <Skeleton className="h-8 w-28 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-lg" />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-5 lg:grid-cols-[300px_1fr]">
-          <div className="space-y-4">
-            {/* About, then the two or three panels under it. */}
-            <div className="rounded-2xl border border-border/70 bg-card p-4">
-              <Skeleton className="mb-3 h-3 w-16" />
-              <div className="space-y-3">
-                {["w-32", "w-24", "w-28", "w-20"].map((w, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3">
-                    <Skeleton className="h-3 w-14" />
-                    <Skeleton className={cn("h-3.5", w)} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border/70 bg-card p-4">
-              <Skeleton className="mb-3 h-3 w-20" />
-              <Skeleton className="h-8 w-full rounded-lg" />
-            </div>
-            <div className="rounded-2xl border border-border/70 bg-card p-4">
-              <Skeleton className="mb-3 h-3 w-20" />
-              <Skeleton className="h-28 w-full rounded-lg" />
-            </div>
-          </div>
-
-          <div className="min-w-0 space-y-4">
-            {/* The composer, the tab row, then a few entries. */}
-            <div className="rounded-2xl border border-border/70 bg-card p-4">
-              <Skeleton className="h-9 w-full rounded-lg" />
-            </div>
-            <div className="flex items-center gap-4 border-b border-border/70 pb-2">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-            {["w-3/4", "w-2/3", "w-4/5"].map((w, i) => (
-              <div key={i} className="flex gap-3 rounded-2xl border border-border/70 bg-card p-4">
-                <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Skeleton className="h-3.5 w-28" />
-                  <Skeleton className={cn("h-3", w)} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // The same shape the auth check and the route loader draw — three moments,
+  // one layout, so a reader cannot tell them apart.
+  if (customerQ.isLoading) return <ClientRecordSkeleton />
   if (!customer) {
     return <div className="mx-auto max-w-6xl p-6 text-center text-muted-foreground">{t("customers.notFound", "Customer not found")}</div>
   }
@@ -678,21 +601,7 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
     return Array.from(m.entries()).sort((a, b) => b[0] - a[0])
   }, [activities])
 
-  // Entries, not slabs — the same avatar-and-two-lines the feed renders.
-  if (loading)
-    return (
-      <div className="space-y-2">
-        {["w-3/4", "w-1/2", "w-2/3"].map((w, i) => (
-          <div key={i} className="flex gap-3 rounded-xl border border-border/70 p-4">
-            <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-3.5 w-32" />
-              <Skeleton className={cn("h-3", w)} />
-            </div>
-          </div>
-        ))}
-      </div>
-    )
+  if (loading) return <ActivityFeedSkeleton />
   if (activities.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/70 py-16 text-center">

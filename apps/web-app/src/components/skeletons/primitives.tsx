@@ -78,29 +78,50 @@ export function NavbarSkeleton() {
 // ============================================================================
 
 /** Fallback shape for routes without a page-specific skeleton. See RouteSkeleton. */
+/**
+ * The shape of a page we cannot predict.
+ *
+ * ⚠️ It used to draw a six-column grid of cards with avatar circles — a
+ * DASHBOARD. Every route that is not the dashboard or tasks falls back to this,
+ * so reloading the clients list, the assets register or a portal showed the
+ * dashboard for a moment and then rearranged into something else entirely.
+ *
+ * It cannot be more specific than this, and should not try: CRM, assets and
+ * portals are module-gated, so at the moment this renders — the auth check, when
+ * the user is still unknown — the route may not exist for this organization at
+ * all. Promising one of their layouts would be drawing a page that never comes.
+ *
+ * So it draws what nearly every content page in this product shares and nothing
+ * more: a title, a toolbar, and a list. Neutral enough to be honest about a page
+ * it has not identified, and close enough that the arrival is not a jolt.
+ */
 export function GenericContentSkeleton() {
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-6">
-      {/* Header area */}
-      <div className="mb-6">
-        <Shimmer className="w-48 h-4 rounded mb-2" />
-        <Shimmer className="w-72 h-8 rounded" />
+    <div className="mx-auto max-w-[1100px] px-6 py-6">
+      <Shimmer className="h-7 w-40 rounded" />
+      <Shimmer className="mt-2 h-4 w-64 rounded" />
+
+      <div className="mt-6 flex items-center justify-between gap-3">
+        <Shimmer className="h-9 w-72 max-w-full rounded-md" />
+        <Shimmer className="h-9 w-32 rounded-lg" />
       </div>
 
-      {/* Content grid */}
-      <div className="grid grid-cols-6 gap-3">
-        {[2, 2, 2, 3, 3].map((span, i) => (
-          <div
-            key={i}
-            className="bg-card rounded-xl border border-border p-4"
-            style={{ gridColumn: `span ${span}` }}
-          >
-            <Shimmer className="w-20 h-3 rounded mb-3" />
-            <div className="flex items-center gap-2">
-              {[...Array(Math.min(span, 3))].map((_, j) => (
-                <Shimmer key={j} className="w-10 h-10 rounded-full" />
-              ))}
+      {/* Widths vary because real content does; identical bars read as a barcode. */}
+      <div className="mt-4 space-y-2">
+        {[
+          ['w-40', 'w-56'],
+          ['w-32', 'w-44'],
+          ['w-48', 'w-36'],
+          ['w-36', 'w-52'],
+          ['w-44', 'w-40'],
+        ].map(([a, b], i) => (
+          <div key={i} className="flex items-center gap-3 rounded-xl border border-border p-3">
+            <Shimmer className="h-10 w-10 shrink-0 rounded-lg" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Shimmer className={`h-3.5 rounded ${a}`} />
+              <Shimmer className={`h-3 rounded ${b}`} />
             </div>
+            <Shimmer className="h-5 w-14 shrink-0 rounded-md" />
           </div>
         ))}
       </div>

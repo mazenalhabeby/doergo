@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { ClientRecordSkeleton, ClientsListSkeleton } from './crm';
 
 import { DashboardPageSkeleton, dashboardVariant } from '@/app/(dashboard)/dashboard/_components/dashboard-skeleton';
 import { TasksPageLoading } from '@/app/(dashboard)/tasks/_components/tasks-skeleton';
@@ -42,6 +43,21 @@ export function RouteSkeleton() {
     // During the auth check `user` is still null and dashboardVariant falls back
     // to the admin grid.
     return <DashboardPageSkeleton variant={dashboardVariant(user)} />;
+  }
+
+  /*
+    The CRM — but only once we know whose CRM it is.
+
+    ⚠️ These routes are MODULE-GATED. Clients, assets and portals exist for an
+    organization only while the module is on, so during the auth check — when
+    `user` is still null — drawing the clients list would be promising a page
+    that may never be rendered for this account at all. The neutral shape below
+    is the honest answer until the user is known; after that this is a real
+    navigation to a route the app has already decided to render.
+  */
+  if (user) {
+    if (pathname.startsWith('/customers/')) return <ClientRecordSkeleton />;
+    if (pathname === '/clients') return <ClientsListSkeleton />;
   }
 
   return <GenericContentSkeleton />;

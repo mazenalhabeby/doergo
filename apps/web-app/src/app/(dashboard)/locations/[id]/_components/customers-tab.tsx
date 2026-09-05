@@ -12,6 +12,7 @@ import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Truncated } from "@/components/truncated"
+import { ClientRowsSkeleton } from "@/components/skeletons/crm"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -141,35 +142,8 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       </div>
 
       {listQ.isLoading ? (
-        /*
-          The shape of the rows that are coming, not a stack of grey slabs.
-
-          A skeleton is a promise about the layout that follows. Four solid
-          blocks promise four solid blocks; when bordered rows with an avatar and
-          two lines of text arrive instead, the page rearranges itself in front
-          of the reader — and a filled block also reads far heavier than the
-          sparse row it stands in for, so the wait looks denser than the answer.
-
-          The line widths vary because real names do. Identical bars read as a
-          barcode, which is the other way a skeleton announces itself as fake.
-        */
-        <div className="space-y-2">
-          {[
-            ["w-40", "w-56"],
-            ["w-32", "w-44"],
-            ["w-48", "w-36"],
-            ["w-36", "w-52"],
-          ].map(([name, meta], i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl border border-border p-3">
-              <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className={cn("h-3.5", name)} />
-                <Skeleton className={cn("h-3", meta)} />
-              </div>
-              <Skeleton className="h-5 w-14 shrink-0 rounded-md" />
-            </div>
-          ))}
-        </div>
+        // The rows that are coming — the same ones the route skeleton draws.
+        <ClientRowsSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState icon={Contact} title={t("customers.empty", "No customers yet")} />
       ) : (
