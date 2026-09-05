@@ -118,8 +118,10 @@ export class CustomersController {
     @Query('limit') limit?: string,
     @Query('portalResident') portalResident?: string,
     @Query('spaceId') spaceId?: string,
+    @Query('contacts') contacts?: 'exclude' | 'only' | 'all',
   ) {
     return this.auth('list_customers', {
+      contacts,
       organizationId: req.user.organizationId,
       search,
       status,
@@ -128,6 +130,92 @@ export class CustomersController {
       limit: limit ? Number(limit) : undefined,
       // 'false' → B2B customers only; 'true' → residents only; omitted → all.
       portalResident: portalResident === undefined ? undefined : portalResident === 'true',
+      caller: this.caller(req),
+    });
+  }
+
+  /*
+    ── Contact people ─────────────────────────────────────────────────────────
+
+    Authorization is enforced in the SERVICE, like every other CRM route here:
+    it resolves the caller's CRM abilities, loads both records with the
+    organization filter, and applies the per-record ownership rule. The gateway's
+    job is to make sure the organization comes from the token and the caller is
+    who the session says they are — neither is ever read from the body.
+
+    ⚠️ `contacts/:linkId` is declared BEFORE `:id` so a link id is not matched as
+    a customer id.
+  */
+  @Patch('contacts/:linkId')
+  @ApiOperation({ summary: 'Change a contact’s role, or make them the primary contact' })
+  async updateContact(
+    @Param('linkId') linkId: string,
+    @Body() body: { role?: string | null; isPrimary?: boolean },
+    @Request() req: any,
+  ) {
+    return this.auth('update_customer_contact', {
+      linkId,
+      role: body?.role,
+      isPrimary: body?.isPrimary,
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+    });
+  }
+
+  @Delete('contacts/:linkId')
+  @ApiOperation({ summary: 'Detach a contact person (the person record is kept)' })
+  async removeContact(@Param('linkId') linkId: string, @Request() req: any) {
+    return this.auth('remove_customer_contact', {
+      linkId,
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+    });
+  }
+
+  @Get(':id/contacts')
+  @ApiOperation({ summary: 'Who works at this company' })
+  async listContacts(@Param('id') id: string, @Request() req: any) {
+    return this.auth('list_customer_contacts', {
+      companyId: id,
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+    });
+  }
+
+  @Get(':id/companies')
+  @ApiOperation({ summary: 'Which companies this person is a contact at' })
+  async listContactCompanies(@Param('id') id: string, @Request() req: any) {
+    return this.auth('list_customer_contact_companies', {
+      personId: id,
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+    });
+  }
+
+  @Post(':id/contacts')
+  @ApiOperation({ summary: 'Attach a person to this company — an existing one, or a new one' })
+  async addContact(
+    @Param('id') id: string,
+    @Body() body: { personId?: string; person?: { name?: string; email?: string; phone?: string }; role?: string; isPrimary?: boolean },
+    @Request() req: any,
+  ) {
+    return this.auth('add_customer_contact', {
+      companyId: id,
+      personId: body?.personId,
+      person: body?.person,
+      role: body?.role,
+      isPrimary: body?.isPrimary,
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+    });
+  }
+
+  @Post(':id/promote')
+  @ApiOperation({ summary: 'Make a contact person a client in their own right' })
+  async promoteContact(@Param('id') id: string, @Request() req: any) {
+    return this.auth('promote_customer_contact', {
+      personId: id,
+      organizationId: req.user.organizationId,
       caller: this.caller(req),
     });
   }

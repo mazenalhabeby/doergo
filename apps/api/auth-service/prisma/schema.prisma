@@ -1465,6 +1465,15 @@ model Customer {
   vatId     String? // VAT / UID number (EU) — e.g. ATU12345678
   regNumber String? // company register number (e.g. Firmenbuchnummer FN 123456x)
 
+  /// This person exists as somebody's CONTACT, not as a client of yours.
+  ///
+  /// Set when a person is created from a company's "Contact people" panel. It
+  /// keeps them out of the CRM list by default and — the part that matters —
+  /// ⚠️ OUT OF THE BILLABLE CLIENT COUNT: the CRM ladder charges per active
+  /// client, and a company with six contacts is not six clients. One button
+  /// clears it the day they buy something.
+  isContact Boolean @default(false)
+
   // Flexible extra attributes the office adds themselves: [{ label, value }].
   // Keeps the record open-ended without a schema change per new field.
   details Json?
@@ -1517,6 +1526,11 @@ model Customer {
 
   documentSignerSteps DocumentSigner[]
   documentSignatures  DocumentSignature[]
+  /// Who works at this company (only meaningful when type = COMPANY).
+  contactsAsCompany CustomerContact[] @relation("CompanyContacts")
+  /// Which companies this person is a contact at (type = PERSON).
+  contactsAsPerson  CustomerContact[] @relation("PersonContacts")
+
   signLinks           CustomerSignLink[]
 
   @@index([organizationId, isActive])
@@ -1524,6 +1538,48 @@ model Customer {
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
+}
+
+/// A person who works at a company — the contact you actually ring.
+///
+/// A company record has always had a free-text `contactName`, which cannot be
+/// dialled, filtered or given a history. This links the PERSON RECORD that
+/// already exists to the company, so there is one Anna rather than her name
+/// copied into a field.
+///
+/// ⚠️ It is a table and not a `companyId` column on Customer because of the two
+/// columns below it: the ROLE somebody has at that company, and which of them is
+/// the one to ring first. Neither has anywhere to live on a plain foreign key,
+/// and a person can genuinely contact two firms — a consultant, a group.
+model CustomerContact {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  /// Customer with type = COMPANY. Enforced in the service; the database cannot
+  /// express "a row whose other column says COMPANY".
+  companyId String
+  company   Customer @relation("CompanyContacts", fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Customer with type = PERSON.
+  personId String
+  person   Customer @relation("PersonContacts", fields: [personId], references: [id], onDelete: Cascade)
+
+  /// What they do there — "Facility Manager". Free text: every organization
+  /// names these differently, and an enum would be wrong for most of them.
+  role String?
+
+  /// The one to ring first. At most one per company, kept true in a transaction.
+  isPrimary Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  /// Nobody added twice — enforced by the database, so a double-click cannot do it.
+  @@unique([companyId, personId])
+  /// "Who does this person work for?" — the person record's own panel.
+  @@index([personId])
+  /// "Who do I ring at this company?" — the company panel, primary first.
+  @@index([companyId, isPrimary])
+  @@map("customer_contacts")
 }
 
 // Kind of CRM timeline entry on a customer.

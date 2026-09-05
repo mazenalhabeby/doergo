@@ -127,6 +127,304 @@ export class CustomersService {
     return false;
   }
 
+
+
+  /**
+   * Add each row's contact relationships, in one query for the whole page.
+   *
+   * A company gets a count ("3 contact people"); a person gets the company they
+   * contact, primary first. Both come out of the same read — the ids are already
+   * in hand, and asking twice, or once per row, would be work for a subtitle.
+   */
+  private async decorateContacts(items: Array<Record<string, unknown>>, organizationId: string) {
+    const companyIds = items.filter((c) => c.type === 'COMPANY').map((c) => c.id as string);
+    const personIds = items.filter((c) => c.type !== 'COMPANY').map((c) => c.id as string);
+    if (!companyIds.length && !personIds.length) return items;
+
+    const links = await this.prisma.customerContact.findMany({
+      where: {
+        organizationId,
+        OR: [
+          ...(companyIds.length ? [{ companyId: { in: companyIds } }] : []),
+          ...(personIds.length ? [{ personId: { in: personIds } }] : []),
+        ],
+      },
+      select: {
+        companyId: true, personId: true, isPrimary: true, role: true,
+        company: { select: { id: true, name: true } },
+      },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+
+    const counts = new Map<string, number>();
+    const worksAt = new Map<string, { id: string; name: string; role: string | null }>();
+    for (const l of links) {
+      counts.set(l.companyId, (counts.get(l.companyId) ?? 0) + 1);
+      // Ordered primary-first above, so the first one seen is the one to show.
+      if (!worksAt.has(l.personId)) {
+        worksAt.set(l.personId, { id: l.company.id, name: l.company.name, role: l.role });
+      }
+    }
+
+    return items.map((c) => ({
+      ...c,
+      contactCount: c.type === 'COMPANY' ? counts.get(c.id as string) ?? 0 : 0,
+      contactOf: c.type === 'COMPANY' ? null : worksAt.get(c.id as string) ?? null,
+    }));
+  }
+
+  // ── Contact people ──────────────────────────────────────────────────────────
+  /*
+    A person who works at a company.
+
+    A link between two records is a way to reach a record you were not shown, so
+    every method below resolves BOTH sides through `reachable()` — which loads
+    them with the organization filter and then applies the same per-record CRM
+    rule the rest of this service uses. Ids from the request are never trusted to
+    identify anything by themselves.
+  */
+
+  /** What a contact row looks like to the client — never the person's whole record. */
+  private static readonly CONTACT_PERSON_SELECT = {
+    id: true, name: true, email: true, phone: true, isContact: true,
+  } as const;
+
+  /**
+   * Load one client the caller is actually allowed to reach, or refuse.
+   *
+   * 404 rather than 403 when it exists but is out of scope — the rest of this
+   * service is careful not to confirm which client ids exist, and a link
+   * endpoint would otherwise be the one place that does.
+   */
+  private async reachable(
+    id: string,
+    organizationId: string,
+    caps: CrmCaps,
+    caller: CrmCaller | undefined,
+  ) {
+    const c = await this.prisma.customer.findFirst({
+      where: { id, organizationId },
+      select: {
+        id: true, name: true, type: true, spaceId: true, isContact: true,
+        ownerId: true, managerIds: true, isPortalResident: true,
+      },
+    });
+    if (!c) throw new NotFoundException('Customer not found');
+    if (!caps.canAccess || !this.canReach(caps, c, caller)) throw new NotFoundException('Customer not found');
+    return c;
+  }
+
+  /** Who works at this company. */
+  async listContacts(data: { companyId: string; organizationId: string; caller?: CrmCaller }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    await this.reachable(data.companyId, data.organizationId, caps, data.caller);
+    const rows = await this.prisma.customerContact.findMany({
+      where: { companyId: data.companyId, organizationId: data.organizationId },
+      select: {
+        id: true, role: true, isPrimary: true, createdAt: true,
+        person: { select: CustomersService.CONTACT_PERSON_SELECT },
+      },
+      // Primary first, then oldest — the person you ring is the top row, and the
+      // rest keep a stable order so the panel does not reshuffle on every load.
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+    return { data: rows };
+  }
+
+  /** Which companies this person is a contact at. */
+  async listContactCompanies(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    await this.reachable(data.personId, data.organizationId, caps, data.caller);
+    const rows = await this.prisma.customerContact.findMany({
+      where: { personId: data.personId, organizationId: data.organizationId },
+      select: {
+        id: true, role: true, isPrimary: true,
+        company: { select: { id: true, name: true, industry: true } },
+      },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+    return { data: rows };
+  }
+
+  /**
+   * Attach a person to a company — an existing one, or a new one created here.
+   *
+   * Two different abilities on purpose, matching the rules this service already
+   * has: LINKING is editing the company's information (`editInfo`), while
+   * CREATING a person is creating a client (`manage`). A rep who may keep their
+   * own client's details current can add the contact they were just given on the
+   * phone; only somebody who may create clients can mint a new record.
+   */
+  async addContact(data: {
+    companyId: string;
+    organizationId: string;
+    personId?: string;
+    person?: { name?: string; email?: string | null; phone?: string | null };
+    role?: string | null;
+    isPrimary?: boolean;
+    caller?: CrmCaller;
+  }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
+
+    const company = await this.reachable(data.companyId, data.organizationId, caps, data.caller);
+    if (company.type !== 'COMPANY') {
+      throw new BadRequestException('Contact people can only be added to a company.');
+    }
+
+    let personId = data.personId;
+    if (personId) {
+      const person = await this.reachable(personId, data.organizationId, caps, data.caller);
+      if (person.type === 'COMPANY') throw new BadRequestException('A company cannot be a contact person.');
+      if (person.id === company.id) throw new BadRequestException('A client cannot be its own contact.');
+      /*
+        Same workspace.
+
+        Clients are listed per workspace and a rep's book is a workspace's book.
+        Linking across them would drag a client into a space somebody can see
+        without anyone granting it — a quiet widening of access that no screen
+        would show. A client with no workspace (legacy, org-level) is allowed
+        either way, because it belongs to all of them.
+      */
+      if (company.spaceId && person.spaceId && company.spaceId !== person.spaceId) {
+        throw new BadRequestException('That person belongs to a different workspace.');
+      }
+    } else {
+      if (!caps.manage) throw new ForbiddenException('Not allowed to create clients');
+      const name = (data.person?.name || '').trim();
+      if (!name) throw new BadRequestException('A name is required');
+      const created = await this.prisma.customer.create({
+        data: {
+          organizationId: data.organizationId,
+          name,
+          email: data.person?.email?.trim() || null,
+          phone: data.person?.phone?.trim() || null,
+          type: 'PERSON',
+          // Created BECAUSE of a company, so not a client of yours: kept out of
+          // the CRM list and out of the billable count until somebody says
+          // otherwise. See Customer.isContact.
+          isContact: true,
+          spaceId: company.spaceId,
+          ownerId: data.caller?.userId ?? null,
+        },
+        select: { id: true },
+      });
+      personId = created.id;
+    }
+
+    const role = (data.role || '').trim().slice(0, 120) || null;
+
+    /*
+      One primary per company, and the link itself, in ONE transaction.
+
+      Two primaries and none are both silent breakage — the panel would show two
+      stars, or the company would have nobody to ring with no way to tell that
+      from "not set yet". Same discipline as the default workspace.
+    */
+    return this.prisma.$transaction(async (tx) => {
+      if (data.isPrimary) {
+        await tx.customerContact.updateMany({
+          where: { companyId: company.id, isPrimary: true },
+          data: { isPrimary: false },
+        });
+      }
+      const link = await tx.customerContact.upsert({
+        // The unique pair is what makes a double-click safe: a second identical
+        // request updates the row it already created instead of failing.
+        where: { companyId_personId: { companyId: company.id, personId: personId! } },
+        create: {
+          organizationId: data.organizationId,
+          companyId: company.id,
+          personId: personId!,
+          role,
+          isPrimary: !!data.isPrimary,
+        },
+        update: { role, isPrimary: !!data.isPrimary },
+        select: {
+          id: true, role: true, isPrimary: true,
+          person: { select: CustomersService.CONTACT_PERSON_SELECT },
+        },
+      });
+      return { data: link };
+    });
+  }
+
+  /** Change a contact's role, or make them the one to ring first. */
+  async updateContact(data: {
+    linkId: string;
+    organizationId: string;
+    role?: string | null;
+    isPrimary?: boolean;
+    caller?: CrmCaller;
+  }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
+    const link = await this.prisma.customerContact.findFirst({
+      where: { id: data.linkId, organizationId: data.organizationId },
+      select: { id: true, companyId: true },
+    });
+    if (!link) throw new NotFoundException('Contact not found');
+    // The COMPANY is the record being changed, so that is the one whose access
+    // decides — reached the same way as everywhere else.
+    await this.reachable(link.companyId, data.organizationId, caps, data.caller);
+
+    return this.prisma.$transaction(async (tx) => {
+      if (data.isPrimary === true) {
+        await tx.customerContact.updateMany({
+          where: { companyId: link.companyId, isPrimary: true, NOT: { id: link.id } },
+          data: { isPrimary: false },
+        });
+      }
+      const updated = await tx.customerContact.update({
+        where: { id: link.id },
+        data: {
+          ...(data.role !== undefined ? { role: (data.role || '').trim().slice(0, 120) || null } : {}),
+          ...(data.isPrimary !== undefined ? { isPrimary: !!data.isPrimary } : {}),
+        },
+        select: {
+          id: true, role: true, isPrimary: true,
+          person: { select: CustomersService.CONTACT_PERSON_SELECT },
+        },
+      });
+      return { data: updated };
+    });
+  }
+
+  /**
+   * Detach a person from a company.
+   *
+   * The PERSON is not deleted — they may work somewhere else tomorrow, and their
+   * history is worth keeping either way. Removing the link is the whole action.
+   */
+  async removeContact(data: { linkId: string; organizationId: string; caller?: CrmCaller }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
+    const link = await this.prisma.customerContact.findFirst({
+      where: { id: data.linkId, organizationId: data.organizationId },
+      select: { id: true, companyId: true },
+    });
+    if (!link) throw new NotFoundException('Contact not found');
+    await this.reachable(link.companyId, data.organizationId, caps, data.caller);
+    await this.prisma.customerContact.delete({ where: { id: link.id } });
+    return { data: { id: link.id } };
+  }
+
+  /**
+   * Promote a contact into a client of their own.
+   *
+   * The one button that moves somebody into the CRM list and onto the bill, so
+   * it is explicit and needs the ability to create clients — the same one it
+   * takes to add a client any other way.
+   */
+  async promoteContact(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    if (!caps.manage) throw new ForbiddenException('Not allowed to create clients');
+    const person = await this.reachable(data.personId, data.organizationId, caps, data.caller);
+    if (!person.isContact) return { data: { id: person.id, isContact: false } };
+    await this.prisma.customer.update({ where: { id: person.id }, data: { isContact: false } });
+    return { data: { id: person.id, isContact: false } };
+  }
+
   /** List an org's customers (search + active filter + pagination). */
   async list(data: {
     organizationId: string;
@@ -135,6 +433,15 @@ export class CustomersService {
     portalResident?: boolean; // true = B2C residents only; false = B2B customers only
     portalId?: string; // residents in a specific portal
     spaceId?: string; // a space's Customers list (CRM)
+    /*
+      Contact people are clients of nobody.
+
+      They exist because they work somewhere you deal with, so by DEFAULT they
+      are not in the client list — a firm with six contacts would otherwise turn
+      one client into seven rows and bury the pipeline. 'only' is the Contacts
+      segment; 'all' is search, which should find a person wherever they live.
+    */
+    contacts?: 'exclude' | 'only' | 'all';
     page?: number;
     limit?: number;
     caller?: CrmCaller;
@@ -156,6 +463,11 @@ export class CustomersService {
     if (typeof data.portalResident === 'boolean') where.isPortalResident = data.portalResident;
     if (data.portalId) where.portalId = data.portalId;
     if (data.spaceId) where.spaceId = data.spaceId;
+    // Indexed boolean on the same table — a filter, not a second query.
+    if (!isPortalPath) {
+      if (data.contacts === 'only') where.isContact = true;
+      else if (data.contacts !== 'all') where.isContact = false;
+    }
     // CRM "own" scope → only clients this caller owns or co-manages (indexed columns).
     if (!isPortalPath && caps.view === 'own') {
       and.push({ OR: [{ ownerId: data.caller?.userId }, { managerIds: { has: data.caller?.userId } }] });
@@ -180,9 +492,18 @@ export class CustomersService {
       }),
       this.prisma.customer.count({ where }),
     ]);
+    /*
+      "3 contact people" on a company row, "at AGRU America" on a person row.
+
+      ONE query for the whole page, both directions at once, keyed on the ids
+      that came back — never one query per row. The subtitle those two facts feed
+      is already being rendered; this only gives it something true to say.
+    */
+    const withContacts = await this.decorateContacts(items as Array<Record<string, unknown>>, data.organizationId);
+
     // Surface the caller's resolved CRM abilities so the UI can hide/disable
     // actions it isn't allowed to take (the server still enforces regardless).
-    return { data: items, meta: { total, page, limit, totalPages: Math.ceil(total / limit), crmCaps: caps } };
+    return { data: withContacts, meta: { total, page, limit, totalPages: Math.ceil(total / limit), crmCaps: caps } };
   }
 
   async get(id: string, organizationId: string, caller?: CrmCaller) {

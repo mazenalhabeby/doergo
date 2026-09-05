@@ -33,7 +33,16 @@ const INDUSTRIES = [
   "Education", "Public Sector", "Professional Services", "Technology",
 ]
 
-type Filter = "all" | "crm" | "app"
+/*
+  "contacts" is a different KIND of filter from the other three.
+
+  All / CRM only / App users select among clients the list already holds.
+  Contacts asks the server for rows it deliberately withholds: a person who
+  exists because they work at a company you deal with is not a client, so they
+  are excluded by default — a firm with six contacts would otherwise turn one
+  client into seven rows and bury the pipeline.
+*/
+type Filter = "all" | "crm" | "app" | "contacts"
 
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 
@@ -59,10 +68,13 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
   const [filter, setFilter] = useState<Filter>("all")
 
   const listQ = useQuery({
-    queryKey: ["space-customers", spaceId ?? "all", search],
+    queryKey: ["space-customers", spaceId ?? "all", search, filter === "contacts" ? "contacts" : "clients"],
     queryFn: () =>
       customersApi.list({
         spaceId,
+        // The segment decides what the SERVER returns, because contacts are not
+        // in the default result set to be filtered out of.
+        contacts: filter === "contacts" ? "only" : undefined,
         /*
           Org-wide means the CRM book, not every portal resident.
 
@@ -79,7 +91,13 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
   })
   const customers = listQ.data?.data ?? []
   const rows = useMemo(
-    () => customers.filter((c) => filter === "all" || (filter === "app" ? c.isPortalResident : !c.isPortalResident)),
+    () =>
+      customers.filter(
+        (c) =>
+          filter === "all" ||
+          filter === "contacts" ||
+          (filter === "app" ? c.isPortalResident : !c.isPortalResident),
+      ),
     [customers, filter],
   )
   const invalidate = () => qc.invalidateQueries({ queryKey: ["space-customers", spaceId ?? "all"] })
@@ -103,11 +121,17 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Input placeholder={t("common.search", "Search…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 max-w-xs" />
         <div className="inline-flex rounded-lg bg-muted p-0.5">
-          {((spaceId ? ["all", "crm", "app"] : ["all", "crm"]) as Filter[]).map((f) => (
+          {((spaceId ? ["all", "crm", "contacts", "app"] : ["all", "crm", "contacts"]) as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 filter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-              {f === "all" ? t("customers.filter.all", "All") : f === "crm" ? t("customers.filter.crm", "CRM only") : t("customers.filter.app", "App users")}
+              {f === "all"
+                ? t("customers.filter.all", "All")
+                : f === "crm"
+                  ? t("customers.filter.crm", "CRM only")
+                  : f === "contacts"
+                    ? t("customers.filter.contacts", "Contacts")
+                    : t("customers.filter.app", "App users")}
             </button>
           ))}
         </div>
@@ -121,18 +145,43 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
         <div className="space-y-2">
           {rows.map((c) => (
             <button key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
-              className="flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50">
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50",
+                // Dimmed: a contact is somebody else's person, sitting in a list
+                // of your clients. Still readable, plainly not the same thing.
+                c.isContact && "opacity-70",
+              )}>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">{initials(c.name)}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {[customerStageLabel(c.status || "LEAD"), c.contactName, c.phone || c.email].filter(Boolean).join(" · ")}
+                  {/*
+                    The row already printed stage · contact · phone. A company
+                    now says how many people it has, and a contact says who they
+                    work for INSTEAD of a stage — they are not a deal, and a
+                    stage on one reads as a pipeline entry that will never move.
+                  */}
+                  {[
+                    c.isContact
+                      ? c.contactOf
+                        ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
+                        : t("customers.contactTag", "Contact")
+                      : customerStageLabel(c.status || "LEAD"),
+                    !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
+                    c.contactCount ? t("customers.contactCount", "{{count}} contact people", { count: c.contactCount }) : null,
+                    c.contactName,
+                    c.phone || c.email,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </span>
               {c.isPortalResident ? (
                 <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300">
                   <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
                 </Badge>
+              ) : c.isContact ? (
+                <Badge variant="outline">{t("customers.contactTag", "Contact")}</Badge>
               ) : (
                 <Badge variant="secondary">{t("customers.crmTag", "CRM")}</Badge>
               )}

@@ -32,6 +32,25 @@ export class CustomersController {
   }
 
   // ── CRM activity timeline ──
+  // ── Contact people ─────────────────────────────────────────────────────────
+  @MessagePattern({ cmd: 'list_customer_contacts' })
+  listContacts(@Payload() d: any) { return this.customersService.listContacts(d); }
+
+  @MessagePattern({ cmd: 'list_customer_contact_companies' })
+  listContactCompanies(@Payload() d: any) { return this.customersService.listContactCompanies(d); }
+
+  @MessagePattern({ cmd: 'add_customer_contact' })
+  addContact(@Payload() d: any) { return this.customersService.addContact(d); }
+
+  @MessagePattern({ cmd: 'update_customer_contact' })
+  updateContact(@Payload() d: any) { return this.customersService.updateContact(d); }
+
+  @MessagePattern({ cmd: 'remove_customer_contact' })
+  removeContact(@Payload() d: any) { return this.customersService.removeContact(d); }
+
+  @MessagePattern({ cmd: 'promote_customer_contact' })
+  promoteContact(@Payload() d: any) { return this.customersService.promoteContact(d); }
+
   @MessagePattern({ cmd: 'list_customer_activities' })
   async listActivities(@Payload() data: { customerId: string; organizationId: string }) {
     return this.customersService.listActivities(data);

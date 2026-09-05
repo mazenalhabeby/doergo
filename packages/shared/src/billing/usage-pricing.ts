@@ -315,9 +315,18 @@ export const BILLABLE_ASSET_WHERE = {
 /**
  * A client counts while it is active. Deactivate one and it stops being billed;
  * the record and its history stay, exactly as with a retired asset.
+ *
+ * ⚠️ A CONTACT PERSON is not a client. Somebody who exists because they work at
+ * a company you deal with — the facility manager you ring, the accounts clerk
+ * you email — is a property of that company, not a second customer. Counting
+ * them would charge a firm with six contacts for six clients, and thirty such
+ * firms would cross the free allowance for people who buy nothing. The day one
+ * of them becomes a customer in their own right the flag is cleared, and they
+ * count from then on.
  */
 export const BILLABLE_CLIENT_WHERE = {
   isActive: true,
+  isContact: false,
 } as const;
 
 /**

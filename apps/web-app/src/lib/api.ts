@@ -5427,8 +5427,36 @@ export interface Customer {
   vatId?: string | null;
   regNumber?: string | null;
   details?: CustomerDetail[] | null;
+  /**
+   * The caller's CRM abilities ON THIS RECORD, resolved server-side and returned
+   * by the single-customer GET. The UI hides what it may not do; the server
+   * enforces every one of them regardless.
+   */
+  crmCaps?: { view: "none" | "own" | "all"; work: boolean; editInfo: boolean; manage: boolean; canAccess: boolean };
+  /** This person exists as somebody's contact — not a client, and not billed as one. */
+  isContact?: boolean;
+  /** On a COMPANY row: how many contact people it has. */
+  contactCount?: number;
+  /** On a PERSON row: the company they contact, primary first. */
+  contactOf?: { id: string; name: string; role?: string | null } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A person who works at a company — see CustomerContact. */
+export interface CustomerContactLink {
+  id: string;
+  role?: string | null;
+  isPrimary: boolean;
+  person: { id: string; name: string; email?: string | null; phone?: string | null; isContact?: boolean };
+}
+
+/** The mirror, read from the person's record. */
+export interface CustomerCompanyLink {
+  id: string;
+  role?: string | null;
+  isPrimary: boolean;
+  company: { id: string; name: string; industry?: string | null };
 }
 
 export interface CustomerDetail { label: string; value: string }
@@ -5584,7 +5612,7 @@ export interface CustomerActivity {
 }
 
 export const customersApi = {
-  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; page?: number; limit?: number }) => {
+  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; page?: number; limit?: number; contacts?: "exclude" | "only" | "all" }) => {
     const qs = buildUrlWithQuery("/customers", params || {});
     const res = await api.get<{ data: Customer[]; meta: { total: number; page: number; limit: number; totalPages: number; crmCaps?: { view: "none" | "own" | "all"; work: boolean; editInfo: boolean; manage: boolean; canAccess: boolean } } }>(qs);
     if (res.error) throw new Error(res.error);
@@ -5625,6 +5653,42 @@ export const customersApi = {
     return res.data;
   },
   // ── Addresses (a customer's units; one primary → on the map) ──
+  // ── Contact people ────────────────────────────────────────────────────────
+  contacts: async (companyId: string): Promise<CustomerContactLink[]> => {
+    const res = await api.get<{ data?: CustomerContactLink[] }>(`/customers/${companyId}/contacts`);
+    if (res.error) throw new Error(res.error);
+    return (res.data as { data?: CustomerContactLink[] })?.data ?? [];
+  },
+  contactCompanies: async (personId: string): Promise<CustomerCompanyLink[]> => {
+    const res = await api.get<{ data?: CustomerCompanyLink[] }>(`/customers/${personId}/companies`);
+    if (res.error) throw new Error(res.error);
+    return (res.data as { data?: CustomerCompanyLink[] })?.data ?? [];
+  },
+  addContact: async (
+    companyId: string,
+    input: { personId?: string; person?: { name: string; email?: string; phone?: string }; role?: string; isPrimary?: boolean },
+  ) => {
+    const res = await api.post(`/customers/${companyId}/contacts`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  updateContact: async (linkId: string, input: { role?: string | null; isPrimary?: boolean }) => {
+    const res = await api.patch(`/customers/contacts/${linkId}`, input);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  removeContact: async (linkId: string) => {
+    const res = await api.delete(`/customers/contacts/${linkId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  /** Make a contact a client in their own right — they start counting from then on. */
+  promoteContact: async (personId: string) => {
+    const res = await api.post(`/customers/${personId}/promote`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+
   addresses: async (id: string): Promise<CustomerAddress[]> => {
     const res = await api.get<CustomerAddress[]>(`/customers/${id}/addresses`);
     if (res.error) throw new Error(res.error);

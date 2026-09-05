@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
 import { AddressesPanel } from "./customer-addresses"
+import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
 import { ManagersPanel } from "./customer-managers"
 
 // stage tone → dot color
@@ -277,6 +278,16 @@ export default function CustomerRecordPage() {
             </dl>
             {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-muted-foreground">{customer.notes}</p>}
           </Panel>
+
+          {/*
+            Who you deal with there.
+
+            Above Managers on purpose: these are the customer's people and those
+            are ours, and the question "who do I ring?" is asked far more often
+            than "who owns this account?".
+          */}
+          {isCompany && <ContactsPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />}
+          {!isCompany && <WorksAtPanel customer={customer} />}
 
           {/* Sales managers — only while the customer is worked by sales (no app access). */}
           {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} />}
