@@ -1177,7 +1177,7 @@ docker exec -it hbcfield-redis redis-cli
 
 ## 17. NEXT IMMEDIATE TASKS
 
-**Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) one real card payment has never completed — pending since July; (2) INVOICE billing mode has never run against a real customer; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+**Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
 
 ### Recently Completed (2026-09-05) — Agreed price, the org off switch, clock-in choice
 
