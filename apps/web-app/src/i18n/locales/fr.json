@@ -6929,14 +6929,7 @@
     "findCompany": "Rechercher une entreprise",
     "findCompanyPh": "Nom de l’entreprise…",
     "myRoleThere": "Sa fonction là-bas",
-    "noCompanies": "Pas encore rattaché à une entreprise.",
-    "countLabel": "{{count}} affichés",
-    "emptySearch": "Rien ne correspond à « {{q}} »",
-    "emptyCompanies": "Aucune entreprise",
-    "emptyPeople": "Aucune personne",
-    "emptyContacts": "Aucun interlocuteur",
-    "emptyApp": "Personne n’a accès à l’application",
-    "emptyContactsHint": "Ouvrez une entreprise et ajoutez les personnes avec qui vous traitez."
+    "noCompanies": "Pas encore rattaché à une entreprise."
   },
   "reports": {
     "addSchedule": "Ajouter une planification",

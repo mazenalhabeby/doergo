@@ -6920,14 +6920,7 @@
     "findCompany": "Buscar una empresa",
     "findCompanyPh": "Nombre de la empresa…",
     "myRoleThere": "Su cargo allí",
-    "noCompanies": "Aún no está vinculada a ninguna empresa.",
-    "countLabel": "{{count}} mostrados",
-    "emptySearch": "Nada coincide con «{{q}}»",
-    "emptyCompanies": "Aún no hay empresas",
-    "emptyPeople": "Aún no hay personas",
-    "emptyContacts": "Aún no hay personas de contacto",
-    "emptyApp": "Nadie tiene acceso a la app",
-    "emptyContactsHint": "Abre una empresa y añade las personas con las que tratas allí."
+    "noCompanies": "Aún no está vinculada a ninguna empresa."
   },
   "reports": {
     "addSchedule": "Añadir programación",

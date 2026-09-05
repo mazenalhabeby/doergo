@@ -5,13 +5,11 @@ import type { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Contact, Plus, Smartphone, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase, Search, Users, Phone, Mail } from "lucide-react"
+import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
-// The record page's own vocabulary — same client, same colour, same shape.
-import { initials, stageDot, shapeFor, AVATAR_TONE } from "@/lib/crm-visuals"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +43,8 @@ const INDUSTRIES = [
   client into seven rows and bury the pipeline.
 */
 type Filter = "all" | "companies" | "people" | "contacts" | "app"
+
+const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 
 /**
  * The clients list — one workspace's, or the organization's.
@@ -119,23 +119,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {/* An icon inside the field, and the count beside it — "12 clients" is
-            the first thing anybody wants from a list and it was nowhere. */}
-        <div className="relative max-w-xs flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t("common.search", "Search…")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-9"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {!listQ.isLoading && (
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {t("customers.countLabel", "{{count}} shown", { count: rows.length })}
-            </span>
-          )}
+        <Input placeholder={t("common.search", "Search…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 max-w-xs" />
         <div className="inline-flex flex-wrap rounded-lg bg-muted p-0.5">
           {((spaceId ? ["all", "companies", "people", "contacts", "app"] : ["all", "companies", "people", "contacts"]) as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
@@ -153,158 +137,83 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
             </button>
           ))}
         </div>
-        </div>
       </div>
 
       {listQ.isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
       ) : rows.length === 0 ? (
-        /*
-          "No customers yet" was shown for every segment, including the ones a
-          brand-new organization would land on with a full book — searching for a
-          name that is not there, or opening Contacts before adding one, both
-          reported that the CRM was empty.
-        */
-        <EmptyState
-          icon={filter === "companies" ? Building2 : filter === "people" || filter === "contacts" ? Users : Contact}
-          title={
-            search
-              ? t("customers.emptySearch", "Nothing matches “{{q}}”", { q: search })
-              : filter === "companies"
-                ? t("customers.emptyCompanies", "No companies yet")
-                : filter === "people"
-                  ? t("customers.emptyPeople", "No people yet")
-                  : filter === "contacts"
-                    ? t("customers.emptyContacts", "No contact people yet")
-                    : filter === "app"
-                      ? t("customers.emptyApp", "Nobody has app access yet")
-                      : t("customers.empty", "No customers yet")
-          }
-          description={
-            filter === "contacts"
-              ? t("customers.emptyContactsHint", "Open a company and add the people you deal with there.")
-              : undefined
-          }
-        />
+        <EmptyState icon={Contact} title={t("customers.empty", "No customers yet")} />
       ) : (
-        /*
-          One list, not a stack of boxes.
-
-          The rows were right all along; what made them look cheap was that each
-          one carried its own border. Forty bordered rectangles down a page is
-          forty things competing for an edge, and the gaps between them are dead
-          space that belongs to nothing.
-
-          One card holds them all now, divided by hairlines. Same rows, a tenth
-          of the lines — and the eye follows a single edge down the page instead
-          of restarting at every item.
-        */
-        <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
-          <div className="divide-y divide-border/60">
-            {rows.map((c) => {
-              const open = () => router.push(`/customers/${c.id}`)
-              return (
-                <div
-                  key={c.id}
-                  onClick={open}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open() } }}
-                  role="link"
-                  tabIndex={0}
-                  className={cn(
-                    "group flex cursor-pointer items-center gap-3.5 px-4 py-3 transition-colors",
-                    "hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none",
-                    // Somebody else's person, sitting in a list of your clients.
-                    c.isContact && "opacity-70",
-                  )}
-                >
-                  {/* Neutral chip; the SHAPE says company or person, which is the
-                      only distinction this list has to draw. */}
-                  <span className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center text-[11px] font-semibold",
-                    shapeFor(c.type), AVATAR_TONE,
-                  )}>
-                    {c.type === "COMPANY" ? <Building2 className="h-4 w-4" /> : initials(c.name)}
-                  </span>
-
-                  {/* ── name, and one quiet line under it ── */}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
-                    <span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-                      {c.isContact ? (
-                        <span className="truncate">
-                          {c.contactOf
-                            ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
-                            : t("customers.contactTag", "Contact")}
-                        </span>
-                      ) : (
-                        <span className="inline-flex shrink-0 items-center gap-1.5">
-                          <span className={cn("h-1.5 w-1.5 rounded-full", stageDot(c.status || "LEAD"))} />
-                          {customerStageLabel(c.status || "LEAD")}
-                        </span>
-                      )}
-                      {!c.isContact && c.contactOf && (
-                        <span className="truncate">{t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}</span>
-                      )}
-                    </span>
-                  </span>
-
+        <div className="space-y-2">
+          {rows.map((c) => (
+            <button key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50",
+                // Dimmed: a contact is somebody else's person, sitting in a list
+                // of your clients. Still readable, plainly not the same thing.
+                c.isContact && "opacity-70",
+              )}>
+              {/*
+                Square for a company, round for a person — the same shape
+                language the client record's own header uses, so the two kinds
+                are told apart before anybody reads a word.
+              */}
+              <span className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center bg-muted text-sm font-semibold text-muted-foreground",
+                c.type === "COMPANY" ? "rounded-lg" : "rounded-full",
+              )}>
+                {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : initials(c.name)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
                   {/*
-                    Who to ring there — its own column, so the names start in the
-                    same place on every row and can be read down. Threaded into
-                    the line above they began wherever the stage happened to end.
+                    The row already printed stage · contact · phone. A company
+                    now says how many people it has, and a contact says who they
+                    work for INSTEAD of a stage — they are not a deal, and a
+                    stage on one reads as a pipeline entry that will never move.
                   */}
-                  <span className="hidden w-40 shrink-0 lg:block">
-                    {c.primaryContact || c.contactName ? (
-                      <>
-                        <span className="block truncate text-[13px] text-foreground/80">
-                          {c.primaryContact ? c.primaryContact.name : c.contactName}
-                          {c.contactCount && c.contactCount > 1 ? (
-                            <span className="ml-1 text-xs text-muted-foreground">+{c.contactCount - 1}</span>
-                          ) : null}
-                        </span>
-                        {c.primaryContact?.role && (
-                          <span className="block truncate text-xs text-muted-foreground">{c.primaryContact.role}</span>
-                        )}
-                      </>
-                    ) : null}
-                  </span>
+                  {[
+                    c.isContact
+                      ? c.contactOf
+                        ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
+                        : t("customers.contactTag", "Contact")
+                      : customerStageLabel(c.status || "LEAD"),
+                    !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
+                    /*
+                      Who to ring, by name — and the typed `contactName` only
+                      while there is nobody real to name instead.
 
-                  <span className="hidden w-48 shrink-0 text-right md:block">
-                    {c.phone && <span className="block truncate text-[13px] tabular-nums text-muted-foreground">{c.phone}</span>}
-                    {c.email && <span className="block truncate text-xs text-muted-foreground/70">{c.email}</span>}
-                  </span>
-
-                  {/*
-                    Call and mail, on the row under the pointer.
-
-                    They stop the row opening underneath them: a call that also
-                    navigates away is a call nobody can take notes on.
-                  */}
-                  <span className="flex w-[76px] shrink-0 items-center justify-end gap-1">
-                    <span className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                      {c.phone && (
-                        <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} title={t("customers.call", "Call")}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                          <Phone className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} title={t("customers.email", "Email")}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                          <Mail className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                    </span>
-                    {c.isPortalResident && (
-                      <span title={t("customers.appAccess", "App access")} className="text-muted-foreground group-hover:hidden">
-                        <Smartphone className="h-3.5 w-3.5" />
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+                      That old field is printed here and NOWHERE else: it is not
+                      on the client record and there is no input for it in any
+                      form, so somebody reading "Lead · Klaus Berger" here could
+                      open the client and never find Klaus. Once he is a real
+                      contact person the row says so and the dead string steps
+                      aside rather than being printed beside him.
+                    */
+                    c.primaryContact
+                      ? c.contactCount && c.contactCount > 1
+                        ? `${c.primaryContact.name} +${c.contactCount - 1}`
+                        : c.primaryContact.name
+                      : c.contactName,
+                    c.phone || c.email,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+              {c.isPortalResident ? (
+                <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
+                </Badge>
+              ) : c.isContact ? (
+                <Badge variant="outline">{t("customers.contactTag", "Contact")}</Badge>
+              ) : (
+                <Badge variant="secondary">{t("customers.crmTag", "CRM")}</Badge>
+              )}
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          ))}
         </div>
       )}
     </div>

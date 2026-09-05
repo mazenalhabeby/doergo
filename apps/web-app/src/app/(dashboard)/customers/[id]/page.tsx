@@ -15,11 +15,8 @@ import type { TFunction } from "i18next"
 
 import { customersApi, locationsApi, organizationsApi, tasksApi, spacePortalApi, type CustomerActivity, type Customer, type PortalSummary, type Task } from "@/lib/api"
 import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
-// The CRM's visual vocabulary — shared with the clients list, so the same
-// client is the same colour and the same shape on both screens.
-import { initials, stageDot, relTime, AVATAR_TONE } from "@/lib/crm-visuals"
 import { CreateTaskDialog } from "../../tasks/_components/create-task-dialog"
-import { CheckSquare, Repeat, ChevronDown as ChevronDownIcon, Info } from "lucide-react"
+import { CheckSquare, Repeat, ChevronDown as ChevronDownIcon } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -40,6 +37,32 @@ import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
 import { ManagersPanel } from "./customer-managers"
 
 // stage tone → dot color
+const STAGE_DOT: Record<string, string> = {
+  slate: "bg-slate-400", blue: "bg-blue-500", violet: "bg-violet-500", green: "bg-emerald-500", gray: "bg-gray-400",
+}
+function stageDot(key: string) {
+  return STAGE_DOT[CUSTOMER_STAGES.find((s) => s.key === key)?.tone ?? "slate"] ?? "bg-slate-400"
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+const AVATAR_GRADIENTS = [
+  "from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600", "from-violet-500 to-purple-600",
+  "from-amber-500 to-orange-600", "from-rose-500 to-pink-600", "from-cyan-500 to-sky-600",
+]
+function gradientFor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]
+}
+function relTime(iso: string) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000
+  if (s < 60) return "just now"
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  if (s < 604800) return `${Math.floor(s / 86400)}d ago`
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+}
 const dayKey = (iso: string) => { const d = new Date(iso); d.setHours(0, 0, 0, 0); return d.getTime() }
 function dayLabel(iso: string, t: TFunction) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -154,6 +177,7 @@ export default function CustomerRecordPage() {
   const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
   const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
   const status = customer.status || "LEAD"
+  const grad = gradientFor(customer.name)
   const isCompany = customer.type === "COMPANY"
   const website = customer.website
   const websiteHref = website ? (website.startsWith("http") ? website : `https://${website}`) : undefined
@@ -195,10 +219,8 @@ export default function CustomerRecordPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* left: avatar + name (+ app access under) */}
           <div className="flex min-w-0 items-center gap-3">
-            {/* Neutral, like the list — the colour in this header belongs to
-                the stage pill, which is the only thing here that means one. */}
-            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center text-lg font-semibold",
-              isCompany ? "rounded-xl" : "rounded-full", AVATAR_TONE)}>
+            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center bg-gradient-to-br text-lg font-bold text-white shadow-sm",
+              isCompany ? "rounded-xl" : "rounded-full", grad)}>
               {isCompany ? <Building2 className="h-6 w-6" /> : initials(customer.name)}
             </span>
             <div className="min-w-0">
@@ -238,7 +260,7 @@ export default function CustomerRecordPage() {
         {/* ── LEFT: About panel ── */}
         <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           <Panel>
-            <PanelHead icon={Info}>{t("customers.about", "About")}</PanelHead>
+            <PanelHead>{t("customers.about", "About")}</PanelHead>
             <dl className="divide-y divide-border/60 text-sm">
               <PropRow label={isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
               <PropRow label={isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
@@ -365,27 +387,14 @@ function IconBtn({ icon: Icon, href, label }: { icon: LucideIcon; href: string; 
 function Panel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border border-border/70 bg-card p-4">{children}</div>
 }
-/**
- * One heading for every panel in the rail.
- *
- * Managers and Contact people carried a small icon; About and Addresses did not,
- * so a column of four cards had two different kinds of heading in it. The icon
- * is optional here only because one caller has none to give — everything that
- * can pass one, does.
- */
-function PanelHead({ icon: Icon, children }: { icon?: LucideIcon; children: React.ReactNode }) {
-  return (
-    <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-      {Icon && <Icon className="h-3.5 w-3.5" />}
-      {children}
-    </p>
-  )
+function PanelHead({ children }: { children: React.ReactNode }) {
+  return <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{children}</p>
 }
 function PropRow({ label, value, href }: { label: string; value?: string | null; href?: string }) {
   if (!value) return null
   return (
     <div className="flex items-baseline justify-between gap-3 py-2.5">
-      <dt className="shrink-0 text-[11.5px] text-muted-foreground">{label}</dt>
+      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
       {href
         ? <a href={href} className="truncate text-right font-medium text-foreground transition-colors hover:text-primary">{value}</a>
         : <dd className="truncate text-right font-medium text-foreground">{value}</dd>}
