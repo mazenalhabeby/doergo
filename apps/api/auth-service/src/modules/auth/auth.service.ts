@@ -36,6 +36,9 @@ import {
   runWithCronLock,
   canUsePlatform,
   isAdmin,
+  isOrganizationSuspended,
+  ORG_SUSPENDED_MESSAGE,
+  ORG_SUSPENDED_CODE,
 } from '@hbcfield/shared';
 
 // Hash a token using SHA-256 for secure storage
@@ -669,6 +672,24 @@ export class AuthService {
         Clients name themselves with X-Client-Platform. One that says nothing is
         allowed through: mobile builds already in the field do not send it yet.
       */
+      /*
+        Is the whole organization switched off?
+
+        Also after the password, for the reason above — a suspended org's member
+        list must not be discoverable by anyone who can guess an email. The
+        operator sets this on admin.hbcfield.com; see `isOrganizationSuspended`
+        for why it now means "off" rather than "read-only".
+      */
+      if (isOrganizationSuspended(user.organization)) {
+        this.logger.warn(`[SUSPENDED] Sign-in refused for ${email} — organization ${user.organizationId} is deactivated`);
+        return {
+          success: false,
+          statusCode: HttpStatus.FORBIDDEN,
+          message: ORG_SUSPENDED_MESSAGE,
+          code: ORG_SUSPENDED_CODE,
+        };
+      }
+
       const clientPlatform = String((data as any).clientPlatform ?? '').toLowerCase().trim();
       if (
         (clientPlatform === 'web' || clientPlatform === 'mobile') &&
@@ -929,6 +950,20 @@ export class AuthService {
           success: false,
           statusCode: HttpStatus.UNAUTHORIZED,
           message: 'Refresh token expired',
+        };
+      }
+
+      // The organization was switched off mid-session. Drop the token rather than
+      // refusing quietly: a refresh token that keeps being presented every few
+      // minutes is a session that has not actually ended.
+      if (isOrganizationSuspended(storedToken.user.organization)) {
+        this.logger.warn(`[SUSPENDED] Refresh refused for ${storedToken.user.email} — organization deactivated`);
+        await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
+        return {
+          success: false,
+          statusCode: HttpStatus.FORBIDDEN,
+          message: ORG_SUSPENDED_MESSAGE,
+          code: ORG_SUSPENDED_CODE,
         };
       }
 
@@ -1471,6 +1506,18 @@ export class AuthService {
       });
 
       if (!user || !user.isActive) {
+        return { valid: false };
+      }
+
+      /*
+        The switch has to bite on the access token too.
+
+        Login and refresh alone would let an already-signed-in member keep
+        working until their refresh token next came due — and the gateway caches
+        a validated user for AUTH_CACHE_TTL_SECONDS, so this is the door that
+        makes suspension take effect in about a minute rather than an hour.
+      */
+      if (isOrganizationSuspended(user.organization)) {
         return { valid: false };
       }
 

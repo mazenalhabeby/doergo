@@ -133,6 +133,31 @@ export default function ControlCenter() {
     catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); } finally { setBusy(null); }
   };
 
+  /*
+    The organization's off switch.
+
+    ⚠️ This used to be a much smaller thing than its label suggested: suspending
+    only refused WRITES, so a "suspended" company could still sign in and read
+    everything. It now refuses sign-in, refresh and every request, which is what
+    an operator pressing "Deactivate" believes they are doing.
+
+    Because the effect grew, the confirmation has to state it — and state the
+    other half too, since the fear that stops an operator using a switch like
+    this is that it might not be reversible. It is: one timestamp, cleared.
+
+    One function for both the row and the detail panel; two copies of a
+    consequence warning drift, and the stale one is the one somebody reads.
+  */
+  const toggleActive = (o: { id: string; name: string; suspendedAt: string | null }) => {
+    const deactivating = !o.suspendedAt;
+    const ok = confirm(
+      deactivating
+        ? `Deactivate ${o.name}?\n\nEveryone in this organization is signed out within about a minute and cannot sign back in. Nothing is deleted and no bill changes — reactivating restores them exactly as they were.`
+        : `Reactivate ${o.name}?\n\nMembers can sign in again straight away.`,
+    );
+    if (ok) act(o.id, deactivating ? '/suspend' : '/reactivate');
+  };
+
   if (booting) return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-500">…</div>;
 
   // ── Login ──
@@ -312,7 +337,7 @@ export default function ControlCenter() {
                 <Stat label="Organizations" value={String(overview.totalOrgs)} sub={`+${overview.newLast30} in 30d`} />
                 <Stat label="Active" value={String(overview.byStatus.active ?? 0)} />
                 <Stat label="Trialing" value={String(overview.trialing)} />
-                <Stat label="Suspended" value={String(overview.suspended)} />
+                <Stat label="Deactivated" value={String(overview.suspended)} />
                 <Stat label="Seats" value={String(overview.seats)} sub="one price, all members" />
               </div>
             )}
@@ -327,7 +352,7 @@ export default function ControlCenter() {
                 <tbody className="divide-y divide-slate-800">
                   {orgs.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-900/50">
-                      <td className="px-3 py-2"><button onClick={async () => setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${o.id}`)).data)} className="font-medium hover:text-blue-400">{o.name}</button>{o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SUSPENDED</span>}</td>
+                      <td className="px-3 py-2"><button onClick={async () => setDetail((await api<{ data: OrgDetail }>(`/platform/orgs/${o.id}`)).data)} className="font-medium hover:text-blue-400">{o.name}</button>{o.suspendedAt && <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">DEACTIVATED</span>}</td>
                       <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[o.subStatus?.toLowerCase()] ?? 'bg-slate-700'}`}>{o.subStatus?.toLowerCase()}</span></td>
                       {/*
                         This was a tier picker. Tiers stopped deciding access when
@@ -370,9 +395,15 @@ export default function ControlCenter() {
                             End trial
                           </button>
                         )}
-                        {can('manageOrgs') && (o.suspendedAt
-                          ? <button disabled={busy === o.id} onClick={() => act(o.id, '/reactivate')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Reactivate</button>
-                          : <button disabled={busy === o.id} onClick={() => act(o.id, '/suspend')} className="rounded bg-red-600/80 px-2 py-1 text-[11px] hover:bg-red-600">Suspend</button>)}
+                        {can('manageOrgs') && (
+                          <button
+                            disabled={busy === o.id}
+                            onClick={() => toggleActive(o)}
+                            className={`rounded px-2 py-1 text-[11px] ${o.suspendedAt ? 'bg-green-600/80 hover:bg-green-600' : 'bg-red-600/80 hover:bg-red-600'}`}
+                          >
+                            {o.suspendedAt ? 'Activate' : 'Deactivate'}
+                          </button>
+                        )}
                       </div></td>
                     </tr>
                   ))}
@@ -399,12 +430,43 @@ export default function ControlCenter() {
           <div className="h-full w-full max-w-lg overflow-y-auto border-l border-slate-800 bg-slate-900 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-start justify-between"><div><h2 className="text-lg font-semibold">{detail.name}</h2><p className="text-xs text-slate-500">{detail.id}</p></div><button onClick={() => setDetail(null)} className="text-slate-400">✕</button></div>
             <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
-              <div><div className="text-xs text-slate-500">Status</div>{detail.subStatus?.toLowerCase()}{detail.suspendedAt && ' (suspended)'}</div>
+              <div><div className="text-xs text-slate-500">Status</div>{detail.subStatus?.toLowerCase()}{detail.suspendedAt && ' · deactivated'}</div>
               <div><div className="text-xs text-slate-500">MRR</div>{eur(detail.mrrCents)}</div>
               <div><div className="text-xs text-slate-500">Seats</div>{detail.seats} active member{detail.seats === 1 ? '' : 's'}</div>
               <div><div className="text-xs text-slate-500">Trial ends</div>{date(detail.trialEndsAt)}</div>
               <div><div className="text-xs text-slate-500">Period ends</div>{date(detail.currentPeriodEnd)}</div>
             </div>
+            {/*
+              Can they use the product at all?
+
+              Above billing on purpose: an operator who has come here to switch a
+              company off should not have to read past three payment modes to
+              find the switch, and the answer to "why can nobody sign in?" should
+              be the first thing this panel says.
+            */}
+            {can('manageOrgs') && (
+              <div className="mb-4 rounded-lg border border-slate-800 p-3">
+                <div className="mb-2 flex items-baseline justify-between gap-2">
+                  <span className="text-xs text-slate-500">Access</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] ${detail.suspendedAt ? 'bg-red-500/15 text-red-400' : 'bg-green-500/15 text-green-400'}`}>
+                    {detail.suspendedAt ? 'Deactivated' : 'Active'}
+                  </span>
+                </div>
+                <p className="mb-2 text-[11px] leading-relaxed text-slate-500">
+                  {detail.suspendedAt
+                    ? `Nobody in this organization can sign in. Deactivated ${date(detail.suspendedAt)}.`
+                    : 'Members can sign in and work normally.'}
+                </p>
+                <button
+                  disabled={busy === detail.id}
+                  onClick={() => toggleActive(detail)}
+                  className={`rounded px-2.5 py-1 text-[11px] ${detail.suspendedAt ? 'bg-green-600/80 hover:bg-green-600' : 'bg-red-600/80 hover:bg-red-600'}`}
+                >
+                  {detail.suspendedAt ? 'Activate organization' : 'Deactivate organization'}
+                </button>
+              </div>
+            )}
+
             {/*
               How this organization pays — the most consequential control here.
 
