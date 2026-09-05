@@ -230,7 +230,7 @@ export default function CustomerRecordPage() {
                   {isCompany ? <><Building2 className="h-3 w-3" /> {t("customers.typeCompany", "Company")}</> : <><Users className="h-3 w-3" /> {t("customers.typePerson", "Person")}</>}
                 </span>
                 {customer.industry && <span className="text-[11px] text-muted-foreground">{customer.industry}</span>}
-                {customer.isPortalResident && (
+                {customer.isPortalResident && !isCompany && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                     <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
                   </span>
@@ -242,7 +242,7 @@ export default function CustomerRecordPage() {
           <div className="flex flex-wrap items-center gap-2">
             {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
             {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
-            {customer.isPortalResident ? (
+            {customer.isPortalResident && !isCompany ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400">
                 <CheckCircle2 className="h-4 w-4" /> {t("customers.activeCustomer", "Active customer")}
               </span>
@@ -301,7 +301,15 @@ export default function CustomerRecordPage() {
 
           <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} portalId={customer.portalId ?? undefined} />
 
-          <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />
+          {/*
+            App access is for a PERSON.
+
+            The client portal is somewhere a human signs in — a tenant, a client
+            contact. A company is not somebody who logs in, so offering to invite
+            one is offering an action that cannot complete, and the card sat on
+            every company record asking a question with no answer.
+          */}
+          {!isCompany && <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />}
         </aside>
 
         {/* ── MAIN: composer + tabs + timeline ── */}
@@ -390,14 +398,27 @@ function Panel({ children }: { children: React.ReactNode }) {
 function PanelHead({ children }: { children: React.ReactNode }) {
   return <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{children}</p>
 }
+/**
+ * One label and one value, truncated to the panel's width.
+ *
+ * ⚠️ Anything truncated carries its full text in `title`. A long address renders
+ * as "test@gmai…" and a reader has no way to learn the rest of it — there is no
+ * expand, and this panel is exactly where somebody goes to FIND an address.
+ *
+ * The native tooltip rather than a component, deliberately: it appears only when
+ * there is something hidden to reveal, costs nothing when there is not, works on
+ * a value that overflows at one window width and fits at another, and is the one
+ * tooltip a screen reader already knows how to announce. The text stays
+ * selectable either way, so it can be copied whether it fits or not.
+ */
 function PropRow({ label, value, href }: { label: string; value?: string | null; href?: string }) {
   if (!value) return null
   return (
     <div className="flex items-baseline justify-between gap-3 py-2.5">
       <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
       {href
-        ? <a href={href} className="truncate text-right font-medium text-foreground transition-colors hover:text-primary">{value}</a>
-        : <dd className="truncate text-right font-medium text-foreground">{value}</dd>}
+        ? <a href={href} title={value} className="truncate text-right font-medium text-foreground transition-colors hover:text-primary">{value}</a>
+        : <dd title={value} className="truncate text-right font-medium text-foreground">{value}</dd>}
     </div>
   )
 }

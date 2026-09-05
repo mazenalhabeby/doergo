@@ -145,7 +145,37 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
         <EmptyState icon={Contact} title={t("customers.empty", "No customers yet")} />
       ) : (
         <div className="space-y-2">
-          {rows.map((c) => (
+          {rows.map((c) => {
+            /*
+              The subtitle, built once.
+
+              It is truncated to the row's width, so the same string has to be
+              available whole for the hover — computing it twice is how the
+              tooltip ends up saying something the row does not.
+            */
+            const subtitle = [
+              c.isContact
+                ? c.contactOf
+                  ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
+                  : t("customers.contactTag", "Contact")
+                : customerStageLabel(c.status || "LEAD"),
+              !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
+              /*
+                Who to ring, by name — and the typed `contactName` only while
+                there is nobody real to name instead. That old field is printed
+                here and nowhere else, so a reader seeing "Lead · Klaus Berger"
+                could open the client and never find Klaus.
+              */
+              c.primaryContact
+                ? c.contactCount && c.contactCount > 1
+                  ? `${c.primaryContact.name} +${c.contactCount - 1}`
+                  : c.primaryContact.name
+                : c.contactName,
+              c.phone || c.email,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+            return (
             <button key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50",
@@ -165,7 +195,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                 {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : initials(c.name)}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
+                <span className="block truncate text-sm font-medium text-foreground" title={c.name}>{c.name}</span>
                 <span className="block truncate text-xs text-muted-foreground">
                   {/*
                     The row already printed stage · contact · phone. A company
@@ -173,33 +203,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                     work for INSTEAD of a stage — they are not a deal, and a
                     stage on one reads as a pipeline entry that will never move.
                   */}
-                  {[
-                    c.isContact
-                      ? c.contactOf
-                        ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
-                        : t("customers.contactTag", "Contact")
-                      : customerStageLabel(c.status || "LEAD"),
-                    !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
-                    /*
-                      Who to ring, by name — and the typed `contactName` only
-                      while there is nobody real to name instead.
-
-                      That old field is printed here and NOWHERE else: it is not
-                      on the client record and there is no input for it in any
-                      form, so somebody reading "Lead · Klaus Berger" here could
-                      open the client and never find Klaus. Once he is a real
-                      contact person the row says so and the dead string steps
-                      aside rather than being printed beside him.
-                    */
-                    c.primaryContact
-                      ? c.contactCount && c.contactCount > 1
-                        ? `${c.primaryContact.name} +${c.contactCount - 1}`
-                        : c.primaryContact.name
-                      : c.contactName,
-                    c.phone || c.email,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
+                  {subtitle}
                 </span>
               </span>
               {c.isPortalResident ? (
@@ -213,7 +217,8 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
               )}
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

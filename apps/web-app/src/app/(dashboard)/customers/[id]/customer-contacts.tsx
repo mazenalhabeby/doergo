@@ -109,7 +109,7 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
             <span className="block text-[10px] font-semibold uppercase tracking-wider">
               {t("customers.contactNote", "Contact (note)")}
             </span>
-            <span className="truncate">{customer.contactName}</span>
+            <span className="truncate" title={customer.contactName}>{customer.contactName}</span>
           </span>
           <AddContactDialog companyId={companyId} startName={customer.contactName} onSaved={invalidate} trigger={
             <button className="shrink-0 text-[11.5px] font-medium text-primary hover:underline">
@@ -134,18 +134,18 @@ function ContactRow({ link, canEdit, onPrimary, onRemove }: {
       </span>
       <span className="min-w-0 flex-1">
         <a href={`/customers/${p.id}`} className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground hover:text-primary">
-          <span className="truncate">{p.name}</span>
+          <span className="truncate" title={p.name}>{p.name}</span>
           {link.isPrimary && (
             <span title={t("customers.primaryContact", "Primary contact")}>
               <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />
             </span>
           )}
         </a>
-        {link.role && <span className="block truncate text-[11.5px] text-muted-foreground">{link.role}</span>}
+        {link.role && <span className="block truncate text-[11.5px] text-muted-foreground" title={link.role}>{link.role}</span>}
         {/* The two things somebody opened this panel to do. */}
         <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px]">
           {p.phone && <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline"><Phone className="h-3 w-3" />{p.phone}</a>}
-          {p.email && <a href={`mailto:${p.email}`} className="inline-flex items-center gap-1 truncate text-primary hover:underline"><Mail className="h-3 w-3" />{p.email}</a>}
+          {p.email && <a href={`mailto:${p.email}`} title={p.email} className="inline-flex items-center gap-1 truncate text-primary hover:underline"><Mail className="h-3 w-3" />{p.email}</a>}
         </span>
       </span>
       {canEdit && (
@@ -289,7 +289,7 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
                               {initials(r.name)}
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate font-medium text-foreground">{r.name}</span>
+                              <span className="block truncate font-medium text-foreground" title={r.name}>{r.name}</span>
                               <span className="block truncate text-[11px] text-muted-foreground">
                                 {/* Say where they already are rather than hiding
                                     them — that is what stops a duplicate. */}
@@ -436,14 +436,14 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
-                    <span className="truncate">{c.company.name}</span>
+                    <span className="truncate" title={c.company.name}>{c.company.name}</span>
                     {c.isPrimary && (
                       <span title={t("customers.primaryContact", "Primary contact")}>
                         <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />
                       </span>
                     )}
                   </span>
-                  {c.role && <span className="block truncate text-[11.5px] text-muted-foreground">{c.role}</span>}
+                  {c.role && <span className="block truncate text-[11.5px] text-muted-foreground" title={c.role}>{c.role}</span>}
                 </span>
               </a>
               {canEdit && (
