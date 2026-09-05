@@ -411,7 +411,16 @@ function PropRow({ label, value, href }: { label: string; value?: string | null;
   return (
     <div className="flex items-baseline justify-between gap-3 py-2.5">
       <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0">
+      {/*
+        `flex-1 min-w-0`, not `min-w-0` alone.
+
+        Without flex-1 the value sizes to its own text and only shrinks when the
+        row runs out of room — so a value could sit at its full width, never
+        clip, and the hover box correctly never appear while the text still ran
+        past the panel. Filling the space left by the label is also what keeps
+        the right edges of every value in the column aligned.
+      */}
+      <dd className="min-w-0 flex-1">
         <Truncated
           text={value}
           href={href}

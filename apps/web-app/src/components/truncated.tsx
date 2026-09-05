@@ -1,6 +1,6 @@
 "use client"
 
-import { useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -34,23 +34,41 @@ export function Truncated({
   className?: string
   side?: "top" | "right" | "bottom" | "left"
 }) {
-  const ref = useRef<HTMLElement | null>(null)
   const [clipped, setClipped] = useState(false)
+  const observer = useRef<ResizeObserver | null>(null)
 
-  useLayoutEffect(() => {
-    const el = ref.current
+  /*
+    A callback ref, not `useRef` — and this is the whole correctness of the
+    component.
+
+    The element is REPLACED the moment it turns out to be clipped: the bare span
+    unmounts and a new one mounts inside the tooltip trigger. With a plain ref
+    and an effect keyed on the text, the ResizeObserver went on watching the
+    first element after React had thrown it away, so every later resize —
+    collapsing the sidebar, resizing the window, a longer value arriving — was
+    measured against a node that no longer existed.
+
+    React calls this on every attach and detach, so the observer always follows
+    the element that is actually on the page.
+  */
+  const attach = useCallback((el: HTMLElement | null) => {
+    observer.current?.disconnect()
+    observer.current = null
     if (!el) return
     // +1 absorbs sub-pixel rounding: at some widths a value that fits exactly
-    // reports one hundredth of a pixel of overflow and would flicker a tooltip.
+    // reports a hundredth of a pixel of overflow and would flicker a tooltip.
     const measure = () => setClipped(el.scrollWidth > el.clientWidth + 1)
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
-    return () => ro.disconnect()
-  }, [text])
+    observer.current = ro
+  }, [])
+
+  // Nothing is watching once this leaves the page.
+  useEffect(() => () => observer.current?.disconnect(), [])
 
   const shared = {
-    ref: ref as React.Ref<never>,
+    ref: attach as React.Ref<never>,
     className: cn("block truncate", className),
     children: text,
   }
