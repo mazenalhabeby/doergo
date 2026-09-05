@@ -380,13 +380,15 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
 | GET | `/attendance/status` | The caller's running shift, if any | ADMIN, EMPLOYEE |
-| GET | `/attendance/clock-in-locations` | **Where the CALLER may clock in right now** — assignment active now, minus the Remote bucket and CUSTOMER spaces | ADMIN, EMPLOYEE |
+| GET | `/attendance/clock-in-locations` | **Where the CALLER may clock in right now** — every space with an assignment active now, minus the Remote bucket | ADMIN, EMPLOYEE |
 | POST | `/attendance/clock-in` | Start a shift (`locationId` **or** `isRemote`) — server re-checks the geofence | ADMIN, EMPLOYEE |
 | POST | `/attendance/clock-out` | End the shift | ADMIN, EMPLOYEE |
 
 > ⚠️ `clock-in-locations` is deliberately **not** `GET /locations`. That one answers "what workspaces can I SEE", and `canViewAllTasks` makes it the whole directory — offering a space the member is not assigned to produces a clock-in refused for a reason they cannot act on. The window rule (`activeAssignmentWhere`) is shared with the clock-in check so the list and the enforcement cannot drift.
 >
 > ⚠️ A space with **no coordinates is geofence-exempt and clocks in fine**. Never filter those out client-side — an org that never set coordinates could otherwise not clock in at all.
+>
+> ⚠️ **CUSTOMER spaces are workplaces.** A first version excluded them as "somebody else's premises"; in a field-service product people spend the day at a customer site and clock in there, and the clock-in has always accepted it. Excluding them made the list stricter than the check and hid two of three workspaces from a member assigned to all three. Only the Remote bucket is filtered.
 
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
@@ -1186,7 +1188,7 @@ docker exec -it hbcfield-redis redis-cli
 - **An invoice line says €77.00, not "7700 × €0.01".** The aggregate lines carried their amount in the QUANTITY against a one-cent price — arithmetically right, meaningless to the payer. They now carry an exact `amountCents` at quantity 1 through an ad-hoc price under the product their lookup key already names. ⚠️ **The subscription diff matches by PRODUCT now, not price id** — an ad-hoc price changes with the amount, so diffing on it would delete and re-add the line every time. Seats keep a real count: "2 × €9.99" is the one line where multiplying means something.
 - **Agreed price** — see Phase 8. Operator-set fixed monthly amount replacing the computed bill.
 - **The organization off switch actually switches them off** — see Phase 8.
-- **A member chooses which workspace they clock in at.** Both web surfaces silently picked the NEAREST site. New `GET /attendance/clock-in-locations` (above), a picker that opens only when there is a choice, and ⚠️ **`useClockIn` — the navbar widget and the shift page were full copies and drifted**, which is why the picker existed on one and not the other. A test fails if `attendanceApi.clockIn/clockOut` is called outside the hook.
+- **A member chooses which workspace they clock in at.** Both web surfaces silently picked the NEAREST site. ⚠️ The first cut of the list also excluded CUSTOMER spaces, which hid two of three workspaces from a member who works across all of them — a list must never be stricter than the check it mirrors. New `GET /attendance/clock-in-locations` (above), a picker that opens only when there is a choice, and ⚠️ **`useClockIn` — the navbar widget and the shift page were full copies and drifted**, which is why the picker existed on one and not the other. A test fails if `attendanceApi.clockIn/clockOut` is called outside the hook.
 
 ### Recently Completed (2026-09-04) — External members, billing modes, billing alerts
 

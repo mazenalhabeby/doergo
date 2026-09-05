@@ -164,10 +164,20 @@ export class AttendanceService {
    *     and clocks in perfectly well. An organization that had never set
    *     coordinates simply could not clock in from the web at all.
    *
-   * So the question is answered here, by the same rule that enforces it. The
-   * remote bucket is excluded — it is the "Clock in remotely" button, not a
-   * place — and so are customer spaces, which are somebody else's premises
-   * rather than a site this organization staffs.
+   * So the question is answered here, by the same rule that enforces it.
+   *
+   * ⚠️ The ONLY thing excluded is the remote bucket, because that is the "Clock
+   * in remotely" button rather than a place — clocking in "at" it would record
+   * an on-site shift at a space with no location.
+   *
+   * ⚠️ Customer spaces are NOT excluded, though a first version of this did
+   * exclude them on the reasoning that they are somebody else's premises. In a
+   * field-service product that is exactly backwards: a technician spends the day
+   * at a customer site and clocks in there, and the clock-in has always accepted
+   * it. Filtering them out made this list STRICTER than the check it is supposed
+   * to mirror, which hid two of three workspaces from a member who works across
+   * all of them — the same class of bug as offering a site that is then refused,
+   * in the other direction.
    */
   async listClockInLocations(data: { userId: string; organizationId: string }) {
     const assignments = await this.prisma.spaceAssignment.findMany({
@@ -183,7 +193,6 @@ export class AttendanceService {
         organizationId: data.organizationId,
         isActive: true,
         isRemote: false,
-        kind: { not: 'CUSTOMER' },
       },
       select: {
         id: true, name: true, address: true, lat: true, lng: true,

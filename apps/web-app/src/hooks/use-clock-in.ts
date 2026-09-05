@@ -142,6 +142,21 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
    * there is something to decide.
    */
   const startOnSite = () => {
+    /*
+      Nowhere to clock in is a real state — a member nobody has put on a site
+      yet. The shift page says so in place of its button, but the navbar has no
+      room for that, and opening an empty picker asks somebody to choose from
+      nothing. Say what is wrong instead.
+    */
+    if (locations.length === 0) {
+      toast.error(
+        t(
+          "attendance.my.noAssignedLocations",
+          "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one.",
+        ),
+      )
+      return
+    }
     if (locations.length === 1) {
       clock.mutate({ locationId: locations[0].id })
       return

@@ -69,12 +69,12 @@ describe('listClockInLocations', () => {
     expect(companyLocation.findMany.mock.calls[0][0].where.id.in.sort()).toEqual(['a', 'b']);
   });
 
-  it('leaves out the remote bucket, customer premises and archived sites', async () => {
+  it('leaves out the remote bucket and archived sites', async () => {
     /*
-      The remote bucket is the "Clock in remotely" button, not a place — offering
-      it as a site would give one action two buttons that behave differently.
-      A customer space is somebody else's premises. An archived one is refused by
-      the clock-in anyway, so listing it is an error waiting to be tapped.
+      The remote bucket is the "Clock in remotely" button, not a place — clocking
+      in "at" it would record an on-site shift at a space with no location. An
+      archived space is refused by the clock-in anyway, so listing it is an error
+      waiting to be tapped.
     */
     spaceAssignment.findMany.mockResolvedValue([{ spaceId: 'a' }]);
 
@@ -82,10 +82,27 @@ describe('listClockInLocations', () => {
 
     const where = companyLocation.findMany.mock.calls[0][0].where;
     expect(where.isRemote).toBe(false);
-    expect(where.kind).toEqual({ not: 'CUSTOMER' });
     expect(where.isActive).toBe(true);
     // Scoped to the caller's organization, not just to the assignment ids.
     expect(where.organizationId).toBe('org-1');
+  });
+
+  it('keeps customer sites — a technician works at them', async () => {
+    /*
+      The first version of this filtered out CUSTOMER spaces as "somebody else's
+      premises". In a field-service product that is backwards: people spend the
+      day at a customer site and clock in there, and the clock-in has always
+      accepted it.
+
+      It made the list STRICTER than the check it mirrors, which hid two of three
+      workspaces from a member assigned to all three — the same class of bug as
+      offering a site that is then refused, pointing the other way.
+    */
+    spaceAssignment.findMany.mockResolvedValue([{ spaceId: 'a' }]);
+
+    await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
+
+    expect(companyLocation.findMany.mock.calls[0][0].where.kind).toBeUndefined();
   });
 
   it('returns nothing, and asks nothing, for a member assigned nowhere', async () => {
