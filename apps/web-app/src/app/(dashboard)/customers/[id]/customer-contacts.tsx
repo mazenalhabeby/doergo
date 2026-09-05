@@ -40,9 +40,20 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
     queryFn: () => customersApi.contacts(companyId),
   })
   const contacts = q.data ?? []
+  /*
+    One link, three screens.
+
+    Adding a contact changes what THREE places say: this company's panel, the
+    clients list (which prints who to ring on the row), and — the one that was
+    missed — the PERSON's own record, whose "Works at" panel is the other end of
+    the very link just created. Without that last line somebody adds Ahmed to OMV
+    here, opens Ahmed, and is shown the cached answer from before: no companies.
+
+    Invalidated by prefix, so it does not matter which person the link was to.
+  */
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["customer-contacts", companyId] })
-    // The list prints "3 contact people" on this company's row.
+    qc.invalidateQueries({ queryKey: ["customer-companies"] })
     qc.invalidateQueries({ queryKey: ["space-customers"] })
   }
 
@@ -389,6 +400,8 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
   const companies = q.data ?? []
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["customer-companies", customer.id] })
+    // …and the company's own panel, which is the other end of this link.
+    qc.invalidateQueries({ queryKey: ["customer-contacts"] })
     qc.invalidateQueries({ queryKey: ["space-customers"] })
   }
   const detach = useMutation({
@@ -398,11 +411,12 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
   })
 
   /*
-    Hidden only for a reader who cannot add anything.
+    Never hidden on a person.
 
-    It used to hide whenever it was empty, which quietly removed the one control
-    that answers "assign this person to a company" — the panel you add from
-    cannot be a panel that only appears once something has been added.
+    It used to disappear when empty, which removed the one control that answers
+    "assign this person to a company" — and left somebody who had just added one
+    unable to tell a panel that is empty from a panel that is broken. An empty
+    panel saying so is information; a missing one is a bug report.
   */
   if (!q.isLoading && companies.length === 0 && !customer.isContact && !canEdit) return null
 
