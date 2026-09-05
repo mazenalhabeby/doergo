@@ -6920,7 +6920,7 @@
     "findCompany": "Find a company",
     "findCompanyPh": "Company name…",
     "myRoleThere": "Their role there",
-    "noCompanies": "Not linked to a company yet."
+    "linkToCompany": "Link to a company"
   },
   "reports": {
     "addSchedule": "Add schedule",

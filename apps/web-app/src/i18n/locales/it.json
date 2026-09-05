@@ -6929,7 +6929,7 @@
     "findCompany": "Cerca un’azienda",
     "findCompanyPh": "Nome azienda…",
     "myRoleThere": "Il suo ruolo lì",
-    "noCompanies": "Non ancora collegata a un’azienda."
+    "linkToCompany": "Collega a un’azienda"
   },
   "reports": {
     "addSchedule": "Aggiungi pianificazione",

@@ -398,6 +398,19 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
     queryKey: ["customer-companies", customer.id],
     queryFn: () => customersApi.contactCompanies(customer.id),
   })
+  /*
+    Does this organization have any companies at all?
+
+    One row is enough to answer it, the key carries no customer id so every
+    person record in a session shares the single request, and it is held for
+    five minutes — a CRM does not gain its first company twice.
+  */
+  const anyCompanies = useQuery({
+    queryKey: ["crm-has-companies"],
+    queryFn: () => customersApi.list({ type: "COMPANY", limit: 1 }),
+    staleTime: 5 * 60_000,
+    select: (r) => (r.data?.length ?? 0) > 0,
+  }).data ?? false
   const companies = q.data ?? []
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["customer-companies", customer.id] })
@@ -412,14 +425,33 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
   })
 
   /*
-    Never hidden on a person.
+    Most people in a CRM work nowhere in particular.
 
-    It used to disappear when empty, which removed the one control that answers
-    "assign this person to a company" — and left somebody who had just added one
-    unable to tell a panel that is empty from a panel that is broken. An empty
-    panel saying so is information; a missing one is a bug report.
+    A private client, a tenant, a lead somebody met at a trade fair — for all of
+    them this panel is a card reserving space for a relationship that does not
+    exist and usually never will. Shown on every person record it becomes
+    furniture, and furniture is what people stop reading.
+
+    So it appears when it has something to say, and otherwise shrinks to a single
+    line offering the action. Three states, in order of how often they happen:
+
+      • no companies in the whole CRM → nothing at all. Linking is impossible,
+        and an action that opens an empty search is worse than no action.
+      • companies exist, this person is at none → one quiet line, no card.
+      • this person is at one or more → the panel.
   */
-  if (!q.isLoading && companies.length === 0 && !customer.isContact && !canEdit) return null
+  if (q.isLoading) return null
+  if (companies.length === 0) {
+    if (!canEdit || !anyCompanies) return null
+    return (
+      <AddContactDialog companyId="" mine={{ personId: customer.id }} onSaved={invalidate} trigger={
+        <button className="flex w-full items-center gap-1.5 rounded-xl border border-dashed border-border px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border/80 hover:bg-muted/40 hover:text-foreground">
+          <Building2 className="h-3.5 w-3.5" />
+          {t("customers.linkToCompany", "Link to a company")}
+        </button>
+      } />
+    )
+  }
 
   return (
     <div className="rounded-2xl border border-border/70 bg-card p-4">
@@ -427,7 +459,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           <Building2 className="h-3.5 w-3.5" /> {t("customers.worksAt", "Works at")}
         </p>
-        {canEdit && (
+        {canEdit && anyCompanies && (
           <AddContactDialog companyId="" mine={{ personId: customer.id }} onSaved={invalidate} trigger={
             <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
               <Plus className="h-3.5 w-3.5" /> {t("customers.addCompany", "Add a company")}
@@ -437,10 +469,6 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
       </div>
       {q.isLoading ? (
         <Skeleton className="h-10 w-full rounded-lg" />
-      ) : companies.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {t("customers.noCompanies", "Not linked to a company yet.")}
-        </p>
       ) : (
         <ul className="divide-y divide-border/60">
           {companies.map((c) => (

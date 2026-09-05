@@ -6920,7 +6920,7 @@
     "findCompany": "Buscar una empresa",
     "findCompanyPh": "Nombre de la empresa…",
     "myRoleThere": "Su cargo allí",
-    "noCompanies": "Aún no está vinculada a ninguna empresa."
+    "linkToCompany": "Vincular a una empresa"
   },
   "reports": {
     "addSchedule": "Añadir programación",
