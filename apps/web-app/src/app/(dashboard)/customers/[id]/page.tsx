@@ -300,7 +300,7 @@ export default function CustomerRecordPage() {
           {/* Sales managers — only while the customer is worked by sales (no app access). */}
           {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} />}
 
-          <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} portalId={customer.portalId ?? undefined} />
+          <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} portalId={customer.portalId ?? undefined} isPortalResident={customer.isPortalResident} />
 
           {/*
             App access is for a PERSON.

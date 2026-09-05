@@ -35,19 +35,41 @@ const LocationPicker = dynamic(
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
 ) as unknown as React.ComponentType<LPProps>
 
-/** Addresses panel for a customer record. When the space runs a B2C portal, this
- *  becomes the portal's entity (e.g. "Apartments") and lets you assign one from
- *  the space catalog. */
-export function AddressesPanel({ customerId, spaceId, hasPortal, portalId }: { customerId: string; spaceId?: string; hasPortal?: boolean; portalId?: string }) {
+/**
+ * Addresses panel for a client record.
+ *
+ * For somebody IN a portal it takes that portal's vocabulary — a tenant's
+ * addresses are "Apartments", and an apartment can be assigned from the space's
+ * catalogue rather than typed.
+ *
+ * ⚠️ For everybody else it says "Addresses", and that had to be fixed: the space
+ * portal was fetched for ANY client in a space that ran one, so a B2B company
+ * with no portal at all found its addresses relabelled "Workspaces" because a
+ * facilities portal existed elsewhere in the same space. A word belonging to
+ * somebody else's product, on a record it has nothing to do with — and in this
+ * case a word the product already uses for the space itself.
+ */
+export function AddressesPanel({ customerId, spaceId, hasPortal, portalId, isPortalResident }: { customerId: string; spaceId?: string; hasPortal?: boolean; portalId?: string; isPortalResident?: boolean }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [showAll, setShowAll] = useState(false)
 
   const q = useQuery({ queryKey: ["customer-addresses", customerId], queryFn: () => customersApi.addresses(customerId) })
-  // Resolve the entity from the customer's OWN portal (a space can run several
-  // portals with different entities); fall back to the space's default portal.
+  /*
+    The entity comes from the client's OWN portal — a space can run several with
+    different entities.
+
+    The fallback to the space's default portal is for a resident who has not been
+    bound to a specific one, and ONLY for a resident: it used to run for every
+    client in the space, which is how a company came to be told it had
+    Workspaces. A client outside the portal has addresses, and that is all.
+  */
   const custPortalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId!), enabled: !!portalId })
-  const spacePortalQ = useQuery({ queryKey: ["space-portal", spaceId], queryFn: () => spacePortalApi.get(spaceId!), enabled: !portalId && !!spaceId && !!hasPortal })
+  const spacePortalQ = useQuery({
+    queryKey: ["space-portal", spaceId],
+    queryFn: () => spacePortalApi.get(spaceId!),
+    enabled: !portalId && !!spaceId && !!hasPortal && !!isPortalResident,
+  })
   const portal = custPortalQ.data ?? spacePortalQ.data
   const addresses = q.data ?? []
   const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
