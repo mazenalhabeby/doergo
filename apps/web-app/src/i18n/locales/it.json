@@ -6936,11 +6936,7 @@
     "emptyPeople": "Ancora nessuna persona",
     "emptyContacts": "Ancora nessun referente",
     "emptyApp": "Nessuno ha accesso all’app",
-    "emptyContactsHint": "Apri un’azienda e aggiungi le persone con cui tratti lì.",
-    "colName": "Nome",
-    "colStage": "Fase",
-    "colContact": "Referente",
-    "colReach": "Telefono / email"
+    "emptyContactsHint": "Apri un’azienda e aggiungi le persone con cui tratti lì."
   },
   "reports": {
     "addSchedule": "Aggiungi pianificazione",

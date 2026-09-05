@@ -6936,11 +6936,7 @@
     "emptyPeople": "Aucune personne",
     "emptyContacts": "Aucun interlocuteur",
     "emptyApp": "Personne n’a accès à l’application",
-    "emptyContactsHint": "Ouvrez une entreprise et ajoutez les personnes avec qui vous traitez.",
-    "colName": "Nom",
-    "colStage": "Étape",
-    "colContact": "Interlocuteur",
-    "colReach": "Téléphone / e-mail"
+    "emptyContactsHint": "Ouvrez une entreprise et ajoutez les personnes avec qui vous traitez."
   },
   "reports": {
     "addSchedule": "Ajouter une planification",

@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase, Search, Users } from "lucide-react"
+import { Contact, Plus, Smartphone, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase, Search, Users, Phone, Mail } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
@@ -188,135 +188,134 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
         />
       ) : (
         /*
-          A table, not a stack of cards.
+          A grid of cards.
 
-          Every row was a bordered card carrying an avatar, two lines of joined
-          text, a badge and a chevron — the shape of a phone list, repeated down
-          a wide screen. Nothing lined up: the stage started after the name, the
-          phone number after whatever the stage happened to be, so no column
-          could be read down and the page grew a hard border every 68 pixels.
+          Two shapes were tried and both failed for the same reason: they used
+          the full width of the screen for one client. A single column of
+          bordered rows makes a wide page mostly empty and puts a hard line every
+          68 pixels; a table fixed the alignment and read like a spreadsheet.
 
-          A CRM list is a table. Columns give the eye a rail to run down, the
-          hairlines between rows are quieter than a border around each one, and
-          the same information fits in half the height — which is what makes a
-          book of clients feel like a book rather than a feed.
+          A client is not a row of figures — it is a name, a state, and somebody
+          to ring. Those three things sit better in a block than on a line, and
+          three blocks across a page is the density this book actually wants.
+
+          The card does the work a row could not: the actions are ON it, so
+          calling somebody does not begin by opening their record.
         */
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-2.5 text-left font-semibold">{t("customers.colName", "Name")}</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">{t("customers.colStage", "Stage")}</th>
-                  <th className="hidden px-3 py-2.5 text-left font-semibold lg:table-cell">{t("customers.colContact", "Contact")}</th>
-                  <th className="hidden px-3 py-2.5 text-left font-semibold md:table-cell">{t("customers.colReach", "Phone / Email")}</th>
-                  <th className="px-3 py-2.5 text-right font-semibold" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rows.map((c) => (
-                  <tr
-                    key={c.id}
-                    onClick={() => router.push(`/customers/${c.id}`)}
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter") router.push(`/customers/${c.id}`) }}
-                    className={cn(
-                      "group cursor-pointer transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
-                      // A contact is somebody else's person sitting in a list of
-                      // your clients — readable, plainly not the same thing.
-                      c.isContact && "opacity-65",
-                    )}
-                  >
-                    {/* ── name ── */}
-                    <td className="px-4 py-2">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        {/*
-                          Smaller than the card version on purpose: at 28px the
-                          avatar identifies a row without setting its height, and
-                          the row height is what decides whether this reads as a
-                          table or a feed. Colour is keyed to the name and the
-                          shape says company or person — the record page's own
-                          vocabulary, so a client looks the same on both screens.
-                        */}
-                        <span className={cn(
-                          "flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-semibold",
-                          shapeFor(c.type), AVATAR_TONE,
-                        )}>
-                          {c.type === "COMPANY" ? <Building2 className="h-3.5 w-3.5" /> : initials(c.name)}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium text-foreground">{c.name}</span>
-                          {/* Only when it says something the columns do not. */}
-                          {c.isContact && c.contactOf && (
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })}
-                            </span>
-                          )}
-                          {!c.isContact && c.contactOf && (
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* ── stage ── */}
-                    <td className="px-3 py-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((c) => {
+            const open = () => router.push(`/customers/${c.id}`)
+            return (
+              <div
+                key={c.id}
+                onClick={open}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open() } }}
+                role="link"
+                tabIndex={0}
+                className={cn(
+                  "group relative flex cursor-pointer flex-col rounded-2xl border border-border/70 bg-card p-4",
+                  // Lifts a hair toward the pointer. The shadow does the work and
+                  // the border only warms — a card that changed colour on hover
+                  // would put a wash of it back on a page we just took it off.
+                  "transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  c.isContact && "opacity-70",
+                )}
+              >
+                {/* ── identity ── */}
+                <div className="flex items-start gap-3">
+                  <span className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold",
+                    shapeFor(c.type), AVATAR_TONE,
+                  )}>
+                    {c.type === "COMPANY" ? <Building2 className="h-4 w-4" /> : initials(c.name)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold leading-tight text-foreground">{c.name}</p>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                       {c.isContact ? (
-                        <span className="text-xs text-muted-foreground">{t("customers.contactTag", "Contact")}</span>
+                        <span className="truncate">
+                          {c.contactOf
+                            ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
+                            : t("customers.contactTag", "Contact")}
+                        </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-foreground/80">
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                           <span className={cn("h-1.5 w-1.5 rounded-full", stageDot(c.status || "LEAD"))} />
                           {customerStageLabel(c.status || "LEAD")}
                         </span>
                       )}
-                    </td>
-
-                    {/* ── who to ring there ── */}
-                    <td className="hidden max-w-[180px] px-3 py-2 lg:table-cell">
-                      {c.primaryContact ? (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {c.primaryContact.name}
-                          {c.contactCount && c.contactCount > 1 ? (
-                            <span className="ml-1 text-muted-foreground/70">+{c.contactCount - 1}</span>
-                          ) : null}
-                        </span>
-                      ) : c.contactName ? (
-                        // The old typed field, only while there is nobody real
-                        // to name instead — it is shown nowhere else in the app.
-                        <span className="block truncate text-xs italic text-muted-foreground/70">{c.contactName}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/40">—</span>
+                      {!c.isContact && c.contactOf && (
+                        <span className="truncate">{t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}</span>
                       )}
-                    </td>
+                    </p>
+                  </div>
+                  {c.isPortalResident && (
+                    <span title={t("customers.appAccess", "App access")} className="shrink-0 text-muted-foreground">
+                      <Smartphone className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                </div>
 
-                    {/* ── reach ── */}
-                    <td className="hidden max-w-[200px] px-3 py-2 md:table-cell">
-                      <span className="block truncate text-xs tabular-nums text-muted-foreground">{c.phone || ""}</span>
-                      {c.email && <span className="block truncate text-xs text-muted-foreground/70">{c.email}</span>}
-                      {!c.phone && !c.email && <span className="text-xs text-muted-foreground/40">—</span>}
-                    </td>
+                {/*
+                  Who to ring there.
 
-                    {/* ── state ── */}
-                    <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-2">
-                        {c.isPortalResident && (
-                          <Badge variant="outline" className="gap-1 font-normal text-muted-foreground">
-                            <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
-                          </Badge>
-                        )}
-                        {/* Appears on the row under the pointer — a chevron on
-                            every row of a table is forty arrows pointing at
-                            nothing. */}
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  Its own block under a hairline, because it is a different
+                  person from the one the card is about — on the same line it
+                  read as a second name for the same client.
+                */}
+                {(c.primaryContact || c.contactName) && (
+                  <div className="mt-3 border-t border-border/60 pt-3">
+                    <p className="flex min-w-0 items-center gap-1.5 text-[13px] text-foreground/80">
+                      <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate">
+                        {c.primaryContact ? c.primaryContact.name : c.contactName}
+                      </span>
+                      {c.contactCount && c.contactCount > 1 ? (
+                        <span className="shrink-0 text-xs text-muted-foreground">+{c.contactCount - 1}</span>
+                      ) : null}
+                    </p>
+                    {c.primaryContact?.role && (
+                      <p className="mt-0.5 truncate pl-5 text-xs text-muted-foreground">{c.primaryContact.role}</p>
+                    )}
+                  </div>
+                )}
+
+                {/*
+                  The reach, and the two things anybody opens a client for.
+
+                  `mt-auto` so every card in a row ends on the same line however
+                  much sits above it — a grid whose cards end at different
+                  heights is the thing that makes a grid look thrown together.
+                */}
+                <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+                  <div className="min-w-0 space-y-0.5 text-xs text-muted-foreground">
+                    {c.phone && <p className="truncate tabular-nums">{c.phone}</p>}
+                    {c.email && <p className="truncate">{c.email}</p>}
+                  </div>
+                  {/*
+                    Stop the card opening underneath them: these do their own
+                    thing, and a call that also navigates away is a call nobody
+                    can take notes on.
+                  */}
+                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    {c.phone && (
+                      <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} title={t("customers.call", "Call")}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                        <Phone className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                    {c.email && (
+                      <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} title={t("customers.email", "Email")}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                        <Mail className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

@@ -6927,11 +6927,7 @@
     "emptyPeople": "No people yet",
     "emptyContacts": "No contact people yet",
     "emptyApp": "Nobody has app access yet",
-    "emptyContactsHint": "Open a company and add the people you deal with there.",
-    "colName": "Name",
-    "colStage": "Stage",
-    "colContact": "Contact",
-    "colReach": "Phone / Email"
+    "emptyContactsHint": "Open a company and add the people you deal with there."
   },
   "reports": {
     "addSchedule": "Add schedule",
