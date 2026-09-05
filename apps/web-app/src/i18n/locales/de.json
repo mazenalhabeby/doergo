@@ -6927,7 +6927,11 @@
     "emptyPeople": "Noch keine Personen",
     "emptyContacts": "Noch keine Ansprechpartner",
     "emptyApp": "Noch niemand mit App-Zugang",
-    "emptyContactsHint": "Öffnen Sie ein Unternehmen und fügen Sie die Personen hinzu, mit denen Sie dort zu tun haben."
+    "emptyContactsHint": "Öffnen Sie ein Unternehmen und fügen Sie die Personen hinzu, mit denen Sie dort zu tun haben.",
+    "colName": "Name",
+    "colStage": "Phase",
+    "colContact": "Ansprechpartner",
+    "colReach": "Telefon / E-Mail"
   },
   "reports": {
     "addSchedule": "Zeitplan hinzufügen",

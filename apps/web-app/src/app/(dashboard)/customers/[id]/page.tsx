@@ -17,7 +17,7 @@ import { customersApi, locationsApi, organizationsApi, tasksApi, spacePortalApi,
 import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
 // The CRM's visual vocabulary — shared with the clients list, so the same
 // client is the same colour and the same shape on both screens.
-import { initials, gradientFor, stageDot, relTime } from "@/lib/crm-visuals"
+import { initials, stageDot, relTime, AVATAR_TONE } from "@/lib/crm-visuals"
 import { CreateTaskDialog } from "../../tasks/_components/create-task-dialog"
 import { CheckSquare, Repeat, ChevronDown as ChevronDownIcon, Info } from "lucide-react"
 import { notify } from "@/lib/toast"
@@ -154,7 +154,6 @@ export default function CustomerRecordPage() {
   const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
   const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
   const status = customer.status || "LEAD"
-  const grad = gradientFor(customer.name)
   const isCompany = customer.type === "COMPANY"
   const website = customer.website
   const websiteHref = website ? (website.startsWith("http") ? website : `https://${website}`) : undefined
@@ -192,21 +191,14 @@ export default function CustomerRecordPage() {
       </button>
 
       {/* ── HEADER ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
-        {/*
-          One soft wash behind the header, inert to pointers.
-
-          The same device the billing total uses, tinted to the client's own
-          gradient rather than the brand blue — so opening a record has a moment
-          of colour that belongs to that client, and the card stops reading as a
-          plain box with a name in it. Purely decorative; nothing sits on it.
-        */}
-        <div aria-hidden className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-[0.07]", grad)} />
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
+      <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           {/* left: avatar + name (+ app access under) */}
           <div className="flex min-w-0 items-center gap-3">
-            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center bg-gradient-to-br text-lg font-bold text-white shadow-sm",
-              isCompany ? "rounded-xl" : "rounded-full", grad)}>
+            {/* Neutral, like the list — the colour in this header belongs to
+                the stage pill, which is the only thing here that means one. */}
+            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center text-lg font-semibold",
+              isCompany ? "rounded-xl" : "rounded-full", AVATAR_TONE)}>
               {isCompany ? <Building2 className="h-6 w-6" /> : initials(customer.name)}
             </span>
             <div className="min-w-0">

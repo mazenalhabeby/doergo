@@ -11,7 +11,7 @@ import { notify } from "@/lib/toast"
 import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
 // The record page's own vocabulary — same client, same colour, same shape.
-import { initials, gradientFor, stageDot, shapeFor } from "@/lib/crm-visuals"
+import { initials, stageDot, shapeFor, AVATAR_TONE } from "@/lib/crm-visuals"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -187,103 +187,136 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
           }
         />
       ) : (
-        <div className="space-y-2">
-          {rows.map((c) => (
-            <button key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
-              className={cn(
-                // A hairline ring on hover rather than a grey wash: the row
-                // lifts toward the pointer instead of going muddy, and it is the
-                // same primary the record page uses for everything interactive.
-                "group flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-sm",
-                // A contact is somebody else's person sitting in a list of your
-                // clients — readable, plainly not the same thing.
-                c.isContact && "opacity-70",
-              )}>
-              {/*
-                The record page's avatar, at list size.
+        /*
+          A table, not a stack of cards.
 
-                It was a grey square for everyone, which made a page of clients a
-                page of identical grey squares. The colour is keyed to the name,
-                so the same client is the same colour everywhere and a row can be
-                found by its colour before it is read; the SHAPE says whether it
-                is a firm or a human.
-              */}
-              <span className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center bg-gradient-to-br text-[13px] font-bold text-white shadow-sm",
-                shapeFor(c.type), gradientFor(c.name),
-              )}>
-                {c.type === "COMPANY" ? <Building2 className="h-4 w-4" /> : initials(c.name)}
-              </span>
+          Every row was a bordered card carrying an avatar, two lines of joined
+          text, a badge and a chevron — the shape of a phone list, repeated down
+          a wide screen. Nothing lined up: the stage started after the name, the
+          phone number after whatever the stage happened to be, so no column
+          could be read down and the page grew a hard border every 68 pixels.
 
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="truncate text-sm font-semibold text-foreground">{c.name}</span>
-                </span>
-                {/*
-                  Two lines of meaning instead of one run-on sentence.
+          A CRM list is a table. Columns give the eye a rail to run down, the
+          hairlines between rows are quieter than a border around each one, and
+          the same information fits in half the height — which is what makes a
+          book of clients feel like a book rather than a feed.
+        */
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2.5 text-left font-semibold">{t("customers.colName", "Name")}</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">{t("customers.colStage", "Stage")}</th>
+                  <th className="hidden px-3 py-2.5 text-left font-semibold lg:table-cell">{t("customers.colContact", "Contact")}</th>
+                  <th className="hidden px-3 py-2.5 text-left font-semibold md:table-cell">{t("customers.colReach", "Phone / Email")}</th>
+                  <th className="px-3 py-2.5 text-right font-semibold" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((c) => (
+                  <tr
+                    key={c.id}
+                    onClick={() => router.push(`/customers/${c.id}`)}
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter") router.push(`/customers/${c.id}`) }}
+                    className={cn(
+                      "group cursor-pointer transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+                      // A contact is somebody else's person sitting in a list of
+                      // your clients — readable, plainly not the same thing.
+                      c.isContact && "opacity-65",
+                    )}
+                  >
+                    {/* ── name ── */}
+                    <td className="px-4 py-2">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        {/*
+                          Smaller than the card version on purpose: at 28px the
+                          avatar identifies a row without setting its height, and
+                          the row height is what decides whether this reads as a
+                          table or a feed. Colour is keyed to the name and the
+                          shape says company or person — the record page's own
+                          vocabulary, so a client looks the same on both screens.
+                        */}
+                        <span className={cn(
+                          "flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-semibold",
+                          shapeFor(c.type), AVATAR_TONE,
+                        )}>
+                          {c.type === "COMPANY" ? <Building2 className="h-3.5 w-3.5" /> : initials(c.name)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-foreground">{c.name}</span>
+                          {/* Only when it says something the columns do not. */}
+                          {c.isContact && c.contactOf && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })}
+                            </span>
+                          )}
+                          {!c.isContact && c.contactOf && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </td>
 
-                  The stage is a dot, not a word in a list joined by middots —
-                  the same dot the record page's status control uses, so "Lead"
-                  is recognisable at a glance and stops competing with the name.
-                */}
-                <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                  {c.isContact ? (
-                    <span className="inline-flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {c.contactOf
-                        ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
-                        : t("customers.contactTag", "Contact")}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 font-medium text-foreground/70">
-                      <span className={cn("h-1.5 w-1.5 rounded-full", stageDot(c.status || "LEAD"))} />
-                      {customerStageLabel(c.status || "LEAD")}
-                    </span>
-                  )}
-                  {!c.isContact && c.contactOf && (
-                    <span className="truncate">{t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}</span>
-                  )}
-                  {/* Who to ring, by name — see the note on the server side. */}
-                  {(c.primaryContact || c.contactName) && (
-                    <span className="inline-flex min-w-0 items-center gap-1">
-                      <Users className="h-3 w-3 shrink-0" />
-                      <span className="truncate">
-                        {c.primaryContact
-                          ? c.contactCount && c.contactCount > 1
-                            ? `${c.primaryContact.name} +${c.contactCount - 1}`
-                            : c.primaryContact.name
-                          : c.contactName}
-                      </span>
-                    </span>
-                  )}
-                </span>
-              </span>
+                    {/* ── stage ── */}
+                    <td className="px-3 py-2">
+                      {c.isContact ? (
+                        <span className="text-xs text-muted-foreground">{t("customers.contactTag", "Contact")}</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-foreground/80">
+                          <span className={cn("h-1.5 w-1.5 rounded-full", stageDot(c.status || "LEAD"))} />
+                          {customerStageLabel(c.status || "LEAD")}
+                        </span>
+                      )}
+                    </td>
 
-              {/*
-                Contact details in their own column, right-aligned.
+                    {/* ── who to ring there ── */}
+                    <td className="hidden max-w-[180px] px-3 py-2 lg:table-cell">
+                      {c.primaryContact ? (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {c.primaryContact.name}
+                          {c.contactCount && c.contactCount > 1 ? (
+                            <span className="ml-1 text-muted-foreground/70">+{c.contactCount - 1}</span>
+                          ) : null}
+                        </span>
+                      ) : c.contactName ? (
+                        // The old typed field, only while there is nobody real
+                        // to name instead — it is shown nowhere else in the app.
+                        <span className="block truncate text-xs italic text-muted-foreground/70">{c.contactName}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40">—</span>
+                      )}
+                    </td>
 
-                They were the tail of the same joined string, so a phone number
-                started in a different place on every row and none of them could
-                be scanned down.
-              */}
-              <span className="hidden min-w-0 shrink-0 text-right text-xs text-muted-foreground sm:block">
-                {c.phone && <span className="block truncate">{c.phone}</span>}
-                {c.email && <span className="block truncate">{c.email}</span>}
-              </span>
+                    {/* ── reach ── */}
+                    <td className="hidden max-w-[200px] px-3 py-2 md:table-cell">
+                      <span className="block truncate text-xs tabular-nums text-muted-foreground">{c.phone || ""}</span>
+                      {c.email && <span className="block truncate text-xs text-muted-foreground/70">{c.email}</span>}
+                      {!c.phone && !c.email && <span className="text-xs text-muted-foreground/40">—</span>}
+                    </td>
 
-              {c.isPortalResident ? (
-                <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300">
-                  <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
-                </Badge>
-              ) : c.isContact ? (
-                <Badge variant="outline">{t("customers.contactTag", "Contact")}</Badge>
-              ) : (
-                <Badge variant="secondary">{c.type === "COMPANY" ? t("customers.typeCompany", "Company") : t("customers.typePerson", "Person")}</Badge>
-              )}
-              {/* Nudges toward the row it belongs to on hover. */}
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
-            </button>
-          ))}
+                    {/* ── state ── */}
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-2">
+                        {c.isPortalResident && (
+                          <Badge variant="outline" className="gap-1 font-normal text-muted-foreground">
+                            <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
+                          </Badge>
+                        )}
+                        {/* Appears on the row under the pointer — a chevron on
+                            every row of a table is forty arrows pointing at
+                            nothing. */}
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

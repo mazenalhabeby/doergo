@@ -16,27 +16,18 @@ import { CUSTOMER_STAGES } from "@hbcfield/shared/client"
 export const initials = (n: string) =>
   n.split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()
 
-/*
-  Six gradients, chosen by the name.
-
-  Deterministic on purpose: the same client is the same colour on every screen
-  and after every reload, which is what lets somebody find a row by its colour
-  before they have read it. Random would be prettier once and useless after.
-*/
-const AVATAR_GRADIENTS = [
-  "from-blue-500 to-indigo-600",
-  "from-emerald-500 to-teal-600",
-  "from-violet-500 to-purple-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-pink-600",
-  "from-cyan-500 to-sky-600",
-]
-
-export function gradientFor(name: string) {
-  let h = 0
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]
-}
+/**
+ * The avatar, in neutral.
+ *
+ * It was one of six gradients keyed to the name. Six saturated squares stacked
+ * down a page is a lot of colour for information a reader gets from the name
+ * anyway — and colour that means nothing competes with the two places in this
+ * product where colour DOES mean something: the lifecycle stage, and app access.
+ *
+ * Identity comes from the shape instead. A company is a rounded square, a person
+ * is a circle, and that is the only distinction the list is being asked to draw.
+ */
+export const AVATAR_TONE = "bg-muted text-muted-foreground ring-1 ring-inset ring-border"
 
 /** Tailwind tokens, not hex — so both themes stay right. */
 const STAGE_DOT: Record<string, string> = {
