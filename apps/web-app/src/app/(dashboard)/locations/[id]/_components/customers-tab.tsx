@@ -236,6 +236,14 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
  * So when nobody has said which workspace, the form asks. One workspace and it
  * answers itself; several and it is a required choice, because guessing puts a
  * client somewhere a person then has to find.
+ *
+ * On EDIT it shows the workspace too. Hiding it was a mistake: a client created
+ * before this asked — sixteen of nineteen here — had no way out of "no
+ * workspace" except a database statement, and a client filed in the wrong one
+ * was stuck there. The field says what it does, because moving a client between
+ * workspaces is not the same kind of act as correcting a phone number. An app
+ * user is the exception: their workspace is decided by the portal that runs
+ * their login, and the server refuses to move them.
  */
 export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }: {
   // personOnly = hide the Person/Company toggle and lock to Person (e.g. a
@@ -262,12 +270,16 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
     the caller did not name a workspace and this is a new client; editing never
     moves one, which is a different action with different consequences.
   */
+  // Asked when nobody has answered (new, from "All"), and shown when editing so
+  // a client can be filed, moved or rescued from having no workspace at all.
   const needsSpace = !spaceId && !existing
+  const canMoveSpace = !!existing && !existing.isPortalResident
+  const showSpace = needsSpace || canMoveSpace
   const spacesQ = useQuery({
     queryKey: ["locations", "list"],
     queryFn: () => locationsApi.list({ limit: 200 }),
     staleTime: 60_000,
-    enabled: open && needsSpace,
+    enabled: open && showSpace,
   })
   const crmSpaces = useMemo(() => {
     const all = ((spacesQ.data as { data?: CompanyLocation[] } | undefined)?.data ?? []).filter(
@@ -280,9 +292,9 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
       return mods.includes("crm")
     })
   }, [spacesQ.data, user?.orgModules])
-  const [chosenSpace, setChosenSpace] = useState<string>("")
+  const [chosenSpace, setChosenSpace] = useState<string>(existing?.spaceId ?? "")
   // One workspace is not a choice; answer it and say where it is going instead.
-  const targetSpace = spaceId ?? (crmSpaces.length === 1 ? crmSpaces[0].id : chosenSpace)
+  const targetSpace = existing ? chosenSpace : spaceId ?? (crmSpaces.length === 1 ? crmSpaces[0].id : chosenSpace)
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
   const emailInvalid = !!form.email && !isEmail(form.email)
   const isCompany = type === "COMPANY"
@@ -305,7 +317,11 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
         regNumber: isCompany ? form.regNumber : "",
         details: cleanDetails,
       }
-      return existing ? customersApi.update(existing.id, payload) : customersApi.create({ ...payload, spaceId: targetSpace })
+      return existing
+        // Sent only when it actually changed — an unchanged workspace has no
+        // business in a PATCH, and the server refuses a move for an app user.
+        ? customersApi.update(existing.id, { ...payload, ...(canMoveSpace && chosenSpace !== (existing.spaceId ?? "") ? { spaceId: chosenSpace || null } : {}) })
+        : customersApi.create({ ...payload, spaceId: targetSpace })
     },
     onSuccess: (customer) => { notify.success(existing ? t("customers.updated", "Customer updated") : t("customers.created", "Customer added")); onSaved(customer); setOpen(false) },
     onError: (e: Error) => notify.error(e.message || "Could not save"),
@@ -330,27 +346,34 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
           </div>
           )}
 
-          {needsSpace && crmSpaces.length > 1 && (
+          {showSpace && (crmSpaces.length > 1 || existing) && (
             <div className="space-y-1">
               <Label>
-                {t("customers.workspace", "Workspace")}<span className="text-destructive"> *</span>
+                {t("customers.workspace", "Workspace")}
+                {!existing && <span className="text-destructive"> *</span>}
               </Label>
               <select
                 value={chosenSpace}
                 onChange={(e) => setChosenSpace(e.target.value)}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="">{t("customers.workspacePick", "Choose a workspace…")}</option>
+                <option value="">
+                  {existing
+                    ? t("customers.workspaceNone", "No workspace")
+                    : t("customers.workspacePick", "Choose a workspace…")}
+                </option>
                 {crmSpaces.map((sp) => (
                   <option key={sp.id} value={sp.id}>{sp.name}</option>
                 ))}
               </select>
               <p className="text-[11px] text-muted-foreground">
-                {t("customers.workspaceHint", "Which workspace's client list this belongs to.")}
+                {existing
+                  ? t("customers.workspaceMoveHint", "Moving this client takes it out of one workspace's list and into another.")
+                  : t("customers.workspaceHint", "Which workspace's client list this belongs to.")}
               </p>
             </div>
           )}
-          {needsSpace && crmSpaces.length === 1 && (
+          {needsSpace && !existing && crmSpaces.length === 1 && (
             // Said, not asked — one workspace answers the question itself, but a
             // client still lands somewhere and the reader should know where.
             <p className="rounded-lg bg-muted/50 px-3 py-2 text-[11.5px] text-muted-foreground">

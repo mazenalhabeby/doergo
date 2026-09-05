@@ -665,7 +665,8 @@ export class CustomersService {
   }
 
   async update(id: string, organizationId: string, dto: CustomerInput, actorId?: string, caller?: CrmCaller) {
-    const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true } });
+    // `spaceId` is read so a move can be told from a no-op — see the guard below.
+    const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true, spaceId: true } });
     if (!existing) throw new NotFoundException('Customer not found');
 
     // ── CRM access enforcement (server-authoritative), by what's being changed ──
@@ -691,6 +692,19 @@ export class CustomersService {
       if (!name) throw new BadRequestException('Customer name is required');
       data.name = name;
     }
+    /*
+      Moving a client between workspaces.
+
+      The workspace id itself is checked by `assertRefsInOrg`, which already
+      validates every ref on every write — this only adds the rule that is about
+      the MOVE rather than about the id: an app user's workspace is decided by
+      the portal that runs their login, and moving them would leave that binding
+      pointing into a space they are no longer in.
+    */
+    if (dto.spaceId !== undefined && dto.spaceId !== existing.spaceId && existing.isPortalResident) {
+      throw new BadRequestException('An app user belongs to the workspace that runs their portal.');
+    }
+
     for (const k of ['contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'ownerId', 'isPortalResident', 'portalId', 'status', 'legalName', 'website', 'industry', 'vatId', 'regNumber'] as const) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
@@ -766,10 +780,15 @@ export class CustomersService {
 
   /** A customer's spaceId/portalId MUST belong to the same org — otherwise a
    *  staff user could point their customer at another org's space or portal
-   *  (portal-config leak to their own app users). Validated on every write. */
+   *  (portal-config leak to their own app users). Validated on every write.
+   *
+   *  ⚠️ The space must also be LIVE. An archived one passed, which put the client
+   *  in a list nobody opens — invisible everywhere, and reachable only by
+   *  restoring a workspace whose connection to the missing client nothing
+   *  states. */
   private async assertRefsInOrg(dto: CustomerInput, organizationId: string) {
     if (dto.spaceId) {
-      const s = await this.prisma.companyLocation.findFirst({ where: { id: dto.spaceId, organizationId }, select: { id: true } });
+      const s = await this.prisma.companyLocation.findFirst({ where: { id: dto.spaceId, organizationId, isActive: true }, select: { id: true } });
       if (!s) throw new BadRequestException('Invalid space for this organization');
     }
     if (dto.portalId) {

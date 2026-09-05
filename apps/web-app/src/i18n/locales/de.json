@@ -6924,7 +6924,9 @@
     "workspace": "Arbeitsbereich",
     "workspacePick": "Arbeitsbereich wählen…",
     "workspaceHint": "Zu welcher Kundenliste dieser Eintrag gehört.",
-    "workspaceOnly": "Wird zu {{name}} hinzugefügt."
+    "workspaceOnly": "Wird zu {{name}} hinzugefügt.",
+    "workspaceNone": "Kein Arbeitsbereich",
+    "workspaceMoveHint": "Beim Verschieben verlässt der Kunde die eine Kundenliste und erscheint in der anderen."
   },
   "reports": {
     "addSchedule": "Zeitplan hinzufügen",

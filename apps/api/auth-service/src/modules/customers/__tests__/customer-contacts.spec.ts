@@ -239,3 +239,76 @@ describe('contact people', () => {
     });
   });
 });
+
+/*
+  Moving a client between workspaces.
+
+  The id itself was already validated — `assertRefsInOrg` checks every ref on
+  every write, and has since long before this. What is tested here is what that
+  check did NOT cover: an archived workspace passed it, and an app user could be
+  moved out from under the portal that runs their login.
+*/
+describe('changing a client’s workspace', () => {
+  let service: CustomersService;
+
+  const prisma: Record<string, any> = {
+    customer: { findFirst: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
+    companyLocation: { findFirst: jest.fn() },
+    customerActivity: { create: jest.fn() },
+    user: { findFirst: jest.fn() },
+    $transaction: jest.fn((cb: (tx: Record<string, any>) => unknown) => cb(prisma)),
+  };
+  const admin = { userId: 'u1', role: 'ADMIN' };
+  const client = (over: Record<string, unknown> = {}) => ({
+    id: 'c1', status: 'LEAD', isPortalResident: false, ownerId: null, managerIds: [], spaceId: 'sp-1', ...over,
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    prisma.customer.update.mockResolvedValue({ id: 'c1' });
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CustomersService, { provide: PrismaService, useValue: prisma }],
+    }).compile();
+    service = module.get(CustomersService);
+  });
+
+  const move = (to: string | null, existing = client()) => {
+    prisma.customer.findFirst.mockResolvedValue(existing);
+    return service.update('c1', ORG, { spaceId: to } as never, 'u1', admin as never);
+  };
+
+  it('refuses a workspace that is not this organization’s, or is archived', async () => {
+    // The check IS the query — another tenant's id, or an archived space,
+    // resolves to nothing because both are in the `where`.
+    prisma.companyLocation.findFirst.mockResolvedValue(null);
+    await expect(move('sp-from-another-org')).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.customer.update).not.toHaveBeenCalled();
+    expect(prisma.companyLocation.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ organizationId: ORG, isActive: true }) }),
+    );
+  });
+
+  it('accepts a live workspace of this organization', async () => {
+    prisma.companyLocation.findFirst.mockResolvedValue({ id: 'sp-2' });
+    await move('sp-2');
+    expect(prisma.customer.update).toHaveBeenCalled();
+  });
+
+  it('allows clearing it', async () => {
+    /*
+      Null is what a client created before the workspace was asked for already
+      is. Refusing it would make the field impossible to correct back, and there
+      is nothing to validate about "nowhere".
+    */
+    await move(null);
+    expect(prisma.companyLocation.findFirst).not.toHaveBeenCalled();
+    expect(prisma.customer.update).toHaveBeenCalled();
+  });
+
+  it('will not move an app user', async () => {
+    // Their workspace is decided by the portal that runs their login; moving
+    // them leaves the binding pointing into a space they are no longer in.
+    prisma.companyLocation.findFirst.mockResolvedValue({ id: 'sp-2' });
+    await expect(move('sp-2', client({ isPortalResident: true }))).rejects.toBeInstanceOf(BadRequestException);
+  });
+});

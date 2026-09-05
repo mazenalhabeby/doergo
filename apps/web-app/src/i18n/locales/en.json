@@ -6924,7 +6924,9 @@
     "workspace": "Workspace",
     "workspacePick": "Choose a workspace…",
     "workspaceHint": "Which workspace's client list this belongs to.",
-    "workspaceOnly": "Added to {{name}}."
+    "workspaceOnly": "Added to {{name}}.",
+    "workspaceNone": "No workspace",
+    "workspaceMoveHint": "Moving this client takes it out of one workspace's list and into another."
   },
   "reports": {
     "addSchedule": "Add schedule",

@@ -6933,7 +6933,9 @@
     "workspace": "Espace de travail",
     "workspacePick": "Choisissez un espace de travail…",
     "workspaceHint": "À quelle liste de clients cela appartient.",
-    "workspaceOnly": "Ajouté à {{name}}."
+    "workspaceOnly": "Ajouté à {{name}}.",
+    "workspaceNone": "Aucun espace de travail",
+    "workspaceMoveHint": "Le déplacer le retire de la liste d’un espace de travail pour l’ajouter à une autre."
   },
   "reports": {
     "addSchedule": "Ajouter une planification",
