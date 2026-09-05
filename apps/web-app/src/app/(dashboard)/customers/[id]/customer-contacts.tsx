@@ -8,6 +8,7 @@ import { Building2, Check, Mail, Phone, Plus, Star, Trash2, UserPlus, Users } fr
 import { customersApi, type Customer, type CustomerContactLink } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { Truncated } from "@/components/truncated"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -120,7 +121,7 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
             <span className="block text-[10px] font-semibold uppercase tracking-wider">
               {t("customers.contactNote", "Contact (note)")}
             </span>
-            <span className="truncate" title={customer.contactName}>{customer.contactName}</span>
+            <Truncated text={customer.contactName} />
           </span>
           <AddContactDialog companyId={companyId} startName={customer.contactName} onSaved={invalidate} trigger={
             <button className="shrink-0 text-[11.5px] font-medium text-primary hover:underline">
@@ -145,18 +146,18 @@ function ContactRow({ link, canEdit, onPrimary, onRemove }: {
       </span>
       <span className="min-w-0 flex-1">
         <a href={`/customers/${p.id}`} className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground hover:text-primary">
-          <span className="truncate" title={p.name}>{p.name}</span>
+          <Truncated text={p.name} />
           {link.isPrimary && (
             <span title={t("customers.primaryContact", "Primary contact")}>
               <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />
             </span>
           )}
         </a>
-        {link.role && <span className="block truncate text-[11.5px] text-muted-foreground" title={link.role}>{link.role}</span>}
+        {link.role && <Truncated text={link.role} className="text-[11.5px] text-muted-foreground" />}
         {/* The two things somebody opened this panel to do. */}
         <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px]">
           {p.phone && <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline"><Phone className="h-3 w-3" />{p.phone}</a>}
-          {p.email && <a href={`mailto:${p.email}`} title={p.email} className="inline-flex items-center gap-1 truncate text-primary hover:underline"><Mail className="h-3 w-3" />{p.email}</a>}
+          {p.email && <span className="inline-flex min-w-0 items-center gap-1 text-primary"><Mail className="h-3 w-3 shrink-0" /><Truncated text={p.email} href={`mailto:${p.email}`} className="hover:underline" /></span>}
         </span>
       </span>
       {canEdit && (
@@ -300,7 +301,7 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
                               {initials(r.name)}
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate font-medium text-foreground" title={r.name}>{r.name}</span>
+                              <Truncated text={r.name} className="font-medium text-foreground" />
                               <span className="block truncate text-[11px] text-muted-foreground">
                                 {/* Say where they already are rather than hiding
                                     them — that is what stops a duplicate. */}
@@ -450,14 +451,14 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
-                    <span className="truncate" title={c.company.name}>{c.company.name}</span>
+                    <Truncated text={c.company.name} />
                     {c.isPrimary && (
                       <span title={t("customers.primaryContact", "Primary contact")}>
                         <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />
                       </span>
                     )}
                   </span>
-                  {c.role && <span className="block truncate text-[11.5px] text-muted-foreground" title={c.role}>{c.role}</span>}
+                  {c.role && <Truncated text={c.role} className="text-[11.5px] text-muted-foreground" />}
                 </span>
               </a>
               {canEdit && (

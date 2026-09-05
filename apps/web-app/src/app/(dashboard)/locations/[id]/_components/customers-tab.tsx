@@ -11,6 +11,7 @@ import { notify } from "@/lib/toast"
 import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { Truncated } from "@/components/truncated"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -195,16 +196,8 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                 {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : initials(c.name)}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground" title={c.name}>{c.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {/*
-                    The row already printed stage · contact · phone. A company
-                    now says how many people it has, and a contact says who they
-                    work for INSTEAD of a stage — they are not a deal, and a
-                    stage on one reads as a pipeline entry that will never move.
-                  */}
-                  {subtitle}
-                </span>
+                <Truncated text={c.name} className="text-sm font-medium text-foreground" />
+                <Truncated text={subtitle} className="text-xs text-muted-foreground" side="bottom" />
               </span>
               {c.isPortalResident ? (
                 <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300">

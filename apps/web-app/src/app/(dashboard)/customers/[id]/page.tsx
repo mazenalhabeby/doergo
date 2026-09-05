@@ -34,6 +34,7 @@ import {
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
 import { AddressesPanel } from "./customer-addresses"
 import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
+import { Truncated } from "@/components/truncated"
 import { ManagersPanel } from "./customer-managers"
 
 // stage tone → dot color
@@ -401,24 +402,25 @@ function PanelHead({ children }: { children: React.ReactNode }) {
 /**
  * One label and one value, truncated to the panel's width.
  *
- * ⚠️ Anything truncated carries its full text in `title`. A long address renders
- * as "test@gmai…" and a reader has no way to learn the rest of it — there is no
- * expand, and this panel is exactly where somebody goes to FIND an address.
- *
- * The native tooltip rather than a component, deliberately: it appears only when
- * there is something hidden to reveal, costs nothing when there is not, works on
- * a value that overflows at one window width and fits at another, and is the one
- * tooltip a screen reader already knows how to announce. The text stays
- * selectable either way, so it can be copied whether it fits or not.
+ * The value shows the whole of itself on hover when — and only when — it does
+ * not fit. See `Truncated`; the rail is 300px wide and an email, a website or a
+ * register number routinely runs past it.
  */
 function PropRow({ label, value, href }: { label: string; value?: string | null; href?: string }) {
   if (!value) return null
   return (
     <div className="flex items-baseline justify-between gap-3 py-2.5">
       <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      {href
-        ? <a href={href} title={value} className="truncate text-right font-medium text-foreground transition-colors hover:text-primary">{value}</a>
-        : <dd title={value} className="truncate text-right font-medium text-foreground">{value}</dd>}
+      <dd className="min-w-0">
+        <Truncated
+          text={value}
+          href={href}
+          className={cn(
+            "text-right font-medium text-foreground",
+            href && "transition-colors hover:text-primary",
+          )}
+        />
+      </dd>
     </div>
   )
 }
