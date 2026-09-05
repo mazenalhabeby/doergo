@@ -6669,7 +6669,9 @@
     "appAccess": "Accesso all’app",
     "fieldName": "Nome del campo",
     "fieldValue": "Che cosa dice",
-    "systemAuthor": "Automatico"
+    "systemAuthor": "Automatico",
+    "inWorkspace": "In {{name}}",
+    "toWorkspace": "Aggiunto a {{name}}"
   },
   "assetMoney": {
     "title": "Denaro",

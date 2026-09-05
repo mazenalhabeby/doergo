@@ -6660,7 +6660,9 @@
     "appAccess": "App access",
     "fieldName": "Field name",
     "fieldValue": "What it says",
-    "systemAuthor": "Automatic"
+    "systemAuthor": "Automatic",
+    "inWorkspace": "In {{name}}",
+    "toWorkspace": "Added to {{name}}"
   },
   "assetMoney": {
     "title": "Money",

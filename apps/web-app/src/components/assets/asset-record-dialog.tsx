@@ -4,9 +4,9 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Ban, Check, Plus, Search, Smartphone, Trash2, User, X } from "lucide-react"
+import { Ban, Building2, Check, Plus, Search, Smartphone, Trash2, User, X } from "lucide-react"
 
-import { assetsApi, customersApi, organizationsApi, type AssetCategory, type OrgMember } from "@/lib/api"
+import { assetsApi, customersApi, locationsApi, organizationsApi, type AssetCategory, type OrgMember } from "@/lib/api"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel,
   KIND_SHAPE_LIMITS, type DetailRow,
@@ -88,6 +88,27 @@ export function AssetRecordDialog({
   const { t } = useTranslation()
   const shape = normalizeKindShape(kind.config)
   const [open, setOpen] = useState(false)
+
+  /*
+    Which workspace this record lives in.
+
+    ⚠️ An asset has no workspace of its own — it inherits its KIND's
+    (`AssetCategory.spaceId`), so the answer was only ever implied by which tab
+    somebody happened to be on. Two workspaces can both have a kind called
+    "Vehicles", and nothing in this dialog said which one was about to receive
+    the record.
+
+    Read from the list the nav and the space tabs already fetched, so saying so
+    costs nothing.
+  */
+  const spacesQ = useQuery({
+    queryKey: ["locations", "list"],
+    queryFn: () => locationsApi.list({ limit: 200 }),
+    staleTime: 60_000,
+    enabled: open && !!spaceId,
+  })
+  const spaceName = ((spacesQ.data as { data?: Array<{ id: string; name: string }> } | undefined)?.data ?? [])
+    .find((sp) => sp.id === spaceId)?.name
 
   const [name, setName] = useState(existing?.name ?? "")
   const [address, setAddress] = useState(existing?.locationAddress ?? "")
@@ -226,6 +247,20 @@ export function AssetRecordDialog({
               ? t("assetRecords.editTitle", "Edit {{kind}}", { kind: kind.name })
               : t("assetRecords.newTitle", "Add to {{kind}}", { kind: kind.name })}
           </DialogTitle>
+          {/*
+            Said, not asked. The workspace is decided by the kind and cannot be
+            chosen here — an asset moves between workspaces only by moving to a
+            kind in another one, which changes its type and the fields that come
+            with it. What this fixes is that it was not stated at all.
+          */}
+          {spaceName && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              {existing
+                ? t("assetRecords.inWorkspace", "In {{name}}", { name: spaceName })
+                : t("assetRecords.toWorkspace", "Added to {{name}}", { name: spaceName })}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="space-y-3">
