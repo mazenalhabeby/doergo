@@ -188,51 +188,48 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
         />
       ) : (
         /*
-          A grid of cards.
+          One list, not a stack of boxes.
 
-          Two shapes were tried and both failed for the same reason: they used
-          the full width of the screen for one client. A single column of
-          bordered rows makes a wide page mostly empty and puts a hard line every
-          68 pixels; a table fixed the alignment and read like a spreadsheet.
+          The rows were right all along; what made them look cheap was that each
+          one carried its own border. Forty bordered rectangles down a page is
+          forty things competing for an edge, and the gaps between them are dead
+          space that belongs to nothing.
 
-          A client is not a row of figures — it is a name, a state, and somebody
-          to ring. Those three things sit better in a block than on a line, and
-          three blocks across a page is the density this book actually wants.
-
-          The card does the work a row could not: the actions are ON it, so
-          calling somebody does not begin by opening their record.
+          One card holds them all now, divided by hairlines. Same rows, a tenth
+          of the lines — and the eye follows a single edge down the page instead
+          of restarting at every item.
         */
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {rows.map((c) => {
-            const open = () => router.push(`/customers/${c.id}`)
-            return (
-              <div
-                key={c.id}
-                onClick={open}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open() } }}
-                role="link"
-                tabIndex={0}
-                className={cn(
-                  "group relative flex cursor-pointer flex-col rounded-2xl border border-border/70 bg-card p-4",
-                  // Lifts a hair toward the pointer. The shadow does the work and
-                  // the border only warms — a card that changed colour on hover
-                  // would put a wash of it back on a page we just took it off.
-                  "transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  c.isContact && "opacity-70",
-                )}
-              >
-                {/* ── identity ── */}
-                <div className="flex items-start gap-3">
+        <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
+          <div className="divide-y divide-border/60">
+            {rows.map((c) => {
+              const open = () => router.push(`/customers/${c.id}`)
+              return (
+                <div
+                  key={c.id}
+                  onClick={open}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open() } }}
+                  role="link"
+                  tabIndex={0}
+                  className={cn(
+                    "group flex cursor-pointer items-center gap-3.5 px-4 py-3 transition-colors",
+                    "hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none",
+                    // Somebody else's person, sitting in a list of your clients.
+                    c.isContact && "opacity-70",
+                  )}
+                >
+                  {/* Neutral chip; the SHAPE says company or person, which is the
+                      only distinction this list has to draw. */}
                   <span className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center text-xs font-semibold",
+                    "flex h-9 w-9 shrink-0 items-center justify-center text-[11px] font-semibold",
                     shapeFor(c.type), AVATAR_TONE,
                   )}>
                     {c.type === "COMPANY" ? <Building2 className="h-4 w-4" /> : initials(c.name)}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-semibold leading-tight text-foreground">{c.name}</p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+
+                  {/* ── name, and one quiet line under it ── */}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
+                    <span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
                       {c.isContact ? (
                         <span className="truncate">
                           {c.contactOf
@@ -240,7 +237,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                             : t("customers.contactTag", "Contact")}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                        <span className="inline-flex shrink-0 items-center gap-1.5">
                           <span className={cn("h-1.5 w-1.5 rounded-full", stageDot(c.status || "LEAD"))} />
                           {customerStageLabel(c.status || "LEAD")}
                         </span>
@@ -248,74 +245,66 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                       {!c.isContact && c.contactOf && (
                         <span className="truncate">{t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}</span>
                       )}
-                    </p>
-                  </div>
-                  {c.isPortalResident && (
-                    <span title={t("customers.appAccess", "App access")} className="shrink-0 text-muted-foreground">
-                      <Smartphone className="h-3.5 w-3.5" />
                     </span>
-                  )}
-                </div>
+                  </span>
 
-                {/*
-                  Who to ring there.
-
-                  Its own block under a hairline, because it is a different
-                  person from the one the card is about — on the same line it
-                  read as a second name for the same client.
-                */}
-                {(c.primaryContact || c.contactName) && (
-                  <div className="mt-3 border-t border-border/60 pt-3">
-                    <p className="flex min-w-0 items-center gap-1.5 text-[13px] text-foreground/80">
-                      <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="truncate">
-                        {c.primaryContact ? c.primaryContact.name : c.contactName}
-                      </span>
-                      {c.contactCount && c.contactCount > 1 ? (
-                        <span className="shrink-0 text-xs text-muted-foreground">+{c.contactCount - 1}</span>
-                      ) : null}
-                    </p>
-                    {c.primaryContact?.role && (
-                      <p className="mt-0.5 truncate pl-5 text-xs text-muted-foreground">{c.primaryContact.role}</p>
-                    )}
-                  </div>
-                )}
-
-                {/*
-                  The reach, and the two things anybody opens a client for.
-
-                  `mt-auto` so every card in a row ends on the same line however
-                  much sits above it — a grid whose cards end at different
-                  heights is the thing that makes a grid look thrown together.
-                */}
-                <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-                  <div className="min-w-0 space-y-0.5 text-xs text-muted-foreground">
-                    {c.phone && <p className="truncate tabular-nums">{c.phone}</p>}
-                    {c.email && <p className="truncate">{c.email}</p>}
-                  </div>
                   {/*
-                    Stop the card opening underneath them: these do their own
-                    thing, and a call that also navigates away is a call nobody
-                    can take notes on.
+                    Who to ring there — its own column, so the names start in the
+                    same place on every row and can be read down. Threaded into
+                    the line above they began wherever the stage happened to end.
                   */}
-                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                    {c.phone && (
-                      <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} title={t("customers.call", "Call")}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                        <Phone className="h-3.5 w-3.5" />
-                      </a>
+                  <span className="hidden w-40 shrink-0 lg:block">
+                    {c.primaryContact || c.contactName ? (
+                      <>
+                        <span className="block truncate text-[13px] text-foreground/80">
+                          {c.primaryContact ? c.primaryContact.name : c.contactName}
+                          {c.contactCount && c.contactCount > 1 ? (
+                            <span className="ml-1 text-xs text-muted-foreground">+{c.contactCount - 1}</span>
+                          ) : null}
+                        </span>
+                        {c.primaryContact?.role && (
+                          <span className="block truncate text-xs text-muted-foreground">{c.primaryContact.role}</span>
+                        )}
+                      </>
+                    ) : null}
+                  </span>
+
+                  <span className="hidden w-48 shrink-0 text-right md:block">
+                    {c.phone && <span className="block truncate text-[13px] tabular-nums text-muted-foreground">{c.phone}</span>}
+                    {c.email && <span className="block truncate text-xs text-muted-foreground/70">{c.email}</span>}
+                  </span>
+
+                  {/*
+                    Call and mail, on the row under the pointer.
+
+                    They stop the row opening underneath them: a call that also
+                    navigates away is a call nobody can take notes on.
+                  */}
+                  <span className="flex w-[76px] shrink-0 items-center justify-end gap-1">
+                    <span className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      {c.phone && (
+                        <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} title={t("customers.call", "Call")}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                          <Phone className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                      {c.email && (
+                        <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} title={t("customers.email", "Email")}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                    </span>
+                    {c.isPortalResident && (
+                      <span title={t("customers.appAccess", "App access")} className="text-muted-foreground group-hover:hidden">
+                        <Smartphone className="h-3.5 w-3.5" />
+                      </span>
                     )}
-                    {c.email && (
-                      <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} title={t("customers.email", "Email")}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                        <Mail className="h-3.5 w-3.5" />
-                      </a>
-                    )}
-                  </div>
+                  </span>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
