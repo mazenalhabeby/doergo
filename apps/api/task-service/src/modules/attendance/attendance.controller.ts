@@ -14,7 +14,12 @@ export class AttendanceController {
     private readonly approvalService: ApprovalService,
   ) {}
 
-  @MessagePattern({ cmd: 'get_attendance_status' })
+    @MessagePattern({ cmd: 'list_clock_in_locations' })
+  listClockInLocations(@Payload() d: { userId: string; organizationId: string }) {
+    return this.attendanceService.listClockInLocations(d);
+  }
+
+@MessagePattern({ cmd: 'get_attendance_status' })
   async getStatus(@Payload() data: { userId: string; organizationId: string }) {
     return this.attendanceService.getStatus(data);
   }

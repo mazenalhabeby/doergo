@@ -108,6 +108,27 @@ export class AttendanceController {
     });
   }
 
+  /**
+   * Where this member may clock in, right now.
+   *
+   * Not `GET /locations`, which answers a different question — that one returns
+   * the workspaces a member can SEE, and a manager can see the whole directory.
+   * Offering a site somebody may look at but is not assigned to produces a
+   * clock-in refused for a reason they cannot act on.
+   *
+   * The caller is always the session; there is no userId parameter, so this
+   * cannot be used to enumerate where a colleague works.
+   */
+  @Get('clock-in-locations')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Workspaces the caller may clock in at right now' })
+  async clockInLocations(@Request() req: any) {
+    return this.attendanceService.listClockInLocations({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
   // ── Session work-log ("what I did today") ──────────────────────────────────
   // Ownership is enforced in the service (a member manages their OWN session's
   // log; managers with canManage may view/manage any session in their org).

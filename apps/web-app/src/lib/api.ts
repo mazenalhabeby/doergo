@@ -2429,6 +2429,21 @@ export const attendanceApi = {
   },
 
   // Get all locations for the organization
+  /**
+   * Where the CALLER may clock in, right now.
+   *
+   * Deliberately not `getLocations()`, which answers "what workspaces can I
+   * see" — a manager can see the whole directory, and offering them a site they
+   * are not assigned to produces a clock-in refused for a reason they cannot
+   * act on. This returns only workspaces with an assignment active now, minus
+   * the remote bucket and customer premises.
+   */
+  getClockInLocations: async () => {
+    const response = await api.get<{ success: boolean; data: CompanyLocation[] }>('/attendance/clock-in-locations');
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: CompanyLocation[] })?.data ?? [];
+  },
+
   getLocations: async () => {
     const response = await api.get<{ success: boolean; data: CompanyLocation[] }>('/locations');
 

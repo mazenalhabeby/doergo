@@ -3134,7 +3134,19 @@
       "periodCustom": "Personalizado",
       "pickBoth": "Elige ambas fechas: mientras tanto, los últimos 7 días.",
       "noneInRange": "Sin turnos entre {{from}} y {{to}}.",
-      "pickRange": "Elige un intervalo"
+      "pickRange": "Elige un intervalo",
+      "picker": {
+        "title": "¿Dónde estás fichando?",
+        "subtitle": "Trabajas en más de un sitio. Elige en cuál estás ahora.",
+        "inRange": "Estás aquí",
+        "outOfRange": "Demasiado lejos para fichar",
+        "noGeofence": "Sin geovalla",
+        "unknownDistance": "Distancia desconocida",
+        "metresAway": "a {{n}} m",
+        "kmAway": "a {{n}} km",
+        "noFix": "Aun así puedes elegir dónde estás: se verificará al fichar."
+      },
+      "noAssignedLocations": "Todavía no estás asignado a ningún espacio de trabajo, así que no hay dónde fichar. Pídeselo a tu administrador."
     },
     "management": {
       "title": "Gestión de asistencia",

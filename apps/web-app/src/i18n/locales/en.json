@@ -3134,7 +3134,19 @@
       "periodCustom": "Custom",
       "pickBoth": "Pick both dates — showing the last 7 days until then.",
       "noneInRange": "No shifts between {{from}} and {{to}}.",
-      "pickRange": "Pick a date range"
+      "pickRange": "Pick a date range",
+      "picker": {
+        "title": "Where are you clocking in?",
+        "subtitle": "You work at more than one place. Pick the one you are at now.",
+        "inRange": "You are here",
+        "outOfRange": "Too far to clock in",
+        "noGeofence": "No geofence",
+        "unknownDistance": "Distance unknown",
+        "metresAway": "{{n}} m away",
+        "kmAway": "{{n}} km away",
+        "noFix": "You can still choose where you are — your site will be verified when you clock in."
+      },
+      "noAssignedLocations": "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one."
     },
     "management": {
       "title": "Attendance Management",

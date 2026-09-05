@@ -60,6 +60,7 @@ export * from './access/space-manage';
 // Per-member reads: the same "is this person in my crew?" rule for the two
 // services that ask it. NOT exported from client.ts — it needs a Prisma client.
 export * from './access/member-scope';
+export * from './access/assignment-window';
 export * from './access/cross-org-chat';
 export * from './access/legacy-flag-migration';
 export * from './access/workflow-modules';

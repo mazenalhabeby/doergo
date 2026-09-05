@@ -20,6 +20,7 @@ import {
   paginated,
   TimeEntryStatus,
   haversineDistance,
+  activeAssignmentWhere,
   ATTENDANCE_CONSTANTS,
   GEOFENCE_EXCURSION,
   computeScheduleFlags,
@@ -143,6 +144,56 @@ export class AttendanceService {
     };
   }
 
+
+  /**
+   * Where may THIS member clock in, right now?
+   *
+   * The web and the phone both used to answer this themselves, from the org's
+   * space directory, by picking whichever site was nearest. That is wrong in
+   * three separate ways and each one was reachable:
+   *
+   *   • A member assigned to several workspaces could not CHOOSE. Two sites a
+   *     few hundred metres apart, or a fuzzy GPS fix, and they were silently
+   *     clocked in at the wrong one — which is a payroll error nobody notices
+   *     until a timesheet is queried.
+   *   • A manager sees the whole directory (`canViewAllTasks`), so "nearest"
+   *     could pick a workspace they are not assigned to, and the clock-in came
+   *     back "You are not assigned to this location" with nothing they could do.
+   *   • Workspaces with no coordinates were filtered out client-side as
+   *     "no GPS", even though a space without coordinates is geofence-exempt
+   *     and clocks in perfectly well. An organization that had never set
+   *     coordinates simply could not clock in from the web at all.
+   *
+   * So the question is answered here, by the same rule that enforces it. The
+   * remote bucket is excluded — it is the "Clock in remotely" button, not a
+   * place — and so are customer spaces, which are somebody else's premises
+   * rather than a site this organization staffs.
+   */
+  async listClockInLocations(data: { userId: string; organizationId: string }) {
+    const assignments = await this.prisma.spaceAssignment.findMany({
+      where: activeAssignmentWhere(data.userId),
+      select: { spaceId: true },
+    });
+    const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
+    if (!spaceIds.length) return success([]);
+
+    const locations = await this.prisma.companyLocation.findMany({
+      where: {
+        id: { in: spaceIds },
+        organizationId: data.organizationId,
+        isActive: true,
+        isRemote: false,
+        kind: { not: 'CUSTOMER' },
+      },
+      select: {
+        id: true, name: true, address: true, lat: true, lng: true,
+        geofenceRadius: true, timezone: true, isDefault: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+    return success(locations);
+  }
+
   /**
    * Clock in at a company location
    */
@@ -259,17 +310,11 @@ export class AttendanceService {
     // Verify user has an assignment to this location that is active RIGHT NOW —
     // started (effectiveFrom <= now) and not expired (effectiveTo null or future).
     // Without the effectiveFrom bound a future-dated assignment could clock in early (L3).
-    const now = new Date();
+    // The window rule is shared with `listClockInLocations`, which decides what
+    // the member is OFFERED. Two copies would eventually offer a workspace this
+    // then refuses — which reads as the product being broken, not as a rule.
     const assignment = await this.prisma.spaceAssignment.findFirst({
-      where: {
-        userId: data.userId,
-        spaceId: data.locationId,
-        effectiveFrom: { lte: now },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: now } },
-        ],
-      },
+      where: { ...activeAssignmentWhere(data.userId), spaceId: data.locationId },
     });
 
     if (!assignment) {

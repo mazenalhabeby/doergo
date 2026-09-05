@@ -3134,7 +3134,19 @@
       "periodCustom": "Personalizzato",
       "pickBoth": "Scegli entrambe le date: fino ad allora, gli ultimi 7 giorni.",
       "noneInRange": "Nessun turno tra il {{from}} e il {{to}}.",
-      "pickRange": "Scegli un intervallo"
+      "pickRange": "Scegli un intervallo",
+      "picker": {
+        "title": "Dove stai timbrando?",
+        "subtitle": "Lavori in più sedi. Scegli quella in cui ti trovi ora.",
+        "inRange": "Sei qui",
+        "outOfRange": "Troppo lontano per timbrare",
+        "noGeofence": "Nessun geofence",
+        "unknownDistance": "Distanza sconosciuta",
+        "metresAway": "a {{n}} m",
+        "kmAway": "a {{n}} km",
+        "noFix": "Puoi comunque scegliere dove sei: la sede verrà verificata al momento della timbratura."
+      },
+      "noAssignedLocations": "Non sei ancora assegnato a uno spazio di lavoro, quindi non c’è dove timbrare. Chiedilo al tuo amministratore."
     },
     "management": {
       "title": "Gestione delle presenze",

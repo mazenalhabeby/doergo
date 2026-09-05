@@ -3134,7 +3134,19 @@
       "periodCustom": "Personnalisé",
       "pickBoth": "Choisissez les deux dates — en attendant, les 7 derniers jours.",
       "noneInRange": "Aucun poste entre le {{from}} et le {{to}}.",
-      "pickRange": "Choisir une période"
+      "pickRange": "Choisir une période",
+      "picker": {
+        "title": "Où pointez-vous ?",
+        "subtitle": "Vous travaillez sur plusieurs sites. Choisissez celui où vous êtes.",
+        "inRange": "Vous êtes ici",
+        "outOfRange": "Trop loin pour pointer",
+        "noGeofence": "Sans géorepérage",
+        "unknownDistance": "Distance inconnue",
+        "metresAway": "à {{n}} m",
+        "kmAway": "à {{n}} km",
+        "noFix": "Vous pouvez tout de même indiquer où vous êtes — le site sera vérifié au pointage."
+      },
+      "noAssignedLocations": "Vous n’êtes encore affecté à aucun espace de travail, il n’y a donc nulle part où pointer. Demandez-le à votre administrateur."
     },
     "management": {
       "title": "Gestion des présences",

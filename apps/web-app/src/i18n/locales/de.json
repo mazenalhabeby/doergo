@@ -3134,7 +3134,19 @@
       "periodCustom": "Zeitraum",
       "pickBoth": "Beide Daten wählen — bis dahin die letzten 7 Tage.",
       "noneInRange": "Keine Schichten zwischen {{from}} und {{to}}.",
-      "pickRange": "Zeitraum wählen"
+      "pickRange": "Zeitraum wählen",
+      "picker": {
+        "title": "Wo stempeln Sie ein?",
+        "subtitle": "Sie arbeiten an mehreren Orten. Wählen Sie den Ort, an dem Sie gerade sind.",
+        "inRange": "Sie sind hier",
+        "outOfRange": "Zu weit entfernt zum Einstempeln",
+        "noGeofence": "Kein Geofence",
+        "unknownDistance": "Entfernung unbekannt",
+        "metresAway": "{{n}} m entfernt",
+        "kmAway": "{{n}} km entfernt",
+        "noFix": "Sie können trotzdem wählen, wo Sie sind — Ihr Standort wird beim Einstempeln geprüft."
+      },
+      "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugeordnet, daher gibt es keinen Ort zum Einstempeln. Bitten Sie Ihre Administration darum."
     },
     "management": {
       "title": "Anwesenheitsverwaltung",

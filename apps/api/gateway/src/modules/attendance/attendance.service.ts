@@ -17,6 +17,11 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_attendance_status' }, data);
   }
 
+  /** The workspaces this member may clock in at right now — see the service. */
+  async listClockInLocations(data: { userId: string; organizationId: string }) {
+    return this.send({ cmd: 'list_clock_in_locations' }, data);
+  }
+
   /**
    * Get attendance history for an employee
    */
