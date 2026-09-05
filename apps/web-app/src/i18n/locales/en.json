@@ -6920,7 +6920,11 @@
     "findCompany": "Find a company",
     "findCompanyPh": "Company name…",
     "myRoleThere": "Their role there",
-    "linkToCompany": "Link to a company"
+    "linkToCompany": "Link to a company",
+    "workspace": "Workspace",
+    "workspacePick": "Choose a workspace…",
+    "workspaceHint": "Which workspace's client list this belongs to.",
+    "workspaceOnly": "Added to {{name}}."
   },
   "reports": {
     "addSchedule": "Add schedule",

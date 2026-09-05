@@ -6920,7 +6920,11 @@
     "findCompany": "Unternehmen suchen",
     "findCompanyPh": "Firmenname…",
     "myRoleThere": "Funktion dort",
-    "linkToCompany": "Mit einem Unternehmen verknüpfen"
+    "linkToCompany": "Mit einem Unternehmen verknüpfen",
+    "workspace": "Arbeitsbereich",
+    "workspacePick": "Arbeitsbereich wählen…",
+    "workspaceHint": "Zu welcher Kundenliste dieser Eintrag gehört.",
+    "workspaceOnly": "Wird zu {{name}} hinzugefügt."
   },
   "reports": {
     "addSchedule": "Zeitplan hinzufügen",

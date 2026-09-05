@@ -6920,7 +6920,11 @@
     "findCompany": "Buscar una empresa",
     "findCompanyPh": "Nombre de la empresa…",
     "myRoleThere": "Su cargo allí",
-    "linkToCompany": "Vincular a una empresa"
+    "linkToCompany": "Vincular a una empresa",
+    "workspace": "Espacio de trabajo",
+    "workspacePick": "Elige un espacio de trabajo…",
+    "workspaceHint": "A qué lista de clientes pertenece.",
+    "workspaceOnly": "Se añadirá a {{name}}."
   },
   "reports": {
     "addSchedule": "Añadir programación",

@@ -6929,7 +6929,11 @@
     "findCompany": "Cerca un’azienda",
     "findCompanyPh": "Nome azienda…",
     "myRoleThere": "Il suo ruolo lì",
-    "linkToCompany": "Collega a un’azienda"
+    "linkToCompany": "Collega a un’azienda",
+    "workspace": "Spazio di lavoro",
+    "workspacePick": "Scegli uno spazio di lavoro…",
+    "workspaceHint": "A quale elenco clienti appartiene.",
+    "workspaceOnly": "Aggiunto a {{name}}."
   },
   "reports": {
     "addSchedule": "Aggiungi pianificazione",
