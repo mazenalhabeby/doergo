@@ -5,11 +5,13 @@ import type { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase } from "lucide-react"
+import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase, Search, Users } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { customersApi, type Customer, type CustomerDetail } from "@/lib/api"
 import { customerStageLabel } from "@hbcfield/shared/client"
+// The record page's own vocabulary — same client, same colour, same shape.
+import { initials, gradientFor, stageDot, shapeFor } from "@/lib/crm-visuals"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,8 +45,6 @@ const INDUSTRIES = [
   client into seven rows and bury the pipeline.
 */
 type Filter = "all" | "companies" | "people" | "contacts" | "app"
-
-const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 
 /**
  * The clients list — one workspace's, or the organization's.
@@ -119,7 +119,23 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Input placeholder={t("common.search", "Search…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 max-w-xs" />
+        {/* An icon inside the field, and the count beside it — "12 clients" is
+            the first thing anybody wants from a list and it was nowhere. */}
+        <div className="relative max-w-xs flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("common.search", "Search…")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 pl-9"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {!listQ.isLoading && (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {t("customers.countLabel", "{{count}} shown", { count: rows.length })}
+            </span>
+          )}
         <div className="inline-flex flex-wrap rounded-lg bg-muted p-0.5">
           {((spaceId ? ["all", "companies", "people", "contacts", "app"] : ["all", "companies", "people", "contacts"]) as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
@@ -137,71 +153,124 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
             </button>
           ))}
         </div>
+        </div>
       </div>
 
       {listQ.isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
       ) : rows.length === 0 ? (
-        <EmptyState icon={Contact} title={t("customers.empty", "No customers yet")} />
+        /*
+          "No customers yet" was shown for every segment, including the ones a
+          brand-new organization would land on with a full book — searching for a
+          name that is not there, or opening Contacts before adding one, both
+          reported that the CRM was empty.
+        */
+        <EmptyState
+          icon={filter === "companies" ? Building2 : filter === "people" || filter === "contacts" ? Users : Contact}
+          title={
+            search
+              ? t("customers.emptySearch", "Nothing matches “{{q}}”", { q: search })
+              : filter === "companies"
+                ? t("customers.emptyCompanies", "No companies yet")
+                : filter === "people"
+                  ? t("customers.emptyPeople", "No people yet")
+                  : filter === "contacts"
+                    ? t("customers.emptyContacts", "No contact people yet")
+                    : filter === "app"
+                      ? t("customers.emptyApp", "Nobody has app access yet")
+                      : t("customers.empty", "No customers yet")
+          }
+          description={
+            filter === "contacts"
+              ? t("customers.emptyContactsHint", "Open a company and add the people you deal with there.")
+              : undefined
+          }
+        />
       ) : (
         <div className="space-y-2">
           {rows.map((c) => (
             <button key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50",
-                // Dimmed: a contact is somebody else's person, sitting in a list
-                // of your clients. Still readable, plainly not the same thing.
+                // A hairline ring on hover rather than a grey wash: the row
+                // lifts toward the pointer instead of going muddy, and it is the
+                // same primary the record page uses for everything interactive.
+                "group flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-sm",
+                // A contact is somebody else's person sitting in a list of your
+                // clients — readable, plainly not the same thing.
                 c.isContact && "opacity-70",
               )}>
               {/*
-                Square for a company, round for a person — the same shape
-                language the client record's own header uses, so the two kinds
-                are told apart before anybody reads a word.
+                The record page's avatar, at list size.
+
+                It was a grey square for everyone, which made a page of clients a
+                page of identical grey squares. The colour is keyed to the name,
+                so the same client is the same colour everywhere and a row can be
+                found by its colour before it is read; the SHAPE says whether it
+                is a firm or a human.
               */}
               <span className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center bg-muted text-sm font-semibold text-muted-foreground",
-                c.type === "COMPANY" ? "rounded-lg" : "rounded-full",
+                "flex h-10 w-10 shrink-0 items-center justify-center bg-gradient-to-br text-[13px] font-bold text-white shadow-sm",
+                shapeFor(c.type), gradientFor(c.name),
               )}>
-                {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : initials(c.name)}
+                {c.type === "COMPANY" ? <Building2 className="h-4 w-4" /> : initials(c.name)}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">{c.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {/*
-                    The row already printed stage · contact · phone. A company
-                    now says how many people it has, and a contact says who they
-                    work for INSTEAD of a stage — they are not a deal, and a
-                    stage on one reads as a pipeline entry that will never move.
-                  */}
-                  {[
-                    c.isContact
-                      ? c.contactOf
-                        ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
-                        : t("customers.contactTag", "Contact")
-                      : customerStageLabel(c.status || "LEAD"),
-                    !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
-                    /*
-                      Who to ring, by name — and the typed `contactName` only
-                      while there is nobody real to name instead.
 
-                      That old field is printed here and NOWHERE else: it is not
-                      on the client record and there is no input for it in any
-                      form, so somebody reading "Lead · Klaus Berger" here could
-                      open the client and never find Klaus. Once he is a real
-                      contact person the row says so and the dead string steps
-                      aside rather than being printed beside him.
-                    */
-                    c.primaryContact
-                      ? c.contactCount && c.contactCount > 1
-                        ? `${c.primaryContact.name} +${c.contactCount - 1}`
-                        : c.primaryContact.name
-                      : c.contactName,
-                    c.phone || c.email,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-semibold text-foreground">{c.name}</span>
+                </span>
+                {/*
+                  Two lines of meaning instead of one run-on sentence.
+
+                  The stage is a dot, not a word in a list joined by middots —
+                  the same dot the record page's status control uses, so "Lead"
+                  is recognisable at a glance and stops competing with the name.
+                */}
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                  {c.isContact ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {c.contactOf
+                        ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
+                        : t("customers.contactTag", "Contact")}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 font-medium text-foreground/70">
+                      <span className={cn("h-1.5 w-1.5 rounded-full", stageDot(c.status || "LEAD"))} />
+                      {customerStageLabel(c.status || "LEAD")}
+                    </span>
+                  )}
+                  {!c.isContact && c.contactOf && (
+                    <span className="truncate">{t("customers.atCompany", "at {{name}}", { name: c.contactOf.name })}</span>
+                  )}
+                  {/* Who to ring, by name — see the note on the server side. */}
+                  {(c.primaryContact || c.contactName) && (
+                    <span className="inline-flex min-w-0 items-center gap-1">
+                      <Users className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {c.primaryContact
+                          ? c.contactCount && c.contactCount > 1
+                            ? `${c.primaryContact.name} +${c.contactCount - 1}`
+                            : c.primaryContact.name
+                          : c.contactName}
+                      </span>
+                    </span>
+                  )}
                 </span>
               </span>
+
+              {/*
+                Contact details in their own column, right-aligned.
+
+                They were the tail of the same joined string, so a phone number
+                started in a different place on every row and none of them could
+                be scanned down.
+              */}
+              <span className="hidden min-w-0 shrink-0 text-right text-xs text-muted-foreground sm:block">
+                {c.phone && <span className="block truncate">{c.phone}</span>}
+                {c.email && <span className="block truncate">{c.email}</span>}
+              </span>
+
               {c.isPortalResident ? (
                 <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300">
                   <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
@@ -209,9 +278,10 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
               ) : c.isContact ? (
                 <Badge variant="outline">{t("customers.contactTag", "Contact")}</Badge>
               ) : (
-                <Badge variant="secondary">{t("customers.crmTag", "CRM")}</Badge>
+                <Badge variant="secondary">{c.type === "COMPANY" ? t("customers.typeCompany", "Company") : t("customers.typePerson", "Person")}</Badge>
               )}
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              {/* Nudges toward the row it belongs to on hover. */}
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
             </button>
           ))}
         </div>

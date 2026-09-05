@@ -6920,7 +6920,14 @@
     "findCompany": "Find a company",
     "findCompanyPh": "Company name…",
     "myRoleThere": "Their role there",
-    "noCompanies": "Not linked to a company yet."
+    "noCompanies": "Not linked to a company yet.",
+    "countLabel": "{{count}} shown",
+    "emptySearch": "Nothing matches “{{q}}”",
+    "emptyCompanies": "No companies yet",
+    "emptyPeople": "No people yet",
+    "emptyContacts": "No contact people yet",
+    "emptyApp": "Nobody has app access yet",
+    "emptyContactsHint": "Open a company and add the people you deal with there."
   },
   "reports": {
     "addSchedule": "Add schedule",
