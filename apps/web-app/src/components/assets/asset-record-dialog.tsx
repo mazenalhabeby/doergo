@@ -7,6 +7,7 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { Ban, Building2, Check, Plus, Search, Smartphone, Trash2, User, X } from "lucide-react"
 
 import { assetsApi, customersApi, locationsApi, organizationsApi, type AssetCategory, type OrgMember } from "@/lib/api"
+import { fieldsDroppedByMove } from "@hbcfield/shared/client"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel,
   KIND_SHAPE_LIMITS, type DetailRow,
@@ -107,8 +108,37 @@ export function AssetRecordDialog({
     staleTime: 60_000,
     enabled: open && !!spaceId,
   })
-  const spaceName = ((spacesQ.data as { data?: Array<{ id: string; name: string }> } | undefined)?.data ?? [])
-    .find((sp) => sp.id === spaceId)?.name
+  const spaces = ((spacesQ.data as { data?: Array<{ id: string; name: string; enabledModules?: unknown }> } | undefined)?.data ?? [])
+  const spaceName = spaces.find((sp) => sp.id === spaceId)?.name
+
+  /*
+    Moving the record to another workspace.
+
+    An asset has no workspace of its own — it inherits its KIND's — so a move is
+    a change of kind, and the kind decides which of the record's fields survive
+    it. That is why this is not a workspace dropdown: choosing "Warehouse" alone
+    would not say what the record becomes when it gets there.
+  */
+  const [moving, setMoving] = useState(false)
+  const [destSpace, setDestSpace] = useState("")
+  const [destKind, setDestKind] = useState("")
+
+  const destKindsQ = useQuery({
+    queryKey: ["asset-categories", destSpace],
+    queryFn: () => assetsApi.getCategories(destSpace),
+    enabled: open && moving && !!destSpace,
+  })
+  const destKinds = ((destKindsQ.data ?? []) as AssetCategory[]).filter((k) => k.id !== kind.id)
+  const chosenKind = destKinds.find((k) => k.id === destKind)
+
+  /*
+    What the move throws away, named before anybody agrees to it.
+
+    The same function the server uses to decide what to keep, read the other way
+    round — so the sentence on screen and the rows actually deleted cannot
+    disagree.
+  */
+  const dropped = chosenKind ? fieldsDroppedByMove(existing?.details, chosenKind.config) : []
 
   const [name, setName] = useState(existing?.name ?? "")
   const [address, setAddress] = useState(existing?.locationAddress ?? "")
@@ -190,7 +220,9 @@ export function AssetRecordDialog({
           .map((r) => ({ label: r.label.trim(), value: r.value.trim() })),
       }
       return existing
-        ? assetsApi.updateAsset(existing.id, base)
+        // A move is a change of kind; the server drops the fields the
+        // destination does not ask for, which is what `dropped` warned about.
+        ? assetsApi.updateAsset(existing.id, { ...base, ...(moving && destKind ? { categoryId: destKind } : {}) })
         : assetsApi.createAsset({ ...base, categoryId: kind.id })
     },
     onSuccess: () => {
@@ -432,6 +464,88 @@ export function AssetRecordDialog({
             )}
           </div>
         </div>
+
+        {/*
+          Moving it somewhere else.
+
+          At the bottom, behind a link, and never open by default: it is the one
+          control here that changes what the record IS, and it has no business
+          sitting among the fields somebody came to correct a serial number in.
+        */}
+        {existing && (
+          <div className="mt-3 border-t border-border pt-3">
+            {!moving ? (
+              <button
+                type="button"
+                onClick={() => setMoving(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                {t("assetRecords.move", "Move to another workspace")}
+              </button>
+            ) : (
+              <div className="space-y-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <p className="text-xs font-semibold">{t("assetRecords.moveTitle", "Move to another workspace")}</p>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <select
+                    value={destSpace}
+                    onChange={(e) => { setDestSpace(e.target.value); setDestKind("") }}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm"
+                  >
+                    <option value="">{t("assetRecords.moveSpace", "Workspace…")}</option>
+                    {spaces.filter((sp) => sp.id !== spaceId).map((sp) => (
+                      <option key={sp.id} value={sp.id}>{sp.name}</option>
+                    ))}
+                  </select>
+                  {/*
+                    The kind, not just the workspace: the record has to become
+                    something when it arrives, and the kind is what it becomes.
+                  */}
+                  <select
+                    value={destKind}
+                    onChange={(e) => setDestKind(e.target.value)}
+                    disabled={!destSpace || destKindsQ.isLoading}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm disabled:opacity-50"
+                  >
+                    <option value="">{t("assetRecords.moveKind", "Kind…")}</option>
+                    {destKinds.map((k) => (
+                      <option key={k.id} value={k.id}>{k.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {destSpace && !destKindsQ.isLoading && destKinds.length === 0 && (
+                  <p className="text-[11.5px] text-muted-foreground">
+                    {t("assetRecords.moveNoKinds", "That workspace has no asset kinds yet.")}
+                  </p>
+                )}
+
+                {/* Named, one by one. A count would not tell anybody whether the
+                    thing they care about is in it. */}
+                {dropped.length > 0 && (
+                  <p className="text-[11.5px] leading-relaxed text-amber-700 dark:text-amber-400">
+                    {t("assetRecords.moveDrops", "{{kind}} does not have these fields, and they will be deleted:", { kind: chosenKind?.name ?? "" })}{" "}
+                    <b>{dropped.join(", ")}</b>
+                  </p>
+                )}
+                {chosenKind && dropped.length === 0 && (
+                  <p className="text-[11.5px] text-muted-foreground">
+                    {t("assetRecords.moveKeeps", "Every field on this record exists in {{kind}} — nothing is lost.", { kind: chosenKind.name })}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => { setMoving(false); setDestSpace(""); setDestKind("") }}
+                  className="text-[11.5px] font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {t("common.cancel", "Cancel")}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>

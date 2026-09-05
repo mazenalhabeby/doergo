@@ -6662,7 +6662,14 @@
     "fieldValue": "What it says",
     "systemAuthor": "Automatic",
     "inWorkspace": "In {{name}}",
-    "toWorkspace": "Added to {{name}}"
+    "toWorkspace": "Added to {{name}}",
+    "move": "Move to another workspace",
+    "moveTitle": "Move to another workspace",
+    "moveSpace": "Workspace…",
+    "moveKind": "Kind…",
+    "moveNoKinds": "That workspace has no asset kinds yet.",
+    "moveDrops": "{{kind}} does not have these fields, and they will be deleted:",
+    "moveKeeps": "Every field on this record exists in {{kind}} — nothing is lost."
   },
   "assetMoney": {
     "title": "Money",

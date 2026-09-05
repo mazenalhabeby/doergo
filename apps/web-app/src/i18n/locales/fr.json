@@ -6671,7 +6671,14 @@
     "fieldValue": "Ce qu’il indique",
     "systemAuthor": "Automatique",
     "inWorkspace": "Dans {{name}}",
-    "toWorkspace": "Ajouté à {{name}}"
+    "toWorkspace": "Ajouté à {{name}}",
+    "move": "Déplacer vers un autre espace de travail",
+    "moveTitle": "Déplacer vers un autre espace de travail",
+    "moveSpace": "Espace de travail…",
+    "moveKind": "Type…",
+    "moveNoKinds": "Cet espace de travail n’a pas encore de types d’équipement.",
+    "moveDrops": "{{kind}} n’a pas ces champs, ils seront supprimés :",
+    "moveKeeps": "Tous les champs de cette fiche existent dans {{kind}} — rien n’est perdu."
   },
   "assetMoney": {
     "title": "Argent",

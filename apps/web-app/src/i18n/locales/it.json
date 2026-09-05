@@ -6671,7 +6671,14 @@
     "fieldValue": "Che cosa dice",
     "systemAuthor": "Automatico",
     "inWorkspace": "In {{name}}",
-    "toWorkspace": "Aggiunto a {{name}}"
+    "toWorkspace": "Aggiunto a {{name}}",
+    "move": "Sposta in un altro spazio di lavoro",
+    "moveTitle": "Sposta in un altro spazio di lavoro",
+    "moveSpace": "Spazio di lavoro…",
+    "moveKind": "Tipo…",
+    "moveNoKinds": "Quello spazio di lavoro non ha ancora tipi di asset.",
+    "moveDrops": "{{kind}} non ha questi campi e verranno eliminati:",
+    "moveKeeps": "Tutti i campi di questo record esistono in {{kind}}: non si perde nulla."
   },
   "assetMoney": {
     "title": "Denaro",

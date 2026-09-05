@@ -462,3 +462,37 @@ export function listByLabel(shape: KindShape, label: string): KindList | null {
 export function linkTargets(shape: KindShape, from: KindList): KindList[] {
   return shape.lists.filter((l) => l.label !== from.label && keyColumn(l));
 }
+
+/**
+ * The rows a record keeps when it moves to a different kind.
+ *
+ * A kind's fields are its own: "Vehicles" in one workspace asks for Plate,
+ * Mileage and Next service; "Fleet" in another asks for Plate and Insurer. Move
+ * a van between them and Mileage belongs to nothing — it would go on being
+ * displayed as an ad-hoc row, carried from a kind the record has left, and
+ * nobody who edits it afterwards would know why it is there.
+ *
+ * So a move drops what the destination does not ask for. That is a real loss and
+ * it is the reason the screen offering the move names the fields first: this
+ * function is the consequence, not the decision.
+ *
+ * Matched on the lowercased label, the same key `normalizeDetailRows` dedupes on
+ * — so "Plate" survives a destination that calls it "plate".
+ */
+export function keepFieldsForKind(details: unknown, kindConfig: unknown): DetailRow[] {
+  const wanted = new Set(normalizeKindShape(kindConfig).fields.map((f) => f.label.toLowerCase()));
+  return normalizeDetailRows(details).filter((r) => wanted.has(r.label.toLowerCase()));
+}
+
+/**
+ * What a move would throw away — for the warning, before anybody agrees to it.
+ *
+ * The same rule read the other way round, so the sentence on screen and the rows
+ * actually deleted can never disagree.
+ */
+export function fieldsDroppedByMove(details: unknown, kindConfig: unknown): string[] {
+  const wanted = new Set(normalizeKindShape(kindConfig).fields.map((f) => f.label.toLowerCase()));
+  return normalizeDetailRows(details)
+    .filter((r) => !wanted.has(r.label.toLowerCase()))
+    .map((r) => r.label);
+}

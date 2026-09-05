@@ -6662,7 +6662,14 @@
     "fieldValue": "Was darin steht",
     "systemAuthor": "Automatisch",
     "inWorkspace": "In {{name}}",
-    "toWorkspace": "Wird zu {{name}} hinzugefügt"
+    "toWorkspace": "Wird zu {{name}} hinzugefügt",
+    "move": "In einen anderen Arbeitsbereich verschieben",
+    "moveTitle": "In einen anderen Arbeitsbereich verschieben",
+    "moveSpace": "Arbeitsbereich…",
+    "moveKind": "Art…",
+    "moveNoKinds": "Dieser Arbeitsbereich hat noch keine Objektarten.",
+    "moveDrops": "{{kind}} kennt diese Felder nicht — sie werden gelöscht:",
+    "moveKeeps": "Alle Felder dieses Objekts gibt es auch in {{kind}} — nichts geht verloren."
   },
   "assetMoney": {
     "title": "Geld",

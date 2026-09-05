@@ -6662,7 +6662,14 @@
     "fieldValue": "Lo que dice",
     "systemAuthor": "Automático",
     "inWorkspace": "En {{name}}",
-    "toWorkspace": "Se añadirá a {{name}}"
+    "toWorkspace": "Se añadirá a {{name}}",
+    "move": "Mover a otro espacio de trabajo",
+    "moveTitle": "Mover a otro espacio de trabajo",
+    "moveSpace": "Espacio de trabajo…",
+    "moveKind": "Tipo…",
+    "moveNoKinds": "Ese espacio de trabajo aún no tiene tipos de activos.",
+    "moveDrops": "{{kind}} no tiene estos campos y se eliminarán:",
+    "moveKeeps": "Todos los campos de este registro existen en {{kind}}: no se pierde nada."
   },
   "assetMoney": {
     "title": "Dinero",

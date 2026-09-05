@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, success, paginated, TaskStatus, normalizeDetailRows } from '@hbcfield/shared';
+import { Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
 import { AssetActivityService } from './asset-activity.service';
@@ -388,6 +388,15 @@ export class AssetsService {
     }
 
     // Verify category if changing
+    /*
+      Changing an asset's KIND is how it changes workspace.
+
+      An asset has no space of its own — it inherits its kind's — so moving one
+      to another workspace means moving it to a kind that lives there. The
+      category is kept here rather than only validated, because its field list
+      decides which of the record's details survive the move.
+    */
+    let movingToKind: { config: unknown } | null = null;
     if (data.categoryId !== undefined) {
       if (data.categoryId) {
         const category = await this.prisma.assetCategory.findUnique({
@@ -397,6 +406,9 @@ export class AssetsService {
         if (!category || category.organizationId !== data.organizationId) {
           throw new BadRequestException('Invalid category');
         }
+        // Only an actual change; re-saving the same kind is not a move and must
+        // not quietly prune fields somebody added by hand.
+        if (category.id !== asset.categoryId) movingToKind = { config: category.config };
       }
     }
 
@@ -476,7 +488,25 @@ export class AssetsService {
         ...(holderRows
           ? { holders: { deleteMany: {}, ...(holderRows.length ? { create: holderRows } : {}) } }
           : {}),
-        ...(data.details !== undefined && {
+        /*
+          A move drops the fields the destination kind does not ask for.
+
+          "Vehicles" asks for Plate, Mileage and Next service; "Fleet" asks for
+          Plate and Insurer. Without this, Mileage survives the move as an ad-hoc
+          row — carried from a kind the record has left, shown to everybody who
+          opens it afterwards, and explicable to nobody.
+
+          Applied whether or not the caller sent `details`: the move is what
+          orphans them, so it is the move that has to clear them, and a client
+          that only sent a categoryId must not leave them behind.
+        */
+        ...(movingToKind && {
+          details: keepFieldsForKind(
+            data.details !== undefined ? data.details : asset.details,
+            movingToKind.config,
+          ) as unknown as Prisma.InputJsonValue,
+        }),
+        ...(!movingToKind && data.details !== undefined && {
           details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
         }),
       },
