@@ -73,7 +73,7 @@ describe('AttendanceService', () => {
     location: mockLocation,
   };
 
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     user: {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
@@ -103,9 +103,21 @@ describe('AttendanceService', () => {
       count: jest.fn(),
       aggregate: jest.fn(),
     },
-    // Batched lookups used by autoClockOut's overtime/schedule resolution.
+    /*
+      Both transaction shapes: the array form for the batched writes that keep a
+      time entry and its overtime round in step, and the callback form used
+      elsewhere. A double that supports only one silently fails the other.
+    */
+    $transaction: jest.fn((ops: any): Promise<any> =>
+      Array.isArray(ops) ? Promise.all(ops) : ops(mockPrismaService),
+    ),
+    // Batched lookups used by autoClockOut's overtime/schedule resolution, plus
+    // the per-ROUND record the extra-time loop now writes.
     overtimeRequest: {
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue({ id: 'ot1', cycle: 1 }),
+      update: jest.fn().mockResolvedValue({ id: 'ot1' }),
     },
     technicianSchedule: {
       findFirst: jest.fn(),

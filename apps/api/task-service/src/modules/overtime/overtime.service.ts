@@ -45,9 +45,11 @@ export class OvertimeService {
   }) {
     this.logger.log(`Initiating overtime request for user ${data.userId}, entry ${data.timeEntryId}`);
 
-    // Check if request already exists for this entry
-    const existing = await this.prisma.overtimeRequest.findUnique({
+    // The newest round for this entry, if there is one. `findFirst` rather than
+    // `findUnique` since a shift may now carry several: overtime loops.
+    const existing = await this.prisma.overtimeRequest.findFirst({
       where: { timeEntryId: data.timeEntryId },
+      orderBy: { cycle: 'desc' },
     });
     if (existing) {
       this.logger.debug(`Overtime request already exists for entry ${data.timeEntryId}`);

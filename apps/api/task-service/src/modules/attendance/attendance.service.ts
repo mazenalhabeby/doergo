@@ -861,10 +861,40 @@ export class AttendanceService {
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
 
-    await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: { reminderState: 'OVERTIME_PENDING', nextRemindAt: null },
+    /*
+      One record per ROUND.
+
+      The state machine on the entry is what drives the reminder engine, but it
+      holds only "where are we now" — it cannot say that this is the second time
+      today, who approved the first ninety minutes, or that they signed for them.
+      A row per cycle is what makes the loop auditable, and it is why the unique
+      index on `timeEntryId` had to go.
+    */
+    const previous = await this.prisma.overtimeRequest.findFirst({
+      where: { timeEntryId: entry.id },
+      orderBy: { cycle: 'desc' },
+      select: { cycle: true },
     });
+    const cycle = (previous?.cycle ?? 0) + 1;
+
+    await this.prisma.$transaction([
+      this.prisma.timeEntry.update({
+        where: { id: entry.id },
+        data: { reminderState: 'OVERTIME_PENDING', nextRemindAt: null },
+      }),
+      this.prisma.overtimeRequest.create({
+        data: {
+          timeEntryId: entry.id,
+          cycle,
+          technicianId: entry.userId,
+          locationId: entry.locationId,
+          organizationId: data.organizationId,
+          status: 'PENDING_APPROVAL',
+          technicianRespondedAt: new Date(),
+          overtimeStartAt: entry.expectedClockOutAt ?? new Date(),
+        },
+      }),
+    ]);
 
     const leaderIds = await this.resolveSpaceLeaders(
       entry.locationId,
@@ -878,10 +908,11 @@ export class AttendanceService {
       locationId: entry.locationId,
       locationName: entry.location?.name || 'a shift',
       leaderIds,
+      cycle,
       organizationId: data.organizationId,
     });
 
-    return success({ entryId: entry.id, status: 'OVERTIME_PENDING' }, 'Extra-time request sent for approval');
+    return success({ entryId: entry.id, status: 'OVERTIME_PENDING', cycle }, 'Extra-time request sent for approval');
   }
 
   /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
@@ -892,6 +923,9 @@ export class AttendanceService {
     entryId: string;
     minutes: number;
     organizationId: string;
+    /** base64 PNG, when the leader signed rather than tapping approve. */
+    signature?: string | null;
+    notes?: string | null;
   }) {
     const minutes = Math.round(data.minutes);
     if (!minutes || minutes < 1 || minutes > 1440) {
@@ -921,15 +955,48 @@ export class AttendanceService {
     const newExpected = new Date(base.getTime() + minutes * 60_000);
     const graceMin = entry.shift?.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
-    await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: {
-        expectedClockOutAt: newExpected,
-        reminderState: 'OVERTIME_APPROVED',
-        reminderCount: 0,
-        nextRemindAt: new Date(newExpected.getTime() + graceMin * 60_000),
-      },
+    /*
+      The decision, written where it can be produced later.
+
+      A signature is optional but recorded exactly as given: it is bound to the
+      round and to the approver's own user id, server-side. A name arriving in a
+      request body is decoration — the authority is the token the call was made
+      with, which is what `userCanApproveOvertime` above just checked.
+    */
+    const round = await this.prisma.overtimeRequest.findFirst({
+      where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },
+      orderBy: { cycle: 'desc' },
+      select: { id: true },
     });
+
+    await this.prisma.$transaction([
+      this.prisma.timeEntry.update({
+        where: { id: entry.id },
+        data: {
+          expectedClockOutAt: newExpected,
+          reminderState: 'OVERTIME_APPROVED',
+          reminderCount: 0,
+          nextRemindAt: new Date(newExpected.getTime() + graceMin * 60_000),
+        },
+      }),
+      ...(round
+        ? [
+            this.prisma.overtimeRequest.update({
+              where: { id: round.id },
+              data: {
+                status: 'APPROVED',
+                approvedById: data.approverId,
+                approvedAt: now,
+                maxDurationMinutes: minutes,
+                overtimeEndAt: newExpected,
+                approvalMethod: data.signature ? 'SIGNATURE' : 'REMOTE',
+                leaderSignature: data.signature ?? null,
+                approverNotes: data.notes ?? null,
+              },
+            }),
+          ]
+        : []),
+    ]);
 
     this.notificationClient.emit('attendance_overtime_decision', {
       entryId: entry.id,
@@ -947,7 +1014,12 @@ export class AttendanceService {
   }
 
   /** Leader rejects the extra-time request → nudge the worker to clock out now. */
-  async rejectExtraTime(data: { approverId: string; entryId: string; organizationId: string }) {
+  async rejectExtraTime(data: {
+    approverId: string;
+    entryId: string;
+    organizationId: string;
+    reason?: string | null;
+  }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
       select: { id: true, locationId: true, userId: true },
@@ -958,12 +1030,35 @@ export class AttendanceService {
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
+    const round = await this.prisma.overtimeRequest.findFirst({
+      where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },
+      orderBy: { cycle: 'desc' },
+      select: { id: true },
+    });
+
     // Give the worker a fresh reminder cycle to clock out now — reset the count
     // so a previously-exhausted worker gets a clean nudge, not instant escalation.
-    await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: new Date() },
-    });
+    // The refusal is recorded too: "asked twice, refused once" is a fact about
+    // the day, and a request that vanishes when the answer is no is not a record.
+    await this.prisma.$transaction([
+      this.prisma.timeEntry.update({
+        where: { id: entry.id },
+        data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: new Date() },
+      }),
+      ...(round
+        ? [
+            this.prisma.overtimeRequest.update({
+              where: { id: round.id },
+              data: {
+                status: 'REJECTED',
+                approvedById: data.approverId,
+                rejectedAt: new Date(),
+                rejectionReason: data.reason ?? null,
+              },
+            }),
+          ]
+        : []),
+    ]);
 
     this.notificationClient.emit('attendance_overtime_decision', {
       entryId: entry.id,

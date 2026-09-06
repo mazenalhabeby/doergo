@@ -34,6 +34,16 @@ describe('overtime self-approval (AT-B1)', () => {
   const SPACE = 'space-1';
 
   const prisma: any = {
+    // Overtime is a loop now: one record per ROUND on the same entry.
+    overtimeRequest: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue({ id: 'ot1', cycle: 1 }),
+      update: jest.fn().mockResolvedValue({ id: 'ot1' }),
+    },
+    // Array form (the batched writes) and callback form (interactive) both.
+    $transaction: jest.fn((ops: any) =>
+      Array.isArray(ops) ? Promise.all(ops) : ops(prisma),
+    ),
     timeEntry: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     spaceAssignment: { findFirst: jest.fn(), findMany: jest.fn() },
     user: { findFirst: jest.fn() },

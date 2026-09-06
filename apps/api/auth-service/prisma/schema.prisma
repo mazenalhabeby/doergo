@@ -2183,8 +2183,10 @@ model TimeEntry {
   // Breaks taken during this shift
   breaks Break[]
 
-  // Overtime extension
-  overtimeRequest OvertimeRequest?
+  // Overtime extensions — one per ROUND, because overtime loops: approve, work,
+  // be asked again, approve again. This was a one-to-one, which is why the
+  // second round had nowhere to go.
+  overtimeRequests OvertimeRequest[]
 
   // Geofence "out of ring" excursions during this session
   geofenceExcursions GeofenceExcursion[]
@@ -3053,8 +3055,20 @@ model OvertimeRequest {
   technician   User   @relation("TechnicianOvertime", fields: [technicianId], references: [id], onDelete: Cascade)
 
   // Which time entry this overtime extends
-  timeEntryId String    @unique
+  //
+  // ⚠️ NOT unique any more, and that is the whole point. Overtime is a LOOP:
+  // approve ninety minutes, the expected end moves, the reminder re-arms, and
+  // when that time is up the member is asked again. A unique index gave a shift
+  // exactly one overtime record ever, so the second round had nowhere to be
+  // written — the flow ran and left no trace of itself.
+  timeEntryId String
   timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+
+  /// Which round this is on that shift: 1, 2, 3…
+  ///
+  /// "He worked four hours of overtime across three approvals, here are the
+  /// three signatures" is then a query rather than an argument.
+  cycle Int @default(1)
 
   // Which location
   locationId String
@@ -3102,7 +3116,7 @@ model OvertimeRequest {
 
   @@index([technicianId, status])
   @@index([organizationId, status])
-  @@index([timeEntryId])
+  @@index([timeEntryId, cycle])
   @@index([status, technicianTimeoutAt])
   @@index([status, approvalTimeoutAt])
   @@map("overtime_requests")

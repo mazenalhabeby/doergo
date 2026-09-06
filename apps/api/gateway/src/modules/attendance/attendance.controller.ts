@@ -33,6 +33,7 @@ import { AttendanceQueueService } from './attendance.queue.service';
 import {
   ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto,
   AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
+  ApproveExtraTimeDto, RejectExtraTimeDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
@@ -913,12 +914,17 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Approve N more minutes of overtime for an open shift' })
   async approveExtraTime(
     @Param('id') entryId: string,
-    @Body() body: { minutes: number },
+    @Body() body: ApproveExtraTimeDto,
     @Request() req?: any,
   ) {
     return this.attendanceService.approveExtraTime({
       entryId,
       minutes: body.minutes,
+      // The signature is stored exactly as drawn and bound to the round. It is
+      // EVIDENCE, never authority: the right to approve comes from the token
+      // this call was made with, checked again in task-service.
+      signature: body.signature ?? null,
+      notes: body.notes ?? null,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
     });
@@ -928,9 +934,14 @@ export class AttendanceController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Reject an extra-time request' })
-  async rejectExtraTime(@Param('id') entryId: string, @Request() req?: any) {
+  async rejectExtraTime(
+    @Param('id') entryId: string,
+    @Body() body: RejectExtraTimeDto,
+    @Request() req?: any,
+  ) {
     return this.attendanceService.rejectExtraTime({
       entryId,
+      reason: body?.reason ?? null,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
     });

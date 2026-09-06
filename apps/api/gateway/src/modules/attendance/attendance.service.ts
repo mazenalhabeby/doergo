@@ -434,6 +434,8 @@ export class AttendanceService extends BaseGatewayService {
     entryId: string;
     minutes: number;
     organizationId: string;
+    signature?: string | null;
+    notes?: string | null;
     /** Spaces the caller may see; null = org-wide, [] = none. */
     scopeSpaceIds?: string[] | null;
   }) {
@@ -441,7 +443,13 @@ export class AttendanceService extends BaseGatewayService {
   }
 
   /** Leader rejects an extra-time request. */
-  async rejectExtraTime(data: { approverId: string; entryId: string; organizationId: string }) {
+  async rejectExtraTime(data: {
+    approverId: string;
+    entryId: string;
+    organizationId: string;
+    /** Reaches the member, so it is worth asking for. */
+    reason?: string | null;
+  }) {
     return this.send({ cmd: 'reject_extra_time' }, data);
   }
 

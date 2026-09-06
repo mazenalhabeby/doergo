@@ -7,6 +7,7 @@ import {
   IsString,
   Matches,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -114,4 +115,41 @@ export class SnoozeBreakDto {
   @IsString()
   @IsOptional()
   ruleId?: string;
+}
+
+/**
+ * A leader granting more time.
+ *
+ * The signature is a data URL of a PNG the approver drew. Capped hard: this
+ * lands in a database column, and an uncapped base64 field on an authenticated
+ * endpoint is a way to fill a disk one request at a time.
+ */
+export class ApproveExtraTimeDto {
+  @ApiPropertyOptional({ description: 'Minutes of overtime granted', example: 90 })
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  minutes!: number;
+
+  @ApiPropertyOptional({ description: 'base64 PNG data URL of the approver’s signature' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200_000)
+  @Matches(/^data:image\/png;base64,/, { message: 'signature must be a PNG data URL' })
+  signature?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  notes?: string;
+}
+
+/** A leader refusing it. The reason reaches the member, so it is worth asking for. */
+export class RejectExtraTimeDto {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  reason?: string;
 }
