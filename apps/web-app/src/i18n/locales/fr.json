@@ -3149,7 +3149,9 @@
         "kmAway": "à {{n}} km",
         "noFix": "Vous pouvez tout de même indiquer où vous êtes — le site sera vérifié au pointage.",
         "awayTitle": "Pour quel espace travaillez-vous ?",
-        "awaySubtitle": "Vous n’êtes pas sur le site. La journée est enregistrée sur l’espace choisi — avec son poste et ses pauses — et signalée à distance pour vérification."
+        "awaySubtitle": "Vous n’êtes pas sur le site. La journée est enregistrée sur l’espace choisi — avec son poste et ses pauses — et signalée à distance pour vérification.",
+        "awayHidden_one": "Un de vos autres espaces ne permet le pointage que sur place.",
+        "awayHidden_other": "{{count}} de vos autres espaces ne permettent le pointage que sur place."
       },
       "noAssignedLocations": "Vous n’êtes encore affecté à aucun espace de travail, il n’y a donc nulle part où pointer. Demandez-le à votre administrateur.",
       "paidFrom": "Compté à partir de {{time}}",

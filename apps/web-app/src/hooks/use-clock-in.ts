@@ -261,12 +261,25 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
    */
   const startAway = () => {
     if (clock.isPending) return
-    if (awayLocations.length === 1) {
-      clock.mutate({ locationId: awayLocations[0].id })
-      return
-    }
-    if (awayLocations.length > 1) {
-      setAwayPickerOpen(true)
+    if (awayLocations.length > 0) {
+      /*
+        Show the picker whenever they work in more than one place — even when
+        only ONE of those places would take them away from it.
+
+        Not the same rule as on-site, and deliberately. Standing at a site, the
+        workspace is obvious from the fact that you are standing there. Working
+        from a kitchen table, "which workspace is today for?" is a real question,
+        and going straight through would silently charge the day to one of
+        several — the exact failure this product already fixed once, when both
+        surfaces picked the nearest site and said nothing about it.
+
+        With a single workspace there is nothing to choose, so it goes through.
+      */
+      if (locations.length > 1) {
+        setAwayPickerOpen(true)
+      } else {
+        clock.mutate({ locationId: awayLocations[0].id })
+      }
       return
     }
     if (hasNoWorkspace && canClockInRemotely) {
@@ -347,6 +360,13 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
       onPick: (locationId: string) => clock.mutate({ locationId }),
       geoErrorMessage: (reason: GeolocationFailure) => geoErrorMessage(t, reason),
       away: true,
+      /*
+        How many of their workspaces were left out, so the dialog can say so.
+
+        A list that silently omits three of a member's five workspaces looks like
+        a bug to the person who knows they work at five.
+      */
+      hiddenCount: locations.length - awayLocations.length,
     },
     /** Spread straight into <ClockInPicker {...pickerProps} />. */
     pickerProps: {

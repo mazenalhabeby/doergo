@@ -3149,7 +3149,9 @@
         "kmAway": "{{n}} km entfernt",
         "noFix": "Sie können trotzdem wählen, wo Sie sind — Ihr Standort wird beim Einstempeln geprüft.",
         "awayTitle": "Für welchen Arbeitsbereich arbeiten Sie?",
-        "awaySubtitle": "Sie sind nicht am Standort. Der Tag wird dem gewählten Arbeitsbereich zugeordnet — mit Schicht und Pausen — und als abwesend zur Prüfung markiert."
+        "awaySubtitle": "Sie sind nicht am Standort. Der Tag wird dem gewählten Arbeitsbereich zugeordnet — mit Schicht und Pausen — und als abwesend zur Prüfung markiert.",
+        "awayHidden_one": "Einer Ihrer anderen Arbeitsbereiche kann nur vor Ort eingestempelt werden.",
+        "awayHidden_other": "{{count}} Ihrer anderen Arbeitsbereiche können nur vor Ort eingestempelt werden."
       },
       "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugeordnet, daher gibt es keinen Ort zum Einstempeln. Bitten Sie Ihre Administration darum.",
       "paidFrom": "Gezählt ab {{time}}",

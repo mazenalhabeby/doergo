@@ -50,6 +50,7 @@ export function ClockInPicker({
   pending,
   geoErrorMessage,
   away,
+  hiddenCount = 0,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -67,6 +68,15 @@ export function ClockInPicker({
    * did before they shared a hook.
    */
   away?: boolean
+  /**
+   * Workspaces left out of an away list because they require presence.
+   *
+   * Said as a count rather than listed: the member is being told why the list is
+   * shorter than they expect, not asked to do anything about it. Omitting it
+   * entirely makes a list missing three of somebody's five workspaces look like
+   * a bug to the one person who knows they work at five.
+   */
+  hiddenCount?: number
 }) {
   const { t } = useTranslation()
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null)
@@ -152,6 +162,16 @@ export function ClockInPicker({
                   "You are not at the site. The day is recorded against the workspace you pick — with its shift and its rests — and marked as away for review.",
                 )
               : t("attendance.my.picker.subtitle", "You work at more than one place. Pick the one you are at now.")}
+            {away && hiddenCount > 0 && (
+              <span className="mt-1 block">
+                {t("attendance.my.picker.awayHidden", {
+                  count: hiddenCount,
+                  defaultValue_one: "One of your other workspaces can only be clocked in at on site.",
+                  defaultValue_other: "{{count}} of your other workspaces can only be clocked in at on site.",
+                  defaultValue: "{{count}} of your other workspaces can only be clocked in at on site.",
+                })}
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 

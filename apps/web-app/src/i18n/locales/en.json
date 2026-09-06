@@ -3149,7 +3149,9 @@
         "kmAway": "{{n}} km away",
         "noFix": "You can still choose where you are — your site will be verified when you clock in.",
         "awayTitle": "Which workspace are you working for?",
-        "awaySubtitle": "You are not at the site. The day is recorded against the workspace you pick — with its shift and its rests — and marked as away for review."
+        "awaySubtitle": "You are not at the site. The day is recorded against the workspace you pick — with its shift and its rests — and marked as away for review.",
+        "awayHidden_one": "One of your other workspaces can only be clocked in at on site.",
+        "awayHidden_other": "{{count}} of your other workspaces can only be clocked in at on site."
       },
       "noAssignedLocations": "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one.",
       "paidFrom": "Counted from {{time}}",

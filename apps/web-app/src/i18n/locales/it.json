@@ -3149,7 +3149,9 @@
         "kmAway": "a {{n}} km",
         "noFix": "Puoi comunque scegliere dove sei: la sede verrà verificata al momento della timbratura.",
         "awayTitle": "Per quale spazio sta lavorando?",
-        "awaySubtitle": "Non è in sede. La giornata viene registrata sullo spazio scelto — con il suo turno e le sue pause — e segnata come fuori sede per la verifica."
+        "awaySubtitle": "Non è in sede. La giornata viene registrata sullo spazio scelto — con il suo turno e le sue pause — e segnata come fuori sede per la verifica.",
+        "awayHidden_one": "In un altro dei suoi spazi si può timbrare solo in sede.",
+        "awayHidden_other": "In {{count}} dei suoi altri spazi si può timbrare solo in sede."
       },
       "noAssignedLocations": "Non sei ancora assegnato a uno spazio di lavoro, quindi non c’è dove timbrare. Chiedilo al tuo amministratore.",
       "paidFrom": "Conteggiato dalle {{time}}",
