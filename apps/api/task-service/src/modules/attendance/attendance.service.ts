@@ -295,6 +295,23 @@ export class AttendanceService {
         remoteClockInAt,
         this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? undefined,
       );
+      /*
+        Rests apply to a day worked from home or a car exactly as they do to one
+        worked on site — the obligation is about hours worked, not about where.
+        Omitting this here was an oversight when planned rests were added: the
+        on-site path got a plan and the remote path silently got none, so the one
+        population most likely to work straight through was the one nobody
+        reminded.
+      */
+      const remoteRests = await this.breakRules.planForClockIn({
+        spaceId: bucket.id,
+        shiftId: remoteStamp.shiftId ?? null,
+        clockInAt: remoteClockInAt,
+        expectedStartAt: remoteStamp.expectedClockInAt ?? null,
+        expectedEndAt: remoteStamp.expectedClockOutAt ?? null,
+        timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
+      });
+
       const entry = await this.prisma.timeEntry.create({
         data: {
           userId: data.userId,
@@ -312,6 +329,8 @@ export class AttendanceService {
           approvalStatus: 'AUTO',
           organizationId: data.organizationId,
           ...remoteStamp,
+          breakPlan: remoteRests.breakPlan as never,
+          nextBreakRemindAt: remoteRests.nextBreakRemindAt,
         },
         include: { location: true, user: { select: { firstName: true, lastName: true } } },
       });
