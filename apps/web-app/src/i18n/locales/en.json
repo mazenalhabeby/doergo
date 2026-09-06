@@ -3150,7 +3150,9 @@
         "noFix": "You can still choose where you are — your site will be verified when you clock in."
       },
       "noAssignedLocations": "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one.",
-      "paidFrom": "Counted from {{time}}"
+      "paidFrom": "Counted from {{time}}",
+      "away": "away",
+      "clockedInAwayToast": "Clocked in — away from the site. This shift will be reviewed."
     },
     "management": {
       "title": "Attendance Management",

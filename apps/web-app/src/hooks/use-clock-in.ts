@@ -142,13 +142,32 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
       */
       return attendanceApi.clockIn({ locationId: action.locationId, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
     },
-    onSuccess: (_data, action) => {
+    onSuccess: (data, action) => {
       setPickerOpen(false)
       qc.invalidateQueries({ queryKey: ["my-attendance-status"] })
       qc.invalidateQueries({ queryKey: ["my-attendance-history"] })
+
+      if (action === "out") {
+        // The server's own message carries the counted hours and any shortfall,
+        // which is more use than "Clocked out" — and it is the figure that will
+        // appear on the timesheet, said once, at the moment it is decided.
+        const msg = (data as { message?: string } | undefined)?.message
+        toast.success(msg || t("attendance.my.clockedOutToast", "Clocked out"))
+        return
+      }
+
+      /*
+        Say when a day is recorded as away.
+
+        The server decides this from the distance to the site, so a member can be
+        clocked in AWAY without having asked to be — and the entry is flagged and
+        held for review. Finding that out on a timesheet weeks later is finding
+        out too late to explain it.
+      */
+      const entry = (data as { isRemote?: boolean } | undefined) ?? {}
       toast.success(
-        action === "out"
-          ? t("attendance.my.clockedOutToast", "Clocked out")
+        entry.isRemote
+          ? t("attendance.my.clockedInAwayToast", "Clocked in — away from the site. This shift will be reviewed.")
           : t("attendance.my.clockedInToast", "Clocked in"),
       )
     },

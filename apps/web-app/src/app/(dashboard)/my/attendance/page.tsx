@@ -348,11 +348,19 @@ export default function MyAttendancePage() {
                   {t("attendance.my.sinceAt", "Since {{time}}", {
                     time: formatTime(activeEntry.clockInAt, activeEntry.timezone ?? activeEntry.location?.timezone),
                   })}
+                  {/*
+                    The workspace comes first, then whether they are at it.
+
+                    An away day belongs to a workspace now — it is not filed
+                    somewhere called "Remote" — so naming the site and then
+                    qualifying it is the honest order. Reading only "Remote" hid
+                    which site the day was worked FOR, which is the fact the
+                    timesheet is grouped by.
+                  */}
+                  {activeEntry.location?.name ? ` · ${activeEntry.location.name}` : ""}
                   {activeEntry.isRemote
-                    ? ` · ${t("attendance.my.remote", "Remote")}${activeEntry.clockInPlace ? ` · ${activeEntry.clockInPlace}` : ""}`
-                    : activeEntry.location?.name
-                      ? ` · ${activeEntry.location.name}`
-                      : ""}
+                    ? ` · ${t("attendance.my.away", "away")}${activeEntry.clockInPlace ? ` · ${activeEntry.clockInPlace}` : ""}`
+                    : ""}
                 </p>
               </>
             ) : (
@@ -583,14 +591,23 @@ export default function MyAttendancePage() {
                   )}
                 />
                 {formatTime(e.clockInAt, (e.timezone ?? e.location?.timezone))} → {e.clockOutAt ? formatTime(e.clockOutAt, (e.timezone ?? e.location?.timezone)) : <span className="text-green-600">{t("attendance.my.active")}</span>}
-                {e.isRemote ? (
+                {/*
+                  An away day still belongs to a workspace, so it names the site
+                  AND says they were away from it. The old branch showed one or
+                  the other, which lost the site on every remote day — the very
+                  fact the timesheet is grouped by.
+                */}
+                {e.location?.name ? (
+                  <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    {e.isRemote ? <Home className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                    {e.location.name}
+                    {e.isRemote ? ` · ${t("attendance.my.away", "away")}` : ""}
+                    {e.isRemote && e.clockInPlace ? ` · ${e.clockInPlace}` : ""}
+                  </span>
+                ) : e.isRemote ? (
                   <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Home className="h-3 w-3" />{t("attendance.my.remote", "Remote")}
                     {e.clockInPlace ? ` · ${e.clockInPlace}` : ""}
-                  </span>
-                ) : e.location?.name ? (
-                  <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />{e.location.name}
                   </span>
                 ) : null}
               </div>

@@ -714,8 +714,15 @@ export class AttendanceService {
     // Smart auto-approval: evaluate clock-out against schedule
     const flagReasons: string[] = [...(entry.flagReasons || [])];
 
-    // Check geofence on clock-out
-    if (!withinGeofence) {
+    /*
+      Clocking out from outside the ring is a violation — unless the whole day
+      was worked away from the site, where it is the expected place to be.
+
+      Flagging it there would put a second amber badge on an entry that already
+      carries OUTSIDE_GEOFENCE_IN and is already waiting for review, and it would
+      read as a rule broken rather than a day worked as agreed.
+    */
+    if (!withinGeofence && !entry.isRemote) {
       flagReasons.push('OUTSIDE_GEOFENCE_OUT');
     }
 
@@ -1340,9 +1347,25 @@ export class AttendanceService {
       );
     }
 
-    // A space with no coordinates has no ring → never triggers an excursion.
+    /*
+      A space with no coordinates has no ring → never triggers an excursion.
+
+      ⚠️ …and neither does a shift being worked AWAY from the site. Somebody who
+      clocked in away is outside the ring for the whole day by definition: the
+      excursion machinery would open an OUT_UNREPORTED the moment their phone
+      first reported in, escalate it to whoever reconciles attendance, and then
+      do it again every few minutes until they clocked out. The permission to be
+      away is exactly the permission not to be asked about it.
+
+      The day is already recorded as away and already flagged for review, which
+      is the signal a manager acts on. This suppresses the SECOND, noisier one
+      that says the same thing about every heartbeat.
+    */
     const hasRing =
-      entry.location.lat != null && entry.location.lng != null && entry.location.geofenceRadius > 0;
+      !entry.isRemote &&
+      entry.location.lat != null &&
+      entry.location.lng != null &&
+      entry.location.geofenceRadius > 0;
     const distance = hasRing
       ? haversineDistance(data.lat, data.lng, entry.location.lat as number, entry.location.lng as number)
       : 0;

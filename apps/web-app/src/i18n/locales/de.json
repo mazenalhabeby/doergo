@@ -3150,7 +3150,9 @@
         "noFix": "Sie können trotzdem wählen, wo Sie sind — Ihr Standort wird beim Einstempeln geprüft."
       },
       "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugeordnet, daher gibt es keinen Ort zum Einstempeln. Bitten Sie Ihre Administration darum.",
-      "paidFrom": "Gezählt ab {{time}}"
+      "paidFrom": "Gezählt ab {{time}}",
+      "away": "abwesend",
+      "clockedInAwayToast": "Eingestempelt — abwesend vom Standort. Diese Schicht wird geprüft."
     },
     "management": {
       "title": "Anwesenheitsverwaltung",

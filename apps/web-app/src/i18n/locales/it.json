@@ -3150,7 +3150,9 @@
         "noFix": "Puoi comunque scegliere dove sei: la sede verrà verificata al momento della timbratura."
       },
       "noAssignedLocations": "Non sei ancora assegnato a uno spazio di lavoro, quindi non c’è dove timbrare. Chiedilo al tuo amministratore.",
-      "paidFrom": "Conteggiato dalle {{time}}"
+      "paidFrom": "Conteggiato dalle {{time}}",
+      "away": "fuori sede",
+      "clockedInAwayToast": "Timbrato — fuori sede. Questo turno sarà verificato."
     },
     "management": {
       "title": "Gestione delle presenze",

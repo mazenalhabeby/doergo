@@ -3150,7 +3150,9 @@
         "noFix": "Aun así puedes elegir dónde estás: se verificará al fichar."
       },
       "noAssignedLocations": "Todavía no estás asignado a ningún espacio de trabajo, así que no hay dónde fichar. Pídeselo a tu administrador.",
-      "paidFrom": "Contado desde las {{time}}"
+      "paidFrom": "Contado desde las {{time}}",
+      "away": "fuera",
+      "clockedInAwayToast": "Fichado — fuera del centro. Este turno se revisará."
     },
     "management": {
       "title": "Gestión de asistencia",

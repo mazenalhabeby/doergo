@@ -2423,9 +2423,22 @@ export const attendanceApi = {
     notes?: string;
     earlyReason?: string;
   }) => {
-    const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/clock-out`, input);
+    const response = await api.post<{ success: boolean; data: unknown; message?: string }>(
+      `/attendance/clock-out`,
+      input,
+    );
     if (response.error) throw new Error(response.error);
-    return (response.data as { data?: unknown })?.data ?? response.data;
+    /*
+      The envelope's MESSAGE comes back with the entry.
+
+      It carries the counted hours and any shortfall — "11h 30m counted, 1h 20m
+      short of your shift" — composed once, on the server, from the figures it
+      has just decided. Dropping it here and rebuilding the sentence on the
+      client is how the two start disagreeing about somebody's hours.
+    */
+    const envelope = response.data as { data?: unknown; message?: string };
+    const entry = (envelope?.data ?? response.data) as Record<string, unknown>;
+    return { ...entry, message: envelope?.message };
   },
 
   /** Start a rest. `ruleId` says which planned one; omit for whichever is next. */
