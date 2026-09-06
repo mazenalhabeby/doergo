@@ -1849,6 +1849,10 @@ export class AttendanceService {
           { effectiveTo: { gte: new Date() } },
         ],
       },
+      // `allowRemote` rides along on rows this endpoint already reads. Without
+      // it, tagging the workspaces below re-queries this very table — a second
+      // trip for a column that was one word away, on the endpoint a phone polls
+      // all day.
       include: {
         space: { select: ATTENDANCE_LOCATION_SELECT },
       },
@@ -1867,6 +1871,8 @@ export class AttendanceService {
       assignments.map((a) => a.space),
       data.userId,
       data.organizationId,
+      // The per-workspace overrides, from the rows just read.
+      new Map(assignments.map((a) => [a.spaceId, a.allowRemote])),
     );
 
     // Active out-of-ring excursion for the current session (drives mobile UI).
@@ -2619,6 +2625,20 @@ export class AttendanceService {
     }
     if (leaders.length > 0) return leaders;
 
+    /*
+      The member half, and its cost, stated plainly.
+
+      This resolves per member, so a sweep escalating N people at workspaces with
+      no leaders does N resolutions rather than one. Three things keep that
+      bounded: the resolver caches per subject for a minute, a sweep is capped at
+      500 entries a tick, and this branch runs ONLY where a workspace has nobody
+      configured — which is the case this change exists to make visible and which
+      an organization fixes by naming a shift leader.
+
+      A batch resolver would remove even that, and is the right move if a real
+      deployment ever escalates dozens of people at once at leaderless sites. It
+      is not worth the shared-service change before somebody has that problem.
+    */
     const { ids } = await this.notificationRouting.resolveWatchers(
       entry.userId,
       entry.organizationId,
