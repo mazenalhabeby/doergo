@@ -5,11 +5,16 @@ import { type TimeEntry } from "@/lib/api"
  * cell of any attendance table.
  *
  * Replaces the old `clockInWithinGeofence ? "In Zone" : "Out of Zone"` badge,
- * which was structurally incapable of showing its second state: remote entries
- * and manually-added entries hardcode the flag to `true`, pin-less spaces treat
- * distance as 0, and `REQUIRE_GEOFENCE_FOR_CLOCK_IN` rejects an out-of-ring
- * clock-in outright — so no normal path ever writes `false`. Every row read
- * "In Zone" regardless of what happened.
+ * which was structurally incapable of showing its second state: manually-added
+ * entries hardcode the flag to `true`, pin-less spaces treat distance as 0, and
+ * an out-of-ring clock-in was rejected outright — so no normal path ever wrote
+ * `false`. Every row read "In Zone" regardless of what happened.
+ *
+ * A workspace may now permit a granted member to clock in away from the site, so
+ * `false` IS reachable. It still does not belong in a badge of its own: those
+ * entries carry OUTSIDE_GEOFENCE_IN and land in the approval queue, which is the
+ * signal an admin acts on — a second badge saying the same thing more quietly is
+ * how two indicators start disagreeing.
  *
  * The signal an admin actually wants (does this shift need attention?) is
  * already on the entry: `status`, `approvalStatus` and `flagReasons`. This maps

@@ -24,7 +24,12 @@ export const ATTENDANCE_CONSTANTS = {
   GRACE_PERIOD_MINUTES: 5,         // Allow 5 min early clock-in
 
   // Validation rules
-  REQUIRE_GEOFENCE_FOR_CLOCK_IN: true,  // Block clock-in if outside geofence
+  // REQUIRE_GEOFENCE_FOR_CLOCK_IN was here: one switch for the entire product,
+  // where a yard and a client-facing sales team had to want the same answer.
+  // Replaced by a per-workspace ceiling and a per-member grant — see
+  // packages/shared/src/attendance/away-policy.ts. Removed rather than
+  // deprecated: a constant nothing reads is a setting somebody will one day
+  // change and wonder why nothing happened.
   ALLOW_CLOCK_OUT_ANYWHERE: true,       // Allow clock-out from anywhere
   ALERT_ON_GEOFENCE_VIOLATION: true,    // Send alerts when clock-out is outside geofence
   AUTO_CLOCK_OUT_DISTANCE_METERS: 150,  // Auto clock-out if technician is this far from location

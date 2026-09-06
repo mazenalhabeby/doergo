@@ -3369,7 +3369,33 @@
       "remindHint": "Chiede quando è il momento e di nuovo dopo «più tardi» — tre volte, poi smette e la registra come non presa.",
       "create": "Aggiungi pausa"
     },
-    "onSite": "{{duration}} in sede"
+    "onSite": "{{duration}} in sede",
+    "away": {
+      "saved": "Salvato",
+      "title": "Timbrare qui",
+      "subtitle": "Cosa succede quando qualcuno non è dentro il raggio di {{radius}} m.",
+      "noPin": "Questo spazio non ha una posizione sulla mappa, quindi non c’è alcun raggio.",
+      "noPinNote": "Aggiunga una posizione sulla mappa per gestirlo.",
+      "strict": "Deve essere in sede",
+      "strictHint": "Nessuno può timbrare fuori da qui, qualunque cosa consenta il suo account. Per una sede dove essere presenti È il lavoro.",
+      "allowed": "Qui è possibile lavorare fuori sede",
+      "allowedHint": "Solo per chi è autorizzato individualmente. A tutti gli altri resta rifiutato fuori dal raggio. La giornata mantiene il turno e le pause e viene segnalata per la verifica.",
+      "none": "Nessun geofence",
+      "noneHint": "Timbrando qui non viene verificato nulla.",
+      "ceilingNote": "Questo decide cosa è possibile in questo spazio. Chi può farlo davvero si imposta su ogni persona, in Accesso.",
+      "mayWorkAway": "Può lavorare fuori da qui",
+      "yes": "Consentito",
+      "no": "Rifiutato",
+      "followAccount": "Account",
+      "allowHere": "Consenti",
+      "refuseHere": "Rifiuta",
+      "grantSaved": "Salvato",
+      "siteStrictHere": "In questo spazio si può timbrare solo in sede.",
+      "viaAccountOn": "Segue il suo account, che lo consente.",
+      "viaAccountOff": "Segue il suo account, che non lo consente.",
+      "overrideOn": "Consentito qui, qualunque cosa dica il suo account.",
+      "overrideOff": "Rifiutato qui, anche se il suo account lo consente."
+    }
   },
   "auditLog": {
     "title": "Registro di controllo",

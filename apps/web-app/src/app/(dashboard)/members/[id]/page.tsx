@@ -635,7 +635,11 @@ export default function MemberProfilePage({
                     </TabsContent>
                   )}
                   <TabsContent value="locations" className="mt-6">
-                    <LocationsTab assignments={memberAssignments} />
+                    <LocationsTab
+                      assignments={memberAssignments}
+                      memberAllowRemote={member.allowRemote}
+                      canManage={canManage}
+                    />
                   </TabsContent>
                   {member.scheduleType === "FIXED" && (
                     <TabsContent value="schedule" className="mt-6">

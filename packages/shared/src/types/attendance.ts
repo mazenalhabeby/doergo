@@ -45,6 +45,13 @@ export interface CompanyLocation {
   isRemote?: boolean;
   // Present on the single-space detail response (findOne includes _count).
   _count?: { tasks: number };
+  /**
+   * The ceiling on working away from this site: STRICT | AWAY_ALLOWED | NONE.
+   *
+   * A fact about the place, never a permission — see
+   * packages/shared/src/attendance/away-policy.ts.
+   */
+  geofencePolicy?: string | null;
 }
 
 // ============================================================================

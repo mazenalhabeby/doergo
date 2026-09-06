@@ -3369,7 +3369,33 @@
       "remindHint": "Avisa cuando toca y de nuevo si responde «más tarde» — tres veces, después para y lo registra como no tomado.",
       "create": "Añadir descanso"
     },
-    "onSite": "{{duration}} en el centro"
+    "onSite": "{{duration}} en el centro",
+    "away": {
+      "saved": "Guardado",
+      "title": "Fichar aquí",
+      "subtitle": "Qué ocurre cuando alguien no está dentro del radio de {{radius}} m.",
+      "noPin": "Este espacio no tiene ubicación en el mapa, así que no hay radio del que estar fuera.",
+      "noPinNote": "Añada una ubicación en el mapa para controlarlo.",
+      "strict": "Debe estar en el centro",
+      "strictHint": "Nadie puede fichar fuera de aquí, diga lo que diga su cuenta. Para un centro donde estar presente ES el trabajo.",
+      "allowed": "Aquí se admite trabajar fuera",
+      "allowedHint": "Solo para quienes lo tengan permitido individualmente. Al resto se le sigue denegando fuera del radio. El día conserva su turno y sus descansos, y se marca para revisión.",
+      "none": "Sin geovalla",
+      "noneHint": "Al fichar aquí no se comprueba nada.",
+      "ceilingNote": "Esto decide qué es posible en este espacio. Quién puede hacerlo se define en cada persona, en Acceso.",
+      "mayWorkAway": "Puede trabajar fuera de aquí",
+      "yes": "Permitido",
+      "no": "Denegado",
+      "followAccount": "Cuenta",
+      "allowHere": "Permitir",
+      "refuseHere": "Denegar",
+      "grantSaved": "Guardado",
+      "siteStrictHere": "En este espacio solo se puede fichar estando presente.",
+      "viaAccountOn": "Sigue su cuenta, que lo permite.",
+      "viaAccountOff": "Sigue su cuenta, que no lo permite.",
+      "overrideOn": "Permitido aquí, diga lo que diga su cuenta.",
+      "overrideOff": "Denegado aquí, aunque su cuenta lo permita."
+    }
   },
   "auditLog": {
     "title": "Registro de auditoría",

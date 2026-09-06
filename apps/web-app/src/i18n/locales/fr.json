@@ -3369,7 +3369,33 @@
       "remindHint": "Sollicite le moment venu, puis de nouveau après « plus tard » — trois fois, ensuite cela s’arrête et est noté comme non prise.",
       "create": "Ajouter la pause"
     },
-    "onSite": "{{duration}} sur place"
+    "onSite": "{{duration}} sur place",
+    "away": {
+      "saved": "Enregistré",
+      "title": "Pointer ici",
+      "subtitle": "Ce qui se passe quand quelqu’un n’est pas dans le rayon de {{radius}} m.",
+      "noPin": "Cet espace n’a pas de lieu sur la carte, il n’y a donc pas de rayon.",
+      "noPinNote": "Ajoutez un lieu sur la carte pour régler ceci.",
+      "strict": "Doit être sur place",
+      "strictHint": "Personne ne peut pointer à distance d’ici, quoi qu’autorise son compte. Pour un site où être présent EST le travail.",
+      "allowed": "Travailler à distance est possible ici",
+      "allowedHint": "Uniquement pour les personnes autorisées individuellement. Les autres restent refusées hors du rayon. La journée garde son poste et ses pauses, et est signalée pour vérification.",
+      "none": "Aucun géorepérage",
+      "noneHint": "Rien n’est vérifié au pointage ici.",
+      "ceilingNote": "Ceci décide de ce qui est possible dans cet espace. Qui peut réellement le faire se règle sur chaque personne, dans Accès.",
+      "mayWorkAway": "Peut travailler à distance d’ici",
+      "yes": "Autorisé",
+      "no": "Refusé",
+      "followAccount": "Compte",
+      "allowHere": "Autoriser",
+      "refuseHere": "Refuser",
+      "grantSaved": "Enregistré",
+      "siteStrictHere": "Dans cet espace, on ne peut pointer que sur place.",
+      "viaAccountOn": "Suit son compte, qui l’autorise.",
+      "viaAccountOff": "Suit son compte, qui ne l’autorise pas.",
+      "overrideOn": "Autorisé ici, quoi que dise son compte.",
+      "overrideOff": "Refusé ici, bien que son compte l’autorise."
+    }
   },
   "auditLog": {
     "title": "Journal d’audit",

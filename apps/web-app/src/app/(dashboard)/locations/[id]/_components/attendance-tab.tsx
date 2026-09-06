@@ -14,6 +14,7 @@ import { SectionHeader } from "./section-header"
 import { ShiftsTab } from "./shifts-tab"
 import { RotaTab } from "./rota-tab"
 import { RestsSection } from "./rests-section"
+import { AwayPolicySection } from "./away-policy-section"
 
 /**
  * Attendance — one tab that replaces the old Work-model + Shifts + Rota trio.
@@ -132,6 +133,16 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
           </div>
         </div>
       )}
+
+      {/*
+        The ceiling on working away from this site.
+
+        Outside the `scheduled` branch and above the rests, because it applies to
+        every attendance model: an open-hours workspace has a geofence too.
+      */}
+      <div className="border-t border-border/60 pt-6">
+        <AwayPolicySection space={space} />
+      </div>
 
       {/*
         Rests, under BOTH models.

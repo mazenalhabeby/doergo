@@ -3369,7 +3369,33 @@
       "remindHint": "Fragt bei Fälligkeit und erneut nach „Später“ — dreimal, dann hört es auf und wird als nicht genommen vermerkt.",
       "create": "Pause hinzufügen"
     },
-    "onSite": "{{duration}} vor Ort"
+    "onSite": "{{duration}} vor Ort",
+    "away": {
+      "saved": "Gespeichert",
+      "title": "Einstempeln hier",
+      "subtitle": "Was passiert, wenn jemand nicht im {{radius}}-m-Radius ist.",
+      "noPin": "Dieser Arbeitsbereich hat keinen Ort auf der Karte, also gibt es keinen Radius.",
+      "noPinNote": "Fügen Sie einen Ort auf der Karte hinzu, um dies zu steuern.",
+      "strict": "Muss vor Ort sein",
+      "strictHint": "Niemand darf sich von hier abwesend einstempeln, unabhängig vom Konto. Für Standorte, an denen die Anwesenheit die Arbeit IST.",
+      "allowed": "Abwesend ist hier möglich",
+      "allowedHint": "Nur für einzeln berechtigte Mitarbeitende. Alle anderen werden außerhalb des Radius weiterhin abgewiesen. Der Tag behält Schicht und Pausen und wird zur Prüfung markiert.",
+      "none": "Gar kein Geofence",
+      "noneHint": "Beim Einstempeln wird hier nichts geprüft.",
+      "ceilingNote": "Das legt fest, was in diesem Arbeitsbereich möglich ist. Wer es tatsächlich darf, wird pro Person unter Zugriff festgelegt.",
+      "mayWorkAway": "Darf von hier abwesend arbeiten",
+      "yes": "Erlaubt",
+      "no": "Abgelehnt",
+      "followAccount": "Konto",
+      "allowHere": "Erlauben",
+      "refuseHere": "Ablehnen",
+      "grantSaved": "Gespeichert",
+      "siteStrictHere": "In diesem Arbeitsbereich kann nur vor Ort eingestempelt werden.",
+      "viaAccountOn": "Folgt dem Konto, das es erlaubt.",
+      "viaAccountOff": "Folgt dem Konto, das es nicht erlaubt.",
+      "overrideOn": "Hier erlaubt, unabhängig vom Konto.",
+      "overrideOff": "Hier abgelehnt, obwohl das Konto es erlaubt."
+    }
   },
   "auditLog": {
     "title": "Audit-Protokoll",

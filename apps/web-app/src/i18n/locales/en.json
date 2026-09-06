@@ -3369,7 +3369,33 @@
       "remindHint": "Asks when it falls due, and again if they say later — three times, then it stops and records it as not taken.",
       "create": "Add rest"
     },
-    "onSite": "{{duration}} on site"
+    "onSite": "{{duration}} on site",
+    "away": {
+      "saved": "Saved",
+      "title": "Clocking in here",
+      "subtitle": "What happens when somebody is not inside the {{radius}}m ring.",
+      "noPin": "This workspace has no location on the map, so there is no ring to be outside of.",
+      "noPinNote": "Add a location on the map to control this.",
+      "strict": "Must be on site",
+      "strictHint": "Nobody may clock in away from here, whatever their account allows. For a site where being present is the work.",
+      "allowed": "Away is possible here",
+      "allowedHint": "Only for members who are individually allowed it. Everyone else is still refused outside the ring. The day keeps its shift and its rests, and is flagged for review.",
+      "none": "No geofence at all",
+      "noneHint": "Nothing is checked when clocking in here.",
+      "ceilingNote": "This decides what is possible at this workspace. Who may actually do it is set on each member, under Access.",
+      "mayWorkAway": "May work away from here",
+      "yes": "Allowed",
+      "no": "Refused",
+      "followAccount": "Account",
+      "allowHere": "Allow",
+      "refuseHere": "Refuse",
+      "grantSaved": "Saved",
+      "siteStrictHere": "This workspace can only be clocked in at on site.",
+      "viaAccountOn": "Follows their account, which allows it.",
+      "viaAccountOff": "Follows their account, which does not.",
+      "overrideOn": "Allowed here, whatever their account says.",
+      "overrideOff": "Refused here, even though their account allows it."
+    }
   },
   "auditLog": {
     "title": "Audit Log",

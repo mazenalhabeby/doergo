@@ -4033,6 +4033,12 @@ export interface UpdateLocationInput {
   enabledModules?: string[];
   workflowId?: string;
   workModel?: string;
+  /**
+   * The ceiling on working away from this site: STRICT | AWAY_ALLOWED | NONE.
+   * Not a permission — it decides what is POSSIBLE here, and the grant on each
+   * member decides who may.
+   */
+  geofencePolicy?: string;
   kind?: string;
   contactName?: string | null;
   contactEmail?: string | null;
@@ -4084,6 +4090,15 @@ export interface UpdateAssignmentInput {
   schedule?: string[];
   effectiveFrom?: string;
   effectiveTo?: string;
+  /**
+   * May this member work away from THIS workspace?
+   *
+   * `true` allows it here, `false` refuses it here even when their account
+   * allows it, and `null` clears the override so the account answers again.
+   * Omitting the field leaves whatever is there — "no opinion" and "explicitly
+   * refused" are different answers.
+   */
+  allowRemote?: boolean | null;
 }
 
 export const locationsApi = {
