@@ -224,6 +224,53 @@ export class AttendanceNotificationHandler {
     });
   }
 
+  /**
+   * Somebody clocked out well before their shift ended.
+   *
+   * The entry was already flagged for this and already landed in an approval
+   * queue — which nobody watches in the moment. A site being a person short is
+   * operational news, and finding out at the end of the month is finding out
+   * too late.
+   */
+  @EventPattern('attendance_left_early')
+  async handleLeftEarly(@Payload() data: {
+    entryId: string;
+    userId: string;
+    userName: string;
+    locationId: string;
+    locationName: string;
+    shortfallMinutes: number;
+    reason?: string | null;
+    leaderIds: string[];
+    organizationId: string;
+  }) {
+    this.logger.log(
+      `Left early: ${data.userName} at ${data.locationName}, short by ${data.shortfallMinutes}m`,
+    );
+    try {
+      await this.pushService.sendLeftEarlyPush({
+        leaderIds: data.leaderIds ?? [],
+        userName: data.userName,
+        locationName: data.locationName,
+        shortfallMinutes: data.shortfallMinutes,
+        reason: data.reason ?? null,
+        entryId: data.entryId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send left-early push: ${error}`);
+    }
+
+    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_left_early', {
+      entryId: data.entryId,
+      userId: data.userId,
+      userName: data.userName,
+      locationName: data.locationName,
+      shortfallMinutes: data.shortfallMinutes,
+      reason: data.reason ?? null,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   @EventPattern('attendance_shift_escalation')
   async handleShiftEscalation(@Payload() data: {
     entryId: string;

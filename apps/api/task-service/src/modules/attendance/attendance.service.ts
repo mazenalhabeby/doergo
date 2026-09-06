@@ -27,6 +27,7 @@ import {
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   SHIFT_REMINDER_DEFAULTS,
   computeCountedTime,
+  shortfallMinutes,
   UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
@@ -586,6 +587,14 @@ export class AttendanceService {
     accuracy?: number;
     notes?: string;
     organizationId: string;
+    /**
+     * Why they are leaving before the shift ends, when they are.
+     *
+     * Asked by the client, which knows the expected end, and recorded here. NOT
+     * required: a person may always stop working, and a time system that refuses
+     * a clock-out is a time system people work around.
+     */
+    earlyReason?: string;
   }) {
     this.logger.log(`Clock out attempt: user=${data.userId}`);
 
@@ -666,6 +675,20 @@ export class AttendanceService {
     // What the timesheet will read. The real times above are untouched.
     const counted = await this.countedTime.columnsFor(entry, clockOutTime, toleranceMin);
 
+    /*
+      How far short of the shift this falls.
+
+      Computed from the same tolerance as the flags, by the same shared rule the
+      phone used to ask the question — so the number the member was shown and the
+      number their manager sees are the same number.
+    */
+    const shortBy = shortfallMinutes({
+      clockOutAt: clockOutTime,
+      expectedEndAt: entry.expectedClockOutAt,
+      toleranceMin,
+    });
+    const earlyReason = shortBy > 0 ? (data.earlyReason ?? '').trim().slice(0, 500) : '';
+
     // Deduplicate flags
     const uniqueFlags = [...new Set(flagReasons)];
     const approvalStatus = uniqueFlags.length === 0 ? 'AUTO' : 'PENDING';
@@ -691,7 +714,13 @@ export class AttendanceService {
         clockOutWithinGeofence: geofenceEvaluable ? withinGeofence : null,
         totalMinutes,
         ...counted,
-        notes: data.notes,
+        // The reason rides with the entry, where the approvals queue reads it.
+        // Prefixed rather than put in a column of its own: it IS a note about
+        // the shift, and a manager reading the row wants it in the same place as
+        // every other thing somebody wrote about that day.
+        notes: earlyReason
+          ? [data.notes, `Left early: ${earlyReason}`].filter(Boolean).join(' · ')
+          : data.notes,
         flagReasons: uniqueFlags,
         approvalStatus,
         clockOutPlace,
@@ -705,6 +734,34 @@ export class AttendanceService {
         user: { select: { firstName: true, lastName: true } },
       },
     });
+
+    if (shortBy > 0) {
+      /*
+        Somebody has to know.
+
+        The entry was already FLAGGED for this and landed in an approval queue —
+        which nobody watches in the moment. A shift ending ninety minutes early
+        is operational news: the site is a person short right now, and finding
+        out at the end of the month is finding out too late.
+      */
+      const leaderIds = await this.resolveSpaceLeaders(
+        entry.locationId,
+        entry.organizationId,
+        'canReconcileAttendance',
+      );
+      this.notificationClient.emit('attendance_left_early', {
+        entryId: entry.id,
+        userId: entry.userId,
+        userName: `${updatedEntry.user?.firstName ?? ''} ${updatedEntry.user?.lastName ?? ''}`.trim(),
+        locationId: entry.locationId,
+        locationName: updatedEntry.location?.name ?? 'a shift',
+        shortfallMinutes: shortBy,
+        expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
+        reason: earlyReason || null,
+        leaderIds,
+        organizationId: entry.organizationId,
+      });
+    }
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -744,9 +801,22 @@ export class AttendanceService {
       });
     }
 
+    /*
+      The message says PAID time, not time present.
+
+      "Total time: 12h 10m" on a shift that pays 11h 30m is the sentence that
+      starts the argument at the end of the month. The counted figure is the one
+      that matters to the person reading it, so it is the one on the screen.
+    */
+    const paid = counted.paidMinutes ?? Math.max(0, totalMinutes - (entry.breakMinutes ?? 0));
+    const ph = Math.floor(paid / 60);
+    const pm = paid % 60;
+
     return success(
-      updatedEntry,
-      `Clocked out from ${entry.location.name}. Total time: ${hours}h ${minutes}m`,
+      { ...updatedEntry, shortfallMinutes: shortBy },
+      shortBy > 0
+        ? `Clocked out from ${entry.location.name}. ${ph}h ${pm}m counted — ${Math.floor(shortBy / 60)}h ${shortBy % 60}m short of your shift.`
+        : `Clocked out from ${entry.location.name}. ${ph}h ${pm}m counted.`,
     );
   }
 

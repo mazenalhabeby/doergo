@@ -293,6 +293,33 @@ export class PushService {
     );
   }
 
+  /** A shift ended short. Told to whoever reconciles attendance for that space. */
+  async sendLeftEarlyPush(data: {
+    leaderIds: string[];
+    userName: string;
+    locationName: string;
+    shortfallMinutes: number;
+    reason: string | null;
+    entryId: string;
+  }) {
+    if (!data.leaderIds?.length) return { success: true, skipped: 'no leaders' };
+    const h = Math.floor(data.shortfallMinutes / 60);
+    const m = data.shortfallMinutes % 60;
+    const short = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const body = data.reason
+      ? `${data.userName} left ${short} early at ${data.locationName} — "${data.reason}"`
+      : `${data.userName} left ${short} early at ${data.locationName}, with no reason given.`;
+
+    // One send per leader; the same shape the escalation push already uses.
+    for (const leaderId of data.leaderIds) {
+      await this.sendToUser(leaderId, 'Shift ended early', body, {
+        type: 'attendance_left_early',
+        entryId: data.entryId,
+      });
+    }
+    return { success: true };
+  }
+
   // Escalation: nobody responded to the reminders → ask a space leader to
   // reconcile the still-open shift. Nothing is auto-closed.
   async sendShiftEscalationPush(data: {
