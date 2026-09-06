@@ -219,6 +219,7 @@ CompanyLocation { id, name, address, lat, lng, geofenceRadius, isActive, organiz
 UserPushToken { id, userId, token, platform, deviceId, createdAt, updatedAt }  # Push notification tokens
 TechnicianSchedule { id, technicianId, dayOfWeek, startTime, endTime, isActive, notes }  # Weekly work schedule
 TimeOff { id, technicianId, startDate, endDate, reason, status, approvedById, approvedAt, rejectionReason }  # Time-off requests
+DocumentType { id, key, label, direction, cadence, signatureMode, requiredFromAll, requiredFromRoleIds, visibleToRoleIds (empty = NO restriction), signerRoute?, retentionMonths?, ... }
 Invitation { id, codeHash, targetRole, organizationId, technicianType?, workMode?, specialty?, maxDailyJobs?, status, expiresAt, usedAt?, acceptedById?, createdById, createdAt, updatedAt }  # Code-based invitations
 ```
 
@@ -1041,6 +1042,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `applyAgreement()`, `agreementFrom()`, `validateAgreedPrice()` | An agreed price — the ONE place a computed bill's total is replaced |
 | `isMaterialAgreementDrift()`, `agreementEndsWithin()` | Has a contracted customer outgrown the deal, and is the term ending? |
 | `isOrganizationSuspended()`, `ORG_SUSPENDED_MESSAGE` | The organization off switch, read at all three doors into the product |
+| `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
@@ -1197,6 +1199,19 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-09-06, latest) — A document type says who may see it
+
+**PROD `5ff66b2e`** (rollback tag `prod-pre-doc-visibility` → `5b902360`). Migration `20260906120000_document_type_visibility`; backup `pre-doc-visibility_20260906_134538.sql.gz`. Detail in memory `document-type-visibility`.
+
+- `canViewMemberDocuments` was ONE switch for the whole filing cabinet — the clerk chasing driving licences also read the payroll. `DocumentType.visibleToRoleIds` now names the roles that see it (Step 6 "Who can see it" on the type).
+- ⚠️ **EMPTY MEANS NO RESTRICTION**, not "nobody". The opposite default empties every register in every organization on the day it deploys. Prod after deploy: 6 types, 0 restricted — nothing changed for anyone.
+- ⚠️ **Three exemptions, all load-bearing.** The **subject** (their own file stays whole, and the catalogue keeps what is still required OF them, or restricting a type leaves somebody unable to hand in their own passport while a screen chases them for it); a **routed signer** (being asked to sign IS the authorisation to read that one document — a shift leader countersigning a time sheet is not in HR); **administrators**.
+- ⚠️ **404, not 403.** A 403 confirms a payslip exists for that person on that date.
+- ⚠️ Two silent holes found wiring it: `listIssued` built its `where` without the scope, so the **tab counts** would have counted documents the reader cannot open; and the type check ran BEFORE the chain was known on the two signing reads, 404-ing routed signers out of documents they were asked to sign.
+- ⚠️ **`memberRoleId` must be on all THREE request-context builders AND in validateToken's explicit `select`** — missing from the select is null, which makes restricted types invisible to the very people granted them.
+- **Live without a refresh**: the 3 type write paths announce `document_types_changed` → org room → 10 document query keys invalidate.
+- `document-scope-guard.spec.ts` reads the service and fails if a new document read is added without scoping, asserting, or being a **named** exemption with a reason (proved by planting one).
 
 ### Recently Completed (2026-09-06, later) — Options & Modules enforced end to end
 
