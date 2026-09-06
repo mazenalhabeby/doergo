@@ -464,6 +464,17 @@ export class AttendanceService extends BaseGatewayService {
     weekdays?: number[];
     startTime: string;
     endTime: string;
+    /*
+      The break as both attendance dialogs describe it — wall-clock times inside
+      the shift, with a type and a reason.
+
+      `breakMinutes` stays for clients that have not taken the update; the
+      service turns it into the same break, centred.
+    */
+    breakStart?: string;
+    breakEnd?: string;
+    breakType?: 'SHORT' | 'LUNCH' | 'OTHER';
+    breakReason?: string;
     breakMinutes?: number;
     notes?: string;
     reason?: string;
