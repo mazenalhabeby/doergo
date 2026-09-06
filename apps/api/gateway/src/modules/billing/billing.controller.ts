@@ -19,6 +19,7 @@ import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS } from '@hbcfield/share
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
 import { SetAddOnsDto } from './dto';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 
 @ApiTags('billing')
 @Controller('billing')
@@ -27,6 +28,10 @@ export class BillingController {
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly config: ConfigService,
     private readonly platformAdminGuard: PlatformAdminGuard,
+    // What an organization has bought rides on the cached, validated user — so
+    // changing it has to clear that cache, or the change is invisible for a
+    // minute even through a hard refresh.
+    private readonly authCache: AuthTokenCache,
   ) {}
 
   /** Web app base URL (server-controlled → no open-redirect from client input). */
@@ -67,11 +72,24 @@ export class BillingController {
   async setAddOns(@CurrentUser() user: CurrentUserData, @Body() dto: SetAddOnsDto) {
     // organizationId comes from the TOKEN, never the body — an admin can only
     // ever change what their own organization has bought.
-    return this.unwrap(
+    const result = this.unwrap(
       await firstValueFrom(
         this.authClient.send({ cmd: 'billing_set_addons' }, { organizationId: user.organizationId, addOns: dto.addOns }),
       ),
     );
+    /*
+      Every member sees it at their next request, not somewhere inside the next
+      minute.
+
+      `orgAddOns` rides on the cached, validated user, so without this the
+      navigation went on offering a screen the page had already begun refusing —
+      for up to AUTH_CACHE_TTL_SECONDS, and through a hard refresh, because the
+      staleness is on the SERVER. Awaited: the caller changed this and should not
+      be told it is done while the old answer is still being served.
+    */
+    // An orphan user has no organization to clear — and nothing to have bought.
+    if (user.organizationId) await this.authCache.invalidateOrganization(user.organizationId);
+    return result;
   }
 
   @Post('checkout')
@@ -197,6 +215,9 @@ export class BillingController {
     if (result && result.success === false) {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
     }
+    // The operator path changes the same thing from the other side — and is the
+    // one somebody watches a customer's screen while using.
+    await this.authCache.invalidateOrganization(dto.organizationId);
     return result;
   }
 }

@@ -45,6 +45,22 @@ export class AuthTokenCache {
     return `auth:usr:${userId}`;
   }
 
+  /*
+    A second index, by ORGANIZATION.
+
+    Some changes are not one person's: switching an Option off changes what every
+    member of the organization may see, all at once. Without this the only way to
+    apply that was to wait out the TTL — a minute in which the navigation still
+    offered Invoices, the page still refused it, and nothing said why.
+
+    A set per organization, written at the same moment as the per-user one, so
+    the invalidation costs one `SMEMBERS` and one `DEL` rather than a query for
+    every member and a round trip each.
+  */
+  private orgKey(organizationId: string): string {
+    return `auth:org:${organizationId}`;
+  }
+
   async get(token: string): Promise<any | null> {
     try {
       const cached = await this.redis.get(this.key(token));
@@ -66,8 +82,34 @@ export class AuthTokenCache {
         // Keep the index slightly longer than any single token entry.
         await this.redis.expire(uk, this.ttl + 5);
       }
+      if (user?.organizationId) {
+        const ok = this.orgKey(user.organizationId);
+        await this.redis.sadd(ok, key);
+        await this.redis.expire(ok, this.ttl + 5);
+      }
     } catch {
       // Cache write failures must never break auth.
+    }
+  }
+
+  /**
+   * Purge every cached session in an organization.
+   *
+   * For a change that is the ORGANIZATION's rather than one member's — the
+   * Options it has bought being the reason this exists. Every member sees the
+   * result at their next request instead of somewhere inside the next minute.
+   *
+   * Best effort, like its sibling: a cache that cannot be cleared must not fail
+   * the change that cleared it, and the entries expire on their own regardless.
+   */
+  async invalidateOrganization(organizationId: string): Promise<void> {
+    try {
+      const ok = this.orgKey(organizationId);
+      const keys = await this.redis.smembers(ok);
+      if (keys.length) await this.redis.del(...keys);
+      await this.redis.del(ok);
+    } catch {
+      // See invalidateUser.
     }
   }
 
