@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-09-04 (External Observer + €2 seat, three billing modes, billing alerts)
+> **Last Updated**: 2026-09-06 (per-type document visibility; Options + Modules enforced end to end)
 
 ---
 
@@ -391,6 +391,30 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ A space with **no coordinates is geofence-exempt and clocks in fine**. Never filter those out client-side — an org that never set coordinates could otherwise not clock in at all.
 >
 > ⚠️ **CUSTOMER spaces are workplaces.** A first version excluded them as "somebody else's premises"; in a field-service product people spend the day at a customer site and clock in there, and the clock-in has always accepted it. Excluding them made the list stricter than the check and hid two of three workspaces from a member assigned to all three. Only the Remote bucket is filtered.
+
+### Documents — the personnel file (`/documents`)
+> The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET · POST · PATCH · DELETE | `/documents/types[/:id]` | The catalogue: cadence, direction, retention, signing route, **who may see it** | read: all · write: `canManageDocumentTemplates` |
+| GET | `/documents` · `/documents/browse` · `/documents/sent` | The member's own list · the folder register · the issued register | `canViewMemberDocuments` for other people's |
+| POST | `/documents/upload-url` → `/documents` | Issue: presign, then file it | `canIssueDocuments` |
+| POST | `/documents/mine/upload-url` → `/documents/mine` | A member supplying their own | the member themselves |
+| GET · POST | `/documents/awaiting-verification` · `/documents/:id/verify` · `/reject` | The verification queue | `canIssueDocuments` |
+| POST | `/documents/:id/download-url` | **Mint a link — this IS the "opened" event**, which is why no list returns a URL | `canOpenMemberDocuments` |
+| POST | `/documents/:id/sign` · `/consent` · `/acknowledge` · `/send-back` | The signing chain, step by step | being ON the step |
+| GET | `/documents/:id/chain` · `/:id/events` | Who has signed, and the evidence trail | in the chain, or `canViewMemberDocuments` |
+| GET · POST | `/documents/templates[...]` · `/issue-contract` | Contract templates and issuing from one | `canManageDocumentTemplates` |
+| GET | `/documents/compliance` · `/requirements` · `/pending` | The credential board · what is required OF me · what waits ON me | — |
+
+> ⚠️ **A type names the roles that may SEE it** (`DocumentType.visibleToRoleIds`). **EMPTY MEANS NO RESTRICTION**, not "nobody" — the opposite default would empty every register in every organization on the day it deployed. The rule lives once in `packages/shared/src/access/document-visibility.ts`, in three shapes (one document / a list of documents / the type catalogue), because it is asked in about ten places.
+>
+> ⚠️ **Three exemptions, all load-bearing.** The **subject** — a restriction decides whose OTHER documents you may read, so their own file stays whole and the catalogue keeps whatever is still required OF them, or restricting a type leaves somebody unable to hand in their own passport while a screen goes on chasing them for it. A **routed signer** — being asked to sign IS the authorisation to read that one document; a shift leader countersigning a time sheet is not in HR. **Administrators**.
+>
+> ⚠️ **Refusals are 404, not 403.** A 403 would confirm that a payslip exists for that person on that date.
+>
+> ⚠️ **`document-scope-guard.spec.ts` fails if a new document read is added** without `typeScope`, `assertTypeVisible`, or a NAMED exemption carrying its reason.
 
 ### CRM contact people (`/customers`)
 | Method | Endpoint | Description | Roles |
