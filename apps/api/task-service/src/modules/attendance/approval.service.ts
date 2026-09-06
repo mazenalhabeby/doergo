@@ -490,6 +490,27 @@ export class ApprovalService {
     }
     if (data.endDate < data.startDate) throw new BadRequestException('End date is before the start date');
 
+    /*
+      A rest cannot be longer than the shift it sits in.
+
+      The shift is the same length every day of a back-fill, so this is answered
+      once, here, rather than per entry — and it has to be answered at all: the
+      break is placed inside the shift, and a rest that does not fit would run
+      past the clock-out. The edit dialog refuses exactly this when a human types
+      it; entering it as a number must not be the way around that.
+
+      Equal is refused too. A shift that is entirely rest is not a shift.
+    */
+    const [sh, sm] = data.startTime.split(':').map(Number);
+    const [eh, em] = data.endTime.split(':').map(Number);
+    let shiftMin = eh * 60 + em - (sh * 60 + sm);
+    if (shiftMin <= 0) shiftMin += 24 * 60; // overnight, as below
+    if (Math.max(0, Math.round(data.breakMinutes ?? 0)) >= shiftMin) {
+      throw new BadRequestException(
+        `A ${Math.round(data.breakMinutes ?? 0)}-minute rest does not fit in a ${shiftMin}-minute shift.`,
+      );
+    }
+
     const tz = loc.timezone || 'Europe/Berlin';
     const single = data.startDate === data.endDate;
     const weekdays = single ? null : data.weekdays?.length ? data.weekdays : [1, 2, 3, 4, 5];

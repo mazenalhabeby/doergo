@@ -2045,7 +2045,9 @@
       },
       "preview": "This will add {{count}} day(s) (existing days are skipped).",
       "submitCount": "Add {{count}} days",
-      "tooLarge": "Date range is too large — back-fill at most one year at a time."
+      "tooLarge": "Date range is too large — back-fill at most one year at a time.",
+      "restTooLong": "Longer than the {{shift}}-minute shift.",
+      "restHint": "Saved as a break in the middle of the shift — you can move it afterwards."
     }
   },
   "members": {

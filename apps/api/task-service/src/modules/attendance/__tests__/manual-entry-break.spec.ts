@@ -111,6 +111,28 @@ describe('a rest entered with a manual attendance', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
+  it('refuses a rest that does not fit in the shift', async () => {
+    /*
+      The break is placed INSIDE the shift, so one that does not fit would run
+      past the clock-out. The edit dialog refuses exactly this when a human types
+      it; entering it as a number must not be the way around that.
+
+      Answered once for the whole back-fill, because the shift is the same length
+      every day of it.
+    */
+    await expect(add({ startTime: '08:00', endTime: '09:00', breakMinutes: 90 })).rejects.toThrow(/does not fit/);
+    // Equal is refused too — a shift that is entirely rest is not a shift.
+    await expect(add({ startTime: '08:00', endTime: '09:00', breakMinutes: 60 })).rejects.toThrow(/does not fit/);
+    // One minute short of the shift is allowed.
+    await expect(add({ startTime: '08:00', endTime: '09:00', breakMinutes: 59 })).resolves.toBeDefined();
+  });
+
+  it('measures an overnight shift the long way round', async () => {
+    // 22:00 → 06:00 is eight hours, not minus sixteen — the same correction the
+    // entry itself makes when the clock-out lands before the clock-in.
+    await expect(add({ startTime: '22:00', endTime: '06:00', breakMinutes: 45 })).resolves.toBeDefined();
+  });
+
   it('gives every day of a back-fill its own rest', async () => {
     // A week of entries is a week of breaks — one number on one entry could
     // never have expressed that.

@@ -2045,7 +2045,9 @@
       },
       "preview": "Cela ajoutera {{count}} jour(s) (les jours existants sont ignorés).",
       "submitCount": "Ajouter {{count}} jours",
-      "tooLarge": "La plage de dates est trop grande — antidatez au maximum une année à la fois."
+      "tooLarge": "La plage de dates est trop grande — antidatez au maximum une année à la fois.",
+      "restTooLong": "Plus long que le poste de {{shift}} minutes.",
+      "restHint": "Enregistré comme une pause au milieu du poste — vous pourrez la déplacer ensuite."
     }
   },
   "members": {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CalendarPlus, Loader2 } from "lucide-react"
@@ -177,6 +178,24 @@ export function AddAttendanceDialog({
     6: t("technicians.addAttendance.weekdays.sat"),
   }
 
+  /*
+    The rest has to fit inside the shift.
+
+    It is placed inside the shift when it is saved, so one that does not fit
+    would run past the clock-out. The server refuses it — this only spares
+    somebody the round trip, and says which number is wrong while they are still
+    looking at it.
+  */
+  const shiftMinutes = (() => {
+    if (!startTime || !endTime) return 0
+    const [sh, sm] = startTime.split(":").map(Number)
+    const [eh, em] = endTime.split(":").map(Number)
+    const mins = eh * 60 + em - (sh * 60 + sm)
+    return mins > 0 ? mins : mins + 24 * 60 // overnight
+  })()
+  const restMinutes = breakMinutes ? Math.max(0, parseInt(breakMinutes, 10) || 0) : 0
+  const restTooLong = shiftMinutes > 0 && restMinutes >= shiftMinutes
+
   const canSubmit =
     !!effectiveEmployeeId &&
     !!locationId &&
@@ -186,6 +205,7 @@ export function AddAttendanceDialog({
     !!endTime &&
     previewCount > 0 &&
     !tooLarge &&
+    !restTooLong &&
     !mutation.isPending
 
   return (
@@ -368,9 +388,29 @@ export function AddAttendanceDialog({
             <Input
               type="number"
               min={0}
+              max={shiftMinutes > 0 ? shiftMinutes - 1 : undefined}
               value={breakMinutes}
               onChange={(e) => setBreakMinutes(e.target.value)}
+              aria-invalid={restTooLong}
+              className={cn(restTooLong && "border-destructive focus-visible:ring-destructive")}
             />
+            {restTooLong ? (
+              <p className="text-[11px] text-destructive">
+                {t("technicians.addAttendance.restTooLong", "Longer than the {{shift}}-minute shift.", {
+                  shift: shiftMinutes,
+                })}
+              </p>
+            ) : (
+              /*
+                Said once, here, because it is the thing nobody expects: the rest
+                becomes a real break in the middle of the shift, which is what
+                makes it visible and editable afterwards instead of a number that
+                the first edit would quietly erase.
+              */
+              <p className="text-[11px] text-muted-foreground">
+                {t("technicians.addAttendance.restHint", "Saved as a break in the middle of the shift — you can move it afterwards.")}
+              </p>
+            )}
           </div>
 
           {/* Notes */}

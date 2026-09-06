@@ -2045,7 +2045,9 @@
       },
       "preview": "Se añadirán {{count}} día(s) (se omiten los días existentes).",
       "submitCount": "Añadir {{count}} días",
-      "tooLarge": "El rango de fechas es demasiado grande: registra como máximo un año a la vez."
+      "tooLarge": "El rango de fechas es demasiado grande: registra como máximo un año a la vez.",
+      "restTooLong": "Más largo que el turno de {{shift}} minutos.",
+      "restHint": "Se guarda como una pausa en mitad del turno; puedes moverla después."
     }
   },
   "members": {
