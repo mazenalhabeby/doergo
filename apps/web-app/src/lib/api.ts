@@ -2358,6 +2358,43 @@ export interface NoShowRow {
   excuseReason?: string | null;
 }
 
+export interface BreakRuleRow {
+  id: string;
+  spaceId: string | null;
+  shiftId: string | null;
+  name: string;
+  /** At a wall-clock time, or a number of minutes into the shift. */
+  trigger: 'LOCAL_WINDOW' | 'AFTER_WORKED';
+  afterMinutes: number | null;
+  earliestLocal: string | null;
+  latestLocal: string | null;
+  durationMinutes: number;
+  /** Paid rests do not come off the counted time. */
+  isPaid: boolean;
+  /** A missed required rest flags the entry. It never deducts. */
+  isRequired: boolean;
+  remind: boolean;
+  snoozeMin: number;
+  maxSnoozes: number | null;
+  isActive: boolean;
+  position: number;
+}
+
+/** One planned rest on one shift, as the server froze it at clock-in. */
+export interface BreakPlanRow {
+  ruleId: string;
+  name: string;
+  dueAt: string;
+  expiresAt: string | null;
+  durationMinutes: number;
+  isPaid: boolean;
+  required: boolean;
+  state: 'PENDING' | 'SNOOZED' | 'TAKEN' | 'MISSED';
+  snoozeCount: number;
+  breakId?: string;
+  takenAt?: string;
+}
+
 export const attendanceApi = {
   // Employee self-service: my current clock status
   getMyStatus: async () => {
@@ -2375,10 +2412,69 @@ export const attendanceApi = {
   },
 
   // Employee self-service: clock out of the current shift.
-  clockOut: async (input: { lat: number; lng: number; accuracy?: number; notes?: string }) => {
+  //
+  // `earlyReason` is sent when the member confirmed leaving before the shift
+  // ends. The server measures the shortfall itself — this is the answer to the
+  // question, not the question.
+  clockOut: async (input: {
+    lat: number;
+    lng: number;
+    accuracy?: number;
+    notes?: string;
+    earlyReason?: string;
+  }) => {
     const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/clock-out`, input);
     if (response.error) throw new Error(response.error);
     return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  /** Start a rest. `ruleId` says which planned one; omit for whichever is next. */
+  startBreak: async (input?: { ruleId?: string; type?: string; notes?: string }) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/breaks/start`, input ?? {});
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  /** End the rest in progress. */
+  endBreak: async (input?: { notes?: string }) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/breaks/end`, input ?? {});
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  /** "Later." The count is kept server-side, so this is a real answer. */
+  snoozeBreak: async (input?: { ruleId?: string }) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/breaks/snooze`, input ?? {});
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
+  },
+
+  // ── Rest rules: what a workspace expects ─────────────────────────────────
+
+  listBreakRules: async (params?: { spaceId?: string; shiftId?: string }) => {
+    const response = await api.get<{ success: boolean; data: BreakRuleRow[] }>(
+      buildUrlWithQuery('/attendance/break-rules', params ?? {}),
+    );
+    if (response.error) throw new Error(response.error);
+    return ((response.data as { data?: BreakRuleRow[] })?.data ?? []) as BreakRuleRow[];
+  },
+
+  createBreakRule: async (input: Partial<BreakRuleRow>) => {
+    const response = await api.post<{ success: boolean; data: BreakRuleRow }>(`/attendance/break-rules`, input);
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: BreakRuleRow })?.data;
+  },
+
+  updateBreakRule: async (id: string, input: Partial<BreakRuleRow>) => {
+    const response = await api.patch<{ success: boolean; data: BreakRuleRow }>(`/attendance/break-rules/${id}`, input);
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: BreakRuleRow })?.data;
+  },
+
+  deleteBreakRule: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/attendance/break-rules/${id}`);
+    if (response.error) throw new Error(response.error);
+    return true;
   },
 
   // Employee self-service: my own time-entry history (paginated envelope)

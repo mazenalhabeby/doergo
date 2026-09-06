@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card"
 import { SectionHeader } from "./section-header"
 import { ShiftsTab } from "./shifts-tab"
 import { RotaTab } from "./rota-tab"
+import { RestsSection } from "./rests-section"
 
 /**
  * Attendance — one tab that replaces the old Work-model + Shifts + Rota trio.
@@ -131,6 +132,18 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
           </div>
         </div>
       )}
+
+      {/*
+        Rests, under BOTH models.
+
+        Deliberately outside the `scheduled` branch: an open-hours workspace
+        still owes its people a lunch, and it is the only thing on this screen
+        that is true whether or not the day has a rota. A rest planned "after
+        five hours" needs no shift at all — it counts from the clock-in.
+      */}
+      <div className="border-t border-border/60 pt-6">
+        <RestsSection spaceId={space.id} />
+      </div>
 
       {/* Open-hours reassurance — nothing else to configure. */}
       {!scheduled && (

@@ -74,6 +74,20 @@ export interface TimeEntry {
   timezone?: string | null;
   totalMinutes: number | null;
   breakMinutes: number;
+  /** Of those, the minutes that do not count as work. */
+  unpaidBreakMinutes?: number;
+  /*
+    The second clock: what the timesheet counts, as opposed to what happened.
+
+    `clockInAt`/`clockOutAt` above are evidence and are never adjusted. These are
+    the same day seen by payroll — an early arrival clamped off, approved
+    overtime included, unpaid rests subtracted — decided ONCE at clock-out by the
+    shared counted-time rule. Null on entries closed before that rule existed,
+    and on shifts still running.
+  */
+  countedStartAt?: string | null;
+  countedEndAt?: string | null;
+  paidMinutes?: number | null;
   notes: string | null;
   flagReasons: string[];
   approvalStatus: ApprovalStatus;
@@ -91,7 +105,25 @@ export interface TimeEntry {
   // Shift expectation (space-centric attendance). Set at clock-in for shift/fixed
   // spaces; drives the reminder engine. null on task/none spaces.
   shiftId?: string | null;
+  expectedClockInAt?: string | null;
   expectedClockOutAt?: string | null;
+  /*
+    This shift's planned rests, frozen at clock-in. Loosely typed here on
+    purpose: the shape is owned and validated by
+    packages/shared/src/attendance/break-plan.ts, and a second definition on the
+    client is a second place for it to be wrong.
+  */
+  breakPlan?: unknown;
+  nextBreakRemindAt?: string | null;
+  /** The rest in progress, when the status endpoint was asked. */
+  breaks?: Array<{
+    id: string;
+    startedAt: string;
+    endedAt?: string | null;
+    ruleId?: string | null;
+    isPaid?: boolean;
+    type?: string;
+  }>;
   reminderState?: 'NONE' | 'REMINDED' | 'OVERTIME_PENDING' | 'OVERTIME_APPROVED' | 'ESCALATED' | 'RESOLVED';
   nextRemindAt?: string | null;
   reminderCount?: number;

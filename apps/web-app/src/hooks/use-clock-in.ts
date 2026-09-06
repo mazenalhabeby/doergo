@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import type { TFunction } from "i18next"
 import type { TimeEntry } from "@hbcfield/shared"
 import { attendanceApi } from "@/lib/api"
+import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from "@hbcfield/shared/client"
 import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import type { ClockLocation } from "@/components/clock-in-picker"
 
@@ -32,7 +33,7 @@ export function geoErrorMessage(t: TFunction, reason: GeolocationFailure): strin
 }
 
 /** What the caller asked for: end the shift, work from anywhere, or a workspace. */
-export type ClockAction = "out" | "remote" | { locationId: string }
+export type ClockAction = "out" | { out: true; earlyReason?: string } | "remote" | { locationId: string }
 
 /**
  * Clocking in and out — the whole behaviour, in one place.
@@ -57,6 +58,7 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [earlyOpen, setEarlyOpen] = useState(false)
 
   const { data: status } = useQuery({
     queryKey: ["my-attendance-status"],
@@ -97,11 +99,34 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   const clockedIn =
     Boolean(st.isClockedIn) || st.status === "CLOCKED_IN" || Boolean(activeEntry && !activeEntry.clockOutAt)
 
+  /*
+    How far short of the shift a clock-out right now would fall.
+
+    Computed by the SHARED rule, from the expectation the server stamped at
+    clock-in — so the figure the member is shown before confirming is the figure
+    the server records afterwards. Zero when the shift has no known end, which is
+    every task-based and open-hours space: there is nothing to fall short of, so
+    nothing is asked.
+  */
+  const shortfall = shortfallMinutes({
+    clockOutAt: new Date(),
+    expectedEndAt: activeEntry?.expectedClockOutAt ? new Date(activeEntry.expectedClockOutAt) : null,
+    // The tolerance the flags use. Not carried on the entry, so the shared
+    // default stands in: a client asking a few minutes early is a nuisance, and
+    // the server measures it again with the shift's own value regardless.
+    toleranceMin: SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+  })
+
   const clock = useMutation({
     mutationFn: async (action: ClockAction) => {
       const pos = await getBrowserPosition()
-      if (action === "out") {
-        return attendanceApi.clockOut({ lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
+      if (action === "out" || (typeof action === "object" && "out" in action)) {
+        return attendanceApi.clockOut({
+          lat: pos.lat,
+          lng: pos.lng,
+          accuracy: pos.accuracy,
+          earlyReason: typeof action === "object" && "out" in action ? action.earlyReason : undefined,
+        })
       }
       if (action === "remote") {
         // No workspace — geofence-exempt; the server captures a coarse place.
@@ -176,9 +201,35 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     action: clock.variables as ClockAction | undefined,
     /** Ask to clock in on site: straight through, or open the picker. */
     startOnSite,
-    /** Clock in remotely, or clock out. */
-    clockOut: () => clock.mutate("out"),
+    /**
+     * End the shift.
+     *
+     * Short of the shift end, this ASKS first rather than clocking out — the
+     * member is told how far short they are and gives a reason, which reaches
+     * whoever is responsible. It never refuses: a person may always stop working,
+     * and confirming is a courtesy, not a gate. The server measures the shortfall
+     * again either way.
+     */
+    clockOut: () => {
+      if (shortfall > 0) setEarlyOpen(true)
+      else clock.mutate("out")
+    },
     clockInRemotely: () => clock.mutate("remote"),
+    /** Minutes short of the shift end, right now; 0 when there is no shift. */
+    shortfallMinutes: shortfall,
+    /** Spread straight into <ClockOutEarlyDialog {...earlyProps} />. */
+    earlyProps: {
+      open: earlyOpen,
+      onOpenChange: setEarlyOpen,
+      shortfallMinutes: shortfall,
+      expectedClockOutAt: activeEntry?.expectedClockOutAt ?? null,
+      timezone: activeEntry?.timezone ?? activeEntry?.location?.timezone ?? null,
+      pending: clock.isPending,
+      onConfirm: (earlyReason: string) => {
+        setEarlyOpen(false)
+        clock.mutate({ out: true, earlyReason })
+      },
+    },
     /** Spread straight into <ClockInPicker {...pickerProps} />. */
     pickerProps: {
       open: pickerOpen,

@@ -1658,6 +1658,19 @@ export class AttendanceService {
       },
       include: {
         location: { select: ATTENDANCE_LOCATION_SELECT },
+        /*
+          The rest in progress, if there is one.
+
+          Only the OPEN one: a closed break is history and the status endpoint
+          answers "what is happening right now". Both clients read this to decide
+          between "start your rest" and "back to work", which is the whole of the
+          rest UI — without it each would need a second request on every poll.
+        */
+        breaks: {
+          where: { endedAt: null },
+          select: { id: true, startedAt: true, ruleId: true, isPaid: true, type: true },
+          take: 1,
+        },
       },
     });
 

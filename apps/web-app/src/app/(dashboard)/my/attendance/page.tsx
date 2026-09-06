@@ -19,6 +19,8 @@ import type { DateRange } from "react-day-picker"
 import { mayClockInRemotely } from "@hbcfield/shared/client"
 
 import { ClockInPicker } from "@/components/clock-in-picker"
+import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
+import { RestPanel } from "@/components/attendance/rest-panel"
 
 /** Human-readable duration between two ISO timestamps (or to now). */
 function duration(fromIso?: string | null, toIso?: string | null): string {
@@ -167,7 +169,7 @@ export default function MyAttendancePage() {
     They share query keys, so mounting the hook twice is still one status
     request and one locations request.
   */
-  const { clockedIn, activeEntry, locations, pending, action, startOnSite, clockOut, clockInRemotely, pickerProps } =
+  const { clockedIn, activeEntry, locations, pending, action, startOnSite, clockOut, clockInRemotely, pickerProps, earlyProps } =
     useClockIn({ enabled: canSee })
 
   /*
@@ -326,6 +328,22 @@ export default function MyAttendancePage() {
                 <div className="mt-3">
                   <LiveShift since={activeEntry.clockInAt} target={shiftTarget} />
                 </div>
+                {/*
+                  Both clocks, when they differ.
+
+                  Arriving twenty minutes early is recorded and is not paid, and
+                  a member who reads that here does not have to discover it on a
+                  payslip and ask.
+                */}
+                {activeEntry.countedStartAt &&
+                  new Date(activeEntry.countedStartAt).getTime() !== new Date(activeEntry.clockInAt).getTime() && (
+                    <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                      <Clock className="h-3 w-3" />
+                      {t("attendance.my.paidFrom", "Counted from {{time}}", {
+                        time: formatTime(activeEntry.countedStartAt, activeEntry.timezone ?? activeEntry.location?.timezone),
+                      })}
+                    </p>
+                  )}
                 <p className="mt-2 text-xs text-muted-foreground">
                   {t("attendance.my.sinceAt", "Since {{time}}", {
                     time: formatTime(activeEntry.clockInAt, activeEntry.timezone ?? activeEntry.location?.timezone),
@@ -387,8 +405,9 @@ export default function MyAttendancePage() {
               )}
             </div>
           )}
-          {/* The same picker the navbar widget opens — one component, one hook. */}
+          {/* Both dialogs come from the same hook, so the navbar behaves identically. */}
           <ClockInPicker {...pickerProps} />
+          <ClockOutEarlyDialog {...earlyProps} />
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
             {mayClockInRemotely(user)
               ? t("attendance.my.gpsHintRemote", "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.")
@@ -450,6 +469,21 @@ export default function MyAttendancePage() {
           </div>
         </div>
       </div>
+
+      {/*
+        The rests planned for the shift that is running.
+
+        Only while clocked in, and only when there are any: a workspace that
+        plans no rests shows nothing here, which is exactly how it behaved before
+        rests existed.
+      */}
+      {clockedIn && Array.isArray(activeEntry?.breakPlan) && activeEntry.breakPlan.length > 0 && (
+        <RestPanel
+          className="mb-6"
+          plan={activeEntry.breakPlan as never}
+          activeBreak={activeEntry.breaks?.find((b) => !b.endedAt) ?? null}
+        />
+      )}
 
       {/* Active-session work log — jot down what you do; becomes the clock-out summary. */}
       {clockedIn && activeEntry?.id && (
