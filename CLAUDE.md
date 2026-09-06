@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-09-06 (per-type document visibility; Options + Modules enforced end to end)
+> **Last Updated**: 2026-09-06 (shift clock: two clocks, planned rests, away-from-site; per-type document visibility)
 
 ---
 
@@ -1224,7 +1224,19 @@ docker exec -it hbcfield-redis redis-cli
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
 
-### Recently Completed (2026-09-06, latest) — A document type says who may see it
+### Recently Completed (2026-09-06, latest) — The shift clock: two clocks, planned rests, away from a site
+
+**PROD `fa5209b4`** (rollback tag `prod-pre-shift-clock` → `5ff66b2e`; 7 migrations; backup `pre-shift-clock_20260906_210743.sql.gz`, 102 tables). Verified after deploy: **0 entries changed hours**, 163 backfilled, 3 workspaces opened for away — exactly the pre-flight prediction. Detail in memory `shift-clock-two-models`.
+
+- **Two clocks.** `clockInAt`/`clockOutAt` stay evidence; `countedStartAt`/`countedEndAt`/`paidMinutes` are what payroll reads — `max(clockIn, shiftStart)` / `min(clockOut, shiftEnd)` less unpaid rests, one rule in `packages/shared/src/attendance/counted-time.ts`. ⚠️ **Approved overtime needs no special case**: approving MOVES `expectedClockOutAt`, so the same `min()` pays it. ⚠️ `expectedClockInAt` is now PERSISTED — it was computed at every clock-in and thrown away.
+- **Rests are planned** (`BreakRule` per workspace, a shift overrides it), resolved ONCE at clock-in and frozen onto the entry. ⚠️ `nextBreakRemindAt` is a COLUMN, not a field in the plan JSON — JSON cannot be indexed and the sweep's cheapness is asking "what is due". ⚠️ **An unanswered prompt counts toward the snooze cap** — counting only explicit "Later" taps meant an ignored prompt re-fired every 5 min, ~140 times a shift. A missed rest FLAGS and never deducts.
+- **Overtime loops.** `OvertimeRequest.timeEntryId` was `@unique`, so a shift held one record ever while the flow already looped. One row per round now, with the signature.
+- **Away from a site is a MODE, not a place.** It was filed in a synthetic Remote bucket, so the rota, the rests and the expected hours were all left behind. Gated by **CEILING × GRANT**: `CompanyLocation.geofencePolicy` is a fact about the place, `User.allowRemote` + a per-assignment override is the decision about the person. Neither alone is enough — a strict site refuses an admin. ⚠️ **An away day is not a geofence excursion.** ⚠️ `REQUIRE_GEOFENCE_FOR_CLOCK_IN` is removed.
+- **Notifications: workspace → the member's watchers → nobody.** Four attendance events fell back to every org ADMIN, which put the owner on every late departure. ⚠️ Authority is untouched — an admin may still approve, they are simply not TOLD.
+- **Push:** the Android `attendance` channel was IMPORTANCE_DEFAULT and could never interrupt; republished as `attendance_v2` (a channel's importance is frozen at creation). iOS pushes are `time-sensitive` — ⚠️ the entitlement is NATIVE and needs a build, not an OTA.
+- Test data `prisma/seed-shift-test.ts`; end-to-end audit `tools/clock-audit.py` (39 checks over real HTTP).
+
+### Recently Completed (2026-09-06) — A document type says who may see it
 
 **PROD `5ff66b2e`** (rollback tag `prod-pre-doc-visibility` → `5b902360`). Migration `20260906120000_document_type_visibility`; backup `pre-doc-visibility_20260906_134538.sql.gz`. Detail in memory `document-type-visibility`.
 
