@@ -30,7 +30,10 @@ import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
-import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto, AddBreakForMemberDto } from './dto';
+import {
+  ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto,
+  AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
+} from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
 @ApiTags('attendance')
@@ -500,7 +503,82 @@ export class AttendanceController {
       organizationId: req.user.organizationId,
       type: dto.type,
       notes: dto.notes,
+      // Which planned rest this answers. Never trusted for anything but
+      // matching: the plan is on the server and an id that is not in it simply
+      // does not match, leaving an ordinary unplanned break.
+      ruleId: dto.ruleId,
     });
+  }
+
+  /**
+   * "Later" — postpone the rest the member was just asked about.
+   *
+   * The snooze COUNT lives on the server. If the phone kept it, "Later" would be
+   * a mute button and a device that is off would silence the alarm by not
+   * existing.
+   */
+  @Post('breaks/snooze')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Postpone the rest that has fallen due' })
+  async snoozeBreak(@Body() dto: SnoozeBreakDto, @Request() req: any) {
+    return this.attendanceService.snoozeBreak({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      ruleId: dto.ruleId,
+    });
+  }
+
+  // ── Rest rules: what a workspace expects ─────────────────────────────────
+  //
+  // Reading is open to anyone who can clock in — a member is entitled to know
+  // when their own rests fall due. Writing is workspace configuration and takes
+  // the same permission as the rest of it.
+
+  @Get('break-rules')
+  @RequireModule('time_tracking')
+  @ApiOperation({ summary: 'The planned rests for a workspace or shift' })
+  async listBreakRules(
+    @Request() req: any,
+    @Query('spaceId') spaceId?: string,
+    @Query('shiftId') shiftId?: string,
+  ) {
+    return this.attendanceService.listBreakRules({
+      organizationId: req.user.organizationId,
+      spaceId,
+      shiftId,
+    });
+  }
+
+  @Post('break-rules')
+  @RequireModule('time_tracking')
+  @RequirePermissionInSpace('canManageWorkspaces')
+  @ApiOperation({ summary: 'Add a planned rest' })
+  async createBreakRule(@Body() dto: BreakRuleDto, @Request() req: any) {
+    return this.attendanceService.createBreakRule({
+      ...dto,
+      // Never from the body: the organization is whose token this is.
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Patch('break-rules/:id')
+  @RequireModule('time_tracking')
+  @RequirePermissionInSpace('canManageWorkspaces')
+  @ApiOperation({ summary: 'Change a planned rest' })
+  async updateBreakRule(@Param('id') id: string, @Body() dto: BreakRuleDto, @Request() req: any) {
+    return this.attendanceService.updateBreakRule({
+      ...dto,
+      id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Delete('break-rules/:id')
+  @RequireModule('time_tracking')
+  @RequirePermissionInSpace('canManageWorkspaces')
+  @ApiOperation({ summary: 'Remove a planned rest' })
+  async deleteBreakRule(@Param('id') id: string, @Request() req: any) {
+    return this.attendanceService.deleteBreakRule({ id, organizationId: req.user.organizationId });
   }
 
   @Post('breaks/end')

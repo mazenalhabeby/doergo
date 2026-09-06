@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ApprovalService } from '../approval.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CountedTimeService } from '../counted-time.service';
+import { BreakRulesService } from '../break-rules.service';
+import { BreakReminderService } from '../break-reminder.service';
 
 /*
   A rest entered on "Add attendance" has to be the same thing as a rest entered
@@ -47,6 +49,8 @@ describe('a rest entered with a manual attendance', () => {
     breaks.length = 0;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        BreakReminderService,
+        BreakRulesService,
         CountedTimeService,
         ApprovalService,
         { provide: PrismaService, useValue: prisma },

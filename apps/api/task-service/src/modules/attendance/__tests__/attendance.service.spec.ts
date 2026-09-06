@@ -16,6 +16,8 @@ import {
   QUEUE_NAMES,
 } from '@hbcfield/shared';
 import { CountedTimeService } from '../counted-time.service';
+import { BreakRulesService } from '../break-rules.service';
+import { BreakReminderService } from '../break-reminder.service';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -144,6 +146,8 @@ describe('AttendanceService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        BreakReminderService,
+        BreakRulesService,
         CountedTimeService,
         AttendanceService,
         BreakService,

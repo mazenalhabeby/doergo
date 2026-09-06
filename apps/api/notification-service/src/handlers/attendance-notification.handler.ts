@@ -144,6 +144,86 @@ export class AttendanceNotificationHandler {
   }
 
   // Reminders exhausted → notify the space leaders to reconcile the open shift.
+  /**
+   * A planned rest has fallen due.
+   *
+   * Time-sensitive by nature — a rest suggested an hour late is not a rest — so
+   * it rides the attendance channel, which now carries the importance and the
+   * iOS interruption level that let it appear over whatever the member is doing.
+   */
+  @EventPattern('attendance_break_due')
+  async handleBreakDue(@Payload() data: {
+    entryId: string;
+    userId: string;
+    ruleId: string;
+    name: string;
+    durationMinutes: number;
+    isPaid: boolean;
+    expiresAt?: string | null;
+    snoozeCount: number;
+    locationName: string;
+    organizationId: string;
+  }) {
+    this.logger.log(`Rest due: user=${data.userId} rest=${data.name} asked=${data.snoozeCount}`);
+    try {
+      await this.pushService.sendBreakDuePush({
+        userId: data.userId,
+        entryId: data.entryId,
+        ruleId: data.ruleId,
+        name: data.name,
+        durationMinutes: data.durationMinutes,
+        isPaid: data.isPaid,
+        expiresAt: data.expiresAt ?? null,
+        snoozeCount: data.snoozeCount,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send rest-due push: ${error}`);
+    }
+
+    // …and to the open app, which must not need a push to show the prompt: a
+    // notification that was blocked, muted or missed cannot be the only channel.
+    this.websocketGateway.emitToUser(data.userId, 'attendance_break_due', {
+      entryId: data.entryId,
+      ruleId: data.ruleId,
+      name: data.name,
+      durationMinutes: data.durationMinutes,
+      isPaid: data.isPaid,
+      expiresAt: data.expiresAt ?? null,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /** The rest has run its length. One nudge, with a button to come back. */
+  @EventPattern('attendance_break_over')
+  async handleBreakOver(@Payload() data: {
+    entryId: string;
+    userId: string;
+    breakId: string;
+    name: string;
+    durationMinutes: number;
+    organizationId: string;
+  }) {
+    this.logger.log(`Rest over: user=${data.userId} rest=${data.name}`);
+    try {
+      await this.pushService.sendBreakOverPush({
+        userId: data.userId,
+        entryId: data.entryId,
+        breakId: data.breakId,
+        name: data.name,
+        durationMinutes: data.durationMinutes,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send rest-over push: ${error}`);
+    }
+
+    this.websocketGateway.emitToUser(data.userId, 'attendance_break_over', {
+      entryId: data.entryId,
+      breakId: data.breakId,
+      name: data.name,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   @EventPattern('attendance_shift_escalation')
   async handleShiftEscalation(@Payload() data: {
     entryId: string;

@@ -36,6 +36,7 @@ import {
 } from '@hbcfield/shared';
 import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
+import { BreakRulesService } from './break-rules.service';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
@@ -71,6 +72,7 @@ export class AttendanceService {
     private readonly notificationRouting: NotificationRoutingService,
     private readonly shiftResolver: ShiftResolverService,
     private readonly countedTime: CountedTimeService,
+    private readonly breakRules: BreakRulesService,
   ) {}
 
   /**
@@ -442,6 +444,22 @@ export class AttendanceService {
 
     const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
 
+    /*
+      This shift's rests, resolved once and frozen onto the entry.
+
+      Never blocks a clock-in: a space with no rules plans nothing, and a
+      resolution that fails plans nothing either. Somebody must always be able to
+      start work, whatever the rest engine thinks.
+    */
+    const restPlan = await this.breakRules.planForClockIn({
+      spaceId: data.locationId,
+      shiftId: stampCols.shiftId ?? null,
+      clockInAt: clockInTime,
+      expectedStartAt: stampCols.expectedClockInAt ?? null,
+      expectedEndAt: stampCols.expectedClockOutAt ?? null,
+      timezone: workerTz ?? location.timezone ?? 'UTC',
+    });
+
     // Create time entry
     const entry = await this.prisma.timeEntry.create({
       data: {
@@ -458,6 +476,8 @@ export class AttendanceService {
         approvalStatus,
         organizationId: data.organizationId,
         ...stampCols,
+        breakPlan: restPlan.breakPlan as never,
+        nextBreakRemindAt: restPlan.nextBreakRemindAt,
       },
       include: {
         location: true,

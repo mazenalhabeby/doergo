@@ -17,6 +17,11 @@ export class StartBreakDto {
   @IsOptional()
   type?: BreakType = BreakType.SHORT;
 
+  @ApiPropertyOptional({ description: 'The planned rest this satisfies; omit for whichever is next' })
+  @IsString()
+  @IsOptional()
+  ruleId?: string;
+
   @ApiPropertyOptional({ description: 'Optional notes about the break' })
   @IsString()
   @IsOptional()

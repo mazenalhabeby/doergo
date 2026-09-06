@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { AttendanceService } from './attendance.service';
+import { BreakReminderService } from './break-reminder.service';
 
 // concurrency:20 (audit P1) — the default of 1 serialised every clock-in/out,
 // heartbeat, the 1-min reminder sweep and the 30-min materialize through a single
@@ -12,7 +13,9 @@ import { AttendanceService } from './attendance.service';
 export class AttendanceProcessor extends WorkerHost {
   private readonly logger = new Logger(AttendanceProcessor.name);
 
-  constructor(private readonly attendanceService: AttendanceService) {
+  constructor(private readonly attendanceService: AttendanceService,
+    private readonly breakReminders: BreakReminderService,
+  ) {
     super();
   }
 
@@ -42,15 +45,21 @@ export class AttendanceProcessor extends WorkerHost {
       // Route any stray legacy job (queued in Redis before the upgrade) to the
       // reminder engine too, so it never throws "Unknown job type".
       case ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT: {
-        // One tick drives the forgot-to-clock-out (reminder) sweep, the no-show
-        // sweep, and the geofence-excursion safety-net — each a single indexed
-        // query returning only due rows.
-        const [clockOut, noShow, excursions] = await Promise.all([
+        /*
+          One tick drives four sweeps: forgot-to-clock-out, no-show, the
+          geofence-excursion safety-net, and rests falling due.
+
+          Each is ONE indexed query returning only rows that are actually due —
+          adding rests here costs a second index seek per minute, not a second
+          job, a second queue or a timer on anybody's phone.
+        */
+        const [clockOut, noShow, excursions, rests] = await Promise.all([
           this.attendanceService.runShiftReminders(data),
           this.attendanceService.runNoShowSweep(),
           this.attendanceService.sweepExpiredExcursions(),
+          this.breakReminders.sweep(),
         ]);
-        return { clockOut, noShow, excursions };
+        return { clockOut, noShow, excursions, rests };
       }
 
       case ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE:

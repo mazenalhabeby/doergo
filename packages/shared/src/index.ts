@@ -91,3 +91,9 @@ export * from './notifications/push-channels';
 
 // Counted time — see client.ts.
 export * from './attendance/counted-time';
+
+// Zoned time — see client.ts.
+export * from './attendance/zoned-time';
+
+// Break plan — see client.ts.
+export * from './attendance/break-plan';

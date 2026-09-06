@@ -7,7 +7,10 @@ export interface CountableEntry {
   clockInAt: Date;
   expectedClockInAt?: Date | null;
   expectedClockOutAt?: Date | null;
+  /** Every break, paid or not — what the screen shows. */
   breakMinutes?: number | null;
+  /** The ones that do not count as work — what payroll subtracts. */
+  unpaidBreakMinutes?: number | null;
   shiftId?: string | null;
 }
 
@@ -65,9 +68,15 @@ export class CountedTimeService {
       expectedStartAt: entry.expectedClockInAt ?? null,
       expectedEndAt: entry.expectedClockOutAt ?? null,
       toleranceMin,
-      // Every break is unpaid today. Paid rests arrive with BreakRule, and this
-      // is the single line that changes when they do.
-      unpaidBreakMinutes: entry.breakMinutes ?? 0,
+      /*
+        Only the unpaid minutes come off.
+
+        The fallback to the gross total is what every entry closed before paid
+        rests existed means: back then every break was unpaid, which is exactly
+        what the reports assumed by subtracting `breakMinutes` wholesale. So an
+        old row keeps reporting the number it always did.
+      */
+      unpaidBreakMinutes: entry.unpaidBreakMinutes ?? entry.breakMinutes ?? 0,
     });
     return { countedStartAt, countedEndAt, paidMinutes };
   }

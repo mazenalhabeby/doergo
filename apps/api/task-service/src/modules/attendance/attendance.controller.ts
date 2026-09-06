@@ -4,6 +4,7 @@ import { AttendanceService } from './attendance.service';
 import { BreakService } from './break.service';
 import { AttendanceReportService } from './attendance-report.service';
 import { ApprovalService } from './approval.service';
+import { BreakRulesService } from './break-rules.service';
 
 @Controller()
 export class AttendanceController {
@@ -12,6 +13,7 @@ export class AttendanceController {
     private readonly breakService: BreakService,
     private readonly reportService: AttendanceReportService,
     private readonly approvalService: ApprovalService,
+    private readonly breakRules: BreakRulesService,
   ) {}
 
     @MessagePattern({ cmd: 'list_clock_in_locations' })
@@ -189,9 +191,45 @@ export class AttendanceController {
       scopeSpaceIds?: string[] | null;
       type?: string;
       notes?: string;
+      /** The planned rest this satisfies; omitted = whichever is next. */
+      ruleId?: string;
     },
   ) {
     return this.breakService.startBreak(data);
+  }
+
+  /** "Later." Moves the rest out by its own interval; the COUNT is kept here. */
+  @MessagePattern({ cmd: 'snooze_break' })
+  async snoozeBreak(
+    @Payload() data: { userId: string; organizationId: string; ruleId?: string },
+  ) {
+    return this.breakService.snoozeBreak(data);
+  }
+
+  // =========================================================================
+  // REST RULES — the workspace's planned rests
+  // =========================================================================
+
+  @MessagePattern({ cmd: 'list_break_rules' })
+  async listBreakRules(
+    @Payload() data: { organizationId: string; spaceId?: string; shiftId?: string },
+  ) {
+    return this.breakRules.list(data);
+  }
+
+  @MessagePattern({ cmd: 'create_break_rule' })
+  async createBreakRule(@Payload() data: any) {
+    return this.breakRules.create(data);
+  }
+
+  @MessagePattern({ cmd: 'update_break_rule' })
+  async updateBreakRule(@Payload() data: any) {
+    return this.breakRules.update(data);
+  }
+
+  @MessagePattern({ cmd: 'delete_break_rule' })
+  async deleteBreakRule(@Payload() data: { id: string; organizationId: string }) {
+    return this.breakRules.remove(data);
   }
 
   @MessagePattern({ cmd: 'end_break' })

@@ -246,6 +246,53 @@ export class PushService {
     });
   }
 
+  /**
+   * A rest has fallen due.
+   *
+   * The body says what it costs, because that is the fact that decides whether
+   * somebody stops now or keeps going: an unpaid rest is time off the clock, and
+   * a member who does not know that will take it late and be surprised.
+   */
+  async sendBreakDuePush(data: {
+    userId: string;
+    entryId: string;
+    ruleId: string;
+    name: string;
+    durationMinutes: number;
+    isPaid: boolean;
+    expiresAt: string | null;
+    snoozeCount: number;
+  }) {
+    const cost = data.isPaid ? 'Paid' : 'It comes off your paid hours';
+    const body =
+      data.snoozeCount > 0
+        ? `Still owed: ${data.durationMinutes} minutes. ${cost}.`
+        : `${data.durationMinutes} minutes. ${cost}.`;
+    return this.sendToUser(data.userId, `Time for your ${data.name.toLowerCase()}`, body, {
+      type: 'break_due',
+      entryId: data.entryId,
+      ruleId: data.ruleId,
+      durationMinutes: data.durationMinutes,
+      expiresAt: data.expiresAt,
+    });
+  }
+
+  /** The rest has run its length — one nudge, then silence. */
+  async sendBreakOverPush(data: {
+    userId: string;
+    entryId: string;
+    breakId: string;
+    name: string;
+    durationMinutes: number;
+  }) {
+    return this.sendToUser(
+      data.userId,
+      `Your ${data.name.toLowerCase()} is over`,
+      'Tap when you are back — until then the time keeps counting as rest.',
+      { type: 'break_over', entryId: data.entryId, breakId: data.breakId },
+    );
+  }
+
   // Escalation: nobody responded to the reminders → ask a space leader to
   // reconcile the still-open shift. Nothing is auto-closed.
   async sendShiftEscalationPush(data: {

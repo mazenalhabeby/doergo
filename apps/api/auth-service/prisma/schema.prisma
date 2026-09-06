@@ -494,6 +494,7 @@ model Organization {
   // Shift scheduling (space-centric attendance)
   shifts           Shift[]
   shiftAssignments ShiftAssignment[]
+  breakRules       BreakRule[]
 
   // Organization delegation relationships
   /// Who owns this organization — normally whoever created it.
@@ -2007,6 +2008,7 @@ model CompanyLocation {
   // Shift scheduling (space-centric attendance)
   shifts           Shift[] // Shift definitions scoped to this space
   shiftAssignments ShiftAssignment[] // Rota: members assigned to shifts here
+  breakRules       BreakRule[] // Planned rests for everyone working here
 
   // Time entries at this location
   timeEntries TimeEntry[]
@@ -2129,6 +2131,30 @@ model TimeEntry {
   // Break duration (calculated from breaks)
   breakMinutes Int @default(0)
 
+  /// Of those minutes, the ones that do NOT count as work.
+  ///
+  /// Separate from the total because a rest may be paid: a statutory half hour
+  /// usually is not, a short afternoon break usually is, and the difference is a
+  /// contract rather than a fact about the clock. The counted-time rule reads
+  /// this one; the screen shows the total.
+  unpaidBreakMinutes Int @default(0)
+
+  /// This shift's rests, resolved ONCE at clock-in and frozen here.
+  ///
+  /// Rules are configuration and may be edited at any time; a plan is what one
+  /// person was actually asked to do today. Freezing it means the reminder sweep
+  /// joins nothing, and an edit at noon cannot rearrange somebody's afternoon
+  /// retroactively. Shape and transitions live in
+  /// packages/shared/src/attendance/break-plan.ts.
+  breakPlan Json?
+
+  /// When the next rest reminder is due for this entry; null = nothing pending.
+  ///
+  /// ⚠️ A COLUMN, not a field inside `breakPlan`. JSON cannot be indexed, and the
+  /// sweep's whole cheapness is asking "what is due" against an index rather than
+  /// reading every open shift. Kept in step with the plan in the same statement.
+  nextBreakRemindAt DateTime?
+
   notes String?
 
   // Smart auto-approval
@@ -2173,6 +2199,7 @@ model TimeEntry {
   @@index([organizationId, clockInAt]) // org attendance reports
   @@index([organizationId, status]) // "who's clocked in right now" (dashboard, date-independent)
   @@index([status, nextRemindAt]) // reminder engine safety-net sweep
+  @@index([status, nextBreakRemindAt]) // the same sweep's second due-list: rests
   @@index([organizationId, reminderState]) // pending extra-time lookups per org
   @@index([organizationId, approvalStatus, clockInAt]) // approval queue (P3): pending, newest-first
   @@map("time_entries")
@@ -2353,6 +2380,16 @@ model Break {
 
   type BreakType @default(SHORT)
 
+  /// The planned rest this satisfies, when it came from one. Null for a break
+  /// somebody simply decided to take — which stays allowed: a plan says when a
+  /// rest is EXPECTED, never that no other rest may happen.
+  ruleId String?
+
+  /// Whether these minutes still count as work. Copied from the rule at the
+  /// moment it is taken, not read back from it: editing a rule next month must
+  /// not silently re-price a shift that has already been paid.
+  isPaid Boolean @default(false)
+
   startedAt DateTime  @default(now())
   endedAt   DateTime?
 
@@ -2377,6 +2414,64 @@ model Break {
   @@index([timeEntryId])
   @@index([startedAt])
   @@map("breaks")
+}
+
+/// A rest, planned.
+///
+/// Until this existed a break happened only if somebody took one: nothing said
+/// when it was due, nothing asked, and `Shift.breakMinutes` — a number the UI
+/// has always offered — was read by no server code at all. A rest that is merely
+/// permitted is a rest skipped on a busy day and argued about at month end.
+///
+/// Scope is narrowest-wins: a rule on a SHIFT overrides the ones on its space,
+/// so a night shift can take a different lunch without redefining the workspace.
+model BreakRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// The workspace these rests belong to. Null with a shiftId = the shift's own.
+  spaceId String?
+  space   CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  /// Set to override the space's rests for one shift.
+  shiftId String?
+  shift   Shift?  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  name String // "Lunch", "Afternoon rest"
+
+  /// AFTER_WORKED — falls due N minutes into the shift.
+  /// LOCAL_WINDOW — falls due at a wall-clock time, and expires at another.
+  trigger String @default("LOCAL_WINDOW")
+
+  afterMinutes  Int? // AFTER_WORKED
+  earliestLocal String? // LOCAL_WINDOW: "11:30", in the space's timezone
+  latestLocal   String? // LOCAL_WINDOW: "13:30" — after this it is missed
+
+  durationMinutes Int     @default(30)
+  /// Paid rests do not come off the counted time. Unpaid is the default because
+  /// the statutory break in this product's home market is unpaid.
+  isPaid          Boolean @default(false)
+  /// A required rest that never happens FLAGS the entry. It never deducts:
+  /// a rest not taken is time worked, and inventing a deduction is how a time
+  /// system loses everyone's trust in a week.
+  isRequired      Boolean @default(true)
+
+  remind     Boolean @default(true)
+  snoozeMin  Int     @default(15)
+  /// Null = the shared default. Never unlimited: a phone in a locker would
+  /// otherwise collect forty notifications and teach its owner to mute us.
+  maxSnoozes Int?
+
+  isActive  Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, isActive])
+  @@index([spaceId, isActive])
+  @@index([shiftId, isActive])
+  @@map("break_rules")
 }
 
 // ==================== AVAILABILITY & SCHEDULING ====================
@@ -2458,6 +2553,7 @@ model Shift {
 
   assignments ShiftAssignment[]
   timeEntries TimeEntry[]
+  breakRules  BreakRule[] // Overrides the space's rests for this shift
 
   @@index([organizationId])
   @@index([spaceId])

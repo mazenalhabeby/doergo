@@ -19,6 +19,7 @@ import {
 import { BreakType, ApprovalStatus } from '@prisma/client';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
+import { parseBreakPlan, outstandingBreaks, markTaken, nextBreakRemindAt as nextRestAt, snooze as snoozePlan } from '@hbcfield/shared';
 
 @Injectable()
 export class BreakService {
@@ -40,6 +41,13 @@ export class BreakService {
     organizationId: string;
     type?: string;
     notes?: string;
+    /**
+     * The planned rest this satisfies, when the member answered a prompt.
+     *
+     * Optional on purpose: taking an unplanned break stays allowed. A plan says
+     * when a rest is EXPECTED, never that no other rest may happen.
+     */
+    ruleId?: string;
   }) {
     this.logger.log(`Start break: user=${data.userId}, type=${data.type || 'SHORT'}`);
 
@@ -66,15 +74,53 @@ export class BreakService {
       throw new BadRequestException('You are already on a break. End your current break first.');
     }
 
+    /*
+      Which planned rest is this, and does it come off the paid time?
+
+      `isPaid` is COPIED from the plan rather than read back from the rule later:
+      editing a rule next month must not silently re-price a shift that has
+      already been worked and paid.
+    */
+    const plan = parseBreakPlan(entry.breakPlan);
+    const planned =
+      (data.ruleId && plan.find((i) => i.ruleId === data.ruleId)) ||
+      // No id given: the member tapped "take my rest now", so satisfy the one
+      // that is next. Guessing beats refusing — the alternative is a prompt they
+      // cannot answer from the screen they are on.
+      outstandingBreaks(plan)[0] ||
+      null;
+
+    const startedAt = new Date();
+
     // Create break record
     const breakRecord = await this.prisma.break.create({
       data: {
         timeEntryId: entry.id,
         type: (data.type as any) || 'SHORT',
-        startedAt: new Date(),
+        startedAt,
         notes: data.notes,
+        ruleId: planned?.ruleId ?? null,
+        isPaid: planned?.isPaid ?? false,
       },
     });
+
+    if (planned) {
+      /*
+        The plan and its indexed deadline move together, in one statement.
+
+        The next wake-up is when THIS rest is over, so the member gets the "back
+        to work" nudge rather than being asked again about a rest they are
+        currently taking.
+      */
+      const updated = markTaken(plan, planned.ruleId, breakRecord.id, startedAt);
+      await this.prisma.timeEntry.update({
+        where: { id: entry.id },
+        data: {
+          breakPlan: updated as never,
+          nextBreakRemindAt: new Date(startedAt.getTime() + planned.durationMinutes * 60_000),
+        },
+      });
+    }
 
     // Get user info for notification
     const user = await this.prisma.user.findUnique({
@@ -193,14 +239,19 @@ export class BreakService {
         moment anything is edited or deleted — which is exactly what this feature
         makes possible.
       */
-      const totalBreakMinutes = [...entry.breaks, br]
-        .filter((b) => b.endedAt)
+      const closed = [...entry.breaks, br].filter((b) => b.endedAt);
+      const totalBreakMinutes = closed.reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+      // Paid and unpaid are tracked apart: the screen shows the total, the
+      // counted-time rule subtracts only what does not count as work.
+      const unpaidBreakMinutes = closed
+        .filter((b) => !b.isPaid)
         .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
 
       await tx.timeEntry.update({
         where: { id: entry.id },
         data: {
           breakMinutes: totalBreakMinutes,
+          unpaidBreakMinutes,
           // Paid hours changed, so an approval given before it no longer applies.
           ...(entry.approvalStatus === ApprovalStatus.APPROVED
             ? { approvalStatus: ApprovalStatus.PENDING, approvedById: null, approvedAt: null }
@@ -213,7 +264,7 @@ export class BreakService {
       // hours and whose breaks disagree, and both look plausible alone. The row
       // is handed over with the total just computed, so this costs one UPDATE
       // and no extra read.
-      await this.countedTime.recomputeClosed({ ...entry, breakMinutes: totalBreakMinutes }, tx);
+      await this.countedTime.recomputeClosed({ ...entry, breakMinutes: totalBreakMinutes, unpaidBreakMinutes }, tx);
 
       return br;
     });
@@ -280,13 +331,17 @@ export class BreakService {
       // add path recomputes: a running total drifts the moment anything changes.
       const remaining = await tx.break.findMany({
         where: { timeEntryId: br.timeEntryId, endedAt: { not: null } },
-        select: { durationMinutes: true },
+        select: { durationMinutes: true, isPaid: true },
       });
       const remainingMinutes = remaining.reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+      const remainingUnpaid = remaining
+        .filter((b) => !b.isPaid)
+        .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
       await tx.timeEntry.update({
         where: { id: br.timeEntryId },
         data: {
           breakMinutes: remainingMinutes,
+          unpaidBreakMinutes: remainingUnpaid,
           ...(br.timeEntry.approvalStatus === ApprovalStatus.APPROVED
             ? { approvalStatus: ApprovalStatus.PENDING, approvedById: null, approvedAt: null }
             : {}),
@@ -295,7 +350,7 @@ export class BreakService {
 
       // Same reason as the add path.
       await this.countedTime.recomputeClosed(
-        { ...br.timeEntry, id: br.timeEntryId, breakMinutes: remainingMinutes },
+        { ...br.timeEntry, id: br.timeEntryId, breakMinutes: remainingMinutes, unpaidBreakMinutes: remainingUnpaid },
         tx,
       );
     });
@@ -370,9 +425,34 @@ export class BreakService {
       data: { breakMinutes: totalBreakMinutes },
     });
 
+    /*
+      Unpaid minutes, tracked apart from the total.
+
+      A paid rest is time at work; an unpaid one is not. The counted-time rule
+      reads only the unpaid figure, and the screen shows the total — so the two
+      are stored separately rather than one being inferred from the other.
+    */
+    const unpaidBreakMinutes = allBreaks
+      .filter((b) => !b.isPaid)
+      .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+
+    // The rest is over: point the sweep at whatever is next, or at nothing.
+    const plan = parseBreakPlan(entry.breakPlan);
+    await this.prisma.timeEntry.update({
+      where: { id: entry.id },
+      data: {
+        unpaidBreakMinutes,
+        nextBreakRemindAt: plan.length ? nextRestAt(plan, new Date()) : null,
+      },
+    });
+
     // Harmless on an open shift (there is no paid figure yet) and necessary on a
     // closed one, which is what `endBreakManually` reaches.
-    await this.countedTime.recomputeClosed({ ...entry, breakMinutes: totalBreakMinutes });
+    await this.countedTime.recomputeClosed({
+      ...entry,
+      breakMinutes: totalBreakMinutes,
+      unpaidBreakMinutes,
+    });
 
     // Get user info for notification
     const user = await this.prisma.user.findUnique({
@@ -402,6 +482,63 @@ export class BreakService {
   /**
    * Get current break status
    */
+  /**
+   * "Later."
+   *
+   * Moves the rest out by its own interval and counts the answer. The COUNT is
+   * what matters and it is kept here, not on the phone: otherwise "Later" is a
+   * mute button, and a device that is off, flat or in a basement silences an
+   * alarm by not existing.
+   *
+   * Past the cap the rest is recorded as MISSED and the asking stops — a phone
+   * in a locker collecting forty notifications is how people learn to turn a
+   * notification channel off entirely.
+   */
+  async snoozeBreak(data: { userId: string; organizationId: string; ruleId?: string }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: {
+        userId: data.userId,
+        organizationId: data.organizationId,
+        status: TimeEntryStatus.CLOCKED_IN,
+      },
+      select: { id: true, breakPlan: true, locationId: true, shiftId: true },
+    });
+    if (!entry) throw new BadRequestException('You must be clocked in');
+
+    const plan = parseBreakPlan(entry.breakPlan);
+    const target = data.ruleId
+      ? plan.find((i) => i.ruleId === data.ruleId)
+      : outstandingBreaks(plan)[0];
+    if (!target) return { success: true, data: { snoozed: false }, message: 'Nothing to postpone' };
+
+    // The interval comes from the RULE, so an organization decides how insistent
+    // its own reminders are — but the floor and the cap are the shared rule's,
+    // which is what stops a misconfiguration becoming a notification storm.
+    const rule = await this.prisma.breakRule.findUnique({
+      where: { id: target.ruleId },
+      select: { snoozeMin: true, maxSnoozes: true },
+    });
+    const updated = snoozePlan(plan, target.ruleId, {
+      snoozeMin: rule?.snoozeMin ?? 15,
+      maxSnoozes: rule?.maxSnoozes ?? null,
+    });
+    const item = updated.find((i) => i.ruleId === target.ruleId)!;
+
+    await this.prisma.timeEntry.update({
+      where: { id: entry.id },
+      data: { breakPlan: updated as never, nextBreakRemindAt: nextRestAt(updated, new Date()) },
+    });
+
+    this.logger.log(
+      `Rest postponed: entry=${entry.id} rest=${target.name} count=${item.snoozeCount} state=${item.state}`,
+    );
+    return {
+      success: true,
+      data: { snoozed: item.state === 'SNOOZED', state: item.state, dueAt: item.dueAt, snoozeCount: item.snoozeCount },
+      message: item.state === 'MISSED' ? 'Recorded as not taken' : 'We will ask again shortly',
+    };
+  }
+
   async getBreakStatus(data: { userId: string; organizationId: string }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {

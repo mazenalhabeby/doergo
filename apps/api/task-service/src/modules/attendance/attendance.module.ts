@@ -11,6 +11,8 @@ import { ApprovalService } from './approval.service';
 import { AttendanceProcessor } from './attendance.processor';
 import { AttendanceScheduler } from './attendance.scheduler';
 import { CountedTimeService } from './counted-time.service';
+import { BreakRulesService } from './break-rules.service';
+import { BreakReminderService } from './break-reminder.service';
 
 @Module({
   imports: [
@@ -25,6 +27,9 @@ import { CountedTimeService } from './counted-time.service';
     // One answer to "what are these hours worth", shared by the clock-out, the
     // self-reported clock-out, the admin edit and the break services.
     CountedTimeService,
+    // Rests: the rules a workspace writes, and one shift's plan of them.
+    BreakRulesService,
+    BreakReminderService,
     BreakService,
     AttendanceReportService,
     ApprovalService,

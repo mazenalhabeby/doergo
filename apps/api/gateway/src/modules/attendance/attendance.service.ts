@@ -187,8 +187,33 @@ export class AttendanceService extends BaseGatewayService {
     scopeSpaceIds?: string[] | null;
     type?: string;
     notes?: string;
+    /** The planned rest this satisfies; omitted = whichever is next. */
+    ruleId?: string;
   }) {
     return this.send({ cmd: 'start_break' }, data);
+  }
+
+  /** "Later" — the count is kept server-side, so this is a real answer. */
+  async snoozeBreak(data: { userId: string; organizationId: string; ruleId?: string }) {
+    return this.send({ cmd: 'snooze_break' }, data);
+  }
+
+  // ── Rest rules ───────────────────────────────────────────────────────────
+
+  async listBreakRules(data: { organizationId: string; spaceId?: string; shiftId?: string }) {
+    return this.send({ cmd: 'list_break_rules' }, data);
+  }
+
+  async createBreakRule(data: Record<string, unknown> & { organizationId: string }) {
+    return this.send({ cmd: 'create_break_rule' }, data);
+  }
+
+  async updateBreakRule(data: Record<string, unknown> & { id: string; organizationId: string }) {
+    return this.send({ cmd: 'update_break_rule' }, data);
+  }
+
+  async deleteBreakRule(data: { id: string; organizationId: string }) {
+    return this.send({ cmd: 'delete_break_rule' }, data);
   }
 
   /**

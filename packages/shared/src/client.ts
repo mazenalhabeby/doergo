@@ -83,3 +83,9 @@ export * from './notifications/push-channels';
 
 // Counted time — the one place real hours become paid hours.
 export * from './attendance/counted-time';
+
+// Wall-clock time in a place, as an absolute instant.
+export * from './attendance/zoned-time';
+
+// Planned rests: rules → one shift's plan, and the state it moves through.
+export * from './attendance/break-plan';
