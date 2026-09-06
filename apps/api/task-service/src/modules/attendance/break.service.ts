@@ -18,6 +18,7 @@ import {
 } from '@hbcfield/shared';
 import { BreakType, ApprovalStatus } from '@prisma/client';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
+import { CountedTimeService } from './counted-time.service';
 
 @Injectable()
 export class BreakService {
@@ -25,6 +26,8 @@ export class BreakService {
 
   constructor(
     private readonly prisma: PrismaService,
+    // A break changes breakMinutes, and paid time is computed from it.
+    private readonly countedTime: CountedTimeService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
   ) {}
@@ -205,6 +208,13 @@ export class BreakService {
         },
       });
 
+      // Paid time is computed FROM breakMinutes, so it has to move with it — in
+      // the same transaction, or a crash between the two leaves an entry whose
+      // hours and whose breaks disagree, and both look plausible alone. The row
+      // is handed over with the total just computed, so this costs one UPDATE
+      // and no extra read.
+      await this.countedTime.recomputeClosed({ ...entry, breakMinutes: totalBreakMinutes }, tx);
+
       return br;
     });
 
@@ -238,7 +248,22 @@ export class BreakService {
     // found", never as a deletion.
     const br = await this.prisma.break.findFirst({
       where: { id: data.breakId, timeEntry: { organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) } },
-      include: { timeEntry: { select: { id: true, approvalStatus: true } } },
+      include: {
+        timeEntry: {
+          // The counting fields ride along on a row already being fetched:
+          // removing a break changes the paid figure, and asking for the entry
+          // again afterwards would be a second query for data we had.
+          select: {
+            id: true,
+            approvalStatus: true,
+            clockInAt: true,
+            clockOutAt: true,
+            expectedClockInAt: true,
+            expectedClockOutAt: true,
+            shiftId: true,
+          },
+        },
+      },
     });
     if (!br) return refuse(HttpStatus.NOT_FOUND, 'Break not found.');
 
@@ -257,15 +282,22 @@ export class BreakService {
         where: { timeEntryId: br.timeEntryId, endedAt: { not: null } },
         select: { durationMinutes: true },
       });
+      const remainingMinutes = remaining.reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
       await tx.timeEntry.update({
         where: { id: br.timeEntryId },
         data: {
-          breakMinutes: remaining.reduce((sum, b) => sum + (b.durationMinutes || 0), 0),
+          breakMinutes: remainingMinutes,
           ...(br.timeEntry.approvalStatus === ApprovalStatus.APPROVED
             ? { approvalStatus: ApprovalStatus.PENDING, approvedById: null, approvedAt: null }
             : {}),
         },
       });
+
+      // Same reason as the add path.
+      await this.countedTime.recomputeClosed(
+        { ...br.timeEntry, id: br.timeEntryId, breakMinutes: remainingMinutes },
+        tx,
+      );
     });
 
     this.logger.warn(
@@ -337,6 +369,10 @@ export class BreakService {
       where: { id: entry.id },
       data: { breakMinutes: totalBreakMinutes },
     });
+
+    // Harmless on an open shift (there is no paid figure yet) and necessary on a
+    // closed one, which is what `endBreakManually` reaches.
+    await this.countedTime.recomputeClosed({ ...entry, breakMinutes: totalBreakMinutes });
 
     // Get user info for notification
     const user = await this.prisma.user.findUnique({

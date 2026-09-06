@@ -7,8 +7,9 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, ApprovalStatus, computeScheduleFlags, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
+import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
+import { CountedTimeService } from './counted-time.service';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else
@@ -21,6 +22,8 @@ export class ApprovalService {
 
   constructor(
     private readonly prisma: PrismaService,
+    // An admin editing hours moves the paid figure like any other close path.
+    private readonly countedTime: CountedTimeService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
@@ -315,6 +318,27 @@ export class ApprovalService {
         (new Date(newClockOut).getTime() - new Date(newClockIn).getTime()) /
           (1000 * 60),
       );
+
+      /*
+        …and the counted window moves with it.
+
+        An edit is the one path where the times change AFTER the shift was
+        resolved, so the expectation stamped at clock-in still applies and the
+        clamp is the same one the clock-out used. Computed inline from the values
+        being written rather than re-read afterwards: `updateData` is the truth
+        about this row a moment before it exists.
+      */
+      const editCounted = computeCountedTime({
+        clockInAt: new Date(newClockIn),
+        clockOutAt: new Date(newClockOut),
+        expectedStartAt: entry.expectedClockInAt ?? null,
+        expectedEndAt: entry.expectedClockOutAt ?? null,
+        toleranceMin: await this.countedTime.toleranceFor(entry.shiftId),
+        unpaidBreakMinutes: entry.breakMinutes ?? 0,
+      });
+      updateData.countedStartAt = editCounted.countedStartAt;
+      updateData.countedEndAt = editCounted.countedEndAt;
+      updateData.paidMinutes = editCounted.paidMinutes;
 
       // Adding a clock-out to a still-open entry closes it. Without this the row
       // keeps status CLOCKED_IN and shows "Active" despite having a clock-out
@@ -638,6 +662,21 @@ export class ApprovalService {
         0,
         Math.round((clockOut.getTime() - clockIn.getTime()) / 60000),
       );
+      /*
+        Counted time on a hand-entered shift.
+
+        No shift was resolved for it — nobody clocked in, so nothing stamped an
+        expectation — which means there is nothing to clamp to and the counted
+        window IS the entered window, net of the break. Written here rather than
+        left null so a back-dated day carries the same three columns as a real
+        one and the timesheet does not have to ask which kind it is looking at.
+      */
+      const counted = computeCountedTime({
+        clockInAt: clockIn,
+        clockOutAt: clockOut,
+        unpaidBreakMinutes: breakMin,
+      });
+
       toCreate.push({
         userId: data.userId,
         organizationId: data.organizationId,
@@ -655,6 +694,9 @@ export class ApprovalService {
         isRemote: false,
         totalMinutes,
         breakMinutes: breakMin,
+        countedStartAt: counted.countedStartAt,
+        countedEndAt: counted.countedEndAt,
+        paidMinutes: counted.paidMinutes,
         notes: data.notes?.trim() || null,
         flagReasons: [],
         approvalStatus: 'APPROVED',

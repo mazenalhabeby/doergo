@@ -9,6 +9,7 @@ import { ShiftResolverService } from '../shift-resolver.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { TimeEntryStatus, SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
+import { CountedTimeService } from '../counted-time.service';
 
 /**
  * Audit AT-B1 — overtime is paid time, and the request/approve flow exists so a
@@ -55,6 +56,7 @@ describe('overtime self-approval (AT-B1)', () => {
     prisma.timeEntry.update.mockResolvedValue({});
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        CountedTimeService,
         AttendanceService, BreakService, ApprovalService, AttendanceReportService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },

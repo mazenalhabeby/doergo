@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BreakService } from '../break.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { CountedTimeService } from '../counted-time.service';
 
 /**
  * The shape of "the breaks on this shift".
@@ -26,6 +27,7 @@ describe('getBreaksForEntry — response shape', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        CountedTimeService,
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         BreakService,
         { provide: PrismaService, useValue: prisma },

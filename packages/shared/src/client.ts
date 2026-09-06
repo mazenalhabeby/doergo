@@ -80,3 +80,6 @@ export * from './access/workflow-status-label';
 // Push routing (Android channel ids + iOS interruption level). Shared because
 // the server names the channel and the app creates it — the two cannot drift.
 export * from './notifications/push-channels';
+
+// Counted time — the one place real hours become paid hours.
+export * from './attendance/counted-time';

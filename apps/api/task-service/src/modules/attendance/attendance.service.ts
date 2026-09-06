@@ -26,6 +26,7 @@ import {
   computeScheduleFlags,
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   SHIFT_REMINDER_DEFAULTS,
+  computeCountedTime,
   UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
@@ -34,6 +35,7 @@ import {
   mayClockInRemotely as canClockInRemotely,
 } from '@hbcfield/shared';
 import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
+import { CountedTimeService } from './counted-time.service';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
@@ -68,6 +70,7 @@ export class AttendanceService {
     private readonly overtimeQueue: Queue,
     private readonly notificationRouting: NotificationRoutingService,
     private readonly shiftResolver: ShiftResolverService,
+    private readonly countedTime: CountedTimeService,
   ) {}
 
   /**
@@ -100,7 +103,19 @@ export class AttendanceService {
     space: ResolverSpace,
     clockInAt: Date,
     clockInTz?: string,
-  ): Promise<{ shiftId?: string; expectedClockInAt?: Date; expectedClockOutAt?: Date; nextRemindAt?: Date; flagToleranceMin?: number; scheduled: boolean }> {
+  ): Promise<{
+    shiftId?: string;
+    /**
+     * PERSISTED now, not derived. It used to be read once for the LATE_ARRIVAL
+     * flag and dropped before the row was written — and nothing can clamp paid
+     * time to a shift start it did not keep.
+     */
+    expectedClockInAt?: Date;
+    expectedClockOutAt?: Date;
+    nextRemindAt?: Date;
+    flagToleranceMin?: number;
+    scheduled: boolean;
+  }> {
     try {
       const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt, clockInTz });
       if (!resolved) return { ...this.unscheduledStamp(clockInAt), scheduled: false };
@@ -119,18 +134,14 @@ export class AttendanceService {
     }
   }
 
+
   /**
    * The per-shift flag tolerance (minutes) for LATE/EARLY/OVERTIME, or the
    * default when the entry has no bound shift. Used at clock-out (clock-in gets
    * it straight from the resolver).
    */
-  private async getShiftFlagTolerance(shiftId?: string | null): Promise<number> {
-    if (!shiftId) return SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
-    const shift = await this.prisma.shift.findUnique({
-      where: { id: shiftId },
-      select: { flagToleranceMin: true },
-    });
-    return shift?.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
+  private getShiftFlagTolerance(shiftId?: string | null): Promise<number> {
+    return this.countedTime.toleranceFor(shiftId ?? null);
   }
 
   /**
@@ -274,9 +285,8 @@ export class AttendanceService {
       const remoteClockInAt = new Date();
       // Remote clock-in: the bucket is a logical (pin-less) space, so anchor the
       // shift to the worker's own timezone.
-      // Strip the derived fields (scheduled/expectedClockInAt) — only the DB
-      // columns go into the entry.
-      const { scheduled: _s, expectedClockInAt: _ci, flagToleranceMin: _ft, ...remoteStamp } = await this.buildShiftStamp(
+      // Strip only what is genuinely derived — `expectedClockInAt` is a column.
+      const { scheduled: _s, flagToleranceMin: _ft, ...remoteStamp } = await this.buildShiftStamp(
         data.userId,
         bucket,
         remoteClockInAt,
@@ -406,7 +416,9 @@ export class AttendanceService {
 
     // Resolve the shift ONCE (rota-aware + timezone-correct) and reuse it for both
     // the flags and the stamp — no separate legacy technicianSchedule query.
-    const { scheduled, expectedClockInAt, flagToleranceMin, ...stampCols } = await this.buildShiftStamp(
+    // `scheduled` and `flagToleranceMin` are derived and are not columns;
+    // `expectedClockInAt` IS one now and stays in `stampCols`.
+    const { scheduled, flagToleranceMin, ...stampCols } = await this.buildShiftStamp(
       data.userId,
       location,
       clockInTime,
@@ -420,7 +432,11 @@ export class AttendanceService {
       flagReasons.push('UNSCHEDULED_DAY');
     } else {
       flagReasons.push(
-        ...computeScheduleFlags({ clockInAt: clockInTime, expectedClockInAt, toleranceMin: flagToleranceMin }),
+        ...computeScheduleFlags({
+          clockInAt: clockInTime,
+          expectedClockInAt: stampCols.expectedClockInAt,
+          toleranceMin: flagToleranceMin,
+        }),
       );
     }
 
@@ -616,8 +632,8 @@ export class AttendanceService {
     // time, which for a cross-midnight or cross-timezone session matched the
     // wrong day's schedule and produced a false "Early Departure" alongside the
     // "Unscheduled" tag.)
+    const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
     if (entry.expectedClockOutAt) {
-      const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
       flagReasons.push(
         ...computeScheduleFlags({
           clockOutAt: clockOutTime,
@@ -626,6 +642,9 @@ export class AttendanceService {
         }),
       );
     }
+
+    // What the timesheet will read. The real times above are untouched.
+    const counted = await this.countedTime.columnsFor(entry, clockOutTime, toleranceMin);
 
     // Deduplicate flags
     const uniqueFlags = [...new Set(flagReasons)];
@@ -651,6 +670,7 @@ export class AttendanceService {
         // "unknown", not "outside".
         clockOutWithinGeofence: geofenceEvaluable ? withinGeofence : null,
         totalMinutes,
+        ...counted,
         notes: data.notes,
         flagReasons: uniqueFlags,
         approvalStatus,
@@ -760,12 +780,17 @@ export class AttendanceService {
     if (isOvertime) flags.add('OVERTIME');
     const uniqueFlags = [...flags];
 
+    // Counted the same way as any other close — a forgotten clock-out is a late
+    // clock-out, not a different kind of day.
+    const counted = await this.countedTime.columnsFor(entry, clockOutTime);
+
     const updated = await this.prisma.timeEntry.update({
       where: { id: entry.id },
       data: {
         status: TimeEntryStatus.CLOCKED_OUT,
         clockOutAt: clockOutTime,
         totalMinutes,
+        ...counted,
         notes: 'Self-reported clock-out (forgot to clock out)',
         flagReasons: uniqueFlags,
         approvalStatus: 'PENDING', // a forgotten clock-out is always worth a glance

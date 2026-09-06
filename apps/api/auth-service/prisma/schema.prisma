@@ -2101,7 +2101,27 @@ model TimeEntry {
   // ── Shift expectation (resolved once at clock-in; server-authoritative) ──
   shiftId            String? // Resolved shift for this clock-in (null = no shift / task / flex)
   shift              Shift?             @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  /// Absolute UTC instant the shift was expected to START.
+  ///
+  /// Resolved at clock-in like its sibling below, and until now thrown away
+  /// immediately after being read once for the LATE_ARRIVAL flag. Nothing can
+  /// clamp to a boundary it did not keep: this column is what makes arriving at
+  /// 05:55 for an 06:00 shift recordable AND unpaid at the same time.
+  expectedClockInAt  DateTime?
   expectedClockOutAt DateTime? // Absolute UTC instant the shift is expected to end (cross-midnight safe)
+
+  // ── Counted time: what the timesheet reads ──────────────────────────────
+  //
+  // `clockInAt`/`clockOutAt` above are EVIDENCE and are never adjusted. These
+  // three are the same day seen by payroll: the part of it the organization
+  // asked for. Computed once, at clock-out, by ONE shared rule
+  // (packages/shared/src/attendance/counted-time.ts) so that the phone, the
+  // timesheet and the export cannot disagree about a person's hours.
+  countedStartAt DateTime?
+  countedEndAt   DateTime?
+  /// Whole minutes, never negative, net of unpaid rests. The one number payroll
+  /// reads; null on an entry that has not been closed yet.
+  paidMinutes    Int?
   reminderState      ShiftReminderState @default(NONE) // Reminder/escalation lifecycle for an open entry
   nextRemindAt       DateTime? // When the next reminder push is due (null = nothing scheduled)
   reminderCount      Int                @default(0) // How many reminders have been sent for this entry

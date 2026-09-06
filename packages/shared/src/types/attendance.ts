@@ -434,8 +434,26 @@ export function mayClockInRemotely(
  * number of hours worked helps nobody diagnose it.
  */
 export function workedMinutes(
-  entry: { totalMinutes?: number | null; breakMinutes?: number | null } | null | undefined,
+  entry:
+    | { paidMinutes?: number | null; totalMinutes?: number | null; breakMinutes?: number | null }
+    | null
+    | undefined,
 ): number {
+  /*
+    The counted figure wins when there is one.
+
+    `paidMinutes` is decided once, at clock-out, by the shared counted-time rule:
+    an early arrival clamped off, approved overtime included because approving it
+    moved the expected end, unpaid rests subtracted. Nothing on a screen may
+    re-derive that from raw times — a second opinion about somebody's hours is
+    exactly the bug this whole column exists to remove.
+
+    The fallback is not legacy debt, it is the same arithmetic this function has
+    always done: entries closed before the column existed keep reporting the
+    number they always reported, on every screen, with no migration of history.
+  */
+  if (entry?.paidMinutes != null) return Math.max(0, entry.paidMinutes);
+
   const gross = entry?.totalMinutes ?? 0;
   const breaks = entry?.breakMinutes ?? 0;
   return Math.max(0, gross - breaks);

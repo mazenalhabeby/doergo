@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus } from '@nestjs/common';
 import { BreakService } from '../break.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { CountedTimeService } from '../counted-time.service';
 
 /**
  * Adding a break to somebody else's shift.
@@ -61,6 +62,7 @@ describe('addBreakForMember', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        CountedTimeService,
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         BreakService,
         { provide: PrismaService, useValue: prisma },

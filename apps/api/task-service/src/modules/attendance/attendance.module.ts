@@ -10,6 +10,7 @@ import { AttendanceReportService } from './attendance-report.service';
 import { ApprovalService } from './approval.service';
 import { AttendanceProcessor } from './attendance.processor';
 import { AttendanceScheduler } from './attendance.scheduler';
+import { CountedTimeService } from './counted-time.service';
 
 @Module({
   imports: [
@@ -21,6 +22,9 @@ import { AttendanceScheduler } from './attendance.scheduler';
   providers: [
     AttendanceService,
     ShiftResolverService,
+    // One answer to "what are these hours worth", shared by the clock-out, the
+    // self-reported clock-out, the admin edit and the break services.
+    CountedTimeService,
     BreakService,
     AttendanceReportService,
     ApprovalService,

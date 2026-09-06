@@ -62,9 +62,18 @@ export const DATASETS: Record<string, Dataset> = {
         the same sum — a wrong total that looks plausible is worse than one row
         that looks absurd.
       */
-      hours: { label: 'Hours worked', agg: 'sum', sql: `GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."breakMinutes", 0), 0) / 60.0`, format: 'hours' },
+      /*
+        Paid hours, which is not the same as hours present.
+
+        `paidMinutes` is computed once at clock-out by the shared counted-time
+        rule — early arrival clamped off, approved overtime included, unpaid
+        rests subtracted. The COALESCE is the bridge for entries closed before
+        that column existed: it falls back to exactly the expression this line
+        used to be, so a historic row reports the number it always reported.
+      */
+      hours: { label: 'Hours worked', agg: 'sum', sql: `COALESCE(te."paidMinutes", GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."breakMinutes", 0), 0)) / 60.0`, format: 'hours' },
       // Overtime is worked time too, so it nets the same way.
-      overtimeHours: { label: 'Overtime hours', agg: 'sum', sql: `CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."breakMinutes", 0), 0) / 60.0 ELSE 0 END`, format: 'hours' },
+      overtimeHours: { label: 'Overtime hours', agg: 'sum', sql: `CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN COALESCE(te."paidMinutes", GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."breakMinutes", 0), 0)) / 60.0 ELSE 0 END`, format: 'hours' },
       breakHours: { label: 'Break hours', agg: 'sum', sql: `te."breakMinutes" / 60.0`, format: 'hours' },
       shifts: { label: 'Shifts', agg: 'count', sql: 'te.id', format: 'number' },
       technicians: { label: 'People', agg: 'countDistinct', sql: 'te."userId"', format: 'number' },
