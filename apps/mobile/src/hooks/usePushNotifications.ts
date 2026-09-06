@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { pushApi } from '../lib/api';
+import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
 
 const PUSH_TOKEN_CACHE_KEY = 'hbcfield_push_token_registered';
 
@@ -209,7 +210,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
   useEffect(() => {
     if (Platform.OS === 'android') {
       // Default channel for general notifications
-      Notifications.setNotificationChannelAsync('default', {
+      Notifications.setNotificationChannelAsync(PUSH_CHANNELS.DEFAULT, {
         name: 'Default',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
@@ -217,7 +218,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       });
 
       // Task notifications channel
-      Notifications.setNotificationChannelAsync('tasks', {
+      Notifications.setNotificationChannelAsync(PUSH_CHANNELS.TASKS, {
         name: 'Tasks',
         description: 'Task assignments and status updates',
         importance: Notifications.AndroidImportance.HIGH,
@@ -225,14 +226,38 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
         lightColor: '#059669',
       });
 
-      // Attendance notifications channel
-      Notifications.setNotificationChannelAsync('attendance', {
+      /*
+        Attendance — the channel that has to be able to interrupt.
+
+        ⚠️ It is `attendance_v2`, and the id matters. Android hands a channel to
+        the USER at creation: importance, sound and vibration are theirs from
+        then on, and calling this again with a higher importance is silently
+        ignored. The original `attendance` channel was registered at
+        IMPORTANCE_DEFAULT — it makes a sound and then sits in the shade, never
+        appearing over what the member is looking at. On every phone that has
+        ever run this app it is still DEFAULT and always will be.
+
+        So: a new id at HIGH, and the old one deleted below, or the member ends
+        up with two "Attendance" switches in their settings and one of them does
+        nothing. A rest falling due and a shift ending are time-bound — worth
+        interrupting for, or not worth sending.
+      */
+      Notifications.setNotificationChannelAsync(PUSH_CHANNELS.ATTENDANCE, {
         name: 'Attendance',
-        description: 'Clock in/out and break reminders',
-        importance: Notifications.AndroidImportance.DEFAULT,
+        description: 'Shift, rest and clock reminders',
+        importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#16A34A', // Green
       });
+
+      // Retire channels replaced by a version bump. Deleting is safe when the
+      // channel was never created; it is the only way to remove a dead switch
+      // from the member's notification settings.
+      for (const retired of RETIRED_PUSH_CHANNELS) {
+        Notifications.deleteNotificationChannelAsync(retired).catch(() => {
+          // Never created on this device — nothing to remove.
+        });
+      }
     }
   }, []);
 

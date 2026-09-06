@@ -76,3 +76,7 @@ export * from './access/workflow-scope';
 export * from './access/asset-kind-shape';
 export * from './access/asset-kind-templates';
 export * from './access/workflow-status-label';
+
+// Push routing (Android channel ids + iOS interruption level). Shared because
+// the server names the channel and the app creates it — the two cannot drift.
+export * from './notifications/push-channels';

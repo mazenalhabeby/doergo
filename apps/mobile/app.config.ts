@@ -61,6 +61,24 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       config: {
         googleMapsApiKey,
       },
+      /*
+        Time Sensitive notifications.
+
+        Without this entitlement a Work Focus or Do Not Disturb silences a push
+        outright, and the two notifications this app most needs to deliver — your
+        shift has ended, your rest is due — are precisely the ones a member has
+        their phone on Focus for. The server marks those `time-sensitive`; iOS
+        only honours it when the build carries this.
+
+        Deliberately NOT `critical`, which overrides the ring/silent switch:
+        that needs a special entitlement from Apple, is meant for medical and
+        safety alarms, and asking for it invites a review problem.
+
+        ⚠️ NATIVE. This reaches phones through a new build, never an OTA.
+      */
+      entitlements: {
+        'com.apple.developer.usernotifications.time-sensitive': true,
+      },
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
           'HBCField needs your location to verify you are at your assigned work site when clocking in.',

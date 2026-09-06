@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@hbcfield/shared';
 import Expo, { ExpoPushMessage, ExpoPushTicket, ExpoPushReceipt } from 'expo-server-sdk';
+import { pushRouting } from '@hbcfield/shared';
 
 @Injectable()
 export class PushService {
@@ -100,6 +101,16 @@ export class PushService {
     }
 
     // Build messages
+    /*
+      Where it lands and how loudly — decided by one shared table, because the
+      server names the Android channel and the APP is what creates it. Two
+      opinions on that string is a push delivered to a channel nobody registered.
+
+      `interruptionLevel` is the iPhone half: without it a Work Focus or Do Not
+      Disturb silences a shift ending and a rest falling due, which are exactly
+      the two things worth interrupting for.
+    */
+    const routing = pushRouting(data?.type);
     const messages: ExpoPushMessage[] = validTokens.map((token) => ({
       to: token,
       sound: 'default',
@@ -107,7 +118,8 @@ export class PushService {
       body,
       data,
       priority: 'high',
-      channelId: data?.type?.includes('attendance') ? 'attendance' : 'tasks',
+      channelId: routing.channelId,
+      interruptionLevel: routing.interruptionLevel,
     }));
 
     // Chunk and send

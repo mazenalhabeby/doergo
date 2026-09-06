@@ -85,3 +85,6 @@ export * from './scheduling/cron-lock';
 
 // Bearer-secret helpers (node crypto — NOT client-safe, root entry only).
 export * from './security/tokens';
+
+// Push routing — see client.ts.
+export * from './notifications/push-channels';
