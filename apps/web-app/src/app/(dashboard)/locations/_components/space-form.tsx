@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef } from "react"
+import { useAuth } from "@/contexts/auth-context"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
@@ -41,6 +42,7 @@ export function SpaceForm({
   submitLabel?: string
   autoFocus?: boolean
 }) {
+  const { hasPlanFeature } = useAuth()
   const { t } = useTranslation()
   const resolvedSubmitLabel = submitLabel ?? t("locations.createSpace")
   // Workflows are fetched here (cached key shared with /locations, so no extra
@@ -296,11 +298,19 @@ export function SpaceForm({
 
       {/* Workflow */}
       <div data-tour="spaces-form-workflow">
+      {/*
+        Choosing a workflow is free; BUILDING one is the Option.
+
+        `allowCreate` opened the builder from inside this form — a second way in
+        that the workspace tab's gate never covered. Picking from the workflows
+        the organization already has stays available either way, because that is
+        not what was bought.
+      */}
       <WorkflowSelector
         value={workflowId || defaultWorkflow?.id || ""}
         onChange={setWorkflowId}
         workflows={workflows}
-        allowCreate
+        allowCreate={hasPlanFeature("workflows")}
       />
       </div>
 

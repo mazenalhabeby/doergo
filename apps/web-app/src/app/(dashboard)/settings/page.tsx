@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react"
+import { SETTINGS_OPTION } from "@hbcfield/shared/client"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -1305,13 +1306,16 @@ export default function SettingsPage() {
   const isAdmin = user?.role === "ADMIN"
   const canManage = user?.canManageUsers
 
-  // Hide settings tabs the org's plan tier doesn't include. Content is also
-  // PlanGate-guarded + API-enforced (402).
-  const SECTION_PLAN_FEATURE: Partial<Record<SettingsSection, string>> = {
-    "audit-log": "audit_log",
-  }
+  /*
+    Settings sections owned by an Option, from the table in shared that also
+    drives the navigation and the workspace tabs.
+
+    This kept its own copy of the map — correct, and one of three places that had
+    to be found and edited together whenever an Option gained a surface. Content
+    is still PlanGate-guarded and the API still enforces it.
+  */
   const orgNavItems = ORG_NAV_ITEMS.filter((i) => {
-    const feat = SECTION_PLAN_FEATURE[i.key]
+    const feat = SETTINGS_OPTION[i.key]
     return !feat || hasPlanFeature(feat)
   })
 

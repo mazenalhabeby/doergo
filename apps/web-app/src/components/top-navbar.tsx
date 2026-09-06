@@ -32,6 +32,7 @@ import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { hasAccessModule, resolveCrmCaps } from "@hbcfield/shared/client"
+import { NAV_OPTION } from "@hbcfield/shared/client"
 import { useMySections } from "@/hooks/use-my-sections"
 import { useAuth } from "@/contexts/auth-context"
 import { useCommandPalette } from "@/contexts/command-palette-context"
@@ -151,6 +152,21 @@ function usePrefetchRoutes() {
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
   const { user, logout, hasPlanFeature, hasPermission } = useAuth()
+  /*
+    One question, asked of one table.
+
+    `NAV_OPTION` says which href belongs to which Option; anything it does not
+    claim is not an Option and stays visible. `hasPlanFeature` is the same check
+    the pages and PlanGate already use, so what the navigation shows and what the
+    page allows cannot disagree.
+  */
+  const optionAllows = useCallback(
+    (href: string) => {
+      const option = NAV_OPTION[href]
+      return !option || hasPlanFeature(option)
+    },
+    [hasPlanFeature],
+  )
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
@@ -191,10 +207,10 @@ export function TopNavbar() {
     403, which is the thing this navbar was just fixed to stop doing in the
     other direction.
   */
-  const showSchedule = user.canViewAllTasks === true || user.canManageRota === true
+  const showSchedule = (user.canViewAllTasks === true || user.canManageRota === true) && optionAllows("/schedule")
   const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
   // Every overtime route asks this one, reads included — so the link does too.
-  const showOvertime = hasPermission('canApproveOvertime')
+  const showOvertime = hasPermission('canApproveOvertime') && optionAllows("/overtime")
   /*
     Shift issues: the responsible party's view. `canViewAllTasks` — org-wide or
     in one space — is exactly what the API treats as "oversees this work", so
@@ -277,7 +293,14 @@ export function TopNavbar() {
   // the obvious case) SAW the nav item and then hit a page whose every request
   // 403s. The reverse also held: a manager with canViewAllTasks had no nav item
   // for something they could already open by URL, so hiding it protected nothing.
-  const showInvoices = user.canViewAllTasks
+  /*
+    ⚠️ Every item here was decided by PERMISSIONS ALONE — not one asked what the
+    organization had bought. Switching an Option off left its entry point exactly
+    where it was, for every role, and the refusal arrived a click or two later
+    from a page or a save. `optionAllows` closes that, from the one table in
+    shared that also drives the workspace tabs and the settings list.
+  */
+  const showInvoices = user.canViewAllTasks && optionAllows("/invoices")
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by

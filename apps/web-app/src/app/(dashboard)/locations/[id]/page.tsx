@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { SPACE_TAB_OPTION } from "@hbcfield/shared/client"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
@@ -58,7 +59,7 @@ export default function SpaceSettingsPage() {
   const router = useRouter()
   const params = useParams()
   const spaceId = params.id as string
-  const { user } = useAuth()
+  const { user, hasPlanFeature } = useAuth()
   /*
     Org-wide managers OR this space's own manager may open its settings —
     delegation, so a space can be administered without org-wide rights.
@@ -132,11 +133,25 @@ export default function SpaceSettingsPage() {
   // enabled modules / kind. Rendered as a vertical rail on desktop, a scrollable
   // row on mobile.
   const mods = space?.enabledModules ?? []
+  /*
+    Tabs owned by an Option, from the same table the navigation reads — so a tab
+    and a nav item can never disagree about whether something was bought.
+  */
+  const optionAllows = (tab: string) => {
+    const option = SPACE_TAB_OPTION[tab]
+    return !option || hasPlanFeature(option)
+  }
   const SECTIONS = [
     { value: "general", label: t("locations.tabs.general"), icon: Building2, show: true },
     { value: "attendance", label: t("scheduling.tabs.attendance"), icon: CalendarClock, show: true },
     { value: "modules", label: t("locations.tabs.modules"), icon: Blocks, show: true },
-    { value: "workflow", label: t("locations.tabs.workflow"), icon: Workflow, show: true },
+    /*
+      ⚠️ This was `show: true`. The whole builder opened for an organization that
+      had not bought Custom workflows — design one, press save, 402. The server
+      was doing its job; the experience of not owning the Option was losing work
+      at the last step.
+    */
+    { value: "workflow", label: t("locations.tabs.workflow"), icon: Workflow, show: optionAllows("workflow") },
     { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
     { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
     /*
@@ -145,7 +160,7 @@ export default function SpaceSettingsPage() {
       address where the same component is mounted — see MOVED_TABS above and the
       links on the General tab. Invoices stays: per-space billing IS a setting.
     */
-    { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" },
+    { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" && optionAllows("invoices") },
   ].filter((s) => s.show)
 
   // Gate the whole page on the user-management permission (mirrors other admin pages).
@@ -264,7 +279,11 @@ export default function SpaceSettingsPage() {
                 <ModulesTab space={space} />
               </TabsContent>
               <TabsContent value="workflow" className="mt-0">
-                <WorkflowTab space={space} />
+                {/* The tab is hidden without the Option; this covers the other
+                    way in — ?tab=workflow in the URL, or a bookmark. */}
+                <PlanGate feature="workflows">
+                  <WorkflowTab space={space} />
+                </PlanGate>
               </TabsContent>
               <TabsContent value="members" className="mt-0">
                 {/* Apartments live in Assets since units became asset records — so this

@@ -4,6 +4,7 @@
  */
 export * from './plans';
 export * from './add-ons';
+export * from './option-surfaces';
 export * from './stripe-catalog';
 export * from './agreement';
 export * from './module-pricing';
