@@ -65,11 +65,29 @@ export const attendanceApi = {
     return fetchWithAuth<PaginatedResponse<TimeEntry>>(endpoint, { method: 'GET' });
   },
 
-  startBreak: async (type?: BreakType, notes?: string): Promise<Break> => {
+  /**
+   * Start a rest. `ruleId` names the planned one it satisfies; without it the
+   * server picks whichever is next, which is what "take my rest now" means.
+   */
+  startBreak: async (type?: BreakType, notes?: string, ruleId?: string): Promise<Break> => {
     const endpoint = buildUrlWithQuery('/attendance/breaks/start', { type });
     return fetchWithAuth<Break>(endpoint, {
       method: 'POST',
-      body: JSON.stringify({ notes }),
+      body: JSON.stringify({ notes, ruleId }),
+    });
+  },
+
+  /**
+   * "Later."
+   *
+   * The count is kept by the SERVER. If the phone kept it, this would be a mute
+   * button — and a phone that is off, flat or in a basement would silence the
+   * alarm by not existing.
+   */
+  snoozeBreak: async (ruleId?: string): Promise<{ state: string; dueAt?: string; snoozeCount: number }> => {
+    return fetchWithAuth('/attendance/breaks/snooze', {
+      method: 'POST',
+      body: JSON.stringify({ ruleId }),
     });
   },
 

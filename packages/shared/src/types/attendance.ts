@@ -282,6 +282,14 @@ export interface ClockOutInput {
   lng?: number;
   accuracy?: number;
   notes?: string;
+  /**
+   * Why they are leaving before the shift ends.
+   *
+   * Sent when the member confirmed a short clock-out. The server measures the
+   * shortfall itself and never refuses the clock-out for want of a reason — the
+   * client asking is a courtesy, not a gate.
+   */
+  earlyReason?: string;
 }
 
 export interface StartBreakInput {

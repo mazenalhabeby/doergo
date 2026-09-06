@@ -59,6 +59,8 @@ import {
 } from '../../../src/lib/utils';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { workedMinutes } from '@hbcfield/shared/client';
+import { RestCard } from '../../../src/components/rest-card';
+import type { BreakPlanItem } from '@hbcfield/shared/client';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
@@ -682,6 +684,28 @@ export default function AttendanceScreen() {
           )}
 
           {/* Shift-reminder: shift ended, still clocked in — prompt for response */}
+          {/*
+            The rests planned for this shift.
+
+            Only while clocked in and only when there are any — a workspace that
+            plans no rests shows nothing here, exactly as before they existed.
+          */}
+          {isClockedIn && Array.isArray(currentEntry?.breakPlan) && currentEntry.breakPlan.length > 0 && (
+            <RestCard
+              plan={currentEntry.breakPlan as BreakPlanItem[]}
+              activeBreak={
+                breakStatus?.isOnBreak && breakStatus.currentBreak
+                  ? {
+                      id: breakStatus.currentBreak.id,
+                      startedAt: breakStatus.currentBreak.startedAt,
+                      ruleId: (breakStatus.currentBreak as { ruleId?: string | null }).ruleId ?? null,
+                    }
+                  : null
+              }
+              onChanged={fetchAttendanceData}
+            />
+          )}
+
           {showReminderPrompt && (
             <View style={[styles.reminderCard, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
               <View style={styles.reminderHeader}>
@@ -697,6 +721,23 @@ export default function AttendanceScreen() {
               >
                 <Ionicons name="log-out-outline" size={18} color="#fff" />
                 <Text style={styles.reminderPrimaryText}>{t('shiftReminder.forgotClockOut')}</Text>
+              </TouchableOpacity>
+              {/*
+                The plain answer, which was missing.
+
+                The prompt offered "I forgot to clock out" and "I'm working
+                extra" — and not the commonest thing of all: I am here, I am
+                finishing now. A member who simply wanted to leave had to pick
+                one of two wrong descriptions of their day.
+              */}
+              <TouchableOpacity
+                style={styles.reminderSecondaryBtn}
+                onPress={handleClockOut}
+                disabled={isReminderLoading || isActionLoading}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="log-out-outline" size={18} color="#92400E" />
+                <Text style={styles.reminderSecondaryText}>{t('attendance.clockOut')}</Text>
               </TouchableOpacity>
               {hasShiftScheduling && (
                 <TouchableOpacity
@@ -778,6 +819,28 @@ export default function AttendanceScreen() {
                   {t('attendance.startedAt', { time: formatTime(currentEntry.clockInAt, (currentEntry.timezone ?? currentEntry.location?.timezone)) })}
                 </Text>
               </View>
+              {/*
+                Both clocks, and only when they differ.
+
+                Arriving twenty minutes early is recorded and is not paid.
+                Reading that here, on the day, is the difference between a member
+                who understands their payslip and one who queries it a month
+                later with nobody able to remember the morning.
+              */}
+              {!!currentEntry.countedStartAt &&
+                new Date(currentEntry.countedStartAt).getTime() !== new Date(currentEntry.clockInAt).getTime() && (
+                  <View style={styles.shiftDetail}>
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#059669" />
+                    <Text style={[styles.shiftDetailText, { color: '#059669' }]}>
+                      {t('attendance.countedFrom', 'Counted from {{time}}', {
+                        time: formatTime(
+                          currentEntry.countedStartAt,
+                          currentEntry.timezone ?? currentEntry.location?.timezone,
+                        ),
+                      })}
+                    </Text>
+                  </View>
+                )}
               <View style={styles.elapsedTimeContainer}>
                 <Text style={[styles.elapsedTimeLabel, { color: colors.textMuted }]}>{t('attendance.timeOnShift')}</Text>
                 <Text style={styles.elapsedTime}>{formatDuration(elapsedMinutes)}</Text>

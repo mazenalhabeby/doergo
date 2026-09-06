@@ -661,7 +661,30 @@
       "notNow": "Non ora"
     },
     "unknownLocation": "questo spazio di lavoro",
-    "clockedInRemotely": "Timbratura da remoto"
+    "clockedInRemotely": "Timbratura da remoto",
+    "countedFrom": "Conteggiato dalle {{time}}",
+    "rest": {
+      "title": "Pause",
+      "onRest": "In pausa",
+      "unpaid": "non retribuita",
+      "untimed": "Senza durata fissata",
+      "ofTotal": "su {{total}}",
+      "overBy": "{{over}} oltre i suoi {{total}}",
+      "backToWork": "Torna al lavoro",
+      "backHint": "Finché non lo fa, il tempo continua a contare come pausa.",
+      "started": "Pausa iniziata",
+      "ended": "Di nuovo al lavoro",
+      "postponed": "Le chiederemo di nuovo a breve",
+      "timeFor": "È il momento della sua {{name}}",
+      "dueIn": "tra {{gap}}",
+      "paidNote": "retribuita",
+      "unpaidNote": "viene tolta dalle ore pagate",
+      "postponedTimes": "rimandata {{n}}×",
+      "startNow": "Inizia la pausa",
+      "later": "Più tardi",
+      "allDone": "Ha preso tutte le sue pause.",
+      "allDoneWithMissed": "Per oggi non resta altro."
+    }
   },
   "overtime": {
     "title": "Straordinario",

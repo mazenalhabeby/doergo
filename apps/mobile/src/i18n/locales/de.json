@@ -661,7 +661,30 @@
       "notNow": "Nicht jetzt"
     },
     "unknownLocation": "diesem Arbeitsbereich",
-    "clockedInRemotely": "Remote eingestempelt"
+    "clockedInRemotely": "Remote eingestempelt",
+    "countedFrom": "Gezählt ab {{time}}",
+    "rest": {
+      "title": "Pausen",
+      "onRest": "In der Pause",
+      "unpaid": "unbezahlt",
+      "untimed": "Ohne Zeitvorgabe",
+      "ofTotal": "von {{total}}",
+      "overBy": "{{over}} über Ihre {{total}}",
+      "backToWork": "Zurück zur Arbeit",
+      "backHint": "Bis dahin läuft die Zeit weiter als Pause.",
+      "started": "Pause begonnen",
+      "ended": "Zurück zur Arbeit",
+      "postponed": "Wir fragen gleich noch einmal",
+      "timeFor": "Zeit für Ihre {{name}}",
+      "dueIn": "in {{gap}}",
+      "paidNote": "bezahlt",
+      "unpaidNote": "wird von Ihren bezahlten Stunden abgezogen",
+      "postponedTimes": "{{n}}× verschoben",
+      "startNow": "Pause beginnen",
+      "later": "Später",
+      "allDone": "Alle Ihre Pausen sind genommen.",
+      "allDoneWithMissed": "Heute steht nichts mehr an."
+    }
   },
   "overtime": {
     "title": "Überstunden",

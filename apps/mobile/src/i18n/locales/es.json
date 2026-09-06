@@ -661,7 +661,30 @@
       "notNow": "Ahora no"
     },
     "unknownLocation": "este espacio de trabajo",
-    "clockedInRemotely": "Fichaje remoto"
+    "clockedInRemotely": "Fichaje remoto",
+    "countedFrom": "Contado desde las {{time}}",
+    "rest": {
+      "title": "Descansos",
+      "onRest": "En descanso",
+      "unpaid": "no remunerado",
+      "untimed": "Sin duración fijada",
+      "ofTotal": "de {{total}}",
+      "overBy": "{{over}} más de sus {{total}}",
+      "backToWork": "Volver al trabajo",
+      "backHint": "Hasta que lo haga, el tiempo sigue contando como descanso.",
+      "started": "Descanso iniciado",
+      "ended": "De vuelta al trabajo",
+      "postponed": "Volveremos a preguntar en breve",
+      "timeFor": "Toca su {{name}}",
+      "dueIn": "en {{gap}}",
+      "paidNote": "remunerado",
+      "unpaidNote": "se descuenta de sus horas pagadas",
+      "postponedTimes": "pospuesto {{n}}×",
+      "startNow": "Empezar descanso",
+      "later": "Más tarde",
+      "allDone": "Ha tomado todos sus descansos.",
+      "allDoneWithMissed": "No queda nada para hoy."
+    }
   },
   "overtime": {
     "title": "Horas extra",

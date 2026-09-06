@@ -661,7 +661,30 @@
       "notNow": "Not now"
     },
     "unknownLocation": "this workspace",
-    "clockedInRemotely": "Clocked in remotely"
+    "clockedInRemotely": "Clocked in remotely",
+    "countedFrom": "Counted from {{time}}",
+    "rest": {
+      "title": "Rests",
+      "onRest": "On rest",
+      "unpaid": "unpaid",
+      "untimed": "Untimed",
+      "ofTotal": "of {{total}}",
+      "overBy": "{{over}} past your {{total}}",
+      "backToWork": "Back to work",
+      "backHint": "Until you do, the time keeps counting as rest.",
+      "started": "Rest started",
+      "ended": "Back to work",
+      "postponed": "We'll ask again shortly",
+      "timeFor": "Time for your {{name}}",
+      "dueIn": "in {{gap}}",
+      "paidNote": "paid",
+      "unpaidNote": "comes off your paid hours",
+      "postponedTimes": "postponed {{n}}×",
+      "startNow": "Start rest",
+      "later": "Later",
+      "allDone": "All your rests are taken.",
+      "allDoneWithMissed": "Nothing more due today."
+    }
   },
   "overtime": {
     "title": "Overtime",

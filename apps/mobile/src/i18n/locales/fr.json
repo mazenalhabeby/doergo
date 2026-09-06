@@ -661,7 +661,30 @@
       "notNow": "Pas maintenant"
     },
     "unknownLocation": "cet espace de travail",
-    "clockedInRemotely": "Pointé à distance"
+    "clockedInRemotely": "Pointé à distance",
+    "countedFrom": "Compté à partir de {{time}}",
+    "rest": {
+      "title": "Pauses",
+      "onRest": "En pause",
+      "unpaid": "non payée",
+      "untimed": "Sans durée fixée",
+      "ofTotal": "sur {{total}}",
+      "overBy": "{{over}} au-delà de vos {{total}}",
+      "backToWork": "Reprendre le travail",
+      "backHint": "Jusque-là, le temps continue de compter comme pause.",
+      "started": "Pause commencée",
+      "ended": "Retour au travail",
+      "postponed": "Nous redemanderons dans un instant",
+      "timeFor": "C’est l’heure de votre {{name}}",
+      "dueIn": "dans {{gap}}",
+      "paidNote": "payée",
+      "unpaidNote": "déduite de vos heures payées",
+      "postponedTimes": "reportée {{n}}×",
+      "startNow": "Commencer la pause",
+      "later": "Plus tard",
+      "allDone": "Toutes vos pauses sont prises.",
+      "allDoneWithMissed": "Plus rien pour aujourd’hui."
+    }
   },
   "overtime": {
     "title": "Heures supplémentaires",
