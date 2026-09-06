@@ -20,176 +20,92 @@ function Shimmer({ className }: SkeletonProps) {
   );
 }
 
-function LogoSkeleton() {
+/** On the dark hero, a light shimmer — a slate block there would be a hole. */
+function HeroShimmer({ className }: SkeletonProps) {
   return (
-    <div className="flex items-center justify-center gap-3 mb-6">
-      <Shimmer className="w-10 h-10 rounded-xl" />
-      <Shimmer className="w-24 h-6 rounded-md" />
-    </div>
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-md bg-white/15',
+        'before:absolute before:inset-0 before:-translate-x-full',
+        'before:animate-[shimmer_1.5s_infinite]',
+        'before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
+        className
+      )}
+    />
   );
 }
 
-function FormFieldSkeleton({ hasIcon = true }: { hasIcon?: boolean }) {
-  return (
-    <div className="space-y-2">
-      <Shimmer className="w-16 h-4 rounded" />
-      <div className="relative">
-        {hasIcon && (
-          <Shimmer className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded" />
-        )}
-        <Shimmer className={cn('w-full h-11 rounded-lg', hasIcon && 'pl-10')} />
-      </div>
-    </div>
-  );
-}
-
-function ButtonSkeleton({ className }: SkeletonProps) {
-  return <Shimmer className={cn('w-full h-11 rounded-lg', className)} />;
-}
-
-function TabSwitcherSkeleton() {
-  return (
-    <div className="flex md:hidden bg-slate-100 p-1 rounded-xl mb-6">
-      <Shimmer className="flex-1 h-10 rounded-lg" />
-      <Shimmer className="flex-1 h-10 rounded-lg ml-1" />
-    </div>
-  );
-}
-
-// ============================================================================
-// Mobile Auth Skeleton
-// ============================================================================
-
-function MobileAuthSkeleton() {
-  return (
-    <div className="md:hidden">
-      <div className="bg-white rounded-2xl shadow-modal p-5 sm:p-6">
-        <LogoSkeleton />
-        <TabSwitcherSkeleton />
-
-        {/* Form skeleton */}
-        <div className="space-y-4">
-          <FormFieldSkeleton />
-          <FormFieldSkeleton />
-
-          <ButtonSkeleton />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Desktop Auth Skeleton
-// ============================================================================
-
-function DesktopAuthSkeleton() {
-  return (
-    <div className="hidden md:block relative bg-white rounded-2xl shadow-modal overflow-hidden min-h-[600px]">
-      <div className="flex h-full min-h-[600px]">
-        {/* Left side - hidden form placeholder */}
-        <div className="w-1/2 p-6 lg:p-8 opacity-0">
-          <FormSkeleton />
-        </div>
-
-        {/* Right side - visible form */}
-        <div className="w-1/2 p-6 lg:p-8">
-          <FormSkeleton />
-        </div>
-      </div>
-
-      {/* Overlay panel skeleton */}
-      <div className="absolute top-0 left-0 w-1/2 h-full">
-        <OverlayPanelSkeleton />
-      </div>
-    </div>
-  );
-}
-
-function FormSkeleton() {
-  return (
-    <div className="flex flex-col justify-center h-full">
-      {/* Header */}
-      <div className="space-y-2 mb-6">
-        <Shimmer className="w-40 h-7 rounded-md" />
-        <Shimmer className="w-56 h-4 rounded" />
-      </div>
-
-      {/* Form fields */}
-      <div className="space-y-4">
-        <FormFieldSkeleton />
-
-        {/* Password with forgot link */}
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Shimmer className="w-16 h-4 rounded" />
-            <Shimmer className="w-24 h-4 rounded" />
-          </div>
-          <Shimmer className="w-full h-11 rounded-lg" />
-        </div>
-
-        <ButtonSkeleton />
-      </div>
-    </div>
-  );
-}
-
-function OverlayPanelSkeleton() {
-  return (
-    <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-8">
-      {/* Animated background effect */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-accent-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
-      </div>
-
-      <div className="relative z-10 text-center max-w-xs space-y-6">
-        {/* Logo */}
-        <div className="flex items-center justify-center">
-          <div className="w-12 h-12 rounded-xl bg-white/10 animate-pulse" />
-        </div>
-
-        {/* Title */}
-        <div className="space-y-2">
-          <div className="h-8 w-48 mx-auto rounded-md bg-white/10 animate-pulse" />
-          <div className="h-4 w-64 mx-auto rounded bg-white/5 animate-pulse" />
-        </div>
-
-        {/* Illustration placeholder */}
-        <div className="w-56 h-40 mx-auto rounded-xl bg-white/5 animate-pulse" />
-
-        {/* Button */}
-        <div className="h-12 w-full rounded-xl bg-white/10 animate-pulse" />
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Footer Skeleton
-// ============================================================================
-
-function FooterSkeleton() {
-  return (
-    <div className="flex justify-center gap-1 mt-6 px-4">
-      <Shimmer className="w-48 h-4 rounded" />
-      <Shimmer className="w-12 h-4 rounded" />
-      <Shimmer className="w-8 h-4 rounded" />
-      <Shimmer className="w-24 h-4 rounded" />
-    </div>
-  );
-}
-
-// ============================================================================
-// Main Export
-// ============================================================================
-
+/**
+ * The sign-in page, unfilled.
+ *
+ * ⚠️ This drew the PREVIOUS design: a centred 900px card with a mobile tab bar
+ * and a footer. The page has been a full-bleed two-panel layout for some time —
+ * a dark hero across 54% of a wide screen and the form beside it — so the wait
+ * showed one page and the arrival was another, rearranging the whole screen
+ * every time anybody signed in.
+ *
+ * It is the real page's own structure now: the same `fixed inset-0` frame, the
+ * same split at `lg`, the same 26px heading over a subtitle, the same tab pair,
+ * the same field rhythm. Nothing here is a guess about the design — it is the
+ * design, with the words taken out.
+ */
 export function AuthSkeleton() {
   return (
-    <div className="w-full max-w-[900px] mx-auto animate-in fade-in duration-300">
-      <MobileAuthSkeleton />
-      <DesktopAuthSkeleton />
-      <FooterSkeleton />
+    <div className="force-light fixed inset-0 z-10 flex flex-col overflow-y-auto bg-white lg:flex-row">
+      {/* ── hero: hidden below lg, exactly as the page hides it ── */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-slate-900 p-10 text-white lg:flex lg:w-[54%] xl:p-14">
+        <div className="relative">
+          <HeroShimmer className="h-9 w-36 rounded-lg" />
+        </div>
+        <div className="relative">
+          {/* The headline runs to two lines on the real page. */}
+          <HeroShimmer className="h-11 w-4/5 rounded-lg" />
+          <HeroShimmer className="mt-3 h-11 w-3/5 rounded-lg" />
+          <HeroShimmer className="mt-5 h-4 w-72" />
+          <HeroShimmer className="mt-2 h-4 w-56" />
+          <div className="mt-8 flex gap-3">
+            <HeroShimmer className="h-[86px] w-[170px] rounded-xl" />
+            <HeroShimmer className="h-[86px] w-[128px] rounded-xl" />
+          </div>
+        </div>
+        <div className="relative">
+          <HeroShimmer className="h-3 w-48" />
+        </div>
+      </aside>
+
+      {/* ── form ── */}
+      <main className="flex flex-1 flex-col justify-center bg-white px-6 py-12 sm:px-10 lg:px-16">
+        <div className="mx-auto w-full max-w-md">
+          {/* The logo shows only below lg, where the hero is gone. */}
+          <div className="mb-9 mt-2 flex justify-center lg:hidden">
+            <Shimmer className="h-10 w-40 rounded-lg" />
+          </div>
+
+          <Shimmer className="h-7 w-56 rounded-lg" />
+          <Shimmer className="mb-6 mt-2 h-4 w-72" />
+
+          {/* Sign in / Create account, in their tray. */}
+          <div className="mb-6 flex gap-1 rounded-[10px] bg-slate-100 p-1">
+            <Shimmer className="h-9 flex-1 rounded-lg bg-white" />
+            <Shimmer className="h-9 flex-1 rounded-lg" />
+          </div>
+
+          {/* Two fields, then the button — the sign-in form's own shape. */}
+          <div className="space-y-4">
+            {[0, 1].map((i) => (
+              <div key={i} className="space-y-1.5">
+                <Shimmer className="h-3.5 w-20" />
+                <Shimmer className="h-11 w-full rounded-lg" />
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-1">
+              <Shimmer className="h-4 w-28" />
+              <Shimmer className="h-4 w-32" />
+            </div>
+            <Shimmer className="h-11 w-full rounded-lg" />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
