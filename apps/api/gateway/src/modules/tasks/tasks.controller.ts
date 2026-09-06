@@ -513,6 +513,14 @@ export class TasksController {
 
   // ============ Checklist Endpoints ============
 
+  /*
+     ⚠️ No module gate existed on any of these. A workspace that had not
+     switched checklists on could still use them.
+
+     A checklist lives on a task but is written through its own routes, so it can
+     be refused without refusing the task.
+  */
+  @RequireModule('checklists')
   @Post(':id/checklist')
   @ApiOperation({ summary: 'Add a checklist item to a task' })
   async addChecklistItem(
@@ -536,6 +544,7 @@ export class TasksController {
     });
   }
 
+  @RequireModule('checklists')
   @Patch(':id/checklist/reorder')
   @ApiOperation({ summary: 'Reorder checklist items' })
   async reorderChecklist(
@@ -559,6 +568,7 @@ export class TasksController {
     });
   }
 
+  @RequireModule('checklists')
   @Patch(':id/checklist/:itemId')
   @ApiOperation({ summary: 'Update a checklist item (text or toggle completion)' })
   async updateChecklistItem(
@@ -584,6 +594,7 @@ export class TasksController {
     });
   }
 
+  @RequireModule('checklists')
   @Delete(':id/checklist/:itemId')
   @ApiOperation({ summary: 'Delete a checklist item' })
   async deleteChecklistItem(
@@ -609,6 +620,14 @@ export class TasksController {
 
   // ============ Subtask Endpoints ============
 
+  /*
+     ⚠️ No module gate existed on any of these. A workspace that had not
+     switched subtasks on could still use them.
+
+     This route is ENTIRELY a subtask, so refusing it whole is right — nothing
+     else is lost with it.
+  */
+  @RequireModule('subtasks')
   @Post(':id/subtasks')
   /*
     Space-aware, like the create route above it.
@@ -718,6 +737,14 @@ export class TasksController {
 
   // ============ Attachment Endpoints ============
 
+  /*
+     ⚠️ No module gate existed on any of these. A workspace that had not
+     switched attachments on could still use them.
+
+     Refused at the presign, before a byte is uploaded — the confirm below is
+     gated too, so a stale URL cannot finish the job either.
+  */
+  @RequireModule('attachments')
   @Post(':id/attachments/presign')
   @ApiOperation({ summary: 'Get presigned URL for uploading an attachment' })
   async getPresignedUrl(
@@ -742,6 +769,7 @@ export class TasksController {
     });
   }
 
+  @RequireModule('attachments')
   @Post(':id/attachments')
   @ApiOperation({ summary: 'Confirm attachment upload after S3 upload' })
   async addAttachment(
@@ -787,6 +815,7 @@ export class TasksController {
     });
   }
 
+  @RequireModule('attachments')
   @Delete(':id/attachments/:attachmentId')
   @ApiOperation({ summary: 'Delete an attachment' })
   async deleteAttachment(

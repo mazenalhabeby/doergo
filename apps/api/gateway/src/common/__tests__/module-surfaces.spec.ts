@@ -25,6 +25,9 @@ const MODULE_CONTROLLERS: Array<{ key: string; file: string }> = [
   { key: 'assets', file: 'modules/assets/asset-categories.controller.ts' },
   { key: 'tracking', file: 'modules/tracking/tracking.controller.ts' },
   { key: 'time_tracking', file: 'modules/attendance/attendance.controller.ts' },
+  { key: 'checklists', file: 'modules/tasks/tasks.controller.ts' },
+  { key: 'subtasks', file: 'modules/tasks/tasks.controller.ts' },
+  { key: 'attachments', file: 'modules/tasks/tasks.controller.ts' },
 ];
 
 describe('a module nobody bought cannot be used', () => {
@@ -44,6 +47,46 @@ describe('a module nobody bought cannot be used', () => {
     const clockOut = src.slice(src.indexOf("@Post('clock-out')"), src.indexOf("@Post('heartbeat')"));
     expect(clockIn).toContain("@RequireModule('time_tracking')");
     expect(clockOut).not.toContain('@RequireModule');
+  });
+
+  it('gates every write path a task feature has, not just one', () => {
+    /*
+      A checklist, a subtask and an attachment each have their OWN routes on the
+      task controller — which is what makes them refusable without refusing the
+      task they belong to. Gating the first and forgetting the rest would leave a
+      workspace unable to ADD a checklist item and perfectly able to edit and
+      delete them, which is not a boundary, it is a speed bump.
+    */
+    const src = readFileSync(join(GATEWAY, 'modules/tasks/tasks.controller.ts'), 'utf8');
+    const routes: Array<[string, string]> = [
+      ["@Post(':id/checklist')", 'checklists'],
+      ["@Patch(':id/checklist/reorder')", 'checklists'],
+      ["@Patch(':id/checklist/:itemId')", 'checklists'],
+      ["@Delete(':id/checklist/:itemId')", 'checklists'],
+      ["@Post(':id/subtasks')", 'subtasks'],
+      ["@Post(':id/attachments/presign')", 'attachments'],
+      ["@Post(':id/attachments')", 'attachments'],
+      ["@Delete(':id/attachments/:attachmentId')", 'attachments'],
+    ];
+    for (const [route, key] of routes) {
+      const at = src.indexOf(route);
+      expect(at).toBeGreaterThan(-1);
+      // The decorator sits immediately above the route it guards.
+      expect(src.slice(Math.max(0, at - 200), at)).toContain(`@RequireModule('${key}')`);
+    }
+  });
+
+  it('keeps the agile FIELDS on the field check, where they belong', () => {
+    /*
+      `sprintId`, `epicId`, `phaseId` and `storyPoints` arrive as fields of a task
+      write, not as routes of their own — so they are refused one field at a time
+      by `assertTaskFieldEntitlements`, on BOTH write paths. A whole-request gate
+      here would make an unbought story point stop somebody creating a job.
+    */
+    const src = readFileSync(join(GATEWAY, 'modules/tasks/tasks.controller.ts'), 'utf8');
+    for (const f of ['sprints', 'epics', 'phases', 'story_points']) expect(src).toContain(`'${f}'`);
+    // Create and update, not just create.
+    expect(src.match(/this\.assertTaskFieldEntitlements\(/g) ?? []).toHaveLength(2);
   });
 
   it('names only modules that exist', () => {
