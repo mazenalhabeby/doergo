@@ -604,7 +604,60 @@ export class ApprovalService {
       });
     }
 
-    if (toCreate.length) await this.prisma.timeEntry.createMany({ data: toCreate });
+    /*
+      The rest goes in as a real BREAK, not just a number on the entry.
+
+      ⚠️ This wrote `breakMinutes: 30` and created no break rows — and the edit
+      dialog lists rows. So the rest was invisible the moment anybody opened the
+      entry, and worse: adding ANY break there RECOMPUTES `breakMinutes` from the
+      rows (see break.service — "recomputed from the rows, never incremented"),
+      so the original thirty minutes was silently destroyed and the paid hours
+      moved with it.
+
+      One representation, then. A break is a row; `breakMinutes` is the sum of
+      the rows, everywhere. `createMany` does not return ids, so the entries go
+      in one at a time when there is a rest to attach — the loop is bounded by
+      the same one-year cap as the back-fill above, and costs nothing at all when
+      the rest is zero, which is the common case.
+    */
+    if (toCreate.length) {
+      if (breakMin > 0) {
+        await this.prisma.$transaction(async (tx) => {
+          for (const entry of toCreate) {
+            const created = await tx.timeEntry.create({ data: entry, select: { id: true, clockInAt: true, clockOutAt: true } });
+            /*
+              Centred in the shift.
+
+              Nobody knows when the rest was actually taken — it is being entered
+              after the fact — and a break at the start or the end reads as a late
+              arrival or an early finish. The middle claims the least, sits inside
+              the shift whatever its length, and can be dragged to the truth in
+              the edit dialog like any other break.
+            */
+            const span = created.clockOutAt!.getTime() - created.clockInAt.getTime();
+            const startedAt = new Date(created.clockInAt.getTime() + Math.max(0, (span - breakMin * 60_000) / 2));
+            const endedAt = new Date(startedAt.getTime() + breakMin * 60_000);
+            await tx.break.create({
+              data: {
+                timeEntryId: created.id,
+                // Not guessed from the length: a 45-minute rest is not evidence
+                // of lunch, and the office knows what it was.
+                type: 'OTHER',
+                startedAt,
+                endedAt,
+                durationMinutes: breakMin,
+                reason,
+                // Who entered it — the same field the edit dialog stamps when an
+                // admin adds a break to somebody else's shift.
+                addedById: data.editorId,
+              },
+            });
+          }
+        });
+      } else {
+        await this.prisma.timeEntry.createMany({ data: toCreate });
+      }
+    }
 
     this.logger.log(
       `Manual attendance added: user=${data.userId}, editor=${data.editorId}, created=${toCreate.length}, skipped=${skipped}`,
