@@ -426,6 +426,16 @@ export class UsersService {
         updatedAt: true,
         position: true,
         enabledModules: true,
+        /*
+          The account-level grant for working away from a site.
+
+          Read by the member's Workspaces tab, which resolves the EFFECTIVE
+          answer per assignment from the site's ceiling, this flag, and any
+          per-assignment override. Missing, that screen renders "Refused" for
+          somebody whose account allows it — a wrong answer shown to the one
+          person who would then go and change the wrong setting.
+        */
+        allowRemote: true,
         specialty: true,
         employmentType: true,
         rating: true,
