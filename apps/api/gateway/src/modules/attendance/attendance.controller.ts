@@ -924,6 +924,12 @@ export class AttendanceController {
       weekdays?: number[];
       startTime: string;
       endTime: string;
+      // The break as the dialogs describe it. `breakMinutes` stays for clients
+      // that have not taken the update — the service turns it into the same row.
+      breakStart?: string;
+      breakEnd?: string;
+      breakType?: 'SHORT' | 'LUNCH' | 'OTHER';
+      breakReason?: string;
       breakMinutes?: number;
       notes?: string;
       reason?: string;
@@ -938,6 +944,10 @@ export class AttendanceController {
       weekdays: body.weekdays,
       startTime: body.startTime,
       endTime: body.endTime,
+      breakStart: body.breakStart,
+      breakEnd: body.breakEnd,
+      breakType: body.breakType,
+      breakReason: body.breakReason,
       breakMinutes: body.breakMinutes,
       notes: body.notes,
       reason: body.reason,

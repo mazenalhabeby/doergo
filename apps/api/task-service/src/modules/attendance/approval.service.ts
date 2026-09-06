@@ -457,6 +457,18 @@ export class ApprovalService {
     weekdays?: number[]; // 0=Sun..6=Sat; ignored for a single-day add
     startTime: string; // "HH:MM"
     endTime: string; // "HH:MM"
+    /*
+      The break as the dialogs now describe it: wall-clock times inside the
+      shift, with a type and a reason — the same shape the edit dialog sends.
+
+      ⚠️ `breakMinutes` is still accepted. Older clients send it, and a phone that
+      has not taken the update must not start failing; it becomes the same break,
+      centred, which is what this service already did.
+    */
+    breakStart?: string;
+    breakEnd?: string;
+    breakType?: 'SHORT' | 'LUNCH' | 'OTHER';
+    breakReason?: string;
     breakMinutes?: number;
     notes?: string;
     reason?: string;
@@ -501,20 +513,51 @@ export class ApprovalService {
 
       Equal is refused too. A shift that is entirely rest is not a shift.
     */
-    const [sh, sm] = data.startTime.split(':').map(Number);
-    const [eh, em] = data.endTime.split(':').map(Number);
-    let shiftMin = eh * 60 + em - (sh * 60 + sm);
-    if (shiftMin <= 0) shiftMin += 24 * 60; // overnight, as below
-    if (Math.max(0, Math.round(data.breakMinutes ?? 0)) >= shiftMin) {
-      throw new BadRequestException(
-        `A ${Math.round(data.breakMinutes ?? 0)}-minute rest does not fit in a ${shiftMin}-minute shift.`,
-      );
+    const mins = (v: string) => {
+      const [h, m] = v.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const shiftStart = mins(data.startTime);
+    let shiftEnd = mins(data.endTime);
+    if (shiftEnd <= shiftStart) shiftEnd += 24 * 60; // overnight, as below
+
+    /*
+      Where the break sits, as an offset from the clock-in.
+
+      Given times, that is what they say — and measuring from the clock-in is
+      what lets a range of days each get the break at the same time of day, which
+      is what a wall-clock time means. Given only a number of minutes — an older
+      client — it is centred, which is what this service did before there was
+      anywhere to say when the break was taken.
+    */
+    let breakOffsetMin = 0;
+    let breakMin = 0;
+    if (data.breakStart && data.breakEnd) {
+      if (!/^\d{2}:\d{2}$/.test(data.breakStart) || !/^\d{2}:\d{2}$/.test(data.breakEnd)) {
+        throw new BadRequestException('Invalid break time');
+      }
+      let bs = mins(data.breakStart);
+      if (bs < shiftStart) bs += 24 * 60; // inside an overnight shift
+      let be = mins(data.breakEnd);
+      if (be <= bs) be += 24 * 60;
+      if (bs < shiftStart || be > shiftEnd) {
+        throw new BadRequestException('The break must sit inside the shift.');
+      }
+      breakOffsetMin = bs - shiftStart;
+      breakMin = be - bs;
+    } else {
+      breakMin = Math.max(0, Math.round(data.breakMinutes ?? 0));
+      if (breakMin >= shiftEnd - shiftStart) {
+        throw new BadRequestException(
+          `A ${breakMin}-minute rest does not fit in a ${shiftEnd - shiftStart}-minute shift.`,
+        );
+      }
+      breakOffsetMin = Math.max(0, (shiftEnd - shiftStart - breakMin) / 2);
     }
 
     const tz = loc.timezone || 'Europe/Berlin';
     const single = data.startDate === data.endDate;
     const weekdays = single ? null : data.weekdays?.length ? data.weekdays : [1, 2, 3, 4, 5];
-    const breakMin = Math.max(0, Math.round(data.breakMinutes ?? 0));
     const reason = data.reason?.trim() || 'Manually added by admin';
 
     // Cap the span so an accidental multi-year range can't mass-insert. One
@@ -646,28 +689,22 @@ export class ApprovalService {
         await this.prisma.$transaction(async (tx) => {
           for (const entry of toCreate) {
             const created = await tx.timeEntry.create({ data: entry, select: { id: true, clockInAt: true, clockOutAt: true } });
-            /*
-              Centred in the shift.
-
-              Nobody knows when the rest was actually taken — it is being entered
-              after the fact — and a break at the start or the end reads as a late
-              arrival or an early finish. The middle claims the least, sits inside
-              the shift whatever its length, and can be dragged to the truth in
-              the edit dialog like any other break.
-            */
-            const span = created.clockOutAt!.getTime() - created.clockInAt.getTime();
-            const startedAt = new Date(created.clockInAt.getTime() + Math.max(0, (span - breakMin * 60_000) / 2));
+            // Measured from the clock-in, so every day of a range gets the
+            // break at the same time of day.
+            const startedAt = new Date(created.clockInAt.getTime() + breakOffsetMin * 60_000);
             const endedAt = new Date(startedAt.getTime() + breakMin * 60_000);
             await tx.break.create({
               data: {
                 timeEntryId: created.id,
                 // Not guessed from the length: a 45-minute rest is not evidence
                 // of lunch, and the office knows what it was.
-                type: 'OTHER',
+                // What the office said it was; OTHER only when nothing was
+                // said, which is the older client's payload.
+                type: data.breakType ?? 'OTHER',
                 startedAt,
                 endedAt,
                 durationMinutes: breakMin,
-                reason,
+                reason: data.breakReason?.trim() || reason,
                 // Who entered it — the same field the edit dialog stamps when an
                 // admin adds a break to somebody else's shift.
                 addedById: data.editorId,

@@ -2465,6 +2465,11 @@ export const attendanceApi = {
     weekdays?: number[]; // 0=Sun..6=Sat, only for a date range
     startTime: string; // HH:MM
     endTime: string; // HH:MM
+    /** The break, as both attendance dialogs describe it: wall-clock times. */
+    breakStart?: string;
+    breakEnd?: string;
+    breakType?: "SHORT" | "LUNCH" | "OTHER";
+    breakReason?: string;
     breakMinutes?: number;
     notes?: string;
     reason?: string;

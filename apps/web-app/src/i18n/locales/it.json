@@ -2046,8 +2046,9 @@
       "preview": "Verranno aggiunti {{count}} giorno/i (i giorni esistenti vengono saltati).",
       "submitCount": "Aggiungi {{count}} giorni",
       "tooLarge": "L'intervallo di date è troppo ampio — recuperi al massimo un anno alla volta.",
-      "restTooLong": "Più lunga del turno di {{shift}} minuti.",
-      "restHint": "Salvata come pausa a metà turno: potrai spostarla in seguito."
+      "hasBreak": "C’è stata una pausa",
+      "breakOutside": "La pausa deve rientrare nel turno.",
+      "breakHint": "Registrata per ogni giorno creato e modificabile in seguito come qualsiasi altra pausa."
     }
   },
   "members": {

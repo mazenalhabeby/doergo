@@ -2046,8 +2046,9 @@
       "preview": "Dies erstellt {{count}} Tag(e) (vorhandene Tage werden übersprungen).",
       "submitCount": "{{count}} Tage hinzufügen",
       "tooLarge": "Zeitraum zu groß – höchstens ein Jahr auf einmal nachtragen.",
-      "restTooLong": "Länger als die {{shift}}-minütige Schicht.",
-      "restHint": "Wird als Pause in der Mitte der Schicht gespeichert — Sie können sie danach verschieben."
+      "hasBreak": "Es gab eine Pause",
+      "breakOutside": "Die Pause muss innerhalb der Schicht liegen.",
+      "breakHint": "Wird für jeden erzeugten Tag erfasst und lässt sich danach wie jede andere Pause bearbeiten."
     }
   },
   "members": {

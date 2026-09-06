@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { BreakFields, type BreakKind } from "@/components/attendance/break-fields"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Pencil, Loader2, Trash2, Coffee, UtensilsCrossed, Pause, Plus } from "lucide-react"
@@ -62,7 +63,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
   const [addingBreak, setAddingBreak] = useState(false)
   const [breakStart, setBreakStart] = useState("")
   const [breakEnd, setBreakEnd] = useState("")
-  const [breakType, setBreakType] = useState<"SHORT" | "LUNCH" | "OTHER">("SHORT")
+  const [breakType, setBreakType] = useState<BreakKind>("SHORT")
   const [breakReason, setBreakReason] = useState("")
   /*
     Breaks wait for Save; they are not written the moment you add one.
@@ -442,65 +443,28 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
 
             {addingBreak && (
               <div className="space-y-3 border-t border-border p-3">
-                <p className="text-[11px] text-muted-foreground">
-                  {t(
+                {/*
+                  The same fields the Add-attendance dialog uses. It asked for a
+                  number of minutes — a different form for one thing, and behind
+                  it a different record, since that number never became a break.
+                */}
+                <BreakFields
+                  mode="datetime"
+                  start={breakStart}
+                  end={breakEnd}
+                  kind={breakType}
+                  reason={breakReason}
+                  onStart={setBreakStart}
+                  onEnd={setBreakEnd}
+                  onKind={setBreakType}
+                  onReason={setBreakReason}
+                  min={clockIn || undefined}
+                  max={clockOut || undefined}
+                  hint={t(
                     "attendance.addBreak.hint",
                     "Breaks are normally recorded by the member. One added here is marked with your name and the reason.",
                   )}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>{t("attendance.addBreak.start", "Break start")}</Label>
-                    <Input
-                      type="datetime-local"
-                      value={breakStart}
-                      min={clockIn || undefined}
-                      max={clockOut || undefined}
-                      onChange={(e) => setBreakStart(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("attendance.addBreak.end", "Break end")}</Label>
-                    <Input
-                      type="datetime-local"
-                      value={breakEnd}
-                      min={breakStart || clockIn || undefined}
-                      max={clockOut || undefined}
-                      onChange={(e) => setBreakEnd(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("attendance.addBreak.type", "Type")}</Label>
-                  <div className="flex gap-1.5">
-                    {(["SHORT", "LUNCH", "OTHER"] as const).map((bt) => (
-                      <button
-                        key={bt}
-                        type="button"
-                        aria-pressed={breakType === bt}
-                        onClick={() => setBreakType(bt)}
-                        className={cn(
-                          "rounded-md border px-2.5 py-1 text-xs",
-                          breakType === bt
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {t(`attendance.breaks.typeBreak.${bt.toLowerCase()}`, bt)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>
-                    {t("attendance.addBreak.reason", "Why")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    value={breakReason}
-                    onChange={(e) => setBreakReason(e.target.value)}
-                    placeholder={t("attendance.addBreak.reasonPlaceholder", "e.g. phone died before lunch")}
-                  />
-                </div>
+                />
                 <Button
                   type="button"
                   size="sm"

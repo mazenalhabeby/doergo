@@ -1,6 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { BreakFields, breakFitsShift, type BreakKind } from "@/components/attendance/break-fields"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -59,7 +61,19 @@ export function AddAttendanceDialog({
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5])
   const [startTime, setStartTime] = useState("08:00")
   const [endTime, setEndTime] = useState("16:00")
-  const [breakMinutes, setBreakMinutes] = useState("30")
+  /*
+    The same break the edit dialog takes — a start, an end, a type and a reason —
+    entered as wall-clock times because this dialog can cover many days at once.
+
+    It was a number of minutes, which is a different form for the same thing and,
+    until this pass, a different RECORD: the number never became a break, so it
+    was invisible on the screen that lists them.
+  */
+  const [hasBreak, setHasBreak] = useState(true)
+  const [breakStart, setBreakStart] = useState("12:00")
+  const [breakEnd, setBreakEnd] = useState("12:30")
+  const [breakKind, setBreakKind] = useState<BreakKind>("LUNCH")
+  const [breakReason, setBreakReason] = useState("")
   const [notes, setNotes] = useState("")
 
   const { data: locations, isLoading: locationsLoading } = useQuery({
@@ -119,7 +133,14 @@ export function AddAttendanceDialog({
         weekdays: mode === "range" ? weekdays : undefined,
         startTime,
         endTime,
-        breakMinutes: breakMinutes ? Math.max(0, parseInt(breakMinutes, 10)) : 0,
+        ...(hasBreak
+          ? {
+              breakStart,
+              breakEnd,
+              breakType: breakKind,
+              breakReason: breakReason.trim() || undefined,
+            }
+          : {}),
         notes: notes.trim() || undefined,
       }),
     onSuccess: (res) => {
@@ -158,7 +179,11 @@ export function AddAttendanceDialog({
     setWeekdays([1, 2, 3, 4, 5])
     setStartTime("08:00")
     setEndTime("16:00")
-    setBreakMinutes("30")
+    setHasBreak(true)
+    setBreakStart("12:00")
+    setBreakEnd("12:30")
+    setBreakKind("LUNCH")
+    setBreakReason("")
     setNotes("")
   }
 
@@ -179,22 +204,15 @@ export function AddAttendanceDialog({
   }
 
   /*
-    The rest has to fit inside the shift.
+    The break has to sit inside the shift, and the right way round.
 
-    It is placed inside the shift when it is saved, so one that does not fit
-    would run past the clock-out. The server refuses it — this only spares
-    somebody the round trip, and says which number is wrong while they are still
-    looking at it.
+    Same rule as the edit dialog, from the same function — the server checks it a
+    third time. This only spares the round trip and says which field is wrong
+    while somebody is still looking at it.
   */
-  const shiftMinutes = (() => {
-    if (!startTime || !endTime) return 0
-    const [sh, sm] = startTime.split(":").map(Number)
-    const [eh, em] = endTime.split(":").map(Number)
-    const mins = eh * 60 + em - (sh * 60 + sm)
-    return mins > 0 ? mins : mins + 24 * 60 // overnight
-  })()
-  const restMinutes = breakMinutes ? Math.max(0, parseInt(breakMinutes, 10) || 0) : 0
-  const restTooLong = shiftMinutes > 0 && restMinutes >= shiftMinutes
+  const breakInvalid =
+    hasBreak && !!startTime && !!endTime && !breakFitsShift(breakStart, breakEnd, startTime, endTime)
+  const breakNeedsReason = hasBreak && breakReason.trim().length < 3
 
   const canSubmit =
     !!effectiveEmployeeId &&
@@ -205,7 +223,8 @@ export function AddAttendanceDialog({
     !!endTime &&
     previewCount > 0 &&
     !tooLarge &&
-    !restTooLong &&
+    !breakInvalid &&
+    !breakNeedsReason &&
     !mutation.isPending
 
   return (
@@ -382,34 +401,37 @@ export function AddAttendanceDialog({
             </div>
           </div>
 
-          {/* Break */}
-          <div className="space-y-1.5">
-            <Label>{t("technicians.addAttendance.breakMinutes")}</Label>
-            <Input
-              type="number"
-              min={0}
-              max={shiftMinutes > 0 ? shiftMinutes - 1 : undefined}
-              value={breakMinutes}
-              onChange={(e) => setBreakMinutes(e.target.value)}
-              aria-invalid={restTooLong}
-              className={cn(restTooLong && "border-destructive focus-visible:ring-destructive")}
-            />
-            {restTooLong ? (
-              <p className="text-[11px] text-destructive">
-                {t("technicians.addAttendance.restTooLong", "Longer than the {{shift}}-minute shift.", {
-                  shift: shiftMinutes,
-                })}
-              </p>
-            ) : (
-              /*
-                Said once, here, because it is the thing nobody expects: the rest
-                becomes a real break in the middle of the shift, which is what
-                makes it visible and editable afterwards instead of a number that
-                the first edit would quietly erase.
-              */
-              <p className="text-[11px] text-muted-foreground">
-                {t("technicians.addAttendance.restHint", "Saved as a break in the middle of the shift — you can move it afterwards.")}
-              </p>
+          {/* Break — the same form the edit dialog uses. */}
+          <div className="space-y-2 rounded-xl border border-border p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <Checkbox checked={hasBreak} onCheckedChange={(v) => setHasBreak(v === true)} />
+              {t("technicians.addAttendance.hasBreak", "There was a break")}
+            </label>
+            {hasBreak && (
+              <BreakFields
+                // Wall-clock times: this dialog can cover a range of days, and
+                // the only thing true of all of them is the time of day.
+                mode="time"
+                start={breakStart}
+                end={breakEnd}
+                kind={breakKind}
+                reason={breakReason}
+                onStart={setBreakStart}
+                onEnd={setBreakEnd}
+                onKind={setBreakKind}
+                onReason={setBreakReason}
+                min={startTime || undefined}
+                max={endTime || undefined}
+                error={
+                  breakInvalid
+                    ? t("technicians.addAttendance.breakOutside", "The break must sit inside the shift.")
+                    : null
+                }
+                hint={t(
+                  "technicians.addAttendance.breakHint",
+                  "Recorded on every day this creates, and editable afterwards like any other break.",
+                )}
+              />
             )}
           </div>
 

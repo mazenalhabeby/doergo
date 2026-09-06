@@ -66,7 +66,10 @@ describe('a rest entered with a manual attendance', () => {
       endDate: '2026-09-01',
       startTime: '08:00',
       endTime: '16:00',
-      breakMinutes: 30,
+      breakStart: '12:00',
+      breakEnd: '12:30',
+      breakType: 'LUNCH',
+      breakReason: 'Lunch',
       ...over,
     });
 
@@ -78,21 +81,38 @@ describe('a rest entered with a manual attendance', () => {
     expect(breaks[0].timeEntryId).toBeTruthy();
   });
 
-  it('places it inside the shift, in the middle', async () => {
-    /*
-      Nobody knows when the rest was taken — it is being entered after the fact.
-      A break at the start or the end reads as a late arrival or an early finish;
-      the middle claims the least and can be dragged to the truth afterwards.
-    */
+  it('puts it where the office said, not where it guessed', async () => {
+    // 08:00–16:00 with a break at 12:00 is four hours in, whatever the shift's
+    // length — the point of asking for times instead of a number.
     await add();
+    const entry = created[0] as { clockInAt: Date };
+    const br = breaks[0] as { startedAt: Date; durationMinutes: number };
+    expect(br.startedAt.getTime() - entry.clockInAt.getTime()).toBe(4 * 60 * 60_000);
+    expect(br.durationMinutes).toBe(30);
+  });
+
+  it('refuses a break that falls outside the shift', async () => {
+    await expect(add({ breakStart: '17:00', breakEnd: '17:30' })).rejects.toThrow(/inside the shift/);
+    await expect(add({ breakStart: '07:00', breakEnd: '07:30' })).rejects.toThrow(/inside the shift/);
+  });
+
+  it('still accepts a plain number of minutes, and centres it', async () => {
+    /*
+      An older client — a phone that has not taken the update — sends only
+      minutes. It must not start failing, and there is nowhere in that payload to
+      say when the break was taken, so the middle is still the honest answer.
+    */
+    await add({ breakStart: undefined, breakEnd: undefined, breakMinutes: 30 });
     const entry = created[0] as { clockInAt: Date; clockOutAt: Date };
     const br = breaks[0] as { startedAt: Date; endedAt: Date };
-    expect(br.startedAt.getTime()).toBeGreaterThan(entry.clockInAt.getTime());
-    expect(br.endedAt.getTime()).toBeLessThan(entry.clockOutAt.getTime());
-    // Centred: the gap before equals the gap after.
     const before = br.startedAt.getTime() - entry.clockInAt.getTime();
     const after = entry.clockOutAt.getTime() - br.endedAt.getTime();
     expect(Math.abs(before - after)).toBeLessThan(1000);
+  });
+
+  it('records the type the office chose', async () => {
+    await add();
+    expect(breaks[0].type).toBe('LUNCH');
   });
 
   it('records who entered it', async () => {
@@ -102,10 +122,10 @@ describe('a rest entered with a manual attendance', () => {
     expect(breaks[0].addedById).toBe('admin-1');
   });
 
-  it('costs nothing when there is no rest', async () => {
+  it('costs nothing when there is no break', async () => {
     // The common case must not pay for the uncommon one: no transaction, no
     // per-entry round trip, just the bulk insert that was always there.
-    await add({ breakMinutes: 0 });
+    await add({ breakStart: undefined, breakEnd: undefined, breakMinutes: 0 });
     expect(breaks).toHaveLength(0);
     expect(tx.timeEntry.createMany).toHaveBeenCalled();
     expect(prisma.$transaction).not.toHaveBeenCalled();
@@ -120,17 +140,19 @@ describe('a rest entered with a manual attendance', () => {
       Answered once for the whole back-fill, because the shift is the same length
       every day of it.
     */
-    await expect(add({ startTime: '08:00', endTime: '09:00', breakMinutes: 90 })).rejects.toThrow(/does not fit/);
+    const noTimes = { breakStart: undefined, breakEnd: undefined };
+    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 90 })).rejects.toThrow(/does not fit/);
     // Equal is refused too — a shift that is entirely rest is not a shift.
-    await expect(add({ startTime: '08:00', endTime: '09:00', breakMinutes: 60 })).rejects.toThrow(/does not fit/);
+    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 60 })).rejects.toThrow(/does not fit/);
     // One minute short of the shift is allowed.
-    await expect(add({ startTime: '08:00', endTime: '09:00', breakMinutes: 59 })).resolves.toBeDefined();
+    await expect(add({ ...noTimes, startTime: '08:00', endTime: '09:00', breakMinutes: 59 })).resolves.toBeDefined();
   });
 
   it('measures an overnight shift the long way round', async () => {
     // 22:00 → 06:00 is eight hours, not minus sixteen — the same correction the
     // entry itself makes when the clock-out lands before the clock-in.
-    await expect(add({ startTime: '22:00', endTime: '06:00', breakMinutes: 45 })).resolves.toBeDefined();
+    // 22:00 → 06:00 with a break at 01:00 is three hours into the shift.
+    await expect(add({ startTime: '22:00', endTime: '06:00', breakStart: '01:00', breakEnd: '01:45' })).resolves.toBeDefined();
   });
 
   it('gives every day of a back-fill its own rest', async () => {

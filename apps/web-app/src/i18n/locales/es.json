@@ -2046,8 +2046,9 @@
       "preview": "Se añadirán {{count}} día(s) (se omiten los días existentes).",
       "submitCount": "Añadir {{count}} días",
       "tooLarge": "El rango de fechas es demasiado grande: registra como máximo un año a la vez.",
-      "restTooLong": "Más largo que el turno de {{shift}} minutos.",
-      "restHint": "Se guarda como una pausa en mitad del turno; puedes moverla después."
+      "hasBreak": "Hubo una pausa",
+      "breakOutside": "La pausa debe estar dentro del turno.",
+      "breakHint": "Se registra en cada día que se cree y se puede editar después como cualquier otra pausa."
     }
   },
   "members": {
