@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import { BootScreen } from '@/components/skeletons/boot-screen';
 import { useRouter, usePathname } from 'next/navigation';
-import { DashboardSkeleton, PageContentSkeleton } from '@/components/skeletons';
+import { PageContentSkeleton } from '@/components/skeletons';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { TopNavbar } from '@/components/top-navbar';
 import { FirstSpaceGate } from '@/components/first-space-gate';
@@ -92,19 +93,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isLoading, isAuthenticated, user?.onboardingCompleted, router]);
 
+  /*
+    Who you are is not known yet — so neither screen is safe to draw.
+
+    This showed the dashboard skeleton: a navbar and a grid of cards, which is a
+    fair guess for somebody signed in and a picture of an application they cannot
+    enter for everybody else, replaced a moment later by the login page. Signing
+    out gave the same flash in reverse.
+  */
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return <BootScreen />;
   }
 
+  /*
+    Signed out, and the redirect above is on its way.
+
+    `null` here meant a blank white screen between the loading state and the
+    login page — so the sequence was skeleton, then nothing, then login. The same
+    boot screen holds it steady until the navigation lands.
+  */
   if (!isAuthenticated) {
-    return null;
+    return <BootScreen />;
   }
 
   // Orphan user (no organization yet) — the effect above redirects them to
   // /onboarding. Don't render the dashboard in the meantime, so we don't flash
   // its chrome or fire org-scoped data fetches for a user who has no org.
   if (user?.onboardingCompleted === false) {
-    return <DashboardSkeleton />;
+    // Also on the way OUT of the dashboard — to /onboarding, which does not look
+    // like the dashboard either.
+    return <BootScreen />;
   }
 
   // Platform hard-block: a mobile-only Access Profile may not use the web portal.

@@ -12,7 +12,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
 import { hasFeatureModule, orgHasAddOn, isAddOn, isAdmin, accessAllowsAnywhere } from '@hbcfield/shared/client';
-import { DashboardSkeleton } from '@/components/skeletons';
+import { BootScreen } from '@/components/skeletons/boot-screen';
 
 // User type
 export interface User {
@@ -471,12 +471,17 @@ export function withAuth<P extends object>(
       }
     }, [isLoading, isAuthenticated, user]);
 
+    /*
+      The same reasoning as the dashboard layout: until the auth check answers,
+      drawing the signed-in application is a guess, and it is wrong for everybody
+      who is about to be sent to the login page.
+    */
     if (isLoading) {
-      return <DashboardSkeleton />;
+      return <BootScreen />;
     }
 
     if (!isAuthenticated) {
-      return null;
+      return <BootScreen />;
     }
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
