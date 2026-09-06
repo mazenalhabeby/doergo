@@ -58,3 +58,53 @@ describe("gating: add-ons versus per-space modules", () => {
     expect(["assets"].includes("crm")).toBe(false)
   })
 })
+
+/*
+  The mistake this file was written about, caught in the source rather than
+  explained after the fact.
+
+  `hasPlanFeature` opens with `if (!isAddOn(feature)) return false`, so asking it
+  about a MODULE answers no for every organization — including the ones paying
+  for that module. It is not a wrong answer, it is the wrong question, and it is
+  invisible: the feature simply never appears and nothing says why. Custom fields
+  were hidden in the New Task dialog for everybody on exactly this.
+*/
+describe("no module is asked the add-on question", () => {
+  const { readFileSync, readdirSync, statSync } = require("fs") as typeof import("fs")
+  const { join } = require("path") as typeof import("path")
+  const { AVAILABLE_MODULES } = require("@hbcfield/shared/client") as { AVAILABLE_MODULES: Array<{ key: string }> }
+
+  const SRC = join(__dirname, "..", "..")
+  const files: string[] = []
+  const walk = (dir: string) => {
+    for (const e of readdirSync(dir)) {
+      if (e === "node_modules" || e === ".next" || e === "__tests__") continue
+      const full = join(dir, e)
+      if (statSync(full).isDirectory()) walk(full)
+      else if (/\.tsx?$/.test(full)) files.push(full)
+    }
+  }
+  walk(SRC)
+
+  it("never passes a module key to hasPlanFeature or PlanGate", () => {
+    const offenders: string[] = []
+    for (const f of files) {
+      /*
+        Comments stripped first.
+
+        Without this the scanner matches the note explaining the bug it is
+        guarding against — a test that fails on its own documentation, which is
+        how a real finding gets buried under a false one.
+      */
+      const src = readFileSync(f, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^[ \t]*\/\/.*$/gm, "")
+      for (const { key } of AVAILABLE_MODULES) {
+        if (src.includes(`hasPlanFeature("${key}")`) || src.includes(`PlanGate feature="${key}"`)) {
+          offenders.push(`${key} in ${f.slice(SRC.length + 1)}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+})

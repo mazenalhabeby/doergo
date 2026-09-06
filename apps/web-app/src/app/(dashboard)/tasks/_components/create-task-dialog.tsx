@@ -173,7 +173,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const { t } = useTranslation()
   const { user, hasModule: orgHasModule, hasPlanFeature, hasPermission } = useAuth()
   const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
-  const canCustomFields = hasPlanFeature("custom_fields") // Custom Fields = Professional+
+
   const queryClient = useQueryClient()
 
   // ── Space state ──
@@ -203,6 +203,19 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   // ── Space-aware module resolution ──
   const { hasModule: spaceHasModule } = useSpaceModules(spaceId !== "none" ? spaceId : null)
   const hasModule = spaceId !== "none" ? spaceHasModule : orgHasModule
+  /*
+    ⚠️ This asked `hasPlanFeature` with a module key, and custom fields are a
+    MODULE, not an Option.
+
+    `hasPlanFeature` opens with `if (!isAddOn(feature)) return false`, so it
+    answered NO for every organization — including the ones with the module
+    switched on and being billed €6 a workspace for it. Custom fields never
+    appeared in this dialog for anybody, and nothing said why.
+
+    `hasModule` is the right question, and it is the per-SPACE one when a
+    workspace is chosen (line above) — which is how the module is sold.
+  */
+  const canCustomFields = hasModule("custom_fields")
 
   // ── Core form state ──
   const [title, setTitle] = useState("")
