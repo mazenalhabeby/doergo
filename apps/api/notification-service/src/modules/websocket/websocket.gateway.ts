@@ -748,6 +748,20 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.server.to(`org:${organizationId}`).emit(SocketEvents.SPACE_CHANGED, { spaceId });
   }
 
+  /**
+   * A document type changed — including WHO MAY SEE IT.
+   *
+   * Org-wide, and deliberately carrying only an id: each client re-reads through
+   * its own scoped endpoints, so a member whose role cannot see the type learns
+   * nothing from the event itself. Broadcasting the type would hand them the
+   * label of a payslip category they are not allowed to know exists.
+   */
+  emitDocumentTypesChanged(organizationId: string, typeId: string | null) {
+    this.logger.debug(`[EMIT] documents.typesChanged for org ${organizationId}`);
+    this.messagesSent += 1;
+    this.server.to(`org:${organizationId}`).emit(SocketEvents.DOCUMENT_TYPES_CHANGED, { typeId });
+  }
+
   /** Someone was added to or removed from a space's roster. */
   emitSpaceRosterChanged(organizationId: string, spaceId: string | null) {
     this.logger.debug(`[EMIT] space.rosterChanged for org ${organizationId}`);

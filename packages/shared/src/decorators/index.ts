@@ -86,6 +86,17 @@ export interface CurrentUserData {
   canOpenMemberDocuments?: boolean;
   canIssueDocuments?: boolean;
   canManageDocumentTemplates?: boolean;
+  /**
+   * The member's org-wide role id — WHICH role, not what it grants.
+   *
+   * Permissions answer "may they read member documents at all"; this answers
+   * "which shelf of the cabinet is theirs", because a document type names the
+   * roles that may see it. The one place a role id is read rather than the
+   * access set it resolves to, and deliberately so: the restriction is written
+   * against roles an organization defines and renames, so it has to travel as
+   * an id and never as a name.
+   */
+  memberRoleId?: string | null;
   // Worker configuration
   position?: string | null;
   scheduleType?: string | null;

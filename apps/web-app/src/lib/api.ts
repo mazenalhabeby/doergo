@@ -6216,6 +6216,12 @@ export interface DocumentTypeRow {
   requiredFromAll: boolean;
   /** Only members holding one of these roles must. */
   requiredFromRoleIds: string[];
+  /**
+   * Who may SEE documents of this type. Empty means no restriction, which is
+   * what every type is until somebody names roles here. Administrators are
+   * never restricted.
+   */
+  visibleToRoleIds: string[];
   /** The scanner asks for the back as well — ID cards and licences, not passports. */
   twoSided: boolean;
   /** The frame the scanner draws: a passport page is not the shape of a card. */

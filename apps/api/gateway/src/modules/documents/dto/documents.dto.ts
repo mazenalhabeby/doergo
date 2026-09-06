@@ -101,6 +101,15 @@ export class CreateDocumentTypeDto {
   @IsString({ each: true })
   requiredFromRoleIds?: string[];
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Roles that may SEE documents of this type. Empty = no restriction.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  visibleToRoleIds?: string[];
+
   @ApiPropertyOptional({ description: 'The scanner asks for the back as well' })
   @IsOptional()
   @IsBoolean()
@@ -188,6 +197,15 @@ export class UpdateDocumentTypeDto {
   @IsArray()
   @IsString({ each: true })
   requiredFromRoleIds?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Roles that may SEE documents of this type. Empty = no restriction.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  visibleToRoleIds?: string[];
 
   @ApiPropertyOptional({ description: 'The scanner asks for the back as well' })
   @IsOptional()

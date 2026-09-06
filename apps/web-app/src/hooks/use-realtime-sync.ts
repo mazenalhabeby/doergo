@@ -56,6 +56,8 @@ const Events = {
   JOIN_REQUEST_SUBMITTED: "join_request_submitted",
   // CRM — a client record or its activity timeline moved
   CUSTOMER_CHANGED: "customer.changed",
+  // A document type changed — including WHO MAY SEE documents filed under it
+  DOCUMENT_TYPES_CHANGED: "documents.typesChanged",
   // Shift-reminder / no-show engine. These are push-first on mobile; on the web
   // they are the only signal the attendance board gets.
   NOSHOW_REMINDER: "attendance_noshow_reminder",
@@ -188,6 +190,31 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
     ["customer"],              // /customers/[id]
     ["customer-activities"],
     ["customer-addresses"],
+  ],
+
+  /*
+    A document type moved.
+
+    This matters beyond the types screen: the type carries who may SEE documents
+    filed under it, so restricting one has to empty those documents out of every
+    colleague's register, member file, verification queue and compliance board
+    without them reloading — and lifting a restriction has to put them back.
+
+    Ids only, as everywhere else here. Each client refetches through its own
+    scoped endpoint, so a viewer who has just LOST access refetches and gets a
+    list without those documents; nothing in the payload widens anything.
+  */
+  [Events.DOCUMENT_TYPES_CHANGED]: [
+    ["document-types"],                  // the picker on every documents screen
+    ["documents-browse"],                // the folder register
+    ["documents-sent"],                  // the issued list
+    ["document-drafts"],
+    ["document-match-candidates"],
+    ["documents-awaiting-verification"], // the verification queue
+    ["credential-compliance"],
+    ["my-documents"],
+    ["my-document-requirements"],
+    ["document-templates"],              // a template names its type
   ],
 
   // The no-show and shift-reminder engine writes to the entries the attendance

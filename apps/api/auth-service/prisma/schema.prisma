@@ -4112,6 +4112,15 @@ model DocumentType {
   requiredFromAll     Boolean  @default(false)
   requiredFromRoleIds String[] @default([])
 
+  /// Roles that may SEE documents of this type — the mirror of the line above.
+  ///
+  /// ⚠️ EMPTY MEANS NO RESTRICTION, not "nobody". `canViewMemberDocuments` used
+  /// to be one switch for the whole filing cabinet, so the clerk chasing driving
+  /// licences also saw the payslips. A type names its roles only when somebody
+  /// decides it should; until then it behaves exactly as it always has, which is
+  /// what makes this safe to deploy to a live filing cabinet.
+  visibleToRoleIds String[] @default([])
+
   /// Whether the scanner asks for the back as well. A property of the DOCUMENT,
   /// not of what it proves: European ID cards and driving licences carry the
   /// machine-readable zone on the back, passports carry it on the photo page,

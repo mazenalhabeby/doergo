@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import {
   FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2,
   CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2, CreditCard,
-  User, UserCheck, Handshake, HardHat, ChevronUp, ChevronDown, X, Clock,
+  User, UserCheck, Handshake, HardHat, ChevronUp, ChevronDown, X, Clock, EyeOff,
 } from "lucide-react"
 import {
   documentsApi, workflowsApi, organizationsApi,
@@ -146,6 +146,7 @@ export default function DocumentTypesPage() {
                   key={ty.id}
                   type={ty}
                   workflows={workflows}
+                  roles={roles}
                   onEdit={() => setEditing(ty)}
                   onRetire={() => setActive.mutate({ id: ty.id, isActive: false })}
                 />
@@ -270,15 +271,19 @@ const BLANK: StarterDocumentType = {
 }
 
 function TypeRow({
-  type, workflows, onEdit, onRetire,
+  type, workflows, roles, onEdit, onRetire,
 }: {
   type: DocumentTypeRow
   workflows: { id: string; name: string }[]
+  roles: { id: string; name: string }[]
   onEdit: () => void
   onRetire: () => void
 }) {
   const { t } = useTranslation()
   const gated = workflows.filter((w) => type.requiredForWorkflowIds.includes(w.id))
+  // Restriction is worth saying on the row: it decides who sees a whole shelf
+  // of the register, and it is invisible to the person it hides things from.
+  const visibleTo = roles.filter((r) => type.visibleToRoleIds.includes(r.id))
 
   return (
     <li className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -292,6 +297,14 @@ function TypeRow({
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
               <ShieldCheck className="h-3 w-3" />
               {t("documents.types.credential")}
+            </span>
+          )}
+          {visibleTo.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <EyeOff className="h-3 w-3" />
+              {t("documents.types.visibleToBadge", {
+                roles: visibleTo.map((r) => r.name).join(", "),
+              })}
             </span>
           )}
           <code className="text-[11px] text-slate-400">{type.key}</code>
@@ -354,6 +367,13 @@ function TypeEditor({
   const [gates, setGates] = useState<string[]>(type?.requiredForWorkflowIds ?? [])
   const [requiredFromAll, setRequiredFromAll] = useState(type?.requiredFromAll ?? false)
   const [requiredFromRoleIds, setRequiredFromRoleIds] = useState<string[]>(type?.requiredFromRoleIds ?? [])
+  /*
+    Who may SEE documents of this type — the mirror of "required from" above.
+
+    Empty means no restriction, which is what every type is today; a type becomes
+    restricted only when somebody names roles here.
+  */
+  const [visibleToRoleIds, setVisibleToRoleIds] = useState<string[]>(type?.visibleToRoleIds ?? [])
   const [twoSided, setTwoSided] = useState(type?.twoSided ?? starter?.twoSided ?? false)
   const [scanShape, setScanShape] = useState(type?.scanShape ?? starter?.scanShape ?? "CARD")
   /*
@@ -385,6 +405,7 @@ function TypeEditor({
           isCredential, hasExpiry,
           requiredForWorkflowIds: isCredential ? gates : [],
           ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
+          visibleToRoleIds,
           twoSided: direction === "SUPPLIED" && twoSided,
           scanShape,
           retentionMonths,
@@ -403,6 +424,7 @@ function TypeEditor({
         isCredential, hasExpiry,
         requiredForWorkflowIds: isCredential ? gates : [],
         ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
+        visibleToRoleIds,
         twoSided: direction === "SUPPLIED" && twoSided,
         scanShape,
         retentionMonths,
@@ -661,6 +683,55 @@ function TypeEditor({
             )}
           </Step>
         )}
+
+        {/*
+          Who may see it.
+
+          Deliberately the same control as "Required from" one step above: a
+          reader who has used that one already knows this one, and the two
+          questions are mirrors — who must provide this, and who may look at it.
+        */}
+        <Step n={6} title={t("documents.types.stepVisibility")}>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setVisibleToRoleIds([])}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                visibleToRoleIds.length === 0
+                  ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                  : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+              )}
+            >
+              {t("documents.types.visibleEveryone")}
+            </button>
+            {roles.map((r) => {
+              const on = visibleToRoleIds.includes(r.id)
+              return (
+                <button
+                  key={r.id}
+                  onClick={() =>
+                    setVisibleToRoleIds((ids) =>
+                      ids.includes(r.id) ? ids.filter((x) => x !== r.id) : [...ids, r.id],
+                    )
+                  }
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                    on
+                      ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                      : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+                  )}
+                >
+                  {r.name}
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            {visibleToRoleIds.length === 0
+              ? t("documents.types.visibleEveryoneNote")
+              : t("documents.types.visibleNote")}
+          </p>
+        </Step>
 
         {direction === "ISSUED" && (
           <Step n={5} title={t("documents.types.step5")}>

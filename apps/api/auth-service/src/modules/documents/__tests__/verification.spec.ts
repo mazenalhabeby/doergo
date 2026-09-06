@@ -85,10 +85,27 @@ describe('DocumentsService — reviewing a supplied document', () => {
     it('asks only for this organization’s pending documents', async () => {
       prisma.document.findMany.mockResolvedValue([]);
       await service.listAwaitingVerification({ actor: actor() });
-      expect(prisma.document.findMany.mock.calls[0][0].where).toEqual({
+      expect(prisma.document.findMany.mock.calls[0][0].where).toMatchObject({
         organizationId: 'org1',
         status: 'PENDING_VERIFICATION',
       });
+    });
+
+    it('shows only the types this reviewer may see', async () => {
+      /*
+        The queue is the one screen where a restriction has to hold even though
+        the reviewer is entitled to review: somebody chasing driving licences
+        opens every document that reaches them, so a payslip landing in that
+        queue is a payslip read. The reviewer here holds no role, so only
+        unrestricted types match — plus their own documents, which a restriction
+        is never about.
+      */
+      prisma.document.findMany.mockResolvedValue([]);
+      await service.listAwaitingVerification({ actor: actor() });
+      expect(prisma.document.findMany.mock.calls[0][0].where.OR).toEqual([
+        { type: { OR: [{ visibleToRoleIds: { isEmpty: true } }] } },
+        { userId: 'reviewer' },
+      ]);
     });
 
     it('returns the oldest first — the person waiting longest is the most blocked', async () => {

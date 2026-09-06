@@ -54,6 +54,17 @@ export class OrgEventsService {
     this.announce(organizationId, 'member_changed', { memberId, reason });
   }
 
+  /**
+   * A document type was defined, changed or retired.
+   *
+   * Announced org-wide because a type carries WHO MAY SEE IT: narrowing one has
+   * to empty somebody else's register without them reloading the page, and
+   * widening one has to fill it.
+   */
+  documentTypesChanged(organizationId: string | null | undefined, typeId?: string | null): void {
+    this.announce(organizationId, 'document_types_changed', { typeId: typeId ?? null });
+  }
+
   /** A space was created, renamed, archived, restored or purged. */
   spaceChanged(organizationId: string | null | undefined, spaceId?: string | null): void {
     this.announce(organizationId, 'space_changed', { spaceId: spaceId ?? null });

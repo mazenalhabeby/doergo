@@ -88,6 +88,16 @@ export const SocketEvents = {
   MEMBER_ACCESS_UPDATED: 'member.access_updated',
   // A space was created, edited, archived or deleted → space lists refresh.
   SPACE_CHANGED: 'space.changed',
+  /*
+    A document type was defined, changed or retired.
+
+    Org-wide, because changing WHO MAY SEE a type changes what every colleague's
+    register contains — and the person who made the change is rarely the person
+    looking at the register. Carries an id, not the type: each client re-reads
+    through its own scoped endpoints, so nobody is handed a type they may not
+    see by the event itself.
+  */
+  DOCUMENT_TYPES_CHANGED: 'documents.typesChanged',
   // Someone was added to or removed from a space's roster → rosters refresh.
   SPACE_ROSTER_CHANGED: 'space.rosterChanged',
   // Support events

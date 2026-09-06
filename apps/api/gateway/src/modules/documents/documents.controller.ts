@@ -37,6 +37,7 @@ import {
   UpdateDocumentTypeDto,
   UpdateTemplateDto,
 } from './dto/documents.dto';
+import { OrgEventsService } from '../../common/events/org-events.service';
 
 /**
  * The personnel file, over HTTP.
@@ -59,7 +60,12 @@ import {
 @RequirePlan('documents')
 @Controller('documents')
 export class DocumentsController {
-  constructor(private readonly documents: DocumentsGatewayService) {}
+  constructor(
+    private readonly documents: DocumentsGatewayService,
+    // A document type carries who may see it, so a change to one has to reach
+    // every colleague's open register without them reloading.
+    private readonly orgEvents: OrgEventsService,
+  ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
 
@@ -69,9 +75,16 @@ export class DocumentsController {
     @CurrentUser() user: CurrentUserData,
     @Query('includeInactive') includeInactive?: string,
   ) {
+    const actor = documentActor(user);
     return this.documents.listTypes({
       organizationId: user.organizationId,
       includeInactive: includeInactive === 'true',
+      roleId: actor.roleId,
+      isAdmin: actor.isAdmin,
+      // Their own file is never restricted from them — see visibleTypeSelfWhere.
+      userId: actor.userId,
+      // Somebody configuring types has to see them all — see listTypes.
+      manage: actor.canManageDocumentTemplates,
     });
   }
 
@@ -79,7 +92,16 @@ export class DocumentsController {
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Define a document type' })
   async createType(@CurrentUser() user: CurrentUserData, @Body() body: CreateDocumentTypeDto) {
-    return this.documents.createType({ actor: documentActor(user), ...body });
+    const created = await this.documents.createType({ actor: documentActor(user), ...body });
+    /*
+      Everybody's register, without a refresh.
+
+      A type carries who may SEE it, so defining or narrowing one changes what a
+      colleague's list contains — and the person who made the change is rarely
+      the person looking at the list.
+    */
+    this.orgEvents.documentTypesChanged(user.organizationId, (created as { id?: string })?.id ?? null);
+    return created;
   }
 
   @Patch('types/:id')
@@ -90,14 +112,18 @@ export class DocumentsController {
     @Param('id') id: string,
     @Body() body: UpdateDocumentTypeDto,
   ) {
-    return this.documents.updateType({ actor: documentActor(user), id, patch: body });
+    const updated = await this.documents.updateType({ actor: documentActor(user), id, patch: body });
+    this.orgEvents.documentTypesChanged(user.organizationId, id);
+    return updated;
   }
 
   @Delete('types/:id')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Retire a document type (never deletes filed documents)' })
   async deactivateType(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
-    return this.documents.deactivateType({ actor: documentActor(user), id });
+    const result = await this.documents.deactivateType({ actor: documentActor(user), id });
+    this.orgEvents.documentTypesChanged(user.organizationId, id);
+    return result;
   }
 
   // ── Issuing ──────────────────────────────────────────────────────────────

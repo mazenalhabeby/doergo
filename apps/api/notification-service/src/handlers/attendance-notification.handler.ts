@@ -642,6 +642,11 @@ export class AttendanceNotificationHandler {
     this.websocketGateway.emitSpaceChanged(data.organizationId, data.spaceId ?? null);
   }
 
+  @EventPattern('document_types_changed')
+  async handleDocumentTypesChanged(@Payload() data: { organizationId: string; typeId?: string | null }) {
+    this.websocketGateway.emitDocumentTypesChanged(data.organizationId, data.typeId ?? null);
+  }
+
   @EventPattern('space_roster_changed')
   async handleSpaceRosterChanged(@Payload() data: { organizationId: string; spaceId?: string | null }) {
     this.websocketGateway.emitSpaceRosterChanged(data.organizationId, data.spaceId ?? null);

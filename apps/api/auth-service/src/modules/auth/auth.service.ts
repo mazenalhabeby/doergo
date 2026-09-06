@@ -857,6 +857,8 @@ export class AuthService {
             // gates its UI on is what the server will authorize. Last, to win
             // over the individual fields set above.
             ...orgPermissionFields(loginAccess, user.taskCreationScope),
+            // See validateToken: a document type may name the roles that see it.
+            memberRoleId: user.memberRoleId ?? null,
           },
           ...tokens,
         },
@@ -1165,6 +1167,8 @@ export class AuthService {
             */
             access: refreshAccess,
             ...orgPermissionFields(refreshAccess, storedToken.user.taskCreationScope),
+            // See validateToken: a document type may name the roles that see it.
+            memberRoleId: storedToken.user.memberRoleId ?? null,
             allowRemote: storedToken.user.allowRemote,
             presence: storedToken.user.presence,
             specialty: storedToken.user.specialty,
@@ -1495,6 +1499,16 @@ export class AuthService {
           // filtered to their effective window so expired/future grants don't
           // contribute per-space permissions (L2).
           memberRole: { select: { permissions: true, isActive: true } },
+          /*
+            The role's ID, not only its permissions.
+
+            A DOCUMENT TYPE may name the roles that can see it, so the id has to
+            travel with the caller. This select is explicit, so an unselected
+            scalar arrives as `undefined` and the visibility rule would quietly
+            treat every restricted type as invisible — the failure would look
+            like a permissions bug and be nothing of the kind.
+          */
+          memberRoleId: true,
           spaceAssignments: {
             where: {
               effectiveFrom: { lte: new Date() },
@@ -1622,6 +1636,18 @@ export class AuthService {
           // Canonicalize the role once at this boundary so every downstream
           // service (and the gateway's req.user) sees ADMIN/MANAGER/EMPLOYEE,
           // never the legacy CLIENT/DISPATCHER/TECHNICIAN values.
+          /*
+            The member's org-wide role id.
+
+            Carried because a DOCUMENT TYPE may name the roles that can see it,
+            and the answer has to travel with the caller rather than be looked up
+            per request. One scalar on a query that already runs.
+
+            ⚠️ THREE places build a request context in this file — login, refresh
+            and validate. All three must set it, or documents restricted to a
+            role become invisible on whichever path missed it.
+          */
+          memberRoleId: (userData as { memberRoleId?: string | null }).memberRoleId ?? null,
           role: normalizeRole(userData.role),
           organizationName: organization?.name || null,
           // Must match the login path exactly — see orgAddOns for what happens

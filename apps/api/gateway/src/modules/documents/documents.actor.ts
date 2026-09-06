@@ -32,6 +32,17 @@ export interface DocumentActor {
   canOpenMemberDocuments: boolean;
   canIssueDocuments: boolean;
   canManageDocumentTemplates: boolean;
+  /*
+    The two facts a document TYPE's visibility is decided from.
+
+    They live here because this is the one function that describes a caller to
+    the documents service, and every read already takes it — so no route can
+    forget to ask, and there is nowhere else to get the answer wrong.
+  */
+  /** The member's org-wide role, or null. A type may name the roles that see it. */
+  roleId: string | null;
+  /** An administrator sees every type — a division of labour, not a wall. */
+  isAdmin: boolean;
 }
 
 export function documentActor(user: CurrentUserData): DocumentActor {
@@ -50,6 +61,8 @@ export function documentActor(user: CurrentUserData): DocumentActor {
     canOpenMemberDocuments: admin || !!user.canOpenMemberDocuments,
     canIssueDocuments: admin || !!user.canIssueDocuments,
     canManageDocumentTemplates: admin || !!user.canManageDocumentTemplates,
+    roleId: user.memberRoleId ?? null,
+    isAdmin: admin,
   };
 }
 

@@ -7,6 +7,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { visibleTypeWhere, documentTypeVisibleTo, visibleTypeSelfWhere } from '@hbcfield/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import {
@@ -92,9 +93,79 @@ export interface DocumentActor {
   canOpenMemberDocuments: boolean;
   canIssueDocuments: boolean;
   canManageDocumentTemplates: boolean;
+  /** The member's org-wide role — a document TYPE may name the roles that see it. */
+  roleId?: string | null;
+  /** An administrator sees every type. */
+  isAdmin?: boolean;
 }
 
 /** Request provenance, recorded on every evidence-trail entry. */
+/**
+ * The type-visibility scope for a read that shows OTHER people's documents.
+ *
+ * A document type may name the roles that can see it. This is that rule as a
+ * `where` fragment, from the one implementation in shared — spread into a query
+ * rather than filtered afterwards, so the COUNT and the pagination describe rows
+ * the reader can actually see. Filtering a fetched page renders twenty as four
+ * and reports the total as twenty.
+ *
+ * ⚠️ Never applied to somebody's OWN documents. You always see your own file
+ * whatever its types contain; this restricts who may look at somebody else's.
+ *
+ * Returns `undefined` for an administrator, so their queries are untouched.
+ */
+/**
+ * Refuse one document whose TYPE this reader may not see.
+ *
+ * ⚠️ 404, not 403. "You may not see this payslip" confirms the payslip exists
+ * and roughly what it says — which is most of what a payslip discloses. The
+ * register does not list it, so nothing else should admit to it either.
+ *
+ * Never applied to the reader's own document.
+ */
+/**
+ * Refuse one document whose TYPE this caller may not see.
+ *
+ * Two exemptions, both of them the point rather than a loophole:
+ *
+ *  - The subject. A restriction decides who may read other people's documents;
+ *    it never hides a person's own file from them.
+ *  - A routed signer. Being asked to sign a document IS the authorisation to
+ *    read that one document — a shift leader countersigning a time sheet is not
+ *    in HR, and signing something you cannot read is the one outcome a signing
+ *    feature must never produce.
+ *
+ * 404 rather than 403 on purpose: to a reader who may not see the type, the
+ * document is not something they are being refused, it is something that is not
+ * there. A 403 would confirm that a payslip exists for that person on that date.
+ */
+function assertTypeVisible(
+  actor: DocumentActor,
+  doc: { userId: string; type?: { visibleToRoleIds?: string[] | null } | null },
+  routedSigner = false,
+): void {
+  if (routedSigner) return;
+  if (doc.userId === actor.userId) return;
+  if (documentTypeVisibleTo(doc.type, { roleId: actor.roleId ?? null, isAdmin: !!actor.isAdmin })) return;
+  throw new NotFoundException('Document not found');
+}
+
+/**
+ * The type restriction as a `where` fragment, for every list of documents.
+ *
+ * Spread it — it is `undefined` for an unrestricted reader and adds nothing to
+ * the query in the common case. It carries the caller's own id, so a member's
+ * own documents stay in every list they appear in; a restriction decides whose
+ * OTHER documents you may read.
+ */
+function typeScope(actor: DocumentActor) {
+  return visibleTypeWhere({
+    roleId: actor.roleId ?? null,
+    isAdmin: !!actor.isAdmin,
+    userId: actor.userId,
+  });
+}
+
 export interface RequestContext {
   ip?: string | null;
   userAgent?: string | null;
@@ -208,9 +279,39 @@ export class DocumentsService {
   // Document types
   // ══════════════════════════════════════════════════════════════════════════
 
-  async listTypes(data: { organizationId: string; includeInactive?: boolean }) {
+  async listTypes(data: {
+    organizationId: string;
+    includeInactive?: boolean;
+    /**
+     * The caller, for type visibility.
+     *
+     * ⚠️ `manage` skips the restriction: configuring types requires seeing all of
+     * them, and it is `canManageDocumentTemplates` that grants it — you cannot
+     * set who may see a type from a screen that hides it from you.
+     */
+    roleId?: string | null;
+    isAdmin?: boolean;
+    manage?: boolean;
+    /** For the self-exemptions in `visibleTypeSelfWhere`. */
+    userId?: string | null;
+  }) {
     return this.prisma.documentType.findMany({
       where: {
+        /*
+          A filter list must not offer a type whose documents it will not show.
+
+          The same rule as the document queries, read against the types
+          themselves and from the same file — a type missing from the register
+          while still present in the dropdown is exactly the confusion this
+          feature exists to remove.
+        */
+        ...(data.manage
+          ? {}
+          : visibleTypeSelfWhere({
+              roleId: data.roleId ?? null,
+              isAdmin: !!data.isAdmin,
+              userId: data.userId ?? null,
+            }) ?? {}),
         organizationId: data.organizationId,
         ...(data.includeInactive ? {} : { isActive: true }),
       },
@@ -232,6 +333,8 @@ export class DocumentsService {
     requiredForWorkflowIds?: string[];
     requiredFromAll?: boolean;
     requiredFromRoleIds?: string[];
+    /** Roles that may SEE documents of this type. Empty = no restriction. */
+    visibleToRoleIds?: string[];
     twoSided?: boolean;
     scanShape?: string;
     position?: number;
@@ -262,6 +365,8 @@ export class DocumentsService {
           // it", and upgrading must not put a red flag on every member.
           requiredFromAll: data.requiredFromAll ?? false,
           requiredFromRoleIds: data.requiredFromRoleIds ?? [],
+          // Empty = no restriction, which is what every existing type is.
+          visibleToRoleIds: data.visibleToRoleIds ?? [],
           twoSided: data.twoSided ?? false,
           scanShape: data.scanShape ?? 'CARD',
           position: data.position ?? 0,
@@ -288,6 +393,8 @@ export class DocumentsService {
       requiredForWorkflowIds: string[];
       requiredFromAll: boolean;
       requiredFromRoleIds: string[];
+      /** Roles that may SEE documents of this type. Empty = no restriction. */
+      visibleToRoleIds: string[];
       twoSided: boolean;
       scanShape: string;
       isActive: boolean;
@@ -1709,6 +1816,8 @@ export class DocumentsService {
 
     const rows = await this.prisma.document.findMany({
       where: {
+        // The verification queue is other people's uploads.
+        ...typeScope(data.actor),
         organizationId: data.actor.organizationId,
         status: 'PENDING_VERIFICATION',
       },
@@ -1871,6 +1980,9 @@ export class DocumentsService {
   private async findPendingOr404(actor: DocumentActor, documentId: string) {
     const document = await this.prisma.document.findFirst({
       where: {
+        // The same scope as the queue it was picked from: approving or refusing
+        // a document is reading it, and then acting on it.
+        ...typeScope(actor),
         id: documentId,
         organizationId: actor.organizationId,
         status: 'PENDING_VERIFICATION',
@@ -2665,7 +2777,8 @@ export class DocumentsService {
   async listDrafts(data: { actor: DocumentActor }) {
     this.assertCanIssue(data.actor);
     const drafts = await this.prisma.document.findMany({
-      where: { organizationId: data.actor.organizationId, status: 'DRAFT' },
+      // Drafts are documents about to be issued TO somebody else.
+      where: { organizationId: data.actor.organizationId, status: 'DRAFT', ...typeScope(data.actor) },
       select: {
         id: true,
         title: true,
@@ -2760,7 +2873,14 @@ export class DocumentsService {
     // was already published, simply is not found — and the count check below
     // then refuses the whole batch rather than publishing the rest.
     const drafts = await this.prisma.document.findMany({
-      where: { id: { in: ids }, organizationId: data.actor.organizationId, status: 'DRAFT' },
+      // …and by type: a restricted draft is not in the list this caller staged
+      // from, so an id reaching here is one they were never shown.
+      where: {
+        ...typeScope(data.actor),
+        id: { in: ids },
+        organizationId: data.actor.organizationId,
+        status: 'DRAFT',
+      },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
         type: { select: { label: true, signatureMode: true, signerRoute: true } },
@@ -2837,6 +2957,7 @@ export class DocumentsService {
     this.assertCanIssue(data.actor);
     const draft = await this.prisma.document.findFirst({
       where: {
+        ...typeScope(data.actor),
         id: data.documentId,
         organizationId: data.actor.organizationId,
         status: 'DRAFT',
@@ -2944,7 +3065,9 @@ export class DocumentsService {
 
     // Every level of the path already chosen narrows the query. The org scope
     // is first and unconditional.
+    // The register shows other people's documents by definition.
     const where: Prisma.DocumentWhereInput = {
+      ...typeScope(data.actor),
       organizationId: data.actor.organizationId,
       status: { not: 'DRAFT' },
       ...(data.typeId ? { typeId: data.typeId } : {}),
@@ -3350,7 +3473,7 @@ export class DocumentsService {
     }
 
     const document = await this.prisma.document.findFirst({
-      where: { id: data.documentId, organizationId: data.actor.organizationId },
+      where: { ...typeScope(data.actor), id: data.documentId, organizationId: data.actor.organizationId },
       select: { id: true, title: true },
     });
     if (!document) throw new NotFoundException('Document not found');
@@ -3409,7 +3532,7 @@ export class DocumentsService {
   async documentChain(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, title: true, userId: true },
+      select: { id: true, title: true, userId: true, type: { select: { visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
 
@@ -3436,6 +3559,9 @@ export class DocumentsService {
     if (!inChain && !isSubject && !data.actor.canViewMemberDocuments) {
       throw new ForbiddenException('You cannot see this document');
     }
+    // Read AFTER the chain is known: a signer routed onto this document reads it
+    // through their step, not through the type.
+    assertTypeVisible(data.actor, document, inChain);
 
     const steps = rows.map((r) => ({
       order: r.order,
@@ -3831,6 +3957,11 @@ export class DocumentsService {
     // The organization scope is on every branch below, never added later: it is
     // what stops a guessed type or user id reaching across tenants.
     const base: Prisma.DocumentWhereInput = {
+      // On the base, so it reaches the rows, the total AND the tab counts. A
+      // filter applied only to the rows leaves the tabs counting documents the
+      // reader cannot open — which is how a restriction announces the existence
+      // of what it is hiding.
+      ...typeScope(data.actor),
       organizationId: data.actor.organizationId,
       status: { not: 'DRAFT' },
       ...(data.typeId ? { typeId: data.typeId } : {}),
@@ -3986,7 +4117,15 @@ export class DocumentsService {
       await this.assertMemberOfOrg(targetUserId, data.actor.organizationId);
     }
 
+    /*
+      Somebody else's file is scoped by document type; your own never is.
+
+      `isSelf` is the distinction the permission check above already draws, so
+      the visibility rule hangs off the same fact rather than inventing a second
+      idea of whose file this is.
+    */
     const where: Prisma.DocumentWhereInput = {
+      ...(isSelf ? {} : typeScope(data.actor)),
       // Both, always. The organization scope is what stops a stale or guessed
       // user id reaching across tenants even when the id is otherwise valid.
       organizationId: data.actor.organizationId,
@@ -4143,7 +4282,7 @@ export class DocumentsService {
     // not entitled to the document — which tells them it exists.
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      include: { type: { select: { label: true } } },
+      include: { type: { select: { label: true, visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
 
@@ -4181,6 +4320,20 @@ export class DocumentsService {
       // open a colleague's payslip.
       throw new ForbiddenException('You cannot open other members’ documents');
     }
+
+    /*
+      The last door, and the one that matters most.
+
+      A link is minted here. A restricted document must not be openable through a
+      URL that leaked from a screen somebody could once see, or from a role that
+      has since been narrowed — so the type is checked at the mint, not only on
+      the lists that led here.
+
+      `isSigner` passes through: it already covers the subject and everyone
+      routed onto the document, and both read it through their own relationship
+      to it rather than through the type.
+    */
+    assertTypeVisible(data.actor, document, isSigner);
 
     const store = this.requireStore();
     /*
@@ -4236,10 +4389,11 @@ export class DocumentsService {
   async listEvents(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, type: { select: { visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
 
+    assertTypeVisible(data.actor, document);
     const isSelf = document.userId === data.actor.userId;
     if (!isSelf && !data.actor.canViewMemberDocuments) {
       throw new ForbiddenException('You cannot see other members’ documents');
@@ -4280,6 +4434,10 @@ export class DocumentsService {
 
     const documents = await this.prisma.document.findMany({
       where: {
+        // A manager exporting somebody else's file takes away only what they may
+        // read; on a self-export every row is the caller's own and this admits
+        // all of them.
+        ...typeScope(data.actor),
         organizationId: data.actor.organizationId,
         userId: targetUserId,
         status: { not: 'DRAFT' },
@@ -4353,7 +4511,7 @@ export class DocumentsService {
     this.assertCanIssue(data.actor);
 
     const document = await this.prisma.document.findFirst({
-      where: { id: data.documentId, organizationId: data.actor.organizationId },
+      where: { ...typeScope(data.actor), id: data.documentId, organizationId: data.actor.organizationId },
     });
     if (!document) throw new NotFoundException('Document not found');
 
