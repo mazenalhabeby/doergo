@@ -3368,7 +3368,8 @@
       "remindLabel": "Mitarbeitende erinnern",
       "remindHint": "Fragt bei Fälligkeit und erneut nach „Später“ — dreimal, dann hört es auf und wird als nicht genommen vermerkt.",
       "create": "Pause hinzufügen"
-    }
+    },
+    "onSite": "{{duration}} vor Ort"
   },
   "auditLog": {
     "title": "Audit-Protokoll",

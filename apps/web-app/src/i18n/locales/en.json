@@ -3368,7 +3368,8 @@
       "remindLabel": "Remind the member",
       "remindHint": "Asks when it falls due, and again if they say later — three times, then it stops and records it as not taken.",
       "create": "Add rest"
-    }
+    },
+    "onSite": "{{duration}} on site"
   },
   "auditLog": {
     "title": "Audit Log",

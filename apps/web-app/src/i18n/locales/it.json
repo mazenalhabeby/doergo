@@ -3368,7 +3368,8 @@
       "remindLabel": "Ricorda alla persona",
       "remindHint": "Chiede quando è il momento e di nuovo dopo «più tardi» — tre volte, poi smette e la registra come non presa.",
       "create": "Aggiungi pausa"
-    }
+    },
+    "onSite": "{{duration}} in sede"
   },
   "auditLog": {
     "title": "Registro di controllo",

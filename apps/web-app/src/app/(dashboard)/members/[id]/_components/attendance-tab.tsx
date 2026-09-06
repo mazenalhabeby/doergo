@@ -9,8 +9,8 @@ import { AddAttendanceDialog } from "./add-attendance-dialog"
 import { AttendanceStatusCell } from "@/components/attendance-status-cell"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTimeFormat } from "@/hooks"
-import { cn } from "@/lib/utils"
-import { countryFromTz } from "@hbcfield/shared/client"
+import { cn, formatDurationMinutes } from "@/lib/utils"
+import { countryFromTz, workedMinutes } from "@hbcfield/shared/client"
 
 interface AttendanceTabProps {
   attendance: TimeEntry[] | undefined
@@ -103,10 +103,36 @@ export function AttendanceTab({
                     <td className="px-5 py-3 text-muted-foreground">
                       {entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : "—"}
                     </td>
+                    {/*
+                      The COUNTED hours, through the same helper every other
+                      attendance screen reads.
+
+                      This cell rendered `totalMinutes` — raw wall time, breaks
+                      and all — while the attendance board rendered
+                      `workedMinutes()`. The same shift therefore read 12h 10m
+                      here and 11h 30m there, and whichever screen somebody
+                      happened to open decided what they believed they were paid
+                      for. The second line names the difference rather than
+                      leaving two numbers to be discovered separately.
+                    */}
                     <td className="px-5 py-3 text-foreground">
-                      {entry.totalMinutes
-                        ? `${Math.floor(entry.totalMinutes / 60)}h ${entry.totalMinutes % 60}m`
-                        : "—"}
+                      {entry.clockOutAt ? (
+                        <>
+                          <span className="font-medium tabular-nums">
+                            {formatDurationMinutes(workedMinutes(entry))}
+                          </span>
+                          {entry.totalMinutes != null &&
+                            workedMinutes(entry) !== entry.totalMinutes && (
+                              <span className="mt-0.5 block text-[11px] tabular-nums text-muted-foreground">
+                                {t("attendance.onSite", "{{duration}} on site", {
+                                  duration: formatDurationMinutes(entry.totalMinutes),
+                                })}
+                              </span>
+                            )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
                       {entry.location?.name || "—"}

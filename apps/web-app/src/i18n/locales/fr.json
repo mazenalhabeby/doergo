@@ -3368,7 +3368,8 @@
       "remindLabel": "Rappeler à la personne",
       "remindHint": "Sollicite le moment venu, puis de nouveau après « plus tard » — trois fois, ensuite cela s’arrête et est noté comme non prise.",
       "create": "Ajouter la pause"
-    }
+    },
+    "onSite": "{{duration}} sur place"
   },
   "auditLog": {
     "title": "Journal d’audit",

@@ -3368,7 +3368,8 @@
       "remindLabel": "Avisar a la persona",
       "remindHint": "Avisa cuando toca y de nuevo si responde «más tarde» — tres veces, después para y lo registra como no tomado.",
       "create": "Añadir descanso"
-    }
+    },
+    "onSite": "{{duration}} en el centro"
   },
   "auditLog": {
     "title": "Registro de auditoría",

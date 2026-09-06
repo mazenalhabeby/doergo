@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEntryStatus, type Break, type BreakType } from "@/lib/api"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
+import { workedMinutes } from "@hbcfield/shared/client"
 
 // Lazy (audit AT-C1). Four tabs of which one shows, plus a dialog that renders on
 // a click — ~2,600 lines in the first paint. ssr:false: none renders on the server.
@@ -287,8 +288,16 @@ export default function AttendancePage() {
     const activeCount = entries.filter((e: TimeEntry) => e.status === "CLOCKED_IN").length
     const completedCount = entries.filter((e: TimeEntry) => e.status === "CLOCKED_OUT").length
     const autoOutCount = entries.filter((e: TimeEntry) => e.status === "AUTO_OUT").length
-    const totalMinutes = entries.reduce(
-      (sum: number, e: TimeEntry) => sum + (e.totalMinutes || 0),
+    /*
+      The same hours the rows below show.
+
+      This summed raw `totalMinutes` while every row in the table beneath it
+      rendered `workedMinutes()` — so the headline said 12.2 hours and the column
+      under it added up to 11.5, on one screen, for the same shifts. Breaks were
+      not subtracted and the counted window was ignored entirely.
+    */
+    const countedMinutes = entries.reduce(
+      (sum: number, e: TimeEntry) => sum + workedMinutes(e),
       0
     )
 
@@ -296,7 +305,7 @@ export default function AttendancePage() {
       active: activeCount,
       completed: completedCount,
       autoOut: autoOutCount,
-      totalHours: Math.round(totalMinutes / 60 * 10) / 10,
+      totalHours: Math.round((countedMinutes / 60) * 10) / 10,
     }
   }, [entries])
 
