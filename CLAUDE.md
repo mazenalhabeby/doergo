@@ -1044,6 +1044,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
+| `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
 | `moduleAllowedForExternal()`, `filterExternalModules()` | An external member holds no clock and no time_off |
 | `stripeCatalog()`, `stripeLinesForBill()`, `stripeLookupKey()` | What Stripe must hold, and a bill as subscription lines |
@@ -1196,6 +1197,21 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-09-06, later) — Options & Modules enforced end to end
+
+**PROD `5b902360`** (rollback tags `prod-pre-option-surfaces`, `prod-pre-module-gates`, `prod-pre-attendance-break`). No migrations. Detail in memory `gating-options-modules`.
+
+> Something switched off must disappear in THREE places: the server refuses the write, the page refuses to render, and **the way in goes**. Two audits, mirror images: **Options were enforced and not hidden; Modules were hidden and not enforced.**
+
+- ⚠️ **The navbar decided every item on PERMISSIONS ALONE** — no item consulted what the org had bought, so Invoices, Overtime and Schedule stayed put with the Option off. One table now (`option-surfaces.ts`), read by the navbar, the workspace tabs and the settings list, with a test walking each table against its source.
+- ⚠️ **Workflows was the worst**: the tab was `show: true`, the builder opened, and the 402 arrived at the SAVE. Gated at the tab, the tab body (`?tab=workflow`) and `allowCreate` on the space form. Choosing an existing workflow stays free — building one is what was bought.
+- ⚠️ **An Option change took up to a minute to appear, through a hard refresh** — `orgAddOns` rides on the gateway's Redis-cached user. `AuthTokenCache` indexes sessions **by organization** now; both add-on write paths call `invalidateOrganization`.
+- ⚠️ **Six modules had NO server gate**: assets, tracking, time_tracking, attachments, checklists, subtasks. `time_tracking` is on **clock-IN only** (clock-out must never strand an open shift), and the task features are gated on their **own** routes — all eight — which is what makes them refusable without refusing the task.
+- ⚠️ **Never pass a module key to `hasPlanFeature`/`PlanGate`.** It opens with `if (!isAddOn(key)) return false`, so it answers NO for everybody **including buyers** — custom fields were invisible in the New Task dialog on exactly this. A test now scans for it.
+- ⚠️ **Production was counted before every gate.** Zero assets/attachments/subtasks/story points; every space with clock-ins already had time_tracking. Nothing in use lost access — do this every time.
+- **Attendance**: Add wrote `breakMinutes` and no rows while Edit lists rows, so a rest was invisible AND was destroyed by the first edit that touched breaks (they are recomputed from the rows). One `BreakFields` in both dialogs now; a break is a row everywhere.
+- **Login**: two skeletons were wrong — the dashboard one flashed before login (now `BootScreen`), and `AuthSkeleton` drew the PREVIOUS login design while the page is a full-bleed two-panel layout.
 
 ### Recently Completed (2026-09-06) — CRM contact people, workspace fixes, two stale gates
 
