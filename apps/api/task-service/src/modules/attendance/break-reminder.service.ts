@@ -8,6 +8,7 @@ import {
   outstandingBreaks,
   isExpired,
   markMissed,
+  snooze,
   type BreakPlanItem,
 } from '@hbcfield/shared';
 
@@ -128,13 +129,31 @@ export class BreakReminderService {
       asked += 1;
 
       /*
-        Re-armed conservatively, and this is the safety net rather than the
-        mechanism: "Later" moves the deadline explicitly. If the member never
-        answers at all, this asks again in five minutes — and the SNOOZE CAP in
-        the plan is what eventually stops it, so an ignored phone collects a
-        handful of notifications rather than an afternoon of them.
+        An ask that goes unanswered COUNTS.
+
+        This used to re-arm five minutes later and leave `snoozeCount` alone,
+        while the comment beside it claimed the cap would eventually stop the
+        asking. It would not: the count moved only when somebody actively tapped
+        "Later", so a member who simply ignored the prompt was asked again every
+        five minutes for the rest of the shift — about a hundred and forty times
+        on a twelve-hour day. Precisely the notification storm the cap exists to
+        prevent, produced by the code that documented itself as preventing it.
+
+        Ignoring a prompt and postponing it are the same fact about the day: it
+        was offered and not taken. So they share one counter and one transition,
+        and past the cap the rest is recorded MISSED and the asking stops.
       */
-      await this.setDeadline(entry.id, this.in(now, 5));
+      const after = snooze(plan, nextUp.ruleId, {
+        snoozeMin: nextUp.snoozeMin,
+        maxSnoozes: nextUp.maxSnoozes,
+        now,
+      });
+      const item = after.find((i) => i.ruleId === nextUp.ruleId);
+      if (item?.state === 'MISSED') {
+        missed += 1;
+        this.logger.log(`Rest unanswered and recorded missed: entry=${entry.id} rest=${nextUp.name}`);
+      }
+      await this.write(entry.id, after, nextBreakRemindAt(after, now));
     }
 
     if (asked || ended || missed) {

@@ -51,6 +51,15 @@ export interface BreakPlanItem {
   required: boolean;
   state: BreakPlanState;
   snoozeCount: number;
+  /**
+   * The rule's own cadence and cap, frozen onto the plan with everything else.
+   *
+   * Carried here so the reminder sweep needs no rule lookup at all — the plan is
+   * meant to be self-contained, and a sweep that joins per entry is a sweep that
+   * gets slower as the product gets busier.
+   */
+  snoozeMin: number;
+  maxSnoozes: number | null;
   /** Set when the member actually took it, linking plan to evidence. */
   breakId?: string;
   /** ISO instant the rest was started, for the "your rest is over" nudge. */
@@ -144,6 +153,8 @@ export function resolveBreakPlan(
       required: !!rule.isRequired,
       state: 'PENDING',
       snoozeCount: 0,
+      snoozeMin: Math.max(MIN_SNOOZE_MINUTES, Math.round(rule.snoozeMin || 0)),
+      maxSnoozes: rule.maxSnoozes ?? null,
     });
   }
 

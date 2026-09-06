@@ -511,16 +511,17 @@ export class BreakService {
       : outstandingBreaks(plan)[0];
     if (!target) return { success: true, data: { snoozed: false }, message: 'Nothing to postpone' };
 
-    // The interval comes from the RULE, so an organization decides how insistent
-    // its own reminders are — but the floor and the cap are the shared rule's,
-    // which is what stops a misconfiguration becoming a notification storm.
-    const rule = await this.prisma.breakRule.findUnique({
-      where: { id: target.ruleId },
-      select: { snoozeMin: true, maxSnoozes: true },
-    });
+    /*
+      The cadence comes from the PLAN, not the rule.
+
+      It was frozen there at clock-in with everything else, so this needs no
+      lookup — and, more importantly, a rule edited at noon cannot change how
+      insistent somebody's afternoon is. The floor and the cap are still the
+      shared rule's, which is what stops a misconfiguration becoming a storm.
+    */
     const updated = snoozePlan(plan, target.ruleId, {
-      snoozeMin: rule?.snoozeMin ?? 15,
-      maxSnoozes: rule?.maxSnoozes ?? null,
+      snoozeMin: target.snoozeMin,
+      maxSnoozes: target.maxSnoozes,
     });
     const item = updated.find((i) => i.ruleId === target.ruleId)!;
 
