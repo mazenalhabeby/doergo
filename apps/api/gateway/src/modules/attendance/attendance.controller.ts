@@ -31,6 +31,7 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import { ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto, AddBreakForMemberDto } from './dto';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -66,6 +67,16 @@ export class AttendanceController {
   @Post('clock-in')
   // Entry point only — clock-out and break-end stay open so removing the tab mid-shift cannot strand an open entry.
   @RequireAccessModule('clock')
+  /*
+    ⚠️ Time Tracking is the MODULE this feature is sold as, and it was never
+    checked: a workspace could clock its people in and out without it being
+    switched on. `clock` above is the member's own Access Profile — whether THIS
+    person uses a clock — which is a different question from whether the
+    workspace bought one.
+    ⚠️ On the ENTRY POINT only, for the reason in the line above it: switching
+    the module off mid-shift must not leave somebody unable to clock out.
+  */
+  @RequireModule('time_tracking')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock in at a company location' })
   async clockIn(@Body() dto: ClockInDto, @Request() req: any) {

@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Inject, Request, Query, ForbiddenException } from '@nestjs/common';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +10,15 @@ import { UpdateTrackingLocationDto, BatchTrackingLocationDto } from './dto';
 
 @ApiTags('tracking')
 @ApiBearerAuth()
+/**
+ * ⚠️ This had NO module gate. Live map and route capture. A phone that keeps posting positions for a space
+ * that stopped paying for tracking is the leak this closes; the points it has
+ * already recorded stay readable.
+ *
+ * ModuleGuard resolves the space from the request and falls back to the
+ * organization's set when there is none, and it passes reads by design.
+ */
+@RequireModule('tracking')
 @Controller('tracking')
 export class TrackingController {
   constructor(

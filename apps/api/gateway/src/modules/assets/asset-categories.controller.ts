@@ -30,6 +30,7 @@ import {
   CreateAssetTypeDto,
   UpdateAssetTypeDto,
 } from './dto';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 
 @ApiTags('asset-categories')
 @ApiBearerAuth()
@@ -43,6 +44,13 @@ import {
   them, not the permission, so the rule is stated about the relationship.
 */
 @DenyExternal()
+/**
+ * ⚠️ This had NO module gate. Kinds are the Assets module's own configuration — the same purchase.
+ *
+ * ModuleGuard resolves the space from the request and falls back to the
+ * organization's set when there is none, and it passes reads by design.
+ */
+@RequireModule('assets')
 @Controller('asset-categories')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetCategoriesController {
@@ -180,6 +188,13 @@ export class AssetCategoriesController {
   them, not the permission, so the rule is stated about the relationship.
 */
 @DenyExternal()
+/**
+ * ⚠️ This had NO module gate. Types sit under a kind, so they follow it.
+ *
+ * ModuleGuard resolves the space from the request and falls back to the
+ * organization's set when there is none, and it passes reads by design.
+ */
+@RequireModule('assets')
 @Controller('asset-types')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetTypesController {

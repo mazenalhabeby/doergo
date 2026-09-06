@@ -27,6 +27,7 @@ import { AssetsQueueService } from './assets.queue.service';
 import {
   CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
 } from './dto';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -40,6 +41,14 @@ import {
   them, not the permission, so the rule is stated about the relationship.
 */
 @DenyExternal()
+/**
+ * ⚠️ This had NO module gate. The register itself. Reads pass — an organization that switches Assets off
+ * keeps sight of what it recorded; it just cannot add to it.
+ *
+ * ModuleGuard resolves the space from the request and falls back to the
+ * organization's set when there is none, and it passes reads by design.
+ */
+@RequireModule('assets')
 @Controller('assets')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetsController {
