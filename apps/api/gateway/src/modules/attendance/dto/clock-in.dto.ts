@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, MaxLength } from 'class-validator';
 
 export class ClockInDto {
   // Optional: not needed for a remote clock-in (no fixed site).
@@ -27,4 +27,18 @@ export class ClockInDto {
   @IsBoolean()
   @IsOptional()
   isRemote?: boolean;
+
+  /**
+   * Why they are away from the site, when they are.
+   *
+   * Optional, and never load-bearing: the server decides whether this clock-in
+   * IS away from its distance to the site, and whether that is permitted from
+   * the workspace's ceiling and the member's grant. This is the note a human
+   * reads afterwards, not an assertion the server acts on.
+   */
+  @ApiPropertyOptional({ description: 'Why they are working away from the site', example: 'Visiting a client' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  awayReason?: string;
 }

@@ -11,6 +11,7 @@ import {
   Max,
 } from 'class-validator';
 import { ATTENDANCE_CONSTANTS, WorkModel, SpaceKind } from '@hbcfield/shared';
+import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY } from '@hbcfield/shared';
 
 export class CreateLocationDto {
   @ApiProperty({
@@ -79,6 +80,22 @@ export class CreateLocationDto {
   @IsIn(Object.values(WorkModel))
   @IsOptional()
   workModel?: WorkModel;
+
+  /**
+   * Whether anybody may clock in for this workspace without standing in it.
+   *
+   * ⚠️ A CEILING, not a permission. AWAY_ALLOWED grants nothing to anybody — it
+   * makes an away day possible here, and the grant on the member decides who may
+   * take one. Defaults to STRICT, which is today's behaviour.
+   */
+  @ApiPropertyOptional({
+    enum: GEOFENCE_POLICIES,
+    description: 'STRICT = must be on site · AWAY_ALLOWED = permitted for granted members · NONE = no ring',
+    default: DEFAULT_GEOFENCE_POLICY,
+  })
+  @IsIn(GEOFENCE_POLICIES as unknown as string[])
+  @IsOptional()
+  geofencePolicy?: string;
 
   @ApiPropertyOptional({
     enum: SpaceKind,

@@ -1949,6 +1949,21 @@ model CompanyLocation {
   geofenceRadius    Int       @default(15) // Radius in meters for clock-in zone
   timezone          String    @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   workModel         WorkModel @default(NONE) // How attendance is interpreted for this space
+
+  /// Whether anybody may clock in for this workspace without standing in it.
+  ///
+  /// STRICT (the default, and today's behaviour) — refused outside the ring.
+  /// AWAY_ALLOWED — permitted, but only for members individually granted it.
+  /// NONE — this workspace has no ring worth checking.
+  ///
+  /// ⚠️ A CEILING, never a permission. Setting it to AWAY_ALLOWED grants nothing
+  /// to anybody: it makes an away day POSSIBLE here, and the grant on the person
+  /// decides who may take one. Collapsing the two would hand remote clock-in to
+  /// everyone who works at the site the moment it was switched on.
+  ///
+  /// A String rather than an enum so a value this server has not heard of falls
+  /// back to STRICT instead of failing to deserialise — see resolveAwayAccess.
+  geofencePolicy    String    @default("STRICT")
   // Ownership classification (project / my company / customer company). Orthogonal
   // to physical-vs-workspace (derived from lat/lng). CUSTOMER spaces carry the
   // contact fields below and represent a customer you do work for.
@@ -2087,8 +2102,17 @@ model TimeEntry {
   clockInWithinGeofence  Boolean  @default(true)
   clockOutWithinGeofence Boolean?
 
-  // Remote work (WFH/anywhere): geofence-exempt, coarse place captured from GPS
+  /// Worked away from the site, rather than at it.
+  ///
+  /// No longer means "filed in the Remote bucket": a member may work away from
+  /// the workspace they are ROSTERED to, keeping its shift, its rests and its
+  /// expected hours. The bucket remains only for somebody assigned to no
+  /// workspace at all.
   isRemote      Boolean @default(false)
+
+  /// Why they were away — "visiting a client", "on the road". Free text, chosen
+  /// from a short list on the phone, and read by nobody but a human.
+  awayReason    String?
   clockInPlace  String? // Coarse reverse-geocoded place, e.g. "Vienna, AT"
   clockOutPlace String?
 
@@ -2702,6 +2726,16 @@ model SpaceAssignment {
 
   isPrimary     Boolean   @default(false)
   schedule      String[]  @default([]) // Work days: ["MON","TUE",...]
+
+  /// May this member work away from THIS workspace?
+  ///
+  /// NULL means follow their account (`User.allowRemote`), which is what every
+  /// assignment starts as — so nobody has to fill anything in to keep what they
+  /// have today. Only an explicit true or false overrides it.
+  ///
+  /// For the person who travels for one site and is only ever physically at
+  /// another: granted on the account, refused on the yard's assignment.
+  allowRemote   Boolean?
   effectiveFrom DateTime  @default(now())
   effectiveTo   DateTime?
 

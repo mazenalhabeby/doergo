@@ -8,6 +8,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES } from '@hbcfield/shared';
+import { isGeofencePolicy } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -344,6 +345,7 @@ export class LocationsService {
     enabledModules?: string[];
     workflowId?: string;
     workModel?: string;
+    geofencePolicy?: string;
     timezone?: string;
     kind?: string;
     contactName?: string;
@@ -375,6 +377,20 @@ export class LocationsService {
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
     if (data.workModel !== undefined) updateData.workModel = data.workModel;
+    /*
+      The ceiling on working away from this site.
+
+      Validated rather than trusted: an unrecognised value would otherwise sit in
+      the column and be read as STRICT by the resolver forever, which is safe but
+      silent — and a setting that silently did not save is worse than one that
+      refused.
+    */
+    if (data.geofencePolicy !== undefined) {
+      if (!isGeofencePolicy(data.geofencePolicy)) {
+        throw new BadRequestException('Unknown clock-in policy for this workspace');
+      }
+      updateData.geofencePolicy = data.geofencePolicy;
+    }
     // Ownership kind + customer contact fields.
     if (data.kind !== undefined) updateData.kind = data.kind;
     if (data.contactName !== undefined) updateData.contactName = data.contactName || null;
@@ -1082,6 +1098,16 @@ export class LocationsService {
     schedule?: string[];
     effectiveFrom?: Date | string;
     effectiveTo?: Date | string;
+    /**
+     * May this member work away from THIS workspace?
+     *
+     * `null` clears the override and returns them to their account default,
+     * which is what every assignment starts as. `undefined` leaves it untouched
+     * — the difference matters, because "no opinion" and "explicitly refused"
+     * are different answers and only one of them is reversible by an admin
+     * changing the account.
+     */
+    allowRemote?: boolean | null;
   }) {
     // Find the assignment and verify organization ownership
     const assignment = await this.prisma.spaceAssignment.findFirst({
@@ -1121,6 +1147,8 @@ export class LocationsService {
       updateData.effectiveFrom = new Date(data.effectiveFrom);
     if (data.effectiveTo !== undefined)
       updateData.effectiveTo = data.effectiveTo ? new Date(data.effectiveTo) : null;
+    // Tri-state on purpose: true / false / null-meaning-follow-the-account.
+    if (data.allowRemote !== undefined) updateData.allowRemote = data.allowRemote;
 
     const updated = await this.prisma.spaceAssignment.update({
       where: { id: data.assignmentId },

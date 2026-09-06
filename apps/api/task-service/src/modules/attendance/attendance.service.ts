@@ -28,6 +28,7 @@ import {
   SHIFT_REMINDER_DEFAULTS,
   computeCountedTime,
   shortfallMinutes,
+  resolveAwayAccess,
   UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
   QUEUE_NAMES,
@@ -227,7 +228,17 @@ export class AttendanceService {
     lng: number;
     accuracy?: number;
     organizationId: string;
+    /**
+     * The org's Remote bucket, for somebody who belongs to no workspace at all.
+     *
+     * Working away from a workspace you ARE assigned to no longer goes through
+     * here: send the `locationId` and the server decides from the site's ceiling
+     * and your grant. Kept because a member with no assignment has no workspace
+     * to be away from, and because it is what every shipped client still sends.
+     */
     isRemote?: boolean;
+    /** Why they are away from the site, when they are. Optional, never trusted. */
+    awayReason?: string;
   }) {
     this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}, remote=${!!data.isRemote}`);
 
@@ -405,27 +416,60 @@ export class AttendanceService {
     }
 
     // Calculate distance to location (logical spaces have no coords → no geofence)
-    const distance =
-      location.lat == null || location.lng == null
-        ? 0
-        : haversineDistance(data.lat, data.lng, location.lat, location.lng);
+    const spaceHasPin = location.lat != null && location.lng != null;
+    const distance = spaceHasPin
+      ? haversineDistance(data.lat, data.lng, location.lat as number, location.lng as number)
+      : 0;
 
     // Accuracy-aware: allow the GPS error margin so a plausible on-site fix
     // passes instead of being hard-rejected for a fuzzy reading.
     const withinGeofence = distance <= location.geofenceRadius + (data.accuracy ?? 0);
 
-    // Reject if not within geofence (if strict mode enabled)
-    if (ATTENDANCE_CONSTANTS.REQUIRE_GEOFENCE_FOR_CLOCK_IN && !withinGeofence) {
+    /*
+      Outside the ring — which is a question for the workspace and the person,
+      not a global constant.
+
+      `REQUIRE_GEOFENCE_FOR_CLOCK_IN` was one switch for the entire product, so a
+      yard and a client-facing sales team had to want the same answer. The
+      workspace now carries a CEILING (may anybody be away from here at all?) and
+      the member carries a GRANT (may THIS person?), resolved by one shared rule.
+
+      The refusal names which of the two failed. "You are not allowed" and "this
+      site never allows it" send somebody to different people to get it fixed,
+      and they are standing outside a client's office while they read it.
+    */
+    const away = !withinGeofence
+      ? resolveAwayAccess({
+          spaceHasPin,
+          policy: location.geofencePolicy,
+          userAllowRemote: user.allowRemote,
+          assignmentAllowRemote: assignment.allowRemote,
+          isAdmin: user.role === 'ADMIN',
+        })
+      : { allowed: true, reason: 'GRANTED' as const };
+
+    if (!withinGeofence && !away.allowed) {
       throw new BadRequestException(
-        `You must be within ${location.geofenceRadius}m of ${location.name} to clock in. Current distance: ${Math.round(distance)}m`,
+        away.reason === 'SITE_STRICT'
+          ? `${location.name} can only be clocked in at on site. You are ${Math.round(distance)}m away.`
+          : `You are ${Math.round(distance)}m from ${location.name}, and you are not set up to work away from it. Ask your administrator to allow it.`,
       );
     }
 
     const clockInTime = new Date();
     const flagReasons: string[] = [];
 
-    // Check geofence
-    if (!withinGeofence) {
+    /*
+      An away day is recorded as away, and reviewed.
+
+      Not from suspicion: there is no geofence evidence behind it, and the honest
+      handling of unverifiable evidence is that a person looks at it. It is one
+      row in a queue that already exists — and it keeps its workspace, its shift
+      and its rests, which is the entire point of admitting it here rather than
+      filing it in a bucket of its own.
+    */
+    const clockedInAway = !withinGeofence;
+    if (clockedInAway) {
       flagReasons.push('OUTSIDE_GEOFENCE_IN');
     }
 
@@ -491,6 +535,11 @@ export class AttendanceService {
         clockInLng: data.lng,
         clockInAccuracy: data.accuracy,
         clockInWithinGeofence: withinGeofence,
+        // Away, but for THIS workspace: the rota, the rests and the expected
+        // hours all hang off it and stay attached.
+        isRemote: clockedInAway,
+        awayReason: clockedInAway ? (data.awayReason?.trim().slice(0, 200) || null) : null,
+        clockInPlace: clockedInAway ? await this.reverseGeocode(data.lat, data.lng) : null,
         timezone: workerTz,
         flagReasons,
         approvalStatus,

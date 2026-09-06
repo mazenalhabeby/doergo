@@ -192,6 +192,138 @@ async function main() {
     created.push({ name: s.name, who: s.who, window: `${s.startLocal}–${s.endLocal}`, tests: s.tests });
   }
 
+  /*
+    ── Working away from a site: the ceiling and the grant, as a matrix ──────
+
+    Three pinned workspaces, three different answers, so the two halves can be
+    seen to be independent. Every one of these is tested from a GPS fix far away
+    from the site.
+  */
+  const warehouse = await prisma.companyLocation.findFirst({
+    where: { organizationId: ORG, name: 'Warehouse' }, select: { id: true },
+  });
+  const serviceCentre = await prisma.companyLocation.findFirst({
+    where: { organizationId: ORG, name: 'Service Center' }, select: { id: true },
+  });
+
+  // The ceiling on each site.
+  if (warehouse) {
+    await prisma.companyLocation.update({
+      where: { id: warehouse.id },
+      data: {
+        // Away days are possible here — for the people granted one.
+        geofencePolicy: 'AWAY_ALLOWED',
+        /*
+          …and the site has to expect hours at all.
+
+          `workModel: NONE` makes the resolver return before it looks at any
+          rota, so a shift assigned here would never be found and the away case
+          could not demonstrate the thing it exists to demonstrate.
+        */
+        workModel: 'SHIFT',
+      },
+    });
+  }
+  if (serviceCentre) {
+    await prisma.companyLocation.update({
+      where: { id: serviceCentre.id },
+      // Presence required, whatever anybody's account says.
+      data: { geofencePolicy: 'STRICT' },
+    });
+  }
+
+  // A third site, to show the per-workspace override on its own.
+  const depot = await prisma.companyLocation.upsert({
+    where: { id: 'space-field-depot-test' },
+    update: { geofencePolicy: 'AWAY_ALLOWED', isActive: true },
+    create: {
+      id: 'space-field-depot-test',
+      organizationId: ORG,
+      name: `Field Depot ${MARKER}`,
+      address: 'Gmunden, AT',
+      lat: 47.9186, lng: 13.7991, geofenceRadius: 60,
+      timezone: TZ, workModel: 'SHIFT', geofencePolicy: 'AWAY_ALLOWED',
+    },
+  });
+
+  /*
+    The clock module on the account, before anything else.
+
+    A member whose access profile has no `clock` module is refused at a door
+    that comes BEFORE any of this — "your access profile does not include the
+    clock feature" — which, while testing an away policy, reads like the away
+    policy refusing them. Seed data that stops one gate short of the gate under
+    test is seed data that teaches the wrong lesson.
+  */
+  for (const email of ['lisa@example.com', 'mike@example.com', 'dana@example.com', 'noor@example.com']) {
+    const u = by(email);
+    const profile = ((await prisma.user.findUnique({
+      where: { id: u.id }, select: { enabledModules: true },
+    }))?.enabledModules ?? {}) as Record<string, unknown>;
+    const modules = new Set([...(Array.isArray(profile.modules) ? profile.modules : []), 'clock']);
+    await prisma.user.update({
+      where: { id: u.id },
+      data: { enabledModules: { ...profile, modules: [...modules] } as never },
+    });
+  }
+
+  // The grant on each person.
+  const lisa = by('lisa@example.com');
+  const mikeUser = by('mike@example.com');
+  await prisma.user.update({ where: { id: lisa.id }, data: { allowRemote: true } });
+  await prisma.user.update({ where: { id: mikeUser.id }, data: { allowRemote: false } });
+
+  for (const [user, space, override] of [
+    [lisa, warehouse?.id, null],        // account grant applies → ALLOWED
+    [lisa, serviceCentre?.id, null],    // granted, but the site is strict → refused
+    [lisa, depot.id, false],            // granted on the account, refused HERE
+    [mikeUser, warehouse?.id, null],    // site permits it, he was never granted → refused
+  ] as const) {
+    if (!space) continue;
+    const existing = await prisma.spaceAssignment.findFirst({
+      where: { userId: user.id, spaceId: space },
+      select: { id: true },
+    });
+    if (existing) {
+      await prisma.spaceAssignment.update({ where: { id: existing.id }, data: { allowRemote: override } });
+    } else {
+      await prisma.spaceAssignment.create({
+        data: {
+          organizationId: ORG, userId: user.id, spaceId: space,
+          allowRemote: override, effectiveFrom: new Date(Date.now() - 86_400_000),
+        },
+      });
+    }
+  }
+
+  /*
+    A rota at the Warehouse, so the away case proves what it is FOR.
+
+    Without one, lisa's away clock-in is correctly reported as unscheduled — and
+    the headline claim, that an away day keeps its shift, its rests and its
+    expected hours, cannot be seen. With one, the same clock-in from Vienna
+    resolves a Gmunden shift and behaves like any other day.
+  */
+  if (warehouse) {
+    const awayShift = await prisma.shift.create({
+      data: {
+        organizationId: ORG, spaceId: warehouse.id,
+        name: `Field day ${MARKER}`, color: '#0e7c66',
+        startLocal: localHm(-45), endLocal: localHm(-45 + 9 * 60),
+        crossesMidnight: hmToMinutes(localHm(-45 + 9 * 60)) <= hmToMinutes(localHm(-45)),
+        graceMin: 1, reminderIntervalMin: 2, maxReminders: 3, flagToleranceMin: 5,
+      },
+    });
+    await prisma.shiftAssignment.create({
+      data: {
+        organizationId: ORG, spaceId: warehouse.id,
+        userId: lisa.id, shiftId: awayShift.id,
+        recurrence: 'DAILY', effectiveFrom: new Date(Date.now() - 86_400_000),
+        isActive: true, priority: 10,
+      },
+    });
+  }
+
   // ── Yesterday, already finished: the two clocks, visible without waiting ──
   const yesterday = new Date(Date.now() - 24 * 3_600_000);
   const day = (h: number, m = 0) =>
@@ -251,6 +383,13 @@ async function main() {
   console.log(`\nRests at Main Office: Coffee (3 min in, 5 min, unpaid) · Lunch (${localHm(25)}, 30 min, unpaid)`);
   console.log(`"Long day" overrides those with one paid 10-minute breather.\n`);
   console.log(`Already finished, for the timesheet: mike yesterday 05:55–18:05, counted 06:00–18:00, paid 11h30.\n`);
+
+  console.log('Working away from a site — try each from a GPS fix nowhere near it:\n');
+  console.log('  lisa  @ Warehouse       site allows · she is granted        → ALLOWED, marked away, flagged');
+  console.log('  lisa  @ Service Center  site is STRICT · she is granted     → refused: the site requires presence');
+  console.log('  lisa  @ Field Depot     site allows · refused on THIS one   → refused: not granted here');
+  console.log('  mike  @ Warehouse       site allows · he is not granted     → refused: not granted');
+  console.log('  anyone @ Main Office    no pin at all                       → no ring to be away from\n');
 }
 
 main()
