@@ -73,6 +73,12 @@ describe('AttendanceService', () => {
     location: mockLocation,
   };
 
+  // Who is told about a member — the explicit-only router. Shared so a test can
+  // say what it returns for that case.
+  const mockNotificationRouting = {
+    resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }),
+  };
+
   const mockPrismaService: any = {
     user: {
       findFirst: jest.fn(),
@@ -154,6 +160,7 @@ describe('AttendanceService', () => {
   };
 
   beforeEach(async () => {
+    mockNotificationRouting.resolveWatchers.mockResolvedValue({ ids: [], emails: [] });
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -170,7 +177,7 @@ describe('AttendanceService', () => {
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: mockOvertimeQueue },
         {
           provide: NotificationRoutingService,
-          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+          useValue: mockNotificationRouting,
         },
         // Default: resolver returns null (no shift stamp) so existing clock-in
         // assertions are unaffected. Shift resolution is covered by its own spec.
@@ -469,17 +476,44 @@ describe('AttendanceService', () => {
       );
     });
 
-    it('falls back to org admins when the space has no reconcile leaders', async () => {
+    it('falls to the MEMBER’s own routing when the workspace has nobody', async () => {
+      /*
+        This used to notify every org ADMIN and everybody holding
+        canManageUsers. In a fifty-person organization that meant the owner —
+        the one person guaranteed not to be running that shift — received every
+        late departure and no-show, and learned to ignore the channel.
+      */
       mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]);
       mockPrismaService.timeEntry.update.mockResolvedValue({});
       mockPrismaService.spaceAssignment.findMany.mockResolvedValue([]); // no space leaders
-      mockPrismaService.user.findMany.mockResolvedValue([{ id: 'admin-1' }]);
+      mockNotificationRouting.resolveWatchers.mockResolvedValue({ ids: ['watcher-1'], emails: [] });
 
       await service.runShiftReminders();
 
       expect(mockNotificationClient.emit).toHaveBeenCalledWith(
         'attendance_shift_escalation',
-        expect.objectContaining({ leaderIds: ['admin-1'] }),
+        expect.objectContaining({ leaderIds: ['watcher-1'] }),
+      );
+      // …and no org-wide sweep for admins happened at all.
+      expect(mockPrismaService.user.findMany).not.toHaveBeenCalled();
+    });
+
+    it('tells NOBODY when the workspace has no one and the member has no watchers', async () => {
+      /*
+        Deliberate silence. The entry is still flagged, still in the approval
+        queue and still on the board — what stops is a push to people who did
+        not ask for it and cannot act on it.
+      */
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]);
+      mockPrismaService.timeEntry.update.mockResolvedValue({});
+      mockPrismaService.spaceAssignment.findMany.mockResolvedValue([]);
+      mockNotificationRouting.resolveWatchers.mockResolvedValue({ ids: [], emails: [] });
+
+      await service.runShiftReminders();
+
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'attendance_shift_escalation',
+        expect.objectContaining({ leaderIds: [] }),
       );
     });
 

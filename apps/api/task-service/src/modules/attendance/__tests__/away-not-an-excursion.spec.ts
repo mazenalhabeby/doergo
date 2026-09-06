@@ -50,7 +50,7 @@ describe('an away day is not a geofence excursion', () => {
       providers: [
         AttendanceService, CountedTimeService, BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveForSpace: jest.fn().mockResolvedValue([]) } },
+        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },

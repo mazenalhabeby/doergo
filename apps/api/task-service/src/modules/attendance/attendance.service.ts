@@ -899,11 +899,7 @@ export class AttendanceService {
         is operational news: the site is a person short right now, and finding
         out at the end of the month is finding out too late.
       */
-      const leaderIds = await this.resolveSpaceLeaders(
-        entry.locationId,
-        entry.organizationId,
-        'canReconcileAttendance',
-      );
+      const leaderIds = await this.notifyTargetsFor(entry, 'canReconcileAttendance');
       this.notificationClient.emit('attendance_left_early', {
         entryId: entry.id,
         userId: entry.userId,
@@ -1121,9 +1117,8 @@ export class AttendanceService {
       }),
     ]);
 
-    const leaderIds = await this.resolveSpaceLeaders(
-      entry.locationId,
-      data.organizationId,
+    const leaderIds = await this.notifyTargetsFor(
+      { ...entry, organizationId: data.organizationId },
       'canApproveOvertime',
     );
     this.notificationClient.emit('attendance_overtime_request', {
@@ -2168,15 +2163,14 @@ export class AttendanceService {
       else toEscalate.push(entry);
     }
 
-    // Resolve leaders ONCE per distinct escalating space (not per entry) — avoids
-    // an N+1 + duplicate admin-fallback when many workers escalate together.
+    // The workspace half is resolved ONCE per distinct escalating space — it is
+    // the same answer for everybody there. The member half, when a space has
+    // nobody, is resolved per entry inside `notifyTargetsFor`.
     const leadersBySpace = new Map<string, string[]>();
-    await Promise.all(
-      [...new Set(toEscalate.map((e) => e.locationId))].map(async (spaceId) => {
-        const e = toEscalate.find((x) => x.locationId === spaceId)!;
-        leadersBySpace.set(spaceId, await this.resolveSpaceLeaders(spaceId, e.organizationId, 'canReconcileAttendance'));
-      }),
-    );
+    const targetsByEntry = new Map<string, string[]>();
+    for (const e of toEscalate) {
+      targetsByEntry.set(e.id, await this.notifyTargetsFor(e, 'canReconcileAttendance', leadersBySpace));
+    }
 
     // Deferred writes (thunks) so we can cap DB concurrency.
     const tasks: Array<() => Promise<void>> = [];
@@ -2207,7 +2201,7 @@ export class AttendanceService {
 
     for (const entry of toEscalate) {
       const userName = `${entry.user.firstName} ${entry.user.lastName}`;
-      const leaderIds = leadersBySpace.get(entry.locationId) ?? [];
+      const leaderIds = targetsByEntry.get(entry.id) ?? [];
       tasks.push(async () => {
         await this.prisma.timeEntry.update({
           where: { id: entry.id },
@@ -2428,12 +2422,10 @@ export class AttendanceService {
     }
 
     const leadersBySpace = new Map<string, string[]>();
-    await Promise.all(
-      [...new Set(toEscalate.map((e) => e.spaceId))].map(async (spaceId) => {
-        const e = toEscalate.find((x) => x.spaceId === spaceId)!;
-        leadersBySpace.set(spaceId, await this.resolveSpaceLeaders(spaceId, e.organizationId, 'canReconcileAttendance'));
-      }),
-    );
+    const targetsByEntry = new Map<string, string[]>();
+    for (const e of toEscalate) {
+      targetsByEntry.set(e.id, await this.notifyTargetsFor(e, 'canReconcileAttendance', leadersBySpace));
+    }
 
     const tasks: Array<() => Promise<void>> = [];
     for (const { inst, nextCount } of toRemind) {
@@ -2457,7 +2449,7 @@ export class AttendanceService {
     }
     for (const inst of toEscalate) {
       const userName = nameById.get(inst.userId) ?? 'A worker';
-      const leaderIds = leadersBySpace.get(inst.spaceId) ?? [];
+      const leaderIds = targetsByEntry.get(inst.id) ?? [];
       tasks.push(async () => {
         await this.prisma.shiftInstance.update({
           where: { id: inst.id },
@@ -2558,6 +2550,31 @@ export class AttendanceService {
    * when the space has no such leaders configured, so escalations/approvals are
    * never silently dropped.
    */
+  /**
+   * Who is told about this member, at this workspace.
+   *
+   * Three steps, and each one only runs because the one before it found nobody:
+   *
+   *   1. THE WORKSPACE'S OWN PEOPLE — whoever holds the permission there, by a
+   *      space role. A site with a manager or a shift leader has an answer, and
+   *      it is them.
+   *   2. THE MEMBER'S OWN ROUTING — the watchers chosen on their Access page,
+   *      through the same explicit-only resolver every other attendance
+   *      notification uses.
+   *   3. NOBODY.
+   *
+   * ⚠️ Step 3 replaces a fallback to every org ADMIN and everyone holding
+   * `canManageUsers`. That fallback meant a workspace with nobody configured
+   * sent every late departure, overtime request and no-show to the owner — who
+   * in a fifty-person organization is the one person guaranteed not to be
+   * managing that shift. Owners learn to ignore a channel like that, and then
+   * they miss the one that mattered.
+   *
+   * Silence is not data loss. A flagged entry is still in the approval queue, a
+   * no-show is still on the no-show board, and an overtime request still shows
+   * as pending — all of them findable by anybody who looks. What stops is the
+   * PUSH, to people who did not ask for it and cannot act on it.
+   */
   private async resolveSpaceLeaders(
     spaceId: string,
     organizationId: string,
@@ -2572,16 +2589,42 @@ export class AttendanceService {
       .map((a) => a.userId);
     if (leaderIds.length > 0) return [...new Set(leaderIds)];
 
-    // Fallback: org admins / user managers.
-    const admins = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
-      },
-      select: { id: true },
-    });
-    return admins.map((a) => a.id);
+    return [];
+  }
+
+  /**
+   * Who to tell about ONE member's shift.
+   *
+   * The workspace's own people first — cached per space, because a site with a
+   * shift leader has the same answer for everybody working there. Only when it
+   * has nobody does this fall to the MEMBER's routing, and that half must be
+   * resolved per member.
+   *
+   * ⚠️ That distinction is the whole reason this is a separate method. The
+   * escalation sweeps resolve once per space and reuse it for every member
+   * escalating there — correct while the fallback was org-wide admins, and
+   * quietly wrong the moment it became per-member: everyone at that site would
+   * have been routed to whichever member the sweep happened to look at first.
+   */
+  private async notifyTargetsFor(
+    entry: { locationId?: string; spaceId?: string; organizationId: string; userId: string },
+    permission: 'canApproveOvertime' | 'canReconcileAttendance',
+    spaceCache?: Map<string, string[]>,
+  ): Promise<string[]> {
+    const spaceId = entry.locationId ?? entry.spaceId!;
+    let leaders = spaceCache?.get(spaceId);
+    if (leaders === undefined) {
+      leaders = await this.resolveSpaceLeaders(spaceId, entry.organizationId, permission);
+      spaceCache?.set(spaceId, leaders);
+    }
+    if (leaders.length > 0) return leaders;
+
+    const { ids } = await this.notificationRouting.resolveWatchers(
+      entry.userId,
+      entry.organizationId,
+      'attendance',
+    );
+    return ids;
   }
 
   /**

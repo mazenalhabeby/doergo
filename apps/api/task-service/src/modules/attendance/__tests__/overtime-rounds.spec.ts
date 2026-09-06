@@ -59,7 +59,12 @@ describe('overtime rounds', () => {
         CountedTimeService,
         BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveForSpace: jest.fn().mockResolvedValue([]) } },
+        // Who is told about the member, when the workspace has nobody holding
+        // the permission. Empty here: these tests are about the ROUND record.
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+        },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notify },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },
