@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useBillingLock, useClockIn } from "@/hooks"
 import { LogIn, LogOut, Home, Loader2, ChevronDown, MapPin } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { hasAccessModule, mayClockInRemotely } from "@hbcfield/shared/client"
+import { hasAccessModule } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import { ClockInPicker } from "@/components/clock-in-picker"
+import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 
 /** Live "HH:MM:SS" elapsed since an ISO timestamp, ticking every second. */
 function useElapsed(sinceIso?: string | null): string {
@@ -58,7 +59,12 @@ export function ClockWidget() {
   // backend already allows both ADMIN and EMPLOYEE clock-in.
   const canClock = !!user && hasAccessModule(user, "clock")
 
-  const { clockedIn, activeEntry, pending, startOnSite, clockOut, clockInRemotely, pickerProps } = useClockIn({
+  const {
+    clockedIn, activeEntry, pending, startOnSite, clockOut, pickerProps,
+    // Whether there is anywhere to work away FROM, not merely whether the
+    // account allows it — see useClockIn.
+    startAway, mayClockInAway, awayPickerProps, earlyProps,
+  } = useClockIn({
     enabled: canClock,
   })
 
@@ -98,10 +104,12 @@ export function ClockWidget() {
 
   return (
     <>
-      {/* One picker, whichever button opened it. */}
+      {/* One picker, whichever button opened it — and the same one for away. */}
       <ClockInPicker {...pickerProps} />
+      <ClockInPicker {...awayPickerProps} />
+      <ClockOutEarlyDialog {...earlyProps} />
 
-      {mayClockInRemotely(user) ? (
+      {mayClockInAway ? (
         // ── Clocked out + remote-eligible → Clock In split menu ─────────
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -121,9 +129,9 @@ export function ClockWidget() {
               <MapPin className="h-4 w-4" />
               {t("attendance.my.clockInOnsite", "On-site")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={clockInRemotely}>
+            <DropdownMenuItem onClick={startAway}>
               <Home className="h-4 w-4" />
-              {t("attendance.my.clockInRemote", "Clock in remotely")}
+              {t("attendance.my.clockInAway", "Away from the site")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

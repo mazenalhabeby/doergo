@@ -3147,12 +3147,17 @@
         "unknownDistance": "Distance unknown",
         "metresAway": "{{n}} m away",
         "kmAway": "{{n}} km away",
-        "noFix": "You can still choose where you are — your site will be verified when you clock in."
+        "noFix": "You can still choose where you are — your site will be verified when you clock in.",
+        "awayTitle": "Which workspace are you working for?",
+        "awaySubtitle": "You are not at the site. The day is recorded against the workspace you pick — with its shift and its rests — and marked as away for review."
       },
       "noAssignedLocations": "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one.",
       "paidFrom": "Counted from {{time}}",
       "away": "away",
-      "clockedInAwayToast": "Clocked in — away from the site. This shift will be reviewed."
+      "clockedInAwayToast": "Clocked in — away from the site. This shift will be reviewed.",
+      "clockInAway": "Away from the site",
+      "noAwayWorkspace": "None of your workspaces allow clocking in away from the site.",
+      "gpsHintAway": "On-site verifies you are at the workspace. Away records the day against it anyway, with the place you are working from, and holds it for review."
     },
     "management": {
       "title": "Attendance Management",

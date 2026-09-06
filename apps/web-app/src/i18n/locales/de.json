@@ -3147,12 +3147,17 @@
         "unknownDistance": "Entfernung unbekannt",
         "metresAway": "{{n}} m entfernt",
         "kmAway": "{{n}} km entfernt",
-        "noFix": "Sie können trotzdem wählen, wo Sie sind — Ihr Standort wird beim Einstempeln geprüft."
+        "noFix": "Sie können trotzdem wählen, wo Sie sind — Ihr Standort wird beim Einstempeln geprüft.",
+        "awayTitle": "Für welchen Arbeitsbereich arbeiten Sie?",
+        "awaySubtitle": "Sie sind nicht am Standort. Der Tag wird dem gewählten Arbeitsbereich zugeordnet — mit Schicht und Pausen — und als abwesend zur Prüfung markiert."
       },
       "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugeordnet, daher gibt es keinen Ort zum Einstempeln. Bitten Sie Ihre Administration darum.",
       "paidFrom": "Gezählt ab {{time}}",
       "away": "abwesend",
-      "clockedInAwayToast": "Eingestempelt — abwesend vom Standort. Diese Schicht wird geprüft."
+      "clockedInAwayToast": "Eingestempelt — abwesend vom Standort. Diese Schicht wird geprüft.",
+      "clockInAway": "Abwesend vom Standort",
+      "noAwayWorkspace": "Keiner Ihrer Arbeitsbereiche erlaubt das Einstempeln abseits des Standorts.",
+      "gpsHintAway": "Vor Ort prüft, ob Sie am Arbeitsbereich sind. Abwesend erfasst den Tag trotzdem dort, mit dem Ort, von dem aus Sie arbeiten, und legt ihn zur Prüfung vor."
     },
     "management": {
       "title": "Anwesenheitsverwaltung",

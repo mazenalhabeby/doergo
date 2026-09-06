@@ -3147,12 +3147,17 @@
         "unknownDistance": "Distance inconnue",
         "metresAway": "à {{n}} m",
         "kmAway": "à {{n}} km",
-        "noFix": "Vous pouvez tout de même indiquer où vous êtes — le site sera vérifié au pointage."
+        "noFix": "Vous pouvez tout de même indiquer où vous êtes — le site sera vérifié au pointage.",
+        "awayTitle": "Pour quel espace travaillez-vous ?",
+        "awaySubtitle": "Vous n’êtes pas sur le site. La journée est enregistrée sur l’espace choisi — avec son poste et ses pauses — et signalée à distance pour vérification."
       },
       "noAssignedLocations": "Vous n’êtes encore affecté à aucun espace de travail, il n’y a donc nulle part où pointer. Demandez-le à votre administrateur.",
       "paidFrom": "Compté à partir de {{time}}",
       "away": "à distance",
-      "clockedInAwayToast": "Pointé — à distance du site. Ce poste sera vérifié."
+      "clockedInAwayToast": "Pointé — à distance du site. Ce poste sera vérifié.",
+      "clockInAway": "À distance du site",
+      "noAwayWorkspace": "Aucun de vos espaces n’autorise le pointage à distance du site.",
+      "gpsHintAway": "Sur place vérifie que vous y êtes. À distance enregistre tout de même la journée sur cet espace, avec le lieu d’où vous travaillez, et la laisse à vérifier."
     },
     "management": {
       "title": "Gestion des présences",

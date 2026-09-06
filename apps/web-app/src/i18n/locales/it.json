@@ -3147,12 +3147,17 @@
         "unknownDistance": "Distanza sconosciuta",
         "metresAway": "a {{n}} m",
         "kmAway": "a {{n}} km",
-        "noFix": "Puoi comunque scegliere dove sei: la sede verrà verificata al momento della timbratura."
+        "noFix": "Puoi comunque scegliere dove sei: la sede verrà verificata al momento della timbratura.",
+        "awayTitle": "Per quale spazio sta lavorando?",
+        "awaySubtitle": "Non è in sede. La giornata viene registrata sullo spazio scelto — con il suo turno e le sue pause — e segnata come fuori sede per la verifica."
       },
       "noAssignedLocations": "Non sei ancora assegnato a uno spazio di lavoro, quindi non c’è dove timbrare. Chiedilo al tuo amministratore.",
       "paidFrom": "Conteggiato dalle {{time}}",
       "away": "fuori sede",
-      "clockedInAwayToast": "Timbrato — fuori sede. Questo turno sarà verificato."
+      "clockedInAwayToast": "Timbrato — fuori sede. Questo turno sarà verificato.",
+      "clockInAway": "Fuori sede",
+      "noAwayWorkspace": "Nessuno dei suoi spazi consente di timbrare fuori sede.",
+      "gpsHintAway": "In sede verifica che lei sia lì. Fuori sede registra comunque la giornata su quello spazio, con il luogo da cui lavora, e la lascia da verificare."
     },
     "management": {
       "title": "Gestione delle presenze",

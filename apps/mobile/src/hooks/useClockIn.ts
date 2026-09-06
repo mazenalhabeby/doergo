@@ -143,6 +143,11 @@ export function useClockIn(opts: {
     [currentLocation],
   );
 
+  const awayCapable = (opts.assignedLocations ?? []).filter((l) => l.awayAllowed);
+  const mayClockInAway =
+    mayClockInRemotely(user) &&
+    (awayCapable.length > 0 || (opts.assignedLocations ?? []).length === 0);
+
   // Spread straight into <LocationPickerSheet {...pickerProps} />.
   const pickerProps = {
     visible: locationModalVisible,
@@ -155,7 +160,15 @@ export function useClockIn(opts: {
     onConfirm: confirmClockIn,
     onClose: () => setLocationModalVisible(false),
     getDistance: getDistanceToLocation,
-    allowRemote: mayClockInRemotely(user),
+    /*
+      Offer "Remote" only where it could be used.
+
+      This asked the ACCOUNT alone, so a member granted it whose every workspace
+      requires presence saw an option that could only ever refuse them. The
+      workspace half is answered per site by the server as `awayAllowed`; the
+      bucket remains for somebody assigned to no workspace at all.
+    */
+    allowRemote: mayClockInAway,
     remoteSelected: isRemoteSelected,
     onSelectRemote: () => {
       setIsRemoteSelected(true);

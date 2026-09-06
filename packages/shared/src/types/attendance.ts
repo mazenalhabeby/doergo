@@ -52,6 +52,15 @@ export interface CompanyLocation {
    * packages/shared/src/attendance/away-policy.ts.
    */
   geofencePolicy?: string | null;
+  /**
+   * Whether the CALLER may clock in here without being on site.
+   *
+   * Only present on the clock-in list, where the server answers it with the
+   * same rule the clock-in refuses by — the site's ceiling and this member's
+   * grant. Undefined elsewhere: it is a fact about a person and a place
+   * together, not a property of the place.
+   */
+  awayAllowed?: boolean;
 }
 
 // ============================================================================

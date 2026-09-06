@@ -43,7 +43,9 @@ describe('the assignment window', () => {
 describe('listClockInLocations', () => {
   const spaceAssignment = { findMany: jest.fn() };
   const companyLocation = { findMany: jest.fn() };
-  const prisma = { spaceAssignment, companyLocation } as any;
+  const prisma = {
+    // The member's account-level away grant, read when tagging workspaces.
+    user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) }, spaceAssignment, companyLocation } as any;
 
   // The method under test, bound to a bare prisma double — it is a query and a
   // filter, and standing the whole AttendanceService up (queues, notifications,

@@ -14,6 +14,14 @@ export type ClockLocation = {
   lat?: number | null
   lng?: number | null
   geofenceRadius?: number | null
+  /**
+   * Whether this member may clock in HERE without being on site.
+   *
+   * Answered by the server with the same rule the clock-in refuses by — the
+   * workspace's ceiling and this member's grant — so the list cannot offer a
+   * workspace the clock-in then rejects, nor hide one it would accept.
+   */
+  awayAllowed?: boolean
 }
 
 /**
@@ -41,6 +49,7 @@ export function ClockInPicker({
   onPick,
   pending,
   geoErrorMessage,
+  away,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -48,6 +57,16 @@ export function ClockInPicker({
   onPick: (locationId: string) => void
   pending: boolean
   geoErrorMessage: (reason: GeolocationFailure) => string
+  /**
+   * Working AWAY from the site rather than at it.
+   *
+   * The same dialog either way — one component, one flow, one place where the
+   * distance is read and a workspace is chosen. Only the words change, because
+   * only the question does: "which one are you at" becomes "which one are you
+   * working for". Two dialogs would drift the way the two clock-in surfaces
+   * did before they shared a hook.
+   */
+  away?: boolean
 }) {
   const { t } = useTranslation()
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null)
@@ -121,9 +140,18 @@ export function ClockInPicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("attendance.my.picker.title", "Where are you clocking in?")}</DialogTitle>
+          <DialogTitle>
+            {away
+              ? t("attendance.my.picker.awayTitle", "Which workspace are you working for?")
+              : t("attendance.my.picker.title", "Where are you clocking in?")}
+          </DialogTitle>
           <DialogDescription>
-            {t("attendance.my.picker.subtitle", "You work at more than one place. Pick the one you are at now.")}
+            {away
+              ? t(
+                  "attendance.my.picker.awaySubtitle",
+                  "You are not at the site. The day is recorded against the workspace you pick — with its shift and its rests — and marked as away for review.",
+                )
+              : t("attendance.my.picker.subtitle", "You work at more than one place. Pick the one you are at now.")}
           </DialogDescription>
         </DialogHeader>
 

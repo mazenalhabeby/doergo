@@ -59,6 +59,9 @@ const ATTENDANCE_LOCATION_SELECT = {
   kind: true,
   isActive: true,
   organizationId: true,
+  // The ceiling on working away from here. Read wherever a workspace is handed
+  // to a client that then decides whether to offer "away".
+  geofencePolicy: true,
 } as const;
 
 @Injectable()
@@ -194,28 +197,105 @@ export class AttendanceService {
    * all of them — the same class of bug as offering a site that is then refused,
    * in the other direction.
    */
+
+  /**
+   * Tag each workspace with whether THIS member may clock in there without being
+   * on site.
+   *
+   * Two endpoints hand a member a list of their workspaces — the clock-in list
+   * and the status payload the phone reads — and both decide whether to offer
+   * "away". Answering it in one place, with the same rule the clock-in refuses
+   * by, is what stops a third answer appearing: a list looser than the check
+   * offers a workspace the clock-in rejects, and a stricter one hides an option
+   * nobody can then find.
+   */
+  private async tagAwayAllowed<T extends { id: string; lat?: number | null; lng?: number | null; geofencePolicy?: string | null }>(
+    spaces: T[],
+    userId: string,
+    organizationId: string,
+    /** Passed when the caller already has them, so this costs no extra query. */
+    knownOverrides?: Map<string, boolean | null>,
+  ): Promise<(T & { awayAllowed: boolean })[]> {
+    /*
+      A missing space would crash the endpoint a phone polls all day.
+
+      The relation is required, so this should not happen — but `getStatus` maps
+      assignments to their space, and one bad row there would take down the whole
+      status payload rather than one entry in a list.
+    */
+    const rows = spaces.filter(Boolean);
+    if (rows.length === 0) return [];
+
+    const [member, overrides] = await Promise.all([
+      this.prisma.user.findFirst({
+        where: { id: userId, organizationId },
+        select: { allowRemote: true, role: true },
+      }),
+      knownOverrides
+        ? Promise.resolve(knownOverrides)
+        : this.prisma.spaceAssignment
+            .findMany({
+              where: { ...activeAssignmentWhere(userId), spaceId: { in: rows.map((s) => s.id) } },
+              select: { spaceId: true, allowRemote: true },
+            })
+            .then((rows) => new Map(rows.map((r) => [r.spaceId, r.allowRemote]))),
+    ]);
+
+    return rows.map((s) => {
+      const spaceHasPin = s.lat != null && s.lng != null;
+      const allowed = resolveAwayAccess({
+        spaceHasPin,
+        policy: s.geofencePolicy,
+        userAllowRemote: member?.allowRemote,
+        assignmentAllowRemote: overrides.get(s.id),
+        isAdmin: member?.role === 'ADMIN',
+      }).allowed;
+      /*
+        `awayAllowed` means "away is a real, permitted choice HERE".
+
+        ⚠️ Not the same as the clock-in's answer, and deliberately narrower: a
+        workspace with no pin never refuses anybody, but there is nothing there
+        to be away FROM — the ordinary clock-in already does the same thing. A
+        member whose only ringed workspace refuses them would otherwise be shown
+        an "Away from the site" button that changes nothing, which is a worse
+        answer than not offering it.
+      */
+      return { ...s, awayAllowed: spaceHasPin && allowed };
+    });
+  }
+
   async listClockInLocations(data: { userId: string; organizationId: string }) {
     const assignments = await this.prisma.spaceAssignment.findMany({
       where: activeAssignmentWhere(data.userId),
-      select: { spaceId: true },
+      // The per-workspace override rides along: it is half of the answer to
+      // "may they work away from HERE", and it is on the row we already read.
+      select: { spaceId: true, allowRemote: true },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
     if (!spaceIds.length) return success([]);
 
     const locations = await this.prisma.companyLocation.findMany({
-      where: {
-        id: { in: spaceIds },
-        organizationId: data.organizationId,
-        isActive: true,
-        isRemote: false,
-      },
-      select: {
-        id: true, name: true, address: true, lat: true, lng: true,
-        geofenceRadius: true, timezone: true, isDefault: true,
-      },
+        where: {
+          id: { in: spaceIds },
+          organizationId: data.organizationId,
+          isActive: true,
+          isRemote: false,
+        },
+        select: {
+          id: true, name: true, address: true, lat: true, lng: true,
+          geofenceRadius: true, timezone: true, isDefault: true,
+          // The ceiling. Needed to answer `awayAllowed` below.
+          geofencePolicy: true,
+        },
       orderBy: { name: 'asc' },
     });
-    return success(locations);
+
+    // The overrides are already on the assignment rows read above, so tagging
+    // costs one lookup for the member and no second query for them.
+    const overrideBySpace = new Map(assignments.map((a) => [a.spaceId, a.allowRemote]));
+    return success(
+      await this.tagAwayAllowed(locations, data.userId, data.organizationId, overrideBySpace),
+    );
   }
 
   /**
@@ -1780,7 +1860,19 @@ export class AttendanceService {
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
 
-    const assignedLocations = assignments.map((a) => a.space);
+    /*
+      …and whether each would take a clock-in from off site.
+
+      The phone reads this list to decide whether to offer "away" at all, and it
+      must answer the same as the clock-in list and the clock-in itself. Without
+      it the phone had only the account grant to go on, and offered the option at
+      workspaces that require presence.
+    */
+    const assignedLocations = await this.tagAwayAllowed(
+      assignments.map((a) => a.space),
+      data.userId,
+      data.organizationId,
+    );
 
     // Active out-of-ring excursion for the current session (drives mobile UI).
     const activeExcursion = currentEntry ? await this.getActiveExcursion(currentEntry.id) : null;

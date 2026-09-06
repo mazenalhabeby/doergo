@@ -3147,12 +3147,17 @@
         "unknownDistance": "Distancia desconocida",
         "metresAway": "a {{n}} m",
         "kmAway": "a {{n}} km",
-        "noFix": "Aun así puedes elegir dónde estás: se verificará al fichar."
+        "noFix": "Aun así puedes elegir dónde estás: se verificará al fichar.",
+        "awayTitle": "¿Para qué espacio está trabajando?",
+        "awaySubtitle": "No está en el centro. El día se registra en el espacio que elija — con su turno y sus descansos — y se marca como fuera para revisión."
       },
       "noAssignedLocations": "Todavía no estás asignado a ningún espacio de trabajo, así que no hay dónde fichar. Pídeselo a tu administrador.",
       "paidFrom": "Contado desde las {{time}}",
       "away": "fuera",
-      "clockedInAwayToast": "Fichado — fuera del centro. Este turno se revisará."
+      "clockedInAwayToast": "Fichado — fuera del centro. Este turno se revisará.",
+      "clockInAway": "Fuera del centro",
+      "noAwayWorkspace": "Ninguno de sus espacios permite fichar fuera del centro.",
+      "gpsHintAway": "En el centro verifica que está allí. Fuera registra el día igualmente en ese espacio, con el lugar desde el que trabaja, y lo deja para revisión."
     },
     "management": {
       "title": "Gestión de asistencia",

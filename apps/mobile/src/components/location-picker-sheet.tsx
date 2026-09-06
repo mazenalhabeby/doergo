@@ -184,12 +184,31 @@ export function LocationPickerSheet({
                 distance !== null && distance <= location.geofenceRadius;
               const isSelected = selectedLocation?.id === location.id;
 
+              /*
+                Would this workspace take a clock-in from where they are standing?
+
+                `awayAllowed` comes from the server, answered by the same rule the
+                clock-in refuses by — the site's ceiling and this member's grant.
+                A row is unusable only when they are OUTSIDE the ring AND the site
+                will not take them away from it.
+
+                Shown greyed with the reason rather than removed: a workspace
+                vanishing from the list while you are standing two hundred metres
+                from it is a mystery, and the member cannot tell whether they did
+                something wrong or the app is broken. Disabled with a sentence
+                says which of the two it is.
+              */
+              const outsideRing = distance !== null && !isWithinGeofence;
+              const unusable = outsideRing && location.awayAllowed === false;
+
               return (
                 <TouchableOpacity
                   key={location.id}
+                  disabled={unusable}
                   style={[
                     styles.locationItem,
                     { borderColor: colors.border },
+                    unusable && { opacity: 0.45 },
                     isSelected && [
                       styles.locationItemSelected,
                       { backgroundColor: colors.primaryLight },
@@ -207,6 +226,11 @@ export function LocationPickerSheet({
                     >
                       {location.address}
                     </Text>
+                    {unusable && (
+                      <Text style={[styles.locationAddress, { color: colors.textMuted, marginTop: 2 }]}>
+                        Can only be clocked in at on site
+                      </Text>
+                    )}
                     {distance !== null && (
                       <View style={styles.distanceRow}>
                         <Ionicons

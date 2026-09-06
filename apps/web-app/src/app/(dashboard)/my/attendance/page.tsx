@@ -16,7 +16,6 @@ import { ProgressRing } from "@/components/progress-ring"
 import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import type { DateRange } from "react-day-picker"
-import { mayClockInRemotely } from "@hbcfield/shared/client"
 
 import { ClockInPicker } from "@/components/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
@@ -169,8 +168,13 @@ export default function MyAttendancePage() {
     They share query keys, so mounting the hook twice is still one status
     request and one locations request.
   */
-  const { clockedIn, activeEntry, locations, pending, action, startOnSite, clockOut, clockInRemotely, pickerProps, earlyProps } =
-    useClockIn({ enabled: canSee })
+  const {
+    clockedIn, activeEntry, locations, pending, action, startOnSite, clockOut,
+    pickerProps, earlyProps,
+    // "Away" is offered only where it could actually be used — the account
+    // grant AND at least one workspace that permits it.
+    startAway, mayClockInAway, awayPickerProps,
+  } = useClockIn({ enabled: canSee })
 
   /*
     Which stretch of time the page is about.
@@ -402,12 +406,19 @@ export default function MyAttendancePage() {
                   )}
                 </p>
               )}
-              {mayClockInRemotely(user) && (
-                <Button onClick={clockInRemotely} disabled={pending} variant="outline" className="w-full">
+              {/*
+                Offered only where it can be used.
+
+                This asked the ACCOUNT alone, so a member granted it whose every
+                workspace requires presence saw a button that could only refuse
+                them — with nothing on screen to say why.
+              */}
+              {mayClockInAway && (
+                <Button onClick={startAway} disabled={pending} variant="outline" className="w-full">
                   {pending && action === "remote" ? (
                     <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
                   ) : (
-                    <><Home className="h-4 w-4" />{t("attendance.my.clockInRemote", "Clock in remotely")}</>
+                    <><Home className="h-4 w-4" />{t("attendance.my.clockInAway", "Away from the site")}</>
                   )}
                 </Button>
               )}
@@ -415,10 +426,11 @@ export default function MyAttendancePage() {
           )}
           {/* Both dialogs come from the same hook, so the navbar behaves identically. */}
           <ClockInPicker {...pickerProps} />
+          <ClockInPicker {...awayPickerProps} />
           <ClockOutEarlyDialog {...earlyProps} />
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-            {mayClockInRemotely(user)
-              ? t("attendance.my.gpsHintRemote", "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.")
+            {mayClockInAway
+              ? t("attendance.my.gpsHintAway", "On-site verifies you are at the workspace. Away records the day against it anyway, with the place you are working from, and holds it for review.")
               : t("attendance.my.gpsHint", "Uses your device location to verify you're on site. Works over VPN.")}
           </p>
         </div>

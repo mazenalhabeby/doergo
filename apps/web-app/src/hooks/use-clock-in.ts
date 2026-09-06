@@ -7,7 +7,8 @@ import { toast } from "sonner"
 import type { TFunction } from "i18next"
 import type { TimeEntry } from "@hbcfield/shared"
 import { attendanceApi } from "@/lib/api"
-import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from "@hbcfield/shared/client"
+import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import type { ClockLocation } from "@/components/clock-in-picker"
 
@@ -33,7 +34,12 @@ export function geoErrorMessage(t: TFunction, reason: GeolocationFailure): strin
 }
 
 /** What the caller asked for: end the shift, work from anywhere, or a workspace. */
-export type ClockAction = "out" | { out: true; earlyReason?: string } | "remote" | { locationId: string }
+export type ClockAction =
+  | "out"
+  | { out: true; earlyReason?: string }
+  /** No workspace to be away from — the org's Remote bucket. */
+  | "remote"
+  | { locationId: string }
 
 /**
  * Clocking in and out — the whole behaviour, in one place.
@@ -57,8 +63,20 @@ export type ClockAction = "out" | { out: true; earlyReason?: string } | "remote"
 export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { user } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [awayPickerOpen, setAwayPickerOpen] = useState(false)
   const [earlyOpen, setEarlyOpen] = useState(false)
+
+  /*
+    The ACCOUNT half of "may they work away from a site".
+
+    Both surfaces used to ask this alone and show the button on its answer — so
+    a member granted it whose every workspace requires presence was offered a
+    button that could only ever refuse them, with nothing on screen to say why.
+    The workspace half is answered per site by the server, below.
+  */
+  const canClockInRemotely = mayClockInRemotely(user)
 
   const { data: status } = useQuery({
     queryKey: ["my-attendance-status"],
@@ -85,6 +103,30 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   })
 
   const locations = (locationsData ?? []) as ClockLocation[]
+
+  /*
+    The workspaces this member may work AWAY from, decided by the server with
+    the same rule the clock-in refuses by.
+
+    Filtered here rather than fetched separately: it is the same list, asked a
+    second question, and a second request would be a second chance for the two
+    answers to disagree.
+  */
+  const awayLocations = locations.filter((l) => l.awayAllowed)
+
+  /*
+    Whether to offer "away" at all.
+
+    Somebody may hold the account grant and still have nowhere to use it —
+    every workspace they are assigned to requires presence. Showing the button
+    there offers a choice that can only end in a refusal, which is worse than
+    not offering it: the member cannot tell whether they did something wrong.
+
+    The bucket remains for a member assigned to NO workspace, who has no site to
+    be away from and for whom the account grant is the whole answer.
+  */
+  const hasNoWorkspace = locations.length === 0
+  const mayClockInAway = awayLocations.length > 0 || (hasNoWorkspace && canClockInRemotely)
 
   const st = (status ?? {}) as Record<string, unknown>
   /*
@@ -208,6 +250,37 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     setPickerOpen(true)
   }
 
+  /**
+   * Clock in away from the site.
+   *
+   * Mirrors `startOnSite` deliberately: one workspace goes straight through, more
+   * than one opens the picker, and none at all falls back to the org's Remote
+   * bucket for a member who belongs to no workspace. The button that calls this
+   * is only rendered when `mayClockInAway` says there is somewhere to go, so the
+   * "nowhere" branch here is a guard rather than a path.
+   */
+  const startAway = () => {
+    if (clock.isPending) return
+    if (awayLocations.length === 1) {
+      clock.mutate({ locationId: awayLocations[0].id })
+      return
+    }
+    if (awayLocations.length > 1) {
+      setAwayPickerOpen(true)
+      return
+    }
+    if (hasNoWorkspace && canClockInRemotely) {
+      clock.mutate("remote")
+      return
+    }
+    toast.error(
+      t(
+        "attendance.my.noAwayWorkspace",
+        "None of your workspaces allow clocking in away from the site.",
+      ),
+    )
+  }
+
   return {
     /** Is a shift running, and which one. */
     clockedIn,
@@ -220,6 +293,16 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     action: clock.variables as ClockAction | undefined,
     /** Ask to clock in on site: straight through, or open the picker. */
     startOnSite,
+    /**
+     * Ask to clock in AWAY: straight through when there is one workspace it
+     * could be, the picker when there is a choice, and the org's Remote bucket
+     * when they belong to no workspace at all.
+     */
+    startAway,
+    /** Is there anywhere this member may actually work away from? */
+    mayClockInAway,
+    /** The workspaces where they may — the same list, asked a second question. */
+    awayLocations,
     /**
      * End the shift.
      *
@@ -248,6 +331,22 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
         setEarlyOpen(false)
         clock.mutate({ out: true, earlyReason })
       },
+    },
+    /**
+     * The SAME picker, in away mode.
+     *
+     * One component and one flow: the dialog that reads the position and takes a
+     * workspace does not care why it is being asked. Two of them would drift the
+     * way the two clock-in surfaces did before they shared this hook.
+     */
+    awayPickerProps: {
+      open: awayPickerOpen,
+      onOpenChange: setAwayPickerOpen,
+      locations: awayLocations,
+      pending: clock.isPending,
+      onPick: (locationId: string) => clock.mutate({ locationId }),
+      geoErrorMessage: (reason: GeolocationFailure) => geoErrorMessage(t, reason),
+      away: true,
     },
     /** Spread straight into <ClockInPicker {...pickerProps} />. */
     pickerProps: {
