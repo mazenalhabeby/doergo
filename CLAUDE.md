@@ -1224,6 +1224,24 @@ docker exec -it hbcfield-redis redis-cli
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
 
+### Recently Completed (2026-09-07) — The site got heavy: static through Node, five languages in one chunk
+
+**PROD `0996f528`** (rollback tag `prod-pre-static-i18n` → `fa5209b4`; no migrations, web-app image only). Raised by a US user reporting slowness. The server was idle — 15ms responses, load 0.62/8. The weight was on the wire, and a ~200ms round trip made Europe unable to feel it. Detail in memory `web-perf-static-and-i18n`.
+
+- **`/_next/static/` had no nginx location at all.** Every script, font and the 4MB hero video fell through `location /` into Node, and nginx — whose buffers cap at 128k — wrote each response to a **temp file on disk** before sending it. `sendfile` was on and never reached. Assets now come off disk from `/opt/doergo/static`, published by `infra/sync-static.sh` (**must run after every web-app deploy**; `infra/deploy.sh` step 6). Measured: 12 requests that caused 12 disk spills now cause **0**.
+  - ⚠️ **`try_files $uri @nextjs` is the safety net** — a missed sync falls back to Node and serves identical bytes. Proven by hiding a file.
+  - ⚠️ **`^~` on `/api/`, `/uploads/`, `/downloads/`, `/socket.io/` is load-bearing**: a regex location beats a plain prefix, so without it the static-media regex captures `/uploads/avatar.png`.
+  - ⚠️ **Prune by `ctime`, never `mtime`** — `cp -a` preserves mtime and `intro.mp4` is from July, so an mtime prune deletes the files it just copied. It did, on the first run.
+  - `http2` is now stated in hbcfield's own config; it was on **only** because the unrelated *ourmoda* site sets it on the shared `:443` socket.
+- **All five locales shipped in one chunk** — 57% of the page's JavaScript. ⚠️ **The cause was not the i18n entry point.** `HomeClient.tsx` is `'use client'` and imported three pure URL helpers from `lib/industries.ts`, which also held the copy accessors — **an import is a module, not a symbol**, so one helper dragged the whole catalogue across the client boundary. Fixing only `i18n/index.ts` would have changed nothing.
+  - English stays bundled (SSR is pinned to it and it is `fallbackLng`); de/es/fr/it load through an **explicit `import()` map** — never a template literal, which webpack turns into a context module.
+  - ⚠️ **`changeLanguage` is async now.** `i18n.changeLanguage(...)` called directly sets the language without loading its bundle and silently renders English.
+  - The localized home routes take copy as a **prop from the server page**, only the 4 namespaces they render — sending the whole file took those pages from 113kB to 459kB of HTML. Two of the four are reached solely via template-literal keys.
+  - **Measured live: homepage 822 → 439 kB gzipped; biggest chunk 470 → 88 kB.** Build report: `/` 737 → 346 kB First Load JS.
+- Two guards, each proven by planting its bug: `i18n-client-bundle.spec.ts` walks the real client import graph; `marketing-namespaces.spec.ts` scans every `t()` call. ⚠️ Both **strip comments before scanning** — the first version matched an example inside its own doc comment.
+- `.dockerignore` now excludes `apps/web-app/public/downloads/` — ~213MB of untracked APKs that every image build copied in and nothing ever served.
+- **Still open**: `/` ships the full English catalogue (335kB) though a marketing visitor needs ~9% — splitting by *surface* is the next win. Cloudflare (US edge, brotli, HTTP/3) needs the user's account, and ⚠️ requires `set_real_ip_from` + `CF-Connecting-IP` or every visitor arrives as one IP and the 3/sec throttle buckets them together.
+
 ### Recently Completed (2026-09-06, latest) — The shift clock: two clocks, planned rests, away from a site
 
 **PROD `fa5209b4`** (rollback tag `prod-pre-shift-clock` → `5ff66b2e`; 7 migrations; backup `pre-shift-clock_20260906_210743.sql.gz`, 102 tables). Verified after deploy: **0 entries changed hours**, 163 backfilled, 3 workspaces opened for away — exactly the pre-flight prediction. Detail in memory `shift-clock-two-models`.
