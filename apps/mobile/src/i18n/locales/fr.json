@@ -1766,7 +1766,8 @@
     "startNav": "Démarrer la navigation",
     "stopsWord": "arrêts",
     "fitRoute": "Voir tout l’itinéraire",
-    "singleStopOnly": "Cette application ne gère qu’un arrêt à la fois — utilisez la flèche à côté d’un arrêt pour vous y rendre."
+    "singleStopOnly": "Cette application ne gère qu’un arrêt à la fois — utilisez la flèche à côté d’un arrêt pour vous y rendre.",
+    "estimatedOnly": "Ordre et estimations uniquement — aucun itinéraire routier disponible."
   },
   "worklog": {
     "button": "Activité",

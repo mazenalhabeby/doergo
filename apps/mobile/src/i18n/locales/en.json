@@ -1709,7 +1709,8 @@
     "startNav": "Start navigation",
     "stopsWord": "stops",
     "fitRoute": "Show the whole route",
-    "singleStopOnly": "This app takes one stop at a time — use the arrow beside a stop to drive to it."
+    "singleStopOnly": "This app takes one stop at a time — use the arrow beside a stop to drive to it.",
+    "estimatedOnly": "Order and estimates only — no road route available."
   },
   "billing": {
     "locked": {

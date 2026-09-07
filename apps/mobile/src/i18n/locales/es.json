@@ -1766,7 +1766,8 @@
     "startNav": "Iniciar navegación",
     "stopsWord": "paradas",
     "fitRoute": "Ver la ruta completa",
-    "singleStopOnly": "Esta app lleva a una parada cada vez: usa la flecha junto a una parada para conducir hasta ella."
+    "singleStopOnly": "Esta app lleva a una parada cada vez: usa la flecha junto a una parada para conducir hasta ella.",
+    "estimatedOnly": "Solo orden y estimaciones: no hay ruta por carretera disponible."
   },
   "worklog": {
     "button": "Actividad",

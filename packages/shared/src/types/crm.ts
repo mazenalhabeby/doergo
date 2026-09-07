@@ -39,5 +39,10 @@ export interface OptimizedRoute {
   totalMeters: number;
   totalSeconds: number;
   geometry?: unknown;
-  engine: 'osrm' | 'nearest-neighbour';
+  /**
+   * Which engine answered. 'nearest-neighbour' is the only one that returns NO
+   * road geometry — it orders the stops by straight-line distance — so a client
+   * showing pins with no route line between them is looking at that.
+   */
+  engine: 'google' | 'osrm' | 'nearest-neighbour';
 }

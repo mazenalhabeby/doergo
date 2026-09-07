@@ -5,6 +5,7 @@ import {
   RouteLeg,
   RouteStop,
   nearestNeighbourOrder,
+  decodePolyline,
   haversineDistance,
 } from '@hbcfield/shared';
 
@@ -24,6 +25,24 @@ import {
   to get true road distances back.
 */
 const OSRM_URL = process.env.OSRM_URL?.trim() || null;
+
+/*
+  Google's Routes API — the same key the /geo proxy already uses.
+
+  It answers the two questions this screen actually asks, in one call: the best
+  visit order, and the road path between the stops. Nothing on the phone can do
+  either. `react-native-maps` shows Apple Maps on iOS and Google Maps on
+  Android, but a map SDK draws a Polyline from coordinates you give it; neither
+  platform hands out routing to a third-party app, so the route has to be
+  computed somewhere and then drawn. Doing it server-side means one
+  implementation for both platforms and the key never leaves the server.
+
+  ⚠️ BILLED PER REQUEST, and waypoint optimization is charged at Google's
+  higher "Advanced" tier. That is why it runs when somebody presses Optimize
+  and never on a screen opening.
+*/
+const GOOGLE_KEY = process.env.GOOGLE_PLACES_API_KEY?.trim() || '';
+const GOOGLE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 const TIMEOUT_MS = 8000;
 // Protect the optimizer (and the public OSRM host) from unbounded requests.
 const MAX_STOPS = 25;
@@ -58,6 +77,20 @@ export class RoutesService {
       this.logger.warn(`optimize: capped ${stops.length} stops to ${MAX_STOPS}`);
     }
 
+    /*
+      Engines in order of what they can answer, each falling through to the
+      next. Only the first two return road geometry; the last returns an order
+      and straight-line estimates, which is why a map showing pins and no route
+      line means no engine was configured.
+    */
+    if (GOOGLE_KEY) {
+      try {
+        return await this.optimizeWithGoogle(req, capped);
+      } catch (err: any) {
+        this.logger.warn(`Google Routes failed (${err?.message}); trying the next engine`);
+      }
+    }
+
     // No engine configured: go straight to the ordering we would have fallen
     // back to anyway, rather than spending an 8-second timeout proving it.
     if (!OSRM_URL) return this.optimizeFallback(req, capped);
@@ -68,6 +101,101 @@ export class RoutesService {
       this.logger.warn(`OSRM /trip failed (${err?.message}); using nearest-neighbour fallback`);
       return this.optimizeFallback(req, capped);
     }
+  }
+
+  // ── Google Routes (computeRoutes) ──────────────────────────────────────────
+  private async optimizeWithGoogle(
+    req: RouteOptimizeRequest,
+    stops: RouteStop[],
+  ): Promise<OptimizedRoute> {
+    const pt = (p: LatLng) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } });
+    const hasEnd = !!req.end;
+    // Somewhere to finish: an explicit end, back to the start for a round trip,
+    // or the last stop — which Google needs named as the destination rather
+    // than left as an intermediate.
+    const destination = hasEnd ? req.end! : req.roundTrip ? req.start : stops[stops.length - 1]!;
+    const intermediates = hasEnd || req.roundTrip ? stops : stops.slice(0, -1);
+
+    const res = await fetch(GOOGLE_ROUTES_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_KEY,
+        // Google bills by how much is asked for, so ask for exactly what is
+        // drawn: the order, the road shape, and per-leg distance and time.
+        'X-Goog-FieldMask': [
+          'routes.optimizedIntermediateWaypointIndex',
+          'routes.polyline.encodedPolyline',
+          'routes.legs.distanceMeters',
+          'routes.legs.duration',
+          'routes.distanceMeters',
+          'routes.duration',
+        ].join(','),
+      },
+      body: JSON.stringify({
+        origin: pt(req.start),
+        destination: pt(destination),
+        intermediates: intermediates.map(pt),
+        travelMode: 'DRIVE',
+        routingPreference: 'TRAFFIC_AWARE',
+        // The travelling-salesman part. Without it Google drives the stops in
+        // the order they were listed, which is not a plan.
+        optimizeWaypointOrder: intermediates.length > 1,
+        polylineQuality: 'HIGH_QUALITY',
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    if (!res.ok) throw new Error(`Google Routes HTTP ${res.status}`);
+    const data: any = await res.json();
+    const route = data?.routes?.[0];
+    if (!route) throw new Error('Google Routes returned no route');
+
+    /*
+      Reorder our stops the way Google decided to drive them.
+
+      `optimizedIntermediateWaypointIndex[i]` is the index INTO the
+      intermediates we sent of the stop visited i-th. Absent when there was
+      nothing to optimize, in which case the order we sent stands.
+    */
+    const optIdx: number[] | undefined = route.optimizedIntermediateWaypointIndex;
+    const orderedIntermediates = Array.isArray(optIdx) && optIdx.length === intermediates.length
+      ? optIdx.map((i) => intermediates[i]!)
+      : intermediates;
+    const orderedStops = hasEnd || req.roundTrip
+      ? orderedIntermediates
+      : [...orderedIntermediates, stops[stops.length - 1]!];
+
+    const seq: (LatLng & { label?: string; stopId?: string })[] = [
+      { lat: req.start.lat, lng: req.start.lng, label: req.start.label },
+      ...orderedStops.map((s) => ({ lat: s.lat, lng: s.lng, label: s.label, stopId: s.id })),
+    ];
+    if (hasEnd) seq.push({ lat: req.end!.lat, lng: req.end!.lng, label: req.end!.label });
+    else if (req.roundTrip) seq.push({ lat: req.start.lat, lng: req.start.lng, label: req.start.label });
+
+    // Google reports durations as a string of seconds ("1234s").
+    const secs = (v: unknown) => Math.round(parseFloat(String(v ?? '0').replace('s', '')) || 0);
+    const legs: RouteLeg[] = (route.legs ?? []).map((l: any, i: number) => ({
+      fromIndex: i,
+      toIndex: i + 1,
+      meters: Math.round(l?.distanceMeters ?? 0),
+      seconds: secs(l?.duration),
+    }));
+
+    return {
+      order: orderedStops.map((s) => s.id),
+      waypoints: seq.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label, stopId: p.stopId })),
+      legs,
+      totalMeters: Math.round(route.distanceMeters ?? 0),
+      totalSeconds: secs(route.duration),
+      // The road shape, in the GeoJSON order the rest of this codebase passes
+      // around — decoded in shared so client and server cannot disagree.
+      geometry: {
+        type: 'LineString',
+        coordinates: decodePolyline(route.polyline?.encodedPolyline ?? ''),
+      },
+      engine: 'google',
+    };
   }
 
   // ── OSRM Trip ──────────────────────────────────────────────────────────────

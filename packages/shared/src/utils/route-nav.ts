@@ -122,3 +122,53 @@ export function nearestNeighbourOrder(start: LatLng, stops: LatLng[]): number[] 
   }
   return order;
 }
+
+/**
+ * Decode Google's encoded-polyline format into coordinates.
+ *
+ * Google returns a route's road geometry as a compact ASCII string rather than
+ * a list of points — thousands of coordinates would otherwise be megabytes on
+ * a phone. Every consumer of a Google route needs this, so it lives here beside
+ * the other route maths rather than in whichever service decoded one first.
+ *
+ * Returns GeoJSON order — [lng, lat] — because that is what the rest of this
+ * codebase already passes around as `geometry.coordinates`, and quietly
+ * swapping the pair is the classic way a route ends up drawn in the sea off
+ * Somalia.
+ *
+ * @param precision 5 for Google's default; OSRM's `polyline6` uses 6.
+ */
+export function decodePolyline(encoded: string, precision = 5): [number, number][] {
+  if (!encoded) return [];
+  const factor = Math.pow(10, precision);
+  const out: [number, number][] = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < encoded.length) {
+    // Each coordinate is a zig-zag-encoded delta from the previous one, in
+    // 5-bit chunks with a continuation bit.
+    let result = 0;
+    let shift = 0;
+    let byte: number;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+
+    result = 0;
+    shift = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
+
+    out.push([lng / factor, lat / factor]);
+  }
+  return out;
+}

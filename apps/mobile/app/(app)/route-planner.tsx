@@ -125,6 +125,23 @@ export default function RoutePlannerScreen() {
     return coords.map((c: number[]) => ({ latitude: c[1], longitude: c[0] }));
   }, [result]);
 
+  /*
+    The order, drawn, when there is no road to draw.
+
+    Without a routing engine the optimizer still answers with a sensible visit
+    order — it just cannot say which roads join them. Showing numbered pins and
+    nothing between them looks like a route that failed to load; a dashed line
+    says "this is the order, not the drive", which is exactly what it is.
+  */
+  const straightLine = useMemo(() => {
+    if (!result || polyline.length > 1) return [];
+    const pts = (result.waypoints ?? []).map((w) => ({ latitude: w.lat, longitude: w.lng }));
+    return pts.length > 1 ? pts : [];
+  }, [result, polyline.length]);
+
+  /** Distance and time for the drive that ARRIVES at ordered stop `i`. */
+  const legTo = useCallback((i: number) => result?.legs?.[i] ?? null, [result]);
+
   const openFullRoute = () => {
     if (!result || !start) return;
     const url = buildGoogleMapsUrl(start, orderedStops);
@@ -209,6 +226,14 @@ export default function RoutePlannerScreen() {
             <Polyline coordinates={polyline} strokeColor={COLORS.primary} strokeWidth={5} />
           </>
         )}
+        {straightLine.length > 1 && (
+          <Polyline
+            coordinates={straightLine}
+            strokeColor={colors.textMuted}
+            strokeWidth={2}
+            lineDashPattern={[6, 6]}
+          />
+        )}
 
         {start && (
           <Marker coordinate={{ latitude: start.lat, longitude: start.lng }} anchor={{ x: 0.5, y: 0.5 }}>
@@ -284,6 +309,18 @@ export default function RoutePlannerScreen() {
                 : `${selectedCount} ${t('route.selected', 'selected')}${start ? ` · ${start.label}` : ''}`}
             </Text>
 
+            {/*
+              An estimate is not a drive time, and it must say so. Without a
+              routing engine these numbers come from straight-line distance with
+              a road factor, which is close enough to plan by and wrong enough
+              that nobody should quote it to a client.
+            */}
+            {!!result && result.engine === 'nearest-neighbour' && (
+              <Text style={[styles.sheetNote, { color: colors.textMuted }]}>
+                {t('route.estimatedOnly', 'Order and estimates only — no road route available.')}
+              </Text>
+            )}
+
             {!!error && <Text style={styles.sheetError}>{error}</Text>}
 
             {result ? (
@@ -335,6 +372,13 @@ export default function RoutePlannerScreen() {
                 <View style={styles.legBody}>
                   <Text style={[styles.legTitle, { color: colors.textPrimary }]} numberOfLines={1}>{s.label}</Text>
                   {!!s.address && <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>{s.address}</Text>}
+                  {/* The drive that gets you here — the number a rep plans the
+                      morning around, and the reason the order matters. */}
+                  {!!legTo(i) && (
+                    <Text style={[styles.legDrive, { color: colors.textMuted }]}>
+                      {fmtKm(legTo(i)!.meters)} · {fmtDur(legTo(i)!.seconds)}
+                    </Text>
+                  )}
                 </View>
                 <TouchableOpacity onPress={() => navTo(s)} hitSlop={8} style={[styles.legNav, { borderColor: colors.border }]}>
                   <Ionicons name="navigate-outline" size={16} color={COLORS.primary} />
@@ -466,6 +510,7 @@ const styles = StyleSheet.create({
   sheetReset: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
   sheetMeta: { fontSize: FONT_SIZE.base },
   sheetError: { color: '#dc2626', fontSize: FONT_SIZE.sm },
+  sheetNote: { fontSize: FONT_SIZE.xs, lineHeight: 15 },
   cta: {
     marginTop: SPACING.sm,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -499,6 +544,7 @@ const styles = StyleSheet.create({
   legBody: { flex: 1, paddingBottom: SPACING.lg },
   legTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
   legAddr: { fontSize: FONT_SIZE.xs, marginTop: 1 },
+  legDrive: { fontSize: FONT_SIZE.xs, marginTop: 3, fontWeight: FONT_WEIGHT.medium as any },
   legNav: {
     width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',

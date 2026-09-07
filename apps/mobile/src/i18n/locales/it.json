@@ -1766,7 +1766,8 @@
     "startNav": "Avvia navigazione",
     "stopsWord": "tappe",
     "fitRoute": "Mostra tutto il percorso",
-    "singleStopOnly": "Questa app gestisce una tappa alla volta: usa la freccia accanto a una tappa per raggiungerla."
+    "singleStopOnly": "Questa app gestisce una tappa alla volta: usa la freccia accanto a una tappa per raggiungerla.",
+    "estimatedOnly": "Solo ordine e stime — nessun percorso stradale disponibile."
   },
   "worklog": {
     "button": "Attività",

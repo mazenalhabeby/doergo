@@ -1766,7 +1766,8 @@
     "startNav": "Navigation starten",
     "stopsWord": "Stopps",
     "fitRoute": "Gesamte Route anzeigen",
-    "singleStopOnly": "Diese App führt jeweils nur zu einem Stopp — tippen Sie auf den Pfeil neben einem Stopp, um dorthin zu fahren."
+    "singleStopOnly": "Diese App führt jeweils nur zu einem Stopp — tippen Sie auf den Pfeil neben einem Stopp, um dorthin zu fahren.",
+    "estimatedOnly": "Nur Reihenfolge und Schätzwerte — keine Straßenroute verfügbar."
   },
   "worklog": {
     "button": "Aktivität",
