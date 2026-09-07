@@ -436,9 +436,36 @@ export default function TasksScreen() {
           )
         }
       >
+      {/* Search Bar */}
+      <TourTarget name="tasks-search" style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.textPrimary }]}
+          placeholder={t('tasks.searchPlaceholder')}
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </TourTarget>
+
       {/* Plan route — optimize MY open location jobs into a driving route.
-          Offered only when there is a route to plan: a supervisor's list is
-          other people's work, and a route through it means nothing. */}
+
+          Sits between the search field and the status filters, not above the
+          search: as the first thing under the title it split the header from
+          the field it belongs to. Here it reads as an action on the list below
+          it, which is what it is.
+
+          Offered only when there is a route to plan — an open job assigned to
+          me, with a place to be, on a flow that actually travels. A
+          supervisor's list is other people's work and a route through it means
+          nothing; a list of desk jobs has nowhere to drive however many
+          addresses it carries. */}
       {hasRoute && (
       <PressableScale
         onPress={() => router.push('/(app)/route-planner')}
@@ -459,24 +486,6 @@ export default function TasksScreen() {
         </LinearGradient>
       </PressableScale>
       )}
-
-      {/* Search Bar */}
-      <TourTarget name="tasks-search" style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Ionicons name="search" size={18} color={colors.textMuted} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder={t('tasks.searchPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-          autoCorrect={false}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </TourTarget>
 
       {/* Tab Bar */}
       <TourTarget name="tasks-header" style={[styles.tabBar, { borderBottomColor: colors.border }]}>
@@ -696,7 +705,10 @@ const styles = StyleSheet.create({
   // on Android, so the gradient carries the emphasis on its own.
   planRouteWrap: {
     marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
+    // Sits under the search field: same side margins, and a gap on both sides
+    // so it is not read as part of either the field above or the chips below.
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
     borderRadius: RADIUS.lg,
   },
   planRouteGradient: {
