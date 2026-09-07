@@ -6,6 +6,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { DetentSheet, type Detent } from '../../src/components/route/detent-sheet';
+import { BlurSheet } from '../../src/components/blur-sheet';
+import { detectNavApps, navDecision, soleNavApp, type InstalledNavApp } from '../../src/lib/nav-apps';
 import { PressableScale } from '../../src/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -18,17 +20,11 @@ import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  buildGoogleMapsUrl, buildNavUrl, supportsMultiStop,
+  buildGoogleMapsUrl, buildNavUrl,
   type NavApp, type RouteStop, type OptimizedRoute,
 } from '@hbcfield/shared/client';
 
 type LatLng = { lat: number; lng: number; label?: string };
-
-const NAV_APPS: { key: NavApp; label: string }[] = [
-  { key: 'google', label: 'Google Maps' },
-  { key: 'waze', label: 'Waze' },
-  { key: 'apple', label: 'Apple Maps' },
-];
 
 const fmtKm = (m: number) => `${(m / 1000).toFixed(1)} km`;
 const fmtDur = (s: number) => {
@@ -50,6 +46,15 @@ export default function RoutePlannerScreen() {
   const [start, setStart] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [navApp, setNavApp] = useState<NavApp>(Platform.OS === 'ios' ? 'apple' : 'google');
+  /*
+    Which map apps this phone actually has, and what to do with a tap.
+
+    Asked once when the screen opens rather than at the moment of the tap: the
+    probe is cheap but it is asynchronous, and a navigation button that pauses
+    before doing anything feels broken in a way a spinner does not fix.
+  */
+  const [navApps, setNavApps] = useState<InstalledNavApp[]>([]);
+  const [chooserFor, setChooserFor] = useState<{ stop: RouteStop | null } | null>(null);
   const [result, setResult] = useState<OptimizedRoute | null>(null);
   const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,14 +149,46 @@ export default function RoutePlannerScreen() {
 
   const openFullRoute = () => {
     if (!result || !start) return;
-    const url = buildGoogleMapsUrl(start, orderedStops);
-    if (url) Linking.openURL(url).catch(() => {});
+    startNavigation(null);
   };
-  const navTo = (stop: RouteStop) => {
+  useEffect(() => {
+    let alive = true;
+    detectNavApps().then((found) => {
+      if (!alive) return;
+      setNavApps(found);
+      // Default to something that exists, rather than to a platform guess that
+      // may point at an app this phone does not have.
+      setNavApp(soleNavApp(found));
+    });
+    return () => { alive = false; };
+  }, []);
+
+  /** Hand the driving off. `stop` null means the whole route. */
+  const openIn = useCallback((app: NavApp, stop: RouteStop | null) => {
     if (!start) return;
-    const url = buildNavUrl(navApp, { start, orderedStops, nextStop: stop });
-    if (url) Linking.openURL(url).catch(() => {});
-  };
+    const url = stop
+      ? buildNavUrl(app, { start, orderedStops, nextStop: stop })
+      : buildGoogleMapsUrl(start, orderedStops);
+    if (!url) return;
+    Linking.openURL(url).catch(() => {
+      setError(t('route.navFailed', 'Could not open that map app.'));
+    });
+  }, [start, orderedStops, t]);
+
+  /*
+    One tap, three outcomes, decided by what is on the phone.
+
+    Several apps → ask. One, or none detected → go straight there; a question
+    with a single answer is a step, not a choice. Note that a WHOLE route only
+    Google can take, so that path does not ask at all.
+  */
+  const startNavigation = useCallback((stop: RouteStop | null) => {
+    if (stop === null) { openIn('google', null); return; }
+    if (navDecision(navApps) === 'choose') { setChooserFor({ stop }); return; }
+    openIn(soleNavApp(navApps), stop);
+  }, [navApps, openIn]);
+
+  const navTo = (stop: RouteStop) => startNavigation(stop);
 
   const selectedCount = stops.length;
   const insets = useSafeAreaInsets();
@@ -411,38 +448,54 @@ export default function RoutePlannerScreen() {
             })
           )}
 
-          {/* Which app does the driving — a preference, so it sits at the end
-              rather than competing with the route. */}
-          {!!result && (
-            <>
-              <View style={styles.navApps}>
-                {NAV_APPS.map((a) => (
-                  <TouchableOpacity
-                    key={a.key}
-                    onPress={() => setNavApp(a.key)}
-                    style={[styles.navChip, { borderColor: navApp === a.key ? COLORS.primary : colors.border }]}
-                  >
-                    <Text style={{ color: navApp === a.key ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.medium as any }}>
-                      {a.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {/*
-                Only Google takes a whole route in one link. Said plainly rather
-                than by hiding the other two: somebody who prefers Waze should
-                keep it and know they will be handed one stop at a time, not
-                find the option missing and wonder whether the app forgot it.
-              */}
-              {!supportsMultiStop(navApp) && orderedStops.length > 1 && (
-                <Text style={[styles.navNote, { color: colors.textMuted }]}>
-                  {t('route.singleStopOnly', 'This app takes one stop at a time — use the arrow beside a stop to drive to it.')}
-                </Text>
-              )}
-            </>
+          {/*
+            No app picker here any more. It was a preference chosen before
+            anyone knew what the phone had, so it could point at an app that
+            was not installed — and the link that produced failed silently.
+            The choice is offered at the moment of navigating, and only when
+            there is genuinely something to choose between.
+          */}
+          {!!result && orderedStops.length > 1 && (
+            <Text style={[styles.navNote, { color: colors.textMuted }]}>
+              {t('route.multiStopNote', 'Start navigation opens the whole route. Use the arrow beside a stop to drive to just that one.')}
+            </Text>
           )}
         </ScrollView>
       </DetentSheet>
+
+      {/*
+        Asked only when the answer is not already obvious — see navDecision.
+        Reuses the app's one sheet presentation rather than inventing a second.
+      */}
+      <BlurSheet visible={!!chooserFor} onClose={() => setChooserFor(null)}>
+        <View style={[styles.chooser, { backgroundColor: colors.card }]}>
+          <View style={[styles.chooserGrab, { backgroundColor: colors.border }]} />
+          <Text style={[styles.chooserTitle, { color: colors.textPrimary }]}>
+            {t('route.chooseApp', 'Open with')}
+          </Text>
+          {navApps.map((a) => (
+            <TouchableOpacity
+              key={a.key}
+              style={[styles.chooserRow, { borderColor: colors.border }]}
+              onPress={() => {
+                const stop = chooserFor?.stop ?? null;
+                setChooserFor(null);
+                setNavApp(a.key);       // remembered for the rest of the session
+                openIn(a.key, stop);
+              }}
+            >
+              <Ionicons name="navigate" size={18} color={COLORS.primary} />
+              <Text style={[styles.chooserLabel, { color: colors.textPrimary }]}>{a.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.chooserCancel} onPress={() => setChooserFor(null)}>
+            <Text style={[styles.chooserCancelText, { color: colors.textMuted }]}>
+              {t('common.cancel', 'Cancel')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </BlurSheet>
     </View>
   );
 }
@@ -551,7 +604,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 
-  navApps: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
+  chooser: {
+    borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl,
+    gap: SPACING.sm,
+  },
+  chooserGrab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: SPACING.md },
+  chooserTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold as any, marginBottom: SPACING.xs },
+  chooserRow: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    paddingVertical: 14, paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md, borderWidth: 1,
+  },
+  chooserLabel: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  chooserCancel: { alignItems: 'center', paddingVertical: SPACING.md },
+  chooserCancelText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium as any },
   navNote: { fontSize: FONT_SIZE.xs, marginTop: SPACING.sm, lineHeight: 16 },
   navChip: {
     paddingVertical: 7, paddingHorizontal: SPACING.md,

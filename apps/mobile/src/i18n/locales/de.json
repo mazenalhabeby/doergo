@@ -1767,7 +1767,10 @@
     "stopsWord": "Stopps",
     "fitRoute": "Gesamte Route anzeigen",
     "singleStopOnly": "Diese App führt jeweils nur zu einem Stopp — tippen Sie auf den Pfeil neben einem Stopp, um dorthin zu fahren.",
-    "estimatedOnly": "Nur Reihenfolge und Schätzwerte — keine Straßenroute verfügbar."
+    "estimatedOnly": "Nur Reihenfolge und Schätzwerte — keine Straßenroute verfügbar.",
+    "chooseApp": "Öffnen mit",
+    "navFailed": "Diese Karten-App konnte nicht geöffnet werden.",
+    "multiStopNote": "„Navigation starten“ öffnet die gesamte Route. Über den Pfeil neben einem Stopp fahren Sie nur dorthin."
   },
   "worklog": {
     "button": "Aktivität",

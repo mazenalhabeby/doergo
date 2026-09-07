@@ -1767,7 +1767,10 @@
     "stopsWord": "tappe",
     "fitRoute": "Mostra tutto il percorso",
     "singleStopOnly": "Questa app gestisce una tappa alla volta: usa la freccia accanto a una tappa per raggiungerla.",
-    "estimatedOnly": "Solo ordine e stime — nessun percorso stradale disponibile."
+    "estimatedOnly": "Solo ordine e stime — nessun percorso stradale disponibile.",
+    "chooseApp": "Apri con",
+    "navFailed": "Impossibile aprire quell’app di mappe.",
+    "multiStopNote": "Avvia navigazione apre l’intero percorso. Usa la freccia accanto a una tappa per raggiungere solo quella."
   },
   "worklog": {
     "button": "Attività",

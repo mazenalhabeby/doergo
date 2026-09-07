@@ -89,6 +89,24 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSPhotoLibraryUsageDescription:
           'HBCField uses your photo library to attach images to tasks and service reports, and to submit a document you already have as a photo or scan.',
         UIBackgroundModes: ['remote-notification', 'location'],
+        /*
+          Which map apps the route planner may ASK about.
+
+          ⚠️ iOS answers `canOpenURL` with false for any scheme not listed
+          here — no error, no warning, just "not installed" for everything. So
+          without this the planner sees no maps at all and quietly stops
+          offering the choice.
+
+          ⚠️ This is NATIVE config: it ships in a BUILD and never in an
+          over-the-air update. An OTA carrying the picker to an older binary
+          will simply find nothing and open the default handler, which is the
+          same behaviour the app had before the picker existed — degraded, not
+          broken, on purpose.
+
+          Apple Maps is absent deliberately: it is part of iOS, cannot be
+          removed, and is therefore never asked about.
+        */
+        LSApplicationQueriesSchemes: ['comgooglemaps', 'waze'],
         ITSAppUsesNonExemptEncryption: false,
         /*
           iPhone: portrait only.
@@ -142,6 +160,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       'expo-secure-store',
       'expo-font',
+      // Android package visibility for the route planner's map-app detection.
+      // See the plugin for why this is required and what happens without it.
+      './plugins/with-nav-app-queries',
     ],
     experiments: {
       typedRoutes: true,

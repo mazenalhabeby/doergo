@@ -172,3 +172,54 @@ export function decodePolyline(encoded: string, precision = 5): [number, number]
   }
   return out;
 }
+
+/**
+ * How to ask the device whether a navigation app is actually installed.
+ *
+ * ⚠️ The `build*Url` functions above all return https universal links, and
+ * that is right for OPENING — the installed app claims the link, and a device
+ * without it still gets the web map instead of an error. It is useless for
+ * ASKING: `canOpenURL` on an https URL is always true, because a browser can
+ * always open it. So the probe is the app's own scheme and the destination is
+ * still the universal link.
+ *
+ * ⚠️⚠️ On iOS a scheme must be listed in `LSApplicationQueriesSchemes` or
+ * `canOpenURL` returns false for it — no error, no warning, just "not
+ * installed" for everything. That list is native config, so it ships in a
+ * BUILD and never in an over-the-air update. The degradation is deliberate and
+ * safe: nothing detected means no chooser, and the universal link opens
+ * whichever app the system prefers.
+ */
+export const NAV_APP_PROBES: Record<NavApp, string | null> = {
+  // Apple Maps is part of iOS and cannot be removed, so there is nothing to
+  // ask; on Android it does not exist at all. Platform decides, not a probe.
+  apple: null,
+  google: 'comgooglemaps://',
+  waze: 'waze://',
+};
+
+/** Display name, for a chooser the person reads rather than a settings value. */
+export const NAV_APP_LABELS: Record<NavApp, string> = {
+  apple: 'Apple Maps',
+  google: 'Google Maps',
+  waze: 'Waze',
+};
+
+/**
+ * Which apps could possibly be on this platform, before asking the device.
+ *
+ * Apple Maps exists only on iOS; offering it on Android is offering something
+ * that can never work. Google Maps is standard on Android but optional on iOS,
+ * so it is probed on both.
+ */
+export function navAppCandidates(platform: 'ios' | 'android'): NavApp[] {
+  return platform === 'ios' ? ['apple', 'google', 'waze'] : ['google', 'waze'];
+}
+
+/**
+ * Is this app present without asking? Apple Maps on iOS is the only one — it
+ * ships with the system and cannot be uninstalled.
+ */
+export function isAlwaysAvailable(app: NavApp, platform: 'ios' | 'android'): boolean {
+  return app === 'apple' && platform === 'ios';
+}

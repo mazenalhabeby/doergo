@@ -1767,7 +1767,10 @@
     "stopsWord": "arrêts",
     "fitRoute": "Voir tout l’itinéraire",
     "singleStopOnly": "Cette application ne gère qu’un arrêt à la fois — utilisez la flèche à côté d’un arrêt pour vous y rendre.",
-    "estimatedOnly": "Ordre et estimations uniquement — aucun itinéraire routier disponible."
+    "estimatedOnly": "Ordre et estimations uniquement — aucun itinéraire routier disponible.",
+    "chooseApp": "Ouvrir avec",
+    "navFailed": "Impossible d’ouvrir cette application de cartes.",
+    "multiStopNote": "« Démarrer la navigation » ouvre tout l’itinéraire. Utilisez la flèche à côté d’un arrêt pour n’y aller que lui."
   },
   "worklog": {
     "button": "Activité",

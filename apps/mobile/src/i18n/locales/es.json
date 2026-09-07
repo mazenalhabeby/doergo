@@ -1767,7 +1767,10 @@
     "stopsWord": "paradas",
     "fitRoute": "Ver la ruta completa",
     "singleStopOnly": "Esta app lleva a una parada cada vez: usa la flecha junto a una parada para conducir hasta ella.",
-    "estimatedOnly": "Solo orden y estimaciones: no hay ruta por carretera disponible."
+    "estimatedOnly": "Solo orden y estimaciones: no hay ruta por carretera disponible.",
+    "chooseApp": "Abrir con",
+    "navFailed": "No se pudo abrir esa app de mapas.",
+    "multiStopNote": "Iniciar navegación abre la ruta completa. Usa la flecha junto a una parada para ir solo a esa."
   },
   "worklog": {
     "button": "Actividad",
