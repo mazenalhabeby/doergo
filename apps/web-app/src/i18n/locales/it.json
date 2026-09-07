@@ -3694,7 +3694,11 @@
       "summary": "{{points}} punti · {{ha}} ha · {{span}} m di larghezza",
       "tooLarge": "troppo grande per salvare",
       "tooManyPoints": "Un confine può avere al massimo {{max}} punti.",
-      "radiusSuperseded": "Vale invece il sito disegnato. Lo cancelli per tornare a un raggio."
+      "radiusSuperseded": "Vale invece il sito disegnato. Lo cancelli per tornare a un raggio.",
+      "expandMap": "Mappa più grande",
+      "collapseMap": "Fatto",
+      "expandedHintDraw": "Fai clic su ogni angolo del sito. Trascina un punto per spostarlo, fai clic per rimuoverlo.",
+      "expandedHintPin": "Fai clic sulla mappa per posizionare il segnaposto."
     }
   },
   "commandPalette": {

@@ -4,10 +4,11 @@ import { useState, useCallback, useRef, useEffect } from "react"
 import { BaseTiles } from "@/components/map/base-tiles"
 import { MapContainer, Marker, Circle, Polygon, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2, MapPin, Keyboard, LocateFixed, Spline, Undo2, Trash2 } from "lucide-react"
+import { Search, Loader2, MapPin, Keyboard, LocateFixed, Spline, Undo2, Trash2, Maximize2, Minimize2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
@@ -17,6 +18,22 @@ import { polygonAreaSqm, GEOFENCE_POLYGON_LIMITS, type LatLng } from "@hbcfield/
 import "leaflet/dist/leaflet.css"
 
 /** --brand-600. Leaflet draws on canvas, so it needs a resolved colour. */
+/**
+ * Leaflet caches the size of its container and only re-reads it when told. Grow
+ * the box without saying so and it keeps drawing for the old one: tiles stop
+ * halfway across, and — worse while drawing — a click lands at the wrong
+ * latitude, because the pixel-to-coordinate maths still uses the small box.
+ */
+function InvalidateSizeOn({ token }: { token: unknown }) {
+  const map = useMap()
+  useEffect(() => {
+    // After the browser has laid the new box out, not before.
+    const frame = requestAnimationFrame(() => map.invalidateSize())
+    return () => cancelAnimationFrame(frame)
+  }, [map, token])
+  return null
+}
+
 const BRAND_ACCENT = "#2563eb"
 /** --ok / emerald-600. Distinct from the radius circle so the two are never
  *  confused while switching between them. Leaflet paints on a canvas and
@@ -112,6 +129,25 @@ function widestSpanMetres(ring: LatLng[]): number {
   return max
 }
 
+/**
+ * Remembers where the map was looking.
+ *
+ * Opening the map moves it into a dialog, which remounts Leaflet, and a
+ * remounted map returns to its initial centre and zoom. Without this, zooming
+ * in on a loading bay and then opening the map for a closer look throws that
+ * away and starts again from the whole city — the opposite of what was asked
+ * for.
+ */
+function ViewTracker({ onChange }: { onChange: (view: { center: [number, number]; zoom: number }) => void }) {
+  const map = useMapEvents({
+    moveend: () => {
+      const c = map.getCenter()
+      onChange({ center: [c.lat, c.lng], zoom: map.getZoom() })
+    },
+  })
+  return null
+}
+
 function MapPanner({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
   useEffect(() => {
@@ -135,6 +171,8 @@ export default function LocationPicker({
   // picker keeps working unchanged everywhere it is used for a pin alone.
   const canDrawBoundary = typeof onPolygonChange === "function"
   const [drawing, setDrawing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const viewRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
   const ring = polygon ?? []
   const [searchQuery, setSearchQuery] = useState("")
   const [results, setResults] = useState<GeoResult[]>([])
@@ -361,6 +399,231 @@ export default function LocationPicker({
 
   const mapCenter: [number, number] = lat && lng ? [lat, lng] : [48.1351, 11.582]
 
+  /*
+    The map takes its own space rather than asking for room.
+
+    280px is fine for dropping a pin on an address you already searched for. It
+    is not enough to trace a building: at that size a warehouse is a thumbnail
+    and the corners land wherever. So the same panel renders in two places — in
+    the form, and in a dialog of its own when opened.
+
+    ⚠️ Three earlier attempts grew it in place, and each failed differently.
+    `fixed inset-0` came out 475px wide on a 1728px screen: the create dialog is
+    centred with a transform, and a transformed ancestor becomes the containing
+    block for its fixed descendants. Sizing to the viewport fixed the width and
+    the dialog's `overflow-y-auto` then clipped it, because a scroll container
+    clips the fixed descendants it contains. Asking the host to widen worked in
+    the dialog and did nothing on the settings page, where a max-width column
+    caps it — one control behaving two ways.
+
+    A dialog of its own has none of those ceilings, and Radix already owns the
+    stacking, the focus trap and Escape. It renders ONCE either way, so the two
+    surfaces cannot drift.
+  */
+  const mapPanel = (
+        <div className={cn(expanded ? "flex min-h-0 flex-1 flex-col gap-2" : "space-y-2")}>
+
+          {/*
+            The mode switch. A site with a yard or several buildings cannot be
+            described by a circle measured from its front door, so the admin draws
+            the property instead. Drawing is opt-in per site; a site with no
+            boundary behaves exactly as it always has.
+          */}
+          {canDrawBoundary && (
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="flex">
+                <button
+                  type="button"
+                  onClick={() => setDrawing(false)}
+                  aria-pressed={!drawing}
+                  className={cn(
+                    "rounded-l-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors",
+                    !drawing ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {t("locations.boundary.modeRadius", "Radius")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                  setDrawing(true)
+                  setExpanded(true)
+                }}
+                  aria-pressed={drawing}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-r-lg border border-l-0 border-border px-3 py-1.5 text-xs font-medium transition-colors",
+                    drawing ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <Spline className="h-3.5 w-3.5" />
+                  {t("locations.boundary.modeDraw", "Draw the site")}
+                </button>
+              </div>
+
+              {drawing && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onPolygonChange?.(ring.slice(0, -1))}
+                    disabled={ring.length === 0}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                  >
+                    <Undo2 className="h-3.5 w-3.5" />
+                    {t("locations.boundary.undo", "Undo point")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onPolygonChange?.(null)}
+                    disabled={ring.length === 0}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {t("locations.boundary.clear", "Clear")}
+                  </button>
+                </>
+              )}
+
+              {/*
+                The numbers that make a mistake obvious BEFORE it is saved: a
+                boundary accidentally drawn around the whole street reads as
+                hectares and hundreds of metres, and the server refuses it anyway.
+              */}
+              <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                {ring.length === 0
+                  ? drawing
+                    ? t("locations.boundary.hintEmpty", "Click each corner of the site")
+                    : t("locations.boundary.usingRadius", "Using the radius")
+                  : ring.length < GEOFENCE_POLYGON_LIMITS.MIN_POINTS
+                    ? t("locations.boundary.needMore", "{{count}} of 3 points", { count: ring.length })
+                    : (() => {
+                        const area = polygonAreaSqm(ring)
+                        const tooBig = area > GEOFENCE_POLYGON_LIMITS.MAX_AREA_SQM
+                        return (
+                          <span className={tooBig ? "font-medium text-destructive" : undefined}>
+                            {t("locations.boundary.summary", "{{points}} points · {{ha}} ha · {{span}} m across", {
+                              points: ring.length,
+                              ha: (area / 10_000).toFixed(2),
+                              span: Math.round(widestSpanMetres(ring)),
+                            })}
+                            {tooBig ? ` — ${t("locations.boundary.tooLarge", "too large to save")}` : ""}
+                          </span>
+                        )
+                      })()}
+              </span>
+            </div>
+          )}
+
+          {/* Map */}
+          <div
+            className={cn(
+              "relative overflow-hidden rounded-lg border border-border",
+              expanded && "min-h-0 flex-1",
+            )}
+            style={expanded ? undefined : { height: 280 }}
+          >
+            {/* Locate-me button overlaid on the map */}
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              title={expanded
+                ? t("locations.boundary.collapseMap", "Done")
+                : t("locations.boundary.expandMap", "Bigger map")}
+              className="absolute bottom-2 left-2 z-[20] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card"
+            >
+              {expanded ? <Minimize2 className="h-3.5 w-3.5 text-blue-600" /> : <Maximize2 className="h-3.5 w-3.5 text-blue-600" />}
+              {expanded
+                ? t("locations.boundary.collapseMap", "Done")
+                : t("locations.boundary.expandMap", "Bigger map")}
+            </button>
+            <button
+              type="button"
+              onClick={useMyLocation}
+              disabled={locating}
+              title={t("locations.picker.useMyLocation")}
+              className="absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
+            >
+              {locating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+              ) : (
+                <LocateFixed className="h-3.5 w-3.5 text-blue-600" />
+              )}
+              {locating ? t("locations.picker.locating") : t("locations.picker.myLocation")}
+            </button>
+            <MapContainer
+              center={viewRef.current?.center ?? mapCenter}
+              zoom={viewRef.current?.zoom ?? (lat && lng ? 16 : 12)}
+              style={{ height: "100%", width: "100%" }}
+              scrollWheelZoom={true}
+              attributionControl={false}
+            >
+              <BaseTiles />
+              <InvalidateSizeOn token={expanded} />
+            <ViewTracker onChange={(v) => { viewRef.current = v }} />
+              <MapClickHandler onClick={handleMapClick} />
+              {lat && lng && (
+                <>
+                  <MapPanner lat={lat} lng={lng} />
+                  <Marker position={[lat, lng]} icon={markerIcon} />
+                  {/* The circle is hidden once a boundary exists: showing both
+                      would draw two different answers to the same question. */}
+                  {ring.length < 3 && (
+                  <Circle
+                    center={[lat, lng]}
+                    radius={radius}
+                    pathOptions={{
+                      // Brand accent, not a literal — the brand moved emerald → blue and
+                      // this circle was left behind (audit S-F1). Leaflet paints on a
+                      // canvas and cannot read a CSS variable, so the token is resolved
+                      // to a value here rather than passed as `var(--brand-600)`.
+                      color: BRAND_ACCENT,
+                      fillColor: BRAND_ACCENT,
+                      fillOpacity: 0.15,
+                      weight: 2,
+                    }}
+                  />
+                  )}
+                </>
+              )}
+
+              {/* The drawn boundary, and a handle on every corner. */}
+              {ring.length >= 2 && (
+                <Polygon
+                  positions={ring.map((p) => [p.lat, p.lng] as [number, number])}
+                  pathOptions={{
+                    color: BOUNDARY_ACCENT,
+                    fillColor: BOUNDARY_ACCENT,
+                    fillOpacity: 0.15,
+                    weight: 2,
+                  }}
+                />
+              )}
+              {onPolygonChange &&
+                ring.map((point, i) => (
+                  <Marker
+                    key={i}
+                    position={[point.lat, point.lng]}
+                    icon={vertexIcon}
+                    draggable
+                    eventHandlers={{
+                      dragend(e) {
+                        const { lat: nlat, lng: nlng } = (e.target as L.Marker).getLatLng()
+                        const next = [...ring]
+                        next[i] = { lat: nlat, lng: nlng }
+                        onPolygonChange(next)
+                      },
+                      // A corner in the wrong place is far more common than a
+                      // corner too few, so click-to-remove is on the handle itself.
+                      click() {
+                        onPolygonChange(ring.filter((_, j) => j !== i))
+                      },
+                    }}
+                  />
+                ))}
+            </MapContainer>
+          </div>
+        </div>
+  )
+
   return (
     <div className="space-y-3">
       {/* Search bar */}
@@ -395,180 +658,32 @@ export default function LocationPicker({
         )}
       </div>
 
-      {/*
-        The mode switch. A site with a yard or several buildings cannot be
-        described by a circle measured from its front door, so the admin draws
-        the property instead. Drawing is opt-in per site; a site with no
-        boundary behaves exactly as it always has.
-      */}
-      {canDrawBoundary && (
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <div className="flex">
-            <button
-              type="button"
-              onClick={() => setDrawing(false)}
-              aria-pressed={!drawing}
-              className={cn(
-                "rounded-l-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors",
-                !drawing ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {t("locations.boundary.modeRadius", "Radius")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDrawing(true)}
-              aria-pressed={drawing}
-              className={cn(
-                "flex items-center gap-1.5 rounded-r-lg border border-l-0 border-border px-3 py-1.5 text-xs font-medium transition-colors",
-                drawing ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <Spline className="h-3.5 w-3.5" />
-              {t("locations.boundary.modeDraw", "Draw the site")}
-            </button>
-          </div>
 
-          {drawing && (
-            <>
-              <button
-                type="button"
-                onClick={() => onPolygonChange?.(ring.slice(0, -1))}
-                disabled={ring.length === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-                {t("locations.boundary.undo", "Undo point")}
-              </button>
-              <button
-                type="button"
-                onClick={() => onPolygonChange?.(null)}
-                disabled={ring.length === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                {t("locations.boundary.clear", "Clear")}
-              </button>
-            </>
-          )}
 
-          {/*
-            The numbers that make a mistake obvious BEFORE it is saved: a
-            boundary accidentally drawn around the whole street reads as
-            hectares and hundreds of metres, and the server refuses it anyway.
-          */}
-          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-            {ring.length === 0
-              ? drawing
-                ? t("locations.boundary.hintEmpty", "Click each corner of the site")
-                : t("locations.boundary.usingRadius", "Using the radius")
-              : ring.length < GEOFENCE_POLYGON_LIMITS.MIN_POINTS
-                ? t("locations.boundary.needMore", "{{count}} of 3 points", { count: ring.length })
-                : (() => {
-                    const area = polygonAreaSqm(ring)
-                    const tooBig = area > GEOFENCE_POLYGON_LIMITS.MAX_AREA_SQM
-                    return (
-                      <span className={tooBig ? "font-medium text-destructive" : undefined}>
-                        {t("locations.boundary.summary", "{{points}} points · {{ha}} ha · {{span}} m across", {
-                          points: ring.length,
-                          ha: (area / 10_000).toFixed(2),
-                          span: Math.round(widestSpanMetres(ring)),
-                        })}
-                        {tooBig ? ` — ${t("locations.boundary.tooLarge", "too large to save")}` : ""}
-                      </span>
-                    )
-                  })()}
-          </span>
-        </div>
+      {expanded ? (
+        <Dialog open onOpenChange={(open) => !open && setExpanded(false)}>
+          <DialogContent
+            className="flex flex-col gap-3 overflow-hidden"
+            style={{ width: "95vw", maxWidth: 1400, height: "90dvh" }}
+          >
+            <DialogHeader className="space-y-1">
+              <DialogTitle className="text-base">
+                {drawing
+                  ? t("locations.boundary.modeDraw", "Draw the site")
+                  : t("locations.picker.address")}
+              </DialogTitle>
+              <DialogDescription>
+                {drawing
+                  ? t("locations.boundary.expandedHintDraw", "Click each corner of the site. Drag a point to move it, click it to remove it.")
+                  : t("locations.boundary.expandedHintPin", "Click the map to place the pin.")}
+              </DialogDescription>
+            </DialogHeader>
+            {mapPanel}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        mapPanel
       )}
-
-      {/* Map */}
-      <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 280 }}>
-        {/* Locate-me button overlaid on the map */}
-        <button
-          type="button"
-          onClick={useMyLocation}
-          disabled={locating}
-          title={t("locations.picker.useMyLocation")}
-          className="absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
-        >
-          {locating ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
-          ) : (
-            <LocateFixed className="h-3.5 w-3.5 text-blue-600" />
-          )}
-          {locating ? t("locations.picker.locating") : t("locations.picker.myLocation")}
-        </button>
-        <MapContainer
-          center={mapCenter}
-          zoom={lat && lng ? 16 : 12}
-          style={{ height: "100%", width: "100%" }}
-          scrollWheelZoom={true}
-          attributionControl={false}
-        >
-          <BaseTiles />
-          <MapClickHandler onClick={handleMapClick} />
-          {lat && lng && (
-            <>
-              <MapPanner lat={lat} lng={lng} />
-              <Marker position={[lat, lng]} icon={markerIcon} />
-              {/* The circle is hidden once a boundary exists: showing both
-                  would draw two different answers to the same question. */}
-              {ring.length < 3 && (
-              <Circle
-                center={[lat, lng]}
-                radius={radius}
-                pathOptions={{
-                  // Brand accent, not a literal — the brand moved emerald → blue and
-                  // this circle was left behind (audit S-F1). Leaflet paints on a
-                  // canvas and cannot read a CSS variable, so the token is resolved
-                  // to a value here rather than passed as `var(--brand-600)`.
-                  color: BRAND_ACCENT,
-                  fillColor: BRAND_ACCENT,
-                  fillOpacity: 0.15,
-                  weight: 2,
-                }}
-              />
-              )}
-            </>
-          )}
-
-          {/* The drawn boundary, and a handle on every corner. */}
-          {ring.length >= 2 && (
-            <Polygon
-              positions={ring.map((p) => [p.lat, p.lng] as [number, number])}
-              pathOptions={{
-                color: BOUNDARY_ACCENT,
-                fillColor: BOUNDARY_ACCENT,
-                fillOpacity: 0.15,
-                weight: 2,
-              }}
-            />
-          )}
-          {onPolygonChange &&
-            ring.map((point, i) => (
-              <Marker
-                key={i}
-                position={[point.lat, point.lng]}
-                icon={vertexIcon}
-                draggable
-                eventHandlers={{
-                  dragend(e) {
-                    const { lat: nlat, lng: nlng } = (e.target as L.Marker).getLatLng()
-                    const next = [...ring]
-                    next[i] = { lat: nlat, lng: nlng }
-                    onPolygonChange(next)
-                  },
-                  // A corner in the wrong place is far more common than a
-                  // corner too few, so click-to-remove is on the handle itself.
-                  click() {
-                    onPolygonChange(ring.filter((_, j) => j !== i))
-                  },
-                }}
-              />
-            ))}
-        </MapContainer>
-      </div>
 
       {/* Address + Coordinates - manual entry */}
       <div className="space-y-3 rounded-lg border border-border bg-muted p-3">

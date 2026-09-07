@@ -3694,7 +3694,11 @@
       "summary": "{{points}} points · {{ha}} ha · {{span}} m de large",
       "tooLarge": "trop grand pour être enregistré",
       "tooManyPoints": "Une limite peut compter au maximum {{max}} points.",
-      "radiusSuperseded": "C'est le site tracé qui s'applique. Effacez-le pour revenir à un rayon."
+      "radiusSuperseded": "C'est le site tracé qui s'applique. Effacez-le pour revenir à un rayon.",
+      "expandMap": "Agrandir la carte",
+      "collapseMap": "Terminé",
+      "expandedHintDraw": "Cliquez sur chaque coin du site. Faites glisser un point pour le déplacer, cliquez dessus pour le supprimer.",
+      "expandedHintPin": "Cliquez sur la carte pour placer le repère."
     }
   },
   "commandPalette": {

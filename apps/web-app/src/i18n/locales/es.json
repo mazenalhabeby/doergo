@@ -3685,7 +3685,11 @@
       "summary": "{{points}} puntos · {{ha}} ha · {{span}} m de ancho",
       "tooLarge": "demasiado grande para guardar",
       "tooManyPoints": "Un límite puede tener como máximo {{max}} puntos.",
-      "radiusSuperseded": "En su lugar se usa el recinto dibujado. Bórrelo para volver a un radio."
+      "radiusSuperseded": "En su lugar se usa el recinto dibujado. Bórrelo para volver a un radio.",
+      "expandMap": "Mapa más grande",
+      "collapseMap": "Listo",
+      "expandedHintDraw": "Haz clic en cada esquina del sitio. Arrastra un punto para moverlo, haz clic en él para eliminarlo.",
+      "expandedHintPin": "Haz clic en el mapa para colocar el marcador."
     }
   },
   "commandPalette": {

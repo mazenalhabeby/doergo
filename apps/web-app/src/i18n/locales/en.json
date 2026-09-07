@@ -3685,7 +3685,11 @@
       "summary": "{{points}} points · {{ha}} ha · {{span}} m across",
       "tooLarge": "too large to save",
       "tooManyPoints": "A boundary can have at most {{max}} points.",
-      "radiusSuperseded": "The drawn site is used instead. Clear it to go back to a radius."
+      "radiusSuperseded": "The drawn site is used instead. Clear it to go back to a radius.",
+      "expandMap": "Bigger map",
+      "collapseMap": "Done",
+      "expandedHintDraw": "Click each corner of the site. Drag a point to move it, click it to remove it.",
+      "expandedHintPin": "Click the map to place the pin."
     }
   },
   "commandPalette": {

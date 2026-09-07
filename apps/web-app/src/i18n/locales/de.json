@@ -3685,7 +3685,11 @@
       "summary": "{{points}} Punkte · {{ha}} ha · {{span}} m breit",
       "tooLarge": "zu groß zum Speichern",
       "tooManyPoints": "Eine Grenze darf höchstens {{max}} Punkte haben.",
-      "radiusSuperseded": "Stattdessen gilt das eingezeichnete Gelände. Löschen Sie es, um wieder einen Radius zu verwenden."
+      "radiusSuperseded": "Stattdessen gilt das eingezeichnete Gelände. Löschen Sie es, um wieder einen Radius zu verwenden.",
+      "expandMap": "Größere Karte",
+      "collapseMap": "Fertig",
+      "expandedHintDraw": "Klicken Sie jede Ecke des Geländes an. Ziehen Sie einen Punkt, um ihn zu verschieben, klicken Sie ihn an, um ihn zu entfernen.",
+      "expandedHintPin": "Klicken Sie auf die Karte, um die Markierung zu setzen."
     }
   },
   "commandPalette": {
