@@ -21,3 +21,11 @@ coverage
 **/coverage
 .vscode
 .idea
+
+# APK builds. On the production box these are ~213MB of untracked binaries sitting
+# in the web app's public/ directory, and every image build copied them in. They
+# are never served from there: both nginx sites alias /downloads/ to the host
+# directory /opt/doergo/infra/docker/downloads/, which holds the newer APK that
+# is actually offered for download. Excluding them takes ~213MB off the image
+# and the build context without changing what any visitor can reach.
+apps/web-app/public/downloads/

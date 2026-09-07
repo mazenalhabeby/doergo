@@ -34,8 +34,19 @@ docker compose -f infra/docker/docker-compose.yml run --rm auth-service sh -c "c
 echo -e "${GREEN}[4/5]${NC} Seeding database..."
 docker compose -f infra/docker/docker-compose.yml run --rm auth-service sh -c "cd apps/api/auth-service && npx prisma db seed" || echo "Seed skipped (may already exist)"
 
-echo -e "${GREEN}[5/5]${NC} Starting all services..."
+echo -e "${GREEN}[5/6]${NC} Starting all services..."
 docker compose -f infra/docker/docker-compose.yml up -d
+
+# Publish the new build's static assets to the host directory nginx serves from.
+# Without this the site still works — the nginx locations fall back to the Node
+# upstream — but every script, font and image goes back to being proxied through
+# Next.js and buffered to a temp file on the way out.
+echo -e "${GREEN}[6/6]${NC} Publishing static assets for nginx..."
+if [ -x infra/sync-static.sh ]; then
+  ./infra/sync-static.sh || echo "Static sync failed — site still serves via Node fallback"
+else
+  echo "infra/sync-static.sh not executable — skipped"
+fi
 
 echo ""
 echo -e "${GREEN}Deployment complete!${NC}"
