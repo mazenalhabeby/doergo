@@ -7,67 +7,67 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist-esm/index.js",
       "require": "./dist/index.js"
     },
     "./client": {
       "types": "./dist/client.d.ts",
-      "import": "./dist/client.js",
+      "import": "./dist-esm/client.js",
       "require": "./dist/client.js"
     },
     "./types": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
+      "import": "./dist-esm/types/index.js",
       "require": "./dist/types/index.js"
     },
     "./constants": {
       "types": "./dist/constants/index.d.ts",
-      "import": "./dist/constants/index.js",
+      "import": "./dist-esm/constants/index.js",
       "require": "./dist/constants/index.js"
     },
     "./design": {
       "types": "./dist/design/index.d.ts",
-      "import": "./dist/design/index.js",
+      "import": "./dist-esm/design/index.js",
       "require": "./dist/design/index.js"
     },
     "./design/tailwind-preset": {
       "types": "./dist/design/tailwind-preset.d.ts",
-      "import": "./dist/design/tailwind-preset.js",
+      "import": "./dist-esm/design/tailwind-preset.js",
       "require": "./dist/design/tailwind-preset.js"
     },
     "./prisma": {
       "types": "./dist/prisma/index.d.ts",
-      "import": "./dist/prisma/index.js",
+      "import": "./dist-esm/prisma/index.js",
       "require": "./dist/prisma/index.js"
     },
     "./microservices": {
       "types": "./dist/microservices/index.d.ts",
-      "import": "./dist/microservices/index.js",
+      "import": "./dist-esm/microservices/index.js",
       "require": "./dist/microservices/index.js"
     },
     "./api": {
       "types": "./dist/api/index.d.ts",
-      "import": "./dist/api/index.js",
+      "import": "./dist-esm/api/index.js",
       "require": "./dist/api/index.js"
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js",
+      "import": "./dist-esm/components/index.js",
       "require": "./dist/components/index.js"
     },
     "./utils": {
       "types": "./dist/utils/index.d.ts",
-      "import": "./dist/utils/index.js",
+      "import": "./dist-esm/utils/index.js",
       "require": "./dist/utils/index.js"
     },
     "./documents": {
       "types": "./dist/documents/index.d.ts",
-      "import": "./dist/documents/index.js",
+      "import": "./dist-esm/documents/index.js",
       "require": "./dist/documents/index.js"
     },
     "./storage": {
       "types": "./dist/storage/index.d.ts",
-      "import": "./dist/storage/index.js",
+      "import": "./dist-esm/storage/index.js",
       "require": "./dist/storage/index.js"
     }
   },
@@ -112,10 +112,11 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
     "lint": "eslint src --ext .ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist dist-esm",
+    "build:esm": "tsc -p tsconfig.esm.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
@@ -147,5 +148,6 @@
     "rxjs": "^7.8.1",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0"
-  }
+  },
+  "sideEffects": false
 }

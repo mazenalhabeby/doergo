@@ -10,6 +10,10 @@ node_modules
 !.env.example
 dist
 **/dist
+# ESM build of packages/shared — regenerated inside the image by
+# `pnpm --filter @hbcfield/shared build`, so a local copy is dead weight.
+dist-esm
+**/dist-esm
 .next
 **/.next
 .expo

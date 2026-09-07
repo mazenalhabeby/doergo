@@ -1,0 +1,25 @@
+{
+  // ESM output, for bundlers only.
+  //
+  // The CommonJS build in ./dist is what the NestJS services require, and
+  // CommonJS cannot be tree-shaken: webpack has to keep every module a barrel
+  // re-exports, because `exports.x = ...` is a runtime assignment it cannot
+  // reason about statically. That is why importing three URL helpers from
+  // `@hbcfield/shared/client` pulled the whole package into the browser.
+  //
+  // `moduleResolution: "Bundler"` is deliberate. TypeScript does not rewrite
+  // relative specifiers, so this output keeps extensionless imports like
+  // `./billing`. Webpack and Metro resolve those; Node's native ESM loader
+  // would not — which is fine, because nothing loads this build through Node.
+  // The services resolve the "require" condition and get ./dist.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "./dist-esm",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "dist-esm"]
+}

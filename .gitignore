@@ -4,6 +4,8 @@ node_modules/
 
 # Build outputs
 dist/
+# ESM build of packages/shared, for bundlers (see tsconfig.esm.json).
+dist-esm/
 build/
 .next/
 .expo/
