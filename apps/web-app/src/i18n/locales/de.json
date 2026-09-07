@@ -1125,7 +1125,14 @@
       "itemsCount_other": "{{count}} Einträge",
       "fillRequiredCustomFields": "Bitte füllen Sie alle erforderlichen benutzerdefinierten Felder aus",
       "cantReceiveTasks": "kann keine Aufgaben erhalten",
-      "attachmentsFailed": "Konnte nicht angehängt werden: {{files}}"
+      "attachmentsFailed": "Konnte nicht angehängt werden: {{files}}",
+      "visitClient": "Zu besuchender Kunde",
+      "visitClientNone": "Kein Kunde",
+      "visitAddress": "Welche Adresse",
+      "visitAddressPick": "Standort wählen",
+      "visitAddressPrimary": "Hauptadresse",
+      "visitAddressNoPin": "Diese Adresse hat noch keinen Kartenpunkt, daher kann die Route nicht aufgezeichnet werden. Bitte unten auf der Karte festlegen.",
+      "visitNoAddresses": "Für diesen Kunden ist keine Adresse hinterlegt. Bitte den Ort unten auf der Karte festlegen."
     },
     "detail": {
       "title": "Aufgabendetails",

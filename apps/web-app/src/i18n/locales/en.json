@@ -1125,7 +1125,14 @@
       "itemsCount_other": "{{count}} items",
       "fillRequiredCustomFields": "Please fill in all required custom fields",
       "cantReceiveTasks": "can’t receive tasks",
-      "attachmentsFailed": "Could not attach: {{files}}"
+      "attachmentsFailed": "Could not attach: {{files}}",
+      "visitClient": "Client to visit",
+      "visitClientNone": "No client",
+      "visitAddress": "Which address",
+      "visitAddressPick": "Pick a site",
+      "visitAddressPrimary": "primary",
+      "visitAddressNoPin": "This address has no map point yet, so the route cannot be tracked. Set it on the map below.",
+      "visitNoAddresses": "This client has no address on file. Set the place on the map below."
     },
     "detail": {
       "title": "Task Details",

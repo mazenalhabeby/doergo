@@ -4,25 +4,7 @@ import { useState, useCallback, useMemo, lazy, Suspense, useEffect } from "react
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  Calendar as CalendarIcon,
-  Loader2,
-  X,
-  FileText,
-  ChevronRight,
-  Clock,
-  MapPin,
-  User,
-  CheckSquare,
-  Layers,
-  SlidersHorizontal,
-  Users,
-  Plus,
-  Trash2,
-  GitBranch,
-  Upload,
-  Repeat,
-} from "lucide-react"
+import { Building2, Calendar as CalendarIcon, CheckSquare, ChevronRight, Clock, FileText, GitBranch, Layers, Loader2, MapPin, Plus, Repeat, SlidersHorizontal, Trash2, Upload, User, Users, X } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -36,6 +18,7 @@ import {
   customFieldsApi,
   organizationsApi,
   locationsApi,
+  customersApi,
   recurringTasksApi,
   STORY_POINT_OPTIONS,
   type CreateTaskInput,
@@ -43,10 +26,12 @@ import {
   type Sprint,
   type Epic,
   type CustomFieldDefinition,
+  type CustomerAddress,
   type OrgMember,
   type RecurringFrequency,
   workflowsApi,
 } from "@/lib/api"
+import { geocodeAddress } from "@/lib/geocode"
 import { canReceiveTasks, byAssignableFirst } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -242,6 +227,21 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const [recurEnd, setRecurEnd] = useState<string>("")
   const [estimatedHours, setEstimatedHours] = useState("")
 
+  /*
+    Who is being visited, and where they are.
+
+    A visit task needs a destination before GPS means anything: the route, the
+    arrival and the distance all measure against a point. That point already
+    exists on the client's address, so asking somebody to retype it — and
+    re-find it on a map — is asking them to copy data the product is holding.
+
+    `customerId` was previously only ever a prop, set when the dialog was opened
+    from a client's page and invisible everywhere else. It is state now, so a
+    visit can be raised from the tasks board, and the prop simply seeds it.
+  */
+  const [customerId, setCustomerId] = useState<string>(defaultCustomerId ?? "none")
+  const [visitAddressId, setVisitAddressId] = useState<string>("none")
+
   // ── Location section ──
   const [locationAddress, setLocationAddress] = useState("")
   const [locationLat, setLocationLat] = useState<number | null>(null)
@@ -273,6 +273,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       setDueDate(undefined)
       setStartDate(undefined)
       setEstimatedHours("")
+      setCustomerId(defaultCustomerId ?? "none")
+      setVisitAddressId("none")
       setLocationAddress("")
       setLocationLat(null)
       setLocationLng(null)
@@ -430,6 +432,120 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     staleTime: 300000,
     enabled: open && spaceId !== "none",
   })
+  /*
+    The clients this person may raise a visit for.
+
+    Scoped to the SELECTED WORKSPACE, which is both the smaller query and the
+    right answer: a client belongs to a workspace, and a visit is raised in the
+    one the work belongs to. Asking for the whole organization would fetch a
+    book that grows without limit to fill a dropdown that only ever offers one
+    workspace's clients.
+
+    Two gates, and both are the point. No workspace chosen, or a workspace
+    without the CRM module, and this never runs — the task is a plain one with
+    a location typed by hand, exactly as before.
+
+    Nothing is filtered in the browser: `GET /customers` already answers in the
+    caller's CRM scope, so a Sales Rep is offered the clients they own and an
+    admin all of them. A second copy of that rule here would be one to keep in
+    step, and the browser's copy is the one that cannot be trusted anyway.
+  */
+  const { data: clientPage } = useQuery({
+    queryKey: ["customers", "task-visit", spaceId],
+    queryFn: () => customersApi.list({ spaceId, limit: 200 }),
+    staleTime: 60000,
+    enabled: open && spaceId !== "none" && hasModule("crm") && !defaultCustomerId,
+  })
+  const visitClients = clientPage?.data ?? []
+
+  /*
+    The chosen client's own record.
+
+    Opened from a client's page the list above is never fetched — the client is
+    already decided — so without this the one address most records actually have
+    would be missing in exactly that flow.
+  */
+  const { data: pinnedClient } = useQuery({
+    queryKey: ["customer", customerId],
+    queryFn: () => customersApi.get(customerId),
+    staleTime: 60000,
+    enabled: open && customerId !== "none" && !visitClients.some((c) => c.id === customerId),
+  })
+
+  // Where that client actually is. Reach-gated server-side, so this returns
+  // nothing for a client the caller cannot see.
+  const { data: clientAddresses = [] } = useQuery({
+    queryKey: ["customer-addresses", customerId],
+    queryFn: () => customersApi.addresses(customerId),
+    staleTime: 60000,
+    enabled: open && customerId !== "none",
+  })
+
+
+  /*
+    Everywhere a client's address might be.
+
+    ⚠️ Reading only the address ROWS was wrong, and the live data says so
+    plainly: of thirteen clients, eight carry an address on the client record
+    and none of those has a row. Offering rows alone would have shown an empty
+    picker for exactly the clients that have an address — the feature looking
+    broken precisely where it should work.
+
+    The client's own address comes first because it is the one most records
+    have; the rows follow, primary first, because a client with sites has
+    chosen one.
+  */
+  const visitAddressOptions = useMemo(() => {
+    const chosen = visitClients.find((c) => c.id === customerId) ?? pinnedClient
+    const opts: { id: string; name: string; address: string | null; lat: number | null; lng: number | null; isPrimary: boolean }[] = []
+    const own = chosen?.address ?? null
+    if (own) opts.push({ id: "client", name: own, address: own, lat: null, lng: null, isPrimary: false })
+    for (const a of clientAddresses) {
+      opts.push({ id: a.id, name: a.name || a.address || "", address: a.address ?? null, lat: a.lat ?? null, lng: a.lng ?? null, isPrimary: a.isPrimary })
+    }
+    return opts
+  }, [visitClients, pinnedClient, customerId, clientAddresses])
+
+  /*
+    Put the client's address on the task, and find its point.
+
+    One place does it, called both by the picker and by the automatic choice
+    below, so "chosen by hand" and "chosen for you" can never fill different
+    fields.
+
+    An address with no coordinates is a destination nobody can navigate to and
+    a route nothing can measure — which is most of them, since a typed address
+    on a client record has never been near a map. So a text-only address is
+    geocoded once, rather than left for somebody to re-find by hand on the map
+    they are already looking at. Failure is not an error: the text still names
+    the place, the pin stays empty, and the note below says so.
+  */
+  const applyVisitAddress = useCallback(async (opt: { address: string | null; name: string; id: string; lat: number | null; lng: number | null } | null) => {
+    setVisitAddressId(opt?.id ?? "none")
+    if (!opt) return
+    const text = opt.address ?? opt.name ?? ""
+    setLocationAddress(text)
+    setLocationLat(opt.lat ?? null)
+    setLocationLng(opt.lng ?? null)
+    if (opt.lat != null || !text.trim()) return
+
+    const point = await geocodeAddress(text)
+    if (point) { setLocationLat(point.lat); setLocationLng(point.lng) }
+  }, [])
+
+  /*
+    Choosing a client is choosing a destination when there is only one it could
+    be — their primary site, or their only address. Anything beyond that is a
+    guess, so the picker below stays and simply waits.
+  */
+  useEffect(() => {
+    if (!open || customerId === "none" || visitAddressOptions.length === 0) return
+    if (visitAddressId !== "none") return
+    const pick = visitAddressOptions.find((a) => a.isPrimary)
+      ?? (visitAddressOptions.length === 1 ? visitAddressOptions[0] : null)
+    if (pick) void applyVisitAddress(pick)
+  }, [open, customerId, visitAddressOptions, visitAddressId, applyVisitAddress])
+
   const spaceWorkflowId = spaceId !== "none" ? spaceModules?.workflowId ?? null : null
   // The task's effective type: an explicit pick, else inherited from the space.
   const effectiveWorkflowId = workflowId !== "inherit" ? workflowId : spaceWorkflowId
@@ -594,7 +710,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       epicId: epicId !== "none" ? epicId : undefined,
       parentId: parentTaskId !== "none" ? parentTaskId : undefined,
       spaceId: spaceId !== "none" ? spaceId : undefined,
-      customerId: defaultCustomerId ?? undefined,
+      customerId: customerId !== "none" ? customerId : undefined,
       // Task type: explicit pick, else omit so the backend inherits the space's.
       workflowId: workflowId !== "inherit" ? workflowId : undefined,
       checklistItems: checklistItems.length > 0
@@ -705,7 +821,14 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           {hasSpaces && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("tasks.groupBy.space")}</Label>
-              <Select value={spaceId} onValueChange={(v) => { setSpaceId(v); setWorkflowId("inherit") }} disabled={isSubmitting || !!defaultCustomerId}>
+              <Select value={spaceId} onValueChange={(v) => {
+                  setSpaceId(v)
+                  setWorkflowId("inherit")
+                  // The client belongs to a workspace; changing it invalidates
+                  // the choice rather than silently keeping a client the new
+                  // workspace does not have.
+                  if (!defaultCustomerId) { setCustomerId("none"); setVisitAddressId("none") }
+                }} disabled={isSubmitting || !!defaultCustomerId}>
                 <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                   <SelectValue placeholder={t("tasks.create.selectSpace")} />
                 </SelectTrigger>
@@ -1031,6 +1154,101 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
             {/* Location */}
             <CollapsibleSection icon={MapPin} label={t("tasks.sidebar.location")} indicator={locationIndicator}>
+              {/*
+                A visit starts with a client. Pick them and the map below is
+                already pointing at their door, which is the whole difference
+                between "a task with GPS" and "a visit somebody can navigate to".
+                Only where the workspace runs CRM — elsewhere this is a plain
+                location and the picker would be noise.
+              */}
+              {hasModule("crm") && (customerId !== "none" || visitClients.length > 0) && (
+                <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-2.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      {t("tasks.create.visitClient", "Client to visit")}
+                    </Label>
+                    <Select
+                      value={customerId}
+                      onValueChange={(v) => { setCustomerId(v); void applyVisitAddress(null) }}
+                      disabled={isSubmitting || !!defaultCustomerId}
+                    >
+                      <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
+                        <SelectValue placeholder={t("tasks.create.visitClientNone", "No client")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("tasks.create.visitClientNone", "No client")}</SelectItem>
+                        {pinnedClient && !visitClients.some((c) => c.id === pinnedClient.id) && (
+                          <SelectItem value={pinnedClient.id}>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="size-3 text-muted-foreground" />
+                              {pinnedClient.name}
+                            </div>
+                          </SelectItem>
+                        )}
+                        {visitClients.map((c: { id: string; name: string }) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="size-3 text-muted-foreground" />
+                              {c.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {customerId !== "none" && visitAddressOptions.length > 0 && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">
+                        {t("tasks.create.visitAddress", "Which address")}
+                      </Label>
+                      <Select
+                        value={visitAddressId}
+                        onValueChange={(v) =>
+                          void applyVisitAddress(visitAddressOptions.find((a) => a.id === v) ?? null)
+                        }
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
+                          <SelectValue placeholder={t("tasks.create.visitAddressPick", "Pick a site")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {visitAddressOptions.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="size-3 text-muted-foreground" />
+                                <span>{a.name}</span>
+                                {a.isPrimary && (
+                                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                    {t("tasks.create.visitAddressPrimary", "primary")}
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Said plainly, because it is the difference between a route
+                      and a line on a map. */}
+                  {customerId !== "none" && visitAddressId !== "none" && locationLat === null && (
+                    <p className="text-xs text-amber-600 dark:text-amber-500">
+                      {t(
+                        "tasks.create.visitAddressNoPin",
+                        "This address has no map point yet, so the route cannot be tracked. Set it on the map below.",
+                      )}
+                    </p>
+                  )}
+                  {customerId !== "none" && visitAddressOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("tasks.create.visitNoAddresses", "This client has no address on file. Set the place on the map below.")}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <Suspense
                 fallback={
                   <div className="h-[200px] rounded-lg border border-border bg-muted flex items-center justify-center">

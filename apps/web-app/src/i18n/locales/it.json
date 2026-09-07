@@ -1125,7 +1125,14 @@
       "itemsCount_other": "{{count}} elementi",
       "fillRequiredCustomFields": "Compilare tutti i campi personalizzati obbligatori",
       "cantReceiveTasks": "non può ricevere attività",
-      "attachmentsFailed": "Impossibile allegare: {{files}}"
+      "attachmentsFailed": "Impossibile allegare: {{files}}",
+      "visitClient": "Cliente da visitare",
+      "visitClientNone": "Nessun cliente",
+      "visitAddress": "Quale indirizzo",
+      "visitAddressPick": "Scegli una sede",
+      "visitAddressPrimary": "principale",
+      "visitAddressNoPin": "Questo indirizzo non ha ancora un punto sulla mappa, quindi il percorso non può essere tracciato. Impostalo sulla mappa qui sotto.",
+      "visitNoAddresses": "Per questo cliente non è registrato alcun indirizzo. Imposta il luogo sulla mappa qui sotto."
     },
     "detail": {
       "title": "Dettagli dell'attività",

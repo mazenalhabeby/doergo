@@ -1125,7 +1125,14 @@
       "itemsCount_other": "{{count}} éléments",
       "fillRequiredCustomFields": "Veuillez remplir tous les champs personnalisés obligatoires",
       "cantReceiveTasks": "ne peut pas recevoir de tâches",
-      "attachmentsFailed": "Impossible de joindre : {{files}}"
+      "attachmentsFailed": "Impossible de joindre : {{files}}",
+      "visitClient": "Client à visiter",
+      "visitClientNone": "Aucun client",
+      "visitAddress": "Quelle adresse",
+      "visitAddressPick": "Choisir un site",
+      "visitAddressPrimary": "principale",
+      "visitAddressNoPin": "Cette adresse n’a pas encore de point sur la carte, l’itinéraire ne peut donc pas être suivi. Placez-le sur la carte ci-dessous.",
+      "visitNoAddresses": "Aucune adresse n’est enregistrée pour ce client. Placez le lieu sur la carte ci-dessous."
     },
     "detail": {
       "title": "Détails de la tâche",

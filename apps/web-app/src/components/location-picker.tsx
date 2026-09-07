@@ -7,7 +7,7 @@ import L from "leaflet"
 import { MapPin, Search, X, Loader2, Navigation } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Input } from "@/components/ui/input"
-import { formatNominatimAddress, type NominatimAddress } from "@/lib/geocode"
+import { formatNominatimAddress, geoBase as geoBaseUrl, type NominatimAddress } from "@/lib/geocode"
 
 // Custom marker icon
 const markerIcon = new L.Icon({
@@ -104,7 +104,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
           // Primary: Google Places (New) via the gateway /geo proxy — Maps-quality
           // results incl. businesses. Free autocomplete with a session token.
           try {
-            const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+            const geoBase = geoBaseUrl()
             if (!sessionRef.current && typeof crypto !== "undefined" && crypto.randomUUID) {
               sessionRef.current = crypto.randomUUID()
             }
@@ -170,7 +170,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
         // Through our own proxy only — see the note in the search above.
         let formatted = ""
         try {
-          const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+          const geoBase = geoBaseUrl()
           const gr = await fetch(`${geoBase}/geo/reverse?lat=${clickLat}&lon=${clickLng}`, {
             signal: AbortSignal.timeout(5000),
           })
@@ -197,7 +197,7 @@ export function LocationPicker({ address, lat, lng, onLocationChange, disabled }
     // Google row: resolve coordinates now (this closes the billed session).
     if (result.gid) {
       try {
-        const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
+        const geoBase = geoBaseUrl()
         const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
         const res = await fetch(`${geoBase}/geo/place?id=${encodeURIComponent(result.gid)}${sess}`, {
           signal: AbortSignal.timeout(5000),

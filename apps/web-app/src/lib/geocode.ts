@@ -59,3 +59,58 @@ export function formatPhotonFeature(p: PhotonProperties | undefined, fallback?: 
   const out = [line1, line2].filter(Boolean).join(", ")
   return out || p.name || fallback || ""
 }
+
+/**
+ * Where the geocoding proxy lives.
+ *
+ * ⚠️ The fallback is `/api/v1`, not "". `NEXT_PUBLIC_API_URL` is inlined at
+ * build time and is simply absent in some environments; an empty base makes the
+ * request relative, so it lands on the Next server instead of the gateway and
+ * returns a 404 that reads like "this address could not be found".
+ */
+export const geoBase = () => process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+
+/**
+ * Turn a written address into a point, or null.
+ *
+ * For addresses the product already holds — a client's, typed by a person long
+ * before anyone thought about maps. Without a point there is no destination to
+ * navigate to and no route to measure, so a visit task is a task with a note in
+ * it. Null is an ordinary answer, not a failure: the text still names the place.
+ *
+ * Never called per keystroke — once, when a place is chosen — so it uses no
+ * autocomplete session token.
+ */
+export async function geocodeAddress(
+  text: string,
+  signal?: AbortSignal,
+): Promise<{ lat: number; lng: number } | null> {
+  const q = text.trim();
+  if (q.length < 3) return null;
+  const base = geoBase();
+  try {
+    const r = await fetch(`${base}/geo/search?q=${encodeURIComponent(q)}&limit=1`, {
+      signal: signal ?? AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return null;
+    const hit = (await r.json())?.results?.[0];
+    if (!hit) return null;
+    if (typeof hit.lat === 'number' && typeof hit.lon === 'number') {
+      return { lat: hit.lat, lng: hit.lon };
+    }
+    // A Google prediction carries no coordinates until it is resolved.
+    if (hit.id) {
+      const pr = await fetch(`${base}/geo/place?id=${encodeURIComponent(hit.id)}`, {
+        signal: signal ?? AbortSignal.timeout(5000),
+      });
+      if (!pr.ok) return null;
+      const place = (await pr.json())?.result;
+      if (typeof place?.lat === 'number' && typeof place?.lon === 'number') {
+        return { lat: place.lat, lng: place.lon };
+      }
+    }
+    return null;
+  } catch {
+    return null; // offline, slow, or refused — the caller keeps the text
+  }
+}
