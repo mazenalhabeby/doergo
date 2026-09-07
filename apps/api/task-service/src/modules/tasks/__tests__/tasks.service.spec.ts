@@ -223,7 +223,16 @@ describe('TasksService', () => {
         userId: 'user-456',
       }) as any;
 
-      expect(result.data).toEqual(tasks);
+      /*
+        The row, plus the one field findAll computes.
+
+        `tracksLocation` says whether the task's flow has a travel step, which
+        is what decides if "Plan my route" is offered for it. Asserted rather
+        than loosened to `objectContaining`: the shape of this list is a
+        contract two clients read, and a test that stops noticing new fields
+        stops noticing accidental ones too.
+      */
+      expect(result.data).toEqual([{ ...mockTask, tracksLocation: expect.any(Boolean) }]);
       expect(result.meta.total).toBe(1);
       expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
