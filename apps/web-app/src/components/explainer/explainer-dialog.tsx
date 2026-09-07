@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { explainerFor } from '@/lib/explainers/registry';
 import { EXPLAINER_NS, ensureExplainers, explainersReady } from '@/i18n/explainers';
-import { ExplainerDiagram } from './diagrams';
+import { ExplainerDiagram, hasDiagram } from './diagrams';
 
 /**
  * The deep explanation of one module or option.
@@ -137,7 +137,9 @@ export function ExplainerDialog({
                 </section>
               )}
 
-              {meta.diagram && <ExplainerDiagram id={meta.diagram} caption={caption || undefined} />}
+              {hasDiagram(explainerKey) && (
+                <ExplainerDiagram explainerKey={explainerKey} caption={caption || undefined} />
+              )}
 
               {steps.length > 0 && (
                 <section>

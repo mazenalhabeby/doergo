@@ -497,7 +497,7 @@
   },
   "live_chat": {
     "summary": "Talk to a person in the app, while you have the problem in front of you, instead of writing it up and waiting.",
-    "caption": "",
+    "caption": "A conversation, not a ticket in a queue.",
     "steps": [
       "Open chat from anywhere in the app.",
       "Describe the problem while you are looking at it.",
@@ -516,7 +516,7 @@
   },
   "dedicated_support": {
     "summary": "A named person who knows your setup, rather than whoever picks up the ticket.",
-    "caption": "",
+    "caption": "One named person, with a direct line to them.",
     "steps": [
       "You are introduced to the person who looks after your account.",
       "They learn how you are set up, so you stop re-explaining it.",

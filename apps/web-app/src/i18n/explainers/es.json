@@ -497,7 +497,7 @@
   },
   "live_chat": {
     "summary": "Hable con una persona dentro de la aplicación, con el problema delante, en lugar de redactarlo y esperar.",
-    "caption": "",
+    "caption": "Una conversación, no un ticket en una cola.",
     "steps": [
       "Abra el chat desde cualquier parte de la aplicación.",
       "Describa el problema mientras lo está mirando.",
@@ -516,7 +516,7 @@
   },
   "dedicated_support": {
     "summary": "Una persona concreta que conoce su configuración, en lugar de quien recoja el ticket.",
-    "caption": "",
+    "caption": "Una persona concreta, con línea directa.",
     "steps": [
       "Le presentamos a la persona que atiende su cuenta.",
       "Aprende cómo está configurado, para que deje de explicarlo.",

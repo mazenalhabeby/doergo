@@ -26,17 +26,6 @@ import {
  * otherwise: the button simply does not render, and nobody notices the gap.
  */
 
-/** The reusable diagram primitives. Deliberately few — see `diagrams.tsx`. */
-export type DiagramId =
-  | 'flow'        // ordered states with arrows between them
-  | 'timeline'    // planned vs actual along a time axis
-  | 'hierarchy'   // a parent with children
-  | 'map'         // a route between pins
-  | 'stack'       // records filed on top of each other
-  | 'split'       // two parties sharing one thing
-  | 'checklist'   // items ticked off in order
-  | 'chart';      // figures rolled up into a shape
-
 export type ExplainerKind = 'module' | 'option';
 
 export interface ExplainerMeta {
@@ -44,43 +33,48 @@ export interface ExplainerMeta {
   key: string;
   kind: ExplainerKind;
   icon: LucideIcon;
-  /** Omitted where a picture would add nothing — the dialog then has no figure. */
-  diagram?: DiagramId;
 }
+
+/*
+  There is no `diagram` field. Each module and option has its OWN drawing,
+  looked up by this same key in `components/explainer/diagrams.tsx` — a shared
+  set of generic shapes was tried first and was worse than no picture at all,
+  because Epics and Subtasks rendered the identical four blank rectangles.
+*/
 
 /** Per-workspace modules. Keys mirror `AVAILABLE_MODULES`. */
 const MODULES: ExplainerMeta[] = [
-  { key: 'subtasks',        kind: 'module', icon: ListTree,       diagram: 'hierarchy' },
-  { key: 'checklists',      kind: 'module', icon: CheckSquare,    diagram: 'checklist' },
-  { key: 'attachments',     kind: 'module', icon: Paperclip,      diagram: 'stack' },
-  { key: 'dependencies',    kind: 'module', icon: GitBranch,      diagram: 'flow' },
-  { key: 'custom_fields',   kind: 'module', icon: Tags,           diagram: 'checklist' },
-  { key: 'tracking',        kind: 'module', icon: Route,          diagram: 'map' },
-  { key: 'service_reports', kind: 'module', icon: FileSignature,  diagram: 'stack' },
-  { key: 'time_tracking',   kind: 'module', icon: Clock,          diagram: 'timeline' },
-  { key: 'assets',          kind: 'module', icon: Boxes,          diagram: 'stack' },
-  { key: 'sprints',         kind: 'module', icon: Target,         diagram: 'timeline' },
-  { key: 'story_points',    kind: 'module', icon: Sparkles,       diagram: 'chart' },
-  { key: 'epics',           kind: 'module', icon: Layers,         diagram: 'hierarchy' },
-  { key: 'phases',          kind: 'module', icon: MapPinned,      diagram: 'flow' },
-  { key: 'crm',             kind: 'module', icon: Users,          diagram: 'split' },
-  { key: 'b2c_portal',      kind: 'module', icon: Building2,      diagram: 'split' },
-  { key: 'space_sharing',   kind: 'module', icon: Share2,         diagram: 'split' },
+  { key: 'subtasks', kind: 'module', icon: ListTree },
+  { key: 'checklists', kind: 'module', icon: CheckSquare },
+  { key: 'attachments', kind: 'module', icon: Paperclip },
+  { key: 'dependencies', kind: 'module', icon: GitBranch },
+  { key: 'custom_fields', kind: 'module', icon: Tags },
+  { key: 'tracking', kind: 'module', icon: Route },
+  { key: 'service_reports', kind: 'module', icon: FileSignature },
+  { key: 'time_tracking', kind: 'module', icon: Clock },
+  { key: 'assets', kind: 'module', icon: Boxes },
+  { key: 'sprints', kind: 'module', icon: Target },
+  { key: 'story_points', kind: 'module', icon: Sparkles },
+  { key: 'epics', kind: 'module', icon: Layers },
+  { key: 'phases', kind: 'module', icon: MapPinned },
+  { key: 'crm', kind: 'module', icon: Users },
+  { key: 'b2c_portal', kind: 'module', icon: Building2 },
+  { key: 'space_sharing', kind: 'module', icon: Share2 },
 ];
 
 /** Organization-wide options. Keys mirror `AVAILABLE_ADD_ONS`. */
 const OPTIONS: ExplainerMeta[] = [
-  { key: 'workflows',         kind: 'option', icon: GitBranch,      diagram: 'flow' },
-  { key: 'recurring',         kind: 'option', icon: Repeat,         diagram: 'timeline' },
-  { key: 'shift_scheduling',  kind: 'option', icon: CalendarDays,   diagram: 'timeline' },
-  { key: 'overtime',          kind: 'option', icon: AlarmClock,     diagram: 'flow' },
-  { key: 'invoicing',         kind: 'option', icon: Coins,          diagram: 'chart' },
-  { key: 'reports_builder',   kind: 'option', icon: LineChart,      diagram: 'chart' },
-  { key: 'report_scheduling', kind: 'option', icon: Send,           diagram: 'timeline' },
-  { key: 'audit_log',         kind: 'option', icon: History,        diagram: 'stack' },
-  { key: 'documents',         kind: 'option', icon: FileText,       diagram: 'stack' },
-  { key: 'priority_routing',  kind: 'option', icon: Filter,         diagram: 'flow' },
-  { key: 'live_chat',         kind: 'option', icon: MessagesSquare },
+  { key: 'workflows', kind: 'option', icon: GitBranch },
+  { key: 'recurring', kind: 'option', icon: Repeat },
+  { key: 'shift_scheduling', kind: 'option', icon: CalendarDays },
+  { key: 'overtime', kind: 'option', icon: AlarmClock },
+  { key: 'invoicing', kind: 'option', icon: Coins },
+  { key: 'reports_builder', kind: 'option', icon: LineChart },
+  { key: 'report_scheduling', kind: 'option', icon: Send },
+  { key: 'audit_log', kind: 'option', icon: History },
+  { key: 'documents', kind: 'option', icon: FileText },
+  { key: 'priority_routing', kind: 'option', icon: Filter },
+  { key: 'live_chat', kind: 'option', icon: MessagesSquare },
   { key: 'dedicated_support', kind: 'option', icon: Headset },
 ];
 

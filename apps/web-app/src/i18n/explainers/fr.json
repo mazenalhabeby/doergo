@@ -497,7 +497,7 @@
   },
   "live_chat": {
     "summary": "Parlez à une personne dans l'application, le problème sous les yeux, au lieu de le rédiger et d'attendre.",
-    "caption": "",
+    "caption": "Une conversation, pas un ticket dans une file.",
     "steps": [
       "Ouvrez la discussion depuis n'importe où dans l'application.",
       "Décrivez le problème pendant que vous le regardez.",
@@ -516,7 +516,7 @@
   },
   "dedicated_support": {
     "summary": "Une personne nommée qui connaît votre configuration, plutôt que celle qui décroche le ticket.",
-    "caption": "",
+    "caption": "Une personne nommée, joignable directement.",
     "steps": [
       "Vous êtes présenté à la personne qui suit votre compte.",
       "Elle apprend votre configuration, pour que vous cessiez de l'expliquer.",

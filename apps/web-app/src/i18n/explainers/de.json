@@ -497,7 +497,7 @@
   },
   "live_chat": {
     "summary": "Sprechen Sie in der App mit einer Person, während Sie das Problem vor sich haben, statt es aufzuschreiben und zu warten.",
-    "caption": "",
+    "caption": "Ein Gespräch, kein Ticket in einer Warteschlange.",
     "steps": [
       "Öffnen Sie den Chat von überall in der App.",
       "Beschreiben Sie das Problem, während Sie es ansehen.",
@@ -516,7 +516,7 @@
   },
   "dedicated_support": {
     "summary": "Eine benannte Person, die Ihre Einrichtung kennt, statt wer auch immer das Ticket aufnimmt.",
-    "caption": "",
+    "caption": "Eine benannte Person, direkt erreichbar.",
     "steps": [
       "Sie werden der Person vorgestellt, die Ihr Konto betreut.",
       "Sie lernt Ihre Einrichtung kennen, damit Sie sie nicht mehr erklären müssen.",

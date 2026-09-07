@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { AVAILABLE_MODULES, AVAILABLE_ADD_ONS } from '@hbcfield/shared/client';
 import { EXPLAINER_KEYS, explainerFor } from '@/lib/explainers/registry';
+import { DIAGRAM_KEYS, hasDiagram } from '@/components/explainer/diagrams';
 
 /**
  * Every module and option must have an explainer, in every language.
@@ -37,6 +38,18 @@ describe('explainers cover the billing catalogue', () => {
   it('every module and option has a registry entry', () => {
     const missing = catalogue.filter((k) => !explainerFor(k));
     expect(missing).toEqual([]);
+  });
+
+  it('every module and option has its own drawing', () => {
+    // A shared set of generic shapes was tried and rejected: the same four
+    // blank rectangles stood for both Epics and Subtasks, which told a reader
+    // nothing. Each key draws itself now, so each key needs its own entry.
+    const missing = catalogue.filter((k) => !hasDiagram(k));
+    expect(missing).toEqual([]);
+  });
+
+  it('no drawing exists for a key that is not in the catalogue', () => {
+    expect(DIAGRAM_KEYS.filter((k) => !catalogue.includes(k))).toEqual([]);
   });
 
   it('the registry names no key that has left the catalogue', () => {
@@ -78,9 +91,8 @@ describe('explainers cover the billing catalogue', () => {
 
       // A caption is only meaningful where a diagram is drawn — and where one
       // is drawn, an unlabelled picture is worse than none.
-      const hasDiagram = Boolean(explainerFor(key)?.diagram);
       const caption = typeof e.caption === 'string' ? e.caption.trim() : '';
-      if (hasDiagram && !caption) bad.push(`${key}.caption missing but a diagram is drawn`);
+      if (hasDiagram(key) && !caption) bad.push(`${key}.caption missing but a diagram is drawn`);
     }
 
     expect(bad).toEqual([]);
