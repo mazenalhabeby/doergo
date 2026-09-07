@@ -229,6 +229,42 @@ export const BUILTIN_ROLES: RolePreset[] = [
       canViewSpaceAttendance: true,
     },
   },
+  /*
+    Sales — a rep who owns a book of clients and works it.
+
+    ORG scope, and that is load-bearing rather than a default: `resolveCrmCaps`
+    reads the CRM keys off the member's ORG role (`memberRoleId`) only, so a
+    SPACE-scoped sales role would resolve to no CRM access at all — a role that
+    grants nothing, on a screen that shows it granted.
+
+    `crmViewOwn` rather than `crmViewAll` is the whole shape of the job: a rep
+    sees the clients assigned to them, and the server scopes the query rather
+    than the page hiding rows. They work those clients — move the stage, add
+    notes, keep the details right — and book the calls and visits as tasks.
+
+    ⚠️ `canViewAllTasks` is deliberately ABSENT and must stay absent. It is not
+    only about tasks: `resolveCrmCaps` reads it as the legacy "read the whole
+    client book", so adding it here to let a rep see the team's jobs would
+    silently hand them every client in the organization. That is the one edit to
+    this role that looks harmless and is not, which is why a test asserts it.
+
+    Reassigning ownership and creating or deleting clients are a manager's acts,
+    so `crmManageClients` is not here. A sales LEAD is the existing Manager
+    role, which reaches full CRM through the same resolver.
+  */
+  {
+    slug: 'sales-rep',
+    name: 'Sales Rep',
+    description: 'Owns their assigned clients: works the pipeline, keeps details current, books calls and visits',
+    color: '#7c3aed',
+    scope: 'ORG',
+    permissions: {
+      crmViewOwn: true,
+      crmWork: true,
+      crmEditInfo: true,
+      canCreateTasks: true,
+    },
+  },
   {
     slug: 'space-manager',
     name: 'Space Manager',
