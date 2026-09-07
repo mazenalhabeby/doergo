@@ -10,7 +10,7 @@ import { Boxes, Building2, CheckCircle2, Inbox, Loader2, MapPin, PauseCircle, Br
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { locationsApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
-import { ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
+import { ATTENDANCE_CONSTANTS, parseGeofencePolygon, type LatLng } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -49,6 +49,11 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [lat, setLat] = useState<number | null>(space.lat ?? null)
   const [lng, setLng] = useState<number | null>(space.lng ?? null)
   const [radius, setRadius] = useState(space.geofenceRadius.toString())
+  // The drawn outline. `parseGeofencePolygon` rather than a cast: the column is
+  // JSON and may hold anything an older build or a restored backup left there.
+  const [polygon, setPolygon] = useState<LatLng[] | null>(
+    parseGeofencePolygon((space as { geofencePolygon?: unknown }).geofencePolygon),
+  )
   const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
   // Ownership classification (separate axis from workspace/physical).
   const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">(
@@ -118,8 +123,11 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
             lat: lat ?? undefined,
             lng: lng ?? undefined,
             geofenceRadius: clampRadius(),
+            // Sent on every physical save so clearing a boundary persists;
+            // `null` returns the site to its radius.
+            geofencePolygon: polygon,
           }
-        : { address: null, lat: null, lng: null }),
+        : { address: null, lat: null, lng: null, geofencePolygon: null }),
     })
   }
 
@@ -420,6 +428,8 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                 />
               </div>
               <LocationPicker
+                polygon={polygon}
+                onPolygonChange={setPolygon}
                 lat={lat}
                 lng={lng}
                 radius={clampRadius()}

@@ -3673,6 +3673,18 @@
       "badge": "Predeterminado",
       "make": "Establecer como predeterminado",
       "done": "{{name}} es ahora el espacio predeterminado."
+    },
+    "boundary": {
+      "modeRadius": "Radio",
+      "modeDraw": "Dibujar el recinto",
+      "undo": "Deshacer punto",
+      "clear": "Borrar",
+      "hintEmpty": "Haga clic en cada esquina del recinto",
+      "usingRadius": "Usando el radio",
+      "needMore": "{{count}} de 3 puntos",
+      "summary": "{{points}} puntos · {{ha}} ha · {{span}} m de ancho",
+      "tooLarge": "demasiado grande para guardar",
+      "tooManyPoints": "Un límite puede tener como máximo {{max}} puntos."
     }
   },
   "commandPalette": {

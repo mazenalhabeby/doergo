@@ -6,6 +6,7 @@ import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2, Briefcase, Building2, Handshake } from "lucide-react"
+import type { LatLng } from "@hbcfield/shared/client"
 import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
@@ -66,6 +67,7 @@ export function SpaceForm({
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
   const [radius, setRadius] = useState(String(GEO_DEFAULT))
+  const [polygon, setPolygon] = useState<LatLng[] | null>(null)
   // Auto-derived from the picked coordinates (admin can override with the
   // searchable picker); backend also auto-derives if this is empty.
   const [timezone, setTimezone] = useState("")
@@ -118,6 +120,9 @@ export function SpaceForm({
       geofenceRadius: isPhysical
         ? Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
         : undefined,
+      // A drawn boundary replaces the radius. Only sent for a physical site —
+      // a workspace with no coordinates has nothing to enclose.
+      geofencePolygon: isPhysical && polygon && polygon.length >= 3 ? polygon : undefined,
       // Empty → backend auto-derives from coordinates (or its own default).
       timezone: timezone || undefined,
       enabledModules,
@@ -253,6 +258,8 @@ export function SpaceForm({
             />
           </div>
           <LocationPicker
+            polygon={polygon}
+            onPolygonChange={setPolygon}
             lat={lat}
             lng={lng}
             radius={parseInt(radius) || GEO_DEFAULT}

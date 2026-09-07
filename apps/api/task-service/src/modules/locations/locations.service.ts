@@ -7,7 +7,11 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES } from '@hbcfield/shared';
+import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES,
+  ATTENDANCE_CONSTANTS,
+  validateGeofencePolygon,
+  type GeofencePolygonError,
+} from '@hbcfield/shared';
 import { isGeofencePolicy } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
@@ -61,6 +65,7 @@ export class LocationsService {
     lat?: number;
     lng?: number;
     geofenceRadius?: number;
+    geofencePolygon?: unknown;
     timezone?: string;
     kind?: string;
     contactName?: string;
@@ -97,7 +102,13 @@ export class LocationsService {
         address: data.address,
         lat: data.lat ?? null,
         lng: data.lng ?? null,
-        geofenceRadius: data.geofenceRadius ?? 15,
+        // ATTENDANCE_CONSTANTS is the single source. This said 15 while the
+        // constant said 50 and the schema default said 15 again, so a space
+        // created by any path that omits the field got a 15-metre fence — small
+        // enough to refuse somebody standing at the building, and chosen by
+        // nobody.
+        geofenceRadius: data.geofenceRadius ?? ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS,
+        geofencePolygon: this.cleanPolygon(data.geofencePolygon) ?? undefined,
         // Resolved above: explicit → pin-derived → org tz → schema default.
         timezone,
         // Each space owns its module set; new spaces start with the standard
@@ -332,6 +343,32 @@ export class LocationsService {
     return { id: target.id, isDefault: true, changed: true };
   }
 
+  /**
+   * A drawn boundary decides whether people can start their shift, and it
+   * arrives as free-form JSON, so it is validated here rather than trusted.
+   *
+   * The area cap is the security-relevant one: a boundary drawn around half a
+   * city would leave the control looking configured while accepting anybody
+   * anywhere. The vertex cap bounds the stored JSON and the per-clock-in scan.
+   *
+   * `null` clears the boundary and returns the site to its radius.
+   */
+  private cleanPolygon(input: unknown): { lat: number; lng: number }[] | null {
+    if (input === null || input === undefined) return null;
+
+    const result = validateGeofencePolygon(input);
+    if (result.ok) return result.ring;
+
+    const reason: Record<GeofencePolygonError, string> = {
+      TOO_FEW_POINTS: 'A site boundary needs at least three points.',
+      TOO_MANY_POINTS: 'A site boundary can have at most 60 points.',
+      INVALID_COORDINATE: 'The site boundary contains a point that is not a valid coordinate.',
+      AREA_TOO_LARGE:
+        'That boundary covers more than 5 km² — too large to be a single site. Draw the property, not the district.',
+    };
+    throw new BadRequestException(reason[result.error]);
+  }
+
   async update(data: {
     id: string;
     organizationId: string;
@@ -341,6 +378,7 @@ export class LocationsService {
     lat?: number;
     lng?: number;
     geofenceRadius?: number;
+    geofencePolygon?: unknown;
     isActive?: boolean;
     enabledModules?: string[];
     workflowId?: string;
@@ -373,6 +411,11 @@ export class LocationsService {
     if (data.lat !== undefined) updateData.lat = data.lat;
     if (data.lng !== undefined) updateData.lng = data.lng;
     if (data.geofenceRadius !== undefined) updateData.geofenceRadius = data.geofenceRadius;
+    // Only touched when the caller actually sent the field: a PATCH that is
+    // renaming the space must not wipe a boundary somebody drew.
+    if ('geofencePolygon' in data) {
+      updateData.geofencePolygon = this.cleanPolygon(data.geofencePolygon);
+    }
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;

@@ -3673,6 +3673,18 @@
       "badge": "Standard",
       "make": "Als Standard festlegen",
       "done": "{{name}} ist jetzt der Standard-Arbeitsbereich."
+    },
+    "boundary": {
+      "modeRadius": "Radius",
+      "modeDraw": "Gelände einzeichnen",
+      "undo": "Punkt zurück",
+      "clear": "Löschen",
+      "hintEmpty": "Klicken Sie jede Ecke des Geländes an",
+      "usingRadius": "Radius wird verwendet",
+      "needMore": "{{count}} von 3 Punkten",
+      "summary": "{{points}} Punkte · {{ha}} ha · {{span}} m breit",
+      "tooLarge": "zu groß zum Speichern",
+      "tooManyPoints": "Eine Grenze darf höchstens {{max}} Punkte haben."
     }
   },
   "commandPalette": {

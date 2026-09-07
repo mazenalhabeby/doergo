@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { isAtSite } from '@hbcfield/shared';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import {
@@ -132,16 +133,24 @@ export function FullTimeHome() {
     assignedLocations: status?.assignedLocations || [],
   });
   const getDistanceToLocation = clockIn.getDistanceToLocation;
+  const currentLocation = clockIn.currentLocation;
 
   // Live out-of-ring updates so the home banner reflects admin decisions /
   // background detection without a manual pull-to-refresh.
   useExcursionSync(() => fetchAttendanceData(), user?.id);
 
-  // Check if within geofence
+  /*
+    The same question the server asks, through the same helper — a site can now
+    carry a drawn boundary instead of a radius, and a local `distance <= radius`
+    would tell somebody standing in the yard that they are out of range while
+    the server accepts them.
+  */
   const isWithinGeofence = (location: CompanyLocation): boolean => {
-    const distance = getDistanceToLocation(location);
-    if (distance === null) return false;
-    return distance <= location.geofenceRadius;
+    if (!currentLocation) return false;
+    return isAtSite(
+      { lat: currentLocation.lat, lng: currentLocation.lng, accuracy: currentLocation.accuracy },
+      location,
+    ).inside;
   };
 
   if (isLoading) return <LoadingState message={t('home.fullTime.loadingAttendance')} />;

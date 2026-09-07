@@ -6,7 +6,15 @@ export const ATTENDANCE_CONSTANTS = {
   // enough not to reject someone standing at the building.
   DEFAULT_GEOFENCE_RADIUS: 50,
   MIN_GEOFENCE_RADIUS: 10,
-  MAX_GEOFENCE_RADIUS: 100,
+  /*
+    Raised from 100m. A circle is measured from the geocoded address, which is
+    the front door, so a site with a yard or several buildings could not be
+    expressed at ALL at 100m: widen it and the neighbour is inside, narrow it
+    and your own warehouse is out. Guidance for outdoor sites is 100-200m, and
+    a campus needs more than that. Sites that need a shape rather than a circle
+    now draw a boundary instead — see `geofencePolygon`.
+  */
+  MAX_GEOFENCE_RADIUS: 500,
 
   // GPS accuracy sanity cap (in meters). Reject a clock-in only if the fix is
   // genuinely useless (worse than this). Kept lenient because real-world fixes

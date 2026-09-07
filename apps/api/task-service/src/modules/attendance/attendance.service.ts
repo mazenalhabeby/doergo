@@ -20,6 +20,9 @@ import {
   paginated,
   TimeEntryStatus,
   haversineDistance,
+  isAtSite,
+  siteEnforcesZone,
+  parseGeofencePolygon,
   activeAssignmentWhere,
   ATTENDANCE_CONSTANTS,
   GEOFENCE_EXCURSION,
@@ -54,6 +57,7 @@ const ATTENDANCE_LOCATION_SELECT = {
   lat: true,
   lng: true,
   geofenceRadius: true,
+  geofencePolygon: true,
   timezone: true,
   workModel: true,
   kind: true,
@@ -283,7 +287,7 @@ export class AttendanceService {
         },
         select: {
           id: true, name: true, address: true, lat: true, lng: true,
-          geofenceRadius: true, timezone: true, isDefault: true,
+          geofenceRadius: true, geofencePolygon: true, timezone: true, isDefault: true,
           // The ceiling. Needed to answer `awayAllowed` below.
           geofencePolicy: true,
         },
@@ -495,15 +499,20 @@ export class AttendanceService {
       );
     }
 
-    // Calculate distance to location (logical spaces have no coords → no geofence)
+    // Is this position at the site? One helper answers it for a radius and for
+    // a drawn boundary alike, so clock-in, clock-out, the excursion sweep and
+    // the phone's badge cannot disagree — they did, when each compared a
+    // distance to a radius inline.
     const spaceHasPin = location.lat != null && location.lng != null;
-    const distance = spaceHasPin
-      ? haversineDistance(data.lat, data.lng, location.lat as number, location.lng as number)
-      : 0;
-
-    // Accuracy-aware: allow the GPS error margin so a plausible on-site fix
-    // passes instead of being hard-rejected for a fuzzy reading.
-    const withinGeofence = distance <= location.geofenceRadius + (data.accuracy ?? 0);
+    const zone = {
+      lat: location.lat,
+      lng: location.lng,
+      geofenceRadius: location.geofenceRadius,
+      geofencePolygon: parseGeofencePolygon(location.geofencePolygon),
+    };
+    const at = isAtSite({ lat: data.lat, lng: data.lng, accuracy: data.accuracy }, zone);
+    const distance = at.distanceToCentre ?? 0;
+    const withinGeofence = at.inside;
 
     /*
       Outside the ring — which is a question for the workspace and the person,
@@ -770,20 +779,22 @@ export class AttendanceService {
     const hasLocationCoords = entry.location.lat != null && entry.location.lng != null;
     const geofenceEvaluable = hasDeviceCoords && hasLocationCoords;
 
-    const distance = geofenceEvaluable
-      ? haversineDistance(
-          data.lat as number,
-          data.lng as number,
-          entry.location.lat as number,
-          entry.location.lng as number,
+    // Same helper as clock-in, so a boundary drawn for the site is honoured at
+    // both ends of the shift. Non-evaluable → treated as within (no flag).
+    const outZone = {
+      lat: entry.location.lat,
+      lng: entry.location.lng,
+      geofenceRadius: entry.location.geofenceRadius,
+      geofencePolygon: parseGeofencePolygon(entry.location.geofencePolygon),
+    };
+    const atOut = geofenceEvaluable
+      ? isAtSite(
+          { lat: data.lat as number, lng: data.lng as number, accuracy: data.accuracy },
+          outZone,
         )
-      : 0;
-
-    // Accuracy-aware geofence (matches clock-in): tolerate the GPS error margin.
-    // Non-evaluable → treated as within (no violation flag / alert).
-    const withinGeofence = geofenceEvaluable
-      ? distance <= entry.location.geofenceRadius + (data.accuracy ?? 0)
-      : true;
+      : null;
+    const distance = atOut?.distanceToCentre ?? 0;
+    const withinGeofence = atOut ? atOut.inside : true;
 
     // Calculate total minutes worked
     const clockOutTime = new Date();
@@ -1436,21 +1447,34 @@ export class AttendanceService {
       is the signal a manager acts on. This suppresses the SECOND, noisier one
       that says the same thing about every heartbeat.
     */
-    const hasRing =
-      !entry.isRemote &&
-      entry.location.lat != null &&
-      entry.location.lng != null &&
-      entry.location.geofenceRadius > 0;
-    const distance = hasRing
-      ? haversineDistance(data.lat, data.lng, entry.location.lat as number, entry.location.lng as number)
-      : 0;
-    const radius = entry.location.geofenceRadius;
+    const sweepZone = {
+      lat: entry.location.lat,
+      lng: entry.location.lng,
+      geofenceRadius: entry.location.geofenceRadius,
+      geofencePolygon: parseGeofencePolygon(entry.location.geofencePolygon),
+    };
+    const hasRing = !entry.isRemote && siteEnforcesZone(sweepZone);
+
+    /*
+      Deliberately WITHOUT the accuracy tolerance, unlike clock-in.
+
+      Clock-in widens the zone by the reported GPS error so a fuzzy fix is not
+      refused outright — the cost of being wrong there is somebody unable to
+      start their day. This sweep runs every minute on an already-open shift,
+      and its own hysteresis buffer is what absorbs scatter. Feeding accuracy in
+      as well would make the fence breathe with the signal, and an excursion
+      would open or close depending on how many satellites were visible.
+    */
+    const raw = hasRing ? isAtSite({ lat: data.lat, lng: data.lng, accuracy: 0 }, sweepZone) : null;
+    const distance = raw?.distanceToCentre ?? 0;
     const distanceM = Math.round(distance);
 
     // Hysteresis so GPS scatter at the edge doesn't flap OUT/RETURNED: only count
-    // as "left" past radius + buffer; count as "back" the moment we're <= radius.
-    const isBackInRing = !hasRing || distance <= radius;
-    const isOutPastBuffer = hasRing && distance > radius + GEOFENCE_EXCURSION.RING_HYSTERESIS_M;
+    // as "left" once past the buffer; count as "back" the moment we are inside.
+    // `metresOutside` measures to the BOUNDARY, so this reads the same for a
+    // circle and for a drawn shape.
+    const isBackInRing = !hasRing || (raw?.inside ?? true);
+    const isOutPastBuffer = hasRing && (raw?.metresOutside ?? 0) > GEOFENCE_EXCURSION.RING_HYSTERESIS_M;
     const inRing = isBackInRing;
 
     // Latest active excursion for this session (OUT_UNREPORTED / PENDING / APPROVED)

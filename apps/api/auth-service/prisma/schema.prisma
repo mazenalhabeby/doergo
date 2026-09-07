@@ -1946,7 +1946,17 @@ model CompanyLocation {
   address           String? // Full address string
   lat               Float? // Latitude (only for physical locations / attendance)
   lng               Float? // Longitude (only for physical locations / attendance)
-  geofenceRadius    Int       @default(15) // Radius in meters for clock-in zone
+  /// Radius in metres for the clock-in zone, used when no boundary is drawn.
+  /// Default matches ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS — it read 15
+  /// here while the constant said 50, so a space created without the field got
+  /// a fence too small to accept somebody standing at the building.
+  geofenceRadius    Int       @default(50)
+  /// The site's actual outline, as [{lat,lng}]. When set it REPLACES the radius:
+  /// an address geocodes to the front door, so a circle cannot describe a
+  /// property with a yard or several buildings. Validated on write
+  /// (validateGeofencePolygon) — vertex count, coordinate range and a maximum
+  /// area, so a boundary cannot be drawn around a district to disable the check.
+  geofencePolygon   Json?
   timezone          String    @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   workModel         WorkModel @default(NONE) // How attendance is interpreted for this space
 

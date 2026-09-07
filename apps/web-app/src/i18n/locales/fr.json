@@ -3682,6 +3682,18 @@
       "badge": "Par défaut",
       "make": "Définir par défaut",
       "done": "{{name}} est désormais l’espace par défaut."
+    },
+    "boundary": {
+      "modeRadius": "Rayon",
+      "modeDraw": "Tracer le site",
+      "undo": "Annuler le point",
+      "clear": "Effacer",
+      "hintEmpty": "Cliquez sur chaque coin du site",
+      "usingRadius": "Rayon utilisé",
+      "needMore": "{{count}} sur 3 points",
+      "summary": "{{points}} points · {{ha}} ha · {{span}} m de large",
+      "tooLarge": "trop grand pour être enregistré",
+      "tooManyPoints": "Une limite peut compter au maximum {{max}} points."
     }
   },
   "commandPalette": {

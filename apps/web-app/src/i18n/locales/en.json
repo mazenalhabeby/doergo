@@ -3673,6 +3673,18 @@
       "badge": "Default",
       "make": "Make default",
       "done": "{{name}} is now the default workspace."
+    },
+    "boundary": {
+      "modeRadius": "Radius",
+      "modeDraw": "Draw the site",
+      "undo": "Undo point",
+      "clear": "Clear",
+      "hintEmpty": "Click each corner of the site",
+      "usingRadius": "Using the radius",
+      "needMore": "{{count}} of 3 points",
+      "summary": "{{points}} points · {{ha}} ha · {{span}} m across",
+      "tooLarge": "too large to save",
+      "tooManyPoints": "A boundary can have at most {{max}} points."
     }
   },
   "commandPalette": {

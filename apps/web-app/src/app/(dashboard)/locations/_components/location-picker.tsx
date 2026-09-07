@@ -2,20 +2,36 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 import { BaseTiles } from "@/components/map/base-tiles"
-import { MapContainer, Marker, Circle, useMapEvents, useMap } from "react-leaflet"
+import { MapContainer, Marker, Circle, Polygon, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2, MapPin, Keyboard, LocateFixed } from "lucide-react"
+import { Search, Loader2, MapPin, Keyboard, LocateFixed, Spline, Undo2, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { notify } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { formatNominatimAddress, formatPhotonFeature, type PhotonProperties, type NominatimAddress } from "@/lib/geocode"
+import { polygonAreaSqm, GEOFENCE_POLYGON_LIMITS, type LatLng } from "@hbcfield/shared/client"
 
 import "leaflet/dist/leaflet.css"
 
 /** --brand-600. Leaflet draws on canvas, so it needs a resolved colour. */
 const BRAND_ACCENT = "#2563eb"
+/** --ok / emerald-600. Distinct from the radius circle so the two are never
+ *  confused while switching between them. Leaflet paints on a canvas and
+ *  cannot read a CSS variable, so this is resolved rather than tokenised. */
+const BOUNDARY_ACCENT = "#16a34a"
+
+/** A small square handle — visibly a control, unlike the address pin. */
+const vertexIcon = L.divIcon({
+  className: "",
+  html:
+    '<div style="width:12px;height:12px;border-radius:3px;background:#16a34a;' +
+    'border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:move"></div>',
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+})
 
 // Fix Leaflet default marker icon
 const markerIcon = new L.Icon({
@@ -45,6 +61,16 @@ interface LocationPickerProps {
   address: string
   onLocationChange: (lat: number, lng: number) => void
   onAddressChange: (address: string) => void
+  /**
+   * The drawn site boundary. When present it REPLACES the radius, because an
+   * address geocodes to the front door and a circle measured from there cannot
+   * describe a property with a yard or several buildings.
+   *
+   * Optional: callers that only need a pin (and every existing caller) pass
+   * neither, and the boundary UI does not appear at all.
+   */
+  polygon?: LatLng[] | null
+  onPolygonChange?: (ring: LatLng[] | null) => void
 }
 
 /** The two upstream geocoders, as much of them as this file reads. */
@@ -69,6 +95,23 @@ function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => v
   return null
 }
 
+/** Metres across the widest part of a ring — the number that tells an admin
+ *  at a glance whether they have drawn the property or the neighbourhood. */
+function widestSpanMetres(ring: LatLng[]): number {
+  let max = 0
+  for (let i = 0; i < ring.length; i++) {
+    for (let j = i + 1; j < ring.length; j++) {
+      const a = ring[i]
+      const b = ring[j]
+      if (!a || !b) continue
+      const dLat = (b.lat - a.lat) * 111_320
+      const dLng = (b.lng - a.lng) * 111_320 * Math.cos((a.lat * Math.PI) / 180)
+      max = Math.max(max, Math.hypot(dLat, dLng))
+    }
+  }
+  return max
+}
+
 function MapPanner({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
   useEffect(() => {
@@ -84,8 +127,15 @@ export default function LocationPicker({
   address,
   onLocationChange,
   onAddressChange,
+  polygon,
+  onPolygonChange,
 }: LocationPickerProps) {
   const { t } = useTranslation()
+  // Boundary editing is only offered when the caller wired the handler, so the
+  // picker keeps working unchanged everywhere it is used for a pin alone.
+  const canDrawBoundary = typeof onPolygonChange === "function"
+  const [drawing, setDrawing] = useState(false)
+  const ring = polygon ?? []
   const [searchQuery, setSearchQuery] = useState("")
   const [results, setResults] = useState<GeoResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -226,6 +276,20 @@ export default function LocationPicker({
 
   const handleMapClick = useCallback(
     async (clickLat: number, clickLng: number) => {
+      // While drawing, a click is a corner of the site — not a new pin. Sharing
+      // one handler keeps the map's own click wiring in one place.
+      if (drawing && onPolygonChange) {
+        if (ring.length >= GEOFENCE_POLYGON_LIMITS.MAX_POINTS) {
+          notify.error(
+            t("locations.boundary.tooManyPoints", "A boundary can have at most {{max}} points.", {
+              max: GEOFENCE_POLYGON_LIMITS.MAX_POINTS,
+            }),
+          )
+          return
+        }
+        onPolygonChange([...ring, { lat: clickLat, lng: clickLng }])
+        return
+      }
       onLocationChange(clickLat, clickLng)
       // Reverse geocode: prefer the server-side /geo/reverse proxy (no public
       // rate limits); fall back to Nominatim (zoom=18 for building-level detail).
@@ -249,7 +313,7 @@ export default function LocationPicker({
         // Ignore
       }
     },
-    [onLocationChange, onAddressChange, address]
+    [onLocationChange, onAddressChange, address, drawing, onPolygonChange, ring, t]
   )
 
   // Use the browser's geolocation, then drop the pin + reverse-geocode (reusing
@@ -331,6 +395,93 @@ export default function LocationPicker({
         )}
       </div>
 
+      {/*
+        The mode switch. A site with a yard or several buildings cannot be
+        described by a circle measured from its front door, so the admin draws
+        the property instead. Drawing is opt-in per site; a site with no
+        boundary behaves exactly as it always has.
+      */}
+      {canDrawBoundary && (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="flex">
+            <button
+              type="button"
+              onClick={() => setDrawing(false)}
+              aria-pressed={!drawing}
+              className={cn(
+                "rounded-l-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors",
+                !drawing ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {t("locations.boundary.modeRadius", "Radius")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrawing(true)}
+              aria-pressed={drawing}
+              className={cn(
+                "flex items-center gap-1.5 rounded-r-lg border border-l-0 border-border px-3 py-1.5 text-xs font-medium transition-colors",
+                drawing ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <Spline className="h-3.5 w-3.5" />
+              {t("locations.boundary.modeDraw", "Draw the site")}
+            </button>
+          </div>
+
+          {drawing && (
+            <>
+              <button
+                type="button"
+                onClick={() => onPolygonChange?.(ring.slice(0, -1))}
+                disabled={ring.length === 0}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                {t("locations.boundary.undo", "Undo point")}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPolygonChange?.(null)}
+                disabled={ring.length === 0}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("locations.boundary.clear", "Clear")}
+              </button>
+            </>
+          )}
+
+          {/*
+            The numbers that make a mistake obvious BEFORE it is saved: a
+            boundary accidentally drawn around the whole street reads as
+            hectares and hundreds of metres, and the server refuses it anyway.
+          */}
+          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+            {ring.length === 0
+              ? drawing
+                ? t("locations.boundary.hintEmpty", "Click each corner of the site")
+                : t("locations.boundary.usingRadius", "Using the radius")
+              : ring.length < GEOFENCE_POLYGON_LIMITS.MIN_POINTS
+                ? t("locations.boundary.needMore", "{{count}} of 3 points", { count: ring.length })
+                : (() => {
+                    const area = polygonAreaSqm(ring)
+                    const tooBig = area > GEOFENCE_POLYGON_LIMITS.MAX_AREA_SQM
+                    return (
+                      <span className={tooBig ? "font-medium text-destructive" : undefined}>
+                        {t("locations.boundary.summary", "{{points}} points · {{ha}} ha · {{span}} m across", {
+                          points: ring.length,
+                          ha: (area / 10_000).toFixed(2),
+                          span: Math.round(widestSpanMetres(ring)),
+                        })}
+                        {tooBig ? ` — ${t("locations.boundary.tooLarge", "too large to save")}` : ""}
+                      </span>
+                    )
+                  })()}
+          </span>
+        </div>
+      )}
+
       {/* Map */}
       <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 280 }}>
         {/* Locate-me button overlaid on the map */}
@@ -361,6 +512,9 @@ export default function LocationPicker({
             <>
               <MapPanner lat={lat} lng={lng} />
               <Marker position={[lat, lng]} icon={markerIcon} />
+              {/* The circle is hidden once a boundary exists: showing both
+                  would draw two different answers to the same question. */}
+              {ring.length < 3 && (
               <Circle
                 center={[lat, lng]}
                 radius={radius}
@@ -375,8 +529,44 @@ export default function LocationPicker({
                   weight: 2,
                 }}
               />
+              )}
             </>
           )}
+
+          {/* The drawn boundary, and a handle on every corner. */}
+          {ring.length >= 2 && (
+            <Polygon
+              positions={ring.map((p) => [p.lat, p.lng] as [number, number])}
+              pathOptions={{
+                color: BOUNDARY_ACCENT,
+                fillColor: BOUNDARY_ACCENT,
+                fillOpacity: 0.15,
+                weight: 2,
+              }}
+            />
+          )}
+          {onPolygonChange &&
+            ring.map((point, i) => (
+              <Marker
+                key={i}
+                position={[point.lat, point.lng]}
+                icon={vertexIcon}
+                draggable
+                eventHandlers={{
+                  dragend(e) {
+                    const { lat: nlat, lng: nlng } = (e.target as L.Marker).getLatLng()
+                    const next = [...ring]
+                    next[i] = { lat: nlat, lng: nlng }
+                    onPolygonChange(next)
+                  },
+                  // A corner in the wrong place is far more common than a
+                  // corner too few, so click-to-remove is on the handle itself.
+                  click() {
+                    onPolygonChange(ring.filter((_, j) => j !== i))
+                  },
+                }}
+              />
+            ))}
         </MapContainer>
       </div>
 

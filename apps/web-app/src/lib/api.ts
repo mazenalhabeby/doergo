@@ -4024,6 +4024,12 @@ export interface CreateLocationInput {
   lat?: number;
   lng?: number;
   geofenceRadius?: number;
+  /**
+   * The site's drawn outline. When set it REPLACES the radius — an address
+   * geocodes to the front door, so a circle measured from there cannot
+   * describe a property with a yard or several buildings. `null` clears it.
+   */
+  geofencePolygon?: { lat: number; lng: number }[] | null;
   timezone?: string;
   enabledModules?: string[];
   workflowId?: string;
@@ -4041,6 +4047,12 @@ export interface UpdateLocationInput {
   lat?: number | null;
   lng?: number | null;
   geofenceRadius?: number;
+  /**
+   * The site's drawn outline. When set it REPLACES the radius — an address
+   * geocodes to the front door, so a circle measured from there cannot
+   * describe a property with a yard or several buildings. `null` clears it.
+   */
+  geofencePolygon?: { lat: number; lng: number }[] | null;
   timezone?: string;
   isActive?: boolean;
   enabledModules?: string[];

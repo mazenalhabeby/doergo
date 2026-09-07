@@ -3682,6 +3682,18 @@
       "badge": "Predefinito",
       "make": "Imposta come predefinito",
       "done": "{{name}} è ora lo spazio predefinito."
+    },
+    "boundary": {
+      "modeRadius": "Raggio",
+      "modeDraw": "Disegna il sito",
+      "undo": "Annulla punto",
+      "clear": "Cancella",
+      "hintEmpty": "Faccia clic su ogni angolo del sito",
+      "usingRadius": "Si usa il raggio",
+      "needMore": "{{count}} di 3 punti",
+      "summary": "{{points}} punti · {{ha}} ha · {{span}} m di larghezza",
+      "tooLarge": "troppo grande per salvare",
+      "tooManyPoints": "Un confine può avere al massimo {{max}} punti."
     }
   },
   "commandPalette": {

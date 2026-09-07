@@ -17,6 +17,13 @@ export interface CompanyLocation {
   lat: number;
   lng: number;
   geofenceRadius: number;
+  /**
+   * The site's drawn outline, when one exists. Present on the type so every
+   * client can ask `isAtSite` the same question the server asks — a client that
+   * only knows about the radius shows "out of range" to somebody the server is
+   * happily accepting, which is worse than showing nothing.
+   */
+  geofencePolygon?: { lat: number; lng: number }[] | null;
   timezone: string;
   isActive: boolean;
   createdAt: string;

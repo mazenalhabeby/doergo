@@ -9,8 +9,9 @@ import {
   MaxLength,
   Min,
   Max,
+  ArrayMaxSize,
 } from 'class-validator';
-import { ATTENDANCE_CONSTANTS, WorkModel, SpaceKind } from '@hbcfield/shared';
+import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } from '@hbcfield/shared';
 import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY } from '@hbcfield/shared';
 
 export class CreateLocationDto {
@@ -62,6 +63,31 @@ export class CreateLocationDto {
   @Min(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS)
   @Max(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS)
   geofenceRadius?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "The site's outline as [{lat,lng}]. When set it replaces the radius — an " +
+      'address geocodes to the front door, so a circle cannot describe a property ' +
+      'with a yard or several buildings. Validated server-side for point count, ' +
+      'coordinate range and total area.',
+    type: 'array',
+    items: { type: 'object', properties: { lat: { type: 'number' }, lng: { type: 'number' } } },
+  })
+  @IsArray()
+  @ArrayMaxSize(GEOFENCE_POLYGON_LIMITS.MAX_POINTS)
+  @IsOptional()
+  /*
+    Deliberately NOT validated point-by-point here. The real rules — coordinate
+    ranges, the closed-ring convention and the maximum area — live in
+    `validateGeofencePolygon` in the shared package, which is also what the
+    service calls before writing. Duplicating half of them in a decorator gives
+    two definitions of a valid boundary that drift.
+
+    The size cap stays at this edge so a hostile payload is rejected before it
+    is parsed at all.
+  */
+  geofencePolygon?: { lat: number; lng: number }[];
+
 
   @ApiPropertyOptional({
     example: 'America/New_York',
