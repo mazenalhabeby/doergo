@@ -20,7 +20,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
 import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
 import { oversees } from '../../../src/lib/permissions';
-import { hasRouteToPlan } from '../../../src/lib/my-route';
+import { countRouteStops } from '../../../src/lib/my-route';
 import { TaskCard, FilterChip, Skeleton, ScreenContainer, PressableScale } from '../../../src/components';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TourTarget } from '../../../src/components/tour';
@@ -323,10 +323,13 @@ export default function TasksScreen() {
     windows (what is coming, what is done), and letting them answer made the
     banner blink out the moment somebody looked at their history.
   */
-  const [hasRoute, setHasRoute] = useState(false);
+  // Stops drive both the banner's visibility and what it says, so they are
+  // one number rather than two answers that could disagree.
+  const [routeStops, setRouteStops] = useState(0);
+  const hasRoute = routeStops > 0;
   useEffect(() => {
     if (activeTab !== 'current' || isLoading) return;
-    setHasRoute(hasRouteToPlan(tasks, user?.id));
+    setRouteStops(countRouteStops(tasks, user?.id));
   }, [activeTab, isLoading, tasks, user?.id]);
 
   // Derive blocked tasks from existing fetched data (no extra API call)
@@ -471,18 +474,32 @@ export default function TasksScreen() {
         onPress={() => router.push('/(app)/route-planner')}
         activeScale={0.97}
         style={styles.planRouteWrap}
+        accessibilityRole="button"
+        accessibilityLabel={t('route.planRouteA11y', {
+          defaultValue: 'Plan my route, {{count}} stops',
+          count: routeStops,
+        })}
       >
         <LinearGradient
-          colors={['#10b981', COLORS.primary, COLORS.primaryDark]}
+          colors={[COLORS.primary, COLORS.primaryDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.planRouteGradient}
         >
           <View style={styles.planRouteIconChip}>
-            <Ionicons name="navigate" size={18} color="#fff" />
+            <Ionicons name="navigate" size={17} color="#fff" />
           </View>
-          <Text style={styles.planRouteText}>{t('route.planRoute', 'Plan my route')}</Text>
-          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.85)" />
+          <View style={styles.planRouteCopy}>
+            <Text style={styles.planRouteText}>{t('route.planRoute', 'Plan my route')}</Text>
+            {/* The one fact that makes the band worth its width: two stops is a
+                detour, nine is the morning. */}
+            <Text style={styles.planRouteMeta} numberOfLines={1}>
+              {t('route.stopCount', { defaultValue: '{{count}} stops', count: routeStops })}
+            </Text>
+          </View>
+          <View style={styles.planRouteChevron}>
+            <Ionicons name="chevron-forward" size={15} color="#fff" />
+          </View>
         </LinearGradient>
       </PressableScale>
       )}
@@ -714,27 +731,52 @@ const styles = StyleSheet.create({
   planRouteGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.md,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    // A highlight along the top edge rather than a full outline: it reads as a
+    // raised surface catching light, where an even border reads as a box.
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   planRouteIconChip: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  // Title and count share a column so the chevron stays vertically centred on
+  // the pair rather than on the title alone.
+  planRouteCopy: {
+    flex: 1,
+    gap: 1,
   },
   planRouteText: {
-    flex: 1,
     color: '#fff',
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.bold as any,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+  },
+  planRouteMeta: {
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.medium as any,
+    letterSpacing: 0.2,
+  },
+  // The chevron gets a target of its own so the arrow is not a lone glyph
+  // floating at the edge of a large coloured band.
+  planRouteChevron: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
   },
   searchInput: {
     flex: 1,

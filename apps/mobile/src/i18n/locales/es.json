@@ -1756,7 +1756,11 @@
     "stops": "Paradas",
     "title": "Planificar mi ruta",
     "todaysStops": "Hoy",
-    "useMyLocation": "Usar mi ubicación"
+    "useMyLocation": "Usar mi ubicación",
+    "stopCount_one": "{{count}} parada",
+    "stopCount_other": "{{count}} paradas",
+    "planRouteA11y_one": "Planificar mi ruta, {{count}} parada",
+    "planRouteA11y_other": "Planificar mi ruta, {{count}} paradas"
   },
   "worklog": {
     "button": "Actividad",

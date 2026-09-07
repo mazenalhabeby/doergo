@@ -1756,7 +1756,11 @@
     "stops": "Arrêts",
     "title": "Planifier mon itinéraire",
     "todaysStops": "Aujourd’hui",
-    "useMyLocation": "Utiliser ma position"
+    "useMyLocation": "Utiliser ma position",
+    "stopCount_one": "{{count}} arrêt",
+    "stopCount_other": "{{count}} arrêts",
+    "planRouteA11y_one": "Planifier mon itinéraire, {{count}} arrêt",
+    "planRouteA11y_other": "Planifier mon itinéraire, {{count}} arrêts"
   },
   "worklog": {
     "button": "Activité",

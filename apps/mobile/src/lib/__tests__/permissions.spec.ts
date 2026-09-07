@@ -1,6 +1,6 @@
 import { holds, holdsOrgWide, oversees } from '../permissions';
 import { manageRowsFor, hasManageSurface } from '../manage-rows';
-import { isMyRouteStop, hasRouteToPlan } from '../my-route';
+import { isMyRouteStop, countRouteStops } from '../my-route';
 
 /**
  * What the mobile app decides on its own.
@@ -133,15 +133,15 @@ describe('planning my route', () => {
   });
 
   it('offers the banner only when there is a route to plan', () => {
-    expect(hasRouteToPlan([job()], me)).toBe(true);
-    expect(hasRouteToPlan([job({ assignedToId: 'other' })], me)).toBe(false);
-    expect(hasRouteToPlan([], me)).toBe(false);
+    expect(countRouteStops([job()], me) > 0).toBe(true);
+    expect(countRouteStops([job({ assignedToId: 'other' })], me) > 0).toBe(false);
+    expect(countRouteStops([], me) > 0).toBe(false);
     // A supervisor: everything on their list belongs to somebody else.
-    expect(hasRouteToPlan([job({ assignedToId: 'a' }), job({ assignedToId: 'b' })], me)).toBe(false);
+    expect(countRouteStops([job({ assignedToId: 'a' }), job({ assignedToId: 'b' })], me) > 0).toBe(false);
   });
 
   it('answers false with no signed-in user rather than guessing', () => {
-    expect(hasRouteToPlan([job()], undefined)).toBe(false);
+    expect(countRouteStops([job()], undefined) > 0).toBe(false);
   });
 
   /*
@@ -152,7 +152,7 @@ describe('planning my route', () => {
   */
   it('ignores a job whose flow has no travel step, address or not', () => {
     expect(isMyRouteStop(job({ tracksLocation: false }), me)).toBe(false);
-    expect(hasRouteToPlan([job({ tracksLocation: false })], me)).toBe(false);
+    expect(countRouteStops([job({ tracksLocation: false })], me) > 0).toBe(false);
   });
 
   it('counts a job whose flow does travel', () => {
@@ -164,9 +164,9 @@ describe('planning my route', () => {
       job({ id: 'a', tracksLocation: false }),
       job({ id: 'b', tracksLocation: false }),
     ];
-    expect(hasRouteToPlan(deskWork, me)).toBe(false);
+    expect(countRouteStops(deskWork, me) > 0).toBe(false);
     // One travelling job among them is enough to make a route worth planning.
-    expect(hasRouteToPlan([...deskWork, job({ id: 'c', tracksLocation: true })], me)).toBe(true);
+    expect(countRouteStops([...deskWork, job({ id: 'c', tracksLocation: true })], me) > 0).toBe(true);
   });
 
   /*
@@ -175,6 +175,27 @@ describe('planning my route', () => {
     would take the button away from every field worker at once, everywhere,
     with nothing on screen to explain it.
   */
+  it('counts exactly the stops the banner is offered for', () => {
+    // Counted from the same predicate, so the band can never advertise a
+    // number the planner behind it does not have.
+    const list = [
+      job({ id: 'a' }),
+      job({ id: 'b', tracksLocation: true }),
+      job({ id: 'c', tracksLocation: false }),   // desk work
+      job({ id: 'd', assignedToId: 'other' }),   // somebody else's
+      job({ id: 'e', status: 'COMPLETED' }),     // done
+      job({ id: 'f', locationLat: undefined }),  // nowhere to go
+    ];
+    expect(countRouteStops(list, me)).toBe(2);
+    expect(countRouteStops(list, me) > 0).toBe(true);
+  });
+
+  it('counts nothing when the banner is withheld', () => {
+    expect(countRouteStops([job({ tracksLocation: false })], me)).toBe(0);
+    expect(countRouteStops([], me)).toBe(0);
+    expect(countRouteStops([job()], undefined)).toBe(0);
+  });
+
   it('keeps the old behaviour when the server does not send the field', () => {
     expect(isMyRouteStop(job(), me)).toBe(true);
     expect(isMyRouteStop(job({ tracksLocation: undefined }), me)).toBe(true);

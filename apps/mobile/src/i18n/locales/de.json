@@ -1756,7 +1756,11 @@
     "stops": "Halte",
     "title": "Meine Route planen",
     "todaysStops": "Heute",
-    "useMyLocation": "Meinen Standort verwenden"
+    "useMyLocation": "Meinen Standort verwenden",
+    "stopCount_one": "{{count}} Stopp",
+    "stopCount_other": "{{count}} Stopps",
+    "planRouteA11y_one": "Meine Route planen, {{count}} Stopp",
+    "planRouteA11y_other": "Meine Route planen, {{count}} Stopps"
   },
   "worklog": {
     "button": "Aktivität",

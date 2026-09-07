@@ -51,7 +51,22 @@ export function isMyRouteStop(task: Task, userId?: string | null): boolean {
   return tracks !== false;
 }
 
-/** Is there anything to plan? Drives whether the banner is offered at all. */
-export function hasRouteToPlan(tasks: Task[], userId?: string | null): boolean {
-  return tasks.some((t) => isMyRouteStop(t, userId));
+/**
+ * How many stops that route would have — and, at zero, whether to offer the
+ * banner at all.
+ *
+ * There was a separate `hasRouteToPlan` that short-circuited on the first
+ * match. It went when the banner started SAYING the count: two ways to ask one
+ * question is one of them drifting later, and the caller needs the number
+ * regardless, so the walk is not extra work.
+ *
+ * The banner is a full-width band that said only "Plan my route", which is a
+ * button describing itself rather than the day. The count is the one fact that
+ * makes it worth its space: two stops is a detour, nine is the morning.
+ *
+ * Derived from the same predicate as the banner, never counted separately — a
+ * button that appears and then says "0 stops" is worse than no button.
+ */
+export function countRouteStops(tasks: Task[], userId?: string | null): number {
+  return tasks.reduce((n, t) => (isMyRouteStop(t, userId) ? n + 1 : n), 0);
 }

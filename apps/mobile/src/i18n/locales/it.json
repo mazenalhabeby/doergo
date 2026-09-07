@@ -1756,7 +1756,11 @@
     "stops": "Tappe",
     "title": "Pianifica il mio percorso",
     "todaysStops": "Oggi",
-    "useMyLocation": "Usa la mia posizione"
+    "useMyLocation": "Usa la mia posizione",
+    "stopCount_one": "{{count}} tappa",
+    "stopCount_other": "{{count}} tappe",
+    "planRouteA11y_one": "Pianifica il mio percorso, {{count}} tappa",
+    "planRouteA11y_other": "Pianifica il mio percorso, {{count}} tappe"
   },
   "worklog": {
     "button": "Attività",

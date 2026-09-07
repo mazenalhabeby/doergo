@@ -1699,7 +1699,11 @@
     "driveTime": "Drive time",
     "stops": "Stops",
     "openFull": "Open full route",
-    "navigate": "Go"
+    "navigate": "Go",
+    "stopCount_one": "{{count}} stop",
+    "stopCount_other": "{{count}} stops",
+    "planRouteA11y_one": "Plan my route, {{count}} stop",
+    "planRouteA11y_other": "Plan my route, {{count}} stops"
   },
   "billing": {
     "locked": {
