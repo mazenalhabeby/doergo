@@ -3684,7 +3684,8 @@
       "needMore": "{{count}} of 3 points",
       "summary": "{{points}} points · {{ha}} ha · {{span}} m across",
       "tooLarge": "too large to save",
-      "tooManyPoints": "A boundary can have at most {{max}} points."
+      "tooManyPoints": "A boundary can have at most {{max}} points.",
+      "radiusSuperseded": "The drawn site is used instead. Clear it to go back to a radius."
     }
   },
   "commandPalette": {

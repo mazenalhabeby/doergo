@@ -68,6 +68,8 @@ export function SpaceForm({
   const [lng, setLng] = useState<number | null>(null)
   const [radius, setRadius] = useState(String(GEO_DEFAULT))
   const [polygon, setPolygon] = useState<LatLng[] | null>(null)
+  /** A drawn boundary supersedes the radius — the check never reads it. */
+  const hasBoundary = (polygon?.length ?? 0) >= 3
   // Auto-derived from the picked coordinates (admin can override with the
   // searchable picker); backend also auto-derives if this is empty.
   const [timezone, setTimezone] = useState("")
@@ -277,9 +279,17 @@ export function SpaceForm({
               <p className="text-xs text-muted-foreground">{t("locations.timezoneAutoHint")}</p>
             </div>
           )}
+          {/*
+            A drawn boundary REPLACES this — `isAtSite` checks the shape and
+            never reads the radius. Left visible but inert rather than hidden:
+            the value survives clearing the boundary, and a control that
+            disappears is its own kind of confusing.
+          */}
           <div className="space-y-2">
-            <Label htmlFor="space-radius">{t("locations.form.geofenceRadius")}</Label>
-            <div className="flex items-center gap-3">
+            <Label htmlFor="space-radius" className={hasBoundary ? "text-muted-foreground" : undefined}>
+              {t("locations.form.geofenceRadius")}
+            </Label>
+            <div className={cn("flex items-center gap-3", hasBoundary && "opacity-50")}>
               <Input
                 id="space-radius"
                 type="number"
@@ -287,6 +297,7 @@ export function SpaceForm({
                 max={GEO_MAX}
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
+                disabled={hasBoundary}
                 className="w-24"
               />
               <input
@@ -295,11 +306,19 @@ export function SpaceForm({
                 max={GEO_MAX}
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
+                disabled={hasBoundary}
                 className="flex-1 accent-blue-600"
               />
               <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
             </div>
-            <p className="text-xs text-muted-foreground">{t("locations.form.geofenceHint")}</p>
+            <p className="text-xs text-muted-foreground">
+              {hasBoundary
+                ? t(
+                    "locations.boundary.radiusSuperseded",
+                    "The drawn site is used instead. Clear it to go back to a radius.",
+                  )
+                : t("locations.form.geofenceHint")}
+            </p>
           </div>
         </div>
       )}

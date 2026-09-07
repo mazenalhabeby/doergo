@@ -54,6 +54,8 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [polygon, setPolygon] = useState<LatLng[] | null>(
     parseGeofencePolygon((space as { geofencePolygon?: unknown }).geofencePolygon),
   )
+  /** A drawn boundary supersedes the radius — see the note by the field. */
+  const hasBoundary = (polygon?.length ?? 0) >= 3
   const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
   // Ownership classification (separate axis from workspace/physical).
   const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">(
@@ -443,7 +445,18 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
           {isPhysical ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="cfg-radius">{t("locations.geofenceRadius")}</Label>
+                <Label htmlFor="cfg-radius" className={hasBoundary ? "text-muted-foreground" : undefined}>
+                  {t("locations.geofenceRadius")}
+                </Label>
+                {/*
+                  A drawn boundary REPLACES the radius — `isAtSite` checks the
+                  shape and never looks at this number. Leaving the field live
+                  offers a control that silently does nothing, which is how
+                  somebody spends an afternoon adjusting a radius that was never
+                  being read. Disabled and explained, rather than hidden: a
+                  control that vanishes is its own kind of confusing, and the
+                  value is still there when the boundary is cleared.
+                */}
                 <div className="relative w-40">
                   <Input
                     id="cfg-radius"
@@ -452,12 +465,21 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                     max={GEO_MAX}
                     value={radius}
                     onChange={(e) => setRadius(e.target.value)}
+                    disabled={hasBoundary}
                     className="pr-8"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                     m
                   </span>
                 </div>
+                {hasBoundary && (
+                  <p className="text-[11px] leading-snug text-muted-foreground/80">
+                    {t(
+                      "locations.boundary.radiusSuperseded",
+                      "The drawn site is used instead. Clear it to go back to a radius.",
+                    )}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>

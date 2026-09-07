@@ -10,9 +10,26 @@ import {
   Min,
   Max,
   ArrayMaxSize,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } from '@hbcfield/shared';
 import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY } from '@hbcfield/shared';
+
+/** One corner of a drawn site boundary. */
+export class GeoPointDto {
+  @ApiProperty({ example: 48.135048 })
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat!: number;
+
+  @ApiProperty({ example: 11.595039 })
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng!: number;
+}
 
 export class CreateLocationDto {
   @ApiProperty({
@@ -66,27 +83,33 @@ export class CreateLocationDto {
 
   @ApiPropertyOptional({
     description:
-      "The site's outline as [{lat,lng}]. When set it replaces the radius — an " +
-      'address geocodes to the front door, so a circle cannot describe a property ' +
-      'with a yard or several buildings. Validated server-side for point count, ' +
-      'coordinate range and total area.',
-    type: 'array',
-    items: { type: 'object', properties: { lat: { type: 'number' }, lng: { type: 'number' } } },
+      "The site's outline. When set it replaces the radius — an address geocodes " +
+      'to the front door, so a circle cannot describe a property with a yard or ' +
+      'several buildings. Area and ring rules are enforced server-side.',
+    type: () => [GeoPointDto],
   })
   @IsArray()
   @ArrayMaxSize(GEOFENCE_POLYGON_LIMITS.MAX_POINTS)
+  @ValidateNested({ each: true })
+  @Type(() => GeoPointDto)
   @IsOptional()
   /*
-    Deliberately NOT validated point-by-point here. The real rules — coordinate
-    ranges, the closed-ring convention and the maximum area — live in
-    `validateGeofencePolygon` in the shared package, which is also what the
-    service calls before writing. Duplicating half of them in a decorator gives
-    two definitions of a valid boundary that drift.
+    ⚠️ THE POINTS MUST BE A REAL NESTED DTO, not a bare `{lat,lng}[]`.
 
-    The size cap stays at this edge so a hostile payload is rejected before it
-    is parsed at all.
+    The pipe runs with `whitelist: true`, which strips any property carrying no
+    validation decorator — including the contents of nested objects. With the
+    array typed only in TypeScript, every point arrived at the service as `{}`
+    and the boundary was refused as "not a valid coordinate" while the browser
+    had sent perfectly good numbers. TypeScript types are gone at runtime;
+    `@Type` is what tells the transformer these objects have a shape worth
+    keeping.
+
+    The coordinate ranges are therefore stated twice — here, because the pipe
+    demands it, and in `validateGeofencePolygon`, which is the one the service
+    trusts and which also enforces the ring and area rules that no decorator
+    can express.
   */
-  geofencePolygon?: { lat: number; lng: number }[];
+  geofencePolygon?: GeoPointDto[];
 
 
   @ApiPropertyOptional({

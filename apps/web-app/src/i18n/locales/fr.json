@@ -3693,7 +3693,8 @@
       "needMore": "{{count}} sur 3 points",
       "summary": "{{points}} points · {{ha}} ha · {{span}} m de large",
       "tooLarge": "trop grand pour être enregistré",
-      "tooManyPoints": "Une limite peut compter au maximum {{max}} points."
+      "tooManyPoints": "Une limite peut compter au maximum {{max}} points.",
+      "radiusSuperseded": "C'est le site tracé qui s'applique. Effacez-le pour revenir à un rayon."
     }
   },
   "commandPalette": {

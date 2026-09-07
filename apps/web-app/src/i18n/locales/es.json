@@ -3684,7 +3684,8 @@
       "needMore": "{{count}} de 3 puntos",
       "summary": "{{points}} puntos · {{ha}} ha · {{span}} m de ancho",
       "tooLarge": "demasiado grande para guardar",
-      "tooManyPoints": "Un límite puede tener como máximo {{max}} puntos."
+      "tooManyPoints": "Un límite puede tener como máximo {{max}} puntos.",
+      "radiusSuperseded": "En su lugar se usa el recinto dibujado. Bórrelo para volver a un radio."
     }
   },
   "commandPalette": {

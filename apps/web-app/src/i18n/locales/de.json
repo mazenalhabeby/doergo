@@ -3684,7 +3684,8 @@
       "needMore": "{{count}} von 3 Punkten",
       "summary": "{{points}} Punkte · {{ha}} ha · {{span}} m breit",
       "tooLarge": "zu groß zum Speichern",
-      "tooManyPoints": "Eine Grenze darf höchstens {{max}} Punkte haben."
+      "tooManyPoints": "Eine Grenze darf höchstens {{max}} Punkte haben.",
+      "radiusSuperseded": "Stattdessen gilt das eingezeichnete Gelände. Löschen Sie es, um wieder einen Radius zu verwenden."
     }
   },
   "commandPalette": {
