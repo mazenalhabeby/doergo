@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { SectionHeader } from "./section-header"
 import { ModuleUsageTabs } from "./module-usage-tabs"
+import { ExplainerButton } from "@/components/explainer/explainer-button"
 
 export function ModulesTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -229,6 +230,17 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
               >
                 <div className="flex-1 min-w-0 mr-3">
                   <span className="text-sm font-medium text-foreground">{t(moduleI18n.label(mod.key), { defaultValue: mod.label })}</span>
+                  {/* This row is a <label> around the toggle, so the button
+                      stops its own click — otherwise opening the help also
+                      switches the module. See ExplainerButton. */}
+                  <ExplainerButton
+                    explainerKey={mod.key}
+                    title={t(moduleI18n.label(mod.key), { defaultValue: mod.label })}
+                    scope="workspace"
+                    priceLabel={`${formatCents(moduleMonthlyCents(mod.key))}${t("billing.perMonthShort", "/mo")}`}
+                    enabled={isEnabled}
+                    className="ml-1.5 align-middle"
+                  />
                   {/* The price sits on the row being toggled. Anywhere else and
                       somebody has to hold two screens in their head to answer
                       "what does this one cost". */}

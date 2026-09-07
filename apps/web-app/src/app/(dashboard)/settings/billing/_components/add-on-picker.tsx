@@ -114,10 +114,9 @@ export function AddOnPicker({
                       <div className="min-w-0">
                         <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                           {label(a)}
-                          <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                            {formatCents(a.monthlyCents)}
-                            {t('billing.addOns.perMonth', '/mo')}
-                          </span>
+                          {/* Beside the NAME, not after the price: the modules
+                              list carries a variable number of price chips, and
+                              the two screens should read the same way. */}
                           <ExplainerButton
                             explainerKey={a.key}
                             title={label(a)}
@@ -125,6 +124,10 @@ export function AddOnPicker({
                             priceLabel={`${formatCents(a.monthlyCents)}${t('billing.addOns.perMonth', '/mo')}`}
                             enabled={on}
                           />
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                            {formatCents(a.monthlyCents)}
+                            {t('billing.addOns.perMonth', '/mo')}
+                          </span>
                         </p>
                         <p className="text-xs text-muted-foreground">{description(a)}</p>
                       </div>

@@ -80,8 +80,16 @@ export function ExplainerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-4rem)] gap-0 overflow-hidden p-0 sm:max-w-[640px]">
-        <DialogHeader className="flex-row items-start gap-3.5 space-y-0 border-b border-border px-5 py-4 text-left">
+      {/*
+        `flex flex-col` is load-bearing. DialogContent is a grid by default, so
+        with only `overflow-hidden` the body had no height to shrink into: it
+        grew past the dialog and everything below the fold was simply clipped
+        away, with no scrollbar to reveal it. The column gives the body a
+        bounded track, and `min-h-0` below lets it actually shrink — without it
+        a flex child refuses to go below its content height and clips again.
+      */}
+      <DialogContent className="flex max-h-[calc(100dvh-4rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[640px]">
+        <DialogHeader className="flex shrink-0 flex-row items-start gap-3.5 space-y-0 border-b border-border px-5 py-4 text-left">
           <span
             aria-hidden
             className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
@@ -114,7 +122,7 @@ export function ExplainerDialog({
           </div>
         </DialogHeader>
 
-        <div className="overflow-y-auto px-5 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
           {!ready ? (
             <div className="flex items-center justify-center gap-2 py-14 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
