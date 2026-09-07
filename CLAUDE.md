@@ -1224,6 +1224,50 @@ docker exec -it hbcfield-redis redis-cli
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
 
+### Recently Completed (2026-09-08) — Draw the site, sell to clients, drive the route
+
+**PROD `600bf7f4`** (rollback tag `prod-pre-route-planner` → `61f94c09`; migration
+`20260907190000_geofence_polygon`, additive; backup `pre-route-planner_20260907_224253.sql.gz`,
+1.8M/103 tables). Verified after deploy: 13 sites, radius range **15–100 unchanged** — the
+migration moved the DEFAULT for new sites only. Detail in memory `route-planner-and-visits`.
+
+- **A site can be DRAWN, not just circled.** `CompanyLocation.geofencePolygon` beats the radius
+  when present; `isAtSite()` in shared is the single rule for "is this person at the site",
+  and the radius field greys out with a note when a boundary exists.
+  - ⚠️ The radius slider is **logarithmic**. Raising the cap 100→500 put a 50m radius at 8% of
+    the track instead of 44% — the number never changed and it read as "clicking Draw changed
+    my radius". Half the track now covers 10–75m.
+  - ⚠️ The boundary map opens into a **dialog of its own**. Three attempts to grow it in place
+    failed: a transformed ancestor becomes the containing block for `fixed`, then
+    `overflow-y-auto` clips it, and asking the host to widen worked in one surface and did
+    nothing in the other.
+- **Sales Rep** is a built-in role — `crmViewOwn + crmWork + crmEditInfo + canCreateTasks`.
+  No migration: `listAccessRoles` upserts built-ins per org.
+  - ⚠️ **ORG scope is load-bearing** — `resolveCrmCaps` reads CRM keys off the member's org
+    role only, so a space-scoped sales role grants nothing while looking configured.
+  - ⚠️ **Never add `canViewAllTasks` to it.** The resolver treats it as the legacy "read every
+    client", so the rep would silently gain the whole organization's book. A test pins this.
+- **A task can be a client visit.** Pick the client in the New Task dialog (only where the
+  workspace runs CRM) and the task takes their address as its GPS destination; a text-only
+  address is geocoded once on selection.
+  - ⚠️ Reading only the address ROWS was wrong on real data — most clients carry the address
+    on the client RECORD and have no rows at all.
+  - ⚠️ `GET /customers?spaceId=X&includeUnfiled=true` exists because clients filed in **no**
+    workspace are the majority in a real book; scoping strictly showed an empty picker.
+- **Routes follow roads.** Google Routes API answers order + geometry in one call
+  (**Google → OSRM → nearest-neighbour**). ⚠️ The last engine returns an order and **no
+  geometry** — pins with no line between them means no engine was configured. Billed per
+  request, so it runs on Optimize and never on a screen opening.
+- **`tracksLocation`** on the task list says whether a task's flow has a travel step, resolved
+  through the per-org workflow cache (one lookup per distinct flow, no statuses join on the
+  hot path). Field Service/Logistics/Sales travel; Support/Office/Inspection do not.
+
+> ⚠️ **The mobile half is BUILT and NOT SHIPPED.** The map-first route planner, nav-app
+> detection and resume-from-here are committed but not OTA'd, because (1) nav-app detection is
+> **native config** (iOS `LSApplicationQueriesSchemes`, Android `<queries>`) and needs a BUILD,
+> and (2) the planner is gesture-heavy and its crash fix is unconfirmed on a device.
+> ⚠️ `eas update` inlines `EXPO_PUBLIC_API_URL` from the local `.env` (localhost) — set it inline.
+
 ### Recently Completed (2026-09-07) — The site got heavy: static through Node, five languages in one chunk
 
 **PROD `0996f528`** (rollback tag `prod-pre-static-i18n` → `fa5209b4`; no migrations, web-app image only). Raised by a US user reporting slowness. The server was idle — 15ms responses, load 0.62/8. The weight was on the wire, and a ~200ms round trip made Europe unable to feel it. Detail in memory `web-perf-static-and-i18n`.
