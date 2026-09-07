@@ -1770,7 +1770,11 @@
     "estimatedOnly": "Solo orden y estimaciones: no hay ruta por carretera disponible.",
     "chooseApp": "Abrir con",
     "navFailed": "No se pudo abrir esa app de mapas.",
-    "multiStopNote": "Iniciar navegación abre la ruta completa. Usa la flecha junto a una parada para ir solo a esa."
+    "multiStopNote": "Iniciar navegación abre la ruta completa. Usa la flecha junto a una parada para ir solo a esa.",
+    "continueNav": "Continuar ruta",
+    "allDone": "Todas las paradas de esta ruta están hechas.",
+    "remaining_one": "queda {{left}} de {{total}} paradas",
+    "remaining_other": "quedan {{left}} de {{total}} paradas"
   },
   "worklog": {
     "button": "Actividad",

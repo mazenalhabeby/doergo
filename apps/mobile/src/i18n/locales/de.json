@@ -1770,7 +1770,11 @@
     "estimatedOnly": "Nur Reihenfolge und Schätzwerte — keine Straßenroute verfügbar.",
     "chooseApp": "Öffnen mit",
     "navFailed": "Diese Karten-App konnte nicht geöffnet werden.",
-    "multiStopNote": "„Navigation starten“ öffnet die gesamte Route. Über den Pfeil neben einem Stopp fahren Sie nur dorthin."
+    "multiStopNote": "„Navigation starten“ öffnet die gesamte Route. Über den Pfeil neben einem Stopp fahren Sie nur dorthin.",
+    "continueNav": "Route fortsetzen",
+    "allDone": "Alle Stopps dieser Route sind erledigt.",
+    "remaining_one": "noch {{left}} von {{total}} Stopps",
+    "remaining_other": "noch {{left}} von {{total}} Stopps"
   },
   "worklog": {
     "button": "Aktivität",

@@ -1713,7 +1713,11 @@
     "estimatedOnly": "Order and estimates only — no road route available.",
     "chooseApp": "Open with",
     "navFailed": "Could not open that map app.",
-    "multiStopNote": "Start navigation opens the whole route. Use the arrow beside a stop to drive to just that one."
+    "multiStopNote": "Start navigation opens the whole route. Use the arrow beside a stop to drive to just that one.",
+    "continueNav": "Continue route",
+    "allDone": "Every stop on this route is done.",
+    "remaining_one": "{{left}} of {{total}} stops left",
+    "remaining_other": "{{left}} of {{total}} stops left"
   },
   "billing": {
     "locked": {

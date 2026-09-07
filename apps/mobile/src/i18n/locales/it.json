@@ -1770,7 +1770,11 @@
     "estimatedOnly": "Solo ordine e stime — nessun percorso stradale disponibile.",
     "chooseApp": "Apri con",
     "navFailed": "Impossibile aprire quell’app di mappe.",
-    "multiStopNote": "Avvia navigazione apre l’intero percorso. Usa la freccia accanto a una tappa per raggiungere solo quella."
+    "multiStopNote": "Avvia navigazione apre l’intero percorso. Usa la freccia accanto a una tappa per raggiungere solo quella.",
+    "continueNav": "Continua percorso",
+    "allDone": "Tutte le tappe di questo percorso sono completate.",
+    "remaining_one": "{{left}} tappa su {{total}} rimasta",
+    "remaining_other": "{{left}} tappe su {{total}} rimaste"
   },
   "worklog": {
     "button": "Attività",

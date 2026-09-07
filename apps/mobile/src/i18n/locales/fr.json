@@ -1770,7 +1770,11 @@
     "estimatedOnly": "Ordre et estimations uniquement — aucun itinéraire routier disponible.",
     "chooseApp": "Ouvrir avec",
     "navFailed": "Impossible d’ouvrir cette application de cartes.",
-    "multiStopNote": "« Démarrer la navigation » ouvre tout l’itinéraire. Utilisez la flèche à côté d’un arrêt pour n’y aller que lui."
+    "multiStopNote": "« Démarrer la navigation » ouvre tout l’itinéraire. Utilisez la flèche à côté d’un arrêt pour n’y aller que lui.",
+    "continueNav": "Continuer l’itinéraire",
+    "allDone": "Tous les arrêts de cet itinéraire sont faits.",
+    "remaining_one": "{{left}} arrêt sur {{total}} restant",
+    "remaining_other": "{{left}} arrêts sur {{total}} restants"
   },
   "worklog": {
     "button": "Activité",

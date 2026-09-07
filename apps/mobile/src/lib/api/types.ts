@@ -172,6 +172,13 @@ export interface Task {
   // DB-derived task-time anchors (timer counts from acceptedAt; freezes at completedAt)
   acceptedAt?: string | null;
   completedAt?: string | null;
+  /**
+   * Stamped when the task goes En Route -> Arrived. The product's own record
+   * that this drive has been made, which is how "Start navigation" knows not
+   * to route somebody back to a stop they are standing at.
+   */
+  routeStartedAt?: string | null;
+  routeEndedAt?: string | null;
   createdBy?: {
     id: string;
     firstName: string;

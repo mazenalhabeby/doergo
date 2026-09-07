@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { tasksApi, type Task } from '../../src/lib/api';
-import { isMyRouteStop } from '../../src/lib/my-route';
+import { isMyRouteStop, hasArrived, remainingStops } from '../../src/lib/my-route';
 import { useAuth } from '../../src/contexts/auth-context';
 import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -147,10 +147,7 @@ export default function RoutePlannerScreen() {
   /** Distance and time for the drive that ARRIVES at ordered stop `i`. */
   const legTo = useCallback((i: number) => result?.legs?.[i] ?? null, [result]);
 
-  const openFullRoute = () => {
-    if (!result || !start) return;
-    startNavigation(null);
-  };
+  const openFullRoute = () => { void resumeRoute(); };
   useEffect(() => {
     let alive = true;
     detectNavApps().then((found) => {
@@ -187,6 +184,55 @@ export default function RoutePlannerScreen() {
     if (navDecision(navApps) === 'choose') { setChooserFor({ stop }); return; }
     openIn(soleNavApp(navApps), stop);
   }, [navApps, openIn]);
+
+  /*
+    Stops already behind the driver.
+
+    Pressing Start navigation at the second stop used to rebuild the whole trip
+    from where the phone was when the screen opened — through stop one, which
+    the driver had already done. A route link is a list of waypoints, and a
+    waypoint already visited is a detour they have to argue with.
+  */
+  const arrivedIds = useMemo(
+    () => new Set(tasks.filter(hasArrived).map((x) => x.id)),
+    [tasks],
+  );
+  const toDrive = useMemo(
+    () => remainingStops(orderedStops, arrivedIds),
+    [orderedStops, arrivedIds],
+  );
+
+  /*
+    Resume, rather than replay.
+
+    Two things are refreshed at the moment of pressing, not at screen load: the
+    driver's position, because they have moved since, and which stops are left.
+    Without both, the link is a plan for a morning that has already partly
+    happened.
+  */
+  const [resuming, setResuming] = useState(false);
+  const resumeRoute = useCallback(async () => {
+    if (!result) return;
+    setError(null);
+    if (toDrive.length === 0) {
+      setError(t('route.allDone', 'Every stop on this route is done.'));
+      return;
+    }
+    setResuming(true);
+    let from = start;
+    try {
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      from = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: t('route.myLocation', 'My location') };
+      setStart(from);
+    } catch {
+      // Keep the origin we already had rather than refusing to navigate.
+    } finally {
+      setResuming(false);
+    }
+    if (!from) return;
+    const url = buildGoogleMapsUrl(from, toDrive);
+    if (url) Linking.openURL(url).catch(() => setError(t('route.navFailed', 'Could not open that map app.')));
+  }, [result, toDrive, start, t]);
 
   const navTo = (stop: RouteStop) => startNavigation(stop);
 
@@ -342,7 +388,13 @@ export default function RoutePlannerScreen() {
             {/* One line that answers "is this my morning or a detour?" */}
             <Text style={[styles.sheetMeta, { color: colors.textMuted }]} numberOfLines={1}>
               {result
-                ? `${result.order.length} ${t('route.stopsWord', 'stops')} · ${fmtKm(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`
+                ? (toDrive.length < orderedStops.length
+                    ? t('route.remaining', {
+                        defaultValue: '{{left}} of {{total}} stops left',
+                        left: toDrive.length,
+                        total: orderedStops.length,
+                      })
+                    : `${result.order.length} ${t('route.stopsWord', 'stops')} · ${fmtKm(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`)
                 : `${selectedCount} ${t('route.selected', 'selected')}${start ? ` · ${start.label}` : ''}`}
             </Text>
 
@@ -361,9 +413,17 @@ export default function RoutePlannerScreen() {
             {!!error && <Text style={styles.sheetError}>{error}</Text>}
 
             {result ? (
-              <PressableScale onPress={openFullRoute} style={[styles.cta, { backgroundColor: COLORS.primary }]} accessibilityRole="button">
-                <Ionicons name="navigate" size={17} color="#fff" />
-                <Text style={styles.ctaText}>{t('route.startNav', 'Start navigation')}</Text>
+              <PressableScale onPress={openFullRoute} disabled={resuming} style={[styles.cta, { backgroundColor: COLORS.primary }]} accessibilityRole="button">
+                {resuming
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Ionicons name="navigate" size={17} color="#fff" />}
+                {/* "Continue" once some of the day is behind them — the button
+                    is doing a different thing and should not claim otherwise. */}
+                <Text style={styles.ctaText}>
+                  {toDrive.length < orderedStops.length
+                    ? t('route.continueNav', 'Continue route')
+                    : t('route.startNav', 'Start navigation')}
+                </Text>
               </PressableScale>
             ) : (
               <PressableScale
@@ -401,13 +461,20 @@ export default function RoutePlannerScreen() {
             orderedStops.map((s, i) => (
               <View key={s.id} style={styles.legRow}>
                 <View style={styles.legRail}>
-                  <View style={[styles.legDot, { backgroundColor: COLORS.primary }]}>
-                    <Text style={styles.legDotText}>{i + 1}</Text>
+                  <View style={[styles.legDot, { backgroundColor: arrivedIds.has(s.id) ? COLORS.success : COLORS.primary }]}>
+                    {arrivedIds.has(s.id)
+                      ? <Ionicons name="checkmark" size={15} color="#fff" />
+                      : <Text style={styles.legDotText}>{i + 1}</Text>}
                   </View>
                   {i < orderedStops.length - 1 && <View style={[styles.legLine, { backgroundColor: colors.border }]} />}
                 </View>
                 <View style={styles.legBody}>
-                  <Text style={[styles.legTitle, { color: colors.textPrimary }]} numberOfLines={1}>{s.label}</Text>
+                  <Text
+                    style={[styles.legTitle, { color: arrivedIds.has(s.id) ? colors.textMuted : colors.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {s.label}
+                  </Text>
                   {!!s.address && <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>{s.address}</Text>}
                   {/* The drive that gets you here — the number a rep plans the
                       morning around, and the reason the order matters. */}

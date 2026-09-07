@@ -70,3 +70,33 @@ export function isMyRouteStop(task: Task, userId?: string | null): boolean {
 export function countRouteStops(tasks: Task[], userId?: string | null): number {
   return tasks.reduce((n, t) => (isMyRouteStop(t, userId) ? n + 1 : n), 0);
 }
+
+/**
+ * Has the driver already been here?
+ *
+ * `routeEndedAt` is stamped when a task goes En Route -> Arrived, so it is the
+ * product's own record that this drive has been made — not a guess from status
+ * names, which differ per workflow and are editable per organization.
+ *
+ * It matters because "Start navigation" pressed at the second stop should not
+ * send somebody back to the first. A route link is a list of waypoints, and a
+ * waypoint already visited is a detour the driver has to argue with.
+ */
+export function hasArrived(task: Pick<Task, 'id'> & { routeEndedAt?: string | null }): boolean {
+  return !!task.routeEndedAt;
+}
+
+/**
+ * The stops still to drive to, in the planned order.
+ *
+ * Note this deliberately keeps the ORDER the optimizer chose rather than
+ * re-optimising from the current position: the plan was made for the day, and
+ * a route that silently reshuffles itself every time it is opened is one
+ * nobody can follow or check.
+ */
+export function remainingStops<T extends { id: string }>(
+  ordered: T[],
+  arrivedIds: ReadonlySet<string>,
+): T[] {
+  return ordered.filter((s) => !arrivedIds.has(s.id));
+}

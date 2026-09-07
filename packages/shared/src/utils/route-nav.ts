@@ -82,8 +82,25 @@ export function buildNavUrl(
   app: NavApp,
   opts: { start: LatLng; orderedStops: LatLng[]; end?: LatLng; nextStop?: LatLng },
 ): string {
+  /*
+    ⚠️ A named `nextStop` means THAT stop, whichever app is chosen.
+
+    Google used to ignore it and rebuild the entire multi-stop trip, so the
+    arrow beside the fourth stop reopened the whole day and started the driver
+    at the first one. The bug only showed with Google selected, which is the
+    default on Android and the likeliest choice everywhere.
+  */
+  if (opts.nextStop) {
+    if (app === 'google') return buildGoogleMapsUrl(opts.start, [opts.nextStop]);
+    return app === 'waze'
+      ? buildWazeUrl(opts.nextStop)
+      : buildAppleMapsUrl(opts.nextStop, opts.start);
+  }
+
+  // No single stop named: Google takes the whole trip, the others can only be
+  // pointed at the first one.
   if (app === 'google') return buildGoogleMapsUrl(opts.start, opts.orderedStops, opts.end);
-  const target = opts.nextStop ?? opts.orderedStops[0] ?? opts.end;
+  const target = opts.orderedStops[0] ?? opts.end;
   if (!target) return '';
   return app === 'waze' ? buildWazeUrl(target) : buildAppleMapsUrl(target, opts.start);
 }
