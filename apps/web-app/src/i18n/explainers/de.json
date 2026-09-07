@@ -1,0 +1,536 @@
+{
+  "subtasks": {
+    "summary": "Erlaubt es, einen Auftrag in kleinere Aufträge darunter zu zerlegen. Der übergeordnete Auftrag bleibt das, was Sie geplant und berichtet haben; die untergeordneten sind die Teile, die jemand im Tagesverlauf tatsächlich abhakt.",
+    "caption": "Ein übergeordneter Auftrag mit eigenen kleineren Aufträgen darunter.",
+    "steps": [
+      "Öffnen Sie einen Auftrag und fügen Sie die Arbeitsschritte hinzu, aus denen er wirklich besteht.",
+      "Jeder Teilauftrag kann einer anderen Person zugewiesen und separat abgeschlossen werden.",
+      "Der übergeordnete Auftrag zeigt den Fortschritt, ohne dass man ihn öffnen muss."
+    ],
+    "benefits": [
+      "Ein langer Auftrag bleibt nicht als unbewegliche Karte auf dem Board liegen",
+      "Zwei Personen können gleichzeitig an verschiedenen Teilen arbeiten",
+      "Fortschritt auf einen Blick, statt nachfragen zu müssen"
+    ],
+    "fit": {
+      "on": "Ein einzelner Auftrag dauert regelmäßig länger als einen Tag oder braucht mehrere Personen.",
+      "off": "Die Arbeit kommt bereits klein an — ein Termin, eine Reparatur, eine Person."
+    },
+    "caveat": "Teilaufträge sind Bestandteile ihres übergeordneten Auftrags, keine eigenständigen Aufträge: Sie erscheinen nicht separat auf dem Board oder in Berichten."
+  },
+  "checklists": {
+    "summary": "Eine Abhakliste innerhalb eines Auftrags. Für die Schritte, die jedes Mal passieren müssen und nachweislich passiert sein müssen — eine Sicherheitsprüfung, eine Übergabe, die Dinge, nach denen ein Prüfer später fragt.",
+    "caption": "Punkte der Reihe nach abgehakt, der letzte noch offen.",
+    "steps": [
+      "Fügen Sie die Punkte dem Auftrag hinzu oder der Auftragsart, damit jeder Auftrag dieser Art damit beginnt.",
+      "Wer die Arbeit ausführt, hakt die Punkte unterwegs ab — am Telefon oder im Web.",
+      "Was wann abgehakt wurde, bleibt am Auftrag dokumentiert."
+    ],
+    "benefits": [
+      "Derselbe Standard bei jedem Einsatz, von allen",
+      "Nachweis, dass ein Schritt erledigt wurde, nicht nur behauptet",
+      "Neue Mitarbeitende schaffen unbekannte Arbeit ohne Einweisung"
+    ],
+    "fit": {
+      "on": "Einheitlichkeit ist wichtig, oder jemand verlangt später den Nachweis eines Schrittes.",
+      "off": "Die Arbeit variiert so stark, dass eine feste Liste nur stören würde."
+    },
+    "caveat": "Eine Checkliste dokumentiert, dass ein Punkt abgehakt wurde — sie verhindert nicht, dass ein Auftrag mit offenen Punkten abgeschlossen wird. Nutzen Sie einen Workflow, wenn es erzwungen werden soll."
+  },
+  "attachments": {
+    "summary": "Fotos und Dokumente am Auftrag. Direkt vom Telefon vor Ort hochgeladen und beim Auftrag abgelegt statt in der Kamerarolle oder einem Chatverlauf.",
+    "caption": "Dateien bleiben bei dem Auftrag, zu dem sie gehören.",
+    "steps": [
+      "Anhängen aus Kamera, Galerie oder als Datei im Web.",
+      "Alle mit Zugriff auf den Auftrag sehen dieselben Dateien, sofort.",
+      "Dateien bleiben so lange am Auftrag, wie der Auftrag aufbewahrt wird."
+    ],
+    "benefits": [
+      "Vorher-Nachher-Nachweise dort, wo sie hingehören",
+      "Kein Suchen in Chats nach dem Foto von jemandem",
+      "Dieselbe Datei für das Büro und die Person vor Ort"
+    ],
+    "fit": {
+      "on": "Die Arbeit erzeugt etwas Sichtbares, oder Sie brauchen Zustandsnachweise.",
+      "off": "Niemand fotografiert etwas und es gehen keine Unterlagen hin und her."
+    },
+    "caveat": "Anhänge zählen auf Ihren Speicher, große Videos verbrauchen ihn schnell. Fotos werden vor dem Hochladen komprimiert, andere Dateien unverändert gespeichert."
+  },
+  "dependencies": {
+    "summary": "Legt fest, dass ein Auftrag erst starten kann, wenn ein anderer abgeschlossen ist. Board und Planung zeigen dann die echte Reihenfolge statt einer Liste, in der alles gleich startbereit aussieht.",
+    "caption": "Arbeit in fester Reihenfolge — der letzte Schritt öffnet erst, wenn die früheren schließen.",
+    "steps": [
+      "Verknüpfen Sie einen Auftrag mit dem, auf den er wartet.",
+      "Ein Auftrag mit unerledigtem Vorgänger wird als blockiert statt als verfügbar angezeigt.",
+      "Schließt der frühere Auftrag, öffnet sich der nächste von selbst."
+    ],
+    "benefits": [
+      "Niemand beginnt Arbeit, die noch nicht beginnen kann",
+      "Die Folgewirkung einer Verzögerung ist sofort sichtbar",
+      "Abfolgen lassen sich ohne Tabelle daneben planen"
+    ],
+    "fit": {
+      "on": "Aufträge warten tatsächlich aufeinander — ein Ausbau, eine Montage, eine mehrstufige Reparatur.",
+      "off": "Jeder Auftrag steht für sich und kann in beliebiger Reihenfolge erledigt werden."
+    },
+    "caveat": "Abhängigkeiten beschreiben Reihenfolge, keine Termine. Ein blockierter Auftrag verschiebt sich nicht selbst im Kalender, wenn der Vorgänger sich verzögert."
+  },
+  "custom_fields": {
+    "summary": "Zusätzliche Felder am Auftrag, von Ihnen definiert. Zählerstände, Seriennummern, eine Referenz aus dem System des Kunden — was diese Art von Arbeit eben einheitlich festhalten muss.",
+    "caption": "Ihre eigenen Felder, ausgefüllt als Teil des Auftrags.",
+    "steps": [
+      "Definieren Sie die Felder an einer Auftragsart, damit jeder Auftrag dieser Art danach fragt.",
+      "Die Felder erscheinen am Auftrag für die ausführende Person.",
+      "Das Eingetragene lässt sich in Berichten und Exporten wieder auslesen."
+    ],
+    "benefits": [
+      "Informationen jedes Mal gleich erfasst, nicht als Freitext",
+      "Werte, über die Sie anschließend auch berichten können",
+      "Verschiedene Arbeitsarten können nach Verschiedenem fragen"
+    ],
+    "fit": {
+      "on": "Sie bitten Leute immer wieder, dasselbe Detail in die Beschreibung zu schreiben.",
+      "off": "Beschreibung und ein Foto decken bereits alles ab."
+    },
+    "caveat": "Felder gehören zu einer Auftragsart. Der Wechsel auf eine andere Art entfernt die Felder, nach denen die neue Art nicht fragt — die Werte werden nicht übernommen."
+  },
+  "tracking": {
+    "summary": "Zeichnet die Route zu einem Auftrag auf, während jemand unterwegs ist, und zeigt, wo Personen auf der Straße gerade sind. Es geht um die Fahrt zur Arbeit, nicht darum, Menschen den ganzen Tag zu beobachten.",
+    "caption": "Der tatsächlich gefahrene Weg zwischen zwei Stationen.",
+    "steps": [
+      "Die Aufzeichnung startet, wenn sich jemand als unterwegs meldet, und endet bei der Ankunft.",
+      "Die Live-Karte zeigt, wer wo ist, damit der nächste Auftrag an die nächstgelegene Person geht.",
+      "Die fertige Route bleibt am Auftrag, mit Strecke und Zeit."
+    ],
+    "benefits": [
+      "Strecke und Fahrzeit, abrechenbar ohne Spesenformular",
+      "Eine belastbare Antwort auf „wann ist jemand da“",
+      "Ein Nachweis der Fahrt, falls ein Termin je bestritten wird"
+    ],
+    "fit": {
+      "on": "Es wird zwischen Aufträgen gefahren und die Fahrt ist Teil der Kosten.",
+      "off": "Alle arbeiten an einem Standort, oder die Fahrt geht Sie nichts an."
+    },
+    "caveat": "Aufgezeichnet wird nur zwischen Losfahren und Ankommen — nie den restlichen Tag. Nötig ist die Hintergrund-Standortfreigabe am Telefon, und die Person wird darüber informiert."
+  },
+  "service_reports": {
+    "summary": "Der Nachweis über das Geleistete am Ende eines Auftrags: ausgeführte Arbeit, verwendetes Material, Fotos und Unterschriften von Ihrem Techniker und vom Kunden.",
+    "caption": "Ein Bericht pro Auftrag, mit allem Nötigen abgelegt.",
+    "steps": [
+      "Wer den Auftrag abschließt, trägt Leistung und Material ein.",
+      "Beide Seiten unterschreiben am Telefon — Ihr Techniker und wer beim Kunden anwesend ist.",
+      "Der fertige Bericht bleibt am Auftrag und in der Historie der Anlage."
+    ],
+    "benefits": [
+      "Vor Ort unterschriebener Leistungsnachweis, ohne Nachlaufen",
+      "Material dort erfasst, wo die Kosten am Auftrag sichtbar sind",
+      "Eine Wartungshistorie, die sich von selbst aufbaut"
+    ],
+    "fit": {
+      "on": "Kunden erwarten einen Nachweis des Termins, oder Sie rechnen Leistung ab.",
+      "off": "Der Auftrag ist fertig, wenn er als fertig markiert ist, und niemand verlangt mehr."
+    },
+    "caveat": "Ein Bericht lässt sich kurz nach Abschluss korrigieren, danach ist er fest — sein Wert liegt gerade darin, dass er zum Zeitpunkt unterschrieben wurde."
+  },
+  "assets": {
+    "summary": "Die Dinge, die Sie betreuen — Maschinen, Fahrzeuge, Wohnungen, Geräte — als Datensätze mit eigener Historie, damit ein Auftrag ein konkretes Objekt betrifft und nicht nur eine Adresse.",
+    "caption": "Ein Datensatz pro Objekt, mit seiner Historie darunter.",
+    "steps": [
+      "Legen Sie die Objektarten fest und was jede Art erfassen soll.",
+      "Hängen Sie einen Auftrag an ein Objekt statt nur an einen Ort.",
+      "Jeder abgeschlossene Auftrag ergänzt automatisch dessen Historie."
+    ],
+    "benefits": [
+      "Die vollständige Servicehistorie eines Objekts an einer Stelle",
+      "Wiederkehrende Wartung am Objekt statt als Kalendernotiz",
+      "Eine Antwort auf „wann wurde das zuletzt angefasst, und von wem“"
+    ],
+    "fit": {
+      "on": "Sie warten dieselben Objekte wiederholt oder verwalten Immobilien.",
+      "off": "Jeder Auftrag ist ein Einzelfall an einem anderen Ort."
+    },
+    "caveat": "Ein Objekt gehört zu seiner Art, die Art zu einem Arbeitsbereich. Ein Wechsel des Arbeitsbereichs bedeutet einen Wechsel der Art — Felder, nach denen die neue Art nicht fragt, entfallen."
+  },
+  "time_tracking": {
+    "summary": "Macht aus einem Arbeitsbereich einen Ort, an dem sich Menschen an- und abmelden. Erfasst wird, was tatsächlich passiert ist, und getrennt davon, was bezahlt werden soll — damit eine früh begonnene oder überzogene Schicht am Monatsende kein Streitfall wird.",
+    "caption": "Früher Arbeitsbeginn wird erfasst und ab Schichtbeginn bezahlt. Am Ende gilt dasselbe.",
+    "steps": [
+      "Anmeldung per Telefon oder Web. Hat der Arbeitsbereich eine Adresse, prüft die App die Anwesenheit; ohne Koordinaten entfällt diese Prüfung.",
+      "Pausen werden für den Arbeitsbereich geplant, zur richtigen Zeit erinnert und als genommen oder versäumt erfasst.",
+      "Früheres Gehen oder Überziehen löst eine Anfrage an die verantwortliche Person aus.",
+      "Nur auffällige Schichten müssen geprüft werden — unauffällige genehmigen sich selbst."
+    ],
+    "benefits": [
+      "Stunden je Person und Arbeitsbereich, bereit für die Lohnverrechnung",
+      "Ein Genehmigungsverlauf, wer welche Stunden akzeptiert hat",
+      "Verspätungen, früher Feierabend und versäumte Pausen sofort sichtbar",
+      "Wer ohne Standort arbeitet, kann sich anmelden, wo Sie es erlauben"
+    ],
+    "fit": {
+      "on": "Menschen werden für Zeit bezahlt, nicht für einen fertigen Auftrag.",
+      "off": "Wichtig ist, dass die Arbeit erledigt ist, nicht wann jemand kam."
+    },
+    "caveat": "Arbeiten abseits eines Standorts erfordert zweierlei: Der Arbeitsbereich muss es erlauben und die Person muss es gewährt bekommen. Eines allein genügt nicht, damit ein strenger Standort nicht über eine Personeneinstellung geöffnet wird."
+  },
+  "sprints": {
+    "summary": "Feste Arbeitszeiträume, denen eine Menge Aufträge zugesagt wird. Sinnvoll, wenn ein Team in Wochen plant, statt auf Eingehendes zu reagieren.",
+    "caption": "Ein Zeitraum mit dem, was zugesagt war, und dem, was tatsächlich ankam.",
+    "steps": [
+      "Eröffnen Sie einen Sprint für Ihren Planungszeitraum.",
+      "Verschieben Sie die Aufträge hinein, die Sie abschließen wollen.",
+      "Am Ende sehen Sie, was fertig wurde und was mitgenommen wird."
+    ],
+    "benefits": [
+      "Ein Team, das weiß, wofür dieser Zeitraum da ist",
+      "Ein sichtbarer Unterschied zwischen Plan und Wirklichkeit",
+      "Eine Grundlage dafür, was in den nächsten passt"
+    ],
+    "fit": {
+      "on": "Arbeit wird in Zyklen von einem Team geplant, das seine Last selbst bestimmt.",
+      "off": "Aufträge kommen von Kunden und werden der Reihe nach erledigt."
+    },
+    "caveat": "Sprints passen zu geplanter Arbeit. Wird Ihr Tag von Anrufen bestimmt, misst ein Sprint vor allem, wie oft der Plan unterbrochen wurde."
+  },
+  "story_points": {
+    "summary": "Eine Größe an jedem Auftrag, damit ein Team über Aufwand sprechen kann, ohne so zu tun, als wüsste es die Stundenzahl.",
+    "caption": "Größen aufsummiert, damit sich Zeiträume vergleichen lassen.",
+    "steps": [
+      "Vergeben Sie beim Planen eine Größe, auf welcher Skala das Team sich einigt.",
+      "Größen summieren sich über einen Sprint oder Zeitraum.",
+      "Vergleichen Sie Zeiträume, um zu sehen, was das Team wirklich schafft."
+    ],
+    "benefits": [
+      "Ein gemeinsames Gefühl für Aufwand, das optimistische Schätzungen überlebt",
+      "Auslastung verglichen statt geraten",
+      "Ein Planungsgespräch, das nicht über Stunden geht"
+    ],
+    "fit": {
+      "on": "Ein Team plant gemeinsam und will Aufwand ehrlich einschätzen.",
+      "off": "Aufträge sind ähnlich groß, oder Sie erfassen bereits Stunden."
+    },
+    "caveat": "Punkte bedeuten nur innerhalb eines Teams etwas. Sie zwischen Teams zu vergleichen oder in Stunden umzurechnen, gibt der Zahl eine Aussagekraft, die sie nicht hat."
+  },
+  "epics": {
+    "summary": "Ein größeres Vorhaben, zu dem viele Aufträge gehören — ein Projekt, ein Standort, eine Kampagne. Die Aufträge bleiben getrennt; das Epic ist die Sicht darauf als ein Ganzes.",
+    "caption": "Viele Aufträge, gebündelt unter dem größeren Ziel.",
+    "steps": [
+      "Legen Sie das Epic für das größere Ziel an.",
+      "Hängen Sie Aufträge daran, beim Anlegen oder später.",
+      "Das Epic zeigt, wie viel vom Ganzen fertig ist."
+    ],
+    "benefits": [
+      "Projektfortschritt, ohne Karten von Hand zu zählen",
+      "Aufträge behalten eigene Zuständige und Termine",
+      "Eine Möglichkeit, über Projekte statt über Aufgaben zu berichten"
+    ],
+    "fit": {
+      "on": "Arbeit gruppiert sich natürlich zu Projekten über Wochen oder Monate.",
+      "off": "Jeder Auftrag ist eigenständig und in Tagen erledigt."
+    },
+    "caveat": "Ein Epic bündelt Arbeit, plant sie aber nicht. Das Schließen eines Epics schließt nicht die Aufträge darin."
+  },
+  "phases": {
+    "summary": "Die Stufen, die ein Vorhaben durchläuft — Aufnahme, Angebot, Montage, Abnahme. Wo ein Workflow einen einzelnen Auftrag steuert, beschreiben Phasen die Form eines ganzen Projekts.",
+    "caption": "Die Stufen eines Projekts, eine nach der anderen.",
+    "steps": [
+      "Definieren Sie die Phasen, die diese Art Projekt durchläuft.",
+      "Ordnen Sie jeden Auftrag der Phase zu, in die er gehört.",
+      "Sehen Sie Offenes je Phase statt in einer langen Liste."
+    ],
+    "benefits": [
+      "Ein Projekt in Stufen statt als flacher Rückstand",
+      "Ein klarer Blick darauf, wo sich Arbeit staut",
+      "Berichte nach Stufe, für Kunden, die so fragen"
+    ],
+    "fit": {
+      "on": "Projekte laufen lange genug, um klare Stufen zu haben.",
+      "off": "Arbeit ist kurz und geht direkt von gebucht zu erledigt."
+    },
+    "caveat": "Phasen bündeln Aufträge innerhalb eines Projekts. Sie sind keine Status — ein Auftrag durchläuft weiterhin seinen eigenen Workflow innerhalb der Phase."
+  },
+  "crm": {
+    "summary": "Die Aufzeichnung darüber, für wen Sie arbeiten. Firmen, die Personen dort, was vereinbart wurde und was geleistet wurde — neben der Arbeit statt in einem getrennten Adressbuch.",
+    "caption": "Ihre Seite und die des Kunden, an einem gemeinsamen Datensatz.",
+    "steps": [
+      "Legen Sie die Firmen an, für die Sie arbeiten, und die Personen dort.",
+      "Aufträge, Angebote und Historie hängen am Kundendatensatz.",
+      "Alle mit Zugriff sehen dasselbe Konto, nicht die eigene Kopie."
+    ],
+    "benefits": [
+      "Ein Ort zum Nachsehen vor einem Anruf statt drei",
+      "Historie, die überdauert, wer das Konto früher betreute",
+      "Kontakte als Personen, sodass eine Person bei mehreren Firmen sein kann"
+    ],
+    "fit": {
+      "on": "Sie arbeiten für wiederkehrende Kunden statt für einmalige Anrufer.",
+      "off": "Arbeit kommt über einen Kanal und der Kunde spielt danach kaum eine Rolle."
+    },
+    "caveat": "Eine Kontaktperson ist kein Kunde: Kontakte zählen und kosten nicht als Kunden — eine Firma mit sechs Kontakten bleibt ein Kunde."
+  },
+  "b2c_portal": {
+    "summary": "Gibt Ihren Kunden einen eigenen Zugang, über den sie eine Anfrage stellen und verfolgen können, ohne jemanden anzurufen oder zu schreiben.",
+    "caption": "Die Seite des Kunden und Ihre, verbunden an derselben Anfrage.",
+    "steps": [
+      "Richten Sie das Portal für den Arbeitsbereich ein und legen Sie fest, was Kunden melden dürfen.",
+      "Laden Sie Kunden ein; ihr Zugang ist strikt auf die eigenen Anfragen begrenzt.",
+      "Anfragen kommen als Arbeit auf Ihrem Board an, bereits zugeordnet."
+    ],
+    "benefits": [
+      "Anfragen, die vollständig ankommen statt als Telefonnotiz",
+      "Kunden, die den Stand sehen, ohne zu fragen",
+      "Weniger Anrufe, ob etwas angekommen ist"
+    ],
+    "fit": {
+      "on": "Kunden melden Arbeit selbst und erwarten, den Stand zu sehen.",
+      "off": "Arbeit kommt von einem Ansprechpartner, der lieber anruft."
+    },
+    "caveat": "Portalnutzer sehen ausschließlich ihre eigenen Anfragen. Das Portal benötigt das CRM-Modul, weil eine Anfrage zu einem Kunden gehören muss."
+  },
+  "space_sharing": {
+    "summary": "Lässt eine andere Organisation in einem Ihrer Arbeitsbereiche mitarbeiten — ein Subunternehmen, ein Partner, das Team eines Kunden — mit genau dem Zugriff, den Sie gewähren, und nicht mehr.",
+    "caption": "Zwei Organisationen, ein gemeinsamer Arbeitsbereich.",
+    "steps": [
+      "Teilen Sie den Arbeitsbereich und wählen Sie, was die andere Seite darf.",
+      "Deren Leute sehen diesen Arbeitsbereich und sonst nichts von Ihnen.",
+      "Beenden Sie die Freigabe und der Zugriff endet, die Historie bleibt."
+    ],
+    "benefits": [
+      "Subunternehmen arbeiten in Ihrem System statt per E-Mail",
+      "Zugriff, der sauber endet, wenn die Zusammenarbeit endet",
+      "Eine Fassung der Arbeit statt zweier, die auseinanderlaufen"
+    ],
+    "fit": {
+      "on": "Andere Firmen leisten Arbeit, die in Ihrem System landen muss.",
+      "off": "Alle Arbeit wird von eigenen Leuten erledigt."
+    },
+    "caveat": "Geteilt wird je Arbeitsbereich, und die Berechtigung wird laufend neu geprüft — das Entfernen wirkt sofort, und die andere Seite behält keine Kopie."
+  },
+  "workflows": {
+    "summary": "Ersetzt die eingebauten Auftragsstatus durch Ihre eigenen und legt fest, welcher Status auf welchen folgen darf. Eine Kesselwartung und eine Gebäudeprüfung durchlaufen nicht dieselben Stufen — hier sagen Sie das.",
+    "caption": "Nur die erlaubten Übergänge sind möglich — ein Auftrag kann das Ende nicht überspringen.",
+    "steps": [
+      "Bauen Sie einen Workflow, oder starten Sie von einer Vorlage.",
+      "Weisen Sie ihn einer Auftragsart zu, damit verschiedene Arbeiten verschiedenen Wegen folgen.",
+      "Board, erlaubte Übergänge und die Schaltflächen am Telefon folgen Ihrer Definition."
+    ],
+    "benefits": [
+      "Status in Ihren Worten statt in denen der Software",
+      "Unmögliche Übergänge blockiert, damit das Board die Wirklichkeit zeigt",
+      "Ein eigener Weg je Arbeitsart, in allen Arbeitsbereichen"
+    ],
+    "fit": {
+      "on": "Ihr Prozess hat Stufen, die die Standardstatus nicht abbilden.",
+      "off": "Die eingebauten Status passen bereits zu Ihrer Arbeitsweise."
+    },
+    "caveat": "Einen bestehenden Workflow zu wählen ist immer kostenlos — eigene zu bauen ist das, was diese Option kauft. Sie wird einmal für die Organisation gekauft und gilt überall."
+  },
+  "recurring": {
+    "summary": "Aufträge, die sich nach einem Zeitplan selbst anlegen — eine monatliche Wartung, eine wöchentliche Prüfung — damit die Arbeit erscheint, wenn sie fällig ist, und nicht, wenn jemand daran denkt.",
+    "caption": "Derselbe Auftrag, der jedes Mal neu erscheint, wenn er fällig ist.",
+    "steps": [
+      "Legen Sie das Muster fest: wie oft und in welchem Arbeitsbereich.",
+      "Jede Wiederholung wird bei Fälligkeit als echter Auftrag angelegt.",
+      "Änderungen am Muster gelten künftig; bereits Erzeugtes bleibt unverändert."
+    ],
+    "benefits": [
+      "Geplante Wartung, die nicht vom Gedächtnis abhängt",
+      "Ein Vorausblick auf zugesagte Arbeit",
+      "Wiederholungen, die einzeln umgeplant werden können"
+    ],
+    "fit": {
+      "on": "Ein Teil Ihrer Arbeit folgt einem Zyklus, den Sie zugesagt haben.",
+      "off": "Alles ist reaktiv und wird auf Anfrage geplant."
+    },
+    "caveat": "Eine Wiederholung wird in dem Moment ein gewöhnlicher Auftrag, in dem sie entsteht. Spätere Änderungen am Muster schreiben bestehende Wiederholungen nicht um."
+  },
+  "shift_scheduling": {
+    "summary": "Planen Sie, wer wann arbeitet, veröffentlichen Sie es, und lassen Sie die Zeiterfassung Ist mit Soll vergleichen. Ohne Dienstplan erfasst die Zeiterfassung weiterhin Stunden — ihr fehlt nur der Maßstab.",
+    "caption": "Der Plan, und was tatsächlich dagegen passiert ist.",
+    "steps": [
+      "Erstellen Sie den Dienstplan für den Arbeitsbereich und veröffentlichen Sie ihn.",
+      "Die Leute sehen ihre eigenen Schichten am Telefon.",
+      "An- und Abmeldung werden mit der Schicht verglichen, Abweichungen markiert."
+    ],
+    "benefits": [
+      "Ein Dienstplan, den man sieht, ohne ein Foto zugeschickt zu bekommen",
+      "Verspätungen, früher Feierabend und Nichterscheinen automatisch sichtbar",
+      "Die geplanten Stunden, die bezahlte Stunden erst aussagekräftig machen"
+    ],
+    "fit": {
+      "on": "Menschen arbeiten zu festen Zeiten, die Sie im Voraus festlegen.",
+      "off": "Menschen arbeiten, wenn Aufträge es verlangen, ohne festes Muster."
+    },
+    "caveat": "Das ist es, was der Zeiterfassung ihre geplante Schicht gibt. Allein plant es; zusammen mit Zeiterfassung markiert es auch, was nicht nach Plan lief."
+  },
+  "overtime": {
+    "summary": "Der Genehmigungsweg für Zeit über die geplante Schicht hinaus. Mehrzeit wird beantragt, geht an die verantwortliche Person und wird genehmigt oder nicht — mit Unterschrift.",
+    "caption": "Ein Antrag, eine Entscheidung, und ein Nachweis über beides.",
+    "steps": [
+      "Jemand arbeitet über die Schicht hinaus oder geht früher, und ein Antrag entsteht.",
+      "Er geht an die verantwortliche Person, mit Stunden und Unterschrift.",
+      "Genehmigen verschiebt die bezahlten Stunden; Ablehnen lässt sie wie geplant."
+    ],
+    "benefits": [
+      "Mehrstunden vereinbart statt auf der Abrechnung entdeckt",
+      "Ein Nachweis, wer was wann genehmigt hat",
+      "Lohnzahlen, die niemand nachträglich rekonstruieren muss"
+    ],
+    "fit": {
+      "on": "Mehrzeit kommt vor und jemand muss zustimmen, sie zu bezahlen.",
+      "off": "Stunden sind fix, oder Mehrzeit wird außerhalb des Systems geregelt."
+    },
+    "caveat": "Genehmigte Mehrzeit verschiebt das Schichtende — genau das macht sie bezahlt. Einen eigenen Überstundensatz gibt es hier nicht, nur vereinbarte Stunden."
+  },
+  "invoicing": {
+    "summary": "Machen Sie aus erledigter Arbeit Rechnungen an Ihre Kunden, aus dem, was die Aufträge ohnehin erfasst haben — Stunden, Material und Vereinbartes.",
+    "caption": "Arbeit und Kosten zusammengeführt zu dem, was ein Kunde schuldet.",
+    "steps": [
+      "Abgeschlossene Aufträge tragen Stunden, Material und vereinbarte Sätze.",
+      "Erstellen Sie eine Rechnung aus der Arbeit eines Zeitraums.",
+      "Versenden Sie sie und verfolgen Sie den Zahlungseingang."
+    ],
+    "benefits": [
+      "Rechnungen aus der Arbeit erzeugt statt abgetippt",
+      "Weniger Zeit zwischen Fertigstellung und Rechnung",
+      "Weniger Diskussionen, weil die Details bereits erfasst sind"
+    ],
+    "fit": {
+      "on": "Sie stellen Kunden Arbeit in Rechnung.",
+      "off": "Die Fakturierung läuft in einem Finanzsystem, das alles Nötige hat."
+    },
+    "caveat": "Das stellt Ihren Kunden Rechnungen. Es ist völlig getrennt von dem, was Sie an uns zahlen — das steht auf der Abrechnungsseite und bleibt unberührt."
+  },
+  "reports_builder": {
+    "summary": "Bauen Sie eigene Auswertungen aus Ihren vorhandenen Daten: was gemessen wird, wie gruppiert und über welchen Zeitraum — ohne irgendetwas zu exportieren.",
+    "caption": "Zahlen gesammelt und zu einer Antwort verdichtet.",
+    "steps": [
+      "Wählen Sie, was gemessen und wie aufgeschlüsselt wird.",
+      "Lassen Sie es über den gewünschten Zeitraum laufen.",
+      "Speichern Sie es, damit dieselbe Frage nächsten Monat wieder gestellt werden kann."
+    ],
+    "benefits": [
+      "Antworten ohne Tabellenexport",
+      "Fragen einmal gespeichert und beliebig wiederholt",
+      "Dieselben Zahlen für alle statt je eigener Auswertung"
+    ],
+    "fit": {
+      "on": "Sie stellen regelmäßig Fragen, die die Standardansichten nicht beantworten.",
+      "off": "Die Übersichten sagen Ihnen bereits, was Sie brauchen."
+    },
+    "caveat": "Eine Auswertung sieht nur Daten, die die lesende Person sehen darf — dieselbe Auswertung kann verschiedenen Personen verschiedene Summen zeigen. Das ist beabsichtigt."
+  },
+  "report_scheduling": {
+    "summary": "Versendet eine gespeicherte Auswertung nach Zeitplan an die richtigen Personen, ohne dass jemand daran denken muss.",
+    "caption": "Dieselbe Auswertung, die von selbst jede Periode ankommt.",
+    "steps": [
+      "Speichern Sie eine Auswertung, die Sie regelmäßig brauchen.",
+      "Legen Sie fest, wann sie gehen soll und an wen.",
+      "Sie kommt nach diesem Zeitplan per E-Mail an."
+    ],
+    "benefits": [
+      "Zahlen, die ankommen, ohne hinterherzulaufen",
+      "Alle lesen dieselben Zahlen am selben Tag",
+      "Eine wiederkehrende Aufgabe weniger in jemandes Woche"
+    ],
+    "fit": {
+      "on": "Jemand lässt derzeit dieselbe Auswertung jede Woche oder jeden Monat von Hand laufen.",
+      "off": "Auswertungen werden bei Bedarf angesehen, nicht im Zyklus."
+    },
+    "caveat": "Benötigt den Auswertungs-Baukasten, da gespeicherte Auswertungen versendet werden. Empfänger erhalten Zahlen im Rahmen ihres eigenen Zugriffs, nicht des Absenders."
+  },
+  "audit_log": {
+    "summary": "Ein Nachweis jeder Änderung: wer, was und wann. Es ist die Antwort auf „wer hat das verschoben“, wenn sich niemand erinnert.",
+    "caption": "Jede Änderung der Reihe nach abgelegt, die älteste unten.",
+    "steps": [
+      "Änderungen werden erfasst, während sie geschehen, ohne Zutun.",
+      "Öffnen Sie die Historie an Auftrag, Person oder Arbeitsbereich.",
+      "Der Eintrag ist nicht änderbar — genau das macht ihn wertvoll."
+    ],
+    "benefits": [
+      "Eine Antwort darauf, wer etwas geändert hat, ohne herumzufragen",
+      "Belege bei Streit über Stunden, Status oder Zugriff",
+      "Eine Spur für Prüfer, die nicht zusammengesucht werden muss"
+    ],
+    "fit": {
+      "on": "Sie müssen Änderungen belegen können, oder es kommt zu Streitfällen.",
+      "off": "Das Team ist klein genug, dass Nachfragen schneller ist."
+    },
+    "caveat": "Einträge werden für eine feste Frist aufbewahrt und dann entfernt. Erfasst werden Änderungen in der App — keine Gespräche außerhalb."
+  },
+  "documents": {
+    "summary": "Die Personalakte: was Sie ausstellen, etwa Verträge und Abrechnungen, und was Menschen Ihnen vorlegen, etwa Ausweis oder Führerschein. Mit Unterschrift, Ablauf und Erinnerungen.",
+    "caption": "Eine Akte je Person, mit allem Ausgestellten und Vorgelegten.",
+    "steps": [
+      "Legen Sie die Dokumentarten fest und wer welche sehen darf.",
+      "Stellen Sie Dokumente aus oder fordern Sie welche an.",
+      "Dokumente laufen zur Unterschrift, Ablaufendes wird automatisch nachgefasst."
+    ],
+    "benefits": [
+      "Eine Personalakte, die kein geteiltes Laufwerk ist",
+      "Unterschriften in der App, mit Nachweis, wer unterschrieben hat",
+      "Ablaufende Nachweise, bemerkt bevor sie ablaufen"
+    ],
+    "fit": {
+      "on": "Sie beschäftigen Menschen und halten Unterlagen über sie.",
+      "off": "Alle sind selbstständig und Unterlagen liegen anderswo."
+    },
+    "caveat": "Jede Dokumentart benennt die Rollen, die sie sehen dürfen — wer Führerscheine nachfasst, muss keine Abrechnungen sehen. Eine Art ohne genannte Rollen ist für alle sichtbar, die Dokumente einsehen dürfen: das ist die Voreinstellung, keine Einschränkung."
+  },
+  "priority_routing": {
+    "summary": "Stellt Ihre Supportanfragen an den Anfang der Warteschlange, mit einer Reaktionszeit, die wir zusagen statt anstreben.",
+    "caption": "Anfragen sortiert, Ihre zuerst.",
+    "steps": [
+      "Stellen Sie Supportanfragen genau wie bisher.",
+      "Ihre werden vor der Standardwarteschlange aufgenommen.",
+      "Reaktionszeiten sind zugesagt und werden gemessen."
+    ],
+    "benefits": [
+      "Eine schnellere erste Antwort, wenn etwas nicht stimmt",
+      "Eine Zusage statt einer Erwartung",
+      "Weniger Warten, wenn das Problem die Arbeit aufhält"
+    ],
+    "fit": {
+      "on": "Ausfallzeit kostet Sie Geld und Warten ist teuer.",
+      "off": "Fragen können einen Tag warten, ohne dass etwas passiert."
+    },
+    "caveat": "Das betrifft, wie schnell wir antworten, nicht wie schnell jedes Problem gelöst ist — manche brauchen eine Lösung, die länger dauert als eine Antwort."
+  },
+  "live_chat": {
+    "summary": "Sprechen Sie in der App mit einer Person, während Sie das Problem vor sich haben, statt es aufzuschreiben und zu warten.",
+    "caption": "",
+    "steps": [
+      "Öffnen Sie den Chat von überall in der App.",
+      "Beschreiben Sie das Problem, während Sie es ansehen.",
+      "Das Gespräch bleibt zu Ihrem Konto hinterlegt."
+    ],
+    "benefits": [
+      "Antworten in Minuten statt einer E-Mail-Runde",
+      "Kein Aufschreiben eines Problems, das man zeigen kann",
+      "Ein Nachweis des Gesagten, beim Konto hinterlegt"
+    ],
+    "fit": {
+      "on": "Ihr Team stößt im Arbeitsalltag auf Fragen und kann nicht pausieren.",
+      "off": "Gelegentliche Fragen, die per E-Mail bestens gehen."
+    },
+    "caveat": "Der Chat ist zu Geschäftszeiten besetzt. Außerhalb wird eine Nachricht zur normalen Supportanfrage und wird zu Tagesbeginn beantwortet."
+  },
+  "dedicated_support": {
+    "summary": "Eine benannte Person, die Ihre Einrichtung kennt, statt wer auch immer das Ticket aufnimmt.",
+    "caption": "",
+    "steps": [
+      "Sie werden der Person vorgestellt, die Ihr Konto betreut.",
+      "Sie lernt Ihre Einrichtung kennen, damit Sie sie nicht mehr erklären müssen.",
+      "Sie bearbeitet Ihre Anfragen und eskaliert für Sie."
+    ],
+    "benefits": [
+      "Jemand, der Ihre Konfiguration bereits kennt",
+      "Kein erneutes Erklären der Einrichtung bei jeder Anfrage",
+      "Eine Person, an die man sich wendet, keine Warteschlange"
+    ],
+    "fit": {
+      "on": "Ihre Einrichtung ist groß oder besonders genug, dass Kontext zählt.",
+      "off": "Das Produkt tut, was Sie brauchen, und Fragen sind selten."
+    },
+    "caveat": "Eine benannte Kontaktperson arbeitet zu Geschäftszeiten in ihrer Zeitzone. Dringendes außerhalb läuft über den normalen Supportweg."
+  }
+}

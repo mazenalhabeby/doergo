@@ -13,6 +13,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ExplainerButton } from '@/components/explainer/explainer-button';
 import { cn } from '@/lib/utils';
 
 const GROUP_ORDER: AddOnDef['group'][] = ['work', 'money', 'insight', 'support'];
@@ -117,6 +118,13 @@ export function AddOnPicker({
                             {formatCents(a.monthlyCents)}
                             {t('billing.addOns.perMonth', '/mo')}
                           </span>
+                          <ExplainerButton
+                            explainerKey={a.key}
+                            title={label(a)}
+                            scope="organization"
+                            priceLabel={`${formatCents(a.monthlyCents)}${t('billing.addOns.perMonth', '/mo')}`}
+                            enabled={on}
+                          />
                         </p>
                         <p className="text-xs text-muted-foreground">{description(a)}</p>
                       </div>

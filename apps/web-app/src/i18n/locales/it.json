@@ -8040,5 +8040,25 @@
       "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
       "UNSCHEDULED_DAY": "Non pianificato"
     }
+  },
+  "explainerButton": {
+    "aria": "Scopri di più su {{name}}"
+  },
+  "explainer": {
+    "scope": {
+      "workspace": "Per spazio di lavoro",
+      "organization": "Intera organizzazione"
+    },
+    "state": {
+      "on": "Attualmente attivo",
+      "off": "Attualmente non attivo"
+    },
+    "whatItIs": "Che cos'è",
+    "howToUse": "Come si usa",
+    "whatYouGet": "Che cosa ottiene",
+    "isItForYou": "Fa per lei?",
+    "fitOn": "Lo attivi quando",
+    "fitOff": "Può lasciarlo disattivato quando",
+    "goodToKnow": "Bene sapere"
   }
 }

@@ -10,6 +10,7 @@ import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, 
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
+import { ExplainerButton } from "@/components/explainer/explainer-button"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Input, Button, Label } from "@/components/ui"
@@ -379,7 +380,20 @@ export function SpaceForm({
                       className="mt-0.5 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                     <div>
-                      <span className="text-sm font-medium text-foreground">{mod.label}</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        {mod.label}
+                        {/*
+                          The row is a <label> around the checkbox, so this button
+                          stops its own click — see ExplainerButton. Without that,
+                          opening the help also switches the module on.
+                        */}
+                        <ExplainerButton
+                          explainerKey={mod.key}
+                          title={mod.label}
+                          scope="workspace"
+                          enabled={enabledModules.includes(mod.key)}
+                        />
+                      </span>
                       <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
                     </div>
                   </label>

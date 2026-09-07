@@ -8040,5 +8040,25 @@
       "OUTSIDE_GEOFENCE_OUT": "Sortie hors zone",
       "UNSCHEDULED_DAY": "Non planifié"
     }
+  },
+  "explainerButton": {
+    "aria": "En savoir plus sur {{name}}"
+  },
+  "explainer": {
+    "scope": {
+      "workspace": "Par espace de travail",
+      "organization": "Toute l'organisation"
+    },
+    "state": {
+      "on": "Actuellement activé",
+      "off": "Actuellement désactivé"
+    },
+    "whatItIs": "De quoi il s'agit",
+    "howToUse": "Comment cela s'utilise",
+    "whatYouGet": "Ce que vous obtenez",
+    "isItForYou": "Est-ce fait pour vous ?",
+    "fitOn": "Activez-le lorsque",
+    "fitOff": "Vous pouvez le laisser désactivé lorsque",
+    "goodToKnow": "Bon à savoir"
   }
 }

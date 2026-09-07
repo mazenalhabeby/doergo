@@ -1,0 +1,536 @@
+{
+  "subtasks": {
+    "summary": "Permet de découper une intervention en interventions plus petites. L'intervention principale reste ce que vous avez planifié ; les sous-tâches sont les éléments que quelqu'un coche réellement dans la journée.",
+    "caption": "Une intervention principale, avec ses propres tâches plus petites en dessous.",
+    "steps": [
+      "Ouvrez une intervention et ajoutez les éléments qui la composent réellement.",
+      "Chaque sous-tâche peut être attribuée à une personne différente et terminée séparément.",
+      "L'intervention principale affiche l'avancement, sans avoir à l'ouvrir."
+    ],
+    "benefits": [
+      "Une intervention longue cesse d'être une carte immobile sur le tableau",
+      "Deux personnes peuvent travailler en même temps sur des parties différentes",
+      "Un avancement visible d'un coup d'œil, au lieu de devoir demander"
+    ],
+    "fit": {
+      "on": "Une seule intervention dure régulièrement plus d'une journée, ou mobilise plusieurs personnes.",
+      "off": "Le travail arrive déjà découpé : une visite, une réparation, une personne."
+    },
+    "caveat": "Les sous-tâches sont des éléments de leur intervention principale, pas des interventions à part entière : elles n'apparaissent ni séparément sur le tableau ni dans les rapports."
+  },
+  "checklists": {
+    "summary": "Une liste à cocher à l'intérieur d'une intervention. Pour les étapes qui doivent avoir lieu à chaque fois et pouvoir être prouvées — un contrôle de sécurité, une remise, ce qu'un inspecteur demandera plus tard.",
+    "caption": "Des points cochés dans l'ordre, le dernier encore ouvert.",
+    "steps": [
+      "Ajoutez les points à l'intervention, ou au type d'intervention pour que toutes commencent avec.",
+      "La personne qui exécute coche au fur et à mesure, sur mobile ou sur le web.",
+      "Ce qui a été coché, et quand, reste consigné sur l'intervention."
+    ],
+    "benefits": [
+      "Le même standard à chaque visite, pour tout le monde",
+      "La preuve qu'une étape a été faite, et pas seulement annoncée",
+      "Des nouveaux venus capables d'exécuter un travail inconnu sans accompagnement"
+    ],
+    "fit": {
+      "on": "La régularité compte, ou quelqu'un pourrait vous demander de prouver une étape.",
+      "off": "Le travail varie tellement qu'une liste figée ne serait que du bruit."
+    },
+    "caveat": "Une liste consigne qu'un point a été coché ; elle n'empêche pas de clôturer avec des points en suspens. Utilisez un flux de travail s'il faut l'imposer."
+  },
+  "attachments": {
+    "summary": "Photos et documents joints à une intervention. Envoyés depuis le mobile sur place et conservés avec l'intervention, plutôt que dans la galerie de quelqu'un ou dans une conversation.",
+    "caption": "Les fichiers restent avec l'intervention à laquelle ils appartiennent.",
+    "steps": [
+      "Joignez depuis l'appareil photo, la galerie ou un fichier sur le web.",
+      "Toutes les personnes ayant accès voient les mêmes fichiers, immédiatement.",
+      "Les fichiers restent tant que l'intervention est conservée."
+    ],
+    "benefits": [
+      "Des preuves avant-après là où elles ont leur place",
+      "Plus besoin de fouiller les conversations pour retrouver une photo",
+      "Le même fichier pour le bureau et pour la personne sur place"
+    ],
+    "fit": {
+      "on": "Le travail produit quelque chose de visuel, ou vous avez besoin d'une preuve d'état.",
+      "off": "Personne ne photographie rien et aucun document ne circule."
+    },
+    "caveat": "Les pièces jointes consomment votre stockage, et les vidéos volumineuses l'épuisent vite. Les photos sont compressées à l'envoi ; les autres fichiers sont conservés tels quels."
+  },
+  "dependencies": {
+    "summary": "Indique qu'une intervention ne peut pas commencer avant qu'une autre soit terminée. Le tableau et le planning reflètent alors l'ordre réel du travail plutôt qu'une liste où tout semble également prêt.",
+    "caption": "Un travail qui doit se faire dans l'ordre : la dernière étape ne s'ouvre qu'à la clôture des précédentes.",
+    "steps": [
+      "Reliez une intervention à celle qu'elle attend.",
+      "Une intervention dont le prédécesseur est ouvert apparaît bloquée, pas disponible.",
+      "Quand la précédente se clôture, la suivante s'ouvre d'elle-même."
+    ],
+    "benefits": [
+      "Personne ne commence un travail qui ne peut pas encore commencer",
+      "L'effet en cascade d'un retard est visible immédiatement",
+      "Un travail séquencé se planifie sans tableur à côté"
+    ],
+    "fit": {
+      "on": "Les interventions s'attendent réellement : un aménagement, une pose, une réparation par étapes.",
+      "off": "Chaque intervention est autonome et peut être faite dans n'importe quel ordre."
+    },
+    "caveat": "Les dépendances décrivent un ordre, pas des dates. Une intervention bloquée ne se déplace pas d'elle-même dans le calendrier si celle qu'elle attend prend du retard."
+  },
+  "custom_fields": {
+    "summary": "Des champs supplémentaires sur une intervention, définis par vous. Relevés de compteur, numéros de série, une référence issue du système du client : ce que ce type de travail doit consigner de façon cohérente.",
+    "caption": "Vos propres champs, renseignés dans le cadre de l'intervention.",
+    "steps": [
+      "Définissez les champs sur un type d'intervention, pour que toutes les demandent.",
+      "Les champs apparaissent sur l'intervention pour la personne qui l'exécute.",
+      "Ce qui a été saisi se relit dans les rapports et les exports."
+    ],
+    "benefits": [
+      "Une information saisie de la même façon à chaque fois, pas en texte libre",
+      "Des valeurs sur lesquelles vous pouvez ensuite produire des rapports",
+      "Des types de travail différents peuvent demander des choses différentes"
+    ],
+    "fit": {
+      "on": "Vous répétez aux équipes d'écrire le même détail dans la description.",
+      "off": "La description et une photo couvrent déjà tout."
+    },
+    "caveat": "Les champs appartiennent à un type d'intervention. Changer de type supprime les champs que le nouveau type ne demande pas : les valeurs ne sont pas reprises."
+  },
+  "tracking": {
+    "summary": "Enregistre le trajet vers une intervention pendant que quelqu'un s'y rend, et montre où sont les personnes en déplacement. Il s'agit du trajet vers le travail, pas de surveiller quelqu'un toute la journée.",
+    "caption": "Le chemin réellement parcouru entre deux arrêts.",
+    "steps": [
+      "L'enregistrement démarre quand la personne se déclare en route, et s'arrête à l'arrivée.",
+      "La carte en direct montre qui est où, pour confier la suite au plus proche.",
+      "Le trajet terminé reste sur l'intervention, avec distance et durée."
+    ],
+    "benefits": [
+      "Distance et temps de trajet facturables sans note de frais",
+      "Une réponse fiable à « quand est-ce que quelqu'un arrive »",
+      "Une trace du déplacement si une visite est un jour contestée"
+    ],
+    "fit": {
+      "on": "On roule entre les interventions et le trajet fait partie du coût.",
+      "off": "Tout le monde travaille sur un seul site, ou le trajet ne vous concerne pas."
+    },
+    "caveat": "L'enregistrement ne tourne qu'entre le départ et l'arrivée, jamais le reste de la journée. Il nécessite l'autorisation de localisation en arrière-plan, et la personne en est informée."
+  },
+  "service_reports": {
+    "summary": "Le compte rendu de ce qui a été fait, produit à la fin d'une intervention : le travail réalisé, les pièces utilisées, des photos et les signatures de votre technicien et du client.",
+    "caption": "Un rapport par intervention, classé avec tout le nécessaire.",
+    "steps": [
+      "La personne qui clôture renseigne le travail fait et les pièces utilisées.",
+      "Les deux parties signent sur le mobile : votre technicien et le représentant du client.",
+      "Le rapport reste sur l'intervention et dans l'historique de l'équipement."
+    ],
+    "benefits": [
+      "Une preuve de travail signée sur place, sans avoir à la réclamer",
+      "Des pièces consignées là où le coût est visible face à l'intervention",
+      "Un historique de maintenance qui se constitue tout seul"
+    ],
+    "fit": {
+      "on": "Les clients attendent une trace de la visite, ou vous facturez le travail fait.",
+      "off": "L'intervention est finie quand elle est marquée finie et personne n'en demande plus."
+    },
+    "caveat": "Un rapport peut être corrigé pendant un court délai après clôture ; ensuite il est figé, car sa valeur tient au fait d'avoir été signé sur le moment."
+  },
+  "assets": {
+    "summary": "Les choses dont vous vous occupez — machines, véhicules, logements, équipements — sous forme de fiches avec leur propre historique, pour qu'une intervention porte sur un élément précis et pas seulement sur une adresse.",
+    "caption": "Une fiche par élément, avec son historique classé dessous.",
+    "steps": [
+      "Définissez les types d'équipement suivis et ce que chacun doit consigner.",
+      "Rattachez une intervention à un équipement plutôt qu'à un simple lieu.",
+      "Chaque intervention clôturée enrichit automatiquement cet historique."
+    ],
+    "benefits": [
+      "L'historique complet d'un élément au même endroit",
+      "Une maintenance récurrente qui suit l'élément, pas une note d'agenda",
+      "Une réponse à « quand y a-t-on touché pour la dernière fois, et par qui »"
+    ],
+    "fit": {
+      "on": "Vous entretenez les mêmes éléments de façon répétée, ou vous gérez des biens.",
+      "off": "Chaque intervention est unique, à un endroit différent."
+    },
+    "caveat": "Un équipement appartient à son type, et le type à un espace de travail. Le déplacer entre espaces implique de changer de type, et les champs que le nouveau type ne demande pas sont supprimés."
+  },
+  "time_tracking": {
+    "summary": "Fait d'un espace de travail un lieu où l'on pointe. Il enregistre ce qui s'est réellement passé et calcule séparément ce qui doit être payé — pour qu'un poste commencé en avance ou prolongé ne devienne pas une discussion en fin de mois.",
+    "caption": "Arriver en avance est enregistré, et payé à partir du début du poste. Il en va de même à la fin.",
+    "steps": [
+      "On pointe depuis le mobile ou le web. Si l'espace a une adresse, l'application vérifie la présence ; sans coordonnées, cette vérification est ignorée.",
+      "Les pauses sont planifiées pour l'espace, rappelées au bon moment et consignées comme prises ou manquées.",
+      "Partir plus tôt, ou dépasser le poste, déclenche une demande vers la personne responsable.",
+      "Seuls les postes signalés demandent un examen ; les autres s'approuvent d'eux-mêmes."
+    ],
+    "benefits": [
+      "Des heures par personne et par espace, prêtes pour la paie",
+      "Une traçabilité de qui a validé quelles heures",
+      "Retards, départs anticipés et pauses manquées visibles immédiatement",
+      "Les personnes travaillant hors site peuvent aussi pointer, si vous l'autorisez"
+    ],
+    "fit": {
+      "on": "Les personnes sont payées au temps et non à l'intervention terminée.",
+      "off": "Ce qui compte est que le travail soit fait, pas l'heure d'arrivée."
+    },
+    "caveat": "Travailler hors d'un site exige deux choses : que l'espace l'autorise et que la personne y soit habilitée. L'un sans l'autre ne suffit pas, afin qu'un site strict ne puisse pas être ouvert par le réglage d'une seule personne."
+  },
+  "sprints": {
+    "summary": "Des périodes fixes de travail auxquelles un ensemble d'interventions est engagé. Utile quand une équipe planifie en semaines plutôt que de réagir à ce qui arrive.",
+    "caption": "Une période, avec ce qui était engagé et ce qui est réellement arrivé.",
+    "steps": [
+      "Ouvrez un sprint pour la période sur laquelle vous planifiez.",
+      "Déplacez-y les interventions que vous comptez terminer.",
+      "À la fin, voyez ce qui est terminé et ce qui est reporté."
+    ],
+    "benefits": [
+      "Une équipe qui sait à quoi sert cette période",
+      "Une différence visible entre le prévu et le réalisé",
+      "Une base pour juger de ce qui tient dans la suivante"
+    ],
+    "fit": {
+      "on": "Le travail se planifie par cycles, par une équipe qui décide de sa charge.",
+      "off": "Les interventions viennent des clients et se traitent dans l'ordre d'arrivée."
+    },
+    "caveat": "Les sprints conviennent au travail planifié. Si votre journée est rythmée par les appels, un sprint mesure surtout le nombre d'interruptions du plan."
+  },
+  "story_points": {
+    "summary": "Une taille sur chaque intervention, pour qu'une équipe parle de la charge sans prétendre connaître le nombre d'heures.",
+    "caption": "Des tailles cumulées, pour comparer la charge d'une période à la précédente.",
+    "steps": [
+      "Attribuez une taille lors de la planification, sur l'échelle convenue par l'équipe.",
+      "Les tailles se cumulent sur un sprint ou une période.",
+      "Comparez les périodes pour voir ce que l'équipe absorbe réellement."
+    ],
+    "benefits": [
+      "Une perception partagée de la charge, qui survit à une estimation optimiste",
+      "Une charge comparée entre périodes plutôt que devinée",
+      "Une discussion de planification qui ne porte pas sur des heures"
+    ],
+    "fit": {
+      "on": "Une équipe planifie ensemble et veut dimensionner le travail honnêtement.",
+      "off": "Les interventions se ressemblent, ou vous suivez déjà les heures."
+    },
+    "caveat": "Les points n'ont de sens qu'au sein d'une équipe. Les comparer entre équipes, ou les convertir en heures, leur donne une autorité qu'ils n'ont pas."
+  },
+  "epics": {
+    "summary": "Un ensemble plus vaste auquel appartiennent de nombreuses interventions — un projet, un site, une campagne. Les interventions restent distinctes ; l'épopée est la façon de les voir comme un tout.",
+    "caption": "De nombreuses interventions, réunies sous l'ensemble qu'elles servent.",
+    "steps": [
+      "Créez l'épopée correspondant à l'objectif plus large.",
+      "Rattachez-y des interventions, à la création ou plus tard.",
+      "L'épopée montre la part de l'ensemble qui est terminée."
+    ],
+    "benefits": [
+      "L'avancement d'un projet sans compter les cartes à la main",
+      "Des interventions qui gardent leurs responsables et leurs dates",
+      "Une façon de rendre compte par projet plutôt que par tâche"
+    ],
+    "fit": {
+      "on": "Le travail se regroupe naturellement en projets de plusieurs semaines ou mois.",
+      "off": "Chaque intervention est indépendante et se termine en quelques jours."
+    },
+    "caveat": "Une épopée regroupe le travail ; elle ne le planifie pas. La clôturer ne clôture pas les interventions qu'elle contient."
+  },
+  "phases": {
+    "summary": "Les étapes que traverse un travail — relevé, devis, pose, réception. Là où un flux gouverne une intervention, les phases décrivent la forme d'un projet entier.",
+    "caption": "Les étapes d'un projet, l'une après l'autre.",
+    "steps": [
+      "Définissez les phases que traverse ce type de projet.",
+      "Placez chaque intervention dans la phase qui lui correspond.",
+      "Voyez ce qui reste par phase plutôt qu'en une longue liste."
+    ],
+    "benefits": [
+      "Un projet lu par étapes plutôt qu'en liste plate",
+      "Une vue claire de l'endroit où le travail s'accumule",
+      "Des rapports par étape, pour les clients qui raisonnent ainsi"
+    ],
+    "fit": {
+      "on": "Les projets durent assez pour avoir des étapes distinctes.",
+      "off": "Le travail est court et passe directement de réservé à terminé."
+    },
+    "caveat": "Les phases regroupent des interventions au sein d'un projet. Ce ne sont pas des statuts : une intervention suit toujours son propre flux à l'intérieur de sa phase."
+  },
+  "crm": {
+    "summary": "La trace de ceux pour qui vous travaillez. Entreprises, personnes chez elles, ce qui a été convenu et ce qui a été fait — à côté du travail plutôt que dans un carnet d'adresses séparé.",
+    "caption": "Votre côté et celui du client, sur une même fiche partagée.",
+    "steps": [
+      "Ajoutez les entreprises pour lesquelles vous travaillez, et vos interlocuteurs.",
+      "Interventions, devis et historique se rattachent à la fiche client.",
+      "Tous ceux qui y ont accès voient le même compte, pas leur propre copie."
+    ],
+    "benefits": [
+      "Un seul endroit à consulter avant un appel, au lieu de trois",
+      "Un historique qui survit à celui qui suivait le compte",
+      "Des contacts en tant que personnes, pouvant travailler chez plusieurs entreprises"
+    ],
+    "fit": {
+      "on": "Vous travaillez pour des clients réguliers plutôt que pour des appels isolés.",
+      "off": "Le travail arrive par un seul canal et le client compte peu ensuite."
+    },
+    "caveat": "Un contact n'est pas un client : les contacts ne sont ni comptés ni facturés comme tels, donc une entreprise avec six contacts reste un client."
+  },
+  "b2c_portal": {
+    "summary": "Donne à vos clients un accès qui leur est propre, où ils peuvent déposer une demande et la suivre, sans appeler ni écrire à personne.",
+    "caption": "Le côté du client et le vôtre, se rejoignant sur la même demande.",
+    "steps": [
+      "Configurez le portail de l'espace et décidez ce que les clients peuvent demander.",
+      "Invitez les clients ; leur accès est strictement limité à leurs propres demandes.",
+      "Les demandes arrivent comme du travail sur votre tableau, déjà attribuées."
+    ],
+    "benefits": [
+      "Des demandes qui arrivent complètes plutôt qu'en message téléphonique",
+      "Des clients qui voient l'avancement sans demander",
+      "Moins d'appels pour savoir si quelque chose a été reçu"
+    ],
+    "fit": {
+      "on": "Les clients déposent eux-mêmes du travail et attendent d'en voir l'état.",
+      "off": "Le travail vient d'un interlocuteur qui préfère téléphoner."
+    },
+    "caveat": "Les utilisateurs du portail ne voient strictement que leurs propres demandes. Le portail nécessite le module CRM, car une demande doit appartenir à un client."
+  },
+  "space_sharing": {
+    "summary": "Permet à une autre organisation de travailler dans l'un de vos espaces — un sous-traitant, un partenaire, l'équipe d'un client — avec exactement l'accès que vous accordez, et rien de plus.",
+    "caption": "Deux organisations, un espace de travail partagé.",
+    "steps": [
+      "Partagez l'espace et choisissez ce que l'autre organisation peut y faire.",
+      "Ses équipes voient cet espace, et rien d'autre chez vous.",
+      "Arrêtez le partage et l'accès cesse, tandis que l'historique demeure."
+    ],
+    "benefits": [
+      "Des sous-traitants qui travaillent dans votre système plutôt que par e-mail",
+      "Un accès qui se termine proprement quand la relation se termine",
+      "Une seule version du travail, et non deux qui divergent"
+    ],
+    "fit": {
+      "on": "D'autres entreprises réalisent un travail qui doit arriver dans votre système.",
+      "off": "Tout le travail est fait par vos propres équipes."
+    },
+    "caveat": "Le partage se fait par espace et il est revérifié en continu : le retirer prend effet immédiatement, et l'autre partie n'en conserve aucune copie."
+  },
+  "workflows": {
+    "summary": "Vous permet de remplacer les statuts intégrés par les vôtres, et de décider quel statut peut suivre lequel. Un entretien de chaudière et une inspection de bâtiment ne suivent pas les mêmes étapes : c'est ici que vous le dites.",
+    "caption": "Seuls les mouvements que vous autorisez sont possibles — une intervention ne peut pas sauter à la fin.",
+    "steps": [
+      "Construisez un flux, ou partez d'un modèle et modifiez-le.",
+      "Affectez-le à un type d'intervention, pour que des travaux différents suivent des parcours différents.",
+      "Le tableau, les transitions autorisées et les boutons du mobile suivent votre définition."
+    ],
+    "benefits": [
+      "Des statuts dans vos mots plutôt que ceux du logiciel",
+      "Des transitions impossibles bloquées, pour un tableau conforme au réel",
+      "Un parcours différent par type de travail, dans tous les espaces"
+    ],
+    "fit": {
+      "on": "Votre processus comporte des étapes que les statuts standards ne décrivent pas.",
+      "off": "Les statuts intégrés correspondent déjà à votre façon de travailler."
+    },
+    "caveat": "Choisir un flux existant est toujours gratuit — construire le vôtre est ce que cette option achète. Elle s'achète une fois pour l'organisation et s'applique partout."
+  },
+  "recurring": {
+    "summary": "Des interventions qui se créent d'elles-mêmes selon un calendrier — un entretien mensuel, une inspection hebdomadaire — pour que le travail apparaisse quand il est dû et non quand quelqu'un y pense.",
+    "caption": "La même intervention, revenant à chaque échéance.",
+    "steps": [
+      "Définissez le rythme : à quelle fréquence et dans quel espace.",
+      "Chaque occurrence est créée comme une vraie intervention à son échéance.",
+      "Modifiez le rythme et les suivantes s'y conforment ; les passées restent inchangées."
+    ],
+    "benefits": [
+      "Une maintenance planifiée qui ne dépend pas de la mémoire",
+      "Une vue anticipée du travail engagé",
+      "Des occurrences réattribuables ou modifiables une par une"
+    ],
+    "fit": {
+      "on": "Une partie de votre travail suit un cycle que vous vous êtes engagé à tenir.",
+      "off": "Tout est réactif et planifié à la demande."
+    },
+    "caveat": "Une occurrence devient une intervention ordinaire dès sa création. Modifier le rythme ensuite ne réécrit pas les occurrences déjà existantes."
+  },
+  "shift_scheduling": {
+    "summary": "Planifiez qui travaille quand, publiez-le, et laissez la pointeuse comparer le réalisé au prévu. Sans planning, le pointage enregistre toujours les heures — il n'a simplement rien à quoi les comparer.",
+    "caption": "Le plan, et ce qui s'est réellement passé face à lui.",
+    "steps": [
+      "Construisez le planning de l'espace et publiez-le à l'équipe.",
+      "Chacun voit ses propres postes sur le mobile.",
+      "Le pointage est comparé au poste, et les écarts sont signalés."
+    ],
+    "benefits": [
+      "Un planning visible sans qu'on vous en envoie une photo",
+      "Retards, départs anticipés et absences signalés automatiquement",
+      "Les heures prévues qui donnent leur sens aux heures payées"
+    ],
+    "fit": {
+      "on": "Les personnes travaillent selon des horaires fixes que vous décidez à l'avance.",
+      "off": "Les personnes travaillent quand les interventions l'exigent, sans rythme fixe."
+    },
+    "caveat": "C'est ce qui donne au pointage son poste prévu. Seul, il planifie ; associé au pointage, il signale aussi ce qui ne s'est pas passé comme prévu."
+  },
+  "overtime": {
+    "summary": "Le circuit de validation du temps au-delà du poste prévu. Le temps supplémentaire est demandé, transmis à la personne responsable, puis validé ou non — avec signature.",
+    "caption": "Une demande, une décision, et une trace des deux.",
+    "steps": [
+      "Quelqu'un dépasse son poste, ou termine plus tôt, et une demande est créée.",
+      "Elle part vers son responsable, avec les heures et une signature.",
+      "Valider déplace les heures payées ; refuser les laisse comme prévu."
+    ],
+    "benefits": [
+      "Des heures supplémentaires convenues plutôt que découvertes sur une fiche de paie",
+      "Une trace de qui a validé quoi, et quand",
+      "Des chiffres de paie que personne n'a à reconstituer ensuite"
+    ],
+    "fit": {
+      "on": "Le temps supplémentaire existe et quelqu'un doit accepter de le payer.",
+      "off": "Les heures sont fixes, ou le temps supplémentaire se gère hors du système."
+    },
+    "caveat": "Valider du temps supplémentaire déplace la fin du poste, ce qui le rend payé. Il n'y a pas de taux majoré distinct ici, seulement des heures convenues."
+  },
+  "invoicing": {
+    "summary": "Transformez le travail terminé en factures pour vos clients, à partir de ce que les interventions ont déjà enregistré : heures, pièces et conditions convenues.",
+    "caption": "Travail et coûts agrégés en ce qu'un client doit.",
+    "steps": [
+      "Les interventions clôturées portent leurs heures, leurs pièces et le tarif convenu.",
+      "Construisez une facture pour un client à partir du travail d'une période.",
+      "Envoyez-la et suivez ce qui a été réglé."
+    ],
+    "benefits": [
+      "Des factures construites depuis le travail plutôt que ressaisies",
+      "Moins de délai entre la fin d'une intervention et sa facturation",
+      "Moins de contestations, car le détail est déjà consigné"
+    ],
+    "fit": {
+      "on": "Vous facturez le travail à des clients.",
+      "off": "La facturation se fait dans un système financier qui a déjà le nécessaire."
+    },
+    "caveat": "Ceci facture vos clients. C'est entièrement distinct de ce que vous nous payez : cela figure sur la page de facturation et n'est pas concerné."
+  },
+  "reports_builder": {
+    "summary": "Construisez vos propres rapports à partir des données que vous avez déjà : quoi mesurer, comment regrouper, sur quelle période — sans rien exporter.",
+    "caption": "Des chiffres rassemblés et agrégés en une réponse.",
+    "steps": [
+      "Choisissez quoi mesurer et comment le ventiler.",
+      "Exécutez sur la période qui vous intéresse.",
+      "Enregistrez-le, pour reposer la même question le mois suivant."
+    ],
+    "benefits": [
+      "Des réponses sans export vers un tableur",
+      "Des questions enregistrées une fois et reposées à volonté",
+      "Les mêmes chiffres pour tous, plutôt que la version de chacun"
+    ],
+    "fit": {
+      "on": "Vous posez régulièrement des questions auxquelles les écrans standards ne répondent pas.",
+      "off": "Les tableaux de bord vous disent déjà ce qu'il faut."
+    },
+    "caveat": "Un rapport ne voit que les données que son lecteur a le droit de voir : le même rapport peut donc afficher des totaux différents selon les personnes. C'est voulu."
+  },
+  "report_scheduling": {
+    "summary": "Envoie un rapport enregistré selon un calendrier, aux personnes concernées, sans que quiconque ait à penser à l'exécuter.",
+    "caption": "Le même rapport, arrivant de lui-même à chaque période.",
+    "steps": [
+      "Enregistrez un rapport dont vous avez régulièrement besoin.",
+      "Définissez quand il doit partir, et à qui.",
+      "Il arrive par e-mail selon ce calendrier."
+    ],
+    "benefits": [
+      "Des chiffres qui arrivent sans qu'on les réclame",
+      "Tout le monde lisant les mêmes chiffres le même jour",
+      "Une tâche récurrente de moins dans la semaine de quelqu'un"
+    ],
+    "fit": {
+      "on": "Quelqu'un exécute aujourd'hui le même rapport à la main chaque semaine ou chaque mois.",
+      "off": "Les rapports sont consultés quand une question se pose, pas selon un cycle."
+    },
+    "caveat": "Nécessite le générateur de rapports, puisqu'il envoie des rapports enregistrés. Chaque destinataire reçoit des chiffres selon son propre accès, pas celui de l'expéditeur."
+  },
+  "audit_log": {
+    "summary": "Une trace de chaque modification : qui, quoi et quand. C'est la réponse à « qui a déplacé ça » quand personne ne s'en souvient.",
+    "caption": "Chaque modification classée dans l'ordre, la plus ancienne dessous.",
+    "steps": [
+      "Les modifications sont enregistrées au fil de l'eau, sans action de personne.",
+      "Ouvrez l'historique d'une intervention, d'une personne ou d'un espace.",
+      "L'enregistrement n'est pas modifiable, ce qui fait justement sa valeur."
+    ],
+    "benefits": [
+      "Une réponse à qui a modifié quelque chose, sans avoir à demander",
+      "Des éléments en cas de litige sur des heures, un statut ou un accès",
+      "Une piste pour les auditeurs qui n'a pas à être reconstituée"
+    ],
+    "fit": {
+      "on": "Vous devez rendre compte des modifications, ou des litiges surviennent.",
+      "off": "L'équipe est assez petite pour qu'il soit plus rapide de demander."
+    },
+    "caveat": "Les entrées sont conservées pendant une durée fixe puis supprimées. Sont consignées les modifications faites dans l'application, pas les conversations en dehors."
+  },
+  "documents": {
+    "summary": "Le dossier du personnel : ce que vous émettez, comme les contrats et les bulletins, et ce que les personnes vous fournissent, comme une pièce d'identité ou un permis. Avec signature, échéance et relances.",
+    "caption": "Un dossier par personne, avec tout ce qui a été émis et fourni.",
+    "steps": [
+      "Définissez les types de document que vous traitez, et qui peut voir chacun.",
+      "Émettez des documents, ou demandez aux personnes de fournir les leurs.",
+      "Les documents circulent pour signature, et ceux qui expirent sont relancés automatiquement."
+    ],
+    "benefits": [
+      "Un dossier du personnel qui n'est pas un disque partagé",
+      "Des signatures recueillies dans l'application, avec la preuve du signataire",
+      "Des permis qui expirent, repérés avant l'échéance"
+    ],
+    "fit": {
+      "on": "Vous employez des personnes et détenez des documents à leur sujet.",
+      "off": "Tout le monde est indépendant et les documents vivent ailleurs."
+    },
+    "caveat": "Chaque type de document nomme les rôles autorisés à le voir, si bien que la personne qui relance les permis n'a pas besoin de voir les bulletins. Un type sans rôle nommé est visible par tous ceux qui peuvent consulter les documents : c'est le réglage par défaut, pas une restriction."
+  },
+  "priority_routing": {
+    "summary": "Place vos demandes d'assistance en tête de file, avec un délai de réponse que nous nous engageons à tenir plutôt qu'à viser.",
+    "caption": "Des demandes triées, la vôtre prise en premier.",
+    "steps": [
+      "Déposez vos demandes exactement comme aujourd'hui.",
+      "Les vôtres sont prises avant la file standard.",
+      "Les délais de réponse sont engagés, et mesurés."
+    ],
+    "benefits": [
+      "Une première réponse plus rapide quand quelque chose ne va pas",
+      "Un engagement plutôt qu'une attente",
+      "Moins d'attente quand le problème bloque le travail"
+    ],
+    "fit": {
+      "on": "L'immobilisation vous coûte de l'argent et attendre coûte cher.",
+      "off": "Les questions peuvent attendre un jour sans conséquence."
+    },
+    "caveat": "Cela concerne la rapidité de notre réponse, pas celle de la résolution : certains problèmes demandent un correctif plus long qu'une réponse."
+  },
+  "live_chat": {
+    "summary": "Parlez à une personne dans l'application, le problème sous les yeux, au lieu de le rédiger et d'attendre.",
+    "caption": "",
+    "steps": [
+      "Ouvrez la discussion depuis n'importe où dans l'application.",
+      "Décrivez le problème pendant que vous le regardez.",
+      "La conversation reste rattachée à votre compte."
+    ],
+    "benefits": [
+      "Des réponses en minutes plutôt qu'un échange d'e-mails",
+      "Pas besoin de rédiger un problème qu'on peut montrer",
+      "Une trace de ce qui a été dit, conservée avec votre compte"
+    ],
+    "fit": {
+      "on": "Votre équipe rencontre des questions en pleine journée et ne peut pas s'arrêter.",
+      "off": "Des questions occasionnelles que l'e-mail traite très bien."
+    },
+    "caveat": "La discussion est assurée aux heures ouvrables. En dehors, un message devient une demande d'assistance normale, traitée en début de journée."
+  },
+  "dedicated_support": {
+    "summary": "Une personne nommée qui connaît votre configuration, plutôt que celle qui décroche le ticket.",
+    "caption": "",
+    "steps": [
+      "Vous êtes présenté à la personne qui suit votre compte.",
+      "Elle apprend votre configuration, pour que vous cessiez de l'expliquer.",
+      "Elle traite vos demandes et fait remonter en votre nom."
+    ],
+    "benefits": [
+      "Quelqu'un qui connaît déjà votre configuration",
+      "Plus besoin de réexpliquer votre installation à chaque demande",
+      "Une personne à qui s'adresser, pas une file d'attente"
+    ],
+    "fit": {
+      "on": "Votre installation est assez vaste ou particulière pour que le contexte compte.",
+      "off": "Le produit fait ce qu'il faut et les questions sont rares."
+    },
+    "caveat": "Un contact nommé travaille aux heures ouvrables de son fuseau. Les urgences en dehors passent par le circuit d'assistance habituel."
+  }
+}

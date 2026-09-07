@@ -8031,5 +8031,25 @@
       "OUTSIDE_GEOFENCE_OUT": "Off-site out",
       "UNSCHEDULED_DAY": "Unscheduled"
     }
+  },
+  "explainerButton": {
+    "aria": "Learn more about {{name}}"
+  },
+  "explainer": {
+    "scope": {
+      "workspace": "Per workspace",
+      "organization": "Whole organization"
+    },
+    "state": {
+      "on": "Currently on",
+      "off": "Currently off"
+    },
+    "whatItIs": "What it is",
+    "howToUse": "How it is used",
+    "whatYouGet": "What you get",
+    "isItForYou": "Is it for you?",
+    "fitOn": "Turn it on when",
+    "fitOff": "You can leave it off when",
+    "goodToKnow": "Good to know"
   }
 }

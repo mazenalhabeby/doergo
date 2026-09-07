@@ -8031,5 +8031,25 @@
       "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
       "UNSCHEDULED_DAY": "Sin programar"
     }
+  },
+  "explainerButton": {
+    "aria": "Más información sobre {{name}}"
+  },
+  "explainer": {
+    "scope": {
+      "workspace": "Por espacio de trabajo",
+      "organization": "Toda la organización"
+    },
+    "state": {
+      "on": "Activado",
+      "off": "Desactivado"
+    },
+    "whatItIs": "Qué es",
+    "howToUse": "Cómo se usa",
+    "whatYouGet": "Qué obtiene",
+    "isItForYou": "¿Es para usted?",
+    "fitOn": "Actívelo cuando",
+    "fitOff": "Puede dejarlo desactivado cuando",
+    "goodToKnow": "Conviene saber"
   }
 }

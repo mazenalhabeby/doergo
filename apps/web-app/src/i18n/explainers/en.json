@@ -1,0 +1,536 @@
+{
+  "subtasks": {
+    "summary": "Lets one job be broken into smaller jobs underneath it. The parent stays the thing you scheduled and reported on; the children are the pieces somebody actually ticks off during the day.",
+    "caption": "One parent job, with its own smaller jobs beneath it.",
+    "steps": [
+      "Open a job and add the smaller pieces of work it really consists of.",
+      "Each subtask can be assigned to a different person and finished separately.",
+      "The parent shows how much of it is done, so progress is visible without opening it."
+    ],
+    "benefits": [
+      "A long job stops looking like a single unmoving card on the board",
+      "Two people can work different parts of the same job at once",
+      "Progress you can see at a glance instead of asking"
+    ],
+    "fit": {
+      "on": "A single job routinely takes more than a day, or more than one person.",
+      "off": "Work arrives already small — one visit, one fix, one person."
+    },
+    "caveat": "Subtasks are pieces of their parent, not jobs in their own right: they do not appear as separate work on the board or in reports."
+  },
+  "checklists": {
+    "summary": "A tick-list inside a job. Use it for the steps that must happen every time and must be seen to have happened — a safety check, a handover, the things an inspector will ask about later.",
+    "caption": "Items ticked off in order, with the last one still open.",
+    "steps": [
+      "Add the items to the job, or to the task type so every job of that kind starts with them.",
+      "Whoever does the work ticks each item as they go, on the phone or on the web.",
+      "The record of what was ticked, and when, stays on the job."
+    ],
+    "benefits": [
+      "The same standard applied on every visit, by everyone",
+      "Evidence that a step was completed, not just claimed",
+      "New people can do unfamiliar work without being talked through it"
+    ],
+    "fit": {
+      "on": "Consistency matters, or somebody may later ask you to prove a step was done.",
+      "off": "The work varies so much that a fixed list would only be noise."
+    },
+    "caveat": "A checklist records that an item was ticked — it does not stop a job being finished with items outstanding. Use a workflow if you need it to be enforced."
+  },
+  "attachments": {
+    "summary": "Photos and documents attached to a job. Uploaded straight from the phone on site, kept with the job rather than in somebody's camera roll or a message thread.",
+    "caption": "Files kept with the job they belong to.",
+    "steps": [
+      "Attach from the phone camera, the gallery, or from a file on the web.",
+      "Everyone with access to the job sees the same files, immediately.",
+      "Files stay attached to the job for as long as the job is kept."
+    ],
+    "benefits": [
+      "Before-and-after evidence in the place it belongs",
+      "No hunting through chats for the photo somebody took",
+      "The same file for the office and the person on site"
+    ],
+    "fit": {
+      "on": "The work produces anything visual, or you need proof of condition.",
+      "off": "Nobody photographs anything and no paperwork changes hands."
+    },
+    "caveat": "Attachments count towards your storage, and large videos consume it quickly. Photos are compressed before upload; other files are stored as they are."
+  },
+  "dependencies": {
+    "summary": "Says that one job cannot start until another has finished. The board and the schedule then reflect the real order of work rather than a list of things that all look equally ready.",
+    "caption": "Work that must happen in order — the last step only opens once the earlier ones close.",
+    "steps": [
+      "Link a job to the one it waits on.",
+      "A job whose predecessor is unfinished is shown as blocked rather than available.",
+      "When the earlier job closes, the next one opens on its own."
+    ],
+    "benefits": [
+      "Nobody starts work that cannot actually be started yet",
+      "The knock-on effect of a delay is visible immediately",
+      "Sequenced work can be planned without a spreadsheet beside it"
+    ],
+    "fit": {
+      "on": "Jobs genuinely wait on each other — a fit-out, an install, a staged repair.",
+      "off": "Every job stands alone and can be done in any order."
+    },
+    "caveat": "Dependencies describe order, not dates. A blocked job does not move itself in the calendar when the job it waits on slips."
+  },
+  "custom_fields": {
+    "summary": "Extra fields on a job, defined by you. Meter readings, serial numbers, a reference from the client's own system — whatever this kind of work needs recorded in a consistent place.",
+    "caption": "Your own fields, filled in as part of the job.",
+    "steps": [
+      "Define the fields on a task type, so every job of that kind asks for them.",
+      "The fields appear on the job for whoever does the work to fill in.",
+      "What was entered can be read back in reports and exports."
+    ],
+    "benefits": [
+      "Information captured the same way every time, not in free text",
+      "Values you can actually report on afterwards",
+      "Different kinds of work can ask for different things"
+    ],
+    "fit": {
+      "on": "You keep asking people to write the same detail into the description.",
+      "off": "The description and a photo already cover everything."
+    },
+    "caveat": "Fields belong to a task type. Moving a job to a different type drops the fields the new type does not ask for — the values are not carried across."
+  },
+  "tracking": {
+    "summary": "Records the route taken to a job while somebody is on their way, and shows where people on the road are now. It is about the journey to the work, not about watching people all day.",
+    "caption": "The actual path taken between two stops.",
+    "steps": [
+      "Recording starts when the person marks themselves on the way, and stops when they arrive.",
+      "The live map shows who is where, so the next job goes to whoever is nearest.",
+      "The finished route stays on the job, with distance and time."
+    ],
+    "benefits": [
+      "Distance and travel time you can bill or reimburse without a claim form",
+      "An answer to \"how long until someone gets here\" that is not a guess",
+      "A record of the journey if a visit is ever disputed"
+    ],
+    "fit": {
+      "on": "People drive between jobs and the travel is part of the cost.",
+      "off": "Everyone works at one site, or travel is not yours to account for."
+    },
+    "caveat": "Recording only runs between setting off and arriving — never for the rest of the day. It needs background location permission on the phone, and the person is told when it is on."
+  },
+  "service_reports": {
+    "summary": "The record of what was done, produced at the end of a job: the work carried out, parts used, photos, and signatures from both your engineer and the customer.",
+    "caption": "One report per job, filed with everything it needs.",
+    "steps": [
+      "The person finishing the job fills in what was done and any parts used.",
+      "Both sides sign on the phone — your engineer, and whoever is there for the customer.",
+      "The finished report stays on the job and on the asset's history."
+    ],
+    "benefits": [
+      "Proof of work signed on site, not chased afterwards",
+      "Parts recorded where the cost can be seen against the job",
+      "A maintenance history that builds itself as jobs are completed"
+    ],
+    "fit": {
+      "on": "Customers expect a record of the visit, or you invoice for work done.",
+      "off": "The job is finished when it is marked finished and nobody asks for more."
+    },
+    "caveat": "A report can be corrected for a short window after completion; after that it is fixed, because its value is that it was signed at the time."
+  },
+  "assets": {
+    "summary": "The things you look after — machines, vehicles, apartments, equipment — kept as records with their own history, so a job can be about a specific item and not just an address.",
+    "caption": "One record per thing, with its history filed underneath.",
+    "steps": [
+      "Define the kinds of asset you look after and what each kind needs recorded.",
+      "Attach a job to an asset instead of only to a place.",
+      "Every completed job adds to that asset's history automatically."
+    ],
+    "benefits": [
+      "The full service history of an item in one place",
+      "Recurring maintenance that follows the item, not a calendar note",
+      "An answer to \"when was this last touched, and by whom\""
+    ],
+    "fit": {
+      "on": "You service the same items repeatedly, or manage property.",
+      "off": "Every job is a one-off at a different place."
+    },
+    "caveat": "An asset belongs to its kind, and the kind belongs to a workspace. Moving an asset between workspaces means changing its kind, and fields the new kind does not ask for are dropped."
+  },
+  "time_tracking": {
+    "summary": "Turns a workspace into somewhere people clock in and out. It records what actually happened, and separately works out what should be paid — so a shift that started early or ran late does not become an argument at the end of the month.",
+    "caption": "Arriving early is recorded, and paid from the shift start. The same applies at the end.",
+    "steps": [
+      "People clock in from the phone or the web. If the workspace has an address, the app checks they are there; a workspace with no coordinates skips that check.",
+      "Rests are planned for the workspace, prompted at the right time, and recorded as taken or missed.",
+      "Finishing short, or running past the shift, raises a request that goes to whoever is responsible for that person.",
+      "Only flagged shifts need review — clean ones approve themselves."
+    ],
+    "benefits": [
+      "Hours per person and workspace, ready for payroll",
+      "An approval trail showing who accepted which hours",
+      "Late starts, early finishes and missed rests surfaced as they happen",
+      "People working away from any site can clock in too, where you allow it"
+    ],
+    "fit": {
+      "on": "People are paid for time rather than for a finished job.",
+      "off": "You care that the work is done, not when somebody arrived."
+    },
+    "caveat": "Working away from a site needs two things: the workspace must allow it and the person must be granted it. Neither alone is enough, so a strict site cannot be opened up by one person's settings."
+  },
+  "sprints": {
+    "summary": "Fixed periods of work that a set of jobs is committed to. Useful when a team plans in weeks rather than reacting to whatever arrives.",
+    "caption": "A period of work, with what was committed and what actually landed.",
+    "steps": [
+      "Open a sprint for the period you plan in.",
+      "Move the jobs you intend to finish into it.",
+      "At the end, see what completed and what carried over."
+    ],
+    "benefits": [
+      "A team that knows what this period is for",
+      "A visible difference between planned and actual",
+      "A basis for judging how much fits in the next one"
+    ],
+    "fit": {
+      "on": "Work is planned in cycles by a team that decides its own load.",
+      "off": "Jobs arrive from customers and are done in the order they arrive."
+    },
+    "caveat": "Sprints suit planned work. If your day is driven by incoming calls, a sprint mostly measures how often the plan was interrupted."
+  },
+  "story_points": {
+    "summary": "A size on each job, so a team can talk about how much work something is without pretending to know how many hours it takes.",
+    "caption": "Sizes rolled up, so a period's load can be compared to the last one.",
+    "steps": [
+      "Put a size on jobs when planning, using whatever scale the team agrees.",
+      "Sizes add up across a sprint or a period.",
+      "Compare periods to see what the team actually gets through."
+    ],
+    "benefits": [
+      "A shared sense of size that survives an optimistic estimate",
+      "Load compared between periods rather than guessed",
+      "A planning conversation that is not about hours"
+    ],
+    "fit": {
+      "on": "A team plans together and wants to size work honestly.",
+      "off": "Jobs are broadly similar, or you already track hours."
+    },
+    "caveat": "Points only mean something within one team. Comparing them between teams, or turning them into hours, gives the number an authority it does not have."
+  },
+  "epics": {
+    "summary": "A larger piece of work that many jobs belong to — a project, a site, a campaign. The jobs stay separate; the epic is how you see them as one thing.",
+    "caption": "Many jobs, gathered under the larger thing they serve.",
+    "steps": [
+      "Create the epic for the larger goal.",
+      "Attach jobs to it as they are created or afterwards.",
+      "The epic shows how much of the whole is finished."
+    ],
+    "benefits": [
+      "Progress on a project without counting cards by hand",
+      "Jobs that keep their own owners and dates",
+      "A way to report on a project rather than on tasks"
+    ],
+    "fit": {
+      "on": "Work naturally clusters into projects that run for weeks or months.",
+      "off": "Every job is independent and finished within days."
+    },
+    "caveat": "An epic groups work; it does not schedule it. Closing an epic does not close the jobs inside it."
+  },
+  "phases": {
+    "summary": "The stages a piece of work passes through — survey, quote, install, sign-off. Where a workflow governs one job, phases describe the shape of a whole project.",
+    "caption": "The stages of a project, one following the other.",
+    "steps": [
+      "Define the phases this kind of project goes through.",
+      "Put each job into the phase it belongs to.",
+      "See what is outstanding in each phase rather than one long list."
+    ],
+    "benefits": [
+      "A project read as stages instead of a flat backlog",
+      "A clear view of where work is piling up",
+      "Reporting by stage, for clients who ask in those terms"
+    ],
+    "fit": {
+      "on": "Projects run long enough to have distinct stages.",
+      "off": "Work is short and moves straight from booked to done."
+    },
+    "caveat": "Phases group jobs within a project. They are not statuses — a job still moves through its own workflow inside whichever phase it sits in."
+  },
+  "crm": {
+    "summary": "The record of who you work for. Companies, the people at them, what was agreed and what has been done — kept beside the work instead of in a separate address book.",
+    "caption": "Your side and the client's, kept against one shared record.",
+    "steps": [
+      "Add the companies you work for, and the people you deal with at each.",
+      "Jobs, quotes and history attach to the client record.",
+      "Anyone with access sees the same account, not their own copy."
+    ],
+    "benefits": [
+      "One place to look before a call, instead of three",
+      "History that survives whoever used to handle the account",
+      "Contacts kept as people, so one person can work at several firms"
+    ],
+    "fit": {
+      "on": "You work for repeat clients rather than one-off callers.",
+      "off": "Work comes through one channel and the client rarely matters afterwards."
+    },
+    "caveat": "A contact person is not a client: contacts are not counted as clients and are not billed as such, so a firm with six contacts is still one client."
+  },
+  "b2c_portal": {
+    "summary": "Gives your clients a login of their own, where they can raise a request and follow it, without phoning or emailing anyone.",
+    "caption": "The client's side and yours, meeting at the same request.",
+    "steps": [
+      "Set up the portal for the workspace and decide what clients may raise.",
+      "Invite clients; they get a login limited strictly to their own requests.",
+      "Requests arrive as work on your board, already attributed."
+    ],
+    "benefits": [
+      "Requests that arrive complete instead of as a phone message",
+      "Clients who can see progress without asking",
+      "Fewer calls asking whether something was received"
+    ],
+    "fit": {
+      "on": "Clients raise work themselves and expect to see where it stands.",
+      "off": "Work arrives from one contact who prefers to call."
+    },
+    "caveat": "Portal users see strictly their own requests and nothing else. The portal needs the CRM module, because a request has to belong to a client."
+  },
+  "space_sharing": {
+    "summary": "Lets another organization work inside one of your workspaces — a subcontractor, a partner, a client's own team — with exactly the access you grant and no more.",
+    "caption": "Two organizations, one shared workspace between them.",
+    "steps": [
+      "Share the workspace with the other organization and choose what they may do.",
+      "Their people see that workspace, and nothing else of yours.",
+      "Stop sharing and the access ends, while the history stays."
+    ],
+    "benefits": [
+      "Subcontractors working in your system instead of over email",
+      "Access that ends cleanly when the relationship does",
+      "One version of the work, not two that drift apart"
+    ],
+    "fit": {
+      "on": "Other companies do work that has to land in your system.",
+      "off": "All the work is done by your own people."
+    },
+    "caveat": "Sharing is per workspace and is re-checked continuously — removing a share takes effect immediately, and the other side keeps no copy."
+  },
+  "workflows": {
+    "summary": "Lets you replace the built-in job statuses with your own, and decide which status may follow which. A boiler service and a building inspection do not move through the same stages, and this is where you say so.",
+    "caption": "Only the moves you allow are possible — a job cannot skip to the end.",
+    "steps": [
+      "Build a workflow, or start from a template and edit it.",
+      "Assign it to a task type, so different work can follow different routes.",
+      "The board, the allowed moves and the phone's buttons all follow what you defined."
+    ],
+    "benefits": [
+      "Statuses in your words rather than the software's",
+      "Impossible transitions blocked, so the board reflects reality",
+      "A different route per kind of work, across every workspace"
+    ],
+    "fit": {
+      "on": "Your process has stages the standard statuses do not describe.",
+      "off": "The built-in statuses already match how you work."
+    },
+    "caveat": "Choosing an existing workflow is always free — building your own is what this buys. It is bought once for the organization and applies everywhere."
+  },
+  "recurring": {
+    "summary": "Jobs that create themselves on a schedule — a monthly service, a weekly inspection — so the work appears when it is due instead of when somebody remembers.",
+    "caption": "The same job, arriving again each time it is due.",
+    "steps": [
+      "Set the pattern on a job: how often, and in which workspace.",
+      "Each occurrence is created as a real job when it comes due.",
+      "Change the pattern and future occurrences follow; past ones stay as they were."
+    ],
+    "benefits": [
+      "Planned maintenance that does not depend on memory",
+      "A forward view of committed work",
+      "Occurrences that can be reassigned or edited individually"
+    ],
+    "fit": {
+      "on": "Some of your work happens on a cycle you have promised to keep.",
+      "off": "Everything is reactive and scheduled when it is asked for."
+    },
+    "caveat": "An occurrence becomes an ordinary job the moment it is created. Editing the pattern afterwards does not rewrite occurrences that already exist."
+  },
+  "shift_scheduling": {
+    "summary": "Plan who works when, publish it, and let the clock compare what happened against what was planned. Without a rota, time tracking still records hours — it just has nothing to measure them against.",
+    "caption": "The plan, and what actually happened against it.",
+    "steps": [
+      "Build the rota for the workspace and publish it to the team.",
+      "People see their own shifts on the phone.",
+      "Clocking in and out is compared with the shift, and differences are flagged."
+    ],
+    "benefits": [
+      "A rota people can see without being sent a picture of one",
+      "Late starts, early finishes and no-shows surfaced automatically",
+      "The planned hours that make paid hours meaningful"
+    ],
+    "fit": {
+      "on": "People work set hours you decide in advance.",
+      "off": "People work when the jobs require it, with no fixed pattern."
+    },
+    "caveat": "This is what gives time tracking its planned shift. On its own it plans; paired with time tracking it also flags what did not go to plan."
+  },
+  "overtime": {
+    "summary": "The approval path for time beyond the planned shift. Extra time is requested, goes to whoever is responsible for that person, and is either approved or not — with a signature.",
+    "caption": "A request, a decision, and a record of both.",
+    "steps": [
+      "Somebody works past their shift, or finishes short, and a request is raised.",
+      "It goes to the person responsible for them, with the hours and a signature.",
+      "Approving moves the paid hours; refusing leaves them as planned."
+    ],
+    "benefits": [
+      "Extra hours agreed rather than discovered on a payslip",
+      "A record of who approved what, and when",
+      "Payroll figures nobody has to reconstruct afterwards"
+    ],
+    "fit": {
+      "on": "Extra time happens and somebody has to agree to pay for it.",
+      "off": "Hours are fixed, or extra time is handled outside the system."
+    },
+    "caveat": "Approving extra time moves the end of the shift, which is what makes it paid — there is no separate overtime rate here, only agreed hours."
+  },
+  "invoicing": {
+    "summary": "Turn completed work into invoices for your clients, using what the jobs already recorded — hours, parts, and what was agreed.",
+    "caption": "Work and costs rolled up into what a client owes.",
+    "steps": [
+      "Completed jobs carry their hours, parts and any agreed rate.",
+      "Build an invoice for a client from the work in a period.",
+      "Send it, and track what has been paid."
+    ],
+    "benefits": [
+      "Invoices built from the work rather than retyped from it",
+      "Less time between finishing a job and billing it",
+      "Fewer arguments, because the detail is already recorded"
+    ],
+    "fit": {
+      "on": "You bill clients for work rather than being paid a salary.",
+      "off": "Billing happens in a finance system that already has what it needs."
+    },
+    "caveat": "This invoices your clients. It is entirely separate from what you pay us — that is on the billing page and is not affected."
+  },
+  "reports_builder": {
+    "summary": "Build your own reports from the data you already have: choose what to measure, how to group it, and over what period, without exporting anything.",
+    "caption": "Figures gathered and rolled up into an answer.",
+    "steps": [
+      "Pick what to measure and how to break it down.",
+      "Run it over the period you care about.",
+      "Save it, so the same question can be asked again next month."
+    ],
+    "benefits": [
+      "Answers without a spreadsheet export",
+      "Questions saved once and re-asked whenever needed",
+      "The same numbers for everyone, rather than each person's own cut"
+    ],
+    "fit": {
+      "on": "You regularly ask questions the standard screens do not answer.",
+      "off": "The dashboards already tell you what you need."
+    },
+    "caveat": "A report only sees data the reader is allowed to see, so the same report can show different totals to different people. That is deliberate."
+  },
+  "report_scheduling": {
+    "summary": "Sends a saved report on a schedule, to the people who need it, without anyone remembering to run it.",
+    "caption": "The same report, arriving on its own each period.",
+    "steps": [
+      "Save a report you want regularly.",
+      "Set when it should go, and to whom.",
+      "It arrives by email on that schedule."
+    ],
+    "benefits": [
+      "Numbers that turn up without being chased",
+      "Everyone reading the same figures on the same day",
+      "One less recurring task in somebody's week"
+    ],
+    "fit": {
+      "on": "Somebody currently runs the same report by hand every week or month.",
+      "off": "Reports are looked at when a question comes up, not on a cycle."
+    },
+    "caveat": "Needs the report builder, since it sends saved reports. Recipients receive figures scoped to their own access, not the sender's."
+  },
+  "audit_log": {
+    "summary": "A record of every change: who did it, what changed, and when. It is the answer to \"who moved this\" when nobody remembers.",
+    "caption": "Every change filed in order, oldest underneath.",
+    "steps": [
+      "Changes are recorded as they happen, with no action needed from anyone.",
+      "Open the history on a job, a member or a workspace to see its trail.",
+      "The record cannot be edited, which is what makes it worth having."
+    ],
+    "benefits": [
+      "An answer to who changed something, without asking around",
+      "Evidence for disputes about hours, status or access",
+      "A trail for auditors that does not have to be assembled"
+    ],
+    "fit": {
+      "on": "You need to account for changes, or disputes come up.",
+      "off": "The team is small enough that asking is faster than looking."
+    },
+    "caveat": "Entries are kept for a fixed retention period and then removed. It records changes made in the app — not conversations elsewhere."
+  },
+  "documents": {
+    "summary": "The personnel file: what you issue to people, such as contracts and payslips, and what they supply to you, such as a passport or a licence. With signing, expiry and reminders.",
+    "caption": "One file per person, with everything issued and supplied.",
+    "steps": [
+      "Define the kinds of document you handle, and who may see each kind.",
+      "Issue documents to people, or ask them to supply theirs.",
+      "Documents route for signature, and expiring ones are chased automatically."
+    ],
+    "benefits": [
+      "A personnel file that is not a shared drive",
+      "Signatures collected in the app, with evidence of who signed",
+      "Expiring licences noticed before they expire"
+    ],
+    "fit": {
+      "on": "You employ people and hold documents about them.",
+      "off": "Everyone is a contractor and paperwork lives elsewhere."
+    },
+    "caveat": "Each document type names the roles that may see it, so the person chasing driving licences need not see payslips. A type with no roles named is visible to everyone who may view documents — that is the default, not a restriction."
+  },
+  "priority_routing": {
+    "summary": "Puts your support requests at the front of the queue, with a response time we commit to rather than aim for.",
+    "caption": "Requests sorted, with yours taken first.",
+    "steps": [
+      "Raise support requests exactly as you do now.",
+      "Yours are picked up ahead of the standard queue.",
+      "Response times are committed, and measured."
+    ],
+    "benefits": [
+      "A faster first response when something is wrong",
+      "A commitment rather than an expectation",
+      "Less waiting when the problem is stopping work"
+    ],
+    "fit": {
+      "on": "Downtime costs you money and waiting is expensive.",
+      "off": "Questions can wait a day without anything going wrong."
+    },
+    "caveat": "This covers how quickly we respond, not how quickly every problem is solved — some need a fix that takes longer than a reply."
+  },
+  "live_chat": {
+    "summary": "Talk to a person in the app, while you have the problem in front of you, instead of writing it up and waiting.",
+    "caption": "",
+    "steps": [
+      "Open chat from anywhere in the app.",
+      "Describe the problem while you are looking at it.",
+      "The conversation stays with your account for reference."
+    ],
+    "benefits": [
+      "Answers in minutes rather than a round of emails",
+      "No writing up a problem you can simply show",
+      "A record of what was said, kept with your account"
+    ],
+    "fit": {
+      "on": "Your team hits questions during the working day and cannot pause.",
+      "off": "Occasional questions that email handles perfectly well."
+    },
+    "caveat": "Live chat is staffed during business hours. Outside them a message becomes a normal support request and is answered when the day starts."
+  },
+  "dedicated_support": {
+    "summary": "A named person who knows your setup, rather than whoever picks up the ticket.",
+    "caption": "",
+    "steps": [
+      "You are introduced to the person who looks after your account.",
+      "They learn how you are set up, so you stop re-explaining it.",
+      "They handle your requests and escalate on your behalf."
+    ],
+    "benefits": [
+      "Somebody who already knows your configuration",
+      "No re-explaining your setup with every request",
+      "A person to take a problem to, not a queue"
+    ],
+    "fit": {
+      "on": "Your setup is large or unusual enough that context matters.",
+      "off": "The product does what you need and questions are rare."
+    },
+    "caveat": "A named contact works business hours in their own timezone. Urgent matters outside those hours go through the normal support path."
+  }
+}

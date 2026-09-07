@@ -8031,5 +8031,25 @@
       "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
       "UNSCHEDULED_DAY": "Nicht geplant"
     }
+  },
+  "explainerButton": {
+    "aria": "Mehr über {{name}} erfahren"
+  },
+  "explainer": {
+    "scope": {
+      "workspace": "Pro Arbeitsbereich",
+      "organization": "Ganze Organisation"
+    },
+    "state": {
+      "on": "Derzeit aktiv",
+      "off": "Derzeit inaktiv"
+    },
+    "whatItIs": "Was es ist",
+    "howToUse": "So wird es genutzt",
+    "whatYouGet": "Das bekommen Sie",
+    "isItForYou": "Passt es zu Ihnen?",
+    "fitOn": "Aktivieren, wenn",
+    "fitOff": "Sie können es aus lassen, wenn",
+    "goodToKnow": "Gut zu wissen"
   }
 }
