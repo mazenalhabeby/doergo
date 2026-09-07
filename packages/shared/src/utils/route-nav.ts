@@ -240,3 +240,68 @@ export function navAppCandidates(platform: 'ios' | 'android'): NavApp[] {
 export function isAlwaysAvailable(app: NavApp, platform: 'ios' | 'android'): boolean {
   return app === 'apple' && platform === 'ios';
 }
+
+/**
+ * How close counts as "standing at this stop".
+ *
+ * Generous on purpose. A phone's fix drifts, a delivery entrance can be a
+ * street away from the pin somebody dropped, and a driver parks where there is
+ * space. The cost of the two mistakes is not symmetric: too tight and the
+ * driver is sent to navigate to a building they are inside, which is absurd
+ * and obvious; too loose and the route skips a stop, which is a missed
+ * customer nobody notices until the end of the day.
+ *
+ * So it is wide enough to absorb a car park and no wider — and only ever
+ * applied to the NEAREST stop, so two shops on the same street cannot both
+ * match.
+ */
+export const AT_STOP_RADIUS_METRES = 150;
+
+/**
+ * Where the driver has got to, judged by where they are standing.
+ *
+ * "Start navigation" pressed at the second stop should continue to the third,
+ * not replay the morning. The product already records an arrival when a task
+ * goes En Route -> Arrived, but a driver who simply drove there without
+ * touching their phone has no such record — and they are the ones most likely
+ * to press this button.
+ *
+ * So position is read as evidence too: the nearest stop, if it is close
+ * enough, is one they have reached. Everything up to and including it is
+ * behind them; what remains keeps the order the optimizer chose. Nothing is
+ * re-optimised — a route that reshuffles itself whenever it is opened is one
+ * nobody can follow or check against the plan they agreed.
+ */
+export function stopsAheadOf<T extends { id: string; lat: number; lng: number }>(
+  position: LatLng | null | undefined,
+  ordered: T[],
+  arrivedIds: ReadonlySet<string> = new Set(),
+): T[] {
+  const notArrived = ordered.filter((s) => !arrivedIds.has(s.id));
+  if (!position || notArrived.length === 0) return notArrived;
+
+  // The nearest stop, and only it, may be the one they are standing at.
+  let nearestIdx = -1;
+  let nearestMetres = Infinity;
+  for (let i = 0; i < notArrived.length; i++) {
+    const s = notArrived[i]!;
+    const d = haversineDistance(position.lat, position.lng, s.lat, s.lng);
+    if (d < nearestMetres) {
+      nearestMetres = d;
+      nearestIdx = i;
+    }
+  }
+
+  // Not at any of them: they are between stops, so the whole remainder stands.
+  if (nearestIdx < 0 || nearestMetres > AT_STOP_RADIUS_METRES) return notArrived;
+
+  /*
+    Standing at one: it and everything BEFORE it in the plan are behind them.
+
+    Earlier stops are dropped as well, deliberately. Reaching stop three means
+    one and two were either done or deliberately skipped; either way, sending
+    somebody backwards through the morning is not what they asked for by
+    pressing continue.
+  */
+  return notArrived.slice(nearestIdx + 1);
+}

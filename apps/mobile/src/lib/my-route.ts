@@ -86,17 +86,3 @@ export function hasArrived(task: Pick<Task, 'id'> & { routeEndedAt?: string | nu
   return !!task.routeEndedAt;
 }
 
-/**
- * The stops still to drive to, in the planned order.
- *
- * Note this deliberately keeps the ORDER the optimizer chose rather than
- * re-optimising from the current position: the plan was made for the day, and
- * a route that silently reshuffles itself every time it is opened is one
- * nobody can follow or check.
- */
-export function remainingStops<T extends { id: string }>(
-  ordered: T[],
-  arrivedIds: ReadonlySet<string>,
-): T[] {
-  return ordered.filter((s) => !arrivedIds.has(s.id));
-}

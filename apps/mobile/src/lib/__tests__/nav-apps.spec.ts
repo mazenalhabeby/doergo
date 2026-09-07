@@ -1,5 +1,8 @@
-import { navAppCandidates, isAlwaysAvailable, NAV_APP_PROBES, buildNavUrl } from '@hbcfield/shared/client';
-import { hasArrived, remainingStops } from '../my-route';
+import {
+  navAppCandidates, isAlwaysAvailable, NAV_APP_PROBES, buildNavUrl,
+  stopsAheadOf, AT_STOP_RADIUS_METRES,
+} from '@hbcfield/shared/client';
+import { hasArrived } from '../my-route';
 import { navDecision, soleNavApp } from '../nav-apps';
 
 /**
@@ -96,9 +99,14 @@ describe('navigating to one stop rather than the whole day', () => {
 });
 
 describe('resuming a route part-way through', () => {
-  const ordered = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+  // Three stops a few hundred metres apart in Vienna, in planned order.
+  const A = { id: 'a', lat: 48.2000, lng: 16.3700 };
+  const B = { id: 'b', lat: 48.2100, lng: 16.3800 };
+  const C = { id: 'c', lat: 48.2200, lng: 16.3900 };
+  const ordered = [A, B, C];
+  const ids = (list: { id: string }[]) => list.map((s) => s.id);
 
-  it('reads arrival from the product record, not from a status name', () => {
+  it('reads a recorded arrival from the product, not from a status name', () => {
     // routeEndedAt is stamped on En Route -> Arrived; status keys differ per
     // workflow and are editable per organization, so they cannot be the test.
     expect(hasArrived({ id: 'a', routeEndedAt: '2026-09-07T08:30:00Z' })).toBe(true);
@@ -106,16 +114,51 @@ describe('resuming a route part-way through', () => {
     expect(hasArrived({ id: 'a' })).toBe(false);
   });
 
-  it('drops the stops already behind the driver', () => {
-    expect(remainingStops(ordered, new Set(['a'])).map((s) => s.id)).toEqual(['b', 'c']);
+  /*
+    The behaviour actually asked for: standing at stop one, continue to two.
+    A driver who simply drove there without touching their phone has no
+    recorded arrival, and they are the likeliest person to press this button.
+  */
+  it('drops the stop you are standing at, and continues to the next', () => {
+    expect(ids(stopsAheadOf(A, ordered))).toEqual(['b', 'c']);
+    expect(ids(stopsAheadOf(B, ordered))).toEqual(['c']);
   });
 
-  it('keeps the planned order instead of re-optimising on every open', () => {
-    // A route that silently reshuffles itself is one nobody can follow or check.
-    expect(remainingStops(ordered, new Set(['b'])).map((s) => s.id)).toEqual(['a', 'c']);
+  it('keeps the planned order — it never re-optimises', () => {
+    // Standing at C, which is LAST in the plan: nothing is ahead. The order of
+    // what remains is always the order that was agreed.
+    expect(ids(stopsAheadOf(C, ordered))).toEqual([]);
+    expect(ids(stopsAheadOf(A, ordered))).toEqual(['b', 'c']);
   });
 
-  it('returns nothing once every stop is done, so the screen can say so', () => {
-    expect(remainingStops(ordered, new Set(['a', 'b', 'c']))).toEqual([]);
+  it('leaves the whole route when the driver is between stops', () => {
+    const faraway = { lat: 48.30, lng: 16.60 };
+    expect(ids(stopsAheadOf(faraway, ordered))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('drops the stops before the one reached, not just that one', () => {
+    // Arriving at three means one and two were done or deliberately skipped;
+    // either way, sending somebody backwards is not "continue".
+    expect(ids(stopsAheadOf(C, ordered))).toEqual([]);
+    expect(ids(stopsAheadOf(B, ordered))).toEqual(['c']);
+  });
+
+  it('still honours a recorded arrival with no position at all', () => {
+    expect(ids(stopsAheadOf(null, ordered, new Set(['a'])))).toEqual(['b', 'c']);
+  });
+
+  it('matches only the NEAREST stop, so neighbours cannot both count', () => {
+    // Two stops within the radius of each other: standing at the first must
+    // not skip the second.
+    const near1 = { id: 'x', lat: 48.2000, lng: 16.3700 };
+    const near2 = { id: 'y', lat: 48.2008, lng: 16.3700 }; // ~90m away
+    expect(ids(stopsAheadOf(near1, [near1, near2]))).toEqual(['y']);
+  });
+
+  it('uses a radius wide enough for a car park and no wider', () => {
+    // Too tight sends a driver to navigate to a building they are inside; too
+    // loose skips a customer nobody misses until the end of the day.
+    expect(AT_STOP_RADIUS_METRES).toBeGreaterThanOrEqual(100);
+    expect(AT_STOP_RADIUS_METRES).toBeLessThanOrEqual(300);
   });
 });

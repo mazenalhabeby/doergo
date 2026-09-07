@@ -14,13 +14,13 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { tasksApi, type Task } from '../../src/lib/api';
-import { isMyRouteStop, hasArrived, remainingStops } from '../../src/lib/my-route';
+import { isMyRouteStop, hasArrived } from '../../src/lib/my-route';
 import { useAuth } from '../../src/contexts/auth-context';
 import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  buildGoogleMapsUrl, buildNavUrl,
+  buildGoogleMapsUrl, buildNavUrl, stopsAheadOf,
   type NavApp, type RouteStop, type OptimizedRoute,
 } from '@hbcfield/shared/client';
 
@@ -197,10 +197,16 @@ export default function RoutePlannerScreen() {
     () => new Set(tasks.filter(hasArrived).map((x) => x.id)),
     [tasks],
   );
+  /*
+    What is left, by the same rule the button uses — recorded arrivals plus
+    "you are standing at it". `start` tracks the driver's position, so the
+    count and the tick marks follow them down the route.
+  */
   const toDrive = useMemo(
-    () => remainingStops(orderedStops, arrivedIds),
-    [orderedStops, arrivedIds],
+    () => stopsAheadOf(start, orderedStops, arrivedIds),
+    [start, orderedStops, arrivedIds],
   );
+  const aheadIds = useMemo(() => new Set(toDrive.map((s) => s.id)), [toDrive]);
 
   /*
     Resume, rather than replay.
@@ -214,11 +220,9 @@ export default function RoutePlannerScreen() {
   const resumeRoute = useCallback(async () => {
     if (!result) return;
     setError(null);
-    if (toDrive.length === 0) {
-      setError(t('route.allDone', 'Every stop on this route is done.'));
-      return;
-    }
     setResuming(true);
+
+    // Where they are NOW, not where the phone was when the screen opened.
     let from = start;
     try {
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -229,10 +233,23 @@ export default function RoutePlannerScreen() {
     } finally {
       setResuming(false);
     }
+
+    /*
+      Standing at stop one means the next drive is to stop two.
+
+      The planned ORDER is untouched — this only decides where in it the driver
+      currently is. Re-optimising here would hand back a different route from
+      the one on screen, which is not what continuing a route means.
+    */
+    const ahead = stopsAheadOf(from, orderedStops, arrivedIds);
+    if (ahead.length === 0) {
+      setError(t('route.allDone', 'Every stop on this route is done.'));
+      return;
+    }
     if (!from) return;
-    const url = buildGoogleMapsUrl(from, toDrive);
+    const url = buildGoogleMapsUrl(from, ahead);
     if (url) Linking.openURL(url).catch(() => setError(t('route.navFailed', 'Could not open that map app.')));
-  }, [result, toDrive, start, t]);
+  }, [result, orderedStops, arrivedIds, start, t]);
 
   const navTo = (stop: RouteStop) => startNavigation(stop);
 
@@ -461,8 +478,8 @@ export default function RoutePlannerScreen() {
             orderedStops.map((s, i) => (
               <View key={s.id} style={styles.legRow}>
                 <View style={styles.legRail}>
-                  <View style={[styles.legDot, { backgroundColor: arrivedIds.has(s.id) ? COLORS.success : COLORS.primary }]}>
-                    {arrivedIds.has(s.id)
+                  <View style={[styles.legDot, { backgroundColor: !aheadIds.has(s.id) ? COLORS.success : COLORS.primary }]}>
+                    {!aheadIds.has(s.id)
                       ? <Ionicons name="checkmark" size={15} color="#fff" />
                       : <Text style={styles.legDotText}>{i + 1}</Text>}
                   </View>
@@ -470,7 +487,7 @@ export default function RoutePlannerScreen() {
                 </View>
                 <View style={styles.legBody}>
                   <Text
-                    style={[styles.legTitle, { color: arrivedIds.has(s.id) ? colors.textMuted : colors.textPrimary }]}
+                    style={[styles.legTitle, { color: !aheadIds.has(s.id) ? colors.textMuted : colors.textPrimary }]}
                     numberOfLines={1}
                   >
                     {s.label}
