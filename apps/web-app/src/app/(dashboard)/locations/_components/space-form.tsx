@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2, Briefcase, Building2, Handshake } from "lucide-react"
 import type { LatLng } from "@hbcfield/shared/client"
-import { AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, ATTENDANCE_CONSTANTS } from "@hbcfield/shared/client"
+import { ATTENDANCE_CONSTANTS, AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, RADIUS_SLIDER_STEPS, radiusToSliderPosition, sliderPositionToRadius } from "@hbcfield/shared/client"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
@@ -33,6 +33,7 @@ const LocationPicker = dynamic(() => import("./location-picker"), {
  * the New-Space dialog on /locations and the first-space setup on /welcome, so
  * the two flows never drift. The caller only supplies the container + callbacks.
  */
+
 export function SpaceForm({
   onCreated,
   onCancel,
@@ -302,10 +303,10 @@ export function SpaceForm({
               />
               <input
                 type="range"
-                min={GEO_MIN}
-                max={GEO_MAX}
-                value={radius}
-                onChange={(e) => setRadius(e.target.value)}
+                min={0}
+                max={RADIUS_SLIDER_STEPS}
+                value={radiusToSliderPosition(parseInt(radius) || GEO_DEFAULT)}
+                onChange={(e) => setRadius(String(sliderPositionToRadius(parseInt(e.target.value))))}
                 disabled={hasBoundary}
                 className="flex-1 accent-blue-600"
               />

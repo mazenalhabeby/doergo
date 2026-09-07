@@ -2,6 +2,7 @@ import {
   isAtSite, isPointInPolygon, distanceToPolygonEdge, polygonAreaSqm,
   validateGeofencePolygon, parseGeofencePolygon, siteEnforcesZone,
   GEOFENCE_POLYGON_LIMITS, ATTENDANCE_CONSTANTS,
+  RADIUS_SLIDER_STEPS, radiusToSliderPosition, sliderPositionToRadius,
 } from '@hbcfield/shared/client';
 
 /**
@@ -189,5 +190,76 @@ describe('the radius cap', () => {
     // 100m could not cover a site with a yard at all.
     expect(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS).toBeGreaterThanOrEqual(500);
     expect(ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS).toBe(50);
+  });
+});
+
+describe('the radius slider scale', () => {
+  /*
+    This exists because of a regression that changed nothing and looked like it
+    changed everything. Raising the cap 100m -> 500m left a 50m radius sitting
+    at 8% of the track instead of 44%; the number was identical, the handle had
+    moved most of the way across, and it read as "clicking Draw changed my
+    radius". A linear scale over a 50x range cannot serve both a 20m doorway and
+    a 500m campus, so the scale is logarithmic — and a scale is arithmetic, so
+    it gets asserted rather than eyeballed.
+  */
+
+  it('spends half the track on the sizes real sites use', () => {
+    // Nearly every site is 10-100m. If a future change to the limits pushes
+    // that range into a corner again, this is what says so.
+    expect(radiusToSliderPosition(75)).toBeGreaterThanOrEqual(45);
+    expect(radiusToSliderPosition(100)).toBeGreaterThanOrEqual(55);
+  });
+
+  it('anchors both ends exactly', () => {
+    expect(sliderPositionToRadius(0)).toBe(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS);
+    expect(sliderPositionToRadius(RADIUS_SLIDER_STEPS)).toBe(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS);
+    expect(radiusToSliderPosition(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS)).toBe(0);
+    expect(radiusToSliderPosition(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS)).toBe(RADIUS_SLIDER_STEPS);
+  });
+
+  it('never moves backwards as the handle moves forwards', () => {
+    // A non-monotonic slider is unusable in a way that is hard to describe and
+    // easy to introduce by mis-snapping.
+    let previous = 0;
+    for (let pos = 0; pos <= RADIUS_SLIDER_STEPS; pos++) {
+      const metres = sliderPositionToRadius(pos);
+      expect(metres).toBeGreaterThanOrEqual(previous);
+      previous = metres;
+    }
+  });
+
+  it('is stable: a value the slider produced survives re-rendering', () => {
+    // NOT a round-trip test. Snapping is lossy on purpose — the handle can only
+    // rest on positions the ladder allows — so position -> metres -> position
+    // legitimately drifts. What must never drift is the metres: the control is
+    // controlled, so every render maps the value back to a position and that
+    // position back to a value. If that is not a fixpoint the handle creeps on
+    // its own, one step per render, without anybody touching it.
+    for (let pos = 0; pos <= RADIUS_SLIDER_STEPS; pos++) {
+      const metres = sliderPositionToRadius(pos);
+      expect(sliderPositionToRadius(radiusToSliderPosition(metres))).toBe(metres);
+    }
+  });
+
+  it('only offers radii a person would choose', () => {
+    for (let pos = 0; pos <= RADIUS_SLIDER_STEPS; pos++) {
+      const metres = sliderPositionToRadius(pos);
+      expect(metres % 5).toBe(0);
+      if (metres >= 100) expect(metres % 25).toBe(0);
+    }
+  });
+
+  it('stays inside the limits whatever it is handed', () => {
+    for (const junk of [NaN, Infinity, -Infinity, -50, 0, 99999]) {
+      const pos = radiusToSliderPosition(junk);
+      expect(pos).toBeGreaterThanOrEqual(0);
+      expect(pos).toBeLessThanOrEqual(RADIUS_SLIDER_STEPS);
+    }
+    for (const junk of [NaN, -10, 9999]) {
+      const metres = sliderPositionToRadius(junk);
+      expect(metres).toBeGreaterThanOrEqual(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS);
+      expect(metres).toBeLessThanOrEqual(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS);
+    }
   });
 });

@@ -20,6 +20,7 @@
   of them gained a field.
 */
 import type { LatLng } from './route-nav';
+import { ATTENDANCE_CONSTANTS } from '../constants/attendance';
 
 export type { LatLng };
 
@@ -301,4 +302,55 @@ export function parseGeofencePolygon(value: unknown): LatLng[] | null {
     ring.push({ lat, lng });
   }
   return ring.length >= GEOFENCE_POLYGON_LIMITS.MIN_POINTS ? ring : null;
+}
+
+/* ------------------------------------------------------------------------- *
+ * The radius slider's scale
+ *
+ * These map a radius to a position on a slider track and back. They are here,
+ * beside the limits they read, rather than inside the form that renders the
+ * control — the mapping is arithmetic with a correct answer, and arithmetic
+ * buried in a component is arithmetic nobody can test.
+ *
+ * The scale is LOGARITHMIC, and that is the whole point. Raising the cap from
+ * 100m to 500m so a campus could be expressed had a side effect on the control:
+ * a 50m radius that had sat at 44% of the track suddenly sat at 8%, with the
+ * entire 10-100m range — where nearly every site lives — squeezed into the
+ * first fifth. The number never changed, but the handle jumped a long way, and
+ * choosing 50 over 60 by dragging became impossible.
+ *
+ * A log scale spends the track where the values are: half of it covers 10-75m,
+ * and the coarse end past 100m steps in 25s, because nobody is choosing between
+ * a 300m site and a 305m one. The typed field stays exact for anyone who wants
+ * a specific number.
+ * ------------------------------------------------------------------------- */
+
+/** Slider granularity. The track is integer positions 0..this. */
+export const RADIUS_SLIDER_STEPS = 100;
+
+const LN_MIN = Math.log(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS);
+const LN_SPAN = Math.log(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS) - LN_MIN;
+
+/** Where on the track a given radius sits. */
+export function radiusToSliderPosition(metres: number): number {
+  const clamped = Math.min(
+    ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS,
+    Math.max(
+      ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS,
+      Number.isFinite(metres) && metres > 0 ? metres : ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS,
+    ),
+  );
+  return Math.round(((Math.log(clamped) - LN_MIN) / LN_SPAN) * RADIUS_SLIDER_STEPS);
+}
+
+/** What radius a track position means, snapped to a number a person would pick. */
+export function sliderPositionToRadius(position: number): number {
+  const pos = Math.min(RADIUS_SLIDER_STEPS, Math.max(0, Number.isFinite(position) ? position : 0));
+  const raw = Math.exp(LN_MIN + (pos / RADIUS_SLIDER_STEPS) * LN_SPAN);
+  // 5m steps where precision matters, 25m past 100m where it does not.
+  const snapped = raw < 100 ? Math.round(raw / 5) * 5 : Math.round(raw / 25) * 25;
+  return Math.min(
+    ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS,
+    Math.max(ATTENDANCE_CONSTANTS.MIN_GEOFENCE_RADIUS, snapped),
+  );
 }
