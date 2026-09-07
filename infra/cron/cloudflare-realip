@@ -1,0 +1,5 @@
+# Cloudflare publishes new edge ranges occasionally. If nginx does not trust a
+# new range, visitors arriving through it lose their real IP and share one
+# rate-limit bucket — a slow, confusing failure. Refresh monthly; the script
+# only reloads nginx when the list actually changed.
+17 4 1 * * root /opt/doergo/infra/refresh-cloudflare-ips.sh >> /var/log/cloudflare-realip.log 2>&1
