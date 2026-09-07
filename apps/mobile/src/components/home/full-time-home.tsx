@@ -10,7 +10,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { isAtSite } from '@hbcfield/shared';
+// ⚠️ /client, never the root. The root barrel is the SERVER entry — it carries
+// Node's crypto (invitation-code hashing, bearer secrets), which React
+// Native has no standard library for, so importing it fails the bundle.
+import { isAtSite } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import {
