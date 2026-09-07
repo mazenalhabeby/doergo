@@ -143,4 +143,40 @@ describe('planning my route', () => {
   it('answers false with no signed-in user rather than guessing', () => {
     expect(hasRouteToPlan([job()], undefined)).toBe(false);
   });
+
+  /*
+    A pin is not a journey. This is the case that motivated the rule: a task
+    can carry a real address and belong to a flow with no travel step — a
+    support ticket with the customer's address on it — and a route built from
+    coordinates alone put it on somebody's driving list.
+  */
+  it('ignores a job whose flow has no travel step, address or not', () => {
+    expect(isMyRouteStop(job({ tracksLocation: false }), me)).toBe(false);
+    expect(hasRouteToPlan([job({ tracksLocation: false })], me)).toBe(false);
+  });
+
+  it('counts a job whose flow does travel', () => {
+    expect(isMyRouteStop(job({ tracksLocation: true }), me)).toBe(true);
+  });
+
+  it('withholds the banner when every job is desk work', () => {
+    const deskWork = [
+      job({ id: 'a', tracksLocation: false }),
+      job({ id: 'b', tracksLocation: false }),
+    ];
+    expect(hasRouteToPlan(deskWork, me)).toBe(false);
+    // One travelling job among them is enough to make a route worth planning.
+    expect(hasRouteToPlan([...deskWork, job({ id: 'c', tracksLocation: true })], me)).toBe(true);
+  });
+
+  /*
+    ⚠️ Absent must read as YES. The app updates over the air and may be talking
+    to a gateway that predates the field; treating a missing answer as "no"
+    would take the button away from every field worker at once, everywhere,
+    with nothing on screen to explain it.
+  */
+  it('keeps the old behaviour when the server does not send the field', () => {
+    expect(isMyRouteStop(job(), me)).toBe(true);
+    expect(isMyRouteStop(job({ tracksLocation: undefined }), me)).toBe(true);
+  });
 });

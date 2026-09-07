@@ -280,3 +280,30 @@ export function getNextStep(steps: FlowStatus[], statusKey: string): FlowStatus 
   const idx = getFlowIndex(steps, statusKey);
   return idx >= 0 && idx < steps.length - 1 ? steps[idx + 1]! : null;
 }
+
+/**
+ * Does this task type track location ANYWHERE in its flow?
+ *
+ * Not "is it tracking right now". The question is asked to decide whether a
+ * route is worth offering, and a visit sitting at its first step has not
+ * reached the driving part yet — it still belongs on tomorrow's route.
+ *
+ * ⚠️ Coordinates are NOT the test, and that is the whole point of this
+ * function. A task can carry a perfectly good pin and sit on a flow with no
+ * travel step in it at all — a support ticket with the customer's address on
+ * it, say — so a route built from "has a pin" quietly includes jobs nobody
+ * drives to, and no screen explains why they are there.
+ *
+ * The workflow's OWN statuses win when present, because an admin may edit
+ * them per organization; the shared preset answers only for a task whose flow
+ * carries no capability data (legacy rows, and tasks with no workflow at all).
+ */
+export function flowTracksLocation(
+  statuses?: { capabilities?: string[] | null }[] | null,
+  workflowName?: string | null,
+): boolean {
+  if (statuses && statuses.length > 0) {
+    return statuses.some((s) => (s.capabilities ?? []).includes('gps'));
+  }
+  return getTaskCapabilities(workflowName).includes('gps');
+}

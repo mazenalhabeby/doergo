@@ -158,6 +158,12 @@ export interface Task {
   locationLat?: number;
   locationLng?: number;
   locationAddress?: string;
+  /**
+   * Does this task's flow have a travel step? Server-computed from the
+   * workflow, NOT from the presence of coordinates. Absent on older gateways —
+   * see isMyRouteStop for why absent must read as yes.
+   */
+  tracksLocation?: boolean;
   organizationId: string;
   createdById: string;
   assignedToId?: string;

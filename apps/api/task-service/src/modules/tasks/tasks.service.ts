@@ -24,6 +24,7 @@ import {
   buildDateRangeFilter,
   haversineDistance,
   getStatusCapabilities,
+  flowTracksLocation,
   accessAllowsInSpace,
   canAccessTask,
   isTaskAssignee,
@@ -985,7 +986,9 @@ export class TasksService {
               user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
             },
           },
-          space: { select: { id: true, name: true } },
+          // workflowId too: a task with no explicit type inherits its space's, and
+          // that is what decides whether it is a job somebody drives to.
+          space: { select: { id: true, name: true, workflowId: true } },
           phase: { select: { id: true, name: true, color: true, type: true } },
           sprint: { select: { id: true, name: true, status: true } },
           epic: { select: { id: true, name: true, color: true, status: true } },
@@ -998,7 +1001,43 @@ export class TasksService {
       this.prisma.task.count({ where }),
     ]);
 
-    return paginated(tasks, { page: safePage, limit: safeLimit, total });
+    /*
+      Mark the jobs somebody actually drives to.
+
+      "Plan my route" is offered on the strength of this, and the honest test is
+      the task's FLOW, not its coordinates: a support ticket carrying the
+      customer's address has a pin and no travel step, and a route built from
+      pins quietly includes stops nobody drives to.
+
+      Resolved through the per-org workflow cache, one lookup per DISTINCT flow
+      rather than per task — a page of a hundred jobs in an org with eight task
+      types costs eight cache reads, and no workflow_statuses join lands on the
+      hot path. The rule itself lives in the shared package, so the phone and
+      the server cannot answer it differently.
+    */
+    const flowIds = [
+      ...new Set(
+        tasks.map((t: any) => t.workflowId ?? t.space?.workflowId ?? null).filter(Boolean),
+      ),
+    ] as string[];
+    const tracksByFlow = new Map<string, boolean>();
+    await Promise.all(
+      flowIds.map(async (id) => {
+        const wf = await this.workflowCache.getWorkflow(query.organizationId, id);
+        tracksByFlow.set(id, flowTracksLocation(wf?.statuses as any, wf?.name));
+      }),
+    );
+    const withTracking = tasks.map((t: any) => {
+      const flowId = t.workflowId ?? t.space?.workflowId ?? null;
+      return {
+        ...t,
+        // No flow at all falls back to the shared default, exactly as the task
+        // detail does — one behaviour, not two.
+        tracksLocation: flowId ? (tracksByFlow.get(flowId) ?? false) : flowTracksLocation(null, null),
+      };
+    });
+
+    return paginated(withTracking, { page: safePage, limit: safeLimit, total });
   }
 
   /**
