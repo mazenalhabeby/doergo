@@ -1760,7 +1760,13 @@
     "stopCount_one": "{{count}} tappa",
     "stopCount_other": "{{count}} tappe",
     "planRouteA11y_one": "Pianifica il mio percorso, {{count}} tappa",
-    "planRouteA11y_other": "Pianifica il mio percorso, {{count}} tappe"
+    "planRouteA11y_other": "Pianifica il mio percorso, {{count}} tappe",
+    "yourRoute": "Il tuo percorso",
+    "edit": "Modifica",
+    "startNav": "Avvia navigazione",
+    "stopsWord": "tappe",
+    "fitRoute": "Mostra tutto il percorso",
+    "singleStopOnly": "Questa app gestisce una tappa alla volta: usa la freccia accanto a una tappa per raggiungerla."
   },
   "worklog": {
     "button": "Attività",

@@ -1760,7 +1760,13 @@
     "stopCount_one": "{{count}} Stopp",
     "stopCount_other": "{{count}} Stopps",
     "planRouteA11y_one": "Meine Route planen, {{count}} Stopp",
-    "planRouteA11y_other": "Meine Route planen, {{count}} Stopps"
+    "planRouteA11y_other": "Meine Route planen, {{count}} Stopps",
+    "yourRoute": "Ihre Route",
+    "edit": "Bearbeiten",
+    "startNav": "Navigation starten",
+    "stopsWord": "Stopps",
+    "fitRoute": "Gesamte Route anzeigen",
+    "singleStopOnly": "Diese App führt jeweils nur zu einem Stopp — tippen Sie auf den Pfeil neben einem Stopp, um dorthin zu fahren."
   },
   "worklog": {
     "button": "Aktivität",

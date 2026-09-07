@@ -1760,7 +1760,13 @@
     "stopCount_one": "{{count}} parada",
     "stopCount_other": "{{count}} paradas",
     "planRouteA11y_one": "Planificar mi ruta, {{count}} parada",
-    "planRouteA11y_other": "Planificar mi ruta, {{count}} paradas"
+    "planRouteA11y_other": "Planificar mi ruta, {{count}} paradas",
+    "yourRoute": "Tu ruta",
+    "edit": "Editar",
+    "startNav": "Iniciar navegación",
+    "stopsWord": "paradas",
+    "fitRoute": "Ver la ruta completa",
+    "singleStopOnly": "Esta app lleva a una parada cada vez: usa la flecha junto a una parada para conducir hasta ella."
   },
   "worklog": {
     "button": "Actividad",

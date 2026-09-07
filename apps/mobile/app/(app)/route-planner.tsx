@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator,
-  Linking, Platform, RefreshControl,
+  Linking, Platform, RefreshControl, useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { DetentSheet, type Detent } from '../../src/components/route/detent-sheet';
+import { PressableScale } from '../../src/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -135,180 +137,381 @@ export default function RoutePlannerScreen() {
   };
 
   const selectedCount = stops.length;
+  const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
+  const mapRef = useRef<MapView | null>(null);
+  const [detent, setDetent] = useState<Detent>('mid');
+
+  /*
+    Frame everything that matters, under the sheet rather than behind it.
+
+    A map centred on a fixed span shows the first stop and hides the rest; the
+    bottom inset keeps the route in the half of the screen the sheet is not
+    covering, which is the difference between a map you read and one you fight.
+  */
+  const fitToRoute = useCallback((animated = true) => {
+    const pts = [
+      ...(start ? [{ latitude: start.lat, longitude: start.lng }] : []),
+      ...(result ? orderedStops : stops).map((s) => ({ latitude: s.lat, longitude: s.lng })),
+    ];
+    if (pts.length === 0 || !mapRef.current) return;
+    mapRef.current.fitToCoordinates(pts, {
+      edgePadding: {
+        top: insets.top + 80,
+        bottom: Math.round(winH * 0.5),
+        left: 56,
+        right: 56,
+      },
+      animated,
+    });
+  }, [start, stops, orderedStops, result, insets.top, winH]);
+
+  // Re-frame when the shape of the route changes, not on every render.
+  useEffect(() => {
+    const id = setTimeout(() => fitToRoute(true), 350);
+    return () => clearTimeout(id);
+  }, [fitToRoute]);
+
+  // A finished route is a result to read: open the sheet to it.
+  useEffect(() => { if (result) setDetent('mid'); }, [result]);
+
+  const listStops = result ? orderedStops : stops;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('route.title', 'Plan my route')}</Text>
-        <View style={styles.headerBtn} />
+    <View style={[styles.screen, { backgroundColor: colors.surface }]}>
+      {/*
+        The map is the page, not an illustration inside it.
+
+        It sits under everything at full bleed — including behind the status bar
+        and the sheet — because a route is a shape, and a shape cropped into a
+        200px window is a picture of a route rather than the route itself.
+      */}
+      <MapView
+        ref={mapRef}
+        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+        style={StyleSheet.absoluteFill}
+        initialRegion={{
+          latitude: start?.lat ?? stops[0]?.lat ?? 48.2,
+          longitude: start?.lng ?? stops[0]?.lng ?? 16.37,
+          latitudeDelta: 0.25,
+          longitudeDelta: 0.25,
+        }}
+        showsUserLocation
+        showsMyLocationButton={false}
+        showsCompass={false}
+        toolbarEnabled={false}
+        onMapReady={() => fitToRoute(false)}
+      >
+        {/* The road geometry underneath the pins, so a pin never sits under a line. */}
+        {polyline.length > 1 && (
+          <>
+            <Polyline coordinates={polyline} strokeColor="rgba(37,99,235,0.25)" strokeWidth={11} />
+            <Polyline coordinates={polyline} strokeColor={COLORS.primary} strokeWidth={5} />
+          </>
+        )}
+
+        {start && (
+          <Marker coordinate={{ latitude: start.lat, longitude: start.lng }} anchor={{ x: 0.5, y: 0.5 }}>
+            <View style={styles.originOuter}>
+              <View style={styles.originInner} />
+            </View>
+          </Marker>
+        )}
+
+        {listStops.map((s, i) => (
+          <Marker
+            key={s.id}
+            coordinate={{ latitude: s.lat, longitude: s.lng }}
+            anchor={{ x: 0.5, y: 1 }}
+            onPress={() => setDetent('mid')}
+          >
+            {/* Numbered once the route is ordered — the number IS the plan, and
+                a default red pin cannot carry it. */}
+            <View style={styles.pin}>
+              <View style={[styles.pinBubble, { backgroundColor: result ? COLORS.primary : colors.card, borderColor: result ? COLORS.primary : colors.border }]}>
+                <Text style={[styles.pinText, { color: result ? '#fff' : colors.textPrimary }]}>
+                  {result ? String(i + 1) : '•'}
+                </Text>
+              </View>
+              <View style={[styles.pinTail, { borderTopColor: result ? COLORS.primary : colors.border }]} />
+            </View>
+          </Marker>
+        ))}
+      </MapView>
+
+      {/* Floating controls — the map's furniture, not a header bar. A solid bar
+          across the top would crop the very thing it sits on. */}
+      <View style={[styles.floatTop, { top: insets.top + 8 }]} pointerEvents="box-none">
+        <PressableScale onPress={() => router.back()} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('common.back', 'Back')}>
+          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+        </PressableScale>
+        <View style={styles.floatTopRight}>
+          <PressableScale onPress={() => { useMyLocation(); fitToRoute(true); }} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.useMyLocation', 'Use my location')}>
+            {locating
+              ? <ActivityIndicator size="small" color={COLORS.primary} />
+              : <Ionicons name="locate" size={20} color={COLORS.primary} />}
+          </PressableScale>
+          <PressableScale onPress={() => fitToRoute(true)} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.fitRoute', 'Show the whole route')}>
+            <Ionicons name="scan-outline" size={20} color={colors.textPrimary} />
+          </PressableScale>
+        </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.xl }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={COLORS.primary} />}
-      >
-        {/* Start */}
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{t('route.start', 'Start')}</Text>
-          <TouchableOpacity onPress={useMyLocation} style={styles.startRow} disabled={locating}>
-            {locating ? <ActivityIndicator size="small" color={COLORS.primary} /> : <Ionicons name="locate" size={18} color={COLORS.primary} />}
-            <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.sm }}>
-              {start ? `${start.label} (${start.lat.toFixed(3)}, ${start.lng.toFixed(3)})` : t('route.useMyLocation', 'Use my location')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Map preview */}
-        {(start || stops.length > 0) && (
-          <View style={[styles.mapWrap, { borderColor: colors.border }]}>
-            <MapView
-              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-              style={StyleSheet.absoluteFill}
-              initialRegion={{
-                latitude: start?.lat ?? stops[0]?.lat ?? 48.2,
-                longitude: start?.lng ?? stops[0]?.lng ?? 16.37,
-                latitudeDelta: 0.15, longitudeDelta: 0.15,
-              }}
-            >
-              {start && <Marker coordinate={{ latitude: start.lat, longitude: start.lng }} title={start.label} pinColor="#111" />}
-              {(result ? orderedStops : stops).map((s, i) => (
-                <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} title={`${result ? i + 1 + '. ' : ''}${s.label ?? ''}`} />
-              ))}
-              {polyline.length > 1 && <Polyline coordinates={polyline} strokeColor={COLORS.primary} strokeWidth={4} />}
-            </MapView>
-          </View>
-        )}
-
-        {/* Stops */}
-        <View style={styles.sectionHead}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('route.todaysStops', "Today's stops")}</Text>
-          <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }}>{selectedCount} {t('route.selected', 'selected')}</Text>
-        </View>
-
-        {loading ? (
-          <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={COLORS.primary} />
-        ) : tasks.length === 0 ? (
-          <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm, textAlign: 'center', paddingVertical: SPACING.lg }}>
-            {t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
-          </Text>
-        ) : (
-          tasks.map((x) => {
-            const on = !!selected[x.id];
-            return (
-              <TouchableOpacity
-                key={x.id}
-                onPress={() => setSelected((p) => ({ ...p, [x.id]: !on }))}
-                style={[styles.stopRow, { backgroundColor: colors.card, borderColor: on ? COLORS.primary : colors.border }]}
-              >
-                <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? COLORS.primary : colors.textMuted} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium as any }} numberOfLines={1}>{x.title}</Text>
-                  {!!x.locationAddress && <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }} numberOfLines={1}>{x.locationAddress}</Text>}
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-
-        {!!error && <Text style={{ color: '#dc2626', fontSize: FONT_SIZE.sm, marginTop: SPACING.sm }}>{error}</Text>}
-
-        {/* Optimize */}
-        <TouchableOpacity
-          onPress={optimize}
-          disabled={optimizing || selectedCount === 0}
-          style={[styles.primaryBtn, { backgroundColor: selectedCount === 0 ? colors.textMuted : COLORS.primary }]}
-        >
-          {optimizing ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="git-network" size={18} color="#fff" />}
-          <Text style={styles.primaryBtnText}>{t('route.optimize', 'Optimize route')}</Text>
-        </TouchableOpacity>
-
-        {/* Result */}
-        {result && (
-          <View style={{ marginTop: SPACING.lg }}>
-            <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Stat label={t('route.distance', 'Distance')} value={fmtKm(result.totalMeters)} colors={colors} />
-              <Stat label={t('route.driveTime', 'Drive time')} value={fmtDur(result.totalSeconds)} colors={colors} />
-              <Stat label={t('route.stops', 'Stops')} value={String(result.order.length)} colors={colors} />
-            </View>
-
-            {/* Nav app selector */}
-            <View style={styles.navApps}>
-              {NAV_APPS.map((a) => (
-                <TouchableOpacity
-                  key={a.key}
-                  onPress={() => setNavApp(a.key)}
-                  style={[styles.navChip, { borderColor: navApp === a.key ? COLORS.primary : colors.border, backgroundColor: navApp === a.key ? COLORS.primary + (isDark ? '30' : '15') : 'transparent' }]}
-                >
-                  <Text style={{ color: navApp === a.key ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.medium as any }}>{a.label}</Text>
+      <DetentSheet
+        detent={detent}
+        onDetentChange={setDetent}
+        peekHeight={result ? 250 : 210}
+        backgroundColor={colors.card}
+        borderColor={colors.border}
+        grabberColor={colors.border}
+        header={
+          <View style={styles.sheetHead}>
+            <View style={styles.sheetTitleRow}>
+              <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
+                {result ? t('route.yourRoute', 'Your route') : t('route.title', 'Plan my route')}
+              </Text>
+              {!!result && (
+                <TouchableOpacity onPress={() => setResult(null)} hitSlop={8}>
+                  <Text style={[styles.sheetReset, { color: COLORS.primary }]}>{t('route.edit', 'Edit')}</Text>
                 </TouchableOpacity>
-              ))}
+              )}
             </View>
 
-            {supportsMultiStop(navApp) && (
-              <TouchableOpacity onPress={openFullRoute} style={[styles.primaryBtn, { backgroundColor: COLORS.primary, marginTop: SPACING.sm }]}>
-                <Ionicons name="navigate" size={18} color="#fff" />
-                <Text style={styles.primaryBtnText}>{t('route.openFull', 'Open full route')}</Text>
-              </TouchableOpacity>
+            {/* One line that answers "is this my morning or a detour?" */}
+            <Text style={[styles.sheetMeta, { color: colors.textMuted }]} numberOfLines={1}>
+              {result
+                ? `${result.order.length} ${t('route.stopsWord', 'stops')} · ${fmtKm(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`
+                : `${selectedCount} ${t('route.selected', 'selected')}${start ? ` · ${start.label}` : ''}`}
+            </Text>
+
+            {!!error && <Text style={styles.sheetError}>{error}</Text>}
+
+            {result ? (
+              <PressableScale onPress={openFullRoute} style={[styles.cta, { backgroundColor: COLORS.primary }]} accessibilityRole="button">
+                <Ionicons name="navigate" size={17} color="#fff" />
+                <Text style={styles.ctaText}>{t('route.startNav', 'Start navigation')}</Text>
+              </PressableScale>
+            ) : (
+              <PressableScale
+                onPress={optimize}
+                disabled={optimizing || selectedCount === 0}
+                style={[styles.cta, { backgroundColor: selectedCount === 0 ? colors.border : COLORS.primary }]}
+                accessibilityRole="button"
+              >
+                {optimizing
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Ionicons name="git-network" size={17} color="#fff" />}
+                <Text style={[styles.ctaText, selectedCount === 0 && { color: colors.textMuted }]}>
+                  {t('route.optimize', 'Optimize route')}
+                </Text>
+              </PressableScale>
             )}
-
-            {/* Ordered stops */}
-            <View style={{ marginTop: SPACING.md, gap: 8 }}>
-              {orderedStops.map((s, i) => {
-                const leg = result.legs[i];
-                return (
-                  <View key={s.id} style={[styles.orderedRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <View style={styles.orderNum}><Text style={styles.orderNumText}>{i + 1}</Text></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium as any }} numberOfLines={1}>{s.label}</Text>
-                      {leg && <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }}>{fmtKm(leg.meters)} · {fmtDur(leg.seconds)}</Text>}
-                    </View>
-                    <TouchableOpacity onPress={() => navTo(s)} style={styles.navBtn}>
-                      <Ionicons name="navigate-outline" size={16} color={COLORS.primary} />
-                      <Text style={{ color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.medium as any }}>{t('route.navigate', 'Go')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </View>
           </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+        }
+      >
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={COLORS.primary} />}
+        >
+          {loading ? (
+            <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={COLORS.primary} />
+          ) : tasks.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="map-outline" size={40} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
+              </Text>
+            </View>
+          ) : result ? (
+            orderedStops.map((s, i) => (
+              <View key={s.id} style={styles.legRow}>
+                <View style={styles.legRail}>
+                  <View style={[styles.legDot, { backgroundColor: COLORS.primary }]}>
+                    <Text style={styles.legDotText}>{i + 1}</Text>
+                  </View>
+                  {i < orderedStops.length - 1 && <View style={[styles.legLine, { backgroundColor: colors.border }]} />}
+                </View>
+                <View style={styles.legBody}>
+                  <Text style={[styles.legTitle, { color: colors.textPrimary }]} numberOfLines={1}>{s.label}</Text>
+                  {!!s.address && <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>{s.address}</Text>}
+                </View>
+                <TouchableOpacity onPress={() => navTo(s)} hitSlop={8} style={[styles.legNav, { borderColor: colors.border }]}>
+                  <Ionicons name="navigate-outline" size={16} color={COLORS.primary} />
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            tasks.map((x) => {
+              const on = !!selected[x.id];
+              return (
+                <TouchableOpacity
+                  key={x.id}
+                  onPress={() => setSelected((p) => ({ ...p, [x.id]: !on }))}
+                  activeOpacity={0.7}
+                  style={[styles.pickRow, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? 'rgba(37,99,235,0.06)' : 'transparent' }]}
+                >
+                  <Ionicons
+                    name={on ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={22}
+                    color={on ? COLORS.primary : colors.textMuted}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={1}>{x.title}</Text>
+                    {!!x.locationAddress && (
+                      <Text style={[styles.pickAddr, { color: colors.textMuted }]} numberOfLines={1}>{x.locationAddress}</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
 
-function Stat({ label, value, colors }: { label: string; value: string; colors: any }) {
-  return (
-    <View style={{ flex: 1 }}>
-      <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }}>{label}</Text>
-      <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold as any }}>{value}</Text>
+          {/* Which app does the driving — a preference, so it sits at the end
+              rather than competing with the route. */}
+          {!!result && (
+            <>
+              <View style={styles.navApps}>
+                {NAV_APPS.map((a) => (
+                  <TouchableOpacity
+                    key={a.key}
+                    onPress={() => setNavApp(a.key)}
+                    style={[styles.navChip, { borderColor: navApp === a.key ? COLORS.primary : colors.border }]}
+                  >
+                    <Text style={{ color: navApp === a.key ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.medium as any }}>
+                      {a.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {/*
+                Only Google takes a whole route in one link. Said plainly rather
+                than by hiding the other two: somebody who prefers Waze should
+                keep it and know they will be handed one stop at a time, not
+                find the option missing and wonder whether the app forgot it.
+              */}
+              {!supportsMultiStop(navApp) && orderedStops.length > 1 && (
+                <Text style={[styles.navNote, { color: colors.textMuted }]}>
+                  {t('route.singleStopOnly', 'This app takes one stop at a time — use the arrow beside a stop to drive to it.')}
+                </Text>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </DetentSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold as any },
-  card: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
-  cardLabel: { fontSize: FONT_SIZE.xs, marginBottom: 6 },
-  startRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  mapWrap: { height: 200, borderRadius: RADIUS.md, borderWidth: 1, overflow: 'hidden', marginBottom: SPACING.md },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm },
-  sectionTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold as any },
-  stopRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginBottom: 8 },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: RADIUS.md, marginTop: SPACING.md },
-  primaryBtnText: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any },
-  statsRow: { flexDirection: 'row', borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, gap: SPACING.sm },
-  navApps: { flexDirection: 'row', gap: 8, marginTop: SPACING.md },
-  navChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
-  orderedRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm },
-  orderNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  orderNumText: { color: '#fff', fontSize: FONT_SIZE.xs, fontWeight: '700' },
-  navBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: RADIUS.sm },
+  screen: { flex: 1 },
+
+  // ── Map furniture ───────────────────────────────────────────────────────
+  floatTop: {
+    position: 'absolute',
+    left: SPACING.lg,
+    right: SPACING.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  floatTopRight: { gap: SPACING.sm },
+  fab: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+
+  // Where the driver is standing: a dot, not a pin. A pin says "a place you
+  // are going to", and this is the place they already are.
+  originOuter: {
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(37,99,235,0.22)',
+  },
+  originInner: {
+    width: 11, height: 11, borderRadius: 6,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2, borderColor: '#fff',
+  },
+
+  pin: { alignItems: 'center' },
+  pinBubble: {
+    minWidth: 26, height: 26, borderRadius: 13,
+    paddingHorizontal: 6,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5,
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 }, elevation: 4,
+  },
+  pinText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold as any },
+  // The stem that plants the bubble on its coordinate.
+  pinTail: {
+    width: 0, height: 0, marginTop: -2,
+    borderLeftWidth: 4, borderRightWidth: 4, borderTopWidth: 6,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+  },
+
+  // ── Sheet ───────────────────────────────────────────────────────────────
+  sheetHead: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md, gap: 6 },
+  sheetTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sheetTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold as any, letterSpacing: -0.2 },
+  sheetReset: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  sheetMeta: { fontSize: FONT_SIZE.base },
+  sheetError: { color: '#dc2626', fontSize: FONT_SIZE.sm },
+  cta: {
+    marginTop: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: 14,
+    borderRadius: RADIUS.lg,
+  },
+  ctaText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold as any },
+
+  // ── Picking stops ───────────────────────────────────────────────────────
+  pickRow: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md, borderWidth: 1,
+    marginBottom: SPACING.sm,
+  },
+  pickTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  pickAddr: { fontSize: FONT_SIZE.xs, marginTop: 1 },
+
+  // ── The ordered route ───────────────────────────────────────────────────
+  // A rail with a connecting line, so the list reads as one journey rather
+  // than a set of unrelated rows that happen to be numbered.
+  legRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md },
+  legRail: { alignItems: 'center', width: 26 },
+  legDot: {
+    width: 26, height: 26, borderRadius: 13,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  legDotText: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold as any },
+  legLine: { width: 2, flex: 1, minHeight: 26, marginVertical: 2 },
+  legBody: { flex: 1, paddingBottom: SPACING.lg },
+  legTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  legAddr: { fontSize: FONT_SIZE.xs, marginTop: 1 },
+  legNav: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1,
+  },
+
+  navApps: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
+  navNote: { fontSize: FONT_SIZE.xs, marginTop: SPACING.sm, lineHeight: 16 },
+  navChip: {
+    paddingVertical: 7, paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.full, borderWidth: 1,
+  },
+
+  empty: { alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.xxxl },
+  emptyText: { fontSize: FONT_SIZE.base, textAlign: 'center', paddingHorizontal: SPACING.lg },
 });
