@@ -1132,7 +1132,10 @@
       "visitAddressPick": "Elegir un sitio",
       "visitAddressPrimary": "principal",
       "visitAddressNoPin": "Esta dirección aún no tiene punto en el mapa, así que no se puede registrar la ruta. Márcalo en el mapa de abajo.",
-      "visitNoAddresses": "Este cliente no tiene ninguna dirección registrada. Marca el lugar en el mapa de abajo."
+      "visitNoAddresses": "Este cliente no tiene ninguna dirección registrada. Marca el lugar en el mapa de abajo.",
+      "visitClientUnfiled": "sin espacio",
+      "visitClientNoAddress": "sin dirección",
+      "visitNoClients": "Todavía no hay clientes en este espacio de trabajo. Añade uno en el CRM o marca el lugar en el mapa de abajo."
     },
     "detail": {
       "title": "Detalles de la tarea",

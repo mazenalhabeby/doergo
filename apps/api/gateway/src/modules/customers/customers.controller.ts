@@ -118,6 +118,7 @@ export class CustomersController {
     @Query('limit') limit?: string,
     @Query('portalResident') portalResident?: string,
     @Query('spaceId') spaceId?: string,
+    @Query('includeUnfiled') includeUnfiled?: string,
     @Query('contacts') contacts?: 'exclude' | 'only' | 'all',
     @Query('type') type?: string,
   ) {
@@ -128,6 +129,7 @@ export class CustomersController {
       search,
       status,
       spaceId,
+      includeUnfiled: includeUnfiled === 'true',
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       // 'false' → B2B customers only; 'true' → residents only; omitted → all.

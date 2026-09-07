@@ -492,6 +492,7 @@ export class CustomersService {
     portalResident?: boolean; // true = B2C residents only; false = B2B customers only
     portalId?: string; // residents in a specific portal
     spaceId?: string; // a space's Customers list (CRM)
+    includeUnfiled?: boolean; // ...plus clients belonging to no workspace
     /*
       Contact people are clients of nobody.
 
@@ -523,7 +524,23 @@ export class CustomersService {
     else if (data.status === 'inactive') where.isActive = false;
     if (typeof data.portalResident === 'boolean') where.isPortalResident = data.portalResident;
     if (data.portalId) where.portalId = data.portalId;
-    if (data.spaceId) where.spaceId = data.spaceId;
+    /*
+      A workspace's clients, optionally including the ones filed nowhere.
+
+      `spaceId` alone is an exact match, which is right for the workspace's own
+      Customers tab. It is wrong for anything OFFERING clients to work on: a
+      client may legitimately belong to no workspace — the CRM has an "All" tab
+      for exactly those — and in a real book most of them do. Scoping strictly
+      there means the clients nobody filed can never be picked, and nothing on
+      the screen explains why.
+
+      One OR rather than a second round trip, and both sides are indexed.
+    */
+    if (data.spaceId && data.includeUnfiled) {
+      and.push({ OR: [{ spaceId: data.spaceId }, { spaceId: null }] });
+    } else if (data.spaceId) {
+      where.spaceId = data.spaceId;
+    }
     /*
       People and companies, told apart.
 

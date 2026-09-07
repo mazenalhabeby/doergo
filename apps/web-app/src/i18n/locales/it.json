@@ -1132,7 +1132,10 @@
       "visitAddressPick": "Scegli una sede",
       "visitAddressPrimary": "principale",
       "visitAddressNoPin": "Questo indirizzo non ha ancora un punto sulla mappa, quindi il percorso non può essere tracciato. Impostalo sulla mappa qui sotto.",
-      "visitNoAddresses": "Per questo cliente non è registrato alcun indirizzo. Imposta il luogo sulla mappa qui sotto."
+      "visitNoAddresses": "Per questo cliente non è registrato alcun indirizzo. Imposta il luogo sulla mappa qui sotto.",
+      "visitClientUnfiled": "nessuno spazio",
+      "visitClientNoAddress": "nessun indirizzo",
+      "visitNoClients": "Non ci sono ancora clienti in questo spazio di lavoro. Aggiungine uno nel CRM o imposta il luogo sulla mappa qui sotto."
     },
     "detail": {
       "title": "Dettagli dell'attività",

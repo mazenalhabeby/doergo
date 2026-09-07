@@ -435,11 +435,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   /*
     The clients this person may raise a visit for.
 
-    Scoped to the SELECTED WORKSPACE, which is both the smaller query and the
-    right answer: a client belongs to a workspace, and a visit is raised in the
-    one the work belongs to. Asking for the whole organization would fetch a
-    book that grows without limit to fill a dropdown that only ever offers one
-    workspace's clients.
+    Scoped to the SELECTED WORKSPACE — the smaller query, and the right answer:
+    a visit is raised in the workspace the work belongs to.
+
+    ⚠️ Plus the clients filed in NO workspace, and that is not a nicety. Scoping
+    strictly looked correct and was useless on real data: of thirteen clients,
+    nine belong to no workspace — including every single one that has an
+    address. A picker that omits them offers four clients nobody can be sent to
+    and hides the nine you would actually visit.
+
+    One query, one indexed OR, done on the server: fetching the whole book and
+    dropping rows in the browser would page-truncate before it filtered.
 
     Two gates, and both are the point. No workspace chosen, or a workspace
     without the CRM module, and this never runs — the task is a plain one with
@@ -452,7 +458,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   */
   const { data: clientPage } = useQuery({
     queryKey: ["customers", "task-visit", spaceId],
-    queryFn: () => customersApi.list({ spaceId, limit: 200 }),
+    queryFn: () => customersApi.list({ spaceId, includeUnfiled: true, limit: 200 }),
     staleTime: 60000,
     enabled: open && spaceId !== "none" && hasModule("crm") && !defaultCustomerId,
   })
@@ -1161,7 +1167,16 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                 Only where the workspace runs CRM — elsewhere this is a plain
                 location and the picker would be noise.
               */}
-              {hasModule("crm") && (customerId !== "none" || visitClients.length > 0) && (
+              {/*
+                Shown whenever the workspace runs CRM, EVEN WITH NO CLIENTS.
+
+                ⚠️ It used to hide itself on an empty list, which is the same
+                thing on screen as the feature not existing: a workspace with
+                CRM and nothing filed to it showed no picker and no reason, and
+                the only available conclusion was that visits were not built.
+                An empty list is an answer and it says so below.
+              */}
+              {hasModule("crm") && spaceId !== "none" && (
                 <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-2.5">
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">
@@ -1185,11 +1200,23 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                             </div>
                           </SelectItem>
                         )}
-                        {visitClients.map((c: { id: string; name: string }) => (
+                        {visitClients.map((c: { id: string; name: string; spaceId?: string | null; address?: string | null }) => (
                           <SelectItem key={c.id} value={c.id}>
                             <div className="flex items-center gap-2">
                               <Building2 className="size-3 text-muted-foreground" />
-                              {c.name}
+                              <span>{c.name}</span>
+                              {/* Which book they came from, and whether there is
+                                  anywhere to go — both decide-at-a-glance facts. */}
+                              {!c.spaceId && (
+                                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                  {t("tasks.create.visitClientUnfiled", "no workspace")}
+                                </span>
+                              )}
+                              {!c.address && (
+                                <span className="text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-500">
+                                  {t("tasks.create.visitClientNoAddress", "no address")}
+                                </span>
+                              )}
                             </div>
                           </SelectItem>
                         ))}
@@ -1244,6 +1271,11 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                   {customerId !== "none" && visitAddressOptions.length === 0 && (
                     <p className="text-xs text-muted-foreground">
                       {t("tasks.create.visitNoAddresses", "This client has no address on file. Set the place on the map below.")}
+                    </p>
+                  )}
+                  {customerId === "none" && visitClients.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("tasks.create.visitNoClients", "No clients in this workspace yet. Add one in CRM, or set the place on the map below.")}
                     </p>
                   )}
                 </div>

@@ -1132,7 +1132,10 @@
       "visitAddressPick": "Choisir un site",
       "visitAddressPrimary": "principale",
       "visitAddressNoPin": "Cette adresse n’a pas encore de point sur la carte, l’itinéraire ne peut donc pas être suivi. Placez-le sur la carte ci-dessous.",
-      "visitNoAddresses": "Aucune adresse n’est enregistrée pour ce client. Placez le lieu sur la carte ci-dessous."
+      "visitNoAddresses": "Aucune adresse n’est enregistrée pour ce client. Placez le lieu sur la carte ci-dessous.",
+      "visitClientUnfiled": "aucun espace",
+      "visitClientNoAddress": "aucune adresse",
+      "visitNoClients": "Aucun client dans cet espace de travail pour l’instant. Ajoutez-en un dans le CRM ou placez le lieu sur la carte ci-dessous."
     },
     "detail": {
       "title": "Détails de la tâche",

@@ -5755,7 +5755,7 @@ export interface CustomerActivity {
 }
 
 export const customersApi = {
-  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; page?: number; limit?: number; contacts?: "exclude" | "only" | "all"; type?: "PERSON" | "COMPANY" }) => {
+  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; includeUnfiled?: boolean; page?: number; limit?: number; contacts?: "exclude" | "only" | "all"; type?: "PERSON" | "COMPANY" }) => {
     const qs = buildUrlWithQuery("/customers", params || {});
     const res = await api.get<{ data: Customer[]; meta: { total: number; page: number; limit: number; totalPages: number; crmCaps?: { view: "none" | "own" | "all"; work: boolean; editInfo: boolean; manage: boolean; canAccess: boolean } } }>(qs);
     if (res.error) throw new Error(res.error);

@@ -1132,7 +1132,10 @@
       "visitAddressPick": "Pick a site",
       "visitAddressPrimary": "primary",
       "visitAddressNoPin": "This address has no map point yet, so the route cannot be tracked. Set it on the map below.",
-      "visitNoAddresses": "This client has no address on file. Set the place on the map below."
+      "visitNoAddresses": "This client has no address on file. Set the place on the map below.",
+      "visitClientUnfiled": "no workspace",
+      "visitClientNoAddress": "no address",
+      "visitNoClients": "No clients in this workspace yet. Add one in CRM, or set the place on the map below."
     },
     "detail": {
       "title": "Task Details",

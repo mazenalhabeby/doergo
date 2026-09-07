@@ -1132,7 +1132,10 @@
       "visitAddressPick": "Standort wählen",
       "visitAddressPrimary": "Hauptadresse",
       "visitAddressNoPin": "Diese Adresse hat noch keinen Kartenpunkt, daher kann die Route nicht aufgezeichnet werden. Bitte unten auf der Karte festlegen.",
-      "visitNoAddresses": "Für diesen Kunden ist keine Adresse hinterlegt. Bitte den Ort unten auf der Karte festlegen."
+      "visitNoAddresses": "Für diesen Kunden ist keine Adresse hinterlegt. Bitte den Ort unten auf der Karte festlegen.",
+      "visitClientUnfiled": "kein Arbeitsbereich",
+      "visitClientNoAddress": "keine Adresse",
+      "visitNoClients": "In diesem Arbeitsbereich gibt es noch keine Kunden. Legen Sie einen im CRM an oder setzen Sie den Ort unten auf der Karte."
     },
     "detail": {
       "title": "Aufgabendetails",
