@@ -78,27 +78,54 @@ export function DetentSheet({
   }, [detent, yFor, y]);
 
   const pan = Gesture.Pan()
-    .onStart(() => { startY.value = y.value; })
+    .onStart(() => {
+      'worklet';
+      startY.value = y.value;
+    })
     .onUpdate((e) => {
+      'worklet';
       // Clamped so it can neither be flung off the bottom nor cover the map.
       y.value = Math.min(PEEK, Math.max(FULL, startY.value + e.translationY));
     })
     .onEnd((e) => {
+      'worklet';
+      /*
+        ⚠️ NOTHING IN HERE MAY CALL A FUNCTION DEFINED ON THE JS SIDE.
+
+        These callbacks are turned into worklets and run on the UI thread. The
+        first version picked the landing detent with a `yFor(next)` helper from
+        the component body, and calling a plain JS closure from the UI thread
+        does not throw an error a user could report — it takes the whole app
+        down the instant the finger lifts. Dragging the sheet closed the app.
+
+        So: only the captured numbers, only arithmetic, and the one hop back to
+        JS goes through runOnJS.
+      */
+      const projected = y.value + e.velocityY * 0.12;
+      const dFull = Math.abs(projected - FULL);
+      const dMid = Math.abs(projected - MID);
+      const dPeek = Math.abs(projected - PEEK);
+
       // Velocity decides before position does: a deliberate flick should reach
       // the next detent even when the finger barely moved.
-      const projected = y.value + e.velocityY * 0.12;
-      const distances: [Detent, number][] = [
-        ['full', Math.abs(projected - FULL)],
-        ['mid', Math.abs(projected - MID)],
-        ['peek', Math.abs(projected - PEEK)],
-      ];
-      distances.sort((a, b) => a[1] - b[1]);
-      const next = distances[0]![0];
-      y.value = withSpring(yFor(next), { damping: 22, stiffness: 220, mass: 0.6 });
+      let next: Detent = 'full';
+      let target = FULL;
+      if (dMid <= dFull && dMid <= dPeek) {
+        next = 'mid';
+        target = MID;
+      } else if (dPeek <= dFull && dPeek <= dMid) {
+        next = 'peek';
+        target = PEEK;
+      }
+
+      y.value = withSpring(target, { damping: 22, stiffness: 220, mass: 0.6 });
       runOnJS(onDetentChange)(next);
     });
 
-  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  const sheetStyle = useAnimatedStyle(() => {
+    'worklet';
+    return { transform: [{ translateY: y.value }] };
+  });
 
   return (
     <Animated.View
