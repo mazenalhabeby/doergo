@@ -1,12 +1,6 @@
 import { SITE_URL } from "@/lib/marketing-seo";
-import {
-  homeCopy,
-  industryData,
-  INDUSTRY_SLUGS,
-  industryPath,
-  industriesHubPath,
-  localePath,
-} from "@/lib/industries";
+import { INDUSTRY_SLUGS, industryPath, industriesHubPath, localePath } from "@/lib/industries";
+import { homeCopy, industryData } from "@/lib/industry-copy";
 
 /**
  * Server-rendered JSON-LD for the industry pages. Built entirely from copy

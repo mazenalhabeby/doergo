@@ -1,12 +1,6 @@
 import Link from "next/link";
-import {
-  homeCopy,
-  industryData,
-  INDUSTRY_SLUGS,
-  industryPath,
-  industriesHubPath,
-  localePath,
-} from "@/lib/industries";
+import { INDUSTRY_SLUGS, industryPath, industriesHubPath, localePath } from "@/lib/industries";
+import { homeCopy, industryData } from "@/lib/industry-copy";
 import { IndustryJsonLd } from "@/components/seo/industry-jsonld";
 
 const DISPLAY = "font-[family:var(--font-familjen)]";

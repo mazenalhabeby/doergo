@@ -1,12 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL as SITE, ALL_LOCALES, hreflangAlternates } from "@/lib/marketing-seo";
-import {
-  INDUSTRY_SLUGS,
-  industryPath,
-  industriesHubPath,
-  industryHreflang,
-  hubHreflang,
-} from "@/lib/industries";
+import { INDUSTRY_SLUGS, industryPath, industriesHubPath, industryHreflang, hubHreflang } from "@/lib/industries";
 import { getAllPosts } from "@/lib/blog";
 
 // Static, English-only pages (add blog/resource URLs here as you publish them).

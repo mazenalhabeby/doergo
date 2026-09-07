@@ -1,26 +1,19 @@
-import en from "@/i18n/locales/en.json";
-import de from "@/i18n/locales/de.json";
-import es from "@/i18n/locales/es.json";
-import fr from "@/i18n/locales/fr.json";
-import it from "@/i18n/locales/it.json";
 import { ALL_LOCALES, DEFAULT_LOCALE, localePath } from "./marketing-seo";
 
-// Server-side copy accessor — industry pages are static server components, so they
-// read the localized strings straight from the JSON (no client i18next needed).
-const COPY: Record<string, unknown> = { en, de, es, fr, it };
-
-type IndustryField = { name: string; who: string; how: string; benefit: string };
-type HomeCopy = {
-  nav?: { industries?: string };
-  industries?: { heading?: string; lead?: string; whoLabel?: string; howLabel?: string; more?: string; fields?: IndustryField[] };
-  field?: { label?: string; features?: { title: string; desc: string }[] };
-  cta?: { requestDemo?: string; trialNote?: string };
-  why?: { lead?: string };
-};
-
-export function homeCopy(lang: string): HomeCopy {
-  return ((COPY[lang] ?? COPY.en) as { home?: HomeCopy }).home ?? {};
-}
+/**
+ * Industry slugs and URL helpers — safe to import from a client component.
+ *
+ * This module deliberately contains NO translation imports. `HomeClient.tsx`
+ * (`'use client'`) needs `INDUSTRY_SLUGS`, `industryPath` and
+ * `industriesHubPath`; when the localized copy lived here too, that one import
+ * pulled all five language files — the whole application's translations, not
+ * just the marketing ones — into the browser bundle of every visitor to the
+ * English home page.
+ *
+ * The copy accessors are in `./industry-copy`, which is server-only. Keep it
+ * that way: adding a translation import here re-creates the bug in a form that
+ * looks completely reasonable in a diff.
+ */
 
 // SEO-friendly slugs, index-aligned with home.industries.fields (order is stable).
 export const INDUSTRY_SLUGS = [
@@ -35,12 +28,6 @@ export type IndustrySlug = (typeof INDUSTRY_SLUGS)[number];
 
 export function isIndustrySlug(slug: string): slug is IndustrySlug {
   return (INDUSTRY_SLUGS as readonly string[]).includes(slug);
-}
-
-export function industryData(lang: string, slug: string): IndustryField | undefined {
-  const idx = INDUSTRY_SLUGS.indexOf(slug as IndustrySlug);
-  const fields = homeCopy(lang).industries?.fields ?? [];
-  return idx >= 0 ? fields[idx] : undefined;
 }
 
 /** `/industries/<slug>` for English, `/<lang>/industries/<slug>` otherwise. */
@@ -66,3 +53,15 @@ export function hubHreflang(): Record<string, string> {
 }
 
 export { localePath };
+
+/*
+  There is deliberately NO re-export of `homeCopy` / `industryData` here.
+
+  Re-exporting them would have made the split invisible to callers, which is
+  tempting and wrong: `export { homeCopy } from "./industry-copy"` is an import
+  of that module, so this file would once again reach the five locale JSONs and
+  every client component importing a path helper would pull them along. Whether
+  a bundler tree-shakes that away is a property of the bundler's side-effect
+  analysis, not a guarantee — and the failure is silent and costs half a
+  megabyte. Server components import copy from "@/lib/industry-copy" directly.
+*/

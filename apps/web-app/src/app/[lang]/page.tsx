@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/seo/structured-data";
 import LocalizedHome from "../_home/LocalizedHome";
+import { marketingBundle } from "@/i18n/server-bundles";
 import {
   MARKETING_LOCALES,
   localeMeta,
@@ -47,7 +48,13 @@ export default async function Page({ params }: Params) {
   return (
     <>
       <StructuredData />
-      <LocalizedHome lang={lang} />
+      {/*
+        The copy is read HERE, in a server component, and handed down. That keeps
+        the locale JSON out of the client bundle entirely: this route inlines
+        only the namespaces the page renders, in the one language it renders,
+        and every other route — the English home page included — carries none.
+      */}
+      <LocalizedHome lang={lang} resources={{ [lang]: { translation: marketingBundle(lang) } }} />
     </>
   );
 }

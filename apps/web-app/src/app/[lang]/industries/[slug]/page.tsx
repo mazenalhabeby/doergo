@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IndustryArticle } from "../../../_industries/IndustryArticle";
-import { INDUSTRY_SLUGS, isIndustrySlug, industryData, industryHreflang, industryPath } from "@/lib/industries";
+import { INDUSTRY_SLUGS, isIndustrySlug, industryHreflang, industryPath } from "@/lib/industries";
+import { industryData } from "@/lib/industry-copy";
 import { MARKETING_LOCALES } from "@/lib/marketing-seo";
 
 export const dynamicParams = false;

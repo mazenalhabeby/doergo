@@ -41,15 +41,18 @@ describe('i18n global default instance', () => {
     expect(i18n.language).toBe('en');
   });
 
-  it('refuses a language it has no bundle for', () => {
+  it('refuses a language it has no bundle for', async () => {
     // An unsupported code would leave i18next without a resource bundle and the
     // UI resolves to whatever it finds — the same class of failure, reached from
     // the other side. (Server rendering is pinned by `lng` at init; jsdom always
     // has a `window`, so that half is not observable from here.)
-    changeLanguage('zz');
+    //
+    // The awaits are load-bearing: only English is bundled, so switching now
+    // fetches the language's chunk first and the change lands a tick later.
+    await changeLanguage('zz');
     expect(i18n.language).toBe('en');
-    changeLanguage('de');
+    await changeLanguage('de');
     expect(i18n.language).toBe('de');
-    changeLanguage('en');
+    await changeLanguage('en');
   });
 });

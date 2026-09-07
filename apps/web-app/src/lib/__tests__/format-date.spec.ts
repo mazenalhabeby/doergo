@@ -5,7 +5,7 @@
  * German user read a German page with an English date on it, and relative time
  * existed four times over — once with untranslated English literals.
  */
-import i18n from "@/i18n"
+import i18n, { changeLanguage } from "@/i18n"
 import {
   dateLocale,
   formatDayMonth,
@@ -15,25 +15,35 @@ import {
   formatRelativeDay,
 } from "../format-date"
 
+/*
+  Language is switched through `changeLanguage` from "@/i18n", NOT through
+  `i18n.changeLanguage` directly.
+
+  Only English is bundled now; the other four are fetched on first use. The
+  instance method sets the active language without loading anything, so it
+  succeeds and then resolves every key through the English fallback — the
+  German assertions below would compare English to English and pass while
+  testing nothing. The wrapper awaits the bundle before switching.
+*/
 const REF = new Date("2026-08-24T12:00:00Z")
 
 describe("format-date", () => {
   const originalLang = i18n.language
   afterEach(async () => {
-    await i18n.changeLanguage(originalLang)
+    await changeLanguage(originalLang)
     jest.useRealTimers()
   })
 
   describe("locale follows the UI language", () => {
     it("reports the active language, not en-US", async () => {
-      await i18n.changeLanguage("de")
+      await changeLanguage("de")
       expect(dateLocale()).toBe("de")
     })
 
     it("formats the same date differently per language", async () => {
-      await i18n.changeLanguage("en")
+      await changeLanguage("en")
       const en = formatMediumDate(REF)
-      await i18n.changeLanguage("de")
+      await changeLanguage("de")
       const de = formatMediumDate(REF)
       // Both name August; only the English one spells it "Aug " with US ordering.
       expect(en).not.toEqual(de)
@@ -41,7 +51,7 @@ describe("format-date", () => {
     })
 
     it("never falls back to a hardcoded en-US for an unsupported tag", async () => {
-      await i18n.changeLanguage("it")
+      await changeLanguage("it")
       expect(dateLocale()).toBe("it")
       expect(formatMonthYear(REF)).toMatch(/2026/)
     })
@@ -68,7 +78,7 @@ describe("format-date", () => {
     const ago = (ms: number) => formatTimeAgo(new Date(REF.getTime() - ms))
 
     it("returns translated output, never an English literal, in German", async () => {
-      await i18n.changeLanguage("de")
+      await changeLanguage("de")
       expect(ago(0)).toBe(i18n.t("common.timeAgo.justNow"))
       expect(ago(2 * 86_400_000)).toBe(i18n.t("common.timeAgo.days", { count: 2 }))
       // The pre-fix implementation hardcoded these two.

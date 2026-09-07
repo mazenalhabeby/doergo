@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IndustriesHub } from "../../_industries/IndustriesHub";
-import { homeCopy, hubHreflang, industriesHubPath } from "@/lib/industries";
+import { hubHreflang, industriesHubPath } from "@/lib/industries";
+import { homeCopy } from "@/lib/industry-copy";
 import { MARKETING_LOCALES } from "@/lib/marketing-seo";
 
 export const dynamicParams = false;
