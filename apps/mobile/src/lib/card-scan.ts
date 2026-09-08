@@ -1,5 +1,5 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { parseBusinessCard, toCardLines, type ParsedCard } from '@hbcfield/shared/client';
+import { parseBusinessCard, toCardLines, type ParsedCard, type CropRect } from '@hbcfield/shared/client';
 
 /**
  * A photo of a business card → the fields of a client.
@@ -68,10 +68,19 @@ export function canScanCards(): boolean {
   return supported;
 }
 
-export async function scanBusinessCard(uri: string, imageHeight: number): Promise<ParsedCard> {
+/**
+ * @param crop  The card frame the person aimed, in fractions of the image.
+ *              Everything outside it is discarded before the rules run — see
+ *              `toCardLines` for why that is correctness, not tidiness.
+ */
+export async function scanBusinessCard(
+  uri: string,
+  image: { width: number; height: number },
+  crop?: CropRect,
+): Promise<ParsedCard> {
   if (!ocr) throw new Error('This build cannot scan cards');
   const result = await ocr.recognizeText(uri);
-  return parseBusinessCard(toCardLines(result.blocks as never, imageHeight));
+  return parseBusinessCard(toCardLines(result.blocks as never, image.height, crop, image.width));
 }
 
 export type { ParsedCard };

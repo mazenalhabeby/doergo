@@ -193,16 +193,33 @@ export function parseBusinessCard(raw: CardLine[]): ParsedCard {
 /** A line as an OCR engine reports it: text plus a box in IMAGE PIXELS. */
 export interface OcrLine {
   text: string;
-  boundingBox: { y: number; height: number };
+  boundingBox: { x: number; y: number; width: number; height: number };
+}
+
+/** A region of the image, in fractions of it — what `frameToImageCrop` returns. */
+export interface CropRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 }
 
 /**
- * Pixels → fractions of the card.
+ * Pixels → fractions of the CARD.
  *
  * ⚠️ Getting this wrong does not throw. It quietly makes every line the same
  * "size", which removes the strongest signal the rules have and turns name
  * detection into a coin flip. It lives here, next to the rules that depend on
  * it, rather than in the screen that happens to call the camera.
+ *
+ * ⚠️ `crop` is not an optimisation. The photograph is the whole frame — a desk,
+ * a poster, whatever is behind the card — and every word of that reaches the
+ * reader. Two things go wrong without it: background text competes to be the
+ * company, and heights are measured against the PHOTO rather than the card, so
+ * "the largest line" stops meaning "the largest line on the card". Keeping only
+ * what was inside the frame the person aimed, and re-measuring against that
+ * frame, fixes both — and costs nothing, because the reader has already done
+ * the work.
  *
  * Also sorts into reading order: ML Kit groups by block, and blocks do not
  * arrive top-to-bottom.
@@ -210,10 +227,42 @@ export interface OcrLine {
 export function toCardLines(
   blocks: { lines: OcrLine[] }[],
   imageHeight: number,
+  crop?: CropRect,
+  imageWidth?: number,
 ): CardLine[] {
   const h = imageHeight > 0 ? imageHeight : 1;
-  return blocks
-    .flatMap((b) => b.lines)
-    .map((l) => ({ text: l.text, y: l.boundingBox.y / h, height: l.boundingBox.height / h }))
+  const w = imageWidth && imageWidth > 0 ? imageWidth : 1;
+
+  const all = blocks.flatMap((b) => b.lines).map((l) => ({
+    text: l.text,
+    // Fractions of the whole image first; the crop is expressed the same way.
+    x: l.boundingBox.x / w,
+    y: l.boundingBox.y / h,
+    width: l.boundingBox.width / w,
+    height: l.boundingBox.height / h,
+  }));
+
+  if (!crop || crop.width <= 0 || crop.height <= 0) {
+    return all.map((l) => ({ text: l.text, y: l.y, height: l.height })).sort((a, b) => a.y - b.y);
+  }
+
+  const right = crop.left + crop.width;
+  const bottom = crop.top + crop.height;
+
+  return all
+    // A line belongs to the card if its CENTRE is inside the frame. Judging by
+    // the whole box would drop anything the frame clips by a pixel, which is
+    // most of a card held to fill it.
+    .filter((l) => {
+      const cx = l.x + l.width / 2;
+      const cy = l.y + l.height / 2;
+      return cx >= crop.left && cx <= right && cy >= crop.top && cy <= bottom;
+    })
+    // Re-measured against the CARD, so height means what the rules assume.
+    .map((l) => ({
+      text: l.text,
+      y: (l.y - crop.top) / crop.height,
+      height: l.height / crop.height,
+    }))
     .sort((a, b) => a.y - b.y);
 }

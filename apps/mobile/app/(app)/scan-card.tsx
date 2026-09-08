@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, Platform,
+  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
+  useWindowDimensions,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { scanBusinessCard, type ParsedCard } from '../../src/lib/card-scan';
+import { frameToImageCrop } from '@hbcfield/shared/client';
 import { customersApi } from '../../src/lib/api';
 import { File as FsFile } from 'expo-file-system';
 import { useAuth } from '../../src/contexts/auth-context';
@@ -37,6 +39,22 @@ export default function ScanCardScreen() {
   const toast = useToast();
   const [permission, requestPermission] = useCameraPermissions();
   const { user } = useAuth();
+  const screen = useWindowDimensions();
+
+  /*
+    The frame, computed ONCE and used twice — drawn on screen, and applied to
+    what the camera captured.
+
+    The document scanner carries the same warning and it is worth repeating: a
+    frame drawn from one calculation and cropped from another is a crop of the
+    wrong rectangle. 85:55 is the size of every business card in the world.
+  */
+  const frame = useMemo(() => {
+    const CARD_ASPECT = 85 / 55;
+    const width = Math.min(screen.width * 0.86, screen.height * 0.5 * CARD_ASPECT);
+    const height = width / CARD_ASPECT;
+    return { left: (screen.width - width) / 2, top: (screen.height - height) / 2, width, height };
+  }, [screen.width, screen.height]);
 
   /*
     A route is reachable by deep link whether or not a button points at it.
@@ -66,7 +84,12 @@ export default function ScanCardScreen() {
       const shot = await camera.current.takePictureAsync({ quality: 0.8, skipProcessing: true });
       if (!shot?.uri) return;
       shotUri = shot.uri;
-      const parsed = await scanBusinessCard(shot.uri, shot.height ?? 0);
+      const image = { width: shot.width ?? 0, height: shot.height ?? 0 };
+      const parsed = await scanBusinessCard(
+        shot.uri,
+        image,
+        frameToImageCrop({ frame, screen: { width: screen.width, height: screen.height }, image }),
+      );
       setCard(parsed);
       setValues({
         name: parsed.name?.value ?? '',
@@ -103,7 +126,7 @@ export default function ScanCardScreen() {
       }
       setBusy(false);
     }
-  }, [busy, t, toast]);
+  }, [busy, t, toast, frame, screen.width, screen.height]);
 
   const save = useCallback(async () => {
     const name = (values.company || values.name).trim();
@@ -242,9 +265,11 @@ export default function ScanCardScreen() {
 
         {/* A card-shaped frame: 85×55mm is the standard, so the guide is the
             shape of the thing rather than a generic rectangle. */}
-        <View style={s.guideWrap} pointerEvents="none">
-          <View style={s.guide} />
-          <Text style={s.guideHint}>{t('scan.frame', 'Fit the card inside the frame')}</Text>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <View style={[s.guide, { left: frame.left, top: frame.top, width: frame.width, height: frame.height }]} />
+          <Text style={[s.guideHint, { top: frame.top + frame.height + 16 }]}>
+            {t('scan.frame', 'Fit the card inside the frame')}
+          </Text>
         </View>
 
         <View style={s.camFoot}>
@@ -280,10 +305,9 @@ const s = StyleSheet.create({
 
   camHead: { flexDirection: 'row', padding: SPACING.md },
   camBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center' },
-  guideWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  // 85:55 — the aspect ratio of every business card in the world.
-  guide: { width: '86%', aspectRatio: 85 / 55, borderWidth: 2, borderColor: '#22c55e', borderRadius: 12 },
-  guideHint: { color: '#e6ecf5', fontSize: FONT_SIZE.sm, marginTop: SPACING.md },
+  // Positioned from the computed frame, so what is drawn is what is cropped.
+  guide: { position: 'absolute', borderWidth: 2, borderColor: '#22c55e', borderRadius: 12 },
+  guideHint: { position: 'absolute', left: 0, right: 0, textAlign: 'center', color: '#e6ecf5', fontSize: FONT_SIZE.sm },
   camFoot: { alignItems: 'center', paddingBottom: SPACING.xl },
   shutter: { width: 68, height: 68, borderRadius: 34, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   shutterInner: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },

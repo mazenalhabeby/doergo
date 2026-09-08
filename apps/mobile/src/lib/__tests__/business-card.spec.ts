@@ -142,8 +142,8 @@ describe('reading a business card', () => {
  */
 describe('normalising what the reader returns', () => {
   const blocks = [
-    { lines: [{ text: 'Anna Gruber', boundingBox: { y: 300, height: 130 } }] },
-    { lines: [{ text: 'Siemens AG', boundingBox: { y: 100, height: 70 } }] },
+    { lines: [{ text: 'Anna Gruber', boundingBox: { x: 100, y: 300, width: 400, height: 130 } }] },
+    { lines: [{ text: 'Siemens AG', boundingBox: { x: 100, y: 100, width: 300, height: 70 } }] },
   ];
 
   it('converts pixels to fractions of the image', () => {
@@ -162,8 +162,8 @@ describe('normalising what the reader returns', () => {
   it('keeps relative sizes intact, at any resolution', () => {
     const small = toCardLines(blocks as never, 1000);
     const large = toCardLines(
-      [{ lines: [{ text: 'Anna Gruber', boundingBox: { y: 1200, height: 520 } }] },
-       { lines: [{ text: 'Siemens AG', boundingBox: { y: 400, height: 280 } }] }] as never,
+      [{ lines: [{ text: 'Anna Gruber', boundingBox: { x: 400, y: 1200, width: 1600, height: 520 } }] },
+       { lines: [{ text: 'Siemens AG', boundingBox: { x: 400, y: 400, width: 1200, height: 280 } }] }] as never,
       4000,
     );
     // A 4x photo of the same card must produce the same numbers.
@@ -173,5 +173,66 @@ describe('normalising what the reader returns', () => {
 
   it('does not divide by zero when the height is unknown', () => {
     expect(() => toCardLines(blocks as never, 0)).not.toThrow();
+  });
+});
+
+
+/**
+ * Only what was inside the frame the person aimed.
+ *
+ * The photograph is the whole scene — a desk, a poster, another card — and all
+ * of it reaches the reader. Two things go wrong if that is kept: background
+ * text competes to be the company, and heights are measured against the PHOTO
+ * rather than the card, so "the largest line" stops meaning what the rules
+ * assume it means.
+ */
+describe('keeping only the card', () => {
+  // A card occupying the middle band of a portrait photo.
+  const CROP = { left: 0.07, top: 0.35, width: 0.86, height: 0.30 };
+  const scene = [{ lines: [
+    { text: 'CONFERENCE 2026', boundingBox: { x: 100, y: 200, width: 800, height: 120 } },   // a banner, above
+    // The card spans y 1050–1950 (0.35–0.65 of a 3000px photo).
+    { text: 'Siemens AG',      boundingBox: { x: 150, y: 1150, width: 500, height: 90 } },   // on the card
+    { text: 'Anna Gruber',     boundingBox: { x: 150, y: 1350, width: 600, height: 150 } },  // on the card
+    { text: 'table clutter',   boundingBox: { x: 150, y: 2200, width: 400, height: 60 } },   // below
+  ] }];
+  const IMG_W = 1000, IMG_H = 3000;
+
+  it('drops everything outside the frame', () => {
+    const kept = toCardLines(scene as never, IMG_H, CROP, IMG_W).map((l) => l.text);
+    expect(kept).toEqual(['Siemens AG', 'Anna Gruber']);
+  });
+
+  it('keeps the whole photo when no frame is given', () => {
+    // The fallback must not silently discard anything.
+    expect(toCardLines(scene as never, IMG_H).map((l) => l.text)).toHaveLength(4);
+  });
+
+  /*
+    The subtle half. Heights re-measured against the CARD, not the photo — a
+    line that is 5% of a tall photo can be 50% of the card, and the name rule
+    reads "largest" as a fraction of what it is looking at.
+  */
+  it('re-measures heights against the card, not the photo', () => {
+    const kept = toCardLines(scene as never, IMG_H, CROP, IMG_W);
+    const name = kept.find((l) => l.text === 'Anna Gruber')!;
+    // 150px of a 900px-tall card ≈ 0.167, not 150/3000 = 0.05.
+    expect(name.height).toBeCloseTo(0.167, 2);
+    expect(name.height).toBeGreaterThan(kept.find((l) => l.text === 'Siemens AG')!.height);
+  });
+
+  it('judges by the centre, so a line the frame clips is still the card\'s', () => {
+    // A card held to fill the frame has lines touching its edges.
+    const edge = [{ lines: [
+      { text: 'Anna Gruber', boundingBox: { x: 40, y: 1400, width: 940, height: 120 } },
+    ] }];
+    expect(toCardLines(edge as never, IMG_H, CROP, IMG_W).map((l) => l.text)).toEqual(['Anna Gruber']);
+  });
+
+  it('reads the right person when a banner is bigger than the card', () => {
+    // End to end: without the frame, "CONFERENCE 2026" is the largest line in
+    // the photo and would be taken for the name.
+    const parsed = parseBusinessCard(toCardLines(scene as never, IMG_H, CROP, IMG_W));
+    expect(parsed.name?.value).toBe('Anna Gruber');
   });
 });
