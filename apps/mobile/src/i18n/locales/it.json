@@ -1706,7 +1706,11 @@
     "fEmail": "Email",
     "fPhone": "Telefono",
     "fWorkspace": "Spazio di lavoro",
-    "save": "Salva cliente"
+    "save": "Salva cliente",
+    "scanCard": "Scansiona un biglietto",
+    "scanCardSub": "Compila il modulo per te",
+    "enterDetails": "Inserisci i dati",
+    "enterDetailsSub": "Scrivilo"
   },
   "issues": {
     "myIssues": "Le mie segnalazioni",
@@ -2049,5 +2053,20 @@
       "timeHint": "Inserisci l’ora come HH:MM.",
       "title": "Modifica turno"
     }
+  },
+  "scan": {
+    "title": "Scansiona biglietto",
+    "review": "Controlla prima di salvare",
+    "frame": "Inquadra il biglietto nel riquadro",
+    "found": "TROVATO",
+    "check": "CONTROLLA",
+    "otherLine": "Scegli un’altra riga",
+    "hideLines": "Nascondi righe",
+    "jobTitle": "Ruolo",
+    "again": "Scansiona di nuovo",
+    "needCamera": "Per leggere un biglietto da visita serve la fotocamera.",
+    "allow": "Consenti fotocamera",
+    "failed": "Impossibile leggere il biglietto.",
+    "nothingRead": "Non è stato letto nulla: riprova con più luce."
   }
 }

@@ -163,6 +163,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // Android package visibility for the route planner's map-app detection.
       // See the plugin for why this is required and what happens without it.
       './plugins/with-nav-app-queries',
+      /*
+        The on-device text reader used by the business-card scanner needs iOS
+        16. Stated here rather than left to a default, because the failure is a
+        build error deep in a pod install rather than anything about OCR.
+      */
+      ['expo-build-properties', { ios: { deploymentTarget: '16.0' } }],
     ],
     experiments: {
       typedRoutes: true,

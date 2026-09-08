@@ -1706,7 +1706,11 @@
     "fEmail": "E-mail",
     "fPhone": "Téléphone",
     "fWorkspace": "Espace de travail",
-    "save": "Enregistrer le client"
+    "save": "Enregistrer le client",
+    "scanCard": "Scanner une carte de visite",
+    "scanCardSub": "Remplit le formulaire pour vous",
+    "enterDetails": "Saisir les détails",
+    "enterDetailsSub": "Le taper"
   },
   "issues": {
     "myIssues": "Mes signalements",
@@ -2049,5 +2053,20 @@
       "timeHint": "Saisissez l’heure au format HH:MM.",
       "title": "Modifier le poste"
     }
+  },
+  "scan": {
+    "title": "Scanner une carte",
+    "review": "Vérifiez avant d’enregistrer",
+    "frame": "Placez la carte dans le cadre",
+    "found": "TROUVÉ",
+    "check": "À VÉRIFIER",
+    "otherLine": "Choisir une autre ligne",
+    "hideLines": "Masquer les lignes",
+    "jobTitle": "Fonction",
+    "again": "Scanner à nouveau",
+    "needCamera": "L’appareil photo est nécessaire pour lire une carte de visite.",
+    "allow": "Autoriser l’appareil photo",
+    "failed": "Impossible de lire la carte.",
+    "nothingRead": "Rien n’a pu être lu — réessayez avec plus de lumière."
   }
 }

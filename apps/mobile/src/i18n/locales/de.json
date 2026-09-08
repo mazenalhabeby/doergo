@@ -1706,7 +1706,11 @@
     "fEmail": "E-Mail",
     "fPhone": "Telefon",
     "fWorkspace": "Arbeitsbereich",
-    "save": "Kunde speichern"
+    "save": "Kunde speichern",
+    "scanCard": "Visitenkarte scannen",
+    "scanCardSub": "Füllt das Formular für Sie aus",
+    "enterDetails": "Daten eingeben",
+    "enterDetailsSub": "Selbst eintippen"
   },
   "issues": {
     "myIssues": "Meine Meldungen",
@@ -2049,5 +2053,20 @@
       "timeHint": "Zeit als HH:MM eingeben.",
       "title": "Schicht bearbeiten"
     }
+  },
+  "scan": {
+    "title": "Karte scannen",
+    "review": "Vor dem Speichern prüfen",
+    "frame": "Karte in den Rahmen legen",
+    "found": "ERKANNT",
+    "check": "PRÜFEN",
+    "otherLine": "Andere Zeile wählen",
+    "hideLines": "Zeilen ausblenden",
+    "jobTitle": "Position",
+    "again": "Erneut scannen",
+    "needCamera": "Für das Lesen einer Visitenkarte wird die Kamera benötigt.",
+    "allow": "Kamera erlauben",
+    "failed": "Die Karte konnte nicht gelesen werden.",
+    "nothingRead": "Es konnte nichts gelesen werden — bitte mit mehr Licht erneut versuchen."
   }
 }

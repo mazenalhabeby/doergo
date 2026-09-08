@@ -8,6 +8,7 @@ import { customersApi, locationsApi, type MobileCustomer } from '../../src/lib/a
 import { useAuth } from '../../src/contexts/auth-context';
 import { holds } from '../../src/lib/permissions';
 import { BlurSheet } from '../../src/components/blur-sheet';
+import { canScanCards } from '../../src/lib/card-scan';
 import { useToast } from '../../src/contexts/toast-context';
 import { customerStageLabel } from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -36,6 +37,7 @@ export default function CustomersScreen() {
     question, so the button never offers something the save would refuse.
   */
   const canAdd = holds(user, 'crmCreateClients') || holds(user, 'crmManageClients');
+  const [chooseOpen, setChooseOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', contactName: '', email: '', phone: '' });
@@ -220,13 +222,55 @@ export default function CustomersScreen() {
       {canAdd && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: COLORS.primary }]}
-          onPress={() => { setFormSpaceId(spaceId); setAddOpen(true); }}
+          onPress={() => { setFormSpaceId(spaceId); setChooseOpen(true); }}
           accessibilityRole="button"
           accessibilityLabel={t('customers.add', 'Add client')}
         >
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
       )}
+
+      {/*
+        Scan or type. Scanning is an accelerator, never the only door — a bent
+        card, a phone call, or no card at all still has to work.
+      */}
+      <BlurSheet visible={chooseOpen} onClose={() => setChooseOpen(false)}>
+        <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.grab, { backgroundColor: colors.border }]} />
+          <Text style={[styles.addTitle, { color: colors.textPrimary }]}>{t('customers.add', 'Add client')}</Text>
+
+          {/* Hidden on a build without the reader — see canScanCards. */}
+          {canScanCards() && (
+          <TouchableOpacity
+            style={[styles.choice, { borderColor: colors.border }]}
+            onPress={() => { setChooseOpen(false); router.push('/(app)/scan-card' as any); }}
+          >
+            <View style={[styles.choiceIcon, { backgroundColor: COLORS.primary + '22' }]}>
+              <Ionicons name="scan" size={20} color={COLORS.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.choiceTitle, { color: colors.textPrimary }]}>{t('customers.scanCard', 'Scan a business card')}</Text>
+              <Text style={[styles.choiceSub, { color: colors.textMuted }]}>{t('customers.scanCardSub', 'Fills the form for you')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[styles.choice, { borderColor: colors.border }]}
+            onPress={() => { setChooseOpen(false); setAddOpen(true); }}
+          >
+            <View style={[styles.choiceIcon, { backgroundColor: 'rgba(139,147,167,.18)' }]}>
+              <Ionicons name="create-outline" size={20} color={colors.textMuted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.choiceTitle, { color: colors.textPrimary }]}>{t('customers.enterDetails', 'Enter details')}</Text>
+              <Text style={[styles.choiceSub, { color: colors.textMuted }]}>{t('customers.enterDetailsSub', 'Type it in')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      </BlurSheet>
 
       <BlurSheet visible={addOpen} onClose={() => setAddOpen(false)}>
         <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
@@ -337,6 +381,10 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, height: 44, fontSize: FONT_SIZE.sm },
   saveBtn: { borderRadius: RADIUS.md, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.sm },
   saveText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
+  choiceIcon: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  choiceTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  choiceSub: { fontSize: FONT_SIZE.xs, marginTop: 1 },
   appTag: { borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: SPACING.sm, paddingVertical: 2 },
   appTagText: { color: '#16a34a', fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
 });

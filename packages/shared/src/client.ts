@@ -30,6 +30,8 @@ export * from './customer-portal';
 
 // Export utility functions (date, query string building)
 export * from './utils';
+// Reading a business card — pure rules, runs on the phone.
+export * from './crm/business-card';
 
 // IANA timezone → country name (for attendance display labels)
 export * from './timezone-country';

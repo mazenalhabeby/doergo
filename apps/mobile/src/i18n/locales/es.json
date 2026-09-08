@@ -1706,7 +1706,11 @@
     "fEmail": "Correo",
     "fPhone": "Teléfono",
     "fWorkspace": "Espacio de trabajo",
-    "save": "Guardar cliente"
+    "save": "Guardar cliente",
+    "scanCard": "Escanear tarjeta",
+    "scanCardSub": "Rellena el formulario por ti",
+    "enterDetails": "Introducir datos",
+    "enterDetailsSub": "Escríbelo"
   },
   "issues": {
     "myIssues": "Mis incidencias",
@@ -2049,5 +2053,20 @@
       "timeHint": "Añade la hora como HH:MM.",
       "title": "Editar turno"
     }
+  },
+  "scan": {
+    "title": "Escanear tarjeta",
+    "review": "Comprueba antes de guardar",
+    "frame": "Encaja la tarjeta en el marco",
+    "found": "DETECTADO",
+    "check": "REVISAR",
+    "otherLine": "Elegir otra línea",
+    "hideLines": "Ocultar líneas",
+    "jobTitle": "Cargo",
+    "again": "Escanear de nuevo",
+    "needCamera": "Se necesita la cámara para leer una tarjeta.",
+    "allow": "Permitir cámara",
+    "failed": "No se pudo leer la tarjeta.",
+    "nothingRead": "No se pudo leer nada: inténtalo con más luz."
   }
 }

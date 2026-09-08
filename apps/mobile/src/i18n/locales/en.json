@@ -1742,7 +1742,11 @@
     "fEmail": "Email",
     "fPhone": "Phone",
     "fWorkspace": "Workspace",
-    "save": "Save client"
+    "save": "Save client",
+    "scanCard": "Scan a business card",
+    "scanCardSub": "Fills the form for you",
+    "enterDetails": "Enter details",
+    "enterDetailsSub": "Type it in"
   },
   "issues": {
     "myIssues": "My issues",
@@ -2049,5 +2053,20 @@
       "timeHint": "Add the time as HH:MM.",
       "title": "Edit shift"
     }
+  },
+  "scan": {
+    "title": "Scan a card",
+    "review": "Check before saving",
+    "frame": "Fit the card inside the frame",
+    "found": "FOUND",
+    "check": "CHECK",
+    "otherLine": "Pick a different line",
+    "hideLines": "Hide lines",
+    "jobTitle": "Job title",
+    "again": "Scan again",
+    "needCamera": "The camera is needed to read a business card.",
+    "allow": "Allow camera",
+    "failed": "Could not read the card.",
+    "nothingRead": "Nothing could be read — try again with more light."
   }
 }
