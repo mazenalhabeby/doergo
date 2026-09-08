@@ -7,7 +7,7 @@ export interface CrmCaller {
   userId?: string;
   role?: string; // system role ('ADMIN' bypasses to full CRM access)
 }
-const NO_CRM: CrmCaps = { view: 'none', work: false, editInfo: false, manage: false, canAccess: false };
+const NO_CRM: CrmCaps = { view: 'none', work: false, editInfo: false, create: false, manage: false, canAccess: false };
 
 export interface CustomerDetail {
   label: string;
