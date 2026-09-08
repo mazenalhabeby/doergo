@@ -37,8 +37,18 @@ export default function CustomersScreen() {
     question, so the button never offers something the save would refuse.
   */
   const canAdd = holds(user, 'crmCreateClients') || holds(user, 'crmManageClients');
-  const [chooseOpen, setChooseOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
+  /*
+    ⚠️ ONE sheet, two states — not two sheets.
+
+    BlurSheet is a Modal, and it stays mounted for 250ms while it animates out.
+    Closing one and opening another in the same tick therefore leaves two
+    modals mounted at once, and iOS will not present a modal while another is
+    dismissing: the second never appears and its invisible backdrop swallows
+    every touch. The app looks frozen, which is exactly what it did.
+
+    Switching content inside a single sheet cannot hit that at all.
+  */
+  const [sheet, setSheet] = useState<'none' | 'choose' | 'form'>('none');
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', contactName: '', email: '', phone: '' });
   const [formSpaceId, setFormSpaceId] = useState<string | null>(null);
@@ -94,7 +104,7 @@ export default function CustomersScreen() {
         // person is looking rather than nowhere.
         spaceId: formSpaceId ?? undefined,
       });
-      setAddOpen(false);
+      setSheet('none');
       setForm({ name: '', contactName: '', email: '', phone: '' });
       toast.success(t('customers.added', 'Client added'));
       load(search, spaceId);
@@ -222,7 +232,7 @@ export default function CustomersScreen() {
       {canAdd && (
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: COLORS.primary }]}
-          onPress={() => { setFormSpaceId(spaceId); setChooseOpen(true); }}
+          onPress={() => { setFormSpaceId(spaceId); setSheet('choose'); }}
           accessibilityRole="button"
           accessibilityLabel={t('customers.add', 'Add client')}
         >
@@ -230,114 +240,116 @@ export default function CustomersScreen() {
         </TouchableOpacity>
       )}
 
-      {/*
-        Scan or type. Scanning is an accelerator, never the only door — a bent
-        card, a phone call, or no card at all still has to work.
-      */}
-      <BlurSheet visible={chooseOpen} onClose={() => setChooseOpen(false)}>
+      <BlurSheet visible={sheet !== 'none'} onClose={() => setSheet('none')}>
         <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
           <View style={[styles.grab, { backgroundColor: colors.border }]} />
-          <Text style={[styles.addTitle, { color: colors.textPrimary }]}>{t('customers.add', 'Add client')}</Text>
 
-          {/* Hidden on a build without the reader — see canScanCards. */}
-          {canScanCards() && (
-          <TouchableOpacity
-            style={[styles.choice, { borderColor: colors.border }]}
-            onPress={() => { setChooseOpen(false); router.push('/(app)/scan-card' as any); }}
-          >
-            <View style={[styles.choiceIcon, { backgroundColor: COLORS.primary + '22' }]}>
-              <Ionicons name="scan" size={20} color={COLORS.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.choiceTitle, { color: colors.textPrimary }]}>{t('customers.scanCard', 'Scan a business card')}</Text>
-              <Text style={[styles.choiceSub, { color: colors.textMuted }]}>{t('customers.scanCardSub', 'Fills the form for you')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-          )}
+          {sheet === 'choose' ? (
+            <>
+              {/*
+                Scan or type. Scanning is an accelerator, never the only door —
+                a bent card, a phone call, or no card at all still has to work.
+              */}
+              <Text style={[styles.addTitle, { color: colors.textPrimary }]}>{t('customers.add', 'Add client')}</Text>
 
-          <TouchableOpacity
-            style={[styles.choice, { borderColor: colors.border }]}
-            onPress={() => { setChooseOpen(false); setAddOpen(true); }}
-          >
-            <View style={[styles.choiceIcon, { backgroundColor: 'rgba(139,147,167,.18)' }]}>
-              <Ionicons name="create-outline" size={20} color={colors.textMuted} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.choiceTitle, { color: colors.textPrimary }]}>{t('customers.enterDetails', 'Enter details')}</Text>
-              <Text style={[styles.choiceSub, { color: colors.textMuted }]}>{t('customers.enterDetailsSub', 'Type it in')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        </View>
-      </BlurSheet>
+              {/* Hidden on a build without the reader — see canScanCards. */}
+              {canScanCards() && (
+                <TouchableOpacity
+                  style={[styles.choice, { borderColor: colors.border }]}
+                  onPress={() => { setSheet('none'); router.push('/(app)/scan-card' as any); }}
+                >
+                  <View style={[styles.choiceIcon, { backgroundColor: COLORS.primary + '22' }]}>
+                    <Ionicons name="scan" size={20} color={COLORS.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.choiceTitle, { color: colors.textPrimary }]}>{t('customers.scanCard', 'Scan a business card')}</Text>
+                    <Text style={[styles.choiceSub, { color: colors.textMuted }]}>{t('customers.scanCardSub', 'Fills the form for you')}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
 
-      <BlurSheet visible={addOpen} onClose={() => setAddOpen(false)}>
-        <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
-          <View style={[styles.grab, { backgroundColor: colors.border }]} />
-          <Text style={[styles.addTitle, { color: colors.textPrimary }]}>
-            {t('customers.add', 'Add client')}
-          </Text>
-
-          {[
-            { k: 'name' as const, label: t('customers.fName', 'Name'), ph: 'Siemens AG', req: true },
-            { k: 'contactName' as const, label: t('customers.fContact', 'Contact person'), ph: 'Anna Gruber' },
-            { k: 'email' as const, label: t('customers.fEmail', 'Email'), ph: 'a.gruber@siemens.com' },
-            { k: 'phone' as const, label: t('customers.fPhone', 'Phone'), ph: '+43 1 234 5601' },
-          ].map((f) => (
-            <View key={f.k} style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-                {f.label}{f.req ? ' *' : ''}
-              </Text>
-              <TextInput
-                value={form[f.k]}
-                onChangeText={(v) => setForm((p) => ({ ...p, [f.k]: v }))}
-                placeholder={f.ph}
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize={f.k === 'email' ? 'none' : 'words'}
-                keyboardType={f.k === 'email' ? 'email-address' : f.k === 'phone' ? 'phone-pad' : 'default'}
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-              />
-            </View>
-          ))}
-
-          {/* Where it lands. A client filed in no workspace is invisible in
-              every workspace tab, so this is not an afterthought. */}
-          {spaces.length > 0 && (
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-                {t('customers.fWorkspace', 'Workspace')}
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
-                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
-                  {[{ id: null as string | null, name: t('customers.noSpace', 'No workspace') }, ...spaces].map((sp) => {
-                    const on = formSpaceId === sp.id;
-                    return (
-                      <TouchableOpacity
-                        key={sp.id ?? 'none'}
-                        onPress={() => setFormSpaceId(sp.id)}
-                        style={[styles.chip, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? COLORS.primary + '15' : 'transparent' }]}
-                      >
-                        <Text style={{ color: on ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold as any }}>
-                          {sp.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+              <TouchableOpacity
+                style={[styles.choice, { borderColor: colors.border }]}
+                onPress={() => setSheet('form')}
+              >
+                <View style={[styles.choiceIcon, { backgroundColor: 'rgba(139,147,167,.18)' }]}>
+                  <Ionicons name="create-outline" size={20} color={colors.textMuted} />
                 </View>
-              </ScrollView>
-            </View>
-          )}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.choiceTitle, { color: colors.textPrimary }]}>{t('customers.enterDetails', 'Enter details')}</Text>
+                  <Text style={[styles.choiceSub, { color: colors.textMuted }]}>{t('customers.enterDetailsSub', 'Type it in')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.addTitle, { color: colors.textPrimary }]}>
+                {t('customers.add', 'Add client')}
+              </Text>
 
-          <TouchableOpacity
-            onPress={submit}
-            disabled={saving || !form.name.trim()}
-            style={[styles.saveBtn, { backgroundColor: form.name.trim() ? COLORS.primary : colors.border }]}
-          >
-            {saving
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={styles.saveText}>{t('customers.save', 'Save client')}</Text>}
-          </TouchableOpacity>
+              {[
+                { k: 'name' as const, label: t('customers.fName', 'Name'), ph: 'Siemens AG', req: true },
+                { k: 'contactName' as const, label: t('customers.fContact', 'Contact person'), ph: 'Anna Gruber' },
+                { k: 'email' as const, label: t('customers.fEmail', 'Email'), ph: 'a.gruber@siemens.com' },
+                { k: 'phone' as const, label: t('customers.fPhone', 'Phone'), ph: '+43 1 234 5601' },
+              ].map((f) => (
+                <View key={f.k} style={styles.field}>
+                  <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
+                    {f.label}{f.req ? ' *' : ''}
+                  </Text>
+                  <TextInput
+                    value={form[f.k]}
+                    onChangeText={(v) => setForm((p) => ({ ...p, [f.k]: v }))}
+                    placeholder={f.ph}
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize={f.k === 'email' ? 'none' : 'words'}
+                    keyboardType={f.k === 'email' ? 'email-address' : f.k === 'phone' ? 'phone-pad' : 'default'}
+                    style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+                  />
+                </View>
+              ))}
+
+              {/* Where it lands. A client filed in no workspace is invisible in
+                  every workspace tab, so this is not an afterthought. */}
+              {spaces.length > 0 && (
+                <View style={styles.field}>
+                  <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
+                    {t('customers.fWorkspace', 'Workspace')}
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                    <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                      {[{ id: null as string | null, name: t('customers.noSpace', 'No workspace') }, ...spaces].map((sp) => {
+                        const on = formSpaceId === sp.id;
+                        return (
+                          <TouchableOpacity
+                            key={sp.id ?? 'none'}
+                            onPress={() => setFormSpaceId(sp.id)}
+                            style={[styles.chip, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? COLORS.primary + '15' : 'transparent' }]}
+                          >
+                            <Text style={{ color: on ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold as any }}>
+                              {sp.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
+                </View>
+              )}
+
+              <TouchableOpacity
+                onPress={submit}
+                disabled={saving || !form.name.trim()}
+                style={[styles.saveBtn, { backgroundColor: form.name.trim() ? COLORS.primary : colors.border }]}
+              >
+                {saving
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={styles.saveText}>{t('customers.save', 'Save client')}</Text>}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </BlurSheet>
     </SafeAreaView>

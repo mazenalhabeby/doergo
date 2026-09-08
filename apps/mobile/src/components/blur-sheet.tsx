@@ -9,6 +9,26 @@ import { BlurView } from 'expo-blur';
  * Callers just provide their own sheet content (bg, handle, padding) as children;
  * this owns the Modal, the tap-to-dismiss backdrop, and the animation.
  */
+/*
+  ⚠️ iOS WILL NOT PRESENT A MODAL WHILE ANOTHER IS DISMISSING.
+
+  Every sheet in this app is a Modal, and this one stays mounted for 250ms
+  while it animates out. So the ordinary pattern
+
+      onPress={() => { setListOpen(false); setDetailOpen(true); }}
+
+  mounts the second modal while the first is still leaving. The second never
+  appears, and its invisible backdrop swallows every touch — the app looks
+  frozen, with nothing in the logs.
+
+  It is fixed HERE rather than at each call site because the call sites read
+  perfectly and there are several of them, including two in shipped code (the
+  shift-issue list handing over to the report sheet, and to the thread sheet).
+  A sheet asked to open while another is leaving simply waits for it.
+*/
+let dismissingUntil = 0;
+const EXIT_MS = 250;
+
 export function BlurSheet({
   visible,
   onClose,
@@ -27,17 +47,29 @@ export function BlurSheet({
 
   useEffect(() => {
     if (visible) {
-      setMounted(true);
-      Animated.parallel([
-        Animated.timing(overlay, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.spring(slide, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
-      ]).start();
-    } else if (mounted) {
+      // Wait out any sheet still leaving the screen — see the note above.
+      const wait = Math.max(0, dismissingUntil - Date.now());
+      const open = () => {
+        setMounted(true);
+        slide.setValue(height);
+        Animated.parallel([
+          Animated.timing(overlay, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.spring(slide, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
+        ]).start();
+      };
+      if (wait === 0) { open(); return; }
+      const timer = setTimeout(open, wait);
+      return () => clearTimeout(timer);
+    }
+    if (mounted) {
+      // Claim the window before anything else can present into it.
+      dismissingUntil = Date.now() + EXIT_MS;
       Animated.parallel([
         Animated.timing(overlay, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(slide, { toValue: height, duration: 250, useNativeDriver: true }),
+        Animated.timing(slide, { toValue: height, duration: EXIT_MS, useNativeDriver: true }),
       ]).start(({ finished }) => { if (finished) setMounted(false); });
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
