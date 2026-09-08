@@ -256,7 +256,19 @@ export default function CustomersScreen() {
               {canScanCards() && (
                 <TouchableOpacity
                   style={[styles.choice, { borderColor: colors.border }]}
-                  onPress={() => { setSheet('none'); router.push('/(app)/scan-card' as any); }}
+                  onPress={() => {
+                    setSheet('none');
+                    /*
+                      Push AFTER the sheet has left.
+
+                      Same conflict that froze "Enter details", one step along:
+                      pushing a screen while a modal is dismissing races the
+                      same presentation the sheet is still using. The camera
+                      would arrive underneath a backdrop that is on its way out.
+                      280ms is the sheet's exit plus a frame.
+                    */
+                    setTimeout(() => router.push('/(app)/scan-card' as any), 280);
+                  }}
                 >
                   <View style={[styles.choiceIcon, { backgroundColor: COLORS.primary + '22' }]}>
                     <Ionicons name="scan" size={20} color={COLORS.primary} />
