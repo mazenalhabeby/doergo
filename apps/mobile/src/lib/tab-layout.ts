@@ -23,10 +23,15 @@ export const MAX_TABS = 5;
  * Home is where the day starts. Tasks and Clock are the two things a field
  * member opens all day, and between them they cover both kinds of member —
  * whoever holds only one of the two never overflows at all. Create is next
- * because it is an action rather than a place. Manage, Time off and Team are
- * visited occasionally and go behind More first.
+ * because it is an action rather than a place. Time off and Team are visited
+ * occasionally and go behind More first.
+ *
+ * ⚠️ Manage is absent by design. It was a tab whose whole content was a list of
+ * links, sitting next to More, which is also a list of links. Its rows live in
+ * More now — one door instead of two, and one fewer permanent slot spent on a
+ * menu.
  */
-export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'create-task', 'manage', 'time-off', 'team'];
+export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'create-task', 'time-off', 'team'];
 
 export const byPriority = (a: { name: string }, b: { name: string }) => {
   const ia = TAB_PRIORITY.indexOf(a.name);
@@ -42,10 +47,27 @@ export const byPriority = (a: { name: string }, b: { name: string }) => {
  * More than five: four keep their slot and the rest move, because the More
  * entry costs one of the five.
  */
-export function splitTabs<T extends { name: string }>(visible: T[]): { barRoutes: T[]; overflowRoutes: T[] } {
-  if (visible.length <= MAX_TABS) return { barRoutes: visible, overflowRoutes: [] };
+export function splitTabs<T extends { name: string }>(
+  visible: T[],
+  /**
+   * Does More have something in it besides overflow — the Manage rows?
+   *
+   * ⚠️ Load-bearing. Without it, a supervisor with five or fewer tabs gets no
+   * More entry at all, and the management screens behind it become unreachable:
+   * four of them have no other door anywhere in the app.
+   */
+  hasExtras = false,
+): { barRoutes: T[]; overflowRoutes: T[]; showMore: boolean } {
+  const showMore = hasExtras || visible.length > MAX_TABS;
+  if (!showMore) return { barRoutes: visible, overflowRoutes: [], showMore: false };
+
   const ranked = [...visible].sort(byPriority);
-  return { barRoutes: ranked.slice(0, MAX_TABS - 1), overflowRoutes: ranked.slice(MAX_TABS - 1) };
+  // More costs one of the five, whether it holds overflow, Manage rows or both.
+  return {
+    barRoutes: ranked.slice(0, MAX_TABS - 1),
+    overflowRoutes: ranked.slice(MAX_TABS - 1),
+    showMore: true,
+  };
 }
 
 /**

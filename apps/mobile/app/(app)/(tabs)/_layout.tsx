@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity, Image } from 'react-native';
-import { Tabs, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { Tabs, useRouter, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,9 @@ import { useRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlurSheet } from '../../../src/components/blur-sheet';
 import { splitTabs, tabIconName } from '../../../src/lib/tab-layout';
+import { manageRowsFor } from '../../../src/lib/manage-rows';
+import { holds } from '../../../src/lib/permissions';
+import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -211,6 +214,15 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   // Filter routes based on role and modules (profile is in header, not tab bar)
   const visibleRoutes = state.routes.filter((route: any) => {
     if (route.name === 'profile') return false;
+    /*
+      Manage is not a tab any more, in any role.
+
+      It was a tab whose entire content was a list of links, sitting beside
+      More, which is also a list of links. Its rows are in More now — see
+      manageRows below. The ROUTE stays registered so a push notification or a
+      deep link into it still resolves.
+    */
+    if (route.name === 'manage') return false;
     if (route.name === 'team') return showTeam;
     if (isAdmin) {
       // Clock is module-driven, not role-locked: an admin/owner who also works
@@ -230,7 +242,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       least one row inside it would open (see manage-rows.ts), so it is never
       an empty tab and never a wall of refusals.
     */
-    if (route.name === 'manage') return hasManageSurface(user);
     if (route.name === 'create-task') return showCreate;
     if (route.name === 'tasks') return showTasks;
     if (route.name === 'attendance') return showAttendance;
@@ -246,13 +257,20 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     route objects, which React Navigation recreates each time.
   */
   const routeNames = visibleRoutes.map((r: any) => r.name).join(',');
-  const { barRoutes, overflowRoutes } = useMemo(
-    () => splitTabs(visibleRoutes),
+  /*
+    What Manage used to hold. Same array the old screen read, so a member never
+    sees a row that would refuse them.
+  */
+  const manageRows = useMemo(() => manageRowsFor(user || {}), [user]);
+  const { barRoutes, overflowRoutes, showMore } = useMemo(
+    () => splitTabs(visibleRoutes, manageRows.length > 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [routeNames],
+    [routeNames, manageRows.length],
   );
 
   const [moreOpen, setMoreOpen] = useState(false);
+  const [issuesOpen, setIssuesOpen] = useState(false);
+  const [issueId, setIssueId] = useState<string | null>(null);
   const currentRoute = state.routes[state.index];
   // Being INSIDE the overflow has to look different from being anywhere else,
   // or the bar shows nothing selected and the person cannot tell where they are.
@@ -306,7 +324,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         })}
 
         {/* The fifth slot, only when there is something to put in it. */}
-        {overflowRoutes.length > 0 && (
+        {showMore && (
           <Pressable style={styles.tabItem} onPress={() => setMoreOpen(true)} accessibilityRole="button">
             <View style={styles.tabItemInner}>
               <View style={styles.iconRow}>
@@ -337,32 +355,99 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       <BlurSheet visible={moreOpen} onClose={() => setMoreOpen(false)}>
         <View style={[styles.moreSheet, { backgroundColor: themeColors.card }]}>
           <View style={[styles.moreGrab, { backgroundColor: themeColors.border }]} />
-          {overflowRoutes.map((route: any) => {
-            const { options } = descriptors[route.key];
-            const active = route.key === currentRoute?.key;
-            return (
-              <Pressable
-                key={route.key}
-                style={[styles.moreRow, { borderColor: themeColors.border }]}
-                onPress={() => {
-                  setMoreOpen(false);
-                  navigation.navigate(route.name);
-                }}
-              >
-                <Ionicons
-                  name={tabIconName(route.name, active) as any}
-                  size={20}
-                  color={active ? COLORS.primary : themeColors.textMuted}
-                />
-                <Text style={[styles.moreLabel, { color: active ? COLORS.primary : themeColors.textPrimary }]}>
-                  {options.title || route.name}
-                </Text>
-                {active && <Ionicons name="checkmark" size={16} color={COLORS.primary} />}
-              </Pressable>
-            );
-          })}
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.moreScroll}>
+            {/* The tabs that did not fit. Plain rows — they are places. */}
+            {overflowRoutes.map((route: any) => {
+              const { options } = descriptors[route.key];
+              const active = route.key === currentRoute?.key;
+              return (
+                <Pressable
+                  key={route.key}
+                  style={[styles.moreRow, { borderColor: themeColors.border }]}
+                  onPress={() => {
+                    setMoreOpen(false);
+                    navigation.navigate(route.name);
+                  }}
+                >
+                  <View style={[styles.moreIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                    <Ionicons
+                      name={tabIconName(route.name, active) as any}
+                      size={19}
+                      color={active ? COLORS.primary : themeColors.textMuted}
+                    />
+                  </View>
+                  <Text style={[styles.moreLabel, { color: active ? COLORS.primary : themeColors.textPrimary }]}>
+                    {options.title || route.name}
+                  </Text>
+                  {active && <Ionicons name="checkmark" size={16} color={COLORS.primary} />}
+                </Pressable>
+              );
+            })}
+
+            {/*
+              What Manage used to be.
+
+              Each row keeps its own colour and description: these are nine
+              different jobs, not variations of one, and the description is
+              often the only thing that tells "Attendance" (approve other
+              people's hours) from the Clock tab (your own).
+            */}
+            {manageRows.length > 0 && (
+              <>
+                {overflowRoutes.length > 0 && (
+                  <Text style={[styles.moreSectionLabel, { color: themeColors.textMuted }]}>
+                    {t('tabs.manage', 'Manage')}
+                  </Text>
+                )}
+                {manageRows.map((row) => (
+                  <Pressable
+                    key={row.route}
+                    style={[styles.moreRow, { borderColor: themeColors.border }]}
+                    onPress={() => {
+                      setMoreOpen(false);
+                      // Shift issues are sheets, not a route — see below.
+                      if (row.route === 'sheet:issues') setIssuesOpen(true);
+                      else router.push(row.route as any);
+                    }}
+                  >
+                    <View style={[styles.moreIcon, { backgroundColor: row.color + '15' }]}>
+                      <Ionicons name={row.icon as any} size={19} color={row.color} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.moreLabel, { color: themeColors.textPrimary }]}>{t(row.labelKey)}</Text>
+                      <Text style={[styles.moreDesc, { color: themeColors.textMuted }]} numberOfLines={1}>
+                        {t(row.descKey)}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+                  </Pressable>
+                ))}
+              </>
+            )}
+          </ScrollView>
         </View>
       </BlurSheet>
+
+      {/*
+        Shift issues are a list sheet and a thread sheet, not a route. The
+        Manage screen used to host them; with Manage gone from the bar, More is
+        their door — the alternative was a route that exists only to open a
+        sheet.
+      */}
+      <ShiftIssueListSheet
+        visible={issuesOpen}
+        onClose={() => setIssuesOpen(false)}
+        onOpen={(id) => { setIssuesOpen(false); setIssueId(id); }}
+      />
+      <ShiftIssueThreadSheet
+        visible={!!issueId}
+        issueId={issueId}
+        onClose={() => setIssueId(null)}
+        /* Whether the actions render is the server's call in the end; this only
+           decides what to draw, and it asks the same question the API does. */
+        canManage={holds(user, 'canViewAllTasks')}
+        currentUserId={user?.id}
+      />
     </View>
   );
 }
@@ -496,6 +581,13 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1,
   },
   moreLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
+  moreDesc: { fontSize: 12, marginTop: 1 },
+  moreIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  moreScroll: { maxHeight: 420 },
+  moreSectionLabel: {
+    fontSize: 11, fontWeight: '700', letterSpacing: 0.6,
+    textTransform: 'uppercase', marginTop: 14, marginBottom: 6, paddingHorizontal: 4,
+  },
   container: {
     flex: 1,
   },
