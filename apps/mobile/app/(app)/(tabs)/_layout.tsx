@@ -3,8 +3,10 @@ import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BlurSheet } from '../../../src/components/blur-sheet';
+import { splitTabs, tabIconName } from '../../../src/lib/tab-layout';
 import { AnimatedLogo } from '../../../src/components';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -129,24 +131,7 @@ function TabItem({
     }).start();
   };
 
-  let iconName: string;
-  if (route.name === 'index') {
-    iconName = isFocused ? 'home' : 'home-outline';
-  } else if (route.name === 'tasks') {
-    iconName = isFocused ? 'clipboard' : 'clipboard-outline';
-  } else if (route.name === 'create-task') {
-    iconName = isFocused ? 'add-circle' : 'add-circle-outline';
-  } else if (route.name === 'manage') {
-    iconName = isFocused ? 'grid' : 'grid-outline';
-  } else if (route.name === 'attendance') {
-    iconName = isFocused ? 'time' : 'time-outline';
-  } else if (route.name === 'time-off') {
-    iconName = isFocused ? 'calendar' : 'calendar-outline';
-  } else if (route.name === 'team') {
-    iconName = isFocused ? 'people' : 'people-outline';
-  } else {
-    iconName = isFocused ? 'person' : 'person-outline';
-  }
+  const iconName = tabIconName(route.name, isFocused);
 
   const tourKey = TAB_TOUR_KEY[route.name];
 
@@ -201,6 +186,7 @@ function TabItem({
 // Custom Tab Bar - Full width premium design
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
   const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
@@ -252,11 +238,27 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     return true;
   });
 
-  // Calculate adjusted focus index
-  const getAdjustedIndex = () => {
-    const currentRoute = state.routes[state.index];
-    return visibleRoutes.findIndex((r: any) => r.key === currentRoute.key);
-  };
+  /*
+    Split into what fits and what does not.
+
+    Cheap by construction — at most seven items, sorted and sliced — but it runs
+    on every navigation, so it is memoised on the route names rather than the
+    route objects, which React Navigation recreates each time.
+  */
+  const routeNames = visibleRoutes.map((r: any) => r.name).join(',');
+  const { barRoutes, overflowRoutes } = useMemo(
+    () => splitTabs(visibleRoutes),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [routeNames],
+  );
+
+  const [moreOpen, setMoreOpen] = useState(false);
+  const currentRoute = state.routes[state.index];
+  // Being INSIDE the overflow has to look different from being anywhere else,
+  // or the bar shows nothing selected and the person cannot tell where they are.
+  const inOverflow = overflowRoutes.some((r: any) => r.key === currentRoute?.key);
+
+  const getAdjustedIndex = () => barRoutes.findIndex((r: any) => r.key === currentRoute.key);
 
   const isDark = themeColors.tabBar === '#0a0a10'; // quick dark mode check
 
@@ -274,7 +276,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       elevation: 12,
     }]}>
       <View style={styles.tabBarInner}>
-        {visibleRoutes.map((route: any, index: number) => {
+        {barRoutes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
           const label = options.title || route.name;
           const isFocused = getAdjustedIndex() === index;
@@ -302,7 +304,65 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             />
           );
         })}
+
+        {/* The fifth slot, only when there is something to put in it. */}
+        {overflowRoutes.length > 0 && (
+          <Pressable style={styles.tabItem} onPress={() => setMoreOpen(true)} accessibilityRole="button">
+            <View style={styles.tabItemInner}>
+              <View style={styles.iconRow}>
+                <Ionicons
+                  name={inOverflow ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'}
+                  size={23}
+                  color={inOverflow ? COLORS.primary : themeColors.textMuted}
+                />
+              </View>
+              <Text
+                style={[styles.tabLabel, { color: inOverflow ? COLORS.primary : themeColors.textMuted }, inOverflow && styles.tabLabelActive]}
+                numberOfLines={1}
+              >
+                {t('tabs.more', 'More')}
+              </Text>
+            </View>
+          </Pressable>
+        )}
       </View>
+
+      {/*
+        The overflow, as a list rather than a second row of icons.
+
+        A row would recreate the problem it exists to solve; a list has room for
+        a full label, which is what these less-frequent destinations need — a
+        person opening More is looking for something by name, not by glyph.
+      */}
+      <BlurSheet visible={moreOpen} onClose={() => setMoreOpen(false)}>
+        <View style={[styles.moreSheet, { backgroundColor: themeColors.card }]}>
+          <View style={[styles.moreGrab, { backgroundColor: themeColors.border }]} />
+          {overflowRoutes.map((route: any) => {
+            const { options } = descriptors[route.key];
+            const active = route.key === currentRoute?.key;
+            return (
+              <Pressable
+                key={route.key}
+                style={[styles.moreRow, { borderColor: themeColors.border }]}
+                onPress={() => {
+                  setMoreOpen(false);
+                  navigation.navigate(route.name);
+                }}
+              >
+                <Ionicons
+                  name={tabIconName(route.name, active) as any}
+                  size={20}
+                  color={active ? COLORS.primary : themeColors.textMuted}
+                />
+                <Text style={[styles.moreLabel, { color: active ? COLORS.primary : themeColors.textPrimary }]}>
+                  {options.title || route.name}
+                </Text>
+                {active && <Ionicons name="checkmark" size={16} color={COLORS.primary} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </BlurSheet>
     </View>
   );
 }
@@ -425,6 +485,17 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  moreSheet: {
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 28, gap: 8,
+  },
+  moreGrab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: 8 },
+  moreRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 14, paddingHorizontal: 14,
+    borderRadius: 12, borderWidth: 1,
+  },
+  moreLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
   container: {
     flex: 1,
   },
