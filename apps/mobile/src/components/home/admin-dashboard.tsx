@@ -889,7 +889,19 @@ export function AdminDashboard() {
       <ScreenContainer width="content">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        /*
+          One rhythm for the whole screen.
+
+          Every block used to set its own gap — SPACING.sm above the clock card,
+          SPACING.md above the out-of-ring banner, nothing at all above the
+          documents reminder — so the vertical spacing was an accident of the
+          order things were added, and blocks that appear conditionally left
+          gaps of three different sizes depending on who was looking.
+
+          A single `gap` on the stack spaces whatever happens to render, evenly,
+          and there is now one number to change instead of six.
+        */
+        contentContainerStyle={styles.stack}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -926,19 +938,21 @@ export function AdminDashboard() {
       {/* Outstanding personal documents, once, at the top — see the component
           for why it is not on every screen. Renders nothing when there are
           none, which is the normal case. */}
-      <DocumentsReminderCard />
+      <View style={styles.section}>
+        <DocumentsReminderCard />
+      </View>
 
         {/* Clock in/out — the same self-contained shift widget members use, for a
             working admin/owner (gated on the clock module). */}
         {canClock && (
-          <View style={{ marginTop: SPACING.sm }}>
+          <View style={styles.section}>
             <ShiftClockCard onChanged={refreshMyStatus} />
           </View>
         )}
 
         {/* Admin's own out-of-ring state + Always-location nudge */}
         {canClock && (
-          <View style={{ marginTop: SPACING.md }}>
+          <View style={styles.section}>
             <OutOfRingHomeBanner
               excursion={myExcursion}
               onPress={() => router.push(ROUTES.attendance as any)}
@@ -1022,6 +1036,14 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 12, fontWeight: '500' },
   // The gutter the header already uses, so the number lines up with the name.
+  /*
+    The stack, and the inset every block shares.
+
+    ⚠️ `section` is not decoration: a block outside it sits flush to the screen
+    edge while its neighbours are inset 16px, which is the other half of why
+    this screen read as unaligned.
+  */
+  stack: { paddingBottom: 120, gap: SPACING.lg },
   section: { paddingHorizontal: SPACING.lg },
   siteName: {
     fontSize: 19,
@@ -1030,7 +1052,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   welcome: { fontSize: 21, fontWeight: '700', marginTop: 2 },
-  grid: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  grid: { paddingHorizontal: SPACING.lg },
   columns: { flexDirection: 'row', alignItems: 'flex-start', gap: GRID_GAP },
   column: { flex: 1 },
   emptyState: {

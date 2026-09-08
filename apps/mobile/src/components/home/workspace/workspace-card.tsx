@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyl
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
-import { COLORS } from '../../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../lib/constants';
 import { PersonNode, type PersonNodeData } from './person-node';
 
 export interface WorkspaceBoxData {
@@ -72,7 +72,17 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
   // In the half-width (compact) card, keep the gap tight so two 60px person
   // tiles still fit two-per-row on a 360px-wide phone. Applied to the present
   // group AND every sub-group so they stay consistent.
-  const peopleGap = compact ? { gap: 8, rowGap: 12 } : { gap: 14, rowGap: 12 };
+  /*
+    Equal both ways, at two densities.
+
+    This overrides `styles.people`, so it is the gap that actually renders —
+    fixing the stylesheet alone changed nothing. It was 14 across and 12 down,
+    which makes a wrapped grid of faces read as two loose rows rather than one
+    group.
+  */
+  const peopleGap = compact
+    ? { gap: SPACING.sm, rowGap: SPACING.sm }
+    : { gap: SPACING.md, rowGap: SPACING.md };
   const hasAnyone =
     present.length +
       (box.onRoadPeople?.length || 0) +
@@ -166,19 +176,33 @@ export const WorkspaceCard = React.memo(function WorkspaceCard({
   );
 });
 
+/*
+  One grid, one inset.
+
+  The header was inset 13px and the body 14px, so the title and the content
+  under it started at different x positions — a pixel apart is invisible as a
+  number and reads, correctly, as "nothing lines up". The rest was the same
+  story in larger steps: 11, 13, 14 and 18 belong to no scale, so the gaps had
+  no rhythm to be read as deliberate.
+
+  Everything below is on the 4px scale the rest of the app uses. Micro values
+  inside the alert badge stay as they are: a 9px-font pill is not "spacing
+  between elements", and rounding its 2px inner padding would only make it fat.
+*/
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
+  card: { borderRadius: RADIUS.lg, borderWidth: 1, marginBottom: SPACING.md, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
-    paddingHorizontal: 13,
-    paddingTop: 12,
-    paddingBottom: 8,
+    gap: SPACING.sm,
+    // Same inset as body and emptyBody — this is the card's left edge.
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
   },
   titleCol: { flex: 1 },
-  title: { fontSize: 14, fontWeight: '700', letterSpacing: 0.1, lineHeight: 18 },
-  subtitle: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  title: { fontSize: FONT_SIZE.base, fontWeight: '700', letterSpacing: 0.1, lineHeight: 18 },
+  subtitle: { fontSize: FONT_SIZE.xs, fontWeight: '500', marginTop: 2 },
   alertBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,23 +214,30 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   alertText: { fontSize: 9, fontWeight: '700', color: '#f87171' },
-  body: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 12 },
-  people: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, rowGap: 12 },
-  subGroup: { marginTop: 12 },
-  subLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 },
-  emptyBody: { paddingHorizontal: 14, paddingVertical: 18, alignItems: 'center' },
-  emptyText: { fontSize: 12 },
+  body: { paddingHorizontal: SPACING.md, paddingTop: SPACING.sm, paddingBottom: SPACING.md },
+  // Equal gap both ways: a grid of faces with wider columns than rows reads as
+  // two unrelated rows rather than one group.
+  people: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, rowGap: SPACING.md },
+  subGroup: { marginTop: SPACING.md },
+  subLabel: {
+    fontSize: 9, fontWeight: '700', letterSpacing: 0.5,
+    textTransform: 'uppercase', marginBottom: SPACING.sm,
+  },
+  emptyBody: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.lg, alignItems: 'center' },
+  emptyText: { fontSize: FONT_SIZE.sm },
   actions: { flexDirection: 'row', borderTopWidth: 1 },
   actionBtn: {
     flex: 1,
     minWidth: 0,
+    // 44px is the smallest target every platform asks for; this row was 39.
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 11,
-    paddingHorizontal: 4,
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xs,
   },
-  actionText: { fontSize: 12, fontWeight: '600', flexShrink: 1 },
+  actionText: { fontSize: FONT_SIZE.sm, fontWeight: '600', flexShrink: 1 },
   actionDivider: { width: 1 },
 });
