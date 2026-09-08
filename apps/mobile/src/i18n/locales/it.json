@@ -2067,6 +2067,7 @@
     "needCamera": "Per leggere un biglietto da visita serve la fotocamera.",
     "allow": "Consenti fotocamera",
     "failed": "Impossibile leggere il biglietto.",
-    "nothingRead": "Non è stato letto nulla: riprova con più luce."
+    "nothingRead": "Non è stato letto nulla: riprova con più luce.",
+    "notAllowed": "Non hai il permesso di aggiungere clienti."
   }
 }

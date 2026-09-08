@@ -2067,6 +2067,7 @@
     "needCamera": "L’appareil photo est nécessaire pour lire une carte de visite.",
     "allow": "Autoriser l’appareil photo",
     "failed": "Impossible de lire la carte.",
-    "nothingRead": "Rien n’a pu être lu — réessayez avec plus de lumière."
+    "nothingRead": "Rien n’a pu être lu — réessayez avec plus de lumière.",
+    "notAllowed": "Vous n’avez pas la permission d’ajouter des clients."
   }
 }

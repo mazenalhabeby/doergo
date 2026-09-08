@@ -85,3 +85,51 @@ describe('the native card reader is never imported at module scope', () => {
     expect(canScanCards()).toBe(false);
   });
 });
+
+
+/**
+ * What the scanner must never do with somebody's card.
+ *
+ * The whole argument for reading the card on the device is that the card does
+ * not travel. Leaving the photograph in a cache directory, or logging what was
+ * read, quietly undoes that — and a business card is a named person's phone
+ * number and email address, which is exactly the data this product is
+ * otherwise careful with.
+ */
+describe('the scanner keeps the card on the phone', () => {
+  const scan = fs.readFileSync(path.join(MOBILE, 'app/(app)/scan-card.tsx'), 'utf8');
+  const lib = fs.readFileSync(path.join(MOBILE, 'src/lib/card-scan.ts'), 'utf8');
+  const code = stripComments(scan) + stripComments(lib);
+
+  it('deletes the photograph, including when reading it failed', () => {
+    expect(code).toMatch(/\.delete\(\)/);
+    // In `finally`, not on the happy path — a failed read leaves a photo too.
+    const finallyBlock = scan.slice(scan.indexOf('} finally {'));
+    expect(finallyBlock).toContain('delete()');
+  });
+
+  it('never logs what was read', () => {
+    // A card in a log file is the same disclosure as a card in a cache.
+    expect(code).not.toMatch(/console\.(log|warn|info|debug)/);
+  });
+
+  it('sends the card nowhere except the client it creates', () => {
+    // No uploads, no analytics, no second endpoint.
+    expect(code).not.toMatch(/fetch\(/);
+    expect(scan.match(/customersApi\.\w+/g) ?? []).toEqual(['customersApi.create']);
+  });
+
+  it('asks the native module its capability once, not on every render', () => {
+    // `isSupported()` crosses the bridge and this is called from a list
+    // screen's render path; the answer cannot change mid-session.
+    expect(lib).toMatch(/let supported: boolean \| null = null/);
+    expect(lib).toMatch(/if \(supported !== null\) return supported/);
+  });
+
+  it('refuses the screen to anyone who may not add a client', () => {
+    // The server refuses the save anyway; this stops somebody photographing a
+    // card and correcting five fields before finding that out.
+    expect(scan).toMatch(/crmCreateClients/);
+    expect(scan).toMatch(/if \(!canAdd\)/);
+  });
+});

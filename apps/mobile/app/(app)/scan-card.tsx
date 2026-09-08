@@ -11,6 +11,9 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { scanBusinessCard, type ParsedCard } from '../../src/lib/card-scan';
 import { customersApi } from '../../src/lib/api';
+import { File as FsFile } from 'expo-file-system';
+import { useAuth } from '../../src/contexts/auth-context';
+import { holds } from '../../src/lib/permissions';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
 /**
@@ -33,6 +36,17 @@ export default function ScanCardScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const [permission, requestPermission] = useCameraPermissions();
+  const { user } = useAuth();
+
+  /*
+    A route is reachable by deep link whether or not a button points at it.
+
+    The server refuses the save regardless, so nothing can be created without
+    the permission — but letting somebody photograph a card, correct five
+    fields and only then be refused is a waste of their time and an odd place
+    to learn what they are not allowed to do.
+  */
+  const canAdd = holds(user, 'crmCreateClients') || holds(user, 'crmManageClients');
   const camera = useRef<CameraView>(null);
 
   const [busy, setBusy] = useState(false);
@@ -47,9 +61,11 @@ export default function ScanCardScreen() {
   const capture = useCallback(async () => {
     if (!camera.current || busy) return;
     setBusy(true);
+    let shotUri: string | null = null;
     try {
       const shot = await camera.current.takePictureAsync({ quality: 0.8, skipProcessing: true });
       if (!shot?.uri) return;
+      shotUri = shot.uri;
       const parsed = await scanBusinessCard(shot.uri, shot.height ?? 0);
       setCard(parsed);
       setValues({
@@ -73,6 +89,18 @@ export default function ScanCardScreen() {
     } catch {
       toast.error(t('scan.failed', 'Could not read the card.'));
     } finally {
+      /*
+        ⚠️ Delete the photograph. Always, including on failure.
+
+        It is a picture of a named person's phone number and email address,
+        sitting in a cache directory with no expiry and no purpose once the
+        text has been read. The whole point of reading the card on the device
+        is that the card does not travel; leaving the image behind quietly
+        undoes that.
+      */
+      if (shotUri) {
+        try { new FsFile(shotUri).delete(); } catch { /* already gone */ }
+      }
       setBusy(false);
     }
   }, [busy, t, toast]);
@@ -98,7 +126,22 @@ export default function ScanCardScreen() {
     }
   }, [values, t, toast]);
 
-  // ── Permission ────────────────────────────────────────────────────────────
+  // ── Allowed to add a client at all? ───────────────────────────────────────
+  if (!canAdd) {
+    return (
+      <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
+        <Header colors={colors} title={t('scan.title', 'Scan a card')} />
+        <View style={s.centre}>
+          <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
+          <Text style={[s.hint, { color: colors.textMuted }]}>
+            {t('scan.notAllowed', 'You do not have permission to add clients.')}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Camera permission ─────────────────────────────────────────────────────
   if (!permission?.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>

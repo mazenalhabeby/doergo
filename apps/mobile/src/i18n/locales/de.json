@@ -2067,6 +2067,7 @@
     "needCamera": "Für das Lesen einer Visitenkarte wird die Kamera benötigt.",
     "allow": "Kamera erlauben",
     "failed": "Die Karte konnte nicht gelesen werden.",
-    "nothingRead": "Es konnte nichts gelesen werden — bitte mit mehr Licht erneut versuchen."
+    "nothingRead": "Es konnte nichts gelesen werden — bitte mit mehr Licht erneut versuchen.",
+    "notAllowed": "Sie haben keine Berechtigung, Kunden hinzuzufügen."
   }
 }

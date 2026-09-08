@@ -2067,6 +2067,7 @@
     "needCamera": "The camera is needed to read a business card.",
     "allow": "Allow camera",
     "failed": "Could not read the card.",
-    "nothingRead": "Nothing could be read — try again with more light."
+    "nothingRead": "Nothing could be read — try again with more light.",
+    "notAllowed": "You do not have permission to add clients."
   }
 }

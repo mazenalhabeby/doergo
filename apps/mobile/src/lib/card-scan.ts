@@ -46,14 +46,26 @@ const ocr = requireOptionalNativeModule<Ocr>('ExpoMlkitOcr');
  * it: an older build hides "Scan a business card" and still adds clients by
  * hand.
  */
+/*
+  Asked once, not per render.
+
+  `isSupported()` crosses the native bridge, and this is called from the render
+  path of a list screen. The answer cannot change while the app is running —
+  a native module does not appear mid-session — so caching it is not an
+  optimisation with a caveat, it is the correct lifetime.
+*/
+let supported: boolean | null = null;
+
 export function canScanCards(): boolean {
-  if (!ocr) return false;
+  if (supported !== null) return supported;
+  if (!ocr) { supported = false; return supported; }
   try {
-    return ocr.isSupported();
+    supported = ocr.isSupported();
   } catch {
     // Present but unusable — an old Android without the ML Kit dependency.
-    return false;
+    supported = false;
   }
+  return supported;
 }
 
 export async function scanBusinessCard(uri: string, imageHeight: number): Promise<ParsedCard> {

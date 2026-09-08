@@ -2067,6 +2067,7 @@
     "needCamera": "Se necesita la cámara para leer una tarjeta.",
     "allow": "Permitir cámara",
     "failed": "No se pudo leer la tarjeta.",
-    "nothingRead": "No se pudo leer nada: inténtalo con más luz."
+    "nothingRead": "No se pudo leer nada: inténtalo con más luz.",
+    "notAllowed": "No tienes permiso para añadir clientes."
   }
 }
