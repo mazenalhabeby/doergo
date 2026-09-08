@@ -285,7 +285,7 @@
         "clockIn": "Pointer l’arrivée",
         "onTheClock": "En service"
       },
-      "greetingLine": "{{greeting}}, {{name}}"
+      "greetingLine": "{{greeting}} {{name}}"
     },
     "fullTime": {
       "clockedIn": "Pointage d'arrivée effectué",
@@ -1693,7 +1693,10 @@
   "customers": {
     "appAccess": "Accès à l’app",
     "empty": "Aucun client",
-    "title": "Clients"
+    "title": "Clients",
+    "allSpaces": "Tous les espaces",
+    "noSpace": "Aucun espace",
+    "capped": "Affichage des {{n}} premiers. Recherchez pour affiner."
   },
   "issues": {
     "myIssues": "Mes signalements",

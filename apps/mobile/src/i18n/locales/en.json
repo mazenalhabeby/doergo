@@ -285,7 +285,7 @@
         "clockIn": "Clock in",
         "onTheClock": "On the clock"
       },
-      "greetingLine": "{{greeting}}, {{name}}"
+      "greetingLine": "{{greeting}} {{name}}"
     },
     "fullTime": {
       "clockedIn": "Clocked In",
@@ -1729,7 +1729,10 @@
   "customers": {
     "appAccess": "App access",
     "empty": "No customers",
-    "title": "Customers"
+    "title": "Customers",
+    "allSpaces": "All workspaces",
+    "noSpace": "No workspace",
+    "capped": "Showing the first {{n}}. Search to narrow it down."
   },
   "issues": {
     "myIssues": "My issues",

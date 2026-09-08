@@ -285,7 +285,7 @@
         "clockIn": "Timbra entrata",
         "onTheClock": "In servizio"
       },
-      "greetingLine": "{{greeting}}, {{name}}"
+      "greetingLine": "{{greeting}} {{name}}"
     },
     "fullTime": {
       "clockedIn": "Entrata timbrata",
@@ -1693,7 +1693,10 @@
   "customers": {
     "appAccess": "Accesso all’app",
     "empty": "Nessun cliente",
-    "title": "Clienti"
+    "title": "Clienti",
+    "allSpaces": "Tutti gli spazi",
+    "noSpace": "Nessuno spazio",
+    "capped": "Mostrando i primi {{n}}. Cerca per restringere."
   },
   "issues": {
     "myIssues": "Le mie segnalazioni",

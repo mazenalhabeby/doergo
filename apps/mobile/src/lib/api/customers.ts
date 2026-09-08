@@ -25,8 +25,16 @@ export interface MobileCustomerActivity {
 }
 
 export const customersApi = {
-  list: (params?: { spaceId?: string; search?: string }): Promise<MobileCustomer[]> =>
-    fetchWithAuth<MobileCustomer[]>(buildUrlWithQuery('/customers', { ...params, limit: 100 })),
+  /**
+   * The client book, optionally narrowed to one workspace.
+   *
+   * `includeUnfiled` matters whenever a workspace is named: a client filed in
+   * NO workspace is invisible to a strict space filter, and in a real book most
+   * of them are. The server does that as one indexed OR — filtering here would
+   * page-truncate before it filtered.
+   */
+  list: (params?: { spaceId?: string; includeUnfiled?: boolean; search?: string; limit?: number }): Promise<MobileCustomer[]> =>
+    fetchWithAuth<MobileCustomer[]>(buildUrlWithQuery('/customers', { ...params, limit: params?.limit ?? 100 })),
   get: (id: string): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>(`/customers/${id}`),
   update: (id: string, dto: Partial<MobileCustomer>): Promise<MobileCustomer> =>
