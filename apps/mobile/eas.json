@@ -19,6 +19,9 @@
       },
       "env": {
         "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCEU0zUQ6kWvz52Cf5o7UtyBbwJzNNcdqk"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "preview": {
