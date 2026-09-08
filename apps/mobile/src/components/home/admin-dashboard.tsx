@@ -923,18 +923,28 @@ export function AdminDashboard() {
           <NeedsList items={needs} />
         </View>
 
-      {/* Outstanding personal documents, once, at the top — see the component
-          for why it is not on every screen. Renders nothing when there are
-          none, which is the normal case. */}
-      <DocumentsReminderCard />
+        {/*
+          Outstanding personal documents. Renders nothing when there are none,
+          which is the normal case.
+
+          ⚠️ The spacer carries a TOP MARGIN ONLY. These cards inset themselves
+          horizontally (homeStyles.actionCard, and the clock card's own
+          marginHorizontal), so a wrapper with padding double-insets them — 32px
+          against their neighbours' 16 — which is exactly what a previous
+          attempt at this did.
+        */}
+        <View style={styles.blockGap}>
+          <DocumentsReminderCard />
+        </View>
 
         {/* Clock in/out — the same self-contained shift widget members use, for a
-            working admin/owner (gated on the clock module). */}
-        {canClock && (
-          <View style={{ marginTop: SPACING.sm }}>
-            <ShiftClockCard onChanged={refreshMyStatus} />
-          </View>
-        )}
+            working admin/owner (gated on the clock module).
+
+            No margin of its own: the documents card above already ends with
+            one, and in React Native adjacent margins STACK rather than collapse.
+            Adding a second here is what made this the one 60px gap on a screen
+            whose rhythm is 24. */}
+        {canClock && <ShiftClockCard onChanged={refreshMyStatus} />}
 
         {/* Admin's own out-of-ring state + Always-location nudge */}
         {canClock && (
@@ -1023,6 +1033,8 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 12, fontWeight: '500' },
   // The gutter the header already uses, so the number lines up with the name.
   section: { paddingHorizontal: SPACING.lg },
+  // Vertical only — see the note at the documents card.
+  blockGap: { marginTop: SPACING.md },
   siteName: {
     fontSize: 19,
     fontWeight: '700',
