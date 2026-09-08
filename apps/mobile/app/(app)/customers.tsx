@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SheetPanel } from '../../src/components/sheet-panel';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +19,7 @@ const initials = (n: string) => n.split(' ').map((w) => w[0]).slice(0, 2).join('
 
 export default function CustomersScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [items, setItems] = useState<MobileCustomer[]>([]);
   const [search, setSearch] = useState('');
@@ -183,7 +185,15 @@ export default function CustomersScreen() {
         <FlatList
           data={items}
           keyExtractor={(c) => c.id}
-          contentContainerStyle={{ padding: SPACING.md }}
+          /*
+            ⚠️ The screen is inset at the TOP only, on purpose: the list
+            should scroll under the home indicator / Android nav bar
+            rather than stop above it. That makes clearing the bar the
+            content's job — both here and on the button that floats over
+            it, which otherwise sits half behind the three nav keys.
+            FAB_CLEARANCE keeps the last row reachable above the button.
+          */
+          contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.md + FAB_CLEARANCE + insets.bottom }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => load(search)} tintColor={COLORS.primary} />}
           ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.textMuted, marginTop: 40 }}>{t('customers.empty', 'No customers')}</Text>}
           ListFooterComponent={capped ? (
@@ -231,7 +241,7 @@ export default function CustomersScreen() {
       */}
       {canAdd && (
         <TouchableOpacity
-          style={[styles.fab, { backgroundColor: COLORS.primary }]}
+          style={[styles.fab, { backgroundColor: COLORS.primary, bottom: SPACING.xl + insets.bottom }]}
           onPress={() => { setFormSpaceId(spaceId); setSheet('choose'); }}
           accessibilityRole="button"
           accessibilityLabel={t('customers.add', 'Add client')}
@@ -241,8 +251,13 @@ export default function CustomersScreen() {
       )}
 
       <BlurSheet visible={sheet !== 'none'} onClose={() => setSheet('none')}>
-        <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
-          <View style={[styles.grab, { backgroundColor: colors.border }]} />
+        {/*
+          Surface, handle and the safe bottom come from SheetPanel. Hand-drawn
+          here it had a flat foot, so on Android the save button sat behind the
+          navigation keys. No title prop: each branch names itself, because
+          "Add client" and the form are two steps of one sheet.
+        */}
+        <SheetPanel onClose={() => setSheet('none')} style={styles.addSheet}>
 
           {sheet === 'choose' ? (
             <>
@@ -296,7 +311,21 @@ export default function CustomersScreen() {
               </TouchableOpacity>
             </>
           ) : (
-            <>
+            /*
+              Scrollable: SheetPanel caps the sheet at a share of the screen, and
+              with the keyboard up this form is taller than what is left. Without
+              it the save button is the thing that gets clipped.
+            */
+            <ScrollView
+              /*
+                ⚠️ `flexShrink: 1` is what makes it scroll. RN defaults children
+                to flexShrink: 0, so inside SheetPanel's clamped height the list
+                keeps its full content height and is simply cut off instead.
+              */
+              style={{ flexShrink: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               <Text style={[styles.addTitle, { color: colors.textPrimary }]}>
                 {t('customers.add', 'Add client')}
               </Text>
@@ -360,13 +389,17 @@ export default function CustomersScreen() {
                   ? <ActivityIndicator size="small" color="#fff" />
                   : <Text style={styles.saveText}>{t('customers.save', 'Save client')}</Text>}
               </TouchableOpacity>
-            </>
+            </ScrollView>
           )}
-        </View>
+        </SheetPanel>
       </BlurSheet>
     </SafeAreaView>
   );
 }
+
+/** The floating add button, plus the gap that keeps it off the last row. */
+const FAB_SIZE = 56;
+const FAB_CLEARANCE = FAB_SIZE + SPACING.xl;
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
@@ -388,17 +421,14 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '700' },
   fab: {
-    position: 'absolute', right: SPACING.lg, bottom: SPACING.xl,
-    width: 56, height: 56, borderRadius: 28,
+    // `bottom` is set inline — it carries the safe-area inset.
+    position: 'absolute', right: SPACING.lg,
+    width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2,
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 }, elevation: 8,
   },
-  addSheet: {
-    borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl,
-  },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: SPACING.md },
+  addSheet: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
   addTitle: { fontSize: FONT_SIZE.xxl, fontWeight: '700', marginBottom: SPACING.md },
   field: { marginBottom: SPACING.md },
   fieldLabel: { fontSize: FONT_SIZE.xs, marginBottom: 5 },

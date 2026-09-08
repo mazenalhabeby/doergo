@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlurSheet } from '../../../src/components/blur-sheet';
+import { SheetPanel } from '../../../src/components/sheet-panel';
 import { splitTabs, tabIconName } from '../../../src/lib/tab-layout';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
 import { holds } from '../../../src/lib/permissions';
@@ -353,8 +354,15 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         person opening More is looking for something by name, not by glyph.
       */}
       <BlurSheet visible={moreOpen} onClose={() => setMoreOpen(false)}>
-        <View style={[styles.moreSheet, { backgroundColor: themeColors.card }]}>
-          <View style={[styles.moreGrab, { backgroundColor: themeColors.border }]} />
+        {/*
+          The surface comes from SheetPanel — background, rounded top, handle,
+          and the bottom inset. Drawn by hand here it had a flat 28px foot, so
+          the last row sat behind the Android navigation keys.
+
+          No title: this is a list of places, and the handle plus a tap outside
+          already say everything a title and a cross would.
+        */}
+        <SheetPanel onClose={() => setMoreOpen(false)} style={styles.moreSheet}>
           <ScrollView showsVerticalScrollIndicator={false} style={styles.moreScroll}>
             {/* The tabs that did not fit. Plain rows — they are places. */}
             {overflowRoutes.map((route: any) => {
@@ -425,7 +433,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               </>
             )}
           </ScrollView>
-        </View>
+        </SheetPanel>
       </BlurSheet>
 
       {/*
@@ -570,11 +578,8 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  moreSheet: {
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 28, gap: 8,
-  },
-  moreGrab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: 8 },
+  // Tighter than SheetPanel's default: these rows carry their own padding.
+  moreSheet: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
   moreRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingVertical: 14, paddingHorizontal: 14,

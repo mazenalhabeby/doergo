@@ -4,7 +4,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +39,20 @@ export default function ScanCardScreen() {
   const toast = useToast();
   const [permission, requestPermission] = useCameraPermissions();
   const { user } = useAuth();
-  const screen = useWindowDimensions();
+  const window = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  /*
+    The frame is measured against the CAMERA'S OWN BOX, not the window.
+
+    They are the same only while the screen is genuinely full-bleed, and it was
+    not: an unregistered route inherited the stack header, so a bar sat over the
+    top of the viewfinder and the camera saw ~200px less than the frame maths
+    assumed. The frame is drawn in this box and the crop is expressed as a
+    fraction of it, so measuring the thing itself cannot drift from what the
+    lens has, whatever appears above it later.
+  */
+  const [box, setBox] = useState({ width: window.width, height: window.height });
 
   /*
     The frame, computed ONCE and used twice — drawn on screen, and applied to
@@ -51,10 +64,10 @@ export default function ScanCardScreen() {
   */
   const frame = useMemo(() => {
     const CARD_ASPECT = 85 / 55;
-    const width = Math.min(screen.width * 0.86, screen.height * 0.5 * CARD_ASPECT);
+    const width = Math.min(box.width * 0.86, box.height * 0.5 * CARD_ASPECT);
     const height = width / CARD_ASPECT;
-    return { left: (screen.width - width) / 2, top: (screen.height - height) / 2, width, height };
-  }, [screen.width, screen.height]);
+    return { left: (box.width - width) / 2, top: (box.height - height) / 2, width, height };
+  }, [box.width, box.height]);
 
   /*
     A route is reachable by deep link whether or not a button points at it.
@@ -88,7 +101,7 @@ export default function ScanCardScreen() {
       const parsed = await scanBusinessCard(
         shot.uri,
         image,
-        frameToImageCrop({ frame, screen: { width: screen.width, height: screen.height }, image }),
+        frameToImageCrop({ frame, screen: box, image }),
       );
       setCard(parsed);
       setValues({
@@ -229,7 +242,14 @@ export default function ScanCardScreen() {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
         <Header colors={colors} title={t('scan.review', 'Check before saving')} onBack={() => setCard(null)} />
-        <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl }}>
+        <ScrollView
+          contentContainerStyle={{
+            padding: SPACING.lg,
+            // Scrolls under the system bar rather than stopping above it,
+            // so the last control still clears it.
+            paddingBottom: SPACING.xxxl + insets.bottom,
+          }}
+        >
           {field('company', t('customers.fName', 'Company'))}
           {field('name', t('customers.fContact', 'Contact person'))}
           {field('title', t('scan.jobTitle', 'Job title'))}
@@ -254,7 +274,13 @@ export default function ScanCardScreen() {
 
   // ── Camera ────────────────────────────────────────────────────────────────
   return (
-    <View style={s.black}>
+    <View
+      style={s.black}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setBox((p) => (p.width === width && p.height === height ? p : { width, height }));
+      }}
+    >
       <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" />
       <SafeAreaView style={StyleSheet.absoluteFill} edges={['top', 'bottom']} pointerEvents="box-none">
         <View style={s.camHead}>
@@ -308,7 +334,12 @@ const s = StyleSheet.create({
   // Positioned from the computed frame, so what is drawn is what is cropped.
   guide: { position: 'absolute', borderWidth: 2, borderColor: '#22c55e', borderRadius: 12 },
   guideHint: { position: 'absolute', left: 0, right: 0, textAlign: 'center', color: '#e6ecf5', fontSize: FONT_SIZE.sm },
-  camFoot: { alignItems: 'center', paddingBottom: SPACING.xl },
+  /* ⚠️ `marginTop: 'auto'` is what puts the shutter at the BOTTOM.
+     The card guide between the head and the foot is absolutely
+     positioned, so it takes up no space in the column — without this
+     the foot rides straight up under the close button, which is where
+     the shutter was found sitting on a real phone. */
+  camFoot: { marginTop: 'auto', alignItems: 'center', paddingBottom: SPACING.xl },
   shutter: { width: 68, height: 68, borderRadius: 34, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   shutterInner: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },
 

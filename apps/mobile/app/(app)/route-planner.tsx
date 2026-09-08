@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { DetentSheet, type Detent } from '../../src/components/route/detent-sheet';
 import { BlurSheet } from '../../src/components/blur-sheet';
+import { SheetPanel } from '../../src/components/sheet-panel';
 import { detectNavApps, navDecision, soleNavApp, type InstalledNavApp } from '../../src/lib/nav-apps';
 import { PressableScale } from '../../src/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
@@ -552,11 +553,14 @@ export default function RoutePlannerScreen() {
         Reuses the app's one sheet presentation rather than inventing a second.
       */}
       <BlurSheet visible={!!chooserFor} onClose={() => setChooserFor(null)}>
-        <View style={[styles.chooser, { backgroundColor: colors.card }]}>
-          <View style={[styles.chooserGrab, { backgroundColor: colors.border }]} />
-          <Text style={[styles.chooserTitle, { color: colors.textPrimary }]}>
-            {t('route.chooseApp', 'Open with')}
-          </Text>
+        {/* Surface, handle and the safe bottom from SheetPanel — drawn by hand
+            this sheet ended in a flat 32px foot, which on Android put the last
+            row behind the navigation keys. */}
+        <SheetPanel
+          title={t('route.chooseApp', 'Open with')}
+          onClose={() => setChooserFor(null)}
+          style={styles.chooser}
+        >
           {navApps.map((a) => (
             <TouchableOpacity
               key={a.key}
@@ -578,7 +582,7 @@ export default function RoutePlannerScreen() {
               {t('common.cancel', 'Cancel')}
             </Text>
           </TouchableOpacity>
-        </View>
+        </SheetPanel>
       </BlurSheet>
     </View>
   );
@@ -688,13 +692,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 
-  chooser: {
-    borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl,
-    gap: SPACING.sm,
-  },
-  chooserGrab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: SPACING.md },
-  chooserTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold as any, marginBottom: SPACING.xs },
+  chooser: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
   chooserRow: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
     paddingVertical: 14, paddingHorizontal: SPACING.md,

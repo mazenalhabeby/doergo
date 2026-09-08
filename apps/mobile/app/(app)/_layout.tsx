@@ -260,11 +260,26 @@ export default function AppLayout() {
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />
-        {/* Both screens draw their own header. Without registering them here
-            they inherit the stack's default one and show TWO — the native
-            "(tabs) documents" bar sitting above "My documents". */}
+        {/* ⚠️ EVERY route under app/(app) must appear in this list.
+
+            A screen that is not registered inherits the stack's default header,
+            and expo-router titles that bar with the ROUTE NAME. So a screen
+            drawing its own header shows two — the native "documents" bar above
+            "My documents" — and a full-bleed screen like the card scanner gets
+            a black "scan-card" bar over the camera, which also shortens the
+            viewfinder the frame geometry is measured against.
+
+            It fails silently and only on the screen you did not open, which is
+            why `screen-registration.spec.ts` fails the build instead. */}
         <Stack.Screen name="documents" options={{ headerShown: false }} />
         <Stack.Screen name="sign-document" options={{ headerShown: false }} />
+        <Stack.Screen name="scan-card" options={{ headerShown: false }} />
+        <Stack.Screen name="overtime/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="overtime/sign/[id]" options={{ headerShown: false }} />
+        {/* A nested stack. It draws the header for every page inside it, so the
+            outer one must be off or every Manage page carries two bars — the
+            inner one titled "Members", the outer one titled "manage". */}
+        <Stack.Screen name="manage" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/notifications"
           options={{
@@ -302,6 +317,14 @@ export default function AppLayout() {
         />
         <Stack.Screen
           name="profile/appearance"
+          options={{
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="profile/time-format"
           options={{
             presentation: 'transparentModal',
             headerShown: false,

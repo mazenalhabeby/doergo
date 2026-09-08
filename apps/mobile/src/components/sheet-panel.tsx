@@ -31,7 +31,13 @@ export function SheetPanel({
   style,
   children,
 }: {
-  title: string;
+  /**
+   * Omit it for a sheet that is a plain list of choices, where a title and a
+   * close cross are furniture — the handle and a tap outside already say what
+   * to do. The surface, the insets and the height cap are the point of this
+   * component; the header is a convenience on top of them.
+   */
+  title?: string;
   onClose: () => void;
   /** While work is in flight — the cross greys out rather than disappearing. */
   closeDisabled?: boolean;
@@ -67,24 +73,26 @@ export function SheetPanel({
     >
       <View style={[s.handle, { backgroundColor: isDark ? '#4b5563' : '#d1d5db' }]} />
 
-      <View style={s.header}>
-        <Text style={[s.title, { color: colors.textPrimary }]} numberOfLines={2}>
-          {title}
-        </Text>
-        <TouchableOpacity
-          onPress={closeDisabled ? undefined : onClose}
-          disabled={closeDisabled}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.close')}
-        >
-          <Ionicons
-            name="close"
-            size={24}
-            color={closeDisabled ? colors.textMuted : colors.textSecondary}
-          />
-        </TouchableOpacity>
-      </View>
+      {title ? (
+        <View style={s.header}>
+          <Text style={[s.title, { color: colors.textPrimary }]} numberOfLines={2}>
+            {title}
+          </Text>
+          <TouchableOpacity
+            onPress={closeDisabled ? undefined : onClose}
+            disabled={closeDisabled}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+          >
+            <Ionicons
+              name="close"
+              size={24}
+              color={closeDisabled ? colors.textMuted : colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {children}
     </View>
