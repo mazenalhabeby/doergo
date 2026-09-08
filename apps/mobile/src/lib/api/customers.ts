@@ -35,6 +35,21 @@ export const customersApi = {
    */
   list: (params?: { spaceId?: string; includeUnfiled?: boolean; search?: string; limit?: number }): Promise<MobileCustomer[]> =>
     fetchWithAuth<MobileCustomer[]>(buildUrlWithQuery('/customers', { ...params, limit: params?.limit ?? 100 })),
+  /**
+   * Add a client.
+   *
+   * `spaceId` is sent whenever one is chosen: a client filed in no workspace is
+   * invisible in every workspace tab, and the gateway also uses it to default
+   * the owner to the creator — which is what lets a rep see the client they
+   * just added under their own "view own" scope.
+   */
+  create: (input: {
+    name: string; type?: 'PERSON' | 'COMPANY';
+    contactName?: string; email?: string; phone?: string;
+    address?: string; notes?: string; spaceId?: string | null;
+  }): Promise<MobileCustomer> =>
+    fetchWithAuth<MobileCustomer>('/customers', { method: 'POST', body: JSON.stringify(input) }),
+
   get: (id: string): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>(`/customers/${id}`),
   update: (id: string, dto: Partial<MobileCustomer>): Promise<MobileCustomer> =>

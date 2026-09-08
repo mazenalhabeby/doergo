@@ -1697,7 +1697,16 @@
     "allSpaces": "Alle Arbeitsbereiche",
     "noSpace": "Kein Arbeitsbereich",
     "capped": "Die ersten {{n}} werden angezeigt. Suchen Sie, um einzugrenzen.",
-    "hasApp": "App"
+    "hasApp": "App",
+    "add": "Kunde hinzufügen",
+    "added": "Kunde hinzugefügt",
+    "addFailed": "Kunde konnte nicht hinzugefügt werden",
+    "fName": "Name",
+    "fContact": "Ansprechpartner",
+    "fEmail": "E-Mail",
+    "fPhone": "Telefon",
+    "fWorkspace": "Arbeitsbereich",
+    "save": "Kunde speichern"
   },
   "issues": {
     "myIssues": "Meine Meldungen",

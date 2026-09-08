@@ -34,7 +34,8 @@ export const PERMISSION_KEYS = [
   'crmViewAll',
   'crmWork', // change pipeline stage + add timeline notes on visible clients
   'crmEditInfo', // edit client details / addresses / units
-  'crmManageClients', // reassign owner/managers, create, delete/archive
+  'crmCreateClients', // add a client — WITHOUT the power to delete or reassign one
+  'crmManageClients', // reassign owner/managers, delete/archive (and implies create)
   // Billing & assets. Split out of canManageUsers / canViewAllTasks, which between
   // them gated 210 endpoints — "can manage members" also meant "can invoice
   // customers and delete assets", so a bookkeeper could not be given the first
@@ -97,7 +98,8 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'crmViewAll', label: 'View all clients', description: 'See every CRM client, not just assigned ones', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'crmWork', label: 'Work clients', description: 'Change pipeline stage and add timeline notes on visible clients', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'crmEditInfo', label: 'Edit client info', description: 'Edit client details, addresses and units', domain: 'crm', scopes: ['org', 'space'] },
-  { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership, create and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmCreateClients', label: 'Add clients', description: 'Add a new client — without the power to reassign or delete one', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'canManageInvoices', label: 'Customer invoices', description: 'Open customer invoicing and see what has been billed', domain: 'billing', scopes: ['org'] },
   { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] },
   { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] },
@@ -119,7 +121,13 @@ export interface CrmCaps {
   view: CrmViewScope; // 'none' = no CRM access at all
   work: boolean; // change stage + add notes
   editInfo: boolean; // edit details/addresses/units
-  manage: boolean; // reassign, create, delete
+  /**
+   * May add a client. Separate from `manage` because adding one and deleting
+   * one are not the same power: a rep who collects a business card should be
+   * able to enter it without also being able to remove somebody else's client.
+   */
+  create: boolean;
+  manage: boolean; // reassign, delete/archive — and implies create
   canAccess: boolean; // convenience: view !== 'none'
 }
 
@@ -133,7 +141,7 @@ export function resolveCrmCaps(
   permissions: PermissionSet | null | undefined,
 ): CrmCaps {
   if (systemRole === 'ADMIN') {
-    return { view: 'all', work: true, editInfo: true, manage: true, canAccess: true };
+    return { view: 'all', work: true, editInfo: true, create: true, manage: true, canAccess: true };
   }
   const p = permissions ?? {};
   // Backward-compat bridge: before CRM caps existed, CRM read = canViewAllTasks and
@@ -145,6 +153,9 @@ export function resolveCrmCaps(
   const work = !!p.crmWork || legacyManage;
   const editInfo = !!p.crmEditInfo || legacyManage;
   const manage = !!p.crmManageClients || legacyManage;
+  // Managing implies adding — a role that can delete a client can obviously
+  // create one, and every existing role keeps working without being re-edited.
+  const create = !!p.crmCreateClients || manage;
   let view: CrmViewScope =
     p.crmViewAll || legacyManage || legacyViewAll ? 'all' : p.crmViewOwn ? 'own' : 'none';
   // Any granted CRM action implies being able to SEE the clients it acts on:
@@ -152,9 +163,9 @@ export function resolveCrmCaps(
   // (So ticking "Manage clients" alone still grants access — no silent dead end.)
   if (view === 'none') {
     if (manage) view = 'all';
-    else if (work || editInfo) view = 'own';
+    else if (work || editInfo || create) view = 'own';
   }
-  return { view, work, editInfo, manage, canAccess: view !== 'none' };
+  return { view, work, editInfo, create, manage, canAccess: view !== 'none' };
 }
 
 /** Does this caller own (or co-manage) a client? Owner or a listed manager. */
@@ -248,9 +259,10 @@ export const BUILTIN_ROLES: RolePreset[] = [
     silently hand them every client in the organization. That is the one edit to
     this role that looks harmless and is not, which is why a test asserts it.
 
-    Reassigning ownership and creating or deleting clients are a manager's acts,
-    so `crmManageClients` is not here. A sales LEAD is the existing Manager
-    role, which reaches full CRM through the same resolver.
+    Adding a client IS a rep's act — they are the ones holding the business
+    card — so `crmCreateClients` is here. Reassigning somebody else's client and
+    deleting one are not, so `crmManageClients` is not. A sales LEAD is the
+    existing Manager role, which reaches full CRM through the same resolver.
   */
   {
     slug: 'sales-rep',
@@ -262,6 +274,8 @@ export const BUILTIN_ROLES: RolePreset[] = [
       crmViewOwn: true,
       crmWork: true,
       crmEditInfo: true,
+      // Adds the clients they meet; still cannot delete or reassign one.
+      crmCreateClients: true,
       canCreateTasks: true,
     },
   },

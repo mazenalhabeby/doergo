@@ -1733,7 +1733,16 @@
     "allSpaces": "All workspaces",
     "noSpace": "No workspace",
     "capped": "Showing the first {{n}}. Search to narrow it down.",
-    "hasApp": "App"
+    "hasApp": "App",
+    "add": "Add client",
+    "added": "Client added",
+    "addFailed": "Could not add the client",
+    "fName": "Name",
+    "fContact": "Contact person",
+    "fEmail": "Email",
+    "fPhone": "Phone",
+    "fWorkspace": "Workspace",
+    "save": "Save client"
   },
   "issues": {
     "myIssues": "My issues",

@@ -325,7 +325,7 @@ export class CustomersService {
         throw new BadRequestException('That person belongs to a different workspace.');
       }
     } else {
-      if (!caps.manage) throw new ForbiddenException('Not allowed to create clients');
+      if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
       const name = (data.person?.name || '').trim();
       if (!name) throw new BadRequestException('A name is required');
       const created = await this.prisma.customer.create({
@@ -477,7 +477,7 @@ export class CustomersService {
    */
   async promoteContact(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
     const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    if (!caps.manage) throw new ForbiddenException('Not allowed to create clients');
+    if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
     const person = await this.reachable(data.personId, data.organizationId, caps, data.caller);
     if (!person.isContact) return { data: { id: person.id, isContact: false } };
     await this.prisma.customer.update({ where: { id: person.id }, data: { isContact: false } });
@@ -640,9 +640,16 @@ export class CustomersService {
   }
 
   async create(organizationId: string, dto: CustomerInput, caller?: CrmCaller) {
-    // Creating clients (and inviting portal residents) is a manage-level action.
+    /*
+      Adding a client is its own permission now.
+
+      It used to be manage-level, which meant the person most likely to be
+      holding a business card — a sales rep — could not enter it. Deleting and
+      reassigning are still manage: those act on somebody else's work, and
+      adding does not.
+    */
     const caps = await this.crmCapsFor(caller, organizationId);
-    if (!caps.manage) throw new ForbiddenException('Not allowed to create clients');
+    if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
     await this.assertRefsInOrg(dto, organizationId);

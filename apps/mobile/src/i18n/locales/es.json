@@ -1697,7 +1697,16 @@
     "allSpaces": "Todos los espacios",
     "noSpace": "Sin espacio",
     "capped": "Mostrando los primeros {{n}}. Busca para acotar.",
-    "hasApp": "App"
+    "hasApp": "App",
+    "add": "Añadir cliente",
+    "added": "Cliente añadido",
+    "addFailed": "No se pudo añadir el cliente",
+    "fName": "Nombre",
+    "fContact": "Persona de contacto",
+    "fEmail": "Correo",
+    "fPhone": "Teléfono",
+    "fWorkspace": "Espacio de trabajo",
+    "save": "Guardar cliente"
   },
   "issues": {
     "myIssues": "Mis incidencias",

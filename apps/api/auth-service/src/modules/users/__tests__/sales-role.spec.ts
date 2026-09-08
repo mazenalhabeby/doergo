@@ -31,6 +31,27 @@ describe('the Sales Rep role', () => {
     expect(c.manage).toBe(false); // reassigning ownership is a manager's act
   });
 
+  /*
+    Adding is a rep's act — they are the ones holding the business card — and
+    it is deliberately NOT the same grant as deleting somebody else's client.
+  */
+  it('can add a client without being able to delete one', () => {
+    const c = caps();
+    expect(c.create).toBe(true);
+    expect(c.manage).toBe(false);
+  });
+
+  it('managing still implies adding, so no existing role has to be re-edited', () => {
+    const manager = BUILTIN_ROLES.find((r) => r.slug === 'manager')!;
+    const mc = resolveCrmCaps('EMPLOYEE', manager.permissions);
+    expect(mc.manage).toBe(true);
+    expect(mc.create).toBe(true);
+  });
+
+  it('a role with neither cannot add', () => {
+    expect(resolveCrmCaps('EMPLOYEE', { crmViewOwn: true }).create).toBe(false);
+  });
+
   it('can raise the calls and visits that sales runs on', () => {
     expect(sales!.permissions.canCreateTasks).toBe(true);
   });

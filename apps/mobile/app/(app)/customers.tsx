@@ -5,6 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, locationsApi, type MobileCustomer } from '../../src/lib/api';
+import { useAuth } from '../../src/contexts/auth-context';
+import { holds } from '../../src/lib/permissions';
+import { BlurSheet } from '../../src/components/blur-sheet';
+import { useToast } from '../../src/contexts/toast-context';
 import { customerStageLabel } from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -20,6 +24,23 @@ export default function CustomersScreen() {
   const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
   const [spaceId, setSpaceId] = useState<string | null>(null); // null = every workspace
   const [capped, setCapped] = useState(false);
+  const { user } = useAuth();
+  const toast = useToast();
+
+  /*
+    May this person add a client?
+
+    `crmCreateClients` — deliberately not `crmManageClients`, which also covers
+    deleting and reassigning somebody else's client. A rep holding a business
+    card should be able to enter it without either. The server asks the same
+    question, so the button never offers something the save would refuse.
+  */
+  const canAdd = holds(user, 'crmCreateClients') || holds(user, 'crmManageClients');
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: '', contactName: '', email: '', phone: '' });
+  const [formSpaceId, setFormSpaceId] = useState<string | null>(null);
+
 
   /*
     Which workspaces run CRM.
@@ -56,6 +77,31 @@ export default function CustomersScreen() {
     const tmr = setTimeout(() => load(search, spaceId), 300);
     return () => clearTimeout(tmr);
   }, [search, spaceId, load]);
+
+  const submit = useCallback(async () => {
+    const name = form.name.trim();
+    if (!name) return;
+    setSaving(true);
+    try {
+      await customersApi.create({
+        name,
+        contactName: form.contactName.trim() || undefined,
+        email: form.email.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        // Whatever workspace is being viewed, so the client lands where the
+        // person is looking rather than nowhere.
+        spaceId: formSpaceId ?? undefined,
+      });
+      setAddOpen(false);
+      setForm({ name: '', contactName: '', email: '', phone: '' });
+      toast.success(t('customers.added', 'Client added'));
+      load(search, spaceId);
+    } catch (e: any) {
+      toast.error(e?.message || t('customers.addFailed', 'Could not add the client'));
+    } finally {
+      setSaving(false);
+    }
+  }, [form, formSpaceId, load, search, spaceId, t, toast]);
 
   // Rows carry a spaceId and no name; this is the only place that can say which.
   const spaceName = useCallback(
@@ -165,6 +211,91 @@ export default function CustomersScreen() {
           )}
         />
       )}
+
+      {/*
+        Adding a client. The button is absent — not disabled — for anyone
+        without the permission: a control that exists only to refuse is worse
+        than no control.
+      */}
+      {canAdd && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: COLORS.primary }]}
+          onPress={() => { setFormSpaceId(spaceId); setAddOpen(true); }}
+          accessibilityRole="button"
+          accessibilityLabel={t('customers.add', 'Add client')}
+        >
+          <Ionicons name="add" size={26} color="#fff" />
+        </TouchableOpacity>
+      )}
+
+      <BlurSheet visible={addOpen} onClose={() => setAddOpen(false)}>
+        <View style={[styles.addSheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.grab, { backgroundColor: colors.border }]} />
+          <Text style={[styles.addTitle, { color: colors.textPrimary }]}>
+            {t('customers.add', 'Add client')}
+          </Text>
+
+          {[
+            { k: 'name' as const, label: t('customers.fName', 'Name'), ph: 'Siemens AG', req: true },
+            { k: 'contactName' as const, label: t('customers.fContact', 'Contact person'), ph: 'Anna Gruber' },
+            { k: 'email' as const, label: t('customers.fEmail', 'Email'), ph: 'a.gruber@siemens.com' },
+            { k: 'phone' as const, label: t('customers.fPhone', 'Phone'), ph: '+43 1 234 5601' },
+          ].map((f) => (
+            <View key={f.k} style={styles.field}>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
+                {f.label}{f.req ? ' *' : ''}
+              </Text>
+              <TextInput
+                value={form[f.k]}
+                onChangeText={(v) => setForm((p) => ({ ...p, [f.k]: v }))}
+                placeholder={f.ph}
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize={f.k === 'email' ? 'none' : 'words'}
+                keyboardType={f.k === 'email' ? 'email-address' : f.k === 'phone' ? 'phone-pad' : 'default'}
+                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              />
+            </View>
+          ))}
+
+          {/* Where it lands. A client filed in no workspace is invisible in
+              every workspace tab, so this is not an afterthought. */}
+          {spaces.length > 0 && (
+            <View style={styles.field}>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
+                {t('customers.fWorkspace', 'Workspace')}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                  {[{ id: null as string | null, name: t('customers.noSpace', 'No workspace') }, ...spaces].map((sp) => {
+                    const on = formSpaceId === sp.id;
+                    return (
+                      <TouchableOpacity
+                        key={sp.id ?? 'none'}
+                        onPress={() => setFormSpaceId(sp.id)}
+                        style={[styles.chip, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? COLORS.primary + '15' : 'transparent' }]}
+                      >
+                        <Text style={{ color: on ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold as any }}>
+                          {sp.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+
+          <TouchableOpacity
+            onPress={submit}
+            disabled={saving || !form.name.trim()}
+            style={[styles.saveBtn, { backgroundColor: form.name.trim() ? COLORS.primary : colors.border }]}
+          >
+            {saving
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Text style={styles.saveText}>{t('customers.save', 'Save client')}</Text>}
+          </TouchableOpacity>
+        </View>
+      </BlurSheet>
     </SafeAreaView>
   );
 }
@@ -188,6 +319,24 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginBottom: 8 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '700' },
+  fab: {
+    position: 'absolute', right: SPACING.lg, bottom: SPACING.xl,
+    width: 56, height: 56, borderRadius: 28,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 }, elevation: 8,
+  },
+  addSheet: {
+    borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl,
+  },
+  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: SPACING.md },
+  addTitle: { fontSize: FONT_SIZE.xxl, fontWeight: '700', marginBottom: SPACING.md },
+  field: { marginBottom: SPACING.md },
+  fieldLabel: { fontSize: FONT_SIZE.xs, marginBottom: 5 },
+  input: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, height: 44, fontSize: FONT_SIZE.sm },
+  saveBtn: { borderRadius: RADIUS.md, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.sm },
+  saveText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
   appTag: { borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: SPACING.sm, paddingVertical: 2 },
   appTagText: { color: '#16a34a', fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
 });
