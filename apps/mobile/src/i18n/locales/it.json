@@ -1696,7 +1696,8 @@
     "title": "Clienti",
     "allSpaces": "Tutti gli spazi",
     "noSpace": "Nessuno spazio",
-    "capped": "Mostrando i primi {{n}}. Cerca per restringere."
+    "capped": "Mostrando i primi {{n}}. Cerca per restringere.",
+    "hasApp": "App"
   },
   "issues": {
     "myIssues": "Le mie segnalazioni",

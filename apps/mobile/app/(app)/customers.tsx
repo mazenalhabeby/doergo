@@ -149,7 +149,17 @@ export default function CustomersScreen() {
                   </Text>
                 )}
               </View>
-              {item.isPortalResident && <Ionicons name="phone-portrait" size={16} color="#16a34a" />}
+              {/*
+                "This client has the app." It was a filled phone glyph at 16px,
+                which at that size is a green rounded rectangle — a battery, and
+                read as one. A marker that needs explaining is not working, so it
+                carries its word.
+              */}
+              {item.isPortalResident && (
+                <View style={[styles.appTag, { borderColor: '#16a34a' }]}>
+                  <Text style={styles.appTagText}>{t('customers.hasApp', 'App')}</Text>
+                </View>
+              )}
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
@@ -163,8 +173,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
   hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  filterBar: { flexGrow: 0, flexShrink: 0 },
-  filters: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, gap: SPACING.sm, alignItems: 'center' },
+  // `searchBar` deliberately ends with marginBottom: 0, so the separation
+  // between the field and the filters belongs here.
+  filterBar: { flexGrow: 0, flexShrink: 0, marginTop: SPACING.md },
+  filters: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.md, gap: SPACING.sm, alignItems: 'center' },
   chip: {
     paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.full, borderWidth: 1, maxWidth: 180,
@@ -176,4 +188,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginBottom: 8 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '700' },
+  appTag: { borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: SPACING.sm, paddingVertical: 2 },
+  appTagText: { color: '#16a34a', fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
 });

@@ -1696,7 +1696,8 @@
     "title": "Kunden",
     "allSpaces": "Alle Arbeitsbereiche",
     "noSpace": "Kein Arbeitsbereich",
-    "capped": "Die ersten {{n}} werden angezeigt. Suchen Sie, um einzugrenzen."
+    "capped": "Die ersten {{n}} werden angezeigt. Suchen Sie, um einzugrenzen.",
+    "hasApp": "App"
   },
   "issues": {
     "myIssues": "Meine Meldungen",

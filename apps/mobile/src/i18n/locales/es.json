@@ -1696,7 +1696,8 @@
     "title": "Clientes",
     "allSpaces": "Todos los espacios",
     "noSpace": "Sin espacio",
-    "capped": "Mostrando los primeros {{n}}. Busca para acotar."
+    "capped": "Mostrando los primeros {{n}}. Busca para acotar.",
+    "hasApp": "App"
   },
   "issues": {
     "myIssues": "Mis incidencias",

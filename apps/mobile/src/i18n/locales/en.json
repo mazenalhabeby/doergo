@@ -1732,7 +1732,8 @@
     "title": "Customers",
     "allSpaces": "All workspaces",
     "noSpace": "No workspace",
-    "capped": "Showing the first {{n}}. Search to narrow it down."
+    "capped": "Showing the first {{n}}. Search to narrow it down.",
+    "hasApp": "App"
   },
   "issues": {
     "myIssues": "My issues",
