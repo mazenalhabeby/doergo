@@ -39,28 +39,42 @@ const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 describe('the native card reader is never imported at module scope', () => {
-  const files = ['src', 'app'].flatMap((d) => sourceFiles(path.join(MOBILE, d)));
+  /*
+    Excluding the tests themselves is not a loophole — it is required. This
+    file names the package as CODE (`const OCR` above), so a scanner that reads
+    it reports itself. That has now happened four times in this codebase with
+    four different guards; stripping comments only fixes half of it.
+  */
+  const files = ['src', 'app']
+    .flatMap((d) => sourceFiles(path.join(MOBILE, d)))
+    .filter((f) => !f.includes('__tests__'));
 
   it('finds the app source (an empty scan would pass anything)', () => {
     expect(files.length).toBeGreaterThan(50);
   });
 
-  it('no file uses a top-level `import ... from` for the reader', () => {
+  it('no file imports the reader package directly', () => {
+    /*
+      `expo-mlkit-ocr` binds at module scope with `requireNativeModule`, which
+      throws when the native side is absent. Importing the package at all —
+      top-level OR inside a require — raises an error that React Native then
+      REPORTS, so the customers screen shows a red error on every render even
+      when the throw is caught.
+    */
     const offenders = files
       .filter((f) => {
         const code = stripComments(fs.readFileSync(f, 'utf8'));
-        return new RegExp(`^\\s*import[^\\n]*['"]${OCR}['"]`, 'm').test(code);
+        return code.includes(`'${OCR}'`) || code.includes(`"${OCR}"`);
       })
       .map((f) => path.relative(MOBILE, f));
     expect(offenders).toEqual([]);
   });
 
-  it('the one file that loads it does so inside a function, and catches', () => {
+  it('binds through the OPTIONAL native API, which answers null instead of throwing', () => {
     const code = stripComments(fs.readFileSync(path.join(MOBILE, 'src/lib/card-scan.ts'), 'utf8'));
-    expect(code).toMatch(new RegExp(`require\\(['"]${OCR}['"]\\)`));
-    // The require must sit inside a try — the whole point is that it may throw.
-    const idx = code.indexOf(`require('${OCR}')`);
-    expect(code.slice(Math.max(0, idx - 200), idx)).toContain('try');
+    expect(code).toContain('requireOptionalNativeModule');
+    // The throwing form must never appear here.
+    expect(code).not.toMatch(/requireNativeModule\s*</);
   });
 
   it('reports "cannot scan" rather than throwing when the module is absent', () => {

@@ -20,6 +20,7 @@ module.exports = {
     // These specs test RULES, not rendering, so react-native is stubbed rather
     // than dragging in jest-expo and a native mock stack for two symbols.
     '^react-native$': '<rootDir>/src/lib/__tests__/react-native.stub.js',
+    '^expo-modules-core$': '<rootDir>/src/lib/__tests__/expo-modules-core.stub.js',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: { module: 'commonjs', esModuleInterop: true, strict: false } }],
