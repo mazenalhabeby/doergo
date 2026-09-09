@@ -1,0 +1,20 @@
+-- A member's date of birth.
+--
+-- Two jobs, and the second is the reason it is a DATE and not a string:
+--
+--   1. The personnel file. Employment paperwork asks for it, and it is the one
+--      identity fact the record did not hold.
+--   2. It turns an identity check back on. `checkScan` in shared already takes
+--      `member.dateOfBirth` and already compares it to what was read off a
+--      scanned passport — but `documents.service.ts` had to leave it out with
+--      the comment "the User model does not hold one", so that comparison has
+--      been dead code and every scan settled for "plausible for a working
+--      person" instead of "matches this member".
+--
+-- @db.Date, matching Document.dateOfBirth: a birthday has no time and no
+-- timezone, and storing it as a timestamp is how somebody born on the 1st shows
+-- up as the 31st for half the world.
+--
+-- Additive and idempotent; the shadow database is broken here, so migrations
+-- are hand-authored and must be safe to re-run.
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "dateOfBirth" DATE;

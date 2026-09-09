@@ -96,6 +96,7 @@ const ORG_MEMBER_SELECT = {
   maxDailyJobs: true,
   leaveAllowance: true,
   employmentStartDate: true,
+  dateOfBirth: true,
   canCreateTasks: true,
   taskCreationScope: true,
   canViewAllTasks: true,
@@ -1534,6 +1535,18 @@ export class UsersService {
     if (dto.firstName !== undefined) data.firstName = dto.firstName;
     if (dto.lastName !== undefined) data.lastName = dto.lastName;
     if (dto.position !== undefined) data.position = dto.position;
+    /*
+      A birthday is a DAY, and only a day.
+
+      Parsed at NOON UTC rather than midnight. The column is `@db.Date`, but the
+      value travels as an instant on the way in: "1990-03-01T00:00:00Z" lands on
+      the 28th of February for anyone west of Greenwich, which is how a person's
+      birthday shifts by a day depending on where the server happens to be.
+      Midday has no such edge in any real timezone.
+    */
+    if (dto.dateOfBirth !== undefined) {
+      data.dateOfBirth = dto.dateOfBirth ? new Date(`${dto.dateOfBirth}T12:00:00Z`) : null;
+    }
     if (dto.scheduleType !== undefined) data.scheduleType = dto.scheduleType;
     if (dto.monthlyHourBudget !== undefined) data.monthlyHourBudget = dto.monthlyHourBudget;
     // Per-user Access Profile (modules / spaceScope / platforms / canContact)

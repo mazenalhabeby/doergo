@@ -200,6 +200,8 @@ export function EditMemberDialog({
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
+  // "YYYY-MM-DD", or "" when the record holds no birthday.
+  const [dateOfBirth, setDateOfBirth] = useState("")
   const [scheduleType, setScheduleType] = useState("NONE")
   const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
   const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
@@ -229,6 +231,7 @@ export function EditMemberDialog({
     setLastName(member.lastName)
     setEmail(member.email)
     setPosition(member.position || "")
+    setDateOfBirth((member.dateOfBirth || "").slice(0, 10))
     setScheduleType(member.scheduleType || "NONE")
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
     setScheduleRows(createDefaultSchedule())
@@ -378,6 +381,7 @@ export function EditMemberDialog({
         // Login email — only sent when edited (server re-checks uniqueness).
         ...(normalizedEmail && normalizedEmail !== member.email ? { email: normalizedEmail } : {}),
         position: position || undefined,
+        dateOfBirth: dateOfBirth || null,
         scheduleType,
         monthlyHourBudget:
           scheduleType === "FLEXIBLE" && monthlyHourBudget !== "" ? Number(monthlyHourBudget) : undefined,
@@ -489,6 +493,27 @@ export function EditMemberDialog({
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.jobTitle", "Job title")}</Label>
               <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
+            </div>
+
+            {/*
+              Date of birth.
+
+              ⚠️ Sent as null rather than undefined when cleared: undefined
+              means "leave alone", and a birthday entered by mistake could then
+              never be removed.
+            */}
+            <div className="space-y-1.5">
+              <Label htmlFor="member-dob" className="text-xs font-medium text-muted-foreground">
+                {t("members.memberEditor.dateOfBirth", "Date of birth")}
+              </Label>
+              <Input
+                id="member-dob"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="h-9 rounded-lg text-sm"
+              />
             </div>
 
             {/* Employment type — only when the org distinguishes in-house vs external.

@@ -56,7 +56,8 @@ import {
   getStatusAction,
   formatElapsedTime,
 } from '../../../src/components/task-detail';
-import { getFlowSteps, hasCapability, getStatusCapabilities, hasFeatureModule, type TaskCapability } from '@hbcfield/shared/client';
+import { getFlowSteps, hasCapability, getStatusCapabilities, hasFeatureModule, needsTravelEstimate, type TaskCapability } from '@hbcfield/shared/client';
+import { BeThereCard } from '../../../src/components/tasks/be-there-card';
 
 /**
  * The task detail UI. Rendered two ways:
@@ -173,6 +174,39 @@ export function TaskDetailPane({
     stopTracking,
     error: locationError,
   } = useLocationTrackingContext();
+
+  /*
+    Where the phone is, only so the departure card can estimate the drive.
+
+    ⚠️ Never PROMPTS. `getForegroundPermissionsAsync` asks what has already been
+    granted; requesting it would put a permission dialog in front of somebody
+    who only opened a task to read it, for a card that is a convenience. Without
+    permission the estimate is simply absent and the card says the arrival time
+    and nothing more.
+
+    Read once when the screen opens rather than watched: the member is standing
+    still reading their phone, and a position from a minute ago changes the
+    departure estimate by seconds.
+  */
+  const [herePosition, setHerePosition] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!task || !needsTravelEstimate(task)) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { granted } = await Location.getForegroundPermissionsAsync();
+        if (!granted) return;
+        const loc = await Location.getLastKnownPositionAsync()
+          ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (alive && loc) {
+          setHerePosition({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+        }
+      } catch {
+        // No position, no estimate. The arrival time still shows.
+      }
+    })();
+    return () => { alive = false; };
+  }, [task?.id, task?.dueDate, task?.locationLat, task?.locationLng]);
 
   // Animate in on mount
   useEffect(() => {
@@ -1283,6 +1317,24 @@ export function TaskDetailPane({
             )}
           </View>
         </TourTarget>
+
+        {/*
+          When to set off, for a job that names an hour.
+
+          Draws nothing for a dated-only job or one on another day, so it is
+          absent from most tasks and means something when it appears. Only the
+          person doing the work is told to leave — a dispatcher reading the same
+          screen is not driving anywhere.
+        */}
+        {doingTheWork && (
+          <BeThereCard
+            dueDate={task.dueDate}
+            taskLat={task.locationLat}
+            taskLng={task.locationLng}
+            here={herePosition}
+            atSite={task.status === TaskStatus.ARRIVED || task.status === TaskStatus.IN_PROGRESS}
+          />
+        )}
 
         {/* Section 2: Compact Progress Dots (Technician only) */}
         {doingTheWork && progressIndex >= 0 && (

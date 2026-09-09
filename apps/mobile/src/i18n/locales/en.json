@@ -415,6 +415,16 @@
         "title": "Nothing assigned to you",
         "body": "Work given to you will appear here. Tap All to see what you oversee."
       }
+    },
+    "beThere": {
+      "title": "Be there {{time}}",
+      "go": "Leave now",
+      "late": "Arriving {{time}} — {{count}} min late",
+      "soon": "Leave in {{count}} min",
+      "plenty": "Leave by {{time}}",
+      "arrived": "You are at the site",
+      "noEstimate": "Travel time unknown",
+      "estimated": "Estimated drive"
     }
   },
   "taskDetail": {
@@ -579,7 +589,10 @@
     "successMessage": "Task created successfully!",
     "failedToCreate": "Failed to create task",
     "spaceLabel": "Workspace",
-    "spaceCount": "{{count}} available"
+    "spaceCount": "{{count}} available",
+    "beThereAt": "Be there at",
+    "beThereAtPlaceholder": "Optional — no fixed hour",
+    "beThereHint": "The member is told when to set off, allowing for the drive."
   },
   "attendance": {
     "clockedIn": "Clocked In",

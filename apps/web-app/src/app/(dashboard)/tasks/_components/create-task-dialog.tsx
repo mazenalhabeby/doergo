@@ -8,6 +8,7 @@ import { Building2, Calendar as CalendarIcon, CheckSquare, ChevronRight, Clock, 
 import { Switch } from "@/components/ui/switch"
 
 import { useAuth } from "@/contexts/auth-context"
+import { withTime } from "@/lib/due-time"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import {
   tasksApi,
@@ -214,6 +215,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   // ── Schedule section ──
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
+  /*
+    The hour the member is expected on site, "" when the job is only dated.
+
+    ⚠️ Midnight IS the "no time given" value — every task made before this
+    existed carries one, and the phone treats it as a date-only job. So the time
+    is held separately and only written onto the date when somebody sets it;
+    picking a date alone must keep producing midnight, or thousands of existing
+    tasks would start counting down to a departure at eleven the night before.
+  */
+  const [dueTime, setDueTime] = useState("")
+
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
 
   // ── Repeat (recurring) section ──
@@ -793,7 +805,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     startDate || dueDate || estimatedHours
       ? [
           startDate && format(startDate, "MMM d"),
-          dueDate && format(dueDate, "MMM d"),
+          dueDate && (dueTime ? `${format(dueDate, "MMM d")} ${dueTime}` : format(dueDate, "MMM d")),
           estimatedHours && `${estimatedHours}h`,
         ]
           .filter(Boolean)
@@ -1043,19 +1055,66 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         disabled={isSubmitting}
                       >
                         <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-                        {dueDate ? format(dueDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
+                        {dueDate
+                          ? dueTime
+                            ? `${format(dueDate, "MMM d, yyyy")} · ${dueTime}`
+                            : format(dueDate, "MMM d, yyyy")
+                          : t("tasks.create.selectDate")}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={dueDate}
-                        onSelect={setDueDate}
+                        onSelect={(d) => setDueDate(withTime(d, dueTime))}
                         disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+
+                {/*
+                  ⚠️ A FIELD, not a thing hidden inside the date popover.
+
+                  It lived in the popover first and was invisible: nobody
+                  re-opens a date they have already set, so the feature might as
+                  well not have shipped. What somebody can set, they must see.
+                */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t("tasks.create.beThereAt", "Be there at")}
+                  </Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="time"
+                      value={dueTime}
+                      onChange={(e) => {
+                        setDueTime(e.target.value)
+                        setDueDate((d) => withTime(d, e.target.value))
+                      }}
+                      disabled={!dueDate || isSubmitting}
+                      className="h-9 rounded-lg text-sm"
+                    />
+                    {dueTime && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 px-2 text-xs"
+                        onClick={() => {
+                          setDueTime("")
+                          setDueDate((d) => withTime(d, ""))
+                        }}
+                      >
+                        {t("common.clear", "Clear")}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {dueDate
+                      ? t("tasks.create.beThereHint", "The member is told when to set off, allowing for the drive.")
+                      : t("tasks.create.beThereNeedsDate", "Pick a due date first.")}
+                  </p>
                 </div>
               </div>
 

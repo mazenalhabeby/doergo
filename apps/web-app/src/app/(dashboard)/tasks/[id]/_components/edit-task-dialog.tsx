@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { timeOf, withTime } from "@/lib/due-time"
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,8 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.dueDate ? new Date(task.dueDate) : undefined
   )
+  // The hour the member is expected on site; "" when the job is only dated.
+  const [dueTime, setDueTime] = useState<string>(timeOf(task.dueDate))
   const [locationAddress, setLocationAddress] = useState(task.locationAddress || "")
   /*
     The coordinates behind the address.
@@ -115,6 +118,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
       setDescription(task.description || "")
       setPriority((task.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") || "MEDIUM")
       setDueDate(task.dueDate ? new Date(task.dueDate) : undefined)
+    setDueTime(timeOf(task.dueDate))
       setStartDate(task.startDate ? new Date(task.startDate) : undefined)
       setEstimatedHours(task.estimatedHours != null ? String(task.estimatedHours) : "")
       setLocationAddress(task.locationAddress || "")
@@ -204,8 +208,14 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
             />
           </div>
 
-          {/* Location & Due Date */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/*
+            The map is full width.
+
+            It used to share a two-column grid with Due Date, so the map's whole
+            height sat empty beside a single date button — and the address was
+            truncated to "Industriezentrum NÖ-Sü" in half the width it needed.
+          */}
+          <div className="space-y-2">
             <div className="space-y-2">
               <Label htmlFor="edit-location" className="text-sm font-medium text-foreground">
                 {t("tasks.create.serviceLocationLabel")}
@@ -230,7 +240,18 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 />
               </Suspense>
             </div>
+          </div>
 
+          {/*
+            When the job is, on one line: the day, the hour to be on site, and
+            how long it should take.
+
+            ⚠️ "Be there at" is a FIELD, not something hidden inside the date
+            popover. It was in the popover first, and it was invisible — nobody
+            clicks a date they have already set, so the feature may as well not
+            have existed. What a person can set, they must be able to SEE.
+          */}
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">
                 {t("tasks.sidebar.dueDate")}
@@ -253,16 +274,76 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                   <Calendar
                     mode="single"
                     selected={dueDate}
-                    onSelect={setDueDate}
+                    onSelect={(d) => setDueDate(withTime(d, dueTime))}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-due-time" className="text-sm font-medium text-foreground">
+                {t("tasks.create.beThereAt", "Be there at")}
+              </Label>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  id="edit-due-time"
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => {
+                    setDueTime(e.target.value)
+                    setDueDate((d) => withTime(d, e.target.value))
+                  }}
+                  disabled={!dueDate || updateMutation.isPending}
+                  className="h-10 rounded-lg"
+                />
+                {dueTime && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-10 px-2 text-xs"
+                    onClick={() => {
+                      setDueTime("")
+                      setDueDate((d) => withTime(d, ""))
+                    }}
+                  >
+                    {t("common.clear", "Clear")}
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {dueDate
+                  ? t("tasks.create.beThereHint", "The member is told when to set off, allowing for the drive.")
+                  : t("tasks.create.beThereNeedsDate", "Pick a due date first.")}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-estimated-hours" className="text-sm font-medium text-foreground">
+                {t("tasks.sidebar.estimatedHours")}
+              </Label>
+              <Input
+                id="edit-estimated-hours"
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder={t("tasks.fields.estimatedHoursPlaceholder")}
+                value={estimatedHours}
+                onChange={(e) => setEstimatedHours(e.target.value)}
+                disabled={updateMutation.isPending}
+                className="h-10 rounded-lg"
+              />
+            </div>
           </div>
 
-          {/* Start Date & Estimated Hours */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/*
+            Start Date drives the timeline (Gantt) view and nothing else — no
+            server rule reads it and the phone never shows it. Said on the form,
+            because "Start Date" reads like the opposite of Due Date and it is
+            not: the day the work happens is the DUE date.
+          */}
+          {/* Start Date */}
+          <div className="grid gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">
                 {t("tasks.sidebar.startDate")}
@@ -290,24 +371,11 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                   />
                 </PopoverContent>
               </Popover>
+              <p className="text-[11px] text-muted-foreground">
+                {t("tasks.sidebar.startDateHint", "Used to draw the bar on the timeline view. The day the work happens is the due date.")}
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-estimated-hours" className="text-sm font-medium text-foreground">
-                {t("tasks.sidebar.estimatedHours")}
-              </Label>
-              <Input
-                id="edit-estimated-hours"
-                type="number"
-                min="0"
-                step="0.5"
-                placeholder={t("tasks.fields.estimatedHoursPlaceholder")}
-                value={estimatedHours}
-                onChange={(e) => setEstimatedHours(e.target.value)}
-                disabled={updateMutation.isPending}
-                className="h-10 rounded-lg border-border bg-card"
-              />
-            </div>
           </div>
 
           {/* Priority */}

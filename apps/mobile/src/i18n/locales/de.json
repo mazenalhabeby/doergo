@@ -415,6 +415,16 @@
         "title": "Ihnen ist nichts zugewiesen",
         "body": "Zugewiesene Arbeit erscheint hier. Tippen Sie auf „Alle“, um Ihren Verantwortungsbereich zu sehen."
       }
+    },
+    "beThere": {
+      "title": "Vor Ort um {{time}}",
+      "go": "Jetzt losfahren",
+      "late": "Ankunft {{time}} — {{count}} Min. zu spät",
+      "soon": "In {{count}} Min. losfahren",
+      "plenty": "Losfahren bis {{time}}",
+      "arrived": "Sie sind vor Ort",
+      "noEstimate": "Fahrzeit unbekannt",
+      "estimated": "Geschätzte Fahrt"
     }
   },
   "taskDetail": {
@@ -579,7 +589,10 @@
     "successMessage": "Aufgabe erfolgreich erstellt!",
     "failedToCreate": "Aufgabe konnte nicht erstellt werden",
     "spaceLabel": "Arbeitsbereich",
-    "spaceCount": "{{count}} verfügbar"
+    "spaceCount": "{{count}} verfügbar",
+    "beThereAt": "Vor Ort um",
+    "beThereAtPlaceholder": "Optional — keine feste Uhrzeit",
+    "beThereHint": "Das Mitglied erfährt, wann es losfahren muss — inklusive Fahrzeit."
   },
   "attendance": {
     "clockedIn": "Eingestempelt",

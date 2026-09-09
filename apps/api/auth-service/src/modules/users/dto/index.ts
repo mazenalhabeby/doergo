@@ -26,6 +26,8 @@ export interface UpdateEmployeeDto {
   firstName?: string;
   lastName?: string;
   position?: string;
+  /** "YYYY-MM-DD". A birthday has no time and no timezone. */
+  dateOfBirth?: string | null;
   enabledModules?: string[];
   specialty?: string;
   employmentType?: string; // "IN_HOUSE" | "EXTERNAL"
@@ -106,6 +108,8 @@ export interface UpdateMemberProfileDto {
   firstName?: string;
   lastName?: string;
   position?: string;
+  /** "YYYY-MM-DD", or null to clear. A birthday has no time and no timezone. */
+  dateOfBirth?: string | null;
   scheduleType?: string;
   monthlyHourBudget?: number;
   role?: Role;

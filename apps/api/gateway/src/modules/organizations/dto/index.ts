@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsBoolean, IsNumber, IsArray, IsEmail, IsNotEmpty, Min, Max, MaxLength } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /**
@@ -285,6 +285,16 @@ export class UpdateMemberDto {
   @IsOptional()
   @IsString()
   position?: string;
+
+  /*
+    A DATE, validated as one. `@IsDateString` would accept a full timestamp and
+    let a browser's local midnight through as the previous day; the column is
+    `@db.Date` and the only thing that belongs in it is a calendar day.
+  */
+  @ApiPropertyOptional({ description: 'Date of birth, YYYY-MM-DD. Null clears it.', example: '1990-03-01' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'dateOfBirth must be YYYY-MM-DD' })
+  dateOfBirth?: string | null;
 
   @ApiPropertyOptional({ enum: ['NONE', 'FIXED', 'FLEXIBLE'], description: 'Schedule type for time tracking' })
   @IsOptional()

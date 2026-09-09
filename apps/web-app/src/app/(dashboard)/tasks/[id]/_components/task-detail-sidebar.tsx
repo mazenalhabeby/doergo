@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { InlineEditField } from "./inline-edit-field"
+import { LeaveByLine } from "./leave-by-line"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
 import { dateLocale } from "@/lib/format-date"
 
@@ -191,15 +192,22 @@ export function TaskDetailSidebar({
             )}
           </div>
 
-          {/* Due Date */}
+          {/*
+            Due Date — the day the work happens, and the hour to be on site when
+            one is named. `LeaveByLine` adds the departure underneath, so a
+            dispatcher can see whether the day is actually possible.
+          */}
           <SidebarRow icon={Calendar} label={t("tasks.sidebar.dueDate")}>
-            <InlineEditField
-              value={task.dueDate}
-              onSave={(v) => onFieldSave("dueDate", v)}
-              type="date"
-              disabled={!canEdit}
-              placeholder={t("tasks.sidebar.setDueDate")}
-            />
+            <div>
+              <InlineEditField
+                value={task.dueDate}
+                onSave={(v) => onFieldSave("dueDate", v)}
+                type="date"
+                disabled={!canEdit}
+                placeholder={t("tasks.sidebar.setDueDate")}
+              />
+              <LeaveByLine task={task} />
+            </div>
           </SidebarRow>
 
           {/* Start Date */}

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { timeOf, withTime, formatDue } from "@/lib/due-time"
 import { dateLocale } from "@/lib/format-date"
 
 interface InlineEditFieldProps {
@@ -133,7 +135,7 @@ export function InlineEditField({
     if (disabled) {
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay ? renderDisplay(value) : (value ? new Date(String(value)).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
+          {renderDisplay ? renderDisplay(value) : (value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
         </span>
       )
     }
@@ -141,7 +143,7 @@ export function InlineEditField({
       <Popover>
         <PopoverTrigger asChild>
           <button className={cn("text-sm text-foreground hover:bg-muted/50 px-1.5 py-0.5 -mx-1.5 rounded transition-colors group flex items-center gap-1.5", className)}>
-            {value ? new Date(String(value)).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", year: "numeric" }) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
+            {value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
             <Pencil className="size-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors" />
           </button>
         </PopoverTrigger>
@@ -152,10 +154,33 @@ export function InlineEditField({
             onSelect={async (date) => {
               if (date) {
                 setSaving(true)
-                try { await onSave(date.toISOString()) } finally { setSaving(false) }
+                // Picking a new day keeps whatever hour was already set.
+                try { await onSave(withTime(date, timeOf(value == null ? null : String(value)))!.toISOString()) } finally { setSaving(false) }
               }
             }}
           />
+          {/*
+            Optional. A job with no hour is the normal case; setting one is what
+            makes the phone tell the member when to set off.
+          */}
+          <div className="border-t border-border p-3">
+            <Label className="text-xs font-medium text-muted-foreground">
+              {t("tasks.create.beThereAt", "Be there at (optional)")}
+            </Label>
+            <Input
+              type="time"
+              value={timeOf(value == null ? null : String(value))}
+              disabled={!value || saving}
+              onChange={async (e) => {
+                if (!value) return
+                setSaving(true)
+                try {
+                  await onSave(withTime(new Date(String(value)), e.target.value)!.toISOString())
+                } finally { setSaving(false) }
+              }}
+              className="mt-1.5 h-9 rounded-lg text-sm"
+            />
+          </div>
         </PopoverContent>
       </Popover>
     )

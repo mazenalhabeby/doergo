@@ -686,6 +686,15 @@ model User {
   passwordHash String
   firstName    String
   lastName     String
+
+  /// A birthday: no time, no timezone. `@db.Date` for the same reason
+  /// Document.dateOfBirth is — stored as a timestamp, somebody born on the 1st
+  /// reads as the 31st for half the world.
+  ///
+  /// Also what re-enables the identity comparison in `checkScan`, which has
+  /// always been able to match a scanned passport against the member record and
+  /// never had a record to match against.
+  dateOfBirth  DateTime? @db.Date
   role         Role
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -969,6 +978,10 @@ model Task {
   locationAddress String?
 
   // Route tracking fields
+  // Set when the "leave now" nudge has been sent for this job; cleared when the
+  // due date moves, so rescheduling re-arms it. See the departure sweep.
+  departureNotifiedAt DateTime?
+
   routeStartedAt DateTime? // When EN_ROUTE started
   routeEndedAt   DateTime? // When ARRIVED
   routeDistance  Float? // Total distance in meters

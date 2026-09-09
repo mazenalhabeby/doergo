@@ -1135,7 +1135,10 @@
       "visitNoAddresses": "Für diesen Kunden ist keine Adresse hinterlegt. Bitte den Ort unten auf der Karte festlegen.",
       "visitClientUnfiled": "kein Arbeitsbereich",
       "visitClientNoAddress": "keine Adresse",
-      "visitNoClients": "In diesem Arbeitsbereich gibt es noch keine Kunden. Legen Sie einen im CRM an oder setzen Sie den Ort unten auf der Karte."
+      "visitNoClients": "In diesem Arbeitsbereich gibt es noch keine Kunden. Legen Sie einen im CRM an oder setzen Sie den Ort unten auf der Karte.",
+      "beThereAt": "Vor Ort um",
+      "beThereHint": "Das Mitglied erfährt, wann es losfahren muss — inklusive Fahrzeit.",
+      "beThereNeedsDate": "Zuerst ein Fälligkeitsdatum wählen."
     },
     "detail": {
       "title": "Aufgabendetails",
@@ -1341,7 +1344,10 @@
       "epic": "Epic",
       "noEpic": "Kein Epic",
       "storyPoints": "Story Points",
-      "none": "Keine"
+      "none": "Keine",
+      "leaveBy": "Losfahren bis {{time}} · {{count}} Min. Fahrt",
+      "leaveByLate": "Ankunft {{time}} — {{count}} Min. zu spät",
+      "startDateHint": "Zeichnet den Balken in der Zeitleiste. Der Tag der Arbeit ist das Fälligkeitsdatum."
     },
     "row": {
       "manageAssignees": "Zum Verwalten der Zuständigen klicken"
@@ -2249,7 +2255,8 @@
       "startDateHint": "Wann diese Person tatsächlich angefangen hat. Damit wird das erste Urlaubsjahr anteilig berechnet.",
       "allowanceLabel": "Urlaubstage pro Jahr",
       "allowancePlaceholder": "Standard der Organisation",
-      "allowanceHint": "Leer lassen für den Standard der Organisation. 0 bedeutet kein bezahlter Urlaub."
+      "allowanceHint": "Leer lassen für den Standard der Organisation. 0 bedeutet kein bezahlter Urlaub.",
+      "dateOfBirth": "Geburtsdatum"
     },
     "detail": {
       "backToTeam": "Zurück zum Team",

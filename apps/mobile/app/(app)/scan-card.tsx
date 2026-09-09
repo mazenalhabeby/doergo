@@ -154,7 +154,18 @@ export default function ScanCardScreen() {
       }
       setBusy(false);
     }
-  }, [busy, t, toast, frame, screen.width, screen.height]);
+    /*
+      ⚠️ `box`, not `screen`. There is no `screen` in this component — it was
+      renamed to `window` when the frame started being measured against the
+      CAMERA's box, and this dependency array was the one use that did not get
+      renamed with it.
+
+      TypeScript could not catch it: `expo/tsconfig.base` sets
+      `lib: ["DOM", "ESNext"]`, so `screen` is a perfectly good global as far as
+      the compiler is concerned. At runtime it does not exist, so opening the
+      scanner threw "Property 'screen' doesn't exist" before a frame was drawn.
+    */
+  }, [busy, t, toast, frame, box.width, box.height]);
 
   const save = useCallback(async () => {
     const name = (values.company || values.name).trim();

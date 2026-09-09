@@ -176,6 +176,29 @@ export class PushService {
     );
   }
 
+  /**
+   * "Leave now" — the nudge that makes an appointment time worth setting.
+   *
+   * Says the arrival time as well as the departure, because a member reading
+   * this on a lock screen needs to know what they are being hurried towards,
+   * and says when the drive is only an estimate.
+   */
+  async sendDepartureDuePush(
+    userId: string,
+    task: { id: string; title: string },
+    detail: { dueTime: string; travelMinutes: number; estimated: boolean },
+  ) {
+    const drive = detail.estimated
+      ? `about ${detail.travelMinutes} min`
+      : `${detail.travelMinutes} min`;
+    return this.sendToUser(
+      userId,
+      'Time to leave',
+      `${task.title} — be there ${detail.dueTime} (${drive} drive)`,
+      { taskId: task.id, type: 'task_departure_due' },
+    );
+  }
+
   async sendStatusChangePush(
     userId: string,
     task: { id: string; title: string },

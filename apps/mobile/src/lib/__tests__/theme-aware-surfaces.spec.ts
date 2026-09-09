@@ -103,3 +103,32 @@ describe('the rest of the app', () => {
     expect(Array.isArray(offenders)).toBe(true);
   });
 });
+
+/**
+ * The two components added for appointment times follow the same rule.
+ *
+ * Both paint surfaces, and both were written after the Mine/All scope was found
+ * rendering a white panel on a dark screen — so they are held to the same line
+ * rather than trusted to have learned it.
+ */
+describe('the appointment-time components follow the theme', () => {
+  const MINE = ['tasks/be-there-card.tsx', 'time-picker-modal.tsx'];
+
+  it.each(MINE)('%s takes its colours from useTheme', (rel) => {
+    expect(readFileSync(join(COMPONENTS, rel), 'utf8')).toContain('useTheme');
+  });
+
+  it.each(MINE)('%s uses no static surface or text colour', (rel) => {
+    const src = strip(readFileSync(join(COMPONENTS, rel), 'utf8'));
+    const offenders = THEMED_ONLY.filter((token) =>
+      new RegExp(`COLORS\\.${token}\\b`).test(src),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it.each(MINE)('%s builds its styles from the current theme', (rel) => {
+    const src = strip(readFileSync(join(COMPONENTS, rel), 'utf8'));
+    expect(src).toMatch(/const styles = \(c: ThemeColors\)/);
+    expect(src).toMatch(/useMemo\(\(\) => styles\(colors\), \[colors\]\)/);
+  });
+});

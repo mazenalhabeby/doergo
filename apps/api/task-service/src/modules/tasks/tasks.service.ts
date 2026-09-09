@@ -35,6 +35,8 @@ import {
   canReceiveTasks,
   credentialStanding,
   credentialBlocks,
+  endOfSiteDay,
+  tzOffsetMs,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -1253,7 +1255,18 @@ export class TasksService {
         ...(updateData.title && { title: updateData.title }),
         ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.priority && { priority: updateData.priority }),
-        ...(updateData.dueDate && { dueDate: new Date(updateData.dueDate) }),
+        /*
+          Moving the date re-arms the "leave now" nudge.
+
+          Without the reset, rescheduling a job to a different hour leaves it
+          marked as already announced and the member is never told to set off
+          for the NEW time — the silent half of a bug whose loud half would be
+          being told twice.
+        */
+        ...(updateData.dueDate && {
+          dueDate: new Date(updateData.dueDate),
+          departureNotifiedAt: null,
+        }),
         ...(updateData.startDate !== undefined && { startDate: updateData.startDate ? new Date(updateData.startDate) : null }),
         ...(updateData.estimatedHours !== undefined && { estimatedHours: updateData.estimatedHours }),
         ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
@@ -1625,6 +1638,9 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
+      // The site's zone, for the due-date gate below — "today" is a fact about
+      // where the work is, not about where this container happens to run.
+      include: { space: { select: { timezone: true } } },
     });
 
     if (!task) {
@@ -1796,11 +1812,24 @@ export class TasksService {
       }
     }
 
-    // (a) Due Date Gate — cannot start a task whose dueDate is in the future
+    /*
+      (a) Due Date Gate — cannot start a task whose dueDate is in the future.
+
+      ⚠️ "Today" is the SITE's day. This used to be `new Date().setHours(23,...)`,
+      which is the container's day, and the container runs in UTC: a job due at
+      20:00 in New York is 01:00 the next day in UTC, so this refused to let
+      anyone set off — on the afternoon it was due. Nobody hit it while due
+      dates were dates, because midnight local is still the same UTC day either
+      side of the Atlantic. An hour on the due date makes it an everyday event.
+
+      ⚠️ Still DAY-granular, deliberately. Comparing instants would refuse to
+      let a member leave at 12:13 for a 13:00 appointment — which is exactly
+      when they must leave to arrive on time.
+    */
     if (isAssignedUser && data.status === TaskStatus.EN_ROUTE) {
       if (task.dueDate) {
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
+        const tz = task.space?.timezone || 'UTC';
+        const endOfToday = endOfSiteDay(new Date(), tzOffsetMs(new Date(), tz) / 60_000);
         if (task.dueDate > endOfToday) {
           throw new BadRequestException(
             'Cannot start this task yet — it is scheduled for a future date. You can start it on the due date.',

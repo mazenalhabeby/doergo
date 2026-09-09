@@ -72,10 +72,32 @@ const TIME_SENSITIVE_PREFIXES = [
   'break_', // break_due, break_over
   'overtime', // overtime_request, overtime_decision
   'noshow',
+  /*
+    "Leave now, or you will be late for the client."
+
+    Urgency is the entire message — arriving a quarter of an hour after it was
+    read is the failure it exists to prevent. It is task work, not attendance,
+    which is why the two lists below are no longer the same list.
+  */
+  'task_departure',
 ] as const;
 
-/** Types that belong on the attendance channel rather than the task channel. */
-const ATTENDANCE_PREFIXES = TIME_SENSITIVE_PREFIXES;
+/**
+ * Types that belong on the attendance channel rather than the task channel.
+ *
+ * ⚠️ This WAS an alias of the list above, and the two are not the same
+ * question. "How loudly?" and "under which heading?" only happened to agree
+ * while every urgent notification was an attendance one. A departure reminder
+ * is urgent AND about a task, and filing it under attendance would put it on a
+ * channel a member may reasonably have muted.
+ */
+const ATTENDANCE_PREFIXES = [
+  'attendance',
+  'shift_',
+  'break_',
+  'overtime',
+  'noshow',
+] as const;
 
 /**
  * The one routing decision, read by the notification service when it sends and

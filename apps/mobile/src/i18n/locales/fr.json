@@ -415,6 +415,16 @@
         "title": "Rien ne vous est attribué",
         "body": "Le travail qui vous est confié apparaîtra ici. Touchez Tous pour voir ce que vous supervisez."
       }
+    },
+    "beThere": {
+      "title": "Sur place à {{time}}",
+      "go": "Partir maintenant",
+      "late": "Arrivée {{time}} — {{count}} min de retard",
+      "soon": "Partir dans {{count}} min",
+      "plenty": "Partir avant {{time}}",
+      "arrived": "Vous êtes sur place",
+      "noEstimate": "Temps de trajet inconnu",
+      "estimated": "Trajet estimé"
     }
   },
   "taskDetail": {
@@ -579,7 +589,10 @@
     "successMessage": "Tâche créée avec succès !",
     "failedToCreate": "Échec de la création de la tâche",
     "spaceLabel": "Espace de travail",
-    "spaceCount": "{{count}} disponibles"
+    "spaceCount": "{{count}} disponibles",
+    "beThereAt": "Sur place à",
+    "beThereAtPlaceholder": "Facultatif — pas d'heure fixe",
+    "beThereHint": "Le membre saura quand partir, trajet compris."
   },
   "attendance": {
     "clockedIn": "Pointage d'arrivée effectué",

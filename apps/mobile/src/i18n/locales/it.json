@@ -415,6 +415,16 @@
         "title": "Non ti è assegnato nulla",
         "body": "Il lavoro assegnato a te comparirà qui. Tocca Tutti per vedere ciò che supervisioni."
       }
+    },
+    "beThere": {
+      "title": "Sul posto alle {{time}}",
+      "go": "Parti ora",
+      "late": "Arrivo {{time}} — {{count}} min di ritardo",
+      "soon": "Parti tra {{count}} min",
+      "plenty": "Parti entro le {{time}}",
+      "arrived": "Sei sul posto",
+      "noEstimate": "Tempo di viaggio sconosciuto",
+      "estimated": "Tragitto stimato"
     }
   },
   "taskDetail": {
@@ -579,7 +589,10 @@
     "successMessage": "Attività creata con successo!",
     "failedToCreate": "Impossibile creare l'attività",
     "spaceLabel": "Spazio di lavoro",
-    "spaceCount": "{{count}} disponibili"
+    "spaceCount": "{{count}} disponibili",
+    "beThereAt": "Sul posto alle",
+    "beThereAtPlaceholder": "Facoltativo — nessun orario fisso",
+    "beThereHint": "Il membro saprà quando partire, tragitto incluso."
   },
   "attendance": {
     "clockedIn": "Entrata timbrata",

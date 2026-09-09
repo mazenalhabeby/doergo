@@ -101,3 +101,4 @@ export * from './attendance/cover';
 
 // What should I work on next — one ordering, shared by the phone and the web.
 export * from './tasks/my-work';
+export * from './tasks/be-there';

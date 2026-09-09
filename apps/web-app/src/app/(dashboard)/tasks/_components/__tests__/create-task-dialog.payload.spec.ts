@@ -34,6 +34,10 @@ const UI_ONLY_STATE: Record<string, string> = {
   isSubmittingLocal: "disables the form while the request is in flight",
   newChecklistItem: "the text being typed before it becomes a checklist item",
   isRecurring: "chooses WHICH payload is sent, rather than being a field in one",
+  dueTime:
+    "folded INTO dueDate before submitting — the server stores one instant, not " +
+    "a date and an hour, so there is no dueTime field to send. If this ever " +
+    "becomes a column of its own, delete this line and send it.",
 }
 
 /**

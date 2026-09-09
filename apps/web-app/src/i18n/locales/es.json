@@ -1135,7 +1135,10 @@
       "visitNoAddresses": "Este cliente no tiene ninguna dirección registrada. Marca el lugar en el mapa de abajo.",
       "visitClientUnfiled": "sin espacio",
       "visitClientNoAddress": "sin dirección",
-      "visitNoClients": "Todavía no hay clientes en este espacio de trabajo. Añade uno en el CRM o marca el lugar en el mapa de abajo."
+      "visitNoClients": "Todavía no hay clientes en este espacio de trabajo. Añade uno en el CRM o marca el lugar en el mapa de abajo.",
+      "beThereAt": "Estar allí a las",
+      "beThereHint": "El miembro sabrá cuándo salir, contando el trayecto.",
+      "beThereNeedsDate": "Elija primero una fecha de vencimiento."
     },
     "detail": {
       "title": "Detalles de la tarea",
@@ -1341,7 +1344,10 @@
       "epic": "Epic",
       "noEpic": "Sin epic",
       "storyPoints": "Puntos de historia",
-      "none": "Ninguno"
+      "none": "Ninguno",
+      "leaveBy": "Salir antes de las {{time}} · {{count}} min de trayecto",
+      "leaveByLate": "Llegaría {{time}} — {{count}} min tarde",
+      "startDateHint": "Dibuja la barra en la vista de cronología. El día del trabajo es la fecha de vencimiento."
     },
     "row": {
       "manageAssignees": "Haz clic para gestionar responsables"
@@ -2243,7 +2249,8 @@
       "startDateHint": "Cuándo empezó a trabajar realmente. Sirve para prorratear su primer año de vacaciones.",
       "allowanceLabel": "Días de vacaciones al año",
       "allowancePlaceholder": "Valor por defecto de la organización",
-      "allowanceHint": "Déjelo en blanco para usar el valor de la organización. Introduzca 0 si no tiene vacaciones pagadas."
+      "allowanceHint": "Déjelo en blanco para usar el valor de la organización. Introduzca 0 si no tiene vacaciones pagadas.",
+      "dateOfBirth": "Fecha de nacimiento"
     },
     "detail": {
       "backToTeam": "Volver a Equipo",

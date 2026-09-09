@@ -3836,6 +3836,8 @@ export interface OrgMember {
    * they are assigned to exactly one workspace and it already names the client.
    */
   isExternal?: boolean;
+  /** Date of birth, YYYY-MM-DD. Absent when the record holds none. */
+  dateOfBirth?: string | null;
 }
 
 /** An org-assignable role (Admin, Manager, or a custom role). */
@@ -3885,6 +3887,8 @@ export interface UpdateMemberInput {
   contactScope?: string;
   contactAllowedIds?: string[];
   allowRemote?: boolean;
+  /** YYYY-MM-DD, or null to clear it. */
+  dateOfBirth?: string | null;
 }
 
 export interface MemberWatcher {

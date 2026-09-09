@@ -19,7 +19,12 @@ const DIALOG = join(__dirname, "..", "edit-task-dialog.tsx")
 const SRC = readFileSync(DIALOG, "utf8")
 
 /** State that deliberately never leaves the browser. Keep the reasons. */
-const UI_ONLY_STATE: Record<string, string> = {}
+const UI_ONLY_STATE: Record<string, string> = {
+  dueTime:
+    "folded INTO dueDate before submitting — the server stores one instant, not " +
+    "a date and an hour, so there is no dueTime field to send. If this ever " +
+    "becomes a column of its own, delete this line and send it.",
+}
 
 /**
  * The argument of the update call, matched by counting braces — slicing to the

@@ -21,6 +21,7 @@ import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePic
 import { TechnicianPicker, ScreenContainer } from '../../../src/components';
 import { LocationSearchPicker } from '../../../src/components/location-search-picker';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
+import { TimePickerModal } from '../../../src/components/time-picker-modal';
 import { useToast } from '../../../src/contexts/toast-context';
 import {
   COLORS,
@@ -44,6 +45,15 @@ export default function CreateTaskScreen() {
   const [priority, setPriority] = useState<Priority>('MEDIUM');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  /*
+    The hour to be on site, "" when the job is only dated.
+
+    ⚠️ Held apart from the date and folded in on submit, because MIDNIGHT is the
+    stored value for "no hour given" — the phone counts down to a departure only
+    for jobs that name one, so picking a day alone must keep producing midnight.
+  */
+  const [dueTime, setDueTime] = useState('');
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [locationAddress, setLocationAddress] = useState('');
   const [locationLat, setLocationLat] = useState<number | null>(null);
   const [locationLng, setLocationLng] = useState<number | null>(null);
@@ -90,7 +100,14 @@ export default function CreateTaskScreen() {
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        dueDate: dueDate?.toISOString(),
+        dueDate: dueDate
+          ? (() => {
+              const d = new Date(dueDate);
+              const [hh, mm] = dueTime.split(':').map(Number);
+              d.setHours(dueTime && Number.isFinite(hh) ? hh : 0, dueTime && Number.isFinite(mm) ? mm : 0, 0, 0);
+              return d.toISOString();
+            })()
+          : undefined,
         locationAddress: locationAddress.trim() || undefined,
         locationLat: locationLat ?? undefined,
         locationLng: locationLng ?? undefined,
@@ -284,6 +301,47 @@ export default function CreateTaskScreen() {
           </TouchableOpacity>
         </View>
 
+        {/*
+          Be there at — a field of its own, and only once a day is chosen.
+          An hour with no date is not a thing anybody can act on.
+        */}
+        {dueDate && (
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>
+              {t('createTask.beThereAt', 'Be there at')}
+            </Text>
+            <TouchableOpacity
+              style={[styles.dateButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setShowTimePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="time-outline" size={20} color={dueTime ? COLORS.primary : colors.textMuted} />
+              <Text style={[styles.dateText, { flex: 1, color: dueTime ? colors.textPrimary : colors.textMuted }]}>
+                {dueTime || t('createTask.beThereAtPlaceholder', 'Optional — no fixed hour')}
+              </Text>
+              {!!dueTime && (
+                <TouchableOpacity
+                  onPress={(e) => { e.stopPropagation(); setDueTime(''); }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+            <Text style={[styles.hint, { color: colors.textMuted }]}>
+              {t('createTask.beThereHint', 'The member is told when to set off, allowing for the drive.')}
+            </Text>
+          </View>
+        )}
+
+        <TimePickerModal
+          visible={showTimePicker}
+          value={dueTime}
+          onSelect={setDueTime}
+          onClear={() => setDueTime('')}
+          onClose={() => setShowTimePicker(false)}
+        />
+
         {/* Date Picker Modal */}
         <DatePickerModal
           visible={showDatePicker}
@@ -435,6 +493,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semibold,
     marginBottom: SPACING.sm,
   },
+  hint: { fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
   // Label + live count badge (e.g. "Space  ⬚ 12 available").
   labelRow: {
     flexDirection: 'row',

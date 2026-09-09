@@ -45,6 +45,32 @@ export class TaskNotificationHandler {
     this.websocketGateway.emitTaskCreated(data);
   }
 
+  /**
+   * The sweep decided somebody should be setting off.
+   *
+   * The decision — who, and whether it is time — is made in task-service where
+   * the positions and due dates are. This only delivers it, so the rule lives
+   * in one place and cannot drift.
+   */
+  @EventPattern('task_departure_due')
+  async handleDepartureDue(@Payload() data: any) {
+    this.logger.log(`Departure due: task ${data.taskId} for ${data.userId}`);
+    try {
+      const due = new Date(data.dueDate);
+      await this.pushService.sendDepartureDuePush(
+        data.userId,
+        { id: data.taskId, title: data.title },
+        {
+          dueTime: due.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }),
+          travelMinutes: data.travelMinutes,
+          estimated: !!data.estimated,
+        },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send departure push: ${error}`);
+    }
+  }
+
   @EventPattern('task_assigned')
   async handleTaskAssigned(@Payload() data: any) {
     this.logger.log(`Task assigned: ${data.task.id}`);

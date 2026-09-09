@@ -1135,7 +1135,10 @@
       "visitNoAddresses": "Per questo cliente non è registrato alcun indirizzo. Imposta il luogo sulla mappa qui sotto.",
       "visitClientUnfiled": "nessuno spazio",
       "visitClientNoAddress": "nessun indirizzo",
-      "visitNoClients": "Non ci sono ancora clienti in questo spazio di lavoro. Aggiungine uno nel CRM o imposta il luogo sulla mappa qui sotto."
+      "visitNoClients": "Non ci sono ancora clienti in questo spazio di lavoro. Aggiungine uno nel CRM o imposta il luogo sulla mappa qui sotto.",
+      "beThereAt": "Sul posto alle",
+      "beThereHint": "Il membro saprà quando partire, tragitto incluso.",
+      "beThereNeedsDate": "Scegli prima una data di scadenza."
     },
     "detail": {
       "title": "Dettagli dell'attività",
@@ -1341,7 +1344,10 @@
       "epic": "Epica",
       "noEpic": "Nessuna epica",
       "storyPoints": "Story point",
-      "none": "Nessuno"
+      "none": "Nessuno",
+      "leaveBy": "Parti entro le {{time}} · {{count}} min di tragitto",
+      "leaveByLate": "Arriverebbe {{time}} — {{count}} min di ritardo",
+      "startDateHint": "Disegna la barra nella vista cronologica. Il giorno del lavoro è la scadenza."
     },
     "row": {
       "manageAssignees": "Fare clic per gestire gli assegnatari"
@@ -2243,7 +2249,8 @@
       "startDateHint": "Quando questa persona ha iniziato davvero. Serve a calcolare in proporzione il primo anno di ferie.",
       "allowanceLabel": "Giorni di ferie all’anno",
       "allowancePlaceholder": "Valore predefinito dell’organizzazione",
-      "allowanceHint": "Lascia vuoto per usare il valore dell’organizzazione. Inserisci 0 se non ha ferie retribuite."
+      "allowanceHint": "Lascia vuoto per usare il valore dell’organizzazione. Inserisci 0 se non ha ferie retribuite.",
+      "dateOfBirth": "Data di nascita"
     },
     "detail": {
       "backToTeam": "Torna al team",

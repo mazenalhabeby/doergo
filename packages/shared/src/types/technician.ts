@@ -28,6 +28,8 @@ export interface EmployeeProfile {
    */
   isExternal?: boolean;
   isActive: boolean;
+  /** Date of birth (YYYY-MM-DD), when the record holds one. */
+  dateOfBirth?: string | null;
   createdAt: string;
   updatedAt: string;
 
@@ -246,6 +248,13 @@ export interface UpdateEmployeeInput {
   leaveAllowance?: number | null;
   /** When they actually started (YYYY-MM-DD) — pro-rates their first year. */
   employmentStartDate?: string | null;
+  /**
+   * Date of birth (YYYY-MM-DD). No time, no timezone.
+   *
+   * Also what lets `checkScan` compare a scanned passport against the member
+   * rather than only asking whether the date is plausible for a working person.
+   */
+  dateOfBirth?: string | null;
   isActive?: boolean;
   rating?: number;
   ratingCount?: number;

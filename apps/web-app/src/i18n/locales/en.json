@@ -1135,7 +1135,10 @@
       "visitNoAddresses": "This client has no address on file. Set the place on the map below.",
       "visitClientUnfiled": "no workspace",
       "visitClientNoAddress": "no address",
-      "visitNoClients": "No clients in this workspace yet. Add one in CRM, or set the place on the map below."
+      "visitNoClients": "No clients in this workspace yet. Add one in CRM, or set the place on the map below.",
+      "beThereAt": "Be there at",
+      "beThereHint": "The member is told when to set off, allowing for the drive.",
+      "beThereNeedsDate": "Pick a due date first."
     },
     "detail": {
       "title": "Task Details",
@@ -1341,7 +1344,10 @@
       "epic": "Epic",
       "noEpic": "No epic",
       "storyPoints": "Story Points",
-      "none": "None"
+      "none": "None",
+      "leaveBy": "Leave by {{time}} · {{count}} min drive",
+      "leaveByLate": "Would arrive {{time}} — {{count}} min late",
+      "startDateHint": "Used to draw the bar on the timeline view. The day the work happens is the due date."
     },
     "row": {
       "manageAssignees": "Click to manage assignees"
@@ -2249,7 +2255,8 @@
       "startDateHint": "When they actually started working here. Used to pro-rate their first year of vacation.",
       "allowanceLabel": "Vacation days per year",
       "allowancePlaceholder": "Organization default",
-      "allowanceHint": "Leave blank to use the organization's default. Enter 0 for no paid vacation."
+      "allowanceHint": "Leave blank to use the organization's default. Enter 0 for no paid vacation.",
+      "dateOfBirth": "Date of birth"
     },
     "detail": {
       "backToTeam": "Back to Team",

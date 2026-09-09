@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { getStatusStyle, getPriorityStyle } from '../lib/styles';
+import { hasAppointmentTime } from '@hbcfield/shared/client';
 import { useTimeFormat } from '../hooks/useTimeFormat';
 import { useTheme } from '../contexts/theme-context';
 
@@ -111,12 +112,24 @@ export function TaskCard({
         </View>
       )}
 
-      {/* Time/Date */}
+      {/*
+        When the job is.
+
+        ⚠️ A due date that names no hour is stored as MIDNIGHT, and
+        `formatTimeRange` turned that into "00:00 - 01:00" — an invented slot,
+        shown on the home screen for every dated-only task, because the home
+        screens do not pass `showDate`. A job with an hour now shows the hour;
+        one without shows the day, which is all anybody knew about it anyway.
+      */}
       {task.dueDate && (
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={16} color={colors.textMuted} />
           <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-            {showDate ? formatRelativeDate(task.dueDate) : formatTimeRange(task.dueDate)}
+            {hasAppointmentTime(new Date(task.dueDate))
+              ? (showDate
+                  ? `${formatRelativeDate(task.dueDate)} · ${formatTimeRange(task.dueDate)}`
+                  : formatTimeRange(task.dueDate))
+              : formatRelativeDate(task.dueDate)}
           </Text>
         </View>
       )}

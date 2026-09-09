@@ -1276,10 +1276,18 @@ export class DocumentsService {
 
     const member = await this.prisma.user.findFirst({
       where: { id: data.actor.userId, organizationId: data.actor.organizationId },
-      // No dateOfBirth: the User model does not hold one. `checkScan` then
-      // only asks whether the date on the document is plausible for a working
-      // person, which is the honest limit of what can be compared.
-      select: { id: true, firstName: true, lastName: true, email: true },
+      /*
+        `dateOfBirth` is selected so `checkScan` can COMPARE rather than merely
+        judge plausibility.
+
+        It used to be left out with a note that the User model held no birthday,
+        which made the comparison in `dobCheck` unreachable: every scan settled
+        for "this date belongs to a working-age person" when it could have
+        asked "is this the same person". Null is still fine — the check falls
+        back to plausibility exactly as before for anyone whose record has no
+        birthday on it.
+      */
+      select: { id: true, firstName: true, lastName: true, email: true, dateOfBirth: true },
     });
     if (!member) throw new NotFoundException('Member not found');
 
@@ -1395,7 +1403,7 @@ export class DocumentsService {
    */
   private async checkSubmittedScan(
     mrzText: string | null | undefined,
-    member: { id: string; firstName: string; lastName: string },
+    member: { id: string; firstName: string; lastName: string; dateOfBirth?: Date | null },
     organizationId: string,
   ) {
     if (!mrzText?.trim()) return null;

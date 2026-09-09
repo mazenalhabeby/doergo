@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next"
 import {
   ArrowLeft,
   Mail,
+  Cake,
   MapPin,
   Pencil,
   Clock,
@@ -72,7 +73,7 @@ import { getStatusConfig } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatRelativeDay, formatDayMonth } from "@/lib/format-date"
+import { formatRelativeDay, formatDayMonth, dateLocale } from "@/lib/format-date"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -289,9 +290,29 @@ export default function MemberProfilePage({
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5" />
-                  {member.email}
+                <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    {member.email}
+                  </span>
+                  {/*
+                    Date of birth, and the birthday itself.
+
+                    ⚠️ Rendered from the "YYYY-MM-DD" string with `T12:00:00`,
+                    never `new Date("1990-03-01")`. That parses as midnight UTC
+                    and prints the 28th of February for anybody west of
+                    Greenwich — a person's birthday moving by a day depending on
+                    where they are reading it.
+                  */}
+                  {member.dateOfBirth && (
+                    <span className="flex items-center gap-1.5">
+                      <Cake className="h-3.5 w-3.5" />
+                      {new Date(`${member.dateOfBirth.slice(0, 10)}T12:00:00`).toLocaleDateString(
+                        dateLocale(),
+                        { day: "numeric", month: "short", year: "numeric" },
+                      )}
+                    </span>
+                  )}
                 </div>
                 {spaceNames.length > 0 && (
                   <div className="flex items-center gap-1.5 flex-wrap pt-1">

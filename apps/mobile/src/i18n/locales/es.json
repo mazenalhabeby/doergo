@@ -415,6 +415,16 @@
         "title": "No tienes nada asignado",
         "body": "El trabajo que te asignen aparecerá aquí. Toca Todos para ver lo que supervisas."
       }
+    },
+    "beThere": {
+      "title": "Estar allí a las {{time}}",
+      "go": "Salir ahora",
+      "late": "Llegada {{time}} — {{count}} min tarde",
+      "soon": "Salir en {{count}} min",
+      "plenty": "Salir antes de las {{time}}",
+      "arrived": "Está en el lugar",
+      "noEstimate": "Tiempo de viaje desconocido",
+      "estimated": "Trayecto estimado"
     }
   },
   "taskDetail": {
@@ -579,7 +589,10 @@
     "successMessage": "¡Tarea creada correctamente!",
     "failedToCreate": "No se pudo crear la tarea",
     "spaceLabel": "Espacio de trabajo",
-    "spaceCount": "{{count}} disponibles"
+    "spaceCount": "{{count}} disponibles",
+    "beThereAt": "Estar allí a las",
+    "beThereAtPlaceholder": "Opcional — sin hora fija",
+    "beThereHint": "El miembro sabrá cuándo salir, contando el trayecto."
   },
   "attendance": {
     "clockedIn": "Entrada registrada",
