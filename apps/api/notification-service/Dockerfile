@@ -19,7 +19,13 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @hbcfield/shared build
 RUN cd apps/api/auth-service && npx prisma generate
 RUN pnpm --filter @hbcfield/notification-service build
-RUN pnpm --filter @hbcfield/notification-service deploy --prod /prod
+# 'pnpm deploy' RE-RESOLVES: unlike the install above it does not honour the
+# lockfile, so it fetches whatever the registry calls latest. That is a
+# reproducibility hole in every image we ship, and on 2026-09-09 it stopped
+# being theoretical -- AWS advertised @aws-sdk/credential-provider-login
+# 3.972.78 whose tarball 404s, and all five services failed to build on a
+# commit that touched none of them. The lockfile pins 3.972.23, which is fine.
+RUN pnpm --filter @hbcfield/notification-service deploy --prod --frozen-lockfile /prod
 RUN rm -rf /prod/node_modules/.prisma /prod/node_modules/@prisma/client && \
     cp -R node_modules/.prisma /prod/node_modules/.prisma && \
     cp -R node_modules/@prisma/client /prod/node_modules/@prisma/client
