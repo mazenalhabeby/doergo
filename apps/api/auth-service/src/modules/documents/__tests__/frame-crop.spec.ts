@@ -109,3 +109,54 @@ describe('isUsefulCrop', () => {
     expect(isUsefulCrop({ left: 0.2, top: 0.35, width: 0.6, height: 0.25 })).toBe(true);
   });
 });
+
+/**
+ * The frame and the photograph have to be the same way up.
+ *
+ * Every line of the mapping assumes the preview is a cover fit of THIS image,
+ * which holds only while both are portrait or both are landscape. Android
+ * breaks it whenever a capture skips processing: the sensor hands back a
+ * landscape frame while the preview was portrait, and the arithmetic still
+ * returns a tidy rectangle — of the wrong part of the picture.
+ *
+ * It happened. A business card scan cropped a region with no relation to the
+ * guide, read a logo, and reported no name, phone, email or address. Nothing
+ * threw, and the screen looked like the card simply had nothing on it.
+ */
+describe('a photograph that disagrees with the frame', () => {
+  const PORTRAIT_SCREEN = { width: 1080, height: 2150 };
+  const FRAME = { left: 76, top: 965, width: 930, height: 600 };
+
+  it('refuses to crop rather than crop the wrong third', () => {
+    const sideways = frameToImageCrop({
+      frame: FRAME,
+      screen: PORTRAIT_SCREEN,
+      image: { width: 4032, height: 3024 },   // sensor-native, un-rotated
+    });
+    expect(sideways).toEqual({ left: 0, top: 0, width: 1, height: 1 });
+  });
+
+  it('still crops normally when they agree', () => {
+    const upright = frameToImageCrop({
+      frame: FRAME,
+      screen: PORTRAIT_SCREEN,
+      image: { width: 3024, height: 4032 },   // processed, upright
+    });
+    expect(upright.width).toBeLessThan(1);
+    expect(upright.height).toBeLessThan(1);
+    expect(isUsefulCrop(upright)).toBe(true);
+  });
+
+  /*
+    A square image takes neither branch by accident: it is not "landscape" and
+    not "portrait", and must not start refusing crops on a whim.
+  */
+  it('treats a square photograph as agreeing with a portrait screen', () => {
+    const square = frameToImageCrop({
+      frame: FRAME,
+      screen: PORTRAIT_SCREEN,
+      image: { width: 3000, height: 3000 },
+    });
+    expect(square).not.toEqual({ left: 0, top: 0, width: 1, height: 1 });
+  });
+});

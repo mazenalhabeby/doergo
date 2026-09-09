@@ -94,7 +94,22 @@ export default function ScanCardScreen() {
     setBusy(true);
     let shotUri: string | null = null;
     try {
-      const shot = await camera.current.takePictureAsync({ quality: 0.8, skipProcessing: true });
+      /*
+        ⚠️ NEVER `skipProcessing: true` here.
+
+        On Android that returns the frame exactly as the sensor recorded it —
+        landscape, whatever way the phone is held. The preview is portrait, so
+        `shot.width/height` then describe a DIFFERENT orientation from `box`,
+        and `frameToImageCrop` maps the frame onto a rectangle with no relation
+        to what the person aimed at. Nothing throws: the reader is simply handed
+        the wrong third of the photograph, and the screen fills in whatever text
+        happened to be there.
+
+        It cost a real scan — a card whose name, phone, email and address were
+        all outside the region, leaving only a logo. Processing costs a couple
+        of hundred milliseconds and is what makes the frame mean anything.
+      */
+      const shot = await camera.current.takePictureAsync({ quality: 0.8 });
       if (!shot?.uri) return;
       shotUri = shot.uri;
       const image = { width: shot.width ?? 0, height: shot.height ?? 0 };

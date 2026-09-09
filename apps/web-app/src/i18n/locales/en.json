@@ -1684,6 +1684,13 @@
       "storyPoints": "Story Points",
       "today": "Today",
       "unassigned": "Unassigned"
+    },
+    "myWork": {
+      "scope": {
+        "label": "Whose work",
+        "mine": "Mine",
+        "all": "All"
+      }
     }
   },
   "technicians": {

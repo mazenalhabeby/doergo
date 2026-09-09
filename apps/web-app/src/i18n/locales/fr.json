@@ -1684,6 +1684,13 @@
       "storyPoints": "Points d’effort",
       "today": "Aujourd’hui",
       "unassigned": "Non assigné"
+    },
+    "myWork": {
+      "scope": {
+        "label": "Travail de qui",
+        "mine": "À moi",
+        "all": "Tous"
+      }
     }
   },
   "technicians": {

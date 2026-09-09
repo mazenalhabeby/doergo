@@ -386,7 +386,36 @@
       "history": "Nessuna attività passata"
     },
     "failedToLoad": "Impossibile caricare le attività",
-    "selectTask": "Selezioni un’attività per vederne i dettagli"
+    "selectTask": "Selezioni un’attività per vederne i dettagli",
+    "myWork": {
+      "scope": {
+        "mine": "Miei",
+        "all": "Tutti"
+      },
+      "bands": {
+        "doing": "In corso",
+        "blocked": "Bloccati",
+        "overdue": "Scaduti",
+        "today": "Per oggi",
+        "upcoming": "Più avanti"
+      },
+      "next": {
+        "label": "Il prossimo",
+        "open": "Apri questo intervento",
+        "doing": "Ci stai già lavorando",
+        "doingLate": "Ci stai lavorando · scaduto da {{count}} giorno",
+        "doingLate_other": "Ci stai lavorando · scaduto da {{count}} giorni",
+        "blocked": "Bloccato: qualcuno è in attesa",
+        "overdue": "Scaduto da {{count}} giorno",
+        "overdue_other": "Scaduto da {{count}} giorni",
+        "today": "Scade oggi",
+        "upcoming": "Il prossimo per priorità"
+      },
+      "empty": {
+        "title": "Non ti è assegnato nulla",
+        "body": "Il lavoro assegnato a te comparirà qui. Tocca Tutti per vedere ciò che supervisioni."
+      }
+    }
   },
   "taskDetail": {
     "title": "Dettagli attività",

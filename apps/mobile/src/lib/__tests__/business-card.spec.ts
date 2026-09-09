@@ -236,3 +236,95 @@ describe('keeping only the card', () => {
     expect(parsed.name?.value).toBe('Anna Gruber');
   });
 });
+
+/**
+ * A card that is lying on its side.
+ *
+ * Portrait-format cards are a whole style, not an edge case — the design reads
+ * with the card stood up, so fitting it into a landscape guide leaves the text
+ * running bottom-to-top. A bounding box stays axis-aligned whatever the writing
+ * does, so every line comes back tall and narrow, and the two signals the
+ * parser rests on invert: "height" becomes the LENGTH of the line rather than
+ * the size of its type, and reading order runs across x instead of down y.
+ *
+ * Taken from a real scan that returned one line — a logo — and no phone, email
+ * or address at all.
+ */
+describe('a card photographed on its side', () => {
+  const IMG_W = 4000, IMG_H = 3000;
+  // The card fills the frame; the writing runs up it, so lines advance in +x.
+  const CROP = { left: 0.375, top: 0.133, width: 0.35, height: 0.733 };
+
+  const sideways = [{ lines: [
+    // x = position in reading order, width = type size,
+    // y/height = where the line starts and how long it runs.
+    { text: 'Dr. Dilyana NIKIFOROVA',          boundingBox: { x: 1560, y: 900,  width: 30,  height: 520 } },
+    { text: 'Dr. Dilyana Nikiforova',          boundingBox: { x: 1750, y: 700,  width: 110, height: 1100 } },
+    { text: 'Ärztin für Allgemeinmedizin',     boundingBox: { x: 1900, y: 760,  width: 55,  height: 980 } },
+    { text: 'T +43 7613 90 80 55',             boundingBox: { x: 2150, y: 1150, width: 50,  height: 700 } },
+    { text: 'F +43 7613 90 80 56',             boundingBox: { x: 2230, y: 1150, width: 50,  height: 700 } },
+    { text: 'M arzt@nikiforova.at',            boundingBox: { x: 2310, y: 1150, width: 50,  height: 700 } },
+    { text: '4663 Laakirchen, Traunsteinweg 1', boundingBox: { x: 2450, y: 1000, width: 50, height: 900 } },
+    { text: 'WWW.NIKIFOROVA.AT',               boundingBox: { x: 2700, y: 1300, width: 45,  height: 650 } },
+  ] }];
+
+  const lines = () => toCardLines(sideways as never, IMG_H, CROP, IMG_W);
+
+  it('keeps every line on the card', () => {
+    expect(lines()).toHaveLength(8);
+  });
+
+  it('reads across the card, not down it', () => {
+    // Reading order is the order the designer set, whichever way it is lying.
+    expect(lines().map((l) => l.text)[1]).toBe('Dr. Dilyana Nikiforova');
+    expect(lines().map((l) => l.text).at(-1)).toBe('WWW.NIKIFOROVA.AT');
+  });
+
+  /*
+    The load-bearing one. Before this, "height" was the length of the line, so
+    the ADDRESS — the longest string on the card — measured as the largest type
+    and the name rule would have taken it.
+  */
+  it('takes type size from the other axis', () => {
+    const l = lines();
+    const name = l.find((x) => x.text === 'Dr. Dilyana Nikiforova')!;
+    const address = l.find((x) => x.text.startsWith('4663'))!;
+    expect(name.height).toBeGreaterThan(address.height);
+  });
+
+  it('reads the whole card end to end', () => {
+    const r = parseBusinessCard(lines());
+    expect(r.email?.value).toBe('arzt@nikiforova.at');
+    expect(r.phone?.value).toBe('+43 7613 90 80 55');
+    expect(r.website?.value).toBe('WWW.NIKIFOROVA.AT');
+    expect(r.address?.value).toContain('4663 Laakirchen');
+    expect(r.name?.value).toBe('Dr. Dilyana Nikiforova');
+    expect(r.title?.value).toBe('Ärztin für Allgemeinmedizin');
+  });
+
+  /*
+    The guard on the guard. An upright card must not be mistaken for a rotated
+    one, or the fix trades one silent failure for another.
+  */
+  it('leaves an upright card alone', () => {
+    const upright = [{ lines: [
+      { text: 'Siemens AG',   boundingBox: { x: 150, y: 300, width: 500, height: 90 } },
+      { text: 'Anna Gruber',  boundingBox: { x: 150, y: 500, width: 600, height: 150 } },
+      { text: 'a.g@siemens.com', boundingBox: { x: 150, y: 700, width: 700, height: 60 } },
+    ] }];
+    const r = toCardLines(upright as never, 3000, undefined, 1000);
+    expect(r.map((l) => l.text)).toEqual(['Siemens AG', 'Anna Gruber', 'a.g@siemens.com']);
+    expect(r[1]!.height).toBeGreaterThan(r[0]!.height);
+  });
+
+  it('is not turned on its side by one stacked word', () => {
+    // A vertical logo beside ordinary text must not flip the card.
+    const mostlyUpright = [{ lines: [
+      { text: 'ACME', boundingBox: { x: 60, y: 200, width: 40, height: 400 } },  // stacked
+      { text: 'Anna Gruber', boundingBox: { x: 200, y: 300, width: 600, height: 150 } },
+      { text: 'Head of Sales', boundingBox: { x: 200, y: 500, width: 500, height: 70 } },
+    ] }];
+    expect(toCardLines(mostlyUpright as never, 3000, undefined, 1000).map((l) => l.text))
+      .toEqual(['ACME', 'Anna Gruber', 'Head of Sales']);
+  });
+});

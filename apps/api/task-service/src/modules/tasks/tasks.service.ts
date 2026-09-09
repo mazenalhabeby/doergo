@@ -23,6 +23,8 @@ import {
   paginated,
   buildDateRangeFilter,
   haversineDistance,
+  isAtSite,
+  ATTENDANCE_CONSTANTS,
   getStatusCapabilities,
   flowTracksLocation,
   accessAllowsInSpace,
@@ -63,7 +65,6 @@ export class TasksService {
   private static readonly SUGGESTION_LIMIT = 100;
   private static readonly MAX_SEARCH_LENGTH = 200;
   private static readonly MAX_DEPENDENCY_DEPTH = 100;
-  private static readonly GEOFENCE_RADIUS_METERS = 20;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -866,6 +867,7 @@ export class TasksService {
       spaceId,
       sharedSpaceIds, // server-authoritative cross-org shared spaces (from the token grant)
       viewAllSpaceIds, // spaces where canViewAllTasks is held by a SPACE role
+      assignedToMe, // narrow to the caller's OWN work, whatever else they may see
     } = query;
     // Is this a query for a foreign space shared with the caller's org?
     const isSharedSpace = !!spaceId && Array.isArray(sharedSpaceIds) && sharedSpaceIds.includes(spaceId);
@@ -876,6 +878,27 @@ export class TasksService {
 
     // Build where clause based on role
     const where: any = {};
+
+    /*
+      "What should I work on" — asked of the SERVER, not of a page of results.
+
+      Somebody who oversees the work sees the whole organization, so their own
+      task is one row among hundreds and might not even be in the first page the
+      app fetches: it was not findable by scrolling, let alone quickly. This
+      narrows to their own work in the query, ANDed with whatever they are
+      allowed to see rather than replacing it, so it can never widen anybody's
+      visibility — the worst it can do is show them fewer of their own tasks.
+
+      Both halves of the assignment model, because a member can be on a task
+      through either. Indexed on each side: tasks(assignedToId, dueDate) and
+      task_assignees(userId).
+    */
+    if (assignedToMe && userId) {
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : []),
+        { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
+      ];
+    }
 
     // Status filter. `statuses` (comma-separated or array) carries a tab group —
     // e.g. "active" is several statuses — which a single `status` cannot express,
@@ -1480,12 +1503,36 @@ export class TasksService {
       workerName: `${worker.firstName} ${worker.lastName}`,
     });
 
-    // Notify worker
-    this.notificationClient.emit('task_assigned', {
-      task: updatedTask,
-      workerId: data.workerId,
-      watcherIds: await this.taskWatcherIds(data.workerId, updatedTask.organizationId),
+    /*
+      ⚠️ And write the ROW, which this never did.
+
+      Assigning set the column and left `task_assignees` untouched, so the two
+      models disagreed the moment either was used: assign Mike, then add Sarah
+      through the picker, and the primary is recomputed from the rows — where
+      Mike does not appear — so Sarah silently becomes the lead and Mike stops
+      being responsible for work he was given.
+
+      "Assign" means "make this person the LEAD", so the row says LEAD and any
+      previous lead is demoted. Co-assignees are kept: they are doing the same
+      job, and reassigning the lead is not a reason to take everybody else off.
+    */
+    await this.prisma.taskAssignee.updateMany({
+      where: { taskId: data.id, role: 'LEAD' },
+      data: { role: 'MEMBER' },
     });
+    const alreadyOn = !!(await this.prisma.taskAssignee.findUnique({
+      where: { taskId_userId: { taskId: data.id, userId: data.workerId } },
+      select: { id: true },
+    }));
+    await this.prisma.taskAssignee.upsert({
+      where: { taskId_userId: { taskId: data.id, userId: data.workerId } },
+      create: { taskId: data.id, userId: data.workerId, role: 'LEAD' },
+      update: { role: 'LEAD' },
+    });
+
+    // The primary, the status and the notification — the same writer as every
+    // other path. It re-derives `assignedToId` from the rows, which now agree.
+    await this.afterAssigneesChanged(data.id, alreadyOn ? [] : [data.workerId]);
 
     this.invalidateStatusCountsCache(updatedTask.organizationId);
 
@@ -1564,6 +1611,14 @@ export class TasksService {
     reason?: string;
     lat?: number;
     lng?: number;
+    /**
+     * The error radius the device reported, in metres.
+     *
+     * Widens the arrival zone rather than being ignored. Absent means the client
+     * made no claim about accuracy and is treated as zero tolerance, so an older
+     * app that does not send it behaves exactly as it always did.
+     */
+    accuracy?: number;
     // Server-authoritative cross-org grant map (forwarded from the gateway).
     // Used to allow a guest org to move a task in a space explicitly shared to it.
     access?: unknown;
@@ -1711,11 +1766,32 @@ export class TasksService {
         );
       }
 
-      const distance = haversineDistance(data.lat, data.lng, task.locationLat, task.locationLng);
+      /*
+        Judged by the SAME rule as clocking in at a workspace.
 
-      if (distance > TasksService.GEOFENCE_RADIUS_METERS) {
+        This used to be its own haversine against a private 20-metre constant,
+        and it was wrong twice over. Twenty metres is inside the error of an
+        ordinary phone fix — 5 to 50 metres, worse beside a building — so a
+        technician standing at the customer's door was regularly told they were
+        thirty-five metres away. And the device REPORTS how unsure it is, which
+        the check discarded: a fix saying "here, ±40m" was judged as though it
+        had said "here, exactly".
+
+        `isAtSite` already answers this, widening the zone by the reported
+        accuracy for exactly the reason it matters most where the signal is
+        worst. Wrongly refusing somebody who is standing at the job stops them
+        working; wrongly accepting produces a record a human can look at.
+      */
+      const radius = await this.arrivalRadiusFor(task);
+      const at = isAtSite(
+        { lat: data.lat, lng: data.lng, accuracy: data.accuracy ?? null },
+        { lat: task.locationLat, lng: task.locationLng, geofenceRadius: radius, geofencePolygon: null },
+      );
+
+      if (!at.inside) {
+        const away = Math.round(at.distanceToCentre ?? at.metresOutside);
         throw new BadRequestException(
-          `You are ${Math.round(distance)}m from the job site. You must be within ${TasksService.GEOFENCE_RADIUS_METERS}m to ${data.status === TaskStatus.ARRIVED ? 'mark as arrived' : 'start the job'}. Please move closer and try again.`,
+          `You are ${away}m from the job site. You must be within ${radius}m to ${data.status === TaskStatus.ARRIVED ? 'mark as arrived' : 'start the job'}. Please move closer and try again.`,
         );
       }
     }
@@ -2225,6 +2301,13 @@ export class TasksService {
       });
     }
 
+    // Read before the write: after the upsert there is no telling whether this
+    // person is new to the task or was already on it in another role.
+    const wasAlreadyOn = !!(await this.prisma.taskAssignee.findUnique({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+      select: { id: true },
+    }));
+
     const assignee = await this.prisma.taskAssignee.upsert({
       where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
       create: { taskId: data.taskId, userId: data.userId, role },
@@ -2234,8 +2317,10 @@ export class TasksService {
       },
     });
 
-    // Sync the primary assignedToId field
-    await this.syncPrimaryAssignee(data.taskId);
+    // Primary, status and the notification — all of it, in one place.
+    // `wasAlreadyOn` decides whether this is news: re-adding somebody to change
+    // their role must not push them a second time about work they already have.
+    await this.afterAssigneesChanged(data.taskId, wasAlreadyOn ? [] : [data.userId]);
 
     await this.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_ADDED, {
       assigneeId: data.userId,
@@ -2280,7 +2365,9 @@ export class TasksService {
     });
 
     // Sync the primary assignedToId field
-    await this.syncPrimaryAssignee(data.taskId);
+    // Same writer as every other change to who is on this task. Nobody is newly
+    // assigned by a removal, so nobody is told they have new work.
+    await this.afterAssigneesChanged(data.taskId, []);
 
     await this.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_REMOVED, {
       assigneeId: data.userId,
@@ -2293,17 +2380,138 @@ export class TasksService {
   }
 
   /**
-   * Sync the legacy assignedToId field with the LEAD assignee from TaskAssignee records.
-   * This keeps backward compatibility with existing single-assignee flows.
+   * How close counts as "at the job".
+   *
+   * The workspace's own geofence radius, because that is the number an
+   * organization has already chosen to mean "near enough to a site" — it is set
+   * on the workspace, understood by whoever set it, and bounded there between 10
+   * and 500 metres. Falling back to ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS
+   * rather than a number private to this file, so there is one default in the
+   * product instead of two that disagree (this one said 20 while attendance said
+   * 50, and nobody had chosen the 20).
+   *
+   * ⚠️ A limitation worth naming: the radius describes the WORKSPACE, while a
+   * task is often at a customer's address. It is being used as the
+   * organization's tolerance for "at a site" rather than as a fact about this
+   * particular place. That is a real improvement on a hardcoded 20 and still not
+   * the same as a radius per customer site, which is what this should grow into
+   * if anybody needs different tolerances for a depot and a tower block.
+   */
+  private async arrivalRadiusFor(task: { spaceId?: string | null }): Promise<number> {
+    const fallback = ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS;
+    if (!task.spaceId) return fallback;
+    const space = await this.prisma.companyLocation.findUnique({
+      where: { id: task.spaceId },
+      select: { geofenceRadius: true },
+    });
+    return space?.geofenceRadius && space.geofenceRadius > 0 ? space.geofenceRadius : fallback;
+  }
+
+  /**
+   * Everything that follows from a change to who is on a task.
+   *
+   * ONE writer, because four had four opinions. `create`, `assign`,
+   * `addAssignee` and `removeAssignee` each decided for themselves what an
+   * assignment implies, and three of them were wrong in a different way: the
+   * primary was cleared, the status never moved, and the person was never told.
+   * Each of those was found separately, as a separate bug, from one report.
+   *
+   * The row mutation stays with the caller — they mean different things by it
+   * ("make this one the lead" is not "add a colleague"). What is IDENTICAL
+   * afterwards, and therefore lives here:
+   *
+   *   1. who is primarily responsible
+   *   2. that a task with somebody on it is no longer merely NEW
+   *   3. that a person given work is TOLD
+   *
+   * `newlyAssigned` is the caller's answer to "who did not have this before" —
+   * only they know, since only they know what the rows looked like going in.
+   */
+  private async afterAssigneesChanged(
+    taskId: string,
+    newlyAssigned: string[],
+  ): Promise<void> {
+    await this.syncPrimaryAssignee(taskId);
+
+    /*
+      A task with somebody on it is ASSIGNED.
+
+      ⚠️ Only the canonical NEW moves. A space with its own workflow starts its
+      tasks at that workflow's first status — "Backlog", "Triage" — and this
+      cannot know which of ITS steps means "has an owner": WorkflowStatus carries
+      isFinal and isCanceled and nothing that says so. Advancing a custom flow by
+      guessing would move somebody's board card under them. Until a status can
+      declare it, a custom workflow is left exactly alone, and that is a known
+      gap rather than an oversight.
+    */
+    await this.prisma.task.updateMany({
+      where: { id: taskId, status: TaskStatus.NEW },
+      data: { status: TaskStatus.ASSIGNED },
+    });
+
+    if (newlyAssigned.length === 0) return;
+
+    /*
+      And tell them.
+
+      `addAssignee` emitted `task_updated` — which announces that a task changed,
+      to whoever was already watching it — and never `task_assigned`, which is
+      what reaches the person the work was just given to. So being added through
+      the picker was silent: no push, no bell, and they found out by opening the
+      app. The other three paths have always announced it.
+    */
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, title: true, organizationId: true, status: true, dueDate: true, priority: true },
+    });
+    if (!task) return;
+
+    for (const workerId of newlyAssigned) {
+      this.notificationClient.emit('task_assigned', {
+        task,
+        workerId,
+        watcherIds: await this.taskWatcherIds(workerId, task.organizationId),
+      });
+    }
+  }
+
+  /**
+   * Keep `assignedToId` in step with the assignee rows.
+   *
+   * ⚠️ This used to look for a LEAD and nothing else — and `MEMBER` is the
+   * DEFAULT role, both in the column and in `addAssignee`. So assigning one
+   * person through the assignee picker found no LEAD and actively wrote
+   * `assignedToId = null`: the task had somebody on it and read as assigned to
+   * nobody. Every surface that shows "assigned to …" from the legacy column
+   * showed it as unassigned, which is what made a task assigned on the web look
+   * unassigned on the phone.
+   *
+   * The rule now says what the column has always meant — who is primarily
+   * responsible: the LEAD when one is named, otherwise the person who was put on
+   * it first. Only a task with NO assignees at all is assigned to nobody.
+   *
+   * (Reads were never the problem: the list already matches on
+   * `assignedToId OR assignees.some`, so the work still appeared. What broke was
+   * every display of WHO, and the status that follows from it.)
    */
   private async syncPrimaryAssignee(taskId: string) {
-    const leadAssignee = await this.prisma.taskAssignee.findFirst({
+    const lead = await this.prisma.taskAssignee.findFirst({
       where: { taskId, role: 'LEAD' },
+      select: { userId: true },
     });
+    const primary =
+      lead ??
+      (await this.prisma.taskAssignee.findFirst({
+        where: { taskId },
+        // The first person put on it — stable, and it does not change under
+        // somebody just because a colleague was added later.
+        orderBy: { createdAt: 'asc' },
+        select: { userId: true },
+      }));
 
     await this.prisma.task.update({
       where: { id: taskId },
-      data: { assignedToId: leadAssignee?.userId || null },
+      data: { assignedToId: primary?.userId ?? null },
     });
   }
 
@@ -2590,6 +2798,30 @@ export class TasksService {
       }
     }
     counts['all'] = total;
+
+    /*
+      And how many of them are the caller's OWN.
+
+      Carried in the same cached response rather than as a second endpoint: the
+      badge beside "All" and the badge beside "Mine" are one question asked
+      twice, and a screen should not pay two round trips to answer it. One
+      indexed count — tasks(assignedToId, dueDate) and task_assignees(userId) —
+      inside a reply that is already cached for thirty seconds.
+
+      ANDed with `where`, which is the visibility rule, so this can only ever
+      count a subset of what the caller may already see.
+    */
+    if (userId) {
+      counts['mine'] = await this.prisma.task.count({
+        where: {
+          ...where,
+          AND: [
+            ...(Array.isArray(where.AND) ? where.AND : []),
+            { OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
+          ],
+        },
+      });
+    }
 
     // Cache for 30 seconds + index the key per org so invalidation never needs
     // a blocking KEYS scan.

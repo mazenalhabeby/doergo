@@ -475,14 +475,27 @@ export function TaskDetailPane({
       }
 
       // Get GPS location for statuses that require location verification
-      let location: { lat: number; lng: number } | undefined;
+      let location: { lat: number; lng: number; accuracy?: number } | undefined;
       const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
       if (locationRequiredStatuses.includes(newStatus as any)) {
         try {
           const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
           if (permStatus === 'granted') {
             const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-            location = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+            /*
+              The device's own error radius goes with the fix.
+
+              It was being read and thrown away: a phone reporting "here, ±40m"
+              was judged as though it had said "here, exactly", so somebody
+              standing at the customer's door was refused for being 35 metres
+              out. The server widens the zone by this instead. Null on a
+              platform that does not report it, which reads as no claim.
+            */
+            location = {
+              lat: loc.coords.latitude,
+              lng: loc.coords.longitude,
+              accuracy: loc.coords.accuracy ?? undefined,
+            };
           }
         } catch {
           // Location will be undefined — backend will reject if task has location set
@@ -1659,7 +1672,21 @@ export function TaskDetailPane({
       {showBottomBar && (
         <TourTarget name="taskdetail-actions" style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: colors.card, borderTopColor: colors.border }]}>
           <View style={r.isTablet ? { width: '100%', maxWidth: 720, alignSelf: 'center' } : undefined}>
-          {isAdmin ? (
+          {/*
+            ⚠️ Branches on "am I the one doing this", NOT on "am I an admin".
+
+            It used to ask `isAdmin`, so an admin with a task assigned to them
+            got the managing bar — Reassign / Edit / Cancel — and no way to
+            accept or start the work that was theirs. The rest of this screen
+            already knew better: the progress stepper, the checklist, the photos,
+            the timer and the GPS toggle all read `doingTheWork`. Only the bar at
+            the bottom disagreed, which is exactly the part that acts.
+
+            An admin who is NOT the assignee still gets the managing bar, and an
+            admin who IS gets both — the work first, since that is why they
+            opened it, and the managing actions still reachable below.
+          */}
+          {isAdmin && !doingTheWork ? (
             /* Admin Bottom Bar: Assign, Edit, Cancel */
             <View style={styles.actionButtonsRow}>
               <TouchableOpacity
@@ -1695,6 +1722,40 @@ export function TaskDetailPane({
             /* Technician Bottom Bar */
             <>
               {/* Timer for IN_PROGRESS */}
+              {/*
+                An admin doing the work still manages it.
+
+                Compact and ABOVE the work actions, not instead of them: they
+                opened this to get on with the job, and reassigning or editing is
+                the rarer thing. Without this row an admin assigned to a task
+                could act on it but no longer edit it, which is a worse trade
+                than the bug being fixed.
+              */}
+              {isAdmin && (
+                <View style={[styles.actionButtonsRow, { marginBottom: 10 }]}>
+                  <TouchableOpacity
+                    style={adminDetailStyles.adminActionBtn}
+                    onPress={() => setShowAssignModal(true)}
+                    disabled={isUpdating}
+                  >
+                    <Ionicons name="person-add" size={16} color={COLORS.primary} />
+                    <Text style={adminDetailStyles.adminActionBtnText}>
+                      {t('taskDetail.adminActions.reassign')}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={adminDetailStyles.adminActionBtn}
+                    onPress={handleOpenEdit}
+                    disabled={isUpdating}
+                  >
+                    <Ionicons name="create" size={16} color={COLORS.primary} />
+                    <Text style={adminDetailStyles.adminActionBtnText}>
+                      {t('taskDetail.adminActions.edit')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {showTimer && (
                 <View style={styles.timerContainer}>
                   <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
@@ -1771,33 +1832,38 @@ export function TaskDetailPane({
                   </TouchableOpacity>
                 )}
 
-                {/* Accept/Decline Buttons for ASSIGNED status */}
-                {task.status === TaskStatus.ASSIGNED ? (
-                  <>
-                    <TouchableOpacity
-                      style={styles.declineButton}
-                      onPress={() => handleDeclineTask()}
-                      disabled={isUpdating}
-                    >
-                      <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
-                      <Text style={styles.declineButtonText}>{t('taskDetail.statusActions.declineJob')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.finishButton, { backgroundColor: isFutureTask ? COLORS.slate300 : COLORS.success }]}
-                      onPress={() => handleStatusUpdate(TaskStatus.ACCEPTED)}
-                      disabled={isUpdating || isFutureTask}
-                    >
-                      {isUpdating ? (
-                        <ActivityIndicator size="small" color="white" />
-                      ) : (
-                        <>
-                          <Ionicons name={isFutureTask ? 'time-outline' : 'checkmark-circle'} size={20} color="white" />
-                          <Text style={styles.finishButtonText}>{isFutureTask ? t('taskDetail.statusActions.scheduledForLater') : t('taskDetail.statusActions.acceptJob')}</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </>
-                ) : statusAction && (
+                {/*
+                  Refusing the job is offered while it is merely ASSIGNED, and is
+                  independent of the flow — "not me" is not a step in anybody's
+                  workflow.
+                */}
+                {task.status === TaskStatus.ASSIGNED && (
+                  <TouchableOpacity
+                    style={styles.declineButton}
+                    onPress={() => handleDeclineTask()}
+                    disabled={isUpdating}
+                  >
+                    <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
+                    <Text style={styles.declineButtonText}>{t('taskDetail.statusActions.declineJob')}</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/*
+                  ⚠️ The forward step ALWAYS comes from the workflow.
+
+                  This used to hardcode ACCEPTED whenever the task was ASSIGNED —
+                  but ACCEPTED is a step in the CANONICAL flow, and a space's own
+                  workflow need not have it. "Field Service" goes
+                  ASSIGNED → EN_ROUTE and has no ACCEPTED at all, so pressing
+                  Accept sent a status that flow does not contain and the server
+                  refused it: "Invalid status transition from ASSIGNED to
+                  ACCEPTED. Allowed: EN_ROUTE". The button was unusable on every
+                  workflow that skips acceptance.
+
+                  `getStatusAction` already reads the flow. It simply was not
+                  asked in this one case.
+                */}
+                {statusAction && (
                   <TouchableOpacity
                     style={[styles.finishButton, { backgroundColor: (isFutureTask && statusAction.nextStatus === TaskStatus.EN_ROUTE) ? COLORS.slate300 : COLORS.success }]}
                     onPress={() => handleStatusUpdate(statusAction.nextStatus)}

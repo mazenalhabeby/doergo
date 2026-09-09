@@ -1,0 +1,22 @@
+-- "What is mine, soonest first" — served in the order it is asked for.
+--
+-- ⚠️ This is NOT the first index on the column. `tasks_assignedToId_status_updatedAt_idx`
+-- has existed since 20260808120000_add_perf_indexes_location_task, and its
+-- leading column already answers `assignedToId = me`. An earlier draft of this
+-- migration claimed the column was unindexed and that every technician's list
+-- scanned the table. That was simply untrue, and is corrected here so the
+-- schema history does not carry it.
+--
+-- What the existing index does NOT give is the ORDER. My-work sorts by due
+-- date, so a lookup on the old index returns rows in (status, updatedAt) order
+-- and the database then sorts them. Leading with (assignedToId, dueDate) makes
+-- that an index-ordered read instead.
+--
+-- Honest about the size of the win: production holds 25 tasks today, where
+-- neither index is measurable. This is for the shape of the query as the table
+-- grows, not a fix for something anybody is feeling now.
+--
+-- Additive and idempotent; the shadow database is broken here, so migrations are
+-- hand-authored and must be safe to re-run.
+CREATE INDEX IF NOT EXISTS "tasks_assignedToId_dueDate_idx"
+  ON "tasks" ("assignedToId", "dueDate");

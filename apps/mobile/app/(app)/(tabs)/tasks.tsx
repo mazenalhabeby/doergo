@@ -18,7 +18,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { tasksApi, TaskStatus, type Task, type TasksListParams } from '../../../src/lib/api';
-import { Role, getStartOfMonth, getEndOfMonth, toISODateString } from '@hbcfield/shared/client';
+import { Role, getStartOfMonth, getEndOfMonth, toISODateString, rankMyWork, bandsOf, summariseMyWork } from '@hbcfield/shared/client';
+import { WorkScope } from '../../../src/components/tasks/work-scope';
+import { NextUpCard } from '../../../src/components/tasks/next-up-card';
 import { oversees } from '../../../src/lib/permissions';
 import { countRouteStops } from '../../../src/lib/my-route';
 import { TaskCard, FilterChip, Skeleton, ScreenContainer, PressableScale } from '../../../src/components';
@@ -192,6 +194,29 @@ export default function TasksScreen() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  /*
+    Mine, or everything I oversee.
+
+    Only meaningful for somebody who can see more than their own work — a field
+    member's list already IS their own, so `isAdmin` decides whether the scope
+    exists at all rather than what it defaults to.
+
+    Opens on MINE. "What do I do now" is why a person unlocks a phone, and an
+    admin's own job is otherwise one row among the hundred the app fetches.
+  */
+  const [mineOnly, setMineOnly] = useState(true);
+  const [counts, setCounts] = useState<{ mine: number | null; all: number | null }>({ mine: null, all: null });
+
+  /*
+    Is this list somebody's own work?
+
+    True for a field member always — their list IS their own — and for an
+    overseer only while the scope says Mine. It decides the ordering and the
+    "next up" card, both of which are answers to "what do I do now" and make no
+    sense over a list of other people's jobs.
+  */
+  const showMyWork = !isAdmin || mineOnly;
+
 
   const initialFetchDoneRef = useRef(false);
   const fetchingRef = useRef(false);
@@ -228,6 +253,11 @@ export default function TasksScreen() {
       const params: TasksListParams = {
         ...dateParams,
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
+        // Narrowed by the SERVER when the scope is "mine": the list is paged, so
+        // filtering here would filter the page rather than the work — and an
+        // admin's own task may not be in it. Never sent for somebody who only
+        // ever sees their own; the request is already that.
+        ...(isAdmin && mineOnly ? { assignedToMe: true } : {}),
         limit: 100,
       };
 
@@ -243,7 +273,27 @@ export default function TasksScreen() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, [activeTab, debouncedSearch]);
+  }, [activeTab, debouncedSearch, isAdmin, mineOnly]);
+
+  /*
+    The badges, from the server.
+
+    Both counts arrive in ONE cached reply — counting rows the app has not
+    fetched is the only way a badge can be true, since the list is paged. Asked
+    only for somebody who has a scope to switch; for everybody else the list is
+    already the whole answer.
+  */
+  const refreshCounts = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const c = await tasksApi.counts();
+      setCounts({ mine: c?.mine ?? null, all: c?.all ?? null });
+    } catch {
+      // A badge that could not be fetched simply does not show a number; it is
+      // decoration on a control that works without it.
+      setCounts({ mine: null, all: null });
+    }
+  }, [isAdmin]);
 
   // Initial fetch
   useEffect(() => {
@@ -252,11 +302,14 @@ export default function TasksScreen() {
     fetchTasks();
   }, [fetchTasks]);
 
-  // Re-fetch when tab or debounced search changes (after initial)
+  // Re-fetch when tab, search or scope changes (after initial)
   useEffect(() => {
     if (!initialFetchDoneRef.current) return;
     fetchTasks();
-  }, [activeTab, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, debouncedSearch, mineOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Counts follow the list: a decision made on one screen changes both numbers.
+  useEffect(() => { void refreshCounts(); }, [refreshCounts, tasks.length]);
 
   // Refetch when screen regains focus — throttled to avoid redundant calls
   useFocusEffect(
@@ -361,6 +414,19 @@ export default function TasksScreen() {
       }
     }
 
+    /*
+      Somebody's OWN work is ordered by what to do next, not by a column.
+
+      `rankMyWork` is the product's answer and lives in shared, so the phone and
+      the web cannot come to different opinions about which job is next: doing
+      beats blocked beats overdue beats today. It applies only while the reader
+      is looking at their own list and has not chosen a sort of their own —
+      picking a column is an explicit request to see it that way instead.
+    */
+    if (showMyWork && sortBy === 'dueDate') {
+      return rankMyWork(result as never) as typeof result;
+    }
+
     // Sort
     const sorted = [...result].sort((a, b) => {
       let cmp = 0;
@@ -389,6 +455,16 @@ export default function TasksScreen() {
 
     return sorted;
   }, [tasks, filter, sortBy, sortOrder]);
+
+  /*
+    One line about the day, from the same ordering the list uses. Derived rather
+    than fetched: these are counts of what is already on screen, and the badges
+    that must be true across pages come from the server instead.
+  */
+  const myWork = useMemo(
+    () => summariseMyWork(filteredTasks as never),
+    [filteredTasks],
+  );
 
   // ---------------------------------------------------------------------------
   // Render
@@ -635,6 +711,34 @@ export default function TasksScreen() {
       <FlatList
         data={filteredTasks}
         keyExtractor={(item) => item.id}
+        /*
+          The scope, and the one job to open.
+
+          In the header rather than above the list so both scroll away — an
+          admin scanning a hundred jobs should not lose a row of screen to a
+          control they have already used. `myWork.next` is `rankMyWork`'s first
+          result, so the card and the list beneath it cannot disagree.
+        */
+        ListHeaderComponent={
+          <View>
+            {isAdmin && (
+              <View style={styles.scopeWrap}>
+                <WorkScope
+                  mine={mineOnly}
+                  onChange={setMineOnly}
+                  mineCount={counts.mine}
+                  allCount={counts.all}
+                />
+              </View>
+            )}
+            {showMyWork && myWork.next && (
+              <NextUpCard
+                task={myWork.next as never}
+                onOpen={() => handleTaskPress(myWork.next as never)}
+              />
+            )}
+          </View>
+        }
         // numColumns can't change on a live list — key forces a remount when it does.
         key={`cols-${listColumns}`}
         numColumns={listColumns}
@@ -943,6 +1047,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.xxxl + SPACING.lg,
   },
+  scopeWrap: { marginBottom: 10 },
   emptyText: {
     fontSize: FONT_SIZE.lg,
     marginTop: SPACING.md,

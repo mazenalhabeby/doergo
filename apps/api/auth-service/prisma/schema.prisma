@@ -1043,6 +1043,9 @@ model Task {
   customFields    CustomFieldValue[]
 
   @@index([status])
+  /// "Which tasks are mine, soonest first" — every technician's list, and now
+  /// the admin's own work. Unindexed until 2026-09-09, so it scanned.
+  @@index([assignedToId, dueDate])
   @@index([createdById])
   @@index([assetId])
   @@index([createdAt])

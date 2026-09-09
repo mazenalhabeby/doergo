@@ -386,7 +386,36 @@
       "history": "Aucune tâche passée"
     },
     "failedToLoad": "Échec du chargement des tâches",
-    "selectTask": "Sélectionnez une tâche pour voir ses détails"
+    "selectTask": "Sélectionnez une tâche pour voir ses détails",
+    "myWork": {
+      "scope": {
+        "mine": "À moi",
+        "all": "Tous"
+      },
+      "bands": {
+        "doing": "En cours",
+        "blocked": "Bloqués",
+        "overdue": "En retard",
+        "today": "Pour aujourd'hui",
+        "upcoming": "Plus tard"
+      },
+      "next": {
+        "label": "À suivre",
+        "open": "Ouvrir cette intervention",
+        "doing": "Vous êtes déjà dessus",
+        "doingLate": "Vous êtes dessus · échéance il y a {{count}} jour",
+        "doingLate_other": "Vous êtes dessus · échéance il y a {{count}} jours",
+        "blocked": "Bloqué — quelqu'un attend",
+        "overdue": "En retard de {{count}} jour",
+        "overdue_other": "En retard de {{count}} jours",
+        "today": "À faire aujourd'hui",
+        "upcoming": "Suivant par priorité"
+      },
+      "empty": {
+        "title": "Rien ne vous est attribué",
+        "body": "Le travail qui vous est confié apparaîtra ici. Touchez Tous pour voir ce que vous supervisez."
+      }
+    }
   },
   "taskDetail": {
     "title": "Détails de la tâche",

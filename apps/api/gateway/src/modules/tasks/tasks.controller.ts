@@ -181,6 +181,7 @@ export class TasksController {
   @ApiQuery({ name: 'endDate', required: false, description: 'Filter tasks with dueDate <= endDate (ISO date)' })
   @ApiQuery({ name: 'includeNoDueDate', required: false, description: 'Include tasks without a dueDate (for Current tab)' })
   @ApiQuery({ name: 'spaceId', required: false, description: 'Filter by space (CompanyLocation) ID' })
+  @ApiQuery({ name: 'assignedToMe', required: false, type: Boolean, description: 'Only tasks the caller is on (as lead or co-assignee)' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async findAll(@Query() query: Record<string, any>, @Request() req: any) {
@@ -201,6 +202,13 @@ export class TasksController {
       ...normalizedQuery,
       page,
       limit,
+      /*
+        "Only my own work." Coerced here rather than trusted as a string: a
+        query param arrives as "true"/"false"/"1", and `!!'false'` is true.
+        Narrowing only — it is ANDed with what the caller may see, so it can
+        never widen anybody's visibility.
+      */
+      assignedToMe: normalizedQuery.assignedToMe === 'true' || normalizedQuery.assignedToMe === true,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

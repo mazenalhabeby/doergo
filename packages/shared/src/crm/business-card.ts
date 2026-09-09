@@ -62,8 +62,31 @@ const FAX_LABEL = /\bfax\b/i;
 /** Suffixes that mark a line as an organisation rather than a person. */
 const LEGAL_FORM = /\b(gmbh|ag|ges\.?m\.?b\.?h|kg|og|e\.?u\.?|ltd|limited|inc|llc|plc|s\.?r\.?o|sp\.?\s?z\.?o\.?o|bv|nv|sa|srl|spa|oy|ab|a\/s|aps)\b/i;
 
-/** Words that mark a line as a job title, in the languages this product ships. */
-const ROLE = /\b(head|chief|director|manager|lead|leiter|leitung|geschäftsführ|prokurist|inhaber|owner|founder|ceo|cto|cfo|coo|president|vp|vice|senior|junior|engineer|ingenieur|techniker|sales|vertrieb|einkauf|purchas|account|consultant|berater|assistant|assistenz|coordinator|koordinator|supervisor|meister|partner|architekt|projekt|project)\b/i;
+/**
+ * The same letters with their accents taken off.
+ *
+ * ⚠️ `\b` in JavaScript is defined on `[A-Za-z0-9_]`, so "Ä" is not a word
+ * character and there is no boundary in front of it. `\bärztin\b` therefore
+ * never matches "Ärztin für Allgemeinmedizin" — it fails silently, on a real
+ * card, in the one language this product ships most. Folding the text and
+ * writing the patterns in plain ASCII keeps them readable and makes the
+ * boundaries real.
+ */
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/*
+  Words that mark a line as a job title, in the languages this product ships.
+
+  ⚠️ Written WITHOUT accents on purpose — see `fold`. "geschaftsfuhr" is not a
+  typo, and matching is done through `isRole`, never against this directly.
+
+  ⚠️ "dr" is deliberately absent, and must stay absent. It is part of a person's
+  name on half the cards in this market — matching it here would rule the NAME
+  out as a name and offer it as the job title instead.
+*/
+const ROLE = /\b(head|chief|director|manager|lead|leiter|leitung|geschaftsfuhr|prokurist|inhaber|owner|founder|ceo|cto|cfo|coo|president|vp|vice|senior|junior|engineer|ingenieur|techniker|sales|vertrieb|einkauf|purchas|account|consultant|berater|assistant|assistenz|coordinator|koordinator|supervisor|meister|partner|architekt|projekt|project|arzt|arztin|arzte|zahnarzt|physician|anwalt|attorney|lawyer|notar|steuerberater|apotheker|pharmacist|therapeut|therapist|hebamme|trainer|coach)\b/i;
+
+const isRole = (t: string) => ROLE.test(fold(t));
 
 /** A postcode next to a town: the giveaway that a line is an address. */
 const POSTCODE = /\b(\d{4,5})\s+[A-Za-zÄÖÜäöüß]/;
@@ -159,7 +182,7 @@ export function parseBusinessCard(raw: CardLine[]): ParsedCard {
       !/\d/.test(l.text) &&
       !l.text.includes('@') &&
       !LEGAL_FORM.test(l.text) &&
-      !ROLE.test(l.text) &&
+      !isRole(l.text) &&
       l.text.split(' ').length <= 4 &&
       l.text.length >= 4)
     .sort((a, b) => (b.l.height - a.l.height) || (a.l.y - b.l.y));
@@ -170,7 +193,7 @@ export function parseBusinessCard(raw: CardLine[]): ParsedCard {
   // The title sits with the name — usually the line right after it.
   const roleLine = lines
     .map((l, i) => ({ i, l }))
-    .filter(({ i, l }) => !used.has(i) && ROLE.test(l.text))
+    .filter(({ i, l }) => !used.has(i) && isRole(l.text))
     .sort((a, b) => {
       const n = out.name?.sourceIndex ?? 0;
       return Math.abs(a.i - n) - Math.abs(b.i - n);
@@ -224,6 +247,38 @@ export interface CropRect {
  * Also sorts into reading order: ML Kit groups by block, and blocks do not
  * arrive top-to-bottom.
  */
+/**
+ * Is the writing on its side?
+ *
+ * A line of horizontal text makes a wide, short box; give the card a quarter
+ * turn and every box becomes tall and narrow, because a bounding box stays
+ * axis-aligned however the text runs. So the SHAPE of the boxes, taken
+ * together, tells us which way the card is lying — no engine has to report an
+ * angle, which matters because the reader we bind to reports only a rectangle.
+ *
+ * ⚠️ Measured in PIXELS, never in the normalised fractions used below. Dividing
+ * width by the image width and height by the image height stretches every box
+ * by the image's own aspect, so on a 4:3 photograph a perfectly square box
+ * comes out "tall" and a page of ordinary text can read as rotated.
+ *
+ * ⚠️ Decided over the card as a whole, never per line. "GmbH" set small is
+ * nearly square, and a single stacked word — a logo, a vertical rule — must not
+ * be able to turn the rest of the card on its side. Lines with no clear shape
+ * abstain rather than vote.
+ */
+function readsSideways(lines: OcrLine[]): boolean {
+  const decisive = lines.filter((l) => {
+    if (l.text.trim().length < 3) return false;
+    const { width, height } = l.boundingBox;
+    if (width <= 0 || height <= 0) return false;
+    return width > height * 1.5 || height > width * 1.5;
+  });
+  // Two lines is the least that can be a majority of anything.
+  if (decisive.length < 2) return false;
+  const tall = decisive.filter((l) => l.boundingBox.height > l.boundingBox.width).length;
+  return tall * 2 > decisive.length;
+}
+
 export function toCardLines(
   blocks: { lines: OcrLine[] }[],
   imageHeight: number,
@@ -233,7 +288,27 @@ export function toCardLines(
   const h = imageHeight > 0 ? imageHeight : 1;
   const w = imageWidth && imageWidth > 0 ? imageWidth : 1;
 
-  const all = blocks.flatMap((b) => b.lines).map((l) => ({
+  const raw = blocks.flatMap((b) => b.lines);
+
+  /*
+    A portrait-format card laid in a landscape frame is not an edge case — it
+    is a whole style of card, and the person holding the phone has no way to
+    tell us. Reading the geometry means the same rules work either way up.
+  */
+  const sideways = readsSideways(raw);
+
+  /*
+    Which way the rules should look.
+
+    `y` in a CardLine means "how far down the card", and `height` means "how big
+    the type is" — the two signals the whole parser rests on. When the card is
+    on its side those live on the other axis, so they are read from x and width
+    instead. Everything downstream is unchanged, and cannot tell the difference.
+  */
+  const along = (l: { x: number; y: number }) => (sideways ? l.x : l.y);
+  const size = (l: { width: number; height: number }) => (sideways ? l.width : l.height);
+
+  const all = raw.map((l) => ({
     text: l.text,
     // Fractions of the whole image first; the crop is expressed the same way.
     x: l.boundingBox.x / w,
@@ -243,11 +318,16 @@ export function toCardLines(
   }));
 
   if (!crop || crop.width <= 0 || crop.height <= 0) {
-    return all.map((l) => ({ text: l.text, y: l.y, height: l.height })).sort((a, b) => a.y - b.y);
+    return all
+      .map((l) => ({ text: l.text, y: along(l), height: size(l) }))
+      .sort((a, b) => a.y - b.y);
   }
 
   const right = crop.left + crop.width;
   const bottom = crop.top + crop.height;
+  // The card's own extent along whichever axis the writing runs down.
+  const start = sideways ? crop.left : crop.top;
+  const span = sideways ? crop.width : crop.height;
 
   return all
     // A line belongs to the card if its CENTRE is inside the frame. Judging by
@@ -261,8 +341,8 @@ export function toCardLines(
     // Re-measured against the CARD, so height means what the rules assume.
     .map((l) => ({
       text: l.text,
-      y: (l.y - crop.top) / crop.height,
-      height: l.height / crop.height,
+      y: (along(l) - start) / span,
+      height: size(l) / span,
     }))
     .sort((a, b) => a.y - b.y);
 }

@@ -10,6 +10,14 @@ export interface TasksListParams {
   includeNoDueDate?: boolean;
   page?: number;
   limit?: number;
+  /**
+   * Only the caller's own work — asked of the SERVER, not of a fetched page.
+   *
+   * Somebody who oversees the work sees the whole organization, so their own
+   * task is one row among hundreds and may not even be in the page the app
+   * fetches. Narrowing only: the server ANDs it with what the caller may see.
+   */
+  assignedToMe?: boolean;
 }
 
 // Tasks API
@@ -19,11 +27,24 @@ export const tasksApi = {
     return fetchWithAuth<Task[]>(url, { method: 'GET' });
   },
 
+  /**
+   * How many tasks there are, by status — plus how many are the caller's own.
+   *
+   * One cached call answers both scope badges. Counting rows the app has not
+   * fetched is the only way a badge can be true: the list is paged, so anything
+   * counted client-side is a count of the page, not of the work.
+   */
+  counts: async (): Promise<Record<string, number>> => {
+    return fetchWithAuth<Record<string, number>>('/tasks/counts', { method: 'GET' });
+  },
+
   getById: async (id: string): Promise<Task> => {
     return fetchWithAuth<Task>(`/tasks/${id}`, { method: 'GET' });
   },
 
-  updateStatus: async (id: string, status: string, reason?: string, location?: { lat: number; lng: number }): Promise<Task> => {
+  // `accuracy` travels with the fix: the arrival check widens its zone by it
+  // rather than judging a fuzzy position as though it were exact.
+  updateStatus: async (id: string, status: string, reason?: string, location?: { lat: number; lng: number; accuracy?: number }): Promise<Task> => {
     return fetchWithAuth<Task>(`/tasks/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status, reason, ...location }),

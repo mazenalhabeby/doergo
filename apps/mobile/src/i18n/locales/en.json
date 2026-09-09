@@ -386,7 +386,36 @@
       "history": "No past tasks"
     },
     "failedToLoad": "Failed to load tasks",
-    "selectTask": "Select a task to view its details"
+    "selectTask": "Select a task to view its details",
+    "myWork": {
+      "scope": {
+        "mine": "Mine",
+        "all": "All"
+      },
+      "bands": {
+        "doing": "Doing now",
+        "blocked": "Blocked",
+        "overdue": "Overdue",
+        "today": "Due today",
+        "upcoming": "Later"
+      },
+      "next": {
+        "label": "Next up",
+        "open": "Open this job",
+        "doing": "You are already on this one",
+        "doingLate": "You are on this one · was due {{count}} day ago",
+        "doingLate_other": "You are on this one · was due {{count}} days ago",
+        "blocked": "Blocked — someone is waiting on this",
+        "overdue": "Overdue by {{count}} day",
+        "overdue_other": "Overdue by {{count}} days",
+        "today": "Due today",
+        "upcoming": "Next by priority"
+      },
+      "empty": {
+        "title": "Nothing assigned to you",
+        "body": "Work given to you will appear here. Tap All to see what you oversee."
+      }
+    }
   },
   "taskDetail": {
     "title": "Task Details",

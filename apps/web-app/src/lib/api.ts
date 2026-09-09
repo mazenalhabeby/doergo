@@ -773,6 +773,15 @@ export interface TasksQueryParams {
   customerId?: string;
   /** Scope tasks to a single apartment/unit (the apartment's history). */
   unitId?: string;
+  /**
+   * Only the caller's own work — as lead or co-assignee.
+   *
+   * Asked of the SERVER, not of a fetched page: somebody who oversees the work
+   * sees the whole organization, so their own task is one row among hundreds and
+   * may not be in the page at all. Narrowing only — the server ANDs it with what
+   * the caller may already see, so it can never widen anybody's visibility.
+   */
+  assignedToMe?: boolean;
 }
 
 // Suggested employee response types
@@ -969,6 +978,7 @@ export const tasksApi = {
       spaceId: params?.spaceId,
       customerId: params?.customerId,
       unitId: params?.unitId,
+      assignedToMe: params?.assignedToMe ? 'true' : undefined,
     });
 
     const response = await api.get<TasksListResponse>(endpoint);

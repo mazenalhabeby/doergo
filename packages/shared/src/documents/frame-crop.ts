@@ -51,6 +51,25 @@ export function frameToImageCrop(input: {
   }
 
   /*
+    ⚠️ The frame and the photograph must be the same way up.
+
+    Everything below assumes the preview is a cover fit of THIS image, which is
+    only true while both are portrait or both are landscape. Hand it a portrait
+    screen and a landscape photograph — which is what Android returns when a
+    capture skips processing — and the arithmetic still produces a neat
+    rectangle, just of the wrong part of the picture. That is the failure this
+    file's own docstring calls invisible, and it happened: a card scan read a
+    logo and missed the name, phone, email and address.
+
+    Refusing to crop is the honest answer. The whole photograph costs the reader
+    a little background text; a confident crop of the wrong third costs it the
+    subject entirely.
+  */
+  if (screen.width > screen.height !== image.width > image.height) {
+    return { left: 0, top: 0, width: 1, height: 1 };
+  }
+
+  /*
     The preview covers the screen, so the sensor image is scaled up until BOTH
     dimensions reach it and the overflow is cut off equally on each side. That
     scale, and the offsets it produces, are the whole of the mapping.

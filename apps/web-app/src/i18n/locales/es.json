@@ -1684,6 +1684,13 @@
       "storyPoints": "Puntos de historia",
       "today": "Hoy",
       "unassigned": "Sin asignar"
+    },
+    "myWork": {
+      "scope": {
+        "label": "De quién",
+        "mine": "Míos",
+        "all": "Todos"
+      }
     }
   },
   "technicians": {

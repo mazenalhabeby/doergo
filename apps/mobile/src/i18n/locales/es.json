@@ -386,7 +386,36 @@
       "history": "No hay tareas pasadas"
     },
     "failedToLoad": "No se pudieron cargar las tareas",
-    "selectTask": "Seleccione una tarea para ver sus detalles"
+    "selectTask": "Seleccione una tarea para ver sus detalles",
+    "myWork": {
+      "scope": {
+        "mine": "Míos",
+        "all": "Todos"
+      },
+      "bands": {
+        "doing": "En curso",
+        "blocked": "Bloqueados",
+        "overdue": "Vencidos",
+        "today": "Para hoy",
+        "upcoming": "Más adelante"
+      },
+      "next": {
+        "label": "Lo siguiente",
+        "open": "Abrir este trabajo",
+        "doing": "Ya estás con este",
+        "doingLate": "Estás con este · vencía hace {{count}} día",
+        "doingLate_other": "Estás con este · vencía hace {{count}} días",
+        "blocked": "Bloqueado: alguien está esperando",
+        "overdue": "Vencido hace {{count}} día",
+        "overdue_other": "Vencido hace {{count}} días",
+        "today": "Vence hoy",
+        "upcoming": "El siguiente por prioridad"
+      },
+      "empty": {
+        "title": "No tienes nada asignado",
+        "body": "El trabajo que te asignen aparecerá aquí. Toca Todos para ver lo que supervisas."
+      }
+    }
   },
   "taskDetail": {
     "title": "Detalles de la tarea",

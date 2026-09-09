@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
-import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH } from '@hbcfield/shared';
+import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
 
 /**
  * Create task request DTO
@@ -152,6 +152,22 @@ export class UpdateStatusDto {
   @IsNumber()
   @IsOptional()
   lng?: number;
+
+  /**
+   * The error radius the device reported, in metres.
+   *
+   * Sent so the arrival check can widen its zone by it instead of judging a
+   * fuzzy fix as though it were exact — a phone saying "here, ±40m" was being
+   * refused for standing 35 metres from a door it was at. Bounded: a useless
+   * fix must not be able to wave anything through, so anything beyond
+   * MAX_GEOFENCE_RADIUS is rejected rather than trusted.
+   */
+  @ApiPropertyOptional({ description: 'GPS accuracy in metres, as reported by the device' })
+  @IsNumber()
+  @Min(0)
+  @Max(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS)
+  @IsOptional()
+  accuracy?: number;
 }
 
 export class AddAssigneeDto {

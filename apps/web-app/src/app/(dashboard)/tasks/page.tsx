@@ -307,6 +307,21 @@ export default function TasksPage() {
 
   // Fetch tasks. Every filter below is applied by the SERVER: filtering in the
   // browser only ever filtered the page that happened to be loaded, so a search
+  /*
+    Mine, or everything I oversee.
+
+    Only meaningful for somebody who can see more than their own work — a member
+    without `canViewAllTasks` already sees only their own, so a scope would be a
+    control with one real option.
+
+    Opens on ALL here, unlike the phone. A person at a desk on this screen is
+    usually running the board; a person unlocking a phone is usually asking what
+    to do next. Same control, different default, because they are different
+    questions.
+  */
+  const canSeeOthers = user?.role === "ADMIN" || hasPermission("canViewAllTasks")
+  const [mineOnly, setMineOnly] = useState(false)
+
   // missed anything past row 20 and the totals described a different set than
   // the rows did.
   const taskQueryParams = useMemo(
@@ -318,14 +333,37 @@ export default function TasksPage() {
       epicId: epicFilter === "all" ? undefined : epicFilter,
       page: paginated ? page : 1,
       limit: effectiveLimit,
+      /*
+        Narrowed by the SERVER when the reader asks for their own work.
+
+        The list is paged, so filtering here would filter the page rather than
+        the work — and somebody overseeing a busy organization may not have
+        their own task in it at all. Never sent by a member who only ever sees
+        their own; their list already is that.
+      */
+      ...(canSeeOthers && mineOnly ? { assignedToMe: true } : {}),
     }),
-    [activeStatuses, debouncedSearch, selectedSpaceId, scope, epicFilter, page, paginated, effectiveLimit],
+    [activeStatuses, debouncedSearch, selectedSpaceId, scope, epicFilter, page, paginated, effectiveLimit, canSeeOthers, mineOnly],
   )
 
   const { data: tasksData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["tasks", taskQueryParams],
     queryFn: () => tasksApi.list(taskQueryParams),
     placeholderData: (prev) => prev, // keep rows on screen while a filter re-fetches
+  })
+
+  /*
+    How many are mine, and how many there are.
+
+    One cached reply carries both — counting rows the page has not fetched is
+    the only way a badge can be true. Asked only of somebody who has a scope to
+    switch; for everybody else the list is already the whole answer.
+  */
+  const { data: myCounts } = useQuery({
+    queryKey: ["taskStatusCounts", "status"],
+    queryFn: () => tasksApi.getStatusCounts(),
+    staleTime: 30000,
+    enabled: canSeeOthers,
   })
 
   // Space tab counts, grouped server-side over everything the viewer may see.
@@ -1181,6 +1219,46 @@ export default function TasksPage() {
           value={selectedSpaceId}
           onChange={handleSpaceChange}
         />
+
+        {/*
+          Mine, or everything I oversee.
+
+          Beside the workspace tabs because it is the same kind of question —
+          "which slice am I looking at" — and both counts stay visible so
+          somebody working in All cannot miss that a job is theirs.
+        */}
+        {canSeeOthers && (
+          <div className="mb-3 inline-flex rounded-lg border border-border bg-card p-0.5" role="group"
+               aria-label={t("tasks.myWork.scope.label", "Whose work")}>
+            {([
+              [false, t("tasks.myWork.scope.all", "All"), myCounts?.all],
+              [true, t("tasks.myWork.scope.mine", "Mine"), myCounts?.mine],
+            ] as const).map(([isMine, label, count]) => (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={mineOnly === isMine}
+                onClick={() => { setMineOnly(isMine); setPage(1) }}
+                className={cn(
+                  "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition",
+                  mineOnly === isMine
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {label}
+                {typeof count === "number" && (
+                  <span className={cn(
+                    "rounded px-1.5 text-[11px] font-bold tabular-nums",
+                    mineOnly === isMine ? "bg-white/20" : "bg-muted text-muted-foreground",
+                  )}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
 
         {recurringView ? (
           <RecurringPanel embedded spaceId={selectedSpaceId} />

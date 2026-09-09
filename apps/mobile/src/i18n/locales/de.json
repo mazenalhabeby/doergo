@@ -386,7 +386,36 @@
       "history": "Keine vergangenen Aufgaben"
     },
     "failedToLoad": "Aufgaben konnten nicht geladen werden",
-    "selectTask": "Wählen Sie eine Aufgabe, um Details zu sehen"
+    "selectTask": "Wählen Sie eine Aufgabe, um Details zu sehen",
+    "myWork": {
+      "scope": {
+        "mine": "Meine",
+        "all": "Alle"
+      },
+      "bands": {
+        "doing": "Gerade dabei",
+        "blocked": "Blockiert",
+        "overdue": "Überfällig",
+        "today": "Heute fällig",
+        "upcoming": "Später"
+      },
+      "next": {
+        "label": "Als Nächstes",
+        "open": "Auftrag öffnen",
+        "doing": "Daran arbeiten Sie bereits",
+        "doingLate": "Daran arbeiten Sie · war vor {{count}} Tag fällig",
+        "doingLate_other": "Daran arbeiten Sie · war vor {{count}} Tagen fällig",
+        "blocked": "Blockiert – jemand wartet darauf",
+        "overdue": "Seit {{count}} Tag überfällig",
+        "overdue_other": "Seit {{count}} Tagen überfällig",
+        "today": "Heute fällig",
+        "upcoming": "Nächster nach Priorität"
+      },
+      "empty": {
+        "title": "Ihnen ist nichts zugewiesen",
+        "body": "Zugewiesene Arbeit erscheint hier. Tippen Sie auf „Alle“, um Ihren Verantwortungsbereich zu sehen."
+      }
+    }
   },
   "taskDetail": {
     "title": "Aufgabendetails",

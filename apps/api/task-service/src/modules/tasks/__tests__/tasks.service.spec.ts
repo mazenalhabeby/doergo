@@ -65,6 +65,9 @@ describe('TasksService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      // Every assignment change funnels through afterAssigneesChanged, which
+      // advances a NEW task with updateMany rather than update.
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       delete: jest.fn(),
       count: jest.fn(),
       groupBy: jest.fn(),
@@ -90,6 +93,11 @@ describe('TasksService', () => {
     taskAssignee: {
       findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
+      // Assigning now writes the ROW as well as the column, so the two models
+      // stop disagreeing — see `assign` in the service.
+      findUnique: jest.fn().mockResolvedValue(null),
+      upsert: jest.fn().mockResolvedValue({ id: 'ta-1' }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       create: jest.fn(),
       deleteMany: jest.fn(),
     },
