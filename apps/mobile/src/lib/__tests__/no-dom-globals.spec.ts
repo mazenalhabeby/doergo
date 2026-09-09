@@ -43,14 +43,23 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
-/** Comments and strings hold the word "screen" constantly; only code counts. */
+/**
+ * Comments and strings hold the word "screen" constantly; only code counts.
+ *
+ * ⚠️ Line-preserving. Blanking a multi-line comment to "" shifts every line
+ * below it, and this test's whole output is a FILE:LINE for somebody to open —
+ * the first version reported line 102 for a fault on line 168, which is worse
+ * than reporting nothing. Each removed newline is put back.
+ */
+const blankKeepingLines = (text: string) => text.replace(/[^\n]/g, ' ');
+
 const strip = (src: string) =>
   src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, blankKeepingLines)
+    .replace(/^\s*\/\/.*$/gm, blankKeepingLines)
     .replace(/'(?:[^'\\]|\\.)*'/g, "''")
     .replace(/"(?:[^"\\]|\\.)*"/g, '""')
-    .replace(/`(?:[^`\\]|\\.)*`/g, '``');
+    .replace(/`(?:[^`\\]|\\.)*`/g, blankKeepingLines);
 
 describe('no browser globals in the mobile app', () => {
   const files = ROOTS.flatMap(sourceFiles);
