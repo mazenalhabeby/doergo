@@ -12,6 +12,7 @@ import { useSpaceModules } from "@/hooks/use-space-modules"
 import {
   tasksApi,
   taskAttachmentsApi,
+  uploadToS3,
   phasesApi,
   sprintsApi,
   epicsApi,
@@ -587,7 +588,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
           try {
             const presign = await taskAttachmentsApi.getPresignedUrl(task.id, file.name, file.type)
             if (!presign?.uploadUrl) throw new Error("No upload URL")
-            await fetch(presign.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
+            /*
+              `uploadToS3`, not a bare fetch.
+
+              fetch resolves on a 403 as happily as on a 200, and this call used
+              to ignore the response entirely — so a rejected upload went
+              straight on to be confirmed, and the attachment was recorded
+              pointing at an object that was never stored. The detail page has
+              always used this helper, which rejects on a non-2xx; the two paths
+              now fail the same way.
+            */
+            await uploadToS3(presign.uploadUrl, file)
             await taskAttachmentsApi.confirmUpload(task.id, {
               fileName: file.name,
               fileUrl: presign.fileUrl,

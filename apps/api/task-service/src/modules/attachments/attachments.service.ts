@@ -19,6 +19,27 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp
 const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
 const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
 
+/**
+ * The MIME type a client sends → the enum the column actually holds.
+ *
+ * ⚠️ These are two different things and the code treated them as one. A client
+ * sends "image/jpeg"; `Attachment.fileType` is an `AttachmentType`
+ * (IMAGE | DOCUMENT | OTHER). `create()` declared its parameter as
+ * `AttachmentType` and passed it straight to Prisma — but the value arrives in
+ * a BullMQ payload, so the annotation was a claim TypeScript had no way to
+ * check. Every upload reached S3 and then died in `prisma.attachment.create()`
+ * with "Invalid value for argument `fileType`", and production held ZERO
+ * attachments as a result: the feature had never once worked.
+ *
+ * Derived from the same two lists the presign step validates against, so the
+ * classification cannot drift from what is allowed through.
+ */
+export function attachmentTypeOf(mime: string): AttachmentType {
+  if (ALLOWED_IMAGE_TYPES.includes(mime)) return AttachmentType.IMAGE;
+  if (ALLOWED_DOCUMENT_TYPES.includes(mime)) return AttachmentType.DOCUMENT;
+  return AttachmentType.OTHER;
+}
+
 @Injectable()
 export class AttachmentsService {
   private readonly logger = new Logger(AttachmentsService.name);
@@ -51,7 +72,8 @@ export class AttachmentsService {
     userRole?: string;
     fileName: string;
     fileUrl: string;
-    fileType: AttachmentType;
+    /** A MIME type, as the client reports it — NOT an AttachmentType. */
+    fileType: string;
     fileSize: number;
     organizationId: string;
   }) {
@@ -95,6 +117,14 @@ export class AttachmentsService {
     if (!data.fileName || data.fileName.length > 255) {
       throw new BadRequestException('Invalid file name');
     }
+    /*
+      Checked HERE as well as at the presign, because they are two requests and
+      only this one writes. Same list, so a file that was allowed to upload is
+      never refused at the last step.
+    */
+    if (!ALLOWED_FILE_TYPES.includes(data.fileType)) {
+      throw new BadRequestException('Unsupported file type');
+    }
 
     const attachment = await this.prisma.attachment.create({
       data: {
@@ -102,7 +132,7 @@ export class AttachmentsService {
         uploadedById: data.uploadedById,
         fileName: data.fileName,
         fileUrl: data.fileUrl,
-        fileType: data.fileType,
+        fileType: attachmentTypeOf(data.fileType),
         fileSize: data.fileSize,
       },
     });
