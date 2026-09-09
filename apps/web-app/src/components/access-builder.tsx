@@ -205,14 +205,19 @@ export function AccessBuilder({
         )}
 
         {/* Notifications about — who is alerted ABOUT this member (approvals,
-            geofence, …). Selection is held locally and persisted on Save/Apply,
-            NOT per-toggle. Empty = default routing (org admins + space managers). */}
+            geofence, leave, …). Selection is held locally and persisted on
+            Save/Apply, NOT per-toggle.
+
+            Empty here does NOT mean "org admins": these names are ADDED to the
+            routing configured on the member's workspaces, and when neither is
+            set nobody is told. That is deliberate — the automatic fallback to
+            every admin is what put the owner on every late departure. */}
         <Field dataTour="access-watchers" label={t("members.watchers.title", "Notifications about {{name}}", { name: isBulk ? t("accessBuilder.selectedMembers", "selected members") : member.firstName })}>
           <div className="rounded-xl border border-border overflow-hidden">
             <div className="flex items-start gap-2 px-4 py-2.5 border-b border-border/60">
               <Bell className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                {t("members.watchers.hint", "Choose who is alerted about this member (approvals, geofence, …). If no one is selected, it defaults to org admins and this member's space managers.")}
+                {t("members.watchers.hint", "Choose who is alerted about this member (approvals, geofence, leave, …). If no one is selected here, only the recipients configured on the member's workspaces are notified — there is no automatic fallback to org admins.")}
               </p>
             </div>
             {watcherCandidates.length === 0 ? (

@@ -3,6 +3,7 @@ import {
   IsString,
   IsNotEmpty,
   IsNumber,
+  IsInt,
   IsOptional,
   IsArray,
   IsIn,
@@ -14,7 +15,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } from '@hbcfield/shared';
-import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY } from '@hbcfield/shared';
+import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX } from '@hbcfield/shared';
 
 /** One corner of a drawn site boundary. */
 export class GeoPointDto {
@@ -145,6 +146,23 @@ export class CreateLocationDto {
   @IsIn(GEOFENCE_POLICIES as unknown as string[])
   @IsOptional()
   geofencePolicy?: string;
+
+  /**
+   * The staffing floor: how many people must be on the floor here on a working
+   * day. 0 means no floor — the screens then report the headcount and pass no
+   * verdict on it, which is what every existing workspace does.
+   */
+  @ApiPropertyOptional({
+    description: 'Minimum people on the floor on a working day. 0 = no floor set.',
+    minimum: 0,
+    maximum: MIN_COVER_MAX,
+    default: 0,
+  })
+  @IsInt()
+  @Min(0)
+  @Max(MIN_COVER_MAX)
+  @IsOptional()
+  minCover?: number;
 
   @ApiPropertyOptional({
     enum: SpaceKind,

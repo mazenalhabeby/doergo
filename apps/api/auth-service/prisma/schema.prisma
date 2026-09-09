@@ -1974,6 +1974,10 @@ model CompanyLocation {
   /// A String rather than an enum so a value this server has not heard of falls
   /// back to STRICT instead of failing to deserialise — see resolveAwayAccess.
   geofencePolicy    String    @default("STRICT")
+  /// The staffing floor: how many people must be on the floor here on a working
+  /// day. 0 = never set, which is NOT "nobody needed" — every surface reads it
+  /// as "no floor configured" and reports the count without a verdict.
+  minCover          Int       @default(0)
   // Ownership classification (project / my company / customer company). Orthogonal
   // to physical-vs-workspace (derived from lat/lng). CUSTOMER spaces carry the
   // contact fields below and represent a customer you do work for.
@@ -2061,9 +2065,13 @@ model CompanyLocation {
 // SpaceAssignment model. Table dropped in migration
 // 20260807160000_drop_legacy_technician_assignment.
 
-// Per-employee notification routing override: a manager/admin (watcher) is
-// subscribed to notifications ABOUT a specific employee (subject). When a
-// subject has ANY watchers, they replace the default space/admin routing.
+// Per-employee notification routing: a manager/admin (watcher) is subscribed to
+// notifications ABOUT a specific employee (subject).
+//
+// These are ADDED to the routing configured on the subject's workspaces, not a
+// replacement for it — this comment said "replace" long after the resolver
+// started merging the two (NotificationRoutingService.computeWatchers). Neither
+// configured → nobody is told; there is no fallback to the org's admins.
 model NotificationWatch {
   id             String       @id @default(cuid())
   organizationId String
@@ -2233,7 +2241,12 @@ model TimeEntry {
   @@index([approvalStatus])
   @@index([userId, status]) // check active clock-in
   @@index([organizationId, clockInAt]) // org attendance reports
-  @@index([organizationId, status]) // "who's clocked in right now" (dashboard, date-independent)
+  @@index([organizationId, status])
+  /// The nightly sweep of abandoned staged drafts reads by age across every
+  /// organization. Declared here so `prisma db push` on a fresh database gets
+  /// it too; the migration creates it PARTIAL (`WHERE status = 'DRAFT'`), which
+  /// Prisma cannot express and which is what makes it nearly free.
+  @@index([status, createdAt]) // "who's clocked in right now" (dashboard, date-independent)
   @@index([status, nextRemindAt]) // reminder engine safety-net sweep
   @@index([status, nextBreakRemindAt]) // the same sweep's second due-list: rests
   @@index([organizationId, reminderState]) // pending extra-time lookups per org

@@ -485,8 +485,16 @@ export class PushService {
     });
   }
 
+  /**
+   * A member asked for days off → the people routed to hear about them.
+   *
+   * `recipientIds`, not `dispatcherIds`: who is told is resolved from the
+   * member's own routing (their Access watchers, then their spaces' notify
+   * config), which has nothing to do with holding any particular role. The old
+   * name described a rule this product does not have.
+   */
   async sendTimeOffRequestPush(data: {
-    dispatcherIds: string[];
+    recipientIds: string[];
     technicianName: string;
     startDate: string;
     endDate: string;
@@ -494,8 +502,8 @@ export class PushService {
     const body = `${data.technicianName} requested time off: ${data.startDate} to ${data.endDate}`;
 
     const allTokens: string[] = [];
-    for (const dispatcherId of data.dispatcherIds) {
-      const tokens = await this.getUserTokens(dispatcherId);
+    for (const recipientId of data.recipientIds) {
+      const tokens = await this.getUserTokens(recipientId);
       allTokens.push(...tokens);
     }
 
@@ -512,11 +520,17 @@ export class PushService {
     startDate: string;
     endDate: string;
     approved: boolean;
+    rejectionReason?: string;
   }) {
     const title = data.approved ? 'Time Off Approved' : 'Time Off Rejected';
+    const range = `${data.startDate} to ${data.endDate}`;
+    // A refusal carries its reason. Without it the member opens the app to find
+    // out what to do differently, which is a day later at best.
     const body = data.approved
-      ? `Your time off request (${data.startDate} to ${data.endDate}) has been approved`
-      : `Your time off request (${data.startDate} to ${data.endDate}) has been rejected`;
+      ? `Your time off request (${range}) has been approved`
+      : data.rejectionReason
+        ? `Your time off request (${range}) was not approved — ${data.rejectionReason}`
+        : `Your time off request (${range}) has been rejected`;
 
     return this.sendToUser(data.technicianId, title, body, {
       type: 'time_off_response',

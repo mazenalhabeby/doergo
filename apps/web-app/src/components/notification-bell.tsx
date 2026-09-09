@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import type { TaskEventPayload } from "@/types/socket-events"
 import {
   Bell, UserPlus, ClipboardList, MessageSquare, CheckCircle,
-  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck, PenLine,
+  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck, PenLine, CalendarDays,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -106,6 +106,7 @@ type NotificationType =
   | "chat_message"
   | "crm_reminder"
   | "signature_needed"
+  | "time_off_requested" | "time_off_decided"
 
 interface Notification {
   id: string
@@ -143,6 +144,8 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   break_started:      { icon: Coffee, color: "text-amber-600", bg: "bg-amber-50" },
   break_ended:        { icon: Coffee, color: "text-green-600", bg: "bg-green-50" },
   invitation_created: { icon: Send, color: "text-indigo-600", bg: "bg-indigo-50" },
+  time_off_requested: { icon: CalendarDays, color: "text-purple-600", bg: "bg-purple-50" },
+  time_off_decided:   { icon: CalendarDays, color: "text-green-600", bg: "bg-green-50" },
 }
 
 // Map a persisted delivery eventType → the bell's NotificationType (for icon/color).
@@ -157,6 +160,8 @@ function eventTypeToNotifType(eventType: string): NotificationType {
     "chat.message": "chat_message",
     "customer_reminder_due": "crm_reminder",
     "document_awaiting_signature": "signature_needed",
+    "time_off_requested": "time_off_requested",
+    "time_off_decided": "time_off_decided",
   }
   return map[eventType] || "task_status_changed"
 }
@@ -290,6 +295,28 @@ export function NotificationBell() {
           t("notifications.crmReminder"),
           [d.customerName, d.body].filter(Boolean).join(" — "),
           d.customerId ? `/customers/${d.customerId}` : "/clients",
+        )
+      }),
+
+      // Leave. The request goes to whoever is routed about that member; the
+      // decision comes back only to the member who asked. Both land here as the
+      // live half of the same bell entry the server has already persisted.
+      subscribe<{ memberName?: string; startDate?: string; endDate?: string }>("time_off_requested", (d) => {
+        add(
+          "time_off_requested",
+          t("notifications.timeOffRequest", "Time-off request"),
+          [d.memberName, [d.startDate, d.endDate].filter(Boolean).join(" → ")].filter(Boolean).join(" — "),
+          "/employees/availability",
+        )
+      }),
+      subscribe<{ approved?: boolean; rejectionReason?: string | null; startDate?: string; endDate?: string }>("time_off_decided", (d) => {
+        add(
+          "time_off_decided",
+          d.approved
+            ? t("notifications.timeOffApproved", "Time off approved")
+            : t("notifications.timeOffRejected", "Time off not approved"),
+          [[d.startDate, d.endDate].filter(Boolean).join(" → "), d.rejectionReason].filter(Boolean).join(" — "),
+          "/my/time-off",
         )
       }),
 

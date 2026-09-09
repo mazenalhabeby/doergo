@@ -9,6 +9,7 @@ import {
   Body,
   Inject,
   UseGuards,
+  BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -129,6 +130,73 @@ export class EmployeesController {
   // ORG-WIDE TIME-OFF (must be before /:id routes to avoid conflict)
   // ============================================================================
 
+  @Get('floor-now')
+  @ApiOperation({ summary: 'Who is on the floor right now, per workspace' })
+  @ApiResponse({ status: 200, description: 'Live floor state retrieved' })
+  /*
+    Gated on attendance, not on tasks.
+
+    This says who clocked in, who has stepped away and who has not turned up —
+    which is attendance, whatever screen it is drawn on. Reusing the time-off
+    gate would have let anyone who can see a leave request read the shift state
+    of everybody in the workspace, and those are not the same authority.
+  */
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  async getFloorNow(@CurrentUser() user?: CurrentUserData) {
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'get_floor_now' },
+        {
+          organizationId: user?.organizationId,
+          // undefined = org-wide; [] = granted nowhere and matches nothing.
+          scopeSpaceIds: isAdmin(user as never)
+            ? undefined
+            : spacesGranting(user?.access as never, 'canViewSpaceAttendance') ?? undefined,
+        },
+      ),
+    );
+  }
+
+  @Get('cover-range')
+  @ApiOperation({ summary: 'Cover per workspace per day, for the leave chart footer' })
+  @ApiQuery({ name: 'start', required: true, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'end', required: true, description: 'YYYY-MM-DD' })
+  /*
+    Gated on ATTENDANCE, not on tasks — and deliberately not on the gate of the
+    leave list it is drawn under.
+
+    `canViewAllTasks` is held by the External Observer seat, whose whole purpose
+    is to watch the work and raise a job. Staffing levels are not the work: how
+    many people a company has on the floor each day is its own business, and
+    reusing the task gate here would be the same mistake the asset audit found —
+    one permission doing duty for two different things.
+  */
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  async getCoverRange(
+    @Query('start') start: string,
+    @Query('end') end: string,
+    @CurrentUser() user?: CurrentUserData,
+  ) {
+    // Rejected here rather than trusted downstream: the range drives a day loop.
+    const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+    if (!ISO_DAY.test(start ?? '') || !ISO_DAY.test(end ?? '') || end < start) {
+      throw new BadRequestException('start and end must be dates (YYYY-MM-DD), and end must not be before start');
+    }
+    return firstValueFrom(
+      this.taskClient.send(
+        { cmd: 'get_cover_range' },
+        {
+          organizationId: user?.organizationId,
+          start,
+          end,
+          scopeSpaceIds: isAdmin(user as never)
+            ? undefined
+            : spacesGranting(user?.access as never, 'canViewSpaceAttendance') ?? undefined,
+        },
+      ),
+    );
+  }
+
   @Get('time-off')
   @ApiOperation({ summary: 'Time-off requests: the organization, or the spaces the caller leads' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELED'] })
@@ -144,6 +212,19 @@ export class EmployeesController {
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
     @CurrentUser() user?: CurrentUserData,
   ) {
+    /*
+      The cover verdict rides on this list, and it must not widen who reads it.
+
+      The list itself is gated on `canViewAllTasks`, which the External Observer
+      seat holds — watching the work is what it is for. Staffing levels are not
+      the work, so the projection is attached only for a caller who also holds
+      attendance. Everyone else gets exactly the list they got before, and the
+      four cover queries are not even run for them.
+    */
+    const canSeeCover =
+      isAdmin(user as never) ||
+      (spacesGranting(user?.access as never, 'canViewSpaceAttendance') ?? []).length > 0;
+
     return firstValueFrom(
       this.taskClient.send(
         { cmd: 'get_org_time_off' },
@@ -151,6 +232,7 @@ export class EmployeesController {
           organizationId: user?.organizationId,
           // undefined = org-wide; [] = granted nowhere and matches nothing.
           scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
+          withCover: canSeeCover,
           status,
         },
       ),
@@ -521,6 +603,10 @@ export class EmployeesController {
     @Query('status') status?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    // Optional due-date window — used by the leave drawer to show what is
+    // already booked while somebody wants to be away.
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @CurrentUser() user?: CurrentUserData,
   ) {
     // Route to task-service for task history (task data lives there)
@@ -533,6 +619,8 @@ export class EmployeesController {
           id,
           organizationId: user?.organizationId,
           status,
+          startDate,
+          endDate,
           page: page ? Math.max(1, Number(page) || 1) : 1,
           limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
         },

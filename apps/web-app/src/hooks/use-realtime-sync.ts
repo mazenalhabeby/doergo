@@ -58,6 +58,9 @@ const Events = {
   CUSTOMER_CHANGED: "customer.changed",
   // A document type changed — including WHO MAY SEE documents filed under it
   DOCUMENT_TYPES_CHANGED: "documents.typesChanged",
+  // Leave — asked for (to whoever is routed about that member) and answered (to them)
+  TIME_OFF_REQUESTED: "time_off_requested",
+  TIME_OFF_DECIDED: "time_off_decided",
   // Shift-reminder / no-show engine. These are push-first on mobile; on the web
   // they are the only signal the attendance board gets.
   NOSHOW_REMINDER: "attendance_noshow_reminder",
@@ -100,7 +103,10 @@ const DASHBOARD_ATTENDANCE_KEYS: string[][] = [
 ]
 
 // Everything that must refresh when attendance changes (clock or admin edit).
-const ALL_ATTENDANCE_KEYS: string[][] = [...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
+const ALL_ATTENDANCE_KEYS: string[][] = [
+  // The "on the floor right now" panel on /employees/availability. It reports
+  // the clock, so every clock event moves it.
+  ["floor-now"],...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
 
 // Everywhere a member, an invitation or a join request is rendered. One list, so
 // the four server call sites that emit `member.changed` cannot drift from what the
@@ -172,6 +178,17 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // nothing refreshed the list — so an admin sitting on /join-requests was told
   // about a request that never appeared on the page in front of them (audit A-D1).
   [Events.JOIN_REQUEST_SUBMITTED]: [["join-requests"]],
+
+  // Leave. All three keys, always — time off is read under `employeeTimeOff` on
+  // a member's record, `orgTimeOff` on /attendance and /employees/availability,
+  // and `availability` on the calendar, which derives from it. Invalidating only
+  // the one the viewer happens to be looking at is the split `invalidateTimeOff`
+  // exists to stop (audit MD-D1), and a socket event has the same duty.
+  // `cover-range` and `floor-now` ride along: a decision changes the chart's
+  // footer and the live floor as surely as it changes the list, and leaving
+  // either behind is how two numbers on one page come to disagree.
+  [Events.TIME_OFF_REQUESTED]: [["employeeTimeOff"], ["orgTimeOff"], ["availability"], ["cover-range"]],
+  [Events.TIME_OFF_DECIDED]: [["employeeTimeOff"], ["orgTimeOff"], ["availability"], ["cover-range"], ["floor-now"]],
 
   // The CRM announced nothing at all (audit C-D2): a rep logging an activity was
   // invisible to a co-manager on the same client, and a new client never appeared

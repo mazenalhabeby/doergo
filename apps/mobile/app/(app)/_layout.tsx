@@ -154,6 +154,23 @@ export default function AppLayout() {
       return;
     }
 
+    /*
+      Leave, in two directions and to two screens.
+
+      A request goes to whoever is routed about that member, and what they need
+      is the approvals list. A decision goes to the member who asked, and what
+      they need is their own. The push already knows which it is — sending both
+      to one screen would land half the taps on a page with nothing to do.
+    */
+    if (type === 'time_off_request') {
+      router.push('/manage/time-off-requests' as Href);
+      return;
+    }
+    if (type === 'time_off_response') {
+      router.push('/(app)/(tabs)/time-off' as Href);
+      return;
+    }
+
     // Attendance pushes (enable-Always reminder, out-of-ring excursion events,
     // geofence warnings) → the clock screen, where the banners + actions live.
     if (type?.startsWith('attendance.')) {

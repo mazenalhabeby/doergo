@@ -100,3 +100,6 @@ export * from './attendance/break-plan';
 
 // Away policy — see client.ts.
 export * from './attendance/away-policy';
+
+// Cover — will there be enough people, and the right people. See client.ts.
+export * from './attendance/cover';

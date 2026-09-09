@@ -60,6 +60,12 @@ export interface CompanyLocation {
    */
   geofencePolicy?: string | null;
   /**
+   * The staffing floor: how many people must be on the floor here on a working
+   * day. 0 means NOT SET, never "nobody needed" — with no floor the leave chart
+   * reports the count and passes no judgement on it.
+   */
+  minCover?: number;
+  /**
    * Whether the CALLER may clock in here without being on site.
    *
    * Only present on the clock-in list, where the server answers it with the

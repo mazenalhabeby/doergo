@@ -1,6 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { success } from '@hbcfield/shared';
 import { TechniciansService } from './technicians.service';
+import { CoverService } from './cover.service';
 import {
   GetEmployeeStatsDto,
   GetEmployeePerformanceDto,
@@ -17,7 +19,10 @@ import {
 
 @Controller()
 export class TechniciansController {
-  constructor(private readonly techniciansService: TechniciansService) {}
+  constructor(
+    private readonly techniciansService: TechniciansService,
+    private readonly coverService: CoverService,
+  ) {}
 
   // ========================================================================
   // PERFORMANCE & STATS
@@ -69,6 +74,29 @@ export class TechniciansController {
   @MessagePattern({ cmd: 'get_leave_balance' })
   async getLeaveBalance(@Payload() dto: { technicianId: string; organizationId: string }) {
     return this.techniciansService.getLeaveBalance(dto);
+  }
+
+  /**
+   * Who is on the floor right now, per workspace.
+   *
+   * Its own read rather than the screen joining four existing ones: the browser
+   * would otherwise need the whole roster, every open shift and every active
+   * break to work it out, which is both slower and more than the viewer is
+   * entitled to see.
+   */
+  @MessagePattern({ cmd: 'get_floor_now' })
+  async getFloorNow(@Payload() data: { organizationId: string; scopeSpaceIds?: string[] }) {
+    return success(await this.coverService.floorNow(data.organizationId, data.scopeSpaceIds));
+  }
+
+  /** Cover for every day of a window, per workspace — the wallchart's footer. */
+  @MessagePattern({ cmd: 'get_cover_range' })
+  async getCoverRange(
+    @Payload() data: { organizationId: string; start: string; end: string; scopeSpaceIds?: string[] },
+  ) {
+    return success(
+      await this.coverService.coverRange(data.organizationId, data.start, data.end, data.scopeSpaceIds),
+    );
   }
 
   @MessagePattern({ cmd: 'get_org_time_off' })

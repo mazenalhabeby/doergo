@@ -94,3 +94,7 @@ export * from './attendance/break-plan';
 
 // Working away from a site: a ceiling on the workspace, a grant on the person.
 export * from './attendance/away-policy';
+
+// Cover: enough people, and the right people — the leave chart, the approval
+// verdict and the live floor panel all read this one rule.
+export * from './attendance/cover';

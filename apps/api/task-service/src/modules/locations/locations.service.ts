@@ -12,7 +12,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   validateGeofencePolygon,
   type GeofencePolygonError,
 } from '@hbcfield/shared';
-import { isGeofencePolicy } from '@hbcfield/shared';
+import { isGeofencePolicy, validateMinCover } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -66,6 +66,7 @@ export class LocationsService {
     lng?: number;
     geofenceRadius?: number;
     geofencePolygon?: unknown;
+    minCover?: number;
     timezone?: string;
     kind?: string;
     contactName?: string;
@@ -111,6 +112,9 @@ export class LocationsService {
         geofencePolygon: this.cleanPolygon(data.geofencePolygon) ?? undefined,
         // Resolved above: explicit → pin-derived → org tz → schema default.
         timezone,
+        // The staffing floor. Omitted means 0 — no floor — which is what every
+        // space that existed before this feature has.
+        minCover: data.minCover !== undefined ? validateMinCover(data.minCover) : undefined,
         // Each space owns its module set; new spaces start with the standard
         // default (the org-level Modules tab was removed — modules live on spaces).
         enabledModules: data.enabledModules ?? DEFAULT_ORG_MODULES,
@@ -384,6 +388,7 @@ export class LocationsService {
     workflowId?: string;
     workModel?: string;
     geofencePolicy?: string;
+    minCover?: number;
     timezone?: string;
     kind?: string;
     contactName?: string;
@@ -433,6 +438,18 @@ export class LocationsService {
         throw new BadRequestException('Unknown clock-in policy for this workspace');
       }
       updateData.geofencePolicy = data.geofencePolicy;
+    }
+    /*
+      The staffing floor. Validated through the shared rule rather than trusted,
+      for the same reason as the policy above — and 0 is a legitimate value
+      meaning "no floor", not a missing one, so it must survive the round trip.
+    */
+    if (data.minCover !== undefined) {
+      try {
+        updateData.minCover = validateMinCover(data.minCover);
+      } catch (e) {
+        throw new BadRequestException((e as Error).message);
+      }
     }
     // Ownership kind + customer contact fields.
     if (data.kind !== undefined) updateData.kind = data.kind;

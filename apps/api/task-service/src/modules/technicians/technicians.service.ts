@@ -1,6 +1,9 @@
 import { assertMemberInScope } from '@hbcfield/shared';
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService, TaskStatus, success } from '@hbcfield/shared';
+import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { CoverService } from './cover.service';
 import {
   GetEmployeeStatsDto,
   GetEmployeePerformanceDto,
@@ -15,9 +18,38 @@ import {
   GetAvailabilityDto,
 } from './dto';
 
+/**
+ * A leave date as the member wrote it: YYYY-MM-DD, no clock.
+ *
+ * UTC rather than local because leave is stored at midnight UTC — reading it
+ * back through the server's local zone moves a day off by one for anybody west
+ * of Greenwich, which in a notification is simply the wrong date.
+ */
+function toDateKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 @Injectable()
 export class TechniciansService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    /*
+      Who is told ABOUT this member. Leave asks the organization for time, so the
+      question "who hears about it" is the same question attendance already
+      answers, and it is answered in one place: explicit watchers chosen on the
+      member's Access page, UNION the routing configured on the spaces they work
+      in (their per-space override first, the space's own notify roles second).
+      Nothing configured anywhere → nobody is told, deliberately.
+    */
+    private readonly notificationRouting: NotificationRoutingService,
+    /*
+      Cover is asked in two places here — the approvals list wants a verdict per
+      request, and a member asking for days deserves the same answer the approver
+      will see. One service, so those two can never disagree.
+    */
+    private readonly cover: CoverService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+  ) {}
 
   /**
    * Get basic stats for an employee
@@ -210,6 +242,7 @@ export class TechniciansService {
       scopeSpaceIds: (dto as { scopeSpaceIds?: string[] }).scopeSpaceIds,
     });
     const { id, organizationId, status, page = 1, limit = 20 } = dto;
+    const { startDate, endDate } = dto as { startDate?: string; endDate?: string };
 
     const where: any = {
       assignedToId: id,
@@ -218,6 +251,19 @@ export class TechniciansService {
 
     if (status) {
       where.status = status as TaskStatus;
+    }
+
+    /*
+      An optional due-date window, for "what is already booked for this person
+      while they want to be away". Without it the leave drawer would have to
+      pull a page of their history and hope the future-dated jobs were on it —
+      which for anybody with a long history they would not be.
+    */
+    if (startDate || endDate) {
+      where.dueDate = {
+        ...(startDate ? { gte: new Date(`${startDate}T00:00:00.000Z`) } : {}),
+        ...(endDate ? { lte: new Date(`${endDate}T23:59:59.999Z`) } : {}),
+      };
     }
 
     const [tasks, total] = await Promise.all([
@@ -472,20 +518,6 @@ export class TechniciansService {
       throw new BadRequestException('Time-off request overlaps with an existing request');
     }
 
-    // Check coverage — warn if other workers are already off during this period
-    const othersOff = await this.prisma.timeOff.findMany({
-      where: {
-        technicianId: { not: technicianId },
-        status: { in: ['PENDING', 'APPROVED'] },
-        startDate: { lte: end },
-        endDate: { gte: start },
-        technician: { organizationId },
-      },
-      include: {
-        technician: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
-
     const timeOff = await this.prisma.timeOff.create({
       data: {
         technicianId,
@@ -502,11 +534,61 @@ export class TechniciansService {
       },
     });
 
-    const coverageWarning = othersOff.length > 0
-      ? `Warning: ${othersOff.length} other worker(s) also have time off during this period: ${othersOff.map(o => `${o.technician.firstName} ${o.technician.lastName}`).join(', ')}`
-      : null;
+    /*
+      What this costs the workspace.
 
-    return success(timeOff, coverageWarning ? coverageWarning : undefined);
+      The old version of this counted everyone in the ORGANIZATION who was off
+      in the window and named them back to the requester. Three things were
+      wrong with it and all three mattered: somebody off in Gmunden does not
+      thin cover in Vöcklabruck; it counted people who do not work those days
+      anyway; and it was told to the one person who cannot act on it. It is now
+      the same verdict the approver will see, computed by the same service.
+    */
+    const verdict = (
+      await this.cover.assessMany(organizationId, [
+        { id: timeOff.id, technicianId, startDate: start, endDate: end },
+      ])
+    ).get(timeOff.id) ?? null;
+
+    /*
+      Tell whoever is meant to hear about this person.
+
+      Until now this wrote a PENDING row and told nobody at all: the only way a
+      request was ever seen was somebody opening the availability calendar and
+      noticing the badge. A request nobody is told about is a request nobody
+      answers.
+
+      Recipients come from the ONE routing resolver, not from a rule invented
+      here. Under the 'attendance' category because leave is about this person's
+      working time — the same people, and the same opt-out, as their shifts.
+      An empty list is a legitimate answer and is not padded with org admins:
+      that is the configured meaning of "nobody watches this member".
+    */
+    const { ids: recipientIds } = await this.notificationRouting.resolveWatchers(
+      technicianId,
+      organizationId,
+      'attendance',
+    );
+
+    if (recipientIds.length > 0) {
+      this.notificationClient.emit('time_off_requested', {
+        timeOffId: timeOff.id,
+        organizationId,
+        memberId: technicianId,
+        memberName: `${timeOff.technician.firstName} ${timeOff.technician.lastName}`,
+        type,
+        startDate: toDateKey(start),
+        endDate: toDateKey(end),
+        reason: reason ?? null,
+        // The approver is told what it costs at the same moment they are told
+        // it exists, so the notification is worth acting on rather than a
+        // prompt to go and look something up.
+        cover: verdict,
+        recipientIds,
+      });
+    }
+
+    return success({ ...timeOff, cover: verdict });
   }
 
   /**
@@ -743,8 +825,11 @@ export class TechniciansService {
    * match nothing. Collapsing those two is how a scoped read becomes an org-wide
    * one by accident.
    */
-  async getOrgTimeOff(dto: GetOrgTimeOffDto & { scopeSpaceIds?: string[] }) {
+  async getOrgTimeOff(dto: GetOrgTimeOffDto & { scopeSpaceIds?: string[]; withCover?: boolean }) {
     const { organizationId, status, scopeSpaceIds } = dto;
+    // Decided at the gateway, which is where the caller's permissions are known.
+    // Default false: a payload that leaks by omission is the wrong default.
+    const withCover = dto.withCover === true;
 
     const where: any = {
       technician: { organizationId },
@@ -783,7 +868,35 @@ export class TechniciansService {
       take: 500,
     });
 
-    return success(timeOffs);
+    /*
+      The cover verdict travels WITH the request.
+
+      This is the whole point of the redesign: deciding leave used to mean
+      reading this list, then opening the calendar on another tab to work out
+      who would be left — and the calendar could not answer, because it only
+      ever drew APPROVED leave and so never showed the effect of the decision
+      being made. Four extra queries for the whole page, computed once here
+      rather than once per row in a browser that would need the entire roster to
+      do it at all.
+
+      Only what is still open is assessed. A verdict on a request decided last
+      March is arithmetic nobody reads, and it would double the window this has
+      to fetch leave for.
+    */
+    const open = withCover ? timeOffs.filter((t) => t.status === 'PENDING') : [];
+    const verdicts = await this.cover.assessMany(
+      organizationId,
+      open.map((t) => ({
+        id: t.id,
+        technicianId: t.technicianId,
+        startDate: t.startDate,
+        endDate: t.endDate,
+      })),
+    );
+
+    return success(
+      timeOffs.map((t) => ({ ...t, cover: verdicts.get(t.id) ?? null })),
+    );
   }
 
   /**
@@ -854,6 +967,24 @@ export class TechniciansService {
           select: { id: true, firstName: true, lastName: true },
         },
       },
+    });
+
+    /*
+      And tell the person whose leave it is.
+
+      The other half of the loop, and the half that was missing entirely: a
+      member submitted a request and then had to keep opening the app to find
+      out whether they had the days. This one is addressed, not routed — the
+      answer belongs to the person who asked, and to nobody else.
+    */
+    this.notificationClient.emit('time_off_decided', {
+      timeOffId: updated.id,
+      organizationId,
+      memberId: updated.technicianId,
+      approved,
+      rejectionReason: approved ? null : (rejectionReason ?? null),
+      startDate: toDateKey(updated.startDate),
+      endDate: toDateKey(updated.endDate),
     });
 
     return success(updated);

@@ -15,6 +15,7 @@ import { ShiftsTab } from "./shifts-tab"
 import { RotaTab } from "./rota-tab"
 import { RestsSection } from "./rests-section"
 import { AwayPolicySection } from "./away-policy-section"
+import { MinCoverSection } from "./min-cover-section"
 
 /**
  * Attendance — one tab that replaces the old Work-model + Shifts + Rota trio.
@@ -142,6 +143,18 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
       */}
       <div className="border-t border-border/60 pt-6">
         <AwayPolicySection space={space} />
+      </div>
+
+      {/*
+        The staffing floor.
+
+        Here rather than on the leave screen because it is a fact about the
+        WORKSPACE, like its geofence and its rests — and because the person who
+        knows how many people this site needs is the person configuring the site,
+        not whoever happens to be approving a request that afternoon.
+      */}
+      <div className="border-t border-border/60 pt-6">
+        <MinCoverSection space={space} />
       </div>
 
       {/*

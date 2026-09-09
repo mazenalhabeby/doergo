@@ -42,8 +42,17 @@ export interface SpaceScope {
 }
 
 export function useSpaceScope(options: {
-  /** The module a workspace must have for this screen to mean anything. */
-  module: string
+  /**
+   * The module a workspace must have for this screen to mean anything.
+   *
+   * Optional, because not every screen that asks "which workspace" is about a
+   * module. Schedule & Time Off is about PEOPLE: leave belongs to a person, not
+   * to a feature, so filtering by `time_tracking` there would hide a workspace
+   * that has a roster and pending leave merely because nobody clocks in at it —
+   * and those requests would vanish from the chart with nothing to say they
+   * had. Omitted = every active workspace.
+   */
+  module?: string
   /**
    * Whether "All" is a real answer here.
    *
@@ -80,6 +89,7 @@ export function useSpaceScope(options: {
         `useSpaceModules` and the server's gates apply, written the same way
         round so the three cannot disagree.
       */
+      if (!module) return true
       const mods = (Array.isArray(s.enabledModules) ? s.enabledModules : user?.orgModules ?? []) as string[]
       return mods.includes(module)
     })
