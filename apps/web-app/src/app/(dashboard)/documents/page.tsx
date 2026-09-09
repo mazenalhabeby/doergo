@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -11,8 +11,12 @@ import {
   documentsApi, uploadToS3,
   type DocumentTypeRow, type MatchCandidateRow, type DraftDocumentRow,
 } from "@/lib/api"
-import { matchBatch, batchIsPublishable, type FileMatch } from "@hbcfield/shared/client"
+import {
+  matchBatch, batchIsPublishable, needsScan, mergeMatch, readContent,
+  type FileMatch, type DocumentCadence,
+} from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { StagedDrafts } from "./_components/staged-drafts"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -44,6 +48,8 @@ type Row = FileMatch & {
   progress: number
   documentId?: string
   error?: string
+  /** True while the file is being read, so the row can say so rather than sit blank. */
+  scanning?: boolean
 }
 
 const MONTHS_KEY = [
@@ -92,10 +98,43 @@ export default function IssueDocumentsPage() {
 
   const activeType = types.find((ty) => ty.id === typeId) ?? null
 
-  /** Match the dropped filenames against the roster, in the browser. */
+  /*
+    Reading a batch is asynchronous and the person carries on using the screen
+    while it runs. These refs are what the scan reads, so a roster that finished
+    loading, or a type chosen a second after the drop, is the one that applies —
+    rather than whatever happened to be captured when the files landed.
+  */
+  const activeTypeRef = useRef(activeType)
+  const candidatesRef = useRef(candidates)
+  const rowsRef = useRef(rows)
+  useEffect(() => { activeTypeRef.current = activeType }, [activeType])
+  useEffect(() => { candidatesRef.current = candidates }, [candidates])
+  useEffect(() => { rowsRef.current = rows }, [rows])
+
+  /**
+   * Match the dropped files, in the browser.
+   *
+   * Two passes, and the second one usually does not happen. The filename is
+   * read first because it is free and, for a payroll export named
+   * `2026-08_holub_monika.pdf`, it is the whole answer. Only the rows it left
+   * unanswered are then READ — see `needsScan`, which is where that rule lives.
+   *
+   * The first pass renders immediately so the table appears at once; the second
+   * refines rows in place as each file finishes, which is why the rows carry a
+   * `scanning` flag rather than the screen showing a spinner over everything.
+   */
   const addFiles = useCallback((files: File[]) => {
     if (files.length === 0) return
     const matches = matchBatch(files.map((f) => f.name), candidates)
+
+    const cadence = (activeTypeRef.current?.cadence ?? "ONE_OFF") as DocumentCadence
+    const toScan = files
+      .map((file, i) => ({ file, i }))
+      .filter(({ file, i }) =>
+        file.type === "application/pdf" && needsScan(matches[i]!, cadence),
+      )
+
+    const startIndex = rowsRef.current.length
     setRows((prev) => [
       ...prev,
       ...files.map((file, i) => ({
@@ -103,8 +142,34 @@ export default function IssueDocumentsPage() {
         file,
         state: "pending" as const,
         progress: 0,
+        scanning: toScan.some((t) => t.i === i),
       })),
     ])
+    if (toScan.length === 0) return
+
+    /*
+      Reading happens off the render path and never blocks the drop. A file that
+      cannot be parsed — encrypted, corrupt, a photo saved as .pdf — simply
+      leaves the row as the filename found it, which is exactly where it was
+      before any of this existed.
+    */
+    void (async () => {
+      const { extractPdfText, mapWithLimit } = await import("./_lib/pdf-text")
+      await mapWithLimit(toScan, 3, async ({ file, i }) => {
+        let refined: FileMatch | null = null
+        try {
+          const text = await extractPdfText(file)
+          refined = mergeMatch(matches[i]!, readContent(text, candidatesRef.current))
+        } catch {
+          refined = null
+        }
+        setRows((prev) =>
+          prev.map((r, idx) =>
+            idx === startIndex + i ? { ...r, ...(refined ?? {}), scanning: false } : r,
+          ),
+        )
+      })
+    })()
   }, [candidates])
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -208,6 +273,13 @@ export default function IssueDocumentsPage() {
     return !!c.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email)
   }
 
+  /*
+    Drafts that are NOT part of what is on screen right now — the ones nothing
+    else on this page can reach, which is exactly the set worth surfacing.
+  */
+  const sessionIds = new Set(rows.map((r) => r.documentId).filter(Boolean))
+  const strandedDrafts = existingDrafts.filter((d) => !sessionIds.has(d.id))
+
   const openQuestions = existingDrafts.filter((d) =>
     (d.routeSteps ?? []).some(
       (s) =>
@@ -244,12 +316,31 @@ export default function IssueDocumentsPage() {
             }
           />
         )}
-        {existingDrafts.length > 0 && rows.length === 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
-            {t("documents.issue.pendingDrafts", { count: existingDrafts.length })}
-          </div>
-        )}
       </header>
+
+      {/*
+        Drafts from an earlier visit.
+
+        ⚠️ Shown whenever any exist, NOT only when this session has no rows. The
+        old banner hid itself the moment files were dropped, so somebody could
+        publish a fresh batch on top of a forgotten draft and never learn it was
+        there. A leak of storage and, worse, of a document somebody believes was
+        sent.
+
+        Excludes anything this session staged: those are already in the table
+        below, and listing them twice makes one batch look like two.
+      */}
+      <StagedDrafts
+        drafts={strandedDrafts}
+        onPublish={(ids) => publish.mutate(ids)}
+        publishing={publish.isPending}
+        blockedReason={
+          openQuestions.length > 0
+            ? t("documents.issue.answerSignersFirst", "Answer the signing questions below first.")
+            : null
+        }
+        onChanged={() => queryClient.invalidateQueries({ queryKey: ["document-drafts"] })}
+      />
 
       {/* Which kind of document this batch is */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -391,9 +482,11 @@ export default function IssueDocumentsPage() {
                     </td>
 
                     <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">
-                      {row.periodMonth && row.periodYear
-                        ? `${t(`documents.months.${MONTHS_KEY[row.periodMonth - 1]}`)} ${row.periodYear}`
-                        : row.periodYear ?? "—"}
+                      <PeriodCell
+                        row={row}
+                        cadence={(activeType?.cadence ?? "ONE_OFF") as DocumentCadence}
+                        onChange={(patch) => setRow(row.fileName, patch)}
+                      />
                     </td>
 
                     <td className="px-3 py-2">
@@ -469,9 +562,102 @@ function MatchChip({ row }: { row: Row }) {
     UNMATCHED: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400",
   }
   return (
-    <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", map[row.confidence])}>
-      {t(`documents.issue.confidence.${row.confidence.toLowerCase()}`)}
+    <span className="inline-flex flex-col items-start gap-0.5">
+      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", map[row.confidence])}>
+        {row.scanning
+          ? t("documents.issue.reading", "reading the file…")
+          : t(`documents.issue.confidence.${row.confidence.toLowerCase()}`)}
+      </span>
+      {row.memberSource === "content" && (
+        <span className="text-[10.5px] text-blue-600 dark:text-blue-400">
+          {t("documents.issue.fromFile", "read from the file")}
+        </span>
+      )}
     </span>
+  )
+}
+
+/**
+ * The period, and a way to supply one.
+ *
+ * ⚠️ It has to be editable. Reading the filename and then the file itself
+ * answers most rows, but not all — a photograph saved as a PDF, an invoice that
+ * dates itself only in a sentence, a scan. Before this, such a row could only be
+ * fixed by cancelling, renaming the file outside the app and dropping it again,
+ * while the screen showed the type's rule rather than a way to satisfy it.
+ *
+ * Where the value CAME from is shown, because "read out of the document" and
+ * "typed by me" deserve different amounts of scrutiny from a reviewer, and a
+ * value that appeared from nowhere invites nobody to check it.
+ */
+function PeriodCell({
+  row,
+  cadence,
+  onChange,
+}: {
+  row: Row
+  cadence: DocumentCadence
+  onChange: (patch: Partial<Row>) => void
+}) {
+  const { t } = useTranslation()
+  if (cadence === "ONE_OFF") return <span className="text-slate-400">—</span>
+  if (row.scanning) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        {t("documents.issue.reading", "reading the file…")}
+      </span>
+    )
+  }
+
+  const needsMonth = cadence === "MONTHLY"
+  const yearOptions = (() => {
+    const now = new Date().getFullYear()
+    return [now + 1, now, now - 1, now - 2]
+  })()
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        {needsMonth && (
+          <select
+            value={row.periodMonth ?? ""}
+            onChange={(e) =>
+              onChange({ periodMonth: e.target.value ? Number(e.target.value) : null, periodSource: undefined })
+            }
+            className="rounded-md border border-slate-300 bg-white px-1.5 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">{t("documents.issue.month", "Month")}</option>
+            {MONTHS_KEY.map((m, i) => (
+              <option key={m} value={i + 1}>{t(`documents.months.${m}`)}</option>
+            ))}
+          </select>
+        )}
+        <select
+          value={row.periodYear ?? ""}
+          onChange={(e) =>
+            onChange({ periodYear: e.target.value ? Number(e.target.value) : null, periodSource: undefined })
+          }
+          className="rounded-md border border-slate-300 bg-white px-1.5 py-1 text-[12px] tabular-nums dark:border-slate-700 dark:bg-slate-900"
+        >
+          <option value="">{t("documents.issue.year", "Year")}</option>
+          {yearOptions.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
+
+      {row.periodSource === "content" && (
+        <span className="text-[10.5px] text-blue-600 dark:text-blue-400">
+          {t("documents.issue.fromFile", "read from the file")}
+        </span>
+      )}
+      {row.periodConflict && (
+        <span className="text-[10.5px] font-medium text-amber-600 dark:text-amber-400">
+          {t("documents.issue.periodConflict", "the filename and the file disagree — check this one")}
+        </span>
+      )}
+    </div>
   )
 }
 

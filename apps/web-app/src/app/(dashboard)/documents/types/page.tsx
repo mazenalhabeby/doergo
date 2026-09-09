@@ -409,6 +409,10 @@ function TypeEditor({
           twoSided: direction === "SUPPLIED" && twoSided,
           scanShape,
           retentionMonths,
+          // Sent on create as well as on edit. It was missing here, so "Who
+          // signs it" was collected on the form and then thrown away — the type
+          // had to be reopened and saved again for the route to stick.
+          signerRoute: route.length ? route.map((r) => ({ role: r })) : null,
         })
       }
       /*

@@ -61,6 +61,8 @@ import { MrzOcrService } from './mrz-ocr.service';
 import { renderContractPdf, sealSignedPdf } from './contract-pdf';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OBJECT_STORE } from './object-store.provider';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { runWithCronLock } from '@hbcfield/shared';
 import { openUntrustedImage } from './image-input';
 
 /**
@@ -176,6 +178,15 @@ export interface RequestContext {
 
 /** Uploads are capped well below anything that would strain a phone or a bill. */
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+
+/**
+ * How long a staged batch is kept before it counts as abandoned.
+ *
+ * A week, so an admin who staged a batch on Friday and came back on Monday
+ * finds it waiting. Shorter would delete work somebody meant to finish; much
+ * longer and the point is lost, since nothing else ever removes these.
+ */
+const ABANDONED_DRAFT_DAYS = 7;
 
 /**
  * What may be filed. Deliberately a short allow-list rather than a deny-list:
@@ -338,11 +349,30 @@ export class DocumentsService {
     twoSided?: boolean;
     scanShape?: string;
     position?: number;
+    /**
+     * The signing route: an ordered list of {role}, or null for one signature.
+     *
+     * ⚠️ This was missing here while `updateType` accepted it, so a type created
+     * WITH a signing route was created without one — silently, since every other
+     * field saved. The only way to get a route onto a new type was to create it,
+     * reopen it, and set the route a second time.
+     */
+    signerRoute?: unknown;
   }) {
     this.assertCanManageTypes(data.actor);
 
     const key = normaliseKey(data.key);
     if (!key) throw new BadRequestException('A document type needs a key');
+
+    /*
+      Validated by the SAME rule as an edit. Two definitions of a legal route is
+      one place for them to disagree — and the direction they would disagree in
+      is a type created with a chain the editor then refuses to save.
+    */
+    if (data.signerRoute !== undefined && data.signerRoute !== null) {
+      const problem = routeProblem(data.signerRoute);
+      if (problem) throw new BadRequestException(problem);
+    }
 
     try {
       return await this.prisma.documentType.create({
@@ -370,6 +400,9 @@ export class DocumentsService {
           twoSided: data.twoSided ?? false,
           scanShape: data.scanShape ?? 'CARD',
           position: data.position ?? 0,
+          // null, not [] — null is "no route, one signature"; an empty array is
+          // a type somebody misconfigured, and the reader tells them apart.
+          signerRoute: (data.signerRoute ?? null) as Prisma.InputJsonValue,
         },
       });
     } catch (err) {
@@ -2965,7 +2998,77 @@ export class DocumentsService {
     });
     if (!draft) throw new NotFoundException('Staged document not found');
     await this.prisma.document.delete({ where: { id: draft.id } });
+    await this.freeStorageIfUnreferenced(draft.storageKey);
     return { success: true };
+  }
+
+  /**
+   * Remove a document's file — but ONLY if no other document is that file.
+   *
+   * ⚠️ Storage keys are CONTENT-ADDRESSED (`documentKey(org, hash, ext)`), which
+   * is why the same policy issued to thirty people costs one object. The direct
+   * consequence: deleting the object because ONE row went away would take the
+   * file out from under the other twenty-nine, and they would keep listing
+   * normally and fail only when somebody tried to open one.
+   *
+   * So the row goes first and the object goes only when nothing points at it.
+   * Never throws — an orphaned object costs a fraction of a cent, while a failed
+   * cleanup that undid a deletion would cost a document.
+   */
+  private async freeStorageIfUnreferenced(storageKey: string): Promise<void> {
+    try {
+      const stillUsed = await this.prisma.document.count({ where: { storageKey } });
+      if (stillUsed > 0) return;
+      const store = this.store;
+      if (store) await store.delete(storageKey);
+    } catch (err) {
+      this.logger.warn(`Could not free ${storageKey}: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * Staged batches nobody ever released.
+   *
+   * A batch is uploaded first and published second, so thirty payslips become
+   * visible in one moment rather than trickling out. The cost of that design is
+   * this: close the tab in between and the drafts sit in the database and in
+   * storage, invisible to the member, for ever. They were not reachable from any
+   * screen either, so nothing ever cleaned them up.
+   *
+   * Left alone for a week, because an admin returning on Monday to a batch they
+   * staged on Friday should find it waiting. After that it is abandoned, and
+   * abandoned staged work is litter that costs storage and confuses whoever
+   * eventually looks.
+   *
+   * Cheap by construction: one indexed read a day against a partial index that
+   * only covers DRAFT rows, so it stays small no matter how large the documents
+   * table grows. The lease is not optional — NestJS starts this schedule in
+   * EVERY replica.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async purgeAbandonedDrafts(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'documents:draftPurge', ttlSeconds: 900, logger: this.logger },
+      async () => {
+        const cutoff = new Date(Date.now() - ABANDONED_DRAFT_DAYS * 24 * 60 * 60 * 1000);
+        const stale = await this.prisma.document.findMany({
+          where: { status: 'DRAFT', createdAt: { lt: cutoff } },
+          select: { id: true, storageKey: true },
+          // Bounded: a runaway batch should cost one night's sweep, not a
+          // transaction that holds the table while it deletes a million rows.
+          take: 500,
+        });
+        if (stale.length === 0) return;
+
+        await this.prisma.document.deleteMany({ where: { id: { in: stale.map((d) => d.id) } } });
+        // After the rows, so the reference check sees the world as it now is.
+        for (const key of new Set(stale.map((d) => d.storageKey))) {
+          await this.freeStorageIfUnreferenced(key);
+        }
+        this.logger.log(`Purged ${stale.length} abandoned staged draft(s)`);
+      },
+    );
   }
 
   // ══════════════════════════════════════════════════════════════════════════

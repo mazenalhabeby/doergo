@@ -36,6 +36,14 @@ describe('every document read is scoped by type visibility', () => {
       'a member submitting their OWN scan — the duplicate-number check must see every ' +
       'member’s numbers or it stops catching the thing it exists for, and it returns a ' +
       'name rather than a document',
+    purgeAbandonedDrafts:
+      'a nightly sweep with NO caller — there is no actor whose visibility could scope it, ' +
+      'and it reads ids and storage keys of DRAFT rows only, which by definition nobody has ' +
+      'ever been allowed to see',
+    freeStorageIfUnreferenced:
+      'a reference count, not a read — it asks HOW MANY documents are the same bytes so a ' +
+      'content-addressed object is not deleted out from under them, and returns a number ' +
+      'rather than anything about a document',
   };
 
   const ASSERTS = /assertTypeVisible\(/;

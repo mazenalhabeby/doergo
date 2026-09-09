@@ -33,6 +33,23 @@ export interface FileMatch {
   periodMonth: number | null;
   /** Why it matched, for the review screen. */
   reason: string;
+  /**
+   * Where the period and the member came from.
+   *
+   * A screen shows this, because "read out of the document" and "read off the
+   * filename" deserve different amounts of trust from whoever is reviewing —
+   * and because a value that appeared from nowhere invites nobody to check it.
+   * Absent = the filename, which is the original behaviour.
+   */
+  periodSource?: 'content';
+  memberSource?: 'content';
+  /**
+   * The filename and the document both named a period, and they differ.
+   *
+   * Not resolved here on purpose: one of the two is wrong and no rule can say
+   * which, so the row asks. See `mergeMatch`.
+   */
+  periodConflict?: boolean;
 }
 
 /**

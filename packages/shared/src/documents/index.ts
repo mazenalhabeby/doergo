@@ -4,6 +4,7 @@ export * from './route';
 export * from './sign-link';
 export * from './merge-fields';
 export * from './batch-matching';
+export * from './content-matching';
 export * from './contract-layout';
 export * from './starter-templates';
 export * from './starter-types';

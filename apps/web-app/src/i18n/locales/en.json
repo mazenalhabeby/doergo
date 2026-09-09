@@ -2661,7 +2661,10 @@
     "clockInAction": "Clocked in",
     "clockOutAction": "Clocked out",
     "crmReminder": "Client follow-up due",
-    "signatureNeeded": "Your signature is needed"
+    "signatureNeeded": "Your signature is needed",
+    "timeOffRequest": "Time-off request",
+    "timeOffApproved": "Time off approved",
+    "timeOffRejected": "Time off not approved"
   },
   "landing": {
     "nav": {
@@ -7465,7 +7468,19 @@
         "manual": "Someone else…",
         "manualName": "Their name",
         "manualEmail": "Their email address"
-      }
+      },
+      "reading": "reading the file…",
+      "fromFile": "read from the file",
+      "month": "Month",
+      "year": "Year",
+      "periodConflict": "the filename and the file disagree — check this one",
+      "pendingDraftsHint": "Uploaded but not released — the member cannot see these and has not been told about them.",
+      "publishStaged": "Publish these",
+      "openDraft": "Open",
+      "discardDraft": "Discard",
+      "discarded": "Draft discarded",
+      "openFailed": "Could not open this document",
+      "answerSignersFirst": "Answer the signing questions below first."
     },
     "sign": {
       "title": "Sign document",
@@ -8078,5 +8093,143 @@
     "fitOn": "Turn it on when",
     "fitOff": "You can leave it off when",
     "goodToKnow": "Good to know"
+  },
+  "cover": {
+    "page": {
+      "subtitle": "Who is on the floor now, and who is asking to be off later."
+    },
+    "range": {
+      "fortnight": "2 weeks",
+      "month": "Month"
+    },
+    "chart": {
+      "team": "Team",
+      "minimum": "· minimum cover {{n}}",
+      "onFloor": "On the floor",
+      "againstMinimum": "Against minimum {{n}}",
+      "unassigned": "Not in any workspace",
+      "pendingTip": "pending — click to decide",
+      "emptyTitle": "Nobody to show here",
+      "emptyBody": "No member is assigned to a workspace yet. Assign people to a workspace and their leave will appear here."
+    },
+    "legend": {
+      "pending": "Pending — yours to decide",
+      "counts": "Cover counts only people rostered that day"
+    },
+    "summary": {
+      "waiting": "Waiting on you",
+      "earliest": "Earliest starts {{date}}",
+      "nothing": "Nothing to decide",
+      "risky": "Would break cover",
+      "riskySub": "Approving these drops a day below the floor",
+      "riskyNone": "None of them thin the floor",
+      "skill": "Leave a trade uncovered",
+      "skillSub": "The only person with that trade is asking",
+      "skillNone": "Every trade stays represented"
+    },
+    "floorNow": {
+      "title": "On the floor right now",
+      "hereOf": "here of {{n}} expected",
+      "nobody": "Nobody is assigned to this workspace.",
+      "viewLabel": "Layout",
+      "viewExceptions": "Only what needs you",
+      "viewLanes": "Everyone, grouped",
+      "allHere": "Everyone expected is here",
+      "notIn": "{{count}} has not clocked in",
+      "notIn_other": "{{count}} have not clocked in",
+      "working": "Working",
+      "nobodyIn": "Nobody has clocked in yet.",
+      "dueSoon": "{{count}} due shortly",
+      "notExpected": "Not expected today:",
+      "back": "back {{date}}"
+    },
+    "state": {
+      "busy": "On a job",
+      "working": "Clocked in, free",
+      "break": "On a break",
+      "expected": "Not in yet",
+      "leave": "On leave",
+      "rest": "Not rostered"
+    },
+    "chip": {
+      "free": "Clocked in, free",
+      "break": "On a break since {{time}}",
+      "notIn": "Not clocked in",
+      "leave": "On leave until {{date}}",
+      "rest": "Not rostered today",
+      "since": "since {{time}}",
+      "freeSince": "Free · in since {{time}}",
+      "breakSince": "Break · since {{time}}",
+      "dueIn": "Due {{time}} · in {{ago}}",
+      "lateBy": "Due {{time}} · {{ago}} ago"
+    },
+    "noRota": {
+      "badge": "no rota set",
+      "hint": "Nobody here has a working week set, so this counts heads rather than a rota."
+    },
+    "title": {
+      "ok": "Cover holds",
+      "tight": "Exactly at minimum",
+      "short": "Below minimum cover on {{count}} day",
+      "short_other": "Below minimum cover on {{count}} days",
+      "skill": "No {{skill}} cover"
+    },
+    "detail": {
+      "ok": "{{worst}} on the floor at the thinnest, against a minimum of {{floor}}.",
+      "tight": "{{worst}} left, which is the minimum. No slack — one sick day and the workspace is short.",
+      "short": "Approving this takes the thinnest day to {{worst}}, and this workspace needs {{floor}}.",
+      "skill": "They are the only {{skill}} person rostered here on {{count}} of these days. Headcount alone would have called this fine.",
+      "noFloor": "{{worst}} would be left. No minimum is set for this workspace, so there is nothing to judge it against."
+    },
+    "short": {
+      "ok": "{{worst}} left",
+      "tight": "At minimum ({{worst}})",
+      "short": "{{worst}} left, needs {{floor}}",
+      "skill": "No {{skill}} cover"
+    },
+    "floor": {
+      "none": "No minimum set",
+      "ok": "Minimum {{floor}}",
+      "tight": "At minimum {{floor}}",
+      "short": "{{n}} under minimum"
+    },
+    "drawer": {
+      "days": "{{count}} day",
+      "days_other": "{{count}} days",
+      "asked": "asked {{date}}",
+      "theirReason": "Their reason",
+      "dayByDay": "Day by day, if you approve",
+      "nobodyLeft": "nobody left",
+      "alreadyOff": "already off",
+      "jobsBooked": "Jobs already booked for {{name}}",
+      "jobsNote": "Approving this leaves {{count}} job needing another person.",
+      "jobsNote_other": "Approving this leaves {{count}} jobs needing another person.",
+      "noJobs": "Nothing booked in this window — nothing to hand over.",
+      "confirmRefusal": "Confirm refusal",
+      "reasonPlaceholder": "Why not? This is sent to them with the refusal — a reason beats a bare “rejected”."
+    },
+    "decision": {
+      "approved": "Approved — they are told now",
+      "rejected": "Not approved — they are told now"
+    },
+    "minCover": {
+      "title": "Minimum cover",
+      "description": "How many people must be on the floor here on a working day. Leave requests that would take this workspace below it are flagged before they are approved.",
+      "unset": "No minimum set — the chart shows the count and judges nothing.",
+      "set": "people, every working day",
+      "saved": "Minimum cover saved",
+      "invalid": "Enter a whole number between 0 and {{max}}."
+    },
+    "error": {
+      "title": "This page could not load",
+      "generic": "The server did not answer."
+    },
+    "lane": {
+      "notIn": "Not in",
+      "free": "Free now",
+      "onJob": "On a job",
+      "break": "On a break",
+      "away": "Away"
+    }
   }
 }

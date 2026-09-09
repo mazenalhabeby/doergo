@@ -2661,7 +2661,10 @@
     "clockInAction": "Eingestempelt",
     "clockOutAction": "Ausgestempelt",
     "crmReminder": "Kundenfolgetermin fällig",
-    "signatureNeeded": "Ihre Unterschrift wird benötigt"
+    "signatureNeeded": "Ihre Unterschrift wird benötigt",
+    "timeOffRequest": "Urlaubsantrag",
+    "timeOffApproved": "Urlaub genehmigt",
+    "timeOffRejected": "Urlaub nicht genehmigt"
   },
   "landing": {
     "nav": {
@@ -7465,7 +7468,19 @@
         "manual": "Jemand anderes…",
         "manualName": "Name",
         "manualEmail": "E-Mail-Adresse"
-      }
+      },
+      "reading": "Datei wird gelesen …",
+      "fromFile": "aus der Datei gelesen",
+      "month": "Monat",
+      "year": "Jahr",
+      "periodConflict": "Dateiname und Dateiinhalt widersprechen sich – bitte prüfen",
+      "pendingDraftsHint": "Hochgeladen, aber nicht freigegeben – das Mitglied sieht diese nicht und wurde nicht benachrichtigt.",
+      "publishStaged": "Diese freigeben",
+      "openDraft": "Öffnen",
+      "discardDraft": "Verwerfen",
+      "discarded": "Entwurf verworfen",
+      "openFailed": "Dieses Dokument konnte nicht geöffnet werden",
+      "answerSignersFirst": "Bitte zuerst die Signaturfragen unten beantworten."
     },
     "sign": {
       "title": "Dokument unterschreiben",
@@ -8078,5 +8093,143 @@
     "fitOn": "Aktivieren, wenn",
     "fitOff": "Sie können es aus lassen, wenn",
     "goodToKnow": "Gut zu wissen"
+  },
+  "cover": {
+    "page": {
+      "subtitle": "Wer gerade im Dienst ist – und wer später frei haben möchte."
+    },
+    "range": {
+      "fortnight": "2 Wochen",
+      "month": "Monat"
+    },
+    "chart": {
+      "team": "Team",
+      "minimum": "· Mindestbesetzung {{n}}",
+      "onFloor": "Im Dienst",
+      "againstMinimum": "Gegen Minimum {{n}}",
+      "unassigned": "Keinem Arbeitsbereich zugeordnet",
+      "pendingTip": "offen – zum Entscheiden klicken",
+      "emptyTitle": "Niemand anzuzeigen",
+      "emptyBody": "Noch ist kein Mitglied einem Arbeitsbereich zugeordnet. Ordnen Sie Personen einem Arbeitsbereich zu, dann erscheinen ihre Abwesenheiten hier."
+    },
+    "legend": {
+      "pending": "Offen – von Ihnen zu entscheiden",
+      "counts": "Gezählt werden nur an diesem Tag eingeteilte Personen"
+    },
+    "summary": {
+      "waiting": "Wartet auf Sie",
+      "earliest": "Beginnt frühestens {{date}}",
+      "nothing": "Nichts zu entscheiden",
+      "risky": "Würde die Besetzung gefährden",
+      "riskySub": "Eine Genehmigung führt an einem Tag unter das Minimum",
+      "riskyNone": "Keiner davon gefährdet die Besetzung",
+      "skill": "Lässt ein Gewerk unbesetzt",
+      "skillSub": "Die einzige Person mit diesem Gewerk fragt an",
+      "skillNone": "Jedes Gewerk bleibt vertreten"
+    },
+    "floorNow": {
+      "title": "Gerade im Dienst",
+      "hereOf": "anwesend von {{n}} erwartet",
+      "nobody": "Diesem Arbeitsbereich ist niemand zugeordnet.",
+      "viewLabel": "Ansicht",
+      "viewExceptions": "Nur was Sie betrifft",
+      "viewLanes": "Alle, gruppiert",
+      "allHere": "Alle Erwarteten sind da",
+      "notIn": "{{count}} hat nicht eingestempelt",
+      "notIn_other": "{{count}} haben nicht eingestempelt",
+      "working": "Im Dienst",
+      "nobodyIn": "Noch hat niemand eingestempelt.",
+      "dueSoon": "{{count}} in Kürze erwartet",
+      "notExpected": "Heute nicht erwartet:",
+      "back": "zurück {{date}}"
+    },
+    "state": {
+      "busy": "Im Einsatz",
+      "working": "Eingestempelt, frei",
+      "break": "In der Pause",
+      "expected": "Noch nicht da",
+      "leave": "Abwesend",
+      "rest": "Nicht eingeteilt"
+    },
+    "chip": {
+      "free": "Eingestempelt, frei",
+      "break": "In Pause seit {{time}}",
+      "notIn": "Nicht eingestempelt",
+      "leave": "Abwesend bis {{date}}",
+      "rest": "Heute nicht eingeteilt",
+      "since": "seit {{time}}",
+      "freeSince": "Frei · da seit {{time}}",
+      "breakSince": "Pause · seit {{time}}",
+      "dueIn": "Erwartet {{time}} · in {{ago}}",
+      "lateBy": "Erwartet {{time}} · vor {{ago}}"
+    },
+    "noRota": {
+      "badge": "kein Dienstplan",
+      "hint": "Für niemanden hier ist eine Arbeitswoche hinterlegt – gezählt werden Köpfe, kein Dienstplan."
+    },
+    "title": {
+      "ok": "Besetzung hält",
+      "tight": "Genau am Minimum",
+      "short": "An {{count}} Tag unter der Mindestbesetzung",
+      "short_other": "An {{count}} Tagen unter der Mindestbesetzung",
+      "skill": "Keine {{skill}}-Vertretung"
+    },
+    "detail": {
+      "ok": "Am dünnsten Tag {{worst}} im Dienst, bei einem Minimum von {{floor}}.",
+      "tight": "{{worst}} verbleiben – genau das Minimum. Kein Puffer: eine Krankmeldung und der Bereich ist unterbesetzt.",
+      "short": "Eine Genehmigung senkt den dünnsten Tag auf {{worst}}; dieser Arbeitsbereich braucht {{floor}}.",
+      "skill": "Diese Person ist an {{count}} dieser Tage die einzige mit dem Gewerk {{skill}}. Eine reine Kopfzahl hätte das als unproblematisch gewertet.",
+      "noFloor": "Es blieben {{worst}}. Für diesen Arbeitsbereich ist kein Minimum hinterlegt, also gibt es keinen Maßstab."
+    },
+    "short": {
+      "ok": "{{worst}} verbleiben",
+      "tight": "Am Minimum ({{worst}})",
+      "short": "{{worst}} verbleiben, nötig {{floor}}",
+      "skill": "Keine {{skill}}-Vertretung"
+    },
+    "floor": {
+      "none": "Kein Minimum hinterlegt",
+      "ok": "Minimum {{floor}}",
+      "tight": "Am Minimum {{floor}}",
+      "short": "{{n}} unter dem Minimum"
+    },
+    "drawer": {
+      "days": "{{count}} Tag",
+      "days_other": "{{count}} Tage",
+      "asked": "beantragt {{date}}",
+      "theirReason": "Begründung",
+      "dayByDay": "Tag für Tag, bei Genehmigung",
+      "nobodyLeft": "niemand mehr da",
+      "alreadyOff": "bereits abwesend",
+      "jobsBooked": "Bereits eingeplante Aufträge für {{name}}",
+      "jobsNote": "Eine Genehmigung lässt {{count}} Auftrag ohne zuständige Person.",
+      "jobsNote_other": "Eine Genehmigung lässt {{count}} Aufträge ohne zuständige Person.",
+      "noJobs": "In diesem Zeitraum ist nichts eingeplant – nichts zu übergeben.",
+      "confirmRefusal": "Ablehnung bestätigen",
+      "reasonPlaceholder": "Warum nicht? Dies wird mit der Ablehnung mitgeschickt – eine Begründung ist besser als ein blosses „abgelehnt“."
+    },
+    "decision": {
+      "approved": "Genehmigt – die Person wird jetzt benachrichtigt",
+      "rejected": "Nicht genehmigt – die Person wird jetzt benachrichtigt"
+    },
+    "minCover": {
+      "title": "Mindestbesetzung",
+      "description": "Wie viele Personen an einem Arbeitstag hier im Dienst sein müssen. Urlaubsanträge, die darunter führen würden, werden vor der Genehmigung markiert.",
+      "unset": "Kein Minimum hinterlegt – die Übersicht zeigt die Zahl und bewertet sie nicht.",
+      "set": "Personen, an jedem Arbeitstag",
+      "saved": "Mindestbesetzung gespeichert",
+      "invalid": "Bitte eine ganze Zahl zwischen 0 und {{max}} eingeben."
+    },
+    "error": {
+      "title": "Diese Seite konnte nicht geladen werden",
+      "generic": "Der Server hat nicht geantwortet."
+    },
+    "lane": {
+      "notIn": "Nicht da",
+      "free": "Jetzt frei",
+      "onJob": "Im Einsatz",
+      "break": "In der Pause",
+      "away": "Abwesend"
+    }
   }
 }

@@ -34,6 +34,26 @@ const SIGNATURE_MODES = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as const;
  */
 
 export class CreateDocumentTypeDto {
+  /*
+    The signing route: an ordered list of {role}, or null for one signature.
+
+    ⚠️ This was absent while UpdateDocumentTypeDto carried it, and `whitelist`
+    strips what a DTO does not declare — so a new type's route was discarded
+    here, before any service saw it, without an error. The route had to be set
+    by reopening the type and saving a second time.
+
+    Passed through as an opaque array and validated in the service, where
+    routeProblem() owns the rule — restating it as decorators would give two
+    definitions of a legal route and one place for them to disagree.
+  */
+  @ApiPropertyOptional({
+    description: 'Ordered signer roles, e.g. [{"role":"MEMBER"},{"role":"RESPONSIBLE"}]. Null for a single signature.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(6)
+  signerRoute?: unknown[] | null;
+
   @ApiProperty({ example: 'payslip' })
   @IsString()
   @Length(1, 60)

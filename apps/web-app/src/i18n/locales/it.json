@@ -2661,7 +2661,10 @@
     "clockInAction": "Entrata registrata",
     "clockOutAction": "Uscita registrata",
     "crmReminder": "Follow-up cliente in scadenza",
-    "signatureNeeded": "Serve la tua firma"
+    "signatureNeeded": "Serve la tua firma",
+    "timeOffRequest": "Richiesta di ferie",
+    "timeOffApproved": "Ferie approvate",
+    "timeOffRejected": "Ferie non approvate"
   },
   "landing": {
     "nav": {
@@ -7474,7 +7477,19 @@
         "manual": "Qualcun altro…",
         "manualName": "Nome",
         "manualEmail": "Indirizzo e-mail"
-      }
+      },
+      "reading": "lettura del file…",
+      "fromFile": "letto dal file",
+      "month": "Mese",
+      "year": "Anno",
+      "periodConflict": "il nome del file e il contenuto non coincidono: da verificare",
+      "pendingDraftsHint": "Caricati ma non pubblicati: il membro non li vede e non è stato avvisato.",
+      "publishStaged": "Pubblica questi",
+      "openDraft": "Apri",
+      "discardDraft": "Scarta",
+      "discarded": "Bozza scartata",
+      "openFailed": "Impossibile aprire questo documento",
+      "answerSignersFirst": "Rispondi prima alle domande sulla firma qui sotto."
     },
     "sign": {
       "title": "Firma documento",
@@ -8087,5 +8102,143 @@
     "fitOn": "Lo attivi quando",
     "fitOff": "Può lasciarlo disattivato quando",
     "goodToKnow": "Bene sapere"
+  },
+  "cover": {
+    "page": {
+      "subtitle": "Chi è al lavoro ora e chi chiede di assentarsi più avanti."
+    },
+    "range": {
+      "fortnight": "2 settimane",
+      "month": "Mese"
+    },
+    "chart": {
+      "team": "Team",
+      "minimum": "· copertura minima {{n}}",
+      "onFloor": "In servizio",
+      "againstMinimum": "Rispetto al minimo {{n}}",
+      "unassigned": "In nessuno spazio di lavoro",
+      "pendingTip": "in attesa — clicca per decidere",
+      "emptyTitle": "Nessuno da mostrare",
+      "emptyBody": "Nessun membro è ancora assegnato a uno spazio di lavoro. Assegna delle persone a uno spazio e le loro assenze compariranno qui."
+    },
+    "legend": {
+      "pending": "In attesa — tocca a te decidere",
+      "counts": "Si contano solo le persone pianificate quel giorno"
+    },
+    "summary": {
+      "waiting": "In attesa di te",
+      "earliest": "La prima inizia il {{date}}",
+      "nothing": "Niente da decidere",
+      "risky": "Metterebbero a rischio la copertura",
+      "riskySub": "Approvarle porta un giorno sotto il minimo",
+      "riskyNone": "Nessuna riduce la copertura",
+      "skill": "Lasciano un mestiere scoperto",
+      "skillSub": "Lo chiede l'unica persona con quel mestiere",
+      "skillNone": "Ogni mestiere resta coperto"
+    },
+    "floorNow": {
+      "title": "In servizio adesso",
+      "hereOf": "presenti su {{n}} attesi",
+      "nobody": "Nessuno è assegnato a questo spazio di lavoro.",
+      "viewLabel": "Vista",
+      "viewExceptions": "Solo ciò che ti riguarda",
+      "viewLanes": "Tutti, raggruppati",
+      "allHere": "Ci sono tutti gli attesi",
+      "notIn": "{{count}} non ha timbrato",
+      "notIn_other": "{{count}} non hanno timbrato",
+      "working": "Al lavoro",
+      "nobodyIn": "Nessuno ha ancora timbrato.",
+      "dueSoon": "{{count}} attesi a breve",
+      "notExpected": "Oggi non attesi:",
+      "back": "rientra il {{date}}"
+    },
+    "state": {
+      "busy": "Su un intervento",
+      "working": "Timbrato, libero",
+      "break": "In pausa",
+      "expected": "Non ancora arrivato",
+      "leave": "In ferie",
+      "rest": "Non pianificato"
+    },
+    "chip": {
+      "free": "Timbrato, libero",
+      "break": "In pausa dalle {{time}}",
+      "notIn": "Non timbrato",
+      "leave": "In ferie fino al {{date}}",
+      "rest": "Oggi non pianificato",
+      "since": "dalle {{time}}",
+      "freeSince": "Libero · dalle {{time}}",
+      "breakSince": "Pausa · dalle {{time}}",
+      "dueIn": "Atteso {{time}} · tra {{ago}}",
+      "lateBy": "Atteso {{time}} · {{ago}} fa"
+    },
+    "noRota": {
+      "badge": "nessun turno impostato",
+      "hint": "Nessuno qui ha una settimana lavorativa impostata: si contano le persone, non un piano turni."
+    },
+    "title": {
+      "ok": "La copertura regge",
+      "tight": "Esattamente al minimo",
+      "short": "Sotto la copertura minima per {{count}} giorno",
+      "short_other": "Sotto la copertura minima per {{count}} giorni",
+      "skill": "Nessuna copertura {{skill}}"
+    },
+    "detail": {
+      "ok": "{{worst}} in servizio nel giorno più scoperto, con un minimo di {{floor}}.",
+      "tight": "Restano {{worst}}, cioè il minimo. Nessun margine: una malattia e lo spazio è scoperto.",
+      "short": "Approvarla porta il giorno più scoperto a {{worst}}, e questo spazio ne richiede {{floor}}.",
+      "skill": "È l'unica persona {{skill}} pianificata qui in {{count}} di questi giorni. Il solo conteggio l'avrebbe giudicata accettabile.",
+      "noFloor": "Ne resterebbero {{worst}}. Per questo spazio non è impostato alcun minimo, quindi non c'è un termine di paragone."
+    },
+    "short": {
+      "ok": "restano {{worst}}",
+      "tight": "Al minimo ({{worst}})",
+      "short": "restano {{worst}}, ne servono {{floor}}",
+      "skill": "Nessuna copertura {{skill}}"
+    },
+    "floor": {
+      "none": "Nessun minimo impostato",
+      "ok": "Minimo {{floor}}",
+      "tight": "Al minimo {{floor}}",
+      "short": "{{n}} sotto il minimo"
+    },
+    "drawer": {
+      "days": "{{count}} giorno",
+      "days_other": "{{count}} giorni",
+      "asked": "richiesto il {{date}}",
+      "theirReason": "La sua motivazione",
+      "dayByDay": "Giorno per giorno, se approvi",
+      "nobodyLeft": "non resta nessuno",
+      "alreadyOff": "già assenti",
+      "jobsBooked": "Interventi già pianificati per {{name}}",
+      "jobsNote": "Approvarla lascia {{count}} intervento senza incaricato.",
+      "jobsNote_other": "Approvarla lascia {{count}} interventi senza incaricato.",
+      "noJobs": "Nulla in programma in queste date — niente da passare.",
+      "confirmRefusal": "Conferma il rifiuto",
+      "reasonPlaceholder": "Perché no? Viene inviato insieme al rifiuto — una motivazione vale più di un semplice «rifiutato»."
+    },
+    "decision": {
+      "approved": "Approvato — la persona viene avvisata ora",
+      "rejected": "Non approvato — la persona viene avvisata ora"
+    },
+    "minCover": {
+      "title": "Copertura minima",
+      "description": "Quante persone devono essere in servizio qui in un giorno lavorativo. Le richieste che porterebbero lo spazio sotto tale soglia vengono segnalate prima dell'approvazione.",
+      "unset": "Nessun minimo impostato — il grafico mostra il numero senza giudicarlo.",
+      "set": "persone, ogni giorno lavorativo",
+      "saved": "Copertura minima salvata",
+      "invalid": "Inserisci un numero intero tra 0 e {{max}}."
+    },
+    "error": {
+      "title": "Impossibile caricare questa pagina",
+      "generic": "Il server non ha risposto."
+    },
+    "lane": {
+      "notIn": "Non timbrati",
+      "free": "Liberi ora",
+      "onJob": "Su un intervento",
+      "break": "In pausa",
+      "away": "Assenti"
+    }
   }
 }

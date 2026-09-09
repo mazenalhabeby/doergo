@@ -3088,7 +3088,12 @@ export const employeesApi = {
   },
 
   // Get task history
-  getTasks: async (id: string, params?: { status?: string; page?: number; limit?: number }) => {
+  // `startDate`/`endDate` filter on the DUE date — used by the leave drawer to
+  // ask "what is already booked for this person while they want to be away".
+  getTasks: async (
+    id: string,
+    params?: { status?: string; page?: number; limit?: number; startDate?: string; endDate?: string },
+  ) => {
     const endpoint = buildUrlWithQuery(`/employees/${id}/tasks`, params || {});
 
     const response = await api.get<{
@@ -3183,21 +3188,39 @@ export const employeesApi = {
   // TIME-OFF MANAGEMENT
   // ========================================================================
 
-  // Get all time-off requests for the organization
+  // Get all time-off requests for the organization. Pending rows carry a cover
+  // verdict, so the list can be decided without opening anything.
   getOrgTimeOff: async (status?: TimeOffStatus) => {
     const endpoint = buildUrlWithQuery('/employees/time-off', { status });
 
     const response = await api.get<{
       success: boolean;
-      data: (TimeOffRequest & {
-        technician: { id: string; firstName: string; lastName: string; email: string; specialty: string | null };
-      })[];
+      data: OrgTimeOffRequest[];
     }>(endpoint);
 
     if (response.error) {
       throw new Error(response.error);
     }
 
+    return response.data?.data || [];
+  },
+
+  // Who is on the floor right now, per workspace. One read: the browser would
+  // otherwise need the whole roster, every open shift and every active break to
+  // work this out — slower, and more than the viewer is entitled to see.
+  getFloorNow: async () => {
+    const response = await api.get<{ success: boolean; data: FloorSpace[] }>('/employees/floor-now');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data || [];
+  },
+
+  // Cover per workspace per day, for the chart footer. Computed server-side so
+  // the footer and the verdict above it read the same rule — a count derived in
+  // the browser would be a second implementation of "who is rostered".
+  getCoverRange: async (start: string, end: string) => {
+    const endpoint = buildUrlWithQuery('/employees/cover-range', { start, end });
+    const response = await api.get<{ success: boolean; data: CoverRangeSpace[] }>(endpoint);
+    if (response.error) throw new Error(response.error);
     return response.data?.data || [];
   },
 
@@ -3440,6 +3463,95 @@ export interface TimeOffRequest {
   rejectionReason?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * What approving a request would do to cover. Computed server-side (it needs
+ * the whole roster and the rota, which a browser has no business holding) and
+ * shaped as PARTS rather than a sentence, so the screen writes the words in the
+ * viewer's language. See `assessLeave` in @hbcfield/shared for the rule.
+ */
+export interface CoverName {
+  id: string;
+  firstName: string;
+  lastName: string;
+  specialty: string | null;
+}
+
+export interface CoverDay {
+  day: string;
+  /** On the floor as things stand. */
+  now: number;
+  /** On the floor if this were approved. Same function, one argument different. */
+  then: number;
+  breach: boolean;
+  skillGap: boolean;
+  working: CoverName[];
+  away: CoverName[];
+}
+
+export interface CoverVerdict {
+  level: "ok" | "tight" | "short" | "skill";
+  worst: number;
+  floor: number;
+  breachDays: number;
+  skillGapDays: number;
+  skill: string | null;
+  /** False when nobody in the workspace has a rota — the count is headcount. */
+  rotaKnown: boolean;
+  /** The working out. Days the person was not rostered anyway are left out. */
+  days: CoverDay[];
+}
+
+/** One workspace's cover for every day of a window — the chart footer. */
+export interface CoverRangeSpace {
+  spaceId: string;
+  minCover: number;
+  rotaKnown: boolean;
+  days: Array<{ day: string; rostered: number; working: number }>;
+}
+
+export type OrgTimeOffRequest = TimeOffRequest & {
+  technician: { id: string; firstName: string; lastName: string; email: string; specialty: string | null };
+  /** Present on PENDING requests only — a decided one needs no projection. */
+  cover?: CoverVerdict | null;
+};
+
+/** One person on the live floor panel. */
+export interface FloorPerson {
+  id: string;
+  firstName: string;
+  lastName: string;
+  specialty: string | null;
+  position: string | null;
+  /** Specialty when it was filled in, position otherwise. Print this one. */
+  trade: string | null;
+  /** leave → rest → break → busy/working → expected. See CoverService.floorNow. */
+  state: "busy" | "working" | "break" | "expected" | "leave" | "rest";
+  since: string | null;
+  isRemote: boolean;
+  breakSince: string | null;
+  leaveUntil: string | null;
+  /** When they were due in. Null when no rota or schedule says. */
+  dueAt: string | null;
+  /** Minutes past due — negative means still to come, so a screen stays calm. */
+  lateMinutes: number | null;
+  task: { id: string; title: string; status: string } | null;
+}
+
+/** One workspace's floor, right now. */
+export interface FloorSpace {
+  spaceId: string;
+  spaceName: string;
+  timezone?: string;
+  minCover: number;
+  /** Actually clocked in — from the clock. */
+  here: number;
+  /** Rostered and not on leave — from the rota. Deliberately a second number. */
+  expected: number;
+  status: "ok" | "tight" | "short";
+  rotaKnown: boolean;
+  people: FloorPerson[];
 }
 
 export interface EmployeeAvailability {
@@ -4064,6 +4176,8 @@ export interface UpdateLocationInput {
    * member decides who may.
    */
   geofencePolicy?: string;
+  /** The staffing floor. 0 = no floor set, which is not "nobody needed". */
+  minCover?: number;
   kind?: string;
   contactName?: string | null;
   contactEmail?: string | null;

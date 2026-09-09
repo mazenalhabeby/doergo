@@ -2661,7 +2661,10 @@
     "clockInAction": "Entrada registrada",
     "clockOutAction": "Salida registrada",
     "crmReminder": "Seguimiento de cliente pendiente",
-    "signatureNeeded": "Se necesita tu firma"
+    "signatureNeeded": "Se necesita tu firma",
+    "timeOffRequest": "Solicitud de vacaciones",
+    "timeOffApproved": "Vacaciones aprobadas",
+    "timeOffRejected": "Vacaciones no aprobadas"
   },
   "landing": {
     "nav": {
@@ -7465,7 +7468,19 @@
         "manual": "Otra persona…",
         "manualName": "Su nombre",
         "manualEmail": "Su correo electrónico"
-      }
+      },
+      "reading": "leyendo el archivo…",
+      "fromFile": "leído del archivo",
+      "month": "Mes",
+      "year": "Año",
+      "periodConflict": "el nombre del archivo y su contenido no coinciden: revísalo",
+      "pendingDraftsHint": "Subidos pero no publicados: el miembro no los ve ni ha sido avisado.",
+      "publishStaged": "Publicar estos",
+      "openDraft": "Abrir",
+      "discardDraft": "Descartar",
+      "discarded": "Borrador descartado",
+      "openFailed": "No se pudo abrir este documento",
+      "answerSignersFirst": "Responde primero a las preguntas de firma de abajo."
     },
     "sign": {
       "title": "Firmar documento",
@@ -8078,5 +8093,143 @@
     "fitOn": "Actívelo cuando",
     "fitOff": "Puede dejarlo desactivado cuando",
     "goodToKnow": "Conviene saber"
+  },
+  "cover": {
+    "page": {
+      "subtitle": "Quién está trabajando ahora y quién pide ausentarse más adelante."
+    },
+    "range": {
+      "fortnight": "2 semanas",
+      "month": "Mes"
+    },
+    "chart": {
+      "team": "Equipo",
+      "minimum": "· cobertura mínima {{n}}",
+      "onFloor": "En servicio",
+      "againstMinimum": "Frente al mínimo {{n}}",
+      "unassigned": "Sin espacio de trabajo",
+      "pendingTip": "pendiente — haz clic para decidir",
+      "emptyTitle": "No hay nadie que mostrar",
+      "emptyBody": "Todavía no hay ningún miembro asignado a un espacio de trabajo. Asigna personas a un espacio y sus ausencias aparecerán aquí."
+    },
+    "legend": {
+      "pending": "Pendiente — te toca decidir",
+      "counts": "Solo cuentan las personas asignadas ese día"
+    },
+    "summary": {
+      "waiting": "Esperan tu decisión",
+      "earliest": "La más próxima empieza el {{date}}",
+      "nothing": "Nada que decidir",
+      "risky": "Romperían la cobertura",
+      "riskySub": "Aprobarlas deja algún día por debajo del mínimo",
+      "riskyNone": "Ninguna reduce la cobertura",
+      "skill": "Dejan un oficio sin cubrir",
+      "skillSub": "Lo pide la única persona con ese oficio",
+      "skillNone": "Todos los oficios siguen cubiertos"
+    },
+    "floorNow": {
+      "title": "En servicio ahora mismo",
+      "hereOf": "presentes de {{n}} previstos",
+      "nobody": "Nadie está asignado a este espacio de trabajo.",
+      "viewLabel": "Vista",
+      "viewExceptions": "Solo lo que te toca",
+      "viewLanes": "Todos, agrupados",
+      "allHere": "Está todo el mundo previsto",
+      "notIn": "{{count}} no ha fichado",
+      "notIn_other": "{{count}} no han fichado",
+      "working": "Trabajando",
+      "nobodyIn": "Todavía no ha fichado nadie.",
+      "dueSoon": "{{count}} previstos en breve",
+      "notExpected": "Hoy no se les espera:",
+      "back": "vuelve el {{date}}"
+    },
+    "state": {
+      "busy": "En un trabajo",
+      "working": "Fichado, libre",
+      "break": "En pausa",
+      "expected": "Aún no ha llegado",
+      "leave": "De permiso",
+      "rest": "No asignado"
+    },
+    "chip": {
+      "free": "Fichado, libre",
+      "break": "En pausa desde las {{time}}",
+      "notIn": "Sin fichar",
+      "leave": "De permiso hasta el {{date}}",
+      "rest": "Hoy no está asignado",
+      "since": "desde las {{time}}",
+      "freeSince": "Libre · desde las {{time}}",
+      "breakSince": "Pausa · desde las {{time}}",
+      "dueIn": "Previsto {{time}} · en {{ago}}",
+      "lateBy": "Previsto {{time}} · hace {{ago}}"
+    },
+    "noRota": {
+      "badge": "sin cuadrante",
+      "hint": "Nadie aquí tiene una semana laboral definida, así que se cuentan personas, no un cuadrante."
+    },
+    "title": {
+      "ok": "La cobertura aguanta",
+      "tight": "Justo en el mínimo",
+      "short": "Por debajo del mínimo {{count}} día",
+      "short_other": "Por debajo del mínimo {{count}} días",
+      "skill": "Sin cobertura de {{skill}}"
+    },
+    "detail": {
+      "ok": "{{worst}} en servicio el día más flojo, frente a un mínimo de {{floor}}.",
+      "tight": "Quedan {{worst}}, que es el mínimo. Sin margen: una baja y el espacio se queda corto.",
+      "short": "Aprobarlo deja el día más flojo en {{worst}}, y este espacio necesita {{floor}}.",
+      "skill": "Es la única persona de {{skill}} asignada aquí en {{count}} de estos días. Contar cabezas habría dado esto por bueno.",
+      "noFloor": "Quedarían {{worst}}. Este espacio no tiene mínimo definido, así que no hay con qué compararlo."
+    },
+    "short": {
+      "ok": "quedan {{worst}}",
+      "tight": "En el mínimo ({{worst}})",
+      "short": "quedan {{worst}}, hacen falta {{floor}}",
+      "skill": "Sin cobertura de {{skill}}"
+    },
+    "floor": {
+      "none": "Sin mínimo definido",
+      "ok": "Mínimo {{floor}}",
+      "tight": "En el mínimo {{floor}}",
+      "short": "{{n}} por debajo del mínimo"
+    },
+    "drawer": {
+      "days": "{{count}} día",
+      "days_other": "{{count}} días",
+      "asked": "solicitado el {{date}}",
+      "theirReason": "Su motivo",
+      "dayByDay": "Día a día, si lo apruebas",
+      "nobodyLeft": "no queda nadie",
+      "alreadyOff": "ya ausentes",
+      "jobsBooked": "Trabajos ya asignados a {{name}}",
+      "jobsNote": "Aprobarlo deja {{count}} trabajo sin responsable.",
+      "jobsNote_other": "Aprobarlo deja {{count}} trabajos sin responsable.",
+      "noJobs": "No hay nada previsto en estas fechas — nada que traspasar.",
+      "confirmRefusal": "Confirmar la denegación",
+      "reasonPlaceholder": "¿Por qué no? Se le envía junto con la denegación — un motivo vale más que un simple «denegado»."
+    },
+    "decision": {
+      "approved": "Aprobado — se le avisa ahora",
+      "rejected": "No aprobado — se le avisa ahora"
+    },
+    "minCover": {
+      "title": "Cobertura mínima",
+      "description": "Cuántas personas deben estar aquí en un día laborable. Las solicitudes que dejarían el espacio por debajo se marcan antes de aprobarlas.",
+      "unset": "Sin mínimo definido — la vista muestra el número y no lo juzga.",
+      "set": "personas, cada día laborable",
+      "saved": "Cobertura mínima guardada",
+      "invalid": "Introduce un número entero entre 0 y {{max}}."
+    },
+    "error": {
+      "title": "No se pudo cargar esta página",
+      "generic": "El servidor no respondió."
+    },
+    "lane": {
+      "notIn": "Sin fichar",
+      "free": "Libres ahora",
+      "onJob": "En un trabajo",
+      "break": "En pausa",
+      "away": "Ausentes"
+    }
   }
 }
