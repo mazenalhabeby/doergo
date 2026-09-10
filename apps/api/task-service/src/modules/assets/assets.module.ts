@@ -9,6 +9,7 @@ import { AssetUsageService } from './asset-usage.service';
 import { AssetHoldersService } from './asset-holders.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
+import { AssetContractService } from './asset-contract.service';
 import { AssetsController } from './assets.controller';
 import { AssetsProcessor } from './assets.processor';
 
@@ -31,6 +32,8 @@ const SERVICES = [
   // Who held it and when, and what they spent on it while they did.
   AssetCustodyService,
   AssetExpenseService,
+  // A contract read into a record, a handover and a retirement.
+  AssetContractService,
 ];
 
 @Module({

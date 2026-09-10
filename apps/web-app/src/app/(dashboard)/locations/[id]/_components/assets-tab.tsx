@@ -4,12 +4,13 @@ import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Package, Plus, Pencil, Search, Trash2, User } from "lucide-react"
+import { ArrowLeft, FileText, Package, Plus, Pencil, Search, Trash2, User } from "lucide-react"
 
 import { assetsApi, type AssetCategory } from "@/lib/api"
 import {
   normalizeKindShape, kindHolderLabel, detailRowsForKind, type KindShape,
 } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { SectionHeader, EmptyState } from "./section-header"
 import { AssetKindDialog } from "./asset-kind-dialog"
 import { AssetRecordDialog, type AssetRecord } from "@/components/assets/asset-record-dialog"
+import { ContractDialog } from "@/components/assets/contract-dialog"
 import { OrphanAssetsCard } from "./orphan-assets-card"
 
 /**
@@ -31,6 +33,14 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const router = useRouter()
+  const { user } = useAuth()
+  /*
+    The whole contract flow — read, preview and apply — asks `canManageAssets`,
+    so the button asks it too. A token minted before the capability existed
+    carries neither flag; an admin is one either way, which is what stops an old
+    session losing a button it had yesterday.
+  */
+  const canManageAssets = !!(user?.canManageAssets ?? user?.canManageUsers) || user?.role === "ADMIN"
   /*
     Which type is open lives in the URL.
 
@@ -90,15 +100,37 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
           "What this workspace owns — apartments, vehicles, machines. Set up a kind here, then add the ones you have inside it.",
         )}
         action={
-          <AssetKindDialog
-            spaceId={spaceId}
-            onSaved={invalidate}
-            trigger={
-              <Button size="sm">
-                <Plus className="mr-1.5 h-4 w-4" /> {t("assetKinds.add", "New type")}
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            {/*
+              Only where something in this workspace is actually HELD by a
+              member. A contract hands a thing to somebody; a workspace of
+              apartments with no member holder has nobody to hand one to, and
+              offering the button there is a dead end three clicks deep.
+            */}
+            {canManageAssets && kinds.some((k: AssetCategory) => {
+              const shape = normalizeKindShape(k.config)
+              return shape.holder.enabled && shape.holder.members
+            }) && (
+              <ContractDialog
+                kinds={kinds}
+                onCreated={(id) => { invalidate(); router.push(`/assets/${id}`) }}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <FileText className="mr-1.5 h-4 w-4" /> {t("contract.button", "From a contract")}
+                  </Button>
+                }
+              />
+            )}
+            <AssetKindDialog
+              spaceId={spaceId}
+              onSaved={invalidate}
+              trigger={
+                <Button size="sm">
+                  <Plus className="mr-1.5 h-4 w-4" /> {t("assetKinds.add", "New type")}
+                </Button>
+              }
+            />
+          </div>
         }
       />
 

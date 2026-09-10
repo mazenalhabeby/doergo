@@ -445,6 +445,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | GET | `/assets/expenses/mine` | What I sent in, and what happened to it | mine |
 | GET · POST | `/assets/expenses/pending` · `/expenses/:id/review` | The office's queue, and the decision | read `canViewAllTasks` · write `canManageAssets` |
 | POST | `/assets/expenses/:id/receipt-url` | **Mint a link to one slip** — no list ever returns a URL | author, or `canManageAssets` |
+| POST | `/assets/contracts/read` · `/preview` · `/apply` | A contract → create the thing, hand it over, retire what it replaces | **all three** `canManageAssets` |
 
 > ⚠️ **THE HOLDER IS NEVER WRITTEN ONTO A COST.** Every entry carries the date the money moved; who held the asset that day is a LOOKUP (`holderOn` in shared). Storing it too gives two versions of the truth the first time somebody corrects a handover date — the likeliest repair in the whole feature.
 >
@@ -453,6 +454,18 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **A member's expense is SUBMITTED and counts for NOTHING until the office accepts it.** Totals sum `status = RECORDED` only. Recorded on arrival, anybody holding a van could move the organization's figures by photographing a slip.
 >
 > ⚠️ **One writer for two tables.** `AssetCustodyService` writes `AssetCustody` AND `AssetHolder`, in one transaction, and `AssetHoldersService.set()` was DELETED so nothing else can. An edit that changes the driver goes through the same path as the button — a drift here is a ledger attributed to the wrong person with nothing on screen to suggest it. The mirror self-heals: a holder row with no open period is repaired on the next save.
+>
+> ⚠️ **A contract PROPOSES; it never acts.** `read` → `preview` → `apply`, and the middle step cannot be skipped: a reader that silently creates records will eventually invent a van from a receipt. The proposal is computed on the SERVER on BOTH preview and apply from the kind and from what the member actually holds — the request carries a reading (a plate, a VIN), never "close custody X, retire asset Y". A client that could name the record to retire could retire any record.
+>
+> ⚠️ **All three ask `canManageAssets`, including the two that write nothing.** A preview answers a question about the organization's property — give it a kind and a member and it says what they hold and what would come off the books — and `canViewAllTasks` is held by an external supervisor. There is also no caller: nobody previews a contract they cannot apply. (A POST on a read permission also trips `external-observer-writes.spec.ts`, correctly.)
+>
+> ⚠️ **Only what the member holds OF THAT KIND is replaced.** Somebody holds a van and a laptop at once; a vehicle contract says nothing about the laptop.
+>
+> ⚠️ **A custody never STARTS in the future.** A rental beginning next Monday would leave the vehicle held by nobody until then, so every receipt in the gap falls out of both custodies. The start is clamped to today and the screen says so; the term's own dates go onto the record as the kind's fields.
+>
+> ⚠️ **On the phone the contract's TEXT never leaves the device** — it carries a home address, a licence number and bank details. Six confirmed fields travel; nothing else.
+>
+> ⚠️ Retiring the replaced record sets `RETIRED`, which is what `BILLABLE_ASSET_WHERE` excludes — so it also stops the old vehicle being billed, while its jobs and its ledger stay.
 >
 > ⚠️ The migration BACKFILLS an open period per existing holder row, dated from `AssetHolder.createdAt`. Without it every asset in somebody's hands reads "held by nobody" on the day it ships, and its whole ledger attributes to nobody with it.
 
@@ -1099,6 +1112,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `holderOn()`, `holdersOn()`, `totalsByPeriod()`, `attribute()` | Whose cost was this? Computed from the date, never stored |
 | `custodyDays()`, `openPeriods()`, `partyKey()` | One custody, read for a screen |
 | `parseReceipt()`, `moneyToCents()`, `categoryForReceipt()` | A photographed slip → amount, date, vendor. On-device, nothing calls out |
+| `parseContract()`, `proposeFromContract()`, `canApply()`, `fieldsForKind()` | A contract → a reading, then the three things accepting it would do |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
 | `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
@@ -1266,7 +1280,9 @@ Migration `20260910120000_asset_custody` (additive + backfill; verified locally:
 - **Web**: a Custody tab on the record (timeline + what each period cost), a handover dialog that renders `planHandover`'s own plan before you agree to it, a Custody tab on the member (both cars, costs split at the handover), and an org-wide queue on `/assets` that renders nothing when empty.
 - **Mobile**: "What I have" (custody, so no picker of the org's equipment) → camera → check-before-sending with read-vs-guess colouring. The entry appears only when the member actually holds something.
 - **DRY**: the holder picker was extracted from the record dialog and is now shared with the handover dialog — two copies of a control that enforces a kind's rules is how a single-holder van gets two drivers on one screen and one on the other.
-- Guards: `expense-authorization.spec.ts` (proved by planting a permission on the member route), `asset-custody.spec.ts` (both tables move together, drift self-heals), `custody.spec.ts` + `receipt.spec.ts` in shared.
+- **A contract creates the car, hands it over and retires the old one** — `read` → `preview` → `apply`, on the web (paste the agreement) and on the phone (photograph it, gated on `canManageAssets`, entry on the Manage tab). See the endpoint table for the six warnings that matter.
+- ⚠️ **`external-observer-writes.spec.ts` caught the first cut**: `read` and `preview` were POSTs gated on `canViewAllTasks`. The right answer was not an exception — it was noticing that a preview enumerates what a member holds, and gating all three on `canManageAssets`.
+- Guards: `expense-authorization.spec.ts` (proved by planting a permission on the member route), `asset-custody.spec.ts` (both tables move together, drift self-heals), `asset-contract.spec.ts` (the plan is recomputed, a client-supplied "retire this" is ignored), `custody.spec.ts` + `receipt.spec.ts` + `contract.spec.ts` in shared.
 
 ### Recently Completed (2026-09-08) — Draw the site, sell to clients, drive the route
 

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  ArrayMaxSize, IsArray, IsDateString, IsIn, IsInt, IsOptional, IsString,
+  ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString,
   Max, MaxLength, Min, ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -115,4 +115,97 @@ export class ReviewExpenseDto {
   @IsString()
   @MaxLength(300)
   note?: string;
+}
+
+/**
+ * The reading off a contract, after a person has corrected it.
+ *
+ * ⚠️ Note what is NOT here: no `closeAssetId`, no `retireAssetId`, no list of
+ * steps. Those are DERIVED on the server from the kind and from what the member
+ * actually holds, on the preview and again on the apply. A client that could
+ * name the record to retire could retire any record.
+ */
+export class ContractFieldsDto {
+  @ApiPropertyOptional({ description: 'Overrides whatever the reader assembled.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  registration?: string;
+
+  @ApiPropertyOptional({ description: '17 characters, and the one field that proves itself.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  vin?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  serial?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  manufacturer?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  model?: string;
+
+  @ApiPropertyOptional({ description: 'When the term begins. A custody never starts in the future.' })
+  @IsOptional()
+  @IsDateString()
+  startsOn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  endsOn?: string;
+}
+
+/** Everything the proposal needs: which kind, which person, what was read. */
+export class ContractProposalDto {
+  @ApiProperty({ description: 'The KIND — it decides the workspace, the fields and the holder rules.' })
+  @IsString()
+  @MaxLength(60)
+  categoryId!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  typeId?: string;
+
+  @ApiProperty({ description: 'Who receives it.' })
+  @IsString()
+  @MaxLength(60)
+  holderUserId!: string;
+
+  @ApiProperty({ type: ContractFieldsDto })
+  @ValidateNested()
+  @Type(() => ContractFieldsDto)
+  fields!: ContractFieldsDto;
+
+  @ApiPropertyOptional({ description: 'Retire what it replaces — which also stops it being billed.' })
+  @IsOptional()
+  @IsBoolean()
+  retireReplaced?: boolean;
+}
+
+/** Text somebody pasted, for the surface that has no reader of its own. */
+export class ReadContractDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(20_000)
+  text!: string;
 }

@@ -1654,6 +1654,54 @@ export interface CustodyTimeline {
   unattributed: { inCents: number; outCents: number; netCents: number; entries: number };
 }
 
+/** What a reader made of a contract, before a person corrects it. */
+export interface ContractReading {
+  registration?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  vin?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  serial?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  manufacturer?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  model?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  startsOn?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  endsOn?: { value: string; confidence: 'certain' | 'likely'; raw: string };
+  lines: string[];
+}
+
+/** The corrected reading — what the server is actually sent. */
+export interface ContractFields {
+  name?: string;
+  registration?: string;
+  vin?: string;
+  serial?: string;
+  manufacturer?: string;
+  model?: string;
+  startsOn?: string;
+  endsOn?: string;
+}
+
+export type ContractStep =
+  | { kind: 'create'; asset: { name: string; serialNumber?: string; model?: string; manufacturer?: string; details: Array<{ label: string; value: string }> } }
+  | { kind: 'hand-over'; startsOn?: string }
+  | { kind: 'close'; assetId: string; assetName: string }
+  | { kind: 'retire'; assetId: string; assetName: string };
+
+export interface ContractPreview {
+  asset: { name: string; serialNumber?: string; model?: string; manufacturer?: string; details: Array<{ label: string; value: string }> };
+  steps: ContractStep[];
+  problems: Array<{ kind: 'no-name' | 'no-holder' }>;
+  canApply: boolean;
+  startsAt: string;
+  /** The term begins later than today, so custody is recorded from today. */
+  startClamped: boolean;
+}
+
+export interface ContractProposalInput {
+  categoryId: string;
+  typeId?: string;
+  holderUserId: string;
+  fields: ContractFields;
+  retireReplaced?: boolean;
+}
+
 /** One expense waiting on a decision, in the office's queue. */
 export interface PendingExpense extends AssetMoneyEntry {
   assetId: string;
@@ -2101,6 +2149,41 @@ export const assetsApi = {
       `/assets/${assetId}/custody`,
       input,
     );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // ============================================
+  // CONTRACTS — read one, then propose, then apply
+  // ============================================
+
+  /** Text → fields. Decides nothing; the browser has no reader of its own. */
+  readContract: async (text: string) => {
+    const response = await api.post<{ success: boolean; data: ContractReading }>('/assets/contracts/read', { text });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /**
+   * What accepting it would do.
+   *
+   * ⚠️ A POST, not a GET, because it carries a plate, a VIN and a person's id —
+   * and this gateway logs URLs. The steps come back computed on the SERVER from
+   * the kind and from what the member actually holds; nothing here names the
+   * record to retire, and nothing here could.
+   */
+  previewContract: async (input: ContractProposalInput) => {
+    const response = await api.post<{ success: boolean; data: ContractPreview }>('/assets/contracts/preview', input);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /** Do it — all of it, or none of it. The server recomputes the plan first. */
+  applyContract: async (input: ContractProposalInput) => {
+    const response = await api.post<{
+      success: boolean;
+      data: { assetId: string; name: string; replaced: string[]; retired: boolean; startClamped: boolean };
+    }>('/assets/contracts/apply', input);
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },

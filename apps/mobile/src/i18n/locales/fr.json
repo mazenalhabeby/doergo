@@ -1059,6 +1059,10 @@
     "issues": {
       "label": "Incidents de poste",
       "desc": "Blocages signalés sur site"
+    },
+    "contract": {
+      "label": "À partir d’un contrat",
+      "desc": "Photographiez le contrat — il crée le bien, le remet et retire l’ancien"
     }
   },
   "components": {
@@ -2162,5 +2166,43 @@
     "accepted": "Acceptée",
     "rejected": "Refusée",
     "pending": "En attente"
+  },
+  "contract": {
+    "title": "À partir d’un contrat",
+    "button": "À partir d’un contrat",
+    "check": "Vérifiez la lecture",
+    "pasteHint": "Collez le contrat. Il remplit ce qu’il trouve et ne crée rien avant votre accord.",
+    "pastePh": "Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 DK\nMietbeginn: 15.09.2026",
+    "read": "Le lire",
+    "skipRead": "Je remplis moi-même",
+    "kind": "De quel type de chose s’agit-il",
+    "pickKind": "Choisir…",
+    "noKinds": "Aucun type de cet espace n’est détenu par un membre — un contrat n’a personne à qui remettre.",
+    "holder": "Qui le reçoit",
+    "pickHolder": "Choisir…",
+    "noMembers": "Aucun membre à choisir.",
+    "fRegistration": "Immatriculation",
+    "fVin": "VIN / n° de série",
+    "fManufacturer": "Marque",
+    "fModel": "Modèle",
+    "fStarts": "Début",
+    "fEnds": "Fin",
+    "needName": "Rien ne l’identifie encore — une immatriculation, un VIN, ou marque et modèle.",
+    "retire": "Retirer ce qu’il remplace",
+    "retireHint": "Conserve son historique et ses interventions, et arrête sa facturation.",
+    "next": "Voir ce qui se passe",
+    "apply": "Le faire",
+    "stepCreate": "Crée « {{name}} » dans {{kind}}.",
+    "stepHand": "Le remet à {{name}} à partir d’aujourd’hui.",
+    "stepClose": "Clôt sa garde de {{name}} — les frais suivants ne lui sont plus imputés.",
+    "stepRetire": "Retire {{name}}. Son historique reste ; sa facturation s’arrête.",
+    "clamped": "Le contrat commence plus tard qu’aujourd’hui : la garde est enregistrée à partir d’aujourd’hui — rien ne peut rester sans détenteur entre-temps. Les dates du contrat sont conservées sur la fiche.",
+    "created": "{{name}} est enregistré et remis.",
+    "readFailed": "Lecture impossible — remplissez vous-même.",
+    "previewFailed": "Impossible de déterminer l’effet",
+    "applyFailed": "Impossible de le faire",
+    "notAllowed": "Réservé à qui gère le registre des biens.",
+    "aim": "Cadrez la page — la lecture reste sur ce téléphone",
+    "typeInstead": "Saisir à la main"
   }
 }

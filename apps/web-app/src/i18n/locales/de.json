@@ -6829,7 +6829,8 @@
     "moveKind": "Art…",
     "moveNoKinds": "Dieser Arbeitsbereich hat noch keine Objektarten.",
     "moveDrops": "{{kind}} kennt diese Felder nicht — sie werden gelöscht:",
-    "moveKeeps": "Alle Felder dieses Objekts gibt es auch in {{kind}} — nichts geht verloren."
+    "moveKeeps": "Alle Felder dieses Objekts gibt es auch in {{kind}} — nichts geht verloren.",
+    "fromContract": "Aus einem Vertrag angelegt"
   },
   "assetMoney": {
     "title": "Geld",
@@ -8286,5 +8287,43 @@
     "viewReceipt": "Beleg ansehen",
     "someone": "Jemand",
     "anAsset": "Ein Objekt"
+  },
+  "contract": {
+    "title": "Aus einem Vertrag",
+    "button": "Aus einem Vertrag",
+    "check": "Prüfen, was gelesen wurde",
+    "pasteHint": "Den Vertrag einfügen. Es füllt aus, was es findet, und legt nichts an, bevor Sie es sagen.",
+    "pastePh": "Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 DK\nMietbeginn: 15.09.2026",
+    "read": "Auslesen",
+    "skipRead": "Selbst ausfüllen",
+    "kind": "Um was für eine Sache geht es",
+    "pickKind": "Wählen…",
+    "noKinds": "Keine Art in diesem Arbeitsbereich wird von einem Mitglied gehalten — ein Vertrag hat niemanden zum Übergeben.",
+    "holder": "Wer bekommt es",
+    "pickHolder": "Wählen…",
+    "noMembers": "Keine Mitglieder zur Auswahl.",
+    "fRegistration": "Kennzeichen",
+    "fVin": "FIN / Seriennummer",
+    "fManufacturer": "Hersteller",
+    "fModel": "Modell",
+    "fStarts": "Beginn",
+    "fEnds": "Ende",
+    "needName": "Noch nichts identifiziert die Sache — ein Kennzeichen, eine FIN oder Hersteller und Modell.",
+    "retire": "Das Ersetzte ausmustern",
+    "retireHint": "Behält Historie und Aufträge und beendet die Verrechnung.",
+    "next": "Ansehen, was passiert",
+    "apply": "Ausführen",
+    "stepCreate": "Legt „{{name}}“ in {{kind}} an.",
+    "stepHand": "Übergibt es ab heute an {{name}}.",
+    "stepClose": "Beendet die Übergabe von {{name}} — spätere Kosten zählen nicht mehr darauf.",
+    "stepRetire": "Mustert {{name}} aus. Die Historie bleibt; die Verrechnung endet.",
+    "clamped": "Der Vertrag beginnt später als heute, daher wird die Übergabe ab heute erfasst — dazwischen darf nichts von niemandem gehalten werden. Die Vertragsdaten bleiben am Datensatz.",
+    "created": "{{name}} ist erfasst und übergeben.",
+    "readFailed": "Konnte nicht gelesen werden — bitte selbst ausfüllen.",
+    "previewFailed": "Konnte nicht ermitteln, was das bewirkt",
+    "applyFailed": "Konnte nicht ausgeführt werden",
+    "notAllowed": "Das darf nur jemand, der das Anlagenverzeichnis verwaltet.",
+    "aim": "Die Seite ins Bild nehmen — das Gelesene bleibt auf diesem Telefon",
+    "typeInstead": "Stattdessen eingeben"
   }
 }

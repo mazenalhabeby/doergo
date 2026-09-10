@@ -110,6 +110,19 @@ export class AssetsService extends BaseGatewayService {
     return this.send({ cmd: 'asset_expense_receipt_url' }, data);
   }
 
+  // Contracts — read, then propose, then apply.
+  async contractRead(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_contract_read' }, data);
+  }
+
+  async contractPreview(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_contract_preview' }, data);
+  }
+
+  async contractApply(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_contract_apply' }, data);
+  }
+
   async listRows(data: Record<string, any>) {
     return this.send({ cmd: 'list_asset_rows' }, data);
   }

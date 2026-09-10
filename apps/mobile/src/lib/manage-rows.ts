@@ -26,6 +26,16 @@ export const MANAGE_ROWS = [
   { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4', permission: 'canManageUsers', orgWide: true },
   { icon: 'alert-circle', labelKey: 'manage.issues.label', descKey: 'manage.issues.desc', route: 'sheet:issues', color: '#ef4444', permission: 'canViewAllTasks', orgWide: false },
   { icon: 'time', labelKey: 'manage.schedules.label', descKey: 'manage.schedules.desc', route: '/(app)/manage/schedules', color: '#10b981', permission: 'canViewAllTasks', orgWide: true },
+  /*
+    Photograph a rental agreement at the desk and the van is on the books before
+    you are out of the car park — created, handed over, and the one it replaces
+    retired.
+
+    `canManageAssets` and org-wide, matching the endpoint: `POST
+    /assets/contracts/apply` is `@RequirePermission`, so a space role however
+    senior is refused there and must be refused a door to it here too.
+  */
+  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: true },
 ] as const;
 
 export type ManageRow = (typeof MANAGE_ROWS)[number];

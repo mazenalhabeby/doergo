@@ -4,3 +4,4 @@
  */
 export * from './custody';
 export * from './receipt';
+export * from './contract';

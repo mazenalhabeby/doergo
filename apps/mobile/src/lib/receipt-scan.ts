@@ -1,5 +1,5 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { parseReceipt, type ParsedReceipt } from '@hbcfield/shared/client';
+import { parseReceipt, parseContract, type ParsedReceipt, type ParsedContract } from '@hbcfield/shared/client';
 
 /**
  * A photograph of a receipt → the amount, the date and who was paid.
@@ -85,4 +85,26 @@ export async function scanReceipt(uri: string): Promise<{ receipt: ParsedReceipt
   return { receipt: parseReceipt(lines), lines };
 }
 
-export type { ParsedReceipt };
+/**
+ * A contract, read the same way and by the same reader.
+ *
+ * Shares `toLines` with the receipt on purpose: both are a page of printed text
+ * whose reading order matters, and a second sort with its own idea of "top"
+ * would eventually disagree with this one about which line the total is on.
+ *
+ * ⚠️ The TEXT NEVER LEAVES THE PHONE. What goes to the server is the fields
+ * after a person has corrected them — a plate, a make, two dates. A rental
+ * agreement carries the member's home address, their licence number and their
+ * bank details, and none of that is the organization's to keep.
+ */
+export async function scanContract(uri: string): Promise<{ contract: ParsedContract; lines: string[] }> {
+  if (!ocr) throw new Error('This build cannot read documents');
+  const result = await ocr.recognizeText(uri);
+  const lines = toLines(result.blocks as never);
+  return { contract: parseContract(lines), lines };
+}
+
+/** Reading a contract needs exactly what reading a slip needs. */
+export const canScanContracts = canScanReceipts;
+
+export type { ParsedReceipt, ParsedContract };

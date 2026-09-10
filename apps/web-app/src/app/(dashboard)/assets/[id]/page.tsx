@@ -475,10 +475,20 @@ function Timeline({ loading, activities }: { loading: boolean; activities: Asset
         return (
           <div key={a.id} className="rounded-xl border border-border bg-card p-3">
             <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              {/*
+                ⚠️ An unrecognised type used to fall through to "Note", so a
+                system event would read as something a person wrote. That is
+                worse than an ugly label: a row explaining where the asset came
+                from would claim somebody typed it.
+              */}
               <span className="font-semibold text-foreground">
                 {a.type === "HOLDER_CHANGED"
                   ? t("assetRecords.handedOver", "Changed hands")
-                  : t("assetRecords.note", "Note")}
+                  : a.type === "CREATED_FROM_CONTRACT"
+                    ? t("assetRecords.fromContract", "Created from a contract")
+                    : a.type === "NOTE"
+                      ? t("assetRecords.note", "Note")
+                      : a.type}
               </span>
               <span>·</span>
               <span>{author}</span>

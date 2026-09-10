@@ -6829,7 +6829,8 @@
     "moveKind": "Kind…",
     "moveNoKinds": "That workspace has no asset kinds yet.",
     "moveDrops": "{{kind}} does not have these fields, and they will be deleted:",
-    "moveKeeps": "Every field on this record exists in {{kind}} — nothing is lost."
+    "moveKeeps": "Every field on this record exists in {{kind}} — nothing is lost.",
+    "fromContract": "Created from a contract"
   },
   "assetMoney": {
     "title": "Money",
@@ -8286,5 +8287,43 @@
     "viewReceipt": "View the receipt",
     "someone": "Someone",
     "anAsset": "An asset"
+  },
+  "contract": {
+    "title": "From a contract",
+    "button": "From a contract",
+    "check": "Check what it read",
+    "pasteHint": "Paste the agreement. It fills in what it can find and creates nothing until you say so.",
+    "pastePh": "Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 DK\nMietbeginn: 15.09.2026",
+    "read": "Read it",
+    "skipRead": "Fill it in myself",
+    "kind": "What kind of thing",
+    "pickKind": "Choose…",
+    "noKinds": "No type in this workspace is held by a member — a contract has nobody to hand it to.",
+    "holder": "Who gets it",
+    "pickHolder": "Choose…",
+    "noMembers": "No members to choose from.",
+    "fRegistration": "Registration",
+    "fVin": "VIN / serial",
+    "fManufacturer": "Make",
+    "fModel": "Model",
+    "fStarts": "Term starts",
+    "fEnds": "Term ends",
+    "needName": "Nothing here identifies it yet — a registration, a VIN, or a make and model.",
+    "retire": "Retire what it replaces",
+    "retireHint": "Keeps its history and its jobs, and stops it being billed.",
+    "next": "See what happens",
+    "apply": "Do it",
+    "stepCreate": "Creates “{{name}}” in {{kind}}.",
+    "stepHand": "Hands it to {{name}} from today.",
+    "stepClose": "Closes their custody of {{name}} — later costs stop landing on it.",
+    "stepRetire": "Retires {{name}}. Its history stays; it stops being billed.",
+    "clamped": "The term starts later than today, so custody is recorded from today — nothing can be held by nobody in between. The term’s own dates are kept on the record.",
+    "created": "{{name}} is on the books and handed over.",
+    "readFailed": "Could not read it — fill it in yourself.",
+    "previewFailed": "Could not work out what that would do",
+    "applyFailed": "Could not do it",
+    "notAllowed": "Only somebody who manages the asset register can do this.",
+    "aim": "Get the page in shot — the reading stays on this phone",
+    "typeInstead": "Type it instead"
   }
 }

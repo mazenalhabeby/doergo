@@ -6829,7 +6829,8 @@
     "moveKind": "Tipo…",
     "moveNoKinds": "Ese espacio de trabajo aún no tiene tipos de activos.",
     "moveDrops": "{{kind}} no tiene estos campos y se eliminarán:",
-    "moveKeeps": "Todos los campos de este registro existen en {{kind}}: no se pierde nada."
+    "moveKeeps": "Todos los campos de este registro existen en {{kind}}: no se pierde nada.",
+    "fromContract": "Creado desde un contrato"
   },
   "assetMoney": {
     "title": "Dinero",
@@ -8286,5 +8287,43 @@
     "viewReceipt": "Ver el recibo",
     "someone": "Alguien",
     "anAsset": "Un activo"
+  },
+  "contract": {
+    "title": "Desde un contrato",
+    "button": "Desde un contrato",
+    "check": "Comprueba lo que ha leído",
+    "pasteHint": "Pega el contrato. Rellena lo que encuentra y no crea nada hasta que tú lo digas.",
+    "pastePh": "Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 DK\nMietbeginn: 15.09.2026",
+    "read": "Leerlo",
+    "skipRead": "Lo relleno yo",
+    "kind": "Qué tipo de cosa",
+    "pickKind": "Elige…",
+    "noKinds": "Ningún tipo de este espacio lo tiene un miembro: un contrato no tiene a quién entregárselo.",
+    "holder": "Quién lo recibe",
+    "pickHolder": "Elige…",
+    "noMembers": "No hay miembros para elegir.",
+    "fRegistration": "Matrícula",
+    "fVin": "VIN / número de serie",
+    "fManufacturer": "Marca",
+    "fModel": "Modelo",
+    "fStarts": "Inicio",
+    "fEnds": "Fin",
+    "needName": "Todavía nada lo identifica: una matrícula, un VIN, o marca y modelo.",
+    "retire": "Retirar lo que sustituye",
+    "retireHint": "Conserva su historial y sus trabajos, y deja de facturarse.",
+    "next": "Ver qué ocurre",
+    "apply": "Hacerlo",
+    "stepCreate": "Crea «{{name}}» en {{kind}}.",
+    "stepHand": "Se lo entrega a {{name}} desde hoy.",
+    "stepClose": "Cierra su custodia de {{name}}: los gastos posteriores dejan de imputarse ahí.",
+    "stepRetire": "Retira {{name}}. Su historial se conserva; deja de facturarse.",
+    "clamped": "El contrato empieza más tarde que hoy, así que la custodia se registra desde hoy: nada puede quedar sin titular en medio. Las fechas del contrato se guardan en la ficha.",
+    "created": "{{name}} está dado de alta y entregado.",
+    "readFailed": "No se pudo leer: rellénalo tú.",
+    "previewFailed": "No se pudo calcular qué haría",
+    "applyFailed": "No se pudo hacer",
+    "notAllowed": "Solo quien gestiona el inventario puede hacer esto.",
+    "aim": "Encuadra la página: lo leído se queda en este teléfono",
+    "typeInstead": "Escribirlo a mano"
   }
 }

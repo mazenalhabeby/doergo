@@ -1059,6 +1059,10 @@
     "issues": {
       "label": "Problemi di turno",
       "desc": "Blocchi segnalati in cantiere"
+    },
+    "contract": {
+      "label": "Da un contratto",
+      "desc": "Fotografa il contratto: crea la cosa, la consegna e dismette la vecchia"
     }
   },
   "components": {
@@ -2162,5 +2166,43 @@
     "accepted": "Accettata",
     "rejected": "Rifiutata",
     "pending": "In attesa"
+  },
+  "contract": {
+    "title": "Da un contratto",
+    "button": "Da un contratto",
+    "check": "Controlla cosa ha letto",
+    "pasteHint": "Incolla il contratto. Compila quello che trova e non crea nulla finché non lo dici tu.",
+    "pastePh": "Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 DK\nMietbeginn: 15.09.2026",
+    "read": "Leggilo",
+    "skipRead": "Lo compilo io",
+    "kind": "Che tipo di cosa",
+    "pickKind": "Scegli…",
+    "noKinds": "Nessun tipo di questo spazio è tenuto da un membro: un contratto non ha a chi consegnare.",
+    "holder": "Chi lo riceve",
+    "pickHolder": "Scegli…",
+    "noMembers": "Nessun membro da scegliere.",
+    "fRegistration": "Targa",
+    "fVin": "VIN / matricola",
+    "fManufacturer": "Marca",
+    "fModel": "Modello",
+    "fStarts": "Inizio",
+    "fEnds": "Fine",
+    "needName": "Ancora nulla lo identifica: una targa, un VIN, o marca e modello.",
+    "retire": "Dismetti quello che sostituisce",
+    "retireHint": "Conserva storico e interventi, e smette di essere fatturato.",
+    "next": "Vedi cosa succede",
+    "apply": "Fallo",
+    "stepCreate": "Crea «{{name}}» in {{kind}}.",
+    "stepHand": "Lo consegna a {{name}} da oggi.",
+    "stepClose": "Chiude la sua custodia di {{name}}: le spese successive non gli vengono più addebitate.",
+    "stepRetire": "Dismette {{name}}. Lo storico resta; smette di essere fatturato.",
+    "clamped": "Il contratto inizia più avanti di oggi, quindi la custodia parte da oggi: nel mezzo nulla può restare senza titolare. Le date del contratto restano sulla scheda.",
+    "created": "{{name}} è a registro e consegnato.",
+    "readFailed": "Non si è potuto leggere: compilalo tu.",
+    "previewFailed": "Non si è potuto calcolare l’effetto",
+    "applyFailed": "Non è stato possibile",
+    "notAllowed": "Può farlo solo chi gestisce il registro dei beni.",
+    "aim": "Inquadra la pagina — la lettura resta su questo telefono",
+    "typeInstead": "Scrivilo a mano"
   }
 }

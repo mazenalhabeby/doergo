@@ -8,6 +8,7 @@ import { AssetActivityService } from './asset-activity.service';
 import { AssetUsageService } from './asset-usage.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
+import { AssetContractService } from './asset-contract.service';
 
 @Controller()
 export class AssetsController {
@@ -20,6 +21,7 @@ export class AssetsController {
     private readonly usage: AssetUsageService,
     private readonly custody: AssetCustodyService,
     private readonly expenses: AssetExpenseService,
+    private readonly contracts: AssetContractService,
   ) {}
 
   // ============================================
@@ -160,6 +162,30 @@ export class AssetsController {
   @MessagePattern({ cmd: 'asset_expense_receipt_url' })
   async expenseReceiptUrl(@Payload() data: any) {
     return this.expenses.receiptUrl(data);
+  }
+
+  // ============================================
+  // CONTRACTS — read one, then propose, then apply
+  // ============================================
+
+  @MessagePattern({ cmd: 'asset_contract_read' })
+  async contractRead(@Payload() data: any) {
+    return this.contracts.read(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_contract_preview' })
+  async contractPreview(@Payload() data: any) {
+    return this.contracts.preview(data);
+  }
+
+  /*
+    A write, straight to the service like the handover — one person pressing one
+    button and watching for the result. It is a transaction either way; a round
+    trip through Redis would only add latency to a screen somebody is looking at.
+  */
+  @MessagePattern({ cmd: 'asset_contract_apply' })
+  async contractApply(@Payload() data: any) {
+    return this.contracts.apply(data);
   }
 
   @MessagePattern({ cmd: 'list_asset_rows' })

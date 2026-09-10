@@ -27,6 +27,7 @@ import { AssetsQueueService } from './assets.queue.service';
 import {
   CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
   HandOverDto, ReceiptPresignDto, SubmitExpenseDto,
+  ContractProposalDto, ReadContractDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
@@ -217,6 +218,70 @@ export class AssetsController {
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
       canManageAssets: req.user.canManageAssets,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    A contract → a record, a handover, and the retirement of what it replaces.
+
+    ⚠️ ALL THREE ASK `canManageAssets`, INCLUDING THE TWO THAT WRITE NOTHING.
+
+    The obvious split — read and preview are reads, so gate them on
+    `canViewAllTasks` — is wrong twice over. First, a preview ANSWERS A QUESTION
+    ABOUT THE ORGANIZATION'S PROPERTY: give it a kind and a member and it says
+    what that person is holding and what would be taken off the books. An
+    external supervisor holds `canViewAllTasks` in their space, and enumerating
+    the fleet a member drives is not something being shown a site should buy.
+    Second, there is no caller: nobody previews a contract they cannot apply.
+
+    A POST that writes nothing also trips `external-observer-writes.spec.ts`,
+    which is the guard doing its job — the shape it flags is exactly the one
+    that has leaked twice in this codebase. Answering it by widening the guard
+    would be answering a real question with an exception.
+
+    ⚠️ The proposal is computed on the SERVER on both preview and apply, from
+    the kind and from what the member actually holds. The request carries the
+    reading — a plate, a VIN — and never "close custody X, retire asset Y". A
+    client that could name the record to retire could retire any record.
+  */
+  @Post('contracts/read')
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'Read a contract’s text into fields' })
+  async readContract(@Body() dto: ReadContractDto, @Request() req: any) {
+    return this.assetsService.contractRead({
+      text: dto.text,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('contracts/preview')
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'What accepting this contract would do' })
+  async previewContract(@Body() dto: ContractProposalDto, @Request() req: any) {
+    return this.assetsService.contractPreview({
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('contracts/apply')
+  // Creates a record, reassigns the organization's property, and can take a
+  // vehicle off the books. Nothing smaller than the write permission fits.
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'Create it, hand it over, retire what it replaces' })
+  async applyContract(@Body() dto: ContractProposalDto, @Request() req: any) {
+    return this.assetsService.contractApply({
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
       organizationId: req.user.organizationId,
     });
   }

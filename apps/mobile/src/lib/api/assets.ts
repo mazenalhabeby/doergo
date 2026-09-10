@@ -86,3 +86,76 @@ export const assetsApi = {
       body: JSON.stringify(input),
     }),
 };
+
+/** The reading off a contract, after a person has corrected it. */
+export interface ContractFields {
+  name?: string;
+  registration?: string;
+  vin?: string;
+  serial?: string;
+  manufacturer?: string;
+  model?: string;
+  startsOn?: string;
+  endsOn?: string;
+}
+
+export type ContractStep =
+  | { kind: 'create'; asset: { name: string } }
+  | { kind: 'hand-over'; startsOn?: string }
+  | { kind: 'close'; assetId: string; assetName: string }
+  | { kind: 'retire'; assetId: string; assetName: string };
+
+export interface ContractPreview {
+  asset: { name: string };
+  steps: ContractStep[];
+  canApply: boolean;
+  startClamped: boolean;
+}
+
+export interface ContractProposalInput {
+  categoryId: string;
+  holderUserId: string;
+  fields: ContractFields;
+  retireReplaced?: boolean;
+}
+
+/**
+ * A contract → a record, a handover, and the retirement of what it replaces.
+ *
+ * ⚠️ The reading is done ON THE DEVICE and the TEXT is never sent. A rental
+ * agreement carries a home address, a licence number and bank details; what
+ * travels is the six fields a person confirmed.
+ *
+ * ⚠️ And what travels is only ever the READING. The steps — which custody to
+ * close, which record to retire — are computed on the server from the kind and
+ * from what the member actually holds. A client that could name the record to
+ * retire could retire any record.
+ */
+export interface AssetKind {
+  id: string;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  spaceId?: string | null;
+  config?: unknown;
+}
+
+export const assetContractsApi = {
+  /** The org's kinds — needed to say WHAT is being created. `canViewAllTasks`. */
+  kinds: async (): Promise<AssetKind[]> => {
+    const res = await fetchWithAuth<AssetKind[]>('/asset-categories');
+    return res ?? [];
+  },
+
+  preview: (input: ContractProposalInput) =>
+    fetchWithAuth<ContractPreview>('/assets/contracts/preview', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  apply: (input: ContractProposalInput) =>
+    fetchWithAuth<{ assetId: string; name: string; replaced: string[]; retired: boolean; startClamped: boolean }>(
+      '/assets/contracts/apply',
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+};

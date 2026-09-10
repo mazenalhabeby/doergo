@@ -73,6 +73,31 @@ describe('reading other people’s custody', () => {
   });
 });
 
+describe('the contract flow asks the write permission throughout', () => {
+  /*
+    ⚠️ Including the two routes that write nothing, and that is deliberate.
+
+    A PREVIEW answers a question about the organization's property: give it a
+    kind and a member and it says what that person is holding and what would be
+    taken off the books. `canViewAllTasks` is held by an external supervisor,
+    and enumerating the fleet a member drives is not something being shown a
+    site should buy. There is also no caller for it — nobody previews a contract
+    they cannot apply.
+  */
+  it.each(['readContract', 'previewContract', 'applyContract'])('%s requires canManageAssets', (name) => {
+    expect(routeOf(name).permissions).toEqual(['canManageAssets']);
+  });
+
+  /*
+    ⚠️ All three are POSTs, and preview is one on purpose: it carries a plate, a
+    VIN and a person's id. A GET would put every one of them in a URL, and this
+    gateway logs URLs.
+  */
+  it.each(['readContract', 'previewContract', 'applyContract'])('%s is a POST, so a VIN never lands in a URL', (name) => {
+    expect(routeOf(name).method).toBe(RequestMethod.POST);
+  });
+});
+
 describe('a receipt link is minted, never listed', () => {
   /*
     A GET would be cacheable, shareable and logged with the rest of the URL
