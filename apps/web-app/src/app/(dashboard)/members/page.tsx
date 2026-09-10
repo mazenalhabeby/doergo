@@ -338,16 +338,43 @@ function ScheduleBadge({ member }: { member: OrgMember }) {
   )
 }
 
+/**
+ * Which workspaces a member belongs to, in a fixed-width cell.
+ *
+ * ⚠️ Two faults, one symptom. The cell joined every name with commas, and a
+ * member in four workspaces produced a string longer than the column — while
+ * `truncate` sat inside an `inline-flex`, which is SHRINK-TO-FIT and grows to
+ * whatever its content needs, so there was never a constrained width to
+ * truncate against. The row swelled past the grid and the whole table picked up
+ * a horizontal scrollbar because of one person.
+ *
+ * `max-w-full` gives the truncation something to bite on. The count does the
+ * rest: one name is the common case and reads in full, and the member in four
+ * shows "HBC Office +3" instead of three names nobody can read anyway. The full
+ * list is on the title, for the moment somebody actually wants it.
+ */
+const SPACES_SHOWN = 1
+
 function SpacesCell({ spaceNames }: { spaceNames: string[] }) {
   const { t } = useTranslation()
   if (spaceNames.length === 0) return <span className="text-sm text-muted-foreground/50 italic">{t("members.noSpaces")}</span>
+
+  const shown = spaceNames.slice(0, SPACES_SHOWN)
+  const rest = spaceNames.length - shown.length
+
   return (
     <Link
       href="/locations"
-      className="inline-flex items-center gap-1.5 min-w-0 text-muted-foreground hover:text-primary transition-colors"
+      title={spaceNames.join(", ")}
+      className="inline-flex max-w-full items-center gap-1.5 min-w-0 text-muted-foreground hover:text-primary transition-colors"
     >
       <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-      <span className="text-sm truncate">{spaceNames.join(", ")}</span>
+      <span className="min-w-0 truncate text-sm">{shown.join(", ")}</span>
+      {rest > 0 && (
+        <span className="flex-shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+          +{rest}
+        </span>
+      )}
     </Link>
   )
 }

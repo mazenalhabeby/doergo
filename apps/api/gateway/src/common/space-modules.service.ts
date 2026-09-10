@@ -96,6 +96,33 @@ export class SpaceModulesService {
   }
 
   /**
+   * The space an ASSET belongs to — through its kind.
+   *
+   * ⚠️ An asset has no `spaceId` of its own; it inherits its category's. Without
+   * this the guard could not resolve a space for any `/assets/:id` write and
+   * fell back to the ORGANIZATION's module set — so an organization that runs
+   * assets in one workspace, which is the normal way to run them, was refused
+   * with "the assets module is not switched on" while the module was plainly on.
+   */
+  async spaceOfAsset(assetId: string, organizationId: string): Promise<string | null> {
+    const key = `asset:${organizationId}:${assetId}`;
+    const hit = this.taskSpace.get(key);
+    if (hit && hit.expires > Date.now()) return hit.spaceId;
+
+    try {
+      const res: any = await firstValueFrom(
+        this.taskClient.send({ cmd: 'find_asset' }, { id: assetId, organizationId }).pipe(timeout(1_500)),
+      );
+      const spaceId: string | null = res?.data?.category?.spaceId ?? null;
+      this.rememberSpaceOf(key, spaceId);
+      return spaceId;
+    } catch {
+      // Unresolvable → the organization's modules, as everywhere else here.
+      return null;
+    }
+  }
+
+  /**
    * The space a planning object belongs to — a sprint, phase or epic.
    *
    * These carry a nullable spaceId: null means organization-wide, which is what

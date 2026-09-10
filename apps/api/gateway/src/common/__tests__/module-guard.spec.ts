@@ -188,3 +188,45 @@ describe('ModuleGuard — the space decides, and only the space', () => {
     ).rejects.toThrow(HttpException);
   });
 });
+
+/**
+ * An asset inherits its space from its KIND.
+ *
+ * ⚠️ This is the shape of the bug it fixes: an organization that runs assets in
+ * ONE workspace — the normal way to run them — was refused "the assets module
+ * is not switched on" on every write. The guard could not resolve a space for
+ * an asset, fell back to the ORGANIZATION's module set, and the organization
+ * does not carry a module that lives on a space.
+ *
+ * Two paths, because they are different questions: an existing asset knows its
+ * own kind, and a creation has no asset yet, so the request must name the
+ * workspace it is writing into.
+ */
+describe('assets resolve their workspace', () => {
+  const source = require('fs').readFileSync(
+    require('path').join(__dirname, '..', 'guards', 'module.guard.ts'),
+    'utf8',
+  );
+
+  it('asks the asset for its space on /assets/:id', () => {
+    expect(source).toContain("this.routeIs(req, '/assets/')");
+    expect(source).toContain('spaceOfAsset');
+  });
+
+  it('falls back rather than failing closed when the asset cannot be resolved', () => {
+    // A guard that refuses on a slow lookup takes a working feature from
+    // everyone — the same rule every other branch here follows.
+    const branch = source.slice(source.indexOf("this.routeIs(req, '/assets/')"));
+    expect(branch.slice(0, 400)).toContain('return null');
+  });
+
+  it('the resolver reads the KIND\'s space, not the asset\'s', () => {
+    const svc = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'space-modules.service.ts'),
+      'utf8',
+    );
+    // An asset has no spaceId column; reading `data.spaceId` would be null for
+    // every asset ever created and the fallback would never stop firing.
+    expect(svc).toContain('res?.data?.category?.spaceId');
+  });
+});

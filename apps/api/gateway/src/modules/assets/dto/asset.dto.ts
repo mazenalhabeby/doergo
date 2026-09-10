@@ -128,6 +128,21 @@ export class CreateAssetDto {
   @IsOptional()
   categoryId?: string;
 
+  /*
+    Not stored on the asset — an asset inherits its space from its KIND. It is
+    here so ModuleGuard can tell WHICH workspace is being written to, because at
+    creation there is no asset yet to ask. Without it the guard fell back to the
+    organization's module set and refused every org that runs assets in one
+    workspace rather than everywhere, which is the normal way to run them.
+
+    Trusted only as far as the org scoping in `get_effective_modules`, which
+    refuses a space belonging to another tenant.
+  */
+  @ApiPropertyOptional({ description: 'Workspace this asset belongs to — read by the module gate, not stored' })
+  @IsString()
+  @IsOptional()
+  spaceId?: string;
+
   @ApiPropertyOptional({ description: 'Type ID (must belong to the category)' })
   @IsString()
   @IsOptional()

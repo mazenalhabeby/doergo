@@ -223,7 +223,14 @@ export function AssetRecordDialog({
         // A move is a change of kind; the server drops the fields the
         // destination does not ask for, which is what `dropped` warned about.
         ? assetsApi.updateAsset(existing.id, { ...base, ...(moving && destKind ? { categoryId: destKind } : {}) })
-        : assetsApi.createAsset({ ...base, categoryId: kind.id })
+        /*
+          `spaceId` is sent for the MODULE GATE, not stored — an asset inherits
+          its space from its kind, and at creation there is no asset yet for the
+          guard to ask. Without it the gate falls back to the ORGANIZATION's
+          modules and refuses "assets is not switched on" to an org that runs
+          assets in one workspace, which is the normal way to run them.
+        */
+        : assetsApi.createAsset({ ...base, categoryId: kind.id, spaceId })
     },
     onSuccess: () => {
       notify.success(existing ? t("common.saved", "Saved") : t("assetRecords.added", "Added"))

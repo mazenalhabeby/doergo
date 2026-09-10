@@ -1656,6 +1656,8 @@ export interface CreateAssetInput {
   details?: { label: string; value: string }[];
   /** Who holds it — one, or several when the type allows it. */
   holders?: AssetHolderInput[];
+  /** The workspace, read by the module gate — an asset itself inherits its kind's. */
+  spaceId?: string
 }
 
 /** One holder on an asset: a member OR a client, never both. */

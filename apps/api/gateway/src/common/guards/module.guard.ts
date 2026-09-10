@@ -127,6 +127,18 @@ export class ModuleGuard implements CanActivate {
       A null spaceId means organization-wide, which is what every row created
       before they had a space still is.
     */
+    /*
+      An asset carries no space of its own — it inherits its KIND's. Resolved
+      here so an `/assets/:id` write is judged by the workspace the asset
+      actually lives in, rather than falling through to the organization's set
+      and refusing a module that is switched on where it matters.
+    */
+    if (this.routeIs(req, '/assets/') && typeof req.params?.id === 'string' && req.params.id) {
+      const spaceId = await this.spaceModules.spaceOfAsset(req.params.id, orgId);
+      if (spaceId) return this.spaceModules.forSpace(spaceId, orgId);
+      return null;
+    }
+
     const planning = PLANNING_ROUTES.find((r) => this.routeIs(req, r.segment));
     if (planning && typeof req.params?.id === 'string' && req.params.id) {
       const spaceId = await this.spaceModules.spaceOfPlanningObject(planning.cmd, req.params.id, orgId);
