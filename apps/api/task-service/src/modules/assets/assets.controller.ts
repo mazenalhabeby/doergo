@@ -9,6 +9,7 @@ import { AssetUsageService } from './asset-usage.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
 import { AssetContractService } from './asset-contract.service';
+import { AssetProposalService } from './asset-proposal.service';
 
 @Controller()
 export class AssetsController {
@@ -22,6 +23,7 @@ export class AssetsController {
     private readonly custody: AssetCustodyService,
     private readonly expenses: AssetExpenseService,
     private readonly contracts: AssetContractService,
+    private readonly proposals: AssetProposalService,
   ) {}
 
   // ============================================
@@ -186,6 +188,50 @@ export class AssetsController {
   @MessagePattern({ cmd: 'asset_contract_apply' })
   async contractApply(@Payload() data: any) {
     return this.contracts.apply(data);
+  }
+
+  // ============================================
+  // PROPOSALS — a member sends a page, the office decides
+  // ============================================
+
+  @MessagePattern({ cmd: 'asset_proposal_presign' })
+  async proposalPresign(@Payload() data: any) {
+    return this.proposals.presign(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_raise' })
+  async proposalRaise(@Payload() data: any) {
+    return this.proposals.raise(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_mine' })
+  async proposalMine(@Payload() data: any) {
+    return this.proposals.mine(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_pending' })
+  async proposalPending(@Payload() data: any) {
+    return this.proposals.pending(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_accept' })
+  async proposalAccept(@Payload() data: any) {
+    return this.proposals.accept(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_reject' })
+  async proposalReject(@Payload() data: any) {
+    return this.proposals.reject(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_withdraw' })
+  async proposalWithdraw(@Payload() data: any) {
+    return this.proposals.withdraw(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_proposal_document_url' })
+  async proposalDocumentUrl(@Payload() data: any) {
+    return this.proposals.documentUrl(data);
   }
 
   @MessagePattern({ cmd: 'list_asset_rows' })

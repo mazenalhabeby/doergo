@@ -75,11 +75,27 @@ const VIN = /\b([A-HJ-NPR-Z0-9]{17})\b/;
 
 /*
   A registration, as Austria, Germany and their neighbours print one: one to
-  three letters, then digits and letters, usually with a separator. Deliberately
-  loose about the separator and deliberately strict about the length — the loose
-  version matches half the reference numbers on a contract.
+  three letters, then digits and letters, usually with a separator.
+
+  ⚠️ AT LEAST TWO DIGITS, and that is not cosmetic. With one, "Seite 3 von 7"
+  matches — "VON 7" is three uppercase letters, a space and a digit — and a
+  page-number footer became the registration of a vehicle. Every plate this is
+  ever asked to read has two or more.
 */
-const REGISTRATION = /\b([A-ZÄÖÜ]{1,3})[\s-]?([0-9]{1,5}\s?[A-Z]{0,3})\b/;
+const REGISTRATION = /\b([A-ZÄÖÜ]{1,3})[\s-]?([0-9]{2,5}\s?[A-Z]{0,3})\b/;
+
+/*
+  Letter blocks that fit the shape and are never a registration.
+
+  The second half of the same problem: "TEL 43 664…" and "NR 2026" both match
+  perfectly well. A short list of the words that actually appear in this
+  position on a contract is worth more than any amount of regex tightening,
+  because the shape genuinely is ambiguous — only the vocabulary is not.
+*/
+const NOT_A_PLATE = new Set([
+  'VON', 'NR', 'SEITE', 'PAGE', 'TEL', 'FAX', 'EUR', 'CHF', 'USD', 'MWST', 'UST', 'VAT',
+  'IBAN', 'BIC', 'ATU', 'DE', 'PLZ', 'ZIP', 'KM', 'PS', 'KW', 'NO', 'REF', 'ART', 'POS',
+]);
 
 /** Labels that introduce the thing's identifier, in the five languages we ship. */
 const LABELS: Record<'registration' | 'vin' | 'serial' | 'model' | 'manufacturer', string[]> = {
@@ -174,7 +190,7 @@ export function parseContract(rawLines: string[], now: Date = new Date()): Parse
       if (/\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4}/.test(line)) continue;
       if (/\d[.,]\d{2}\b/.test(line)) continue;
       const m = line.toUpperCase().match(REGISTRATION);
-      if (m && /\d/.test(m[0]!)) {
+      if (m && !NOT_A_PLATE.has(m[1]!)) {
         out.registration = { value: clean(m[0]!), confidence: 'likely', raw: line };
         break;
       }

@@ -73,6 +73,53 @@ describe('reading other people’s custody', () => {
   });
 });
 
+describe('a member sends a page in; only the office turns it into a thing', () => {
+  /*
+    ⚠️ THE POINT OF THE WHOLE PROPOSALS FEATURE.
+
+    The driver holding the rental agreement is precisely the person who holds no
+    asset permission and never will. Gate the raise and there is nobody left who
+    can use it — so these four carry no permission at all, and what they do is
+    bounded by the caller's own id inside the service: raise one, list your own,
+    withdraw your own, open your own page.
+  */
+  it.each(['raiseProposal', 'myProposals', 'withdrawProposal', 'proposalUploadUrl', 'proposalDocumentUrl'])(
+    '%s asks for no permission — the caller\'s own id is the boundary',
+    (name) => {
+      expect(routeOf(name).permissions).toBeUndefined();
+    },
+  );
+
+  /*
+    ⚠️ And the mirror. Accepting one CREATES the record, hands it over and can
+    take a vehicle off the books — it IS `/contracts/apply` — so it asks exactly
+    what that asks. A proposals queue whose accept button were reachable by
+    everyone who can read would have moved the create, not removed it.
+  */
+  it.each(['acceptProposal', 'rejectProposal'])('%s requires canManageAssets', (name) => {
+    expect(routeOf(name).permissions).toEqual(['canManageAssets']);
+  });
+
+  it('the queue itself is a read of other people’s, so it asks to look', () => {
+    expect(routeOf('pendingProposals').permissions).toEqual(['canViewAllTasks']);
+  });
+
+  /*
+    Declared before `:id`. `/assets/proposals/mine` has two segments so `:id`
+    cannot swallow it — but `:id/custody` and its siblings are two segments too,
+    and the day somebody adds `:id/mine` the order is all that saves it.
+  */
+  it('declares the proposal reads before the parameter routes', () => {
+    const order = Object.getOwnPropertyNames(AssetsController.prototype)
+      .filter((n) => n !== 'constructor')
+      .map((n) => (AssetsController.prototype as any)[n])
+      .filter((fn) => typeof fn === 'function' && Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
+      .map((fn) => Reflect.getMetadata(PATH_METADATA, fn) as string);
+    expect(order.indexOf('proposals/mine')).toBeLessThan(order.indexOf(':id'));
+    expect(order.indexOf('proposals/pending')).toBeLessThan(order.indexOf(':id'));
+  });
+});
+
 describe('the contract flow asks the write permission throughout', () => {
   /*
     ⚠️ Including the two routes that write nothing, and that is deliberate.

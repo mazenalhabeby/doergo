@@ -82,10 +82,11 @@ export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput, Colleag
 export { overtimeApi } from './overtime';
 export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
-export { assetsApi, assetContractsApi } from './assets';
+export { assetsApi, assetContractsApi, assetProposalsApi } from './assets';
 export type {
   HeldAsset, MyExpense, SubmitExpenseInput,
   ContractFields, ContractStep, ContractPreview, ContractProposalInput, AssetKind,
+  MyProposal, RaiseProposalInput,
 } from './assets';
 
 export { supportApi } from './support';

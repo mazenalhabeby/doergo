@@ -55,10 +55,18 @@ export interface SubmitExpenseInput {
 // NOTE: fetchWithAuth already unwraps the `{ data: T }` envelope, so nothing
 // here may unwrap `.data` a second time.
 export const assetsApi = {
-  /** What I hold right now. Open custody periods, newest first. */
-  mine: async (): Promise<HeldAsset[]> => {
-    const res = await fetchWithAuth<{ periods: HeldAsset[] }>('/assets/mine');
-    return res?.periods ?? [];
+  /**
+   * What I hold right now, and whether this organization hands things out at all.
+   *
+   * ⚠️ `canPropose` cannot be inferred from an empty list: a member holds
+   * nothing both when the organization runs no assets and when they simply have
+   * not been given one — and the second is exactly who "send a document" is
+   * for. Without it the button is hidden from the people who need it, or shown
+   * to every organization that never bought Assets.
+   */
+  mine: async (): Promise<{ periods: HeldAsset[]; canPropose: boolean }> => {
+    const res = await fetchWithAuth<{ periods: HeldAsset[]; canPropose?: boolean }>('/assets/mine');
+    return { periods: res?.periods ?? [], canPropose: !!res?.canPropose };
   },
 
   /** What I have sent in, and what happened to it. */
@@ -158,4 +166,57 @@ export const assetContractsApi = {
       '/assets/contracts/apply',
       { method: 'POST', body: JSON.stringify(input) },
     ),
+};
+
+/** One page I sent in, and what happened to it. */
+export interface MyProposal {
+  id: string;
+  fields: ContractFields;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAssetId: string | null;
+  hasDocument: boolean;
+  documentKind: string;
+  createdAt: string;
+}
+
+export interface RaiseProposalInput {
+  fields: ContractFields;
+  signals?: string[];
+  documentKind?: string;
+  fileKey?: string;
+  fileName?: string;
+  fileMime?: string;
+}
+
+/**
+ * Sending a page in.
+ *
+ * ⚠️ The member NEVER creates an asset — creating a record, reassigning the
+ * organization's property and taking a vehicle off the books is
+ * `canManageAssets` and always will be. What a driver handed a rental agreement
+ * at a desk can do is send the page, and somebody responsible for them decides.
+ *
+ * ⚠️ The TEXT never leaves the phone: a rental agreement carries a home
+ * address, a licence number and bank details. The six confirmed fields travel,
+ * and the PAGE itself only because a reviewer has to be able to check it.
+ */
+export const assetProposalsApi = {
+  presign: (input: { fileName: string; mimeType: string }) =>
+    fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
+      '/assets/proposals/upload-url',
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+
+  raise: (input: RaiseProposalInput) =>
+    fetchWithAuth<MyProposal>('/assets/proposals', { method: 'POST', body: JSON.stringify(input) }),
+
+  mine: async (): Promise<MyProposal[]> => {
+    const res = await fetchWithAuth<MyProposal[]>('/assets/proposals/mine');
+    return res ?? [];
+  },
+
+  withdraw: (id: string) =>
+    fetchWithAuth<{ id: string }>(`/assets/proposals/${id}/withdraw`, { method: 'POST' }),
 };

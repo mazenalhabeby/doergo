@@ -207,6 +207,7 @@ RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, ca
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance, assetId }
 AssetCustody { id, organizationId, assetId, userId?, customerId?, startedAt, endedAt?, reason?, openedById?, closedById? }  # endedAt NULL = holds it now
+AssetProposal { id, organizationId, raisedById, holderUserId?, categoryId?, fields, documentKind, signals?, fileKey?, status (PENDING|ACCEPTED|REJECTED|WITHDRAWN), reviewedById?, reviewNote?, createdAssetId? }
 AssetMoney { …, receiptKey?, receiptName?, receiptMime?, status (RECORDED|SUBMITTED|REJECTED), reviewedById?, reviewedAt?, reviewNote? }
 CustomerContact { id, organizationId, companyId, personId, role?, isPrimary }  # a person who works at a company (@@unique companyId+personId)
 Comment { id, content, taskId, userId }
@@ -446,6 +447,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | GET · POST | `/assets/expenses/pending` · `/expenses/:id/review` | The office's queue, and the decision | read `canViewAllTasks` · write `canManageAssets` |
 | POST | `/assets/expenses/:id/receipt-url` | **Mint a link to one slip** — no list ever returns a URL | author, or `canManageAssets` |
 | POST | `/assets/contracts/read` · `/preview` · `/apply` | A contract → create the thing, hand it over, retire what it replaces | **all three** `canManageAssets` |
+| POST · GET | `/assets/proposals/upload-url` · `/proposals` · `/proposals/mine` · `/proposals/:id/withdraw` · `/:id/document-url` | **A member sends a page in** and watches what happened to it | **none: the caller's own id is the boundary** |
+| GET · POST | `/assets/proposals/pending` · `/proposals/:id/accept` · `/reject` | The queue, and the decision | read `canViewAllTasks` · write `canManageAssets` |
 
 > ⚠️ **THE HOLDER IS NEVER WRITTEN ONTO A COST.** Every entry carries the date the money moved; who held the asset that day is a LOOKUP (`holderOn` in shared). Storing it too gives two versions of the truth the first time somebody corrects a handover date — the likeliest repair in the whole feature.
 >
@@ -454,6 +457,16 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **A member's expense is SUBMITTED and counts for NOTHING until the office accepts it.** Totals sum `status = RECORDED` only. Recorded on arrival, anybody holding a van could move the organization's figures by photographing a slip.
 >
 > ⚠️ **One writer for two tables.** `AssetCustodyService` writes `AssetCustody` AND `AssetHolder`, in one transaction, and `AssetHoldersService.set()` was DELETED so nothing else can. An edit that changes the driver goes through the same path as the button — a drift here is a ledger attributed to the wrong person with nothing on screen to suggest it. The mirror self-heals: a holder row with no open period is repaired on the next save.
+>
+> ⚠️ **A DRIVER NEVER CREATES AN ASSET, and the raise routes carry NO permission — that is the point.** The person holding the rental agreement is precisely the one who holds nothing and never will. What they do is bounded by their own id in the service (raise one, list your own, withdraw your own, open your own page); creating the thing stays behind `canManageAssets` on `/proposals/:id/accept`, which IS `/contracts/apply`.
+>
+> ⚠️ **`classifyDocument` must be hard to fool.** It needs BOTH an agreement word AND an identifier, and a page shaped like a receipt (transaction word + a total) is refused FIRST — a fuel slip from a leasing company carries "Leasing" *and* a registration. A false positive puts a van that does not exist in somebody's queue, and the third time that happens the queue stops being read, which costs the real proposals too. A false negative costs one tap ("send it anyway").
+>
+> ⚠️ **The proposal stores the FIELDS, not a plan.** Which custody would close and which record would be retired are recomputed at REVIEW time from what the member holds then — a page uploaded three weeks ago may name a van since given to somebody else, and a frozen plan would be executed anyway.
+>
+> ⚠️ **Accepting CLAIMS the row with a conditional update**, so two reviewers cannot both act on one page and create two vehicles from it. A failed accept puts it BACK to PENDING — otherwise one bad click makes a member's proposal vanish with nothing created and nothing said.
+>
+> ⚠️ **Routing is watchers ∪ space roles — WITH A FALLBACK**, unlike attendance. Not being told about a late clock-out is a choice; a proposal reaching nobody is *work that stops*, and the member waits forever and stops sending pages in. Where nothing is configured it goes to whoever can actually act (org roles granting `canManageAssets`, resolved through `AccessRole` — it is not a User column).
 >
 > ⚠️ **A contract PROPOSES; it never acts.** `read` → `preview` → `apply`, and the middle step cannot be skipped: a reader that silently creates records will eventually invent a van from a receipt. The proposal is computed on the SERVER on BOTH preview and apply from the kind and from what the member actually holds — the request carries a reading (a plate, a VIN), never "close custody X, retire asset Y". A client that could name the record to retire could retire any record.
 >
@@ -1113,6 +1126,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `custodyDays()`, `openPeriods()`, `partyKey()` | One custody, read for a screen |
 | `parseReceipt()`, `moneyToCents()`, `categoryForReceipt()` | A photographed slip → amount, date, vendor. On-device, nothing calls out |
 | `parseContract()`, `proposeFromContract()`, `canApply()`, `fieldsForKind()` | A contract → a reading, then the three things accepting it would do |
+| `classifyDocument()`, `worthProposing()` | Is this page a contract for a thing, or a fuel receipt? Needs BOTH signals |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
 | `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
@@ -1282,7 +1296,9 @@ Migration `20260910120000_asset_custody` (additive + backfill; verified locally:
 - **DRY**: the holder picker was extracted from the record dialog and is now shared with the handover dialog — two copies of a control that enforces a kind's rules is how a single-holder van gets two drivers on one screen and one on the other.
 - **A contract creates the car, hands it over and retires the old one** — `read` → `preview` → `apply`, on the web (paste the agreement) and on the phone (photograph it, gated on `canManageAssets`, entry on the Manage tab). See the endpoint table for the six warnings that matter.
 - ⚠️ **`external-observer-writes.spec.ts` caught the first cut**: `read` and `preview` were POSTs gated on `canViewAllTasks`. The right answer was not an exception — it was noticing that a preview enumerates what a member holds, and gating all three on `canManageAssets`.
-- Guards: `expense-authorization.spec.ts` (proved by planting a permission on the member route), `asset-custody.spec.ts` (both tables move together, drift self-heals), `asset-contract.spec.ts` (the plan is recomputed, a client-supplied "retire this" is ignored), `custody.spec.ts` + `receipt.spec.ts` + `contract.spec.ts` in shared.
+- **A member sends the page in and somebody responsible decides** (`AssetProposal`, migration `20260910190000_asset_proposals`). The driver photographs the agreement at the desk; `classifyDocument` decides whether it is a contract; it lands with the people responsible for that member; they accept — which runs the same `/contracts/apply` — or refuse with a reason the member reads. See the endpoint table for the five warnings.
+- ⚠️ **The plate reader had a real false positive**: "Seite 3 von 7" matched the registration shape ("VON 7"), so a terms page proposed a van registered VON 7. Two digits minimum plus a short stop-word list — the SHAPE is genuinely ambiguous, only the vocabulary is not.
+- Guards: `expense-authorization.spec.ts` (proved by planting a permission on the member route), `asset-proposal.spec.ts` (a member cannot name somebody else as holder, two reviewers cannot both accept, a failed accept returns to the queue, the fallback routing), `document-kind.spec.ts` (a leasing company's fuel receipt is refused), `asset-custody.spec.ts` (both tables move together, drift self-heals), `asset-contract.spec.ts` (the plan is recomputed, a client-supplied "retire this" is ignored), `custody.spec.ts` + `receipt.spec.ts` + `contract.spec.ts` in shared.
 
 ### Recently Completed (2026-09-08) — Draw the site, sell to clients, drive the route
 

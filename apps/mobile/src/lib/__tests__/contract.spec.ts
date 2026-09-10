@@ -81,6 +81,24 @@ describe('reading the agreement', () => {
     expect(noisy.registration).toBeUndefined();
   });
 
+  /*
+    ⚠️ A page-number footer is not a vehicle.
+
+    "Seite 3 von 7" matched the plate shape exactly — "VON" is three uppercase
+    letters, a space, and a digit — so a terms-and-conditions page proposed a
+    van registered "VON 7". Two digits minimum, plus a short list of words that
+    are never a plate, because the SHAPE genuinely is ambiguous and only the
+    vocabulary is not.
+  */
+  it('does not read a page footer as a registration', () => {
+    expect(parseContract(['Allgemeine Vertragsbedingungen', 'Seite 3 von 7'], NOW).registration).toBeUndefined();
+  });
+
+  it('does not read a phone number or a reference as one', () => {
+    expect(parseContract(['Tel 43 664 1234567'], NOW).registration).toBeUndefined();
+    expect(parseContract(['Nr 2026 8841'], NOW).registration).toBeUndefined();
+  });
+
   it('returns nothing rather than something for an unreadable page', () => {
     expect(parseContract([], NOW).lines).toEqual([]);
     expect(parseContract(['   ', ''], NOW).registration).toBeUndefined();

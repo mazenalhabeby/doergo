@@ -2204,5 +2204,26 @@
     "notAllowed": "Può farlo solo chi gestisce il registro dei beni.",
     "aim": "Inquadra la pagina — la lettura resta su questo telefono",
     "typeInstead": "Scrivilo a mano"
+  },
+  "sendDoc": {
+    "title": "Invia un documento",
+    "check": "Controlla prima di inviare",
+    "aim": "Inquadra la pagina — viene letta su questo telefono",
+    "looksLike": "Sembra un contratto per un bene nuovo",
+    "notSure": "Non è chiaro cosa sia",
+    "notSureSub": "Puoi inviarlo lo stesso: qualcuno lo guarderà.",
+    "what": "Di cosa si tratta",
+    "send": "Invia",
+    "sendAnyway": "Invia lo stesso",
+    "sent": "Inviato — qualcuno lo confermerà.",
+    "sendFailed": "Invio non riuscito",
+    "hint": "Non viene creato nulla. Decide qualcuno responsabile per te.",
+    "readFailed": "Non si è potuta leggere — la pagina puoi inviarla lo stesso.",
+    "photoFailed": "La pagina non è stata caricata — la lettura parte lo stesso.",
+    "pageAttached": "Verrà inviata anche la pagina",
+    "noPage": "Nessuna pagina",
+    "mine": "Documenti che ho inviato",
+    "withdrawn": "Ritirato",
+    "aPage": "Una pagina"
   }
 }

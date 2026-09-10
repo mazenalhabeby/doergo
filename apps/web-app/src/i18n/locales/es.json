@@ -8325,5 +8325,22 @@
     "notAllowed": "Solo quien gestiona el inventario puede hacer esto.",
     "aim": "Encuadra la página: lo leído se queda en este teléfono",
     "typeInstead": "Escribirlo a mano"
+  },
+  "proposals": {
+    "waiting": "{{count}} documentos parecen activos nuevos",
+    "title": "Un activo nuevo por confirmar",
+    "intro": "{{who}} lo ha enviado. Todavía no se ha creado nada.",
+    "sentBy": "Enviado por {{who}}",
+    "review": "Revisar",
+    "unnamed": "Algo sin nombre",
+    "openDocument": "Abrir la página",
+    "pickKindFirst": "Elige un tipo para verlo.",
+    "cannot": "Así no se puede crear.",
+    "accept": "Añadirlo",
+    "refuse": "Rechazar",
+    "why": "Por qué no (el miembro lo lee)",
+    "whyPh": "Ese es el contrato antiguo…",
+    "accepted": "Añadido y entregado.",
+    "refused": "Rechazado."
   }
 }

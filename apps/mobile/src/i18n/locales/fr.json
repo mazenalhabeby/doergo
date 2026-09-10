@@ -2204,5 +2204,26 @@
     "notAllowed": "Réservé à qui gère le registre des biens.",
     "aim": "Cadrez la page — la lecture reste sur ce téléphone",
     "typeInstead": "Saisir à la main"
+  },
+  "sendDoc": {
+    "title": "Envoyer un document",
+    "check": "Vérifiez avant d’envoyer",
+    "aim": "Cadrez la page — elle est lue sur ce téléphone",
+    "looksLike": "Cela ressemble à un contrat pour un nouveau bien",
+    "notSure": "Pas sûr de ce que c’est",
+    "notSureSub": "Vous pouvez l’envoyer quand même — quelqu’un regardera.",
+    "what": "De quoi il s’agit",
+    "send": "Envoyer",
+    "sendAnyway": "Envoyer quand même",
+    "sent": "Envoyé — quelqu’un confirmera.",
+    "sendFailed": "Envoi impossible",
+    "hint": "Rien n’est créé. Quelqu’un de responsable décide.",
+    "readFailed": "Lecture impossible — vous pouvez tout de même envoyer la page.",
+    "photoFailed": "La page n’est pas partie — la lecture est envoyée quand même.",
+    "pageAttached": "La page sera envoyée aussi",
+    "noPage": "Pas de page",
+    "mine": "Documents que j’ai envoyés",
+    "withdrawn": "Retiré",
+    "aPage": "Une page"
   }
 }

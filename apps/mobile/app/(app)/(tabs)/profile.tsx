@@ -80,7 +80,7 @@ export default function ProfileScreen() {
     and not by a module flag: most members hold nothing, and a permanent row
     that opens an empty screen is how a menu teaches people to stop reading it.
   */
-  const { held } = useHeldAssets();
+  const { held, canPropose } = useHeldAssets();
 
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [savingPresence, setSavingPresence] = useState(false);
@@ -350,6 +350,25 @@ export default function ProfileScreen() {
                     <Text style={[styles.menuBadgeText, { color: colors.textPrimary }]}>{held.length}</Text>
                   </View>
                 }
+                themeColors={colors}
+              />
+            </>
+          )}
+          {/*
+            Sending a page in. Offered whenever this organization hands things
+            to members — NOT only when this member already holds one, which is
+            the opposite of who needs it: the driver about to be given a van
+            holds nothing yet.
+          */}
+          {canPropose && (
+            <>
+              <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+              <MenuItem
+                icon="document-attach-outline"
+                iconColor={COLORS.primary}
+                iconBg={colors.primaryLight}
+                label={t('sendDoc.title', 'Send a document')}
+                onPress={() => router.push('/send-document' as Href)}
                 themeColors={colors}
               />
             </>

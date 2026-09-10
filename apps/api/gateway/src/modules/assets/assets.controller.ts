@@ -28,6 +28,7 @@ import {
   CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
   HandOverDto, ReceiptPresignDto, SubmitExpenseDto,
   ContractProposalDto, ReadContractDto,
+  RaiseProposalDto, AcceptProposalDto, ProposalPresignDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
@@ -217,6 +218,132 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      canManageAssets: req.user.canManageAssets,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    A member sends a page in; somebody responsible decides.
+
+    ⚠️ THE MEMBER NEVER CREATES AN ASSET. These four routes carry NO permission
+    decorator, and that is not an oversight — what they do is bounded by the
+    caller's own id in the service: raise one, list your own, withdraw your own,
+    look at your own page. Creating the thing lives behind `canManageAssets` on
+    `/proposals/:id/accept`, where it belongs.
+
+    Gating the raise on a permission would defeat the entire feature: the driver
+    holding the rental agreement is precisely the person who holds nothing.
+  */
+  @Post('proposals/upload-url')
+  @ApiOperation({ summary: 'A place to put the page' })
+  async proposalUploadUrl(@Body() dto: ProposalPresignDto, @Request() req: any) {
+    return this.assetsService.proposalPresign({
+      ...dto,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('proposals')
+  @ApiOperation({ summary: 'Send in a document that looks like a contract' })
+  async raiseProposal(@Body() dto: RaiseProposalDto, @Request() req: any) {
+    return this.assetsService.proposalRaise({
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canManageAssets: req.user.canManageAssets,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** What I have sent in, and what happened to it. Mine, so no permission. */
+  @Get('proposals/mine')
+  @ApiOperation({ summary: 'Documents I sent in' })
+  async myProposals(@Request() req: any) {
+    return this.assetsService.proposalMine({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** The queue. A read of other people's, so it asks to be allowed to look. */
+  @Get('proposals/pending')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Documents waiting on a decision' })
+  async pendingProposals(@Request() req: any) {
+    return this.assetsService.proposalPending({
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    Accepting one CREATES the thing, hands it over and can retire what it
+    replaces — so it asks exactly what `/contracts/apply` asks, because it IS
+    `/contracts/apply`, with the plan recomputed at this moment rather than
+    frozen when the page was uploaded.
+  */
+  @Post('proposals/:id/accept')
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'Create it, hand it over, retire what it replaces' })
+  @ApiParam({ name: 'id', description: 'Proposal ID' })
+  async acceptProposal(@Param('id') id: string, @Body() dto: AcceptProposalDto, @Request() req: any) {
+    return this.assetsService.proposalAccept({
+      id,
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Post('proposals/:id/reject')
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'Refuse it, with a reason the member reads' })
+  @ApiParam({ name: 'id', description: 'Proposal ID' })
+  async rejectProposal(
+    @Param('id') id: string,
+    @Body() body: { note?: string },
+    @Request() req: any,
+  ) {
+    return this.assetsService.proposalReject({
+      id,
+      note: body?.note,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** The member changes their mind. Their own, and only while it waits. */
+  @Post('proposals/:id/withdraw')
+  @ApiOperation({ summary: 'Take back something I sent in' })
+  @ApiParam({ name: 'id', description: 'Proposal ID' })
+  async withdrawProposal(@Param('id') id: string, @Request() req: any) {
+    return this.assetsService.proposalWithdraw({
+      id,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    A short-lived link to one page. A POST, and nothing lists these: a rental
+    agreement carries a home address, a licence number and bank details.
+  */
+  @Post('proposals/:id/document-url')
+  @ApiOperation({ summary: 'A short-lived link to the page' })
+  @ApiParam({ name: 'id', description: 'Proposal ID' })
+  async proposalDocumentUrl(@Param('id') id: string, @Request() req: any) {
+    return this.assetsService.proposalDocumentUrl({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
       canManageAssets: req.user.canManageAssets,
       organizationId: req.user.organizationId,
     });

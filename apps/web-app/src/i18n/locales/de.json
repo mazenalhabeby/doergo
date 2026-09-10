@@ -8325,5 +8325,22 @@
     "notAllowed": "Das darf nur jemand, der das Anlagenverzeichnis verwaltet.",
     "aim": "Die Seite ins Bild nehmen — das Gelesene bleibt auf diesem Telefon",
     "typeInstead": "Stattdessen eingeben"
+  },
+  "proposals": {
+    "waiting": "{{count}} Dokumente sehen nach neuen Objekten aus",
+    "title": "Ein neues Objekt bestätigen",
+    "intro": "{{who}} hat das gesendet. Es wurde noch nichts angelegt.",
+    "sentBy": "Gesendet von {{who}}",
+    "review": "Prüfen",
+    "unnamed": "Etwas ohne Namen",
+    "openDocument": "Seite öffnen",
+    "pickKindFirst": "Zum Ansehen eine Art wählen.",
+    "cannot": "So kann das nicht angelegt werden.",
+    "accept": "Anlegen",
+    "refuse": "Ablehnen",
+    "why": "Warum nicht (das Mitglied liest das)",
+    "whyPh": "Das ist der alte Vertrag…",
+    "accepted": "Angelegt und übergeben.",
+    "refused": "Abgelehnt."
   }
 }

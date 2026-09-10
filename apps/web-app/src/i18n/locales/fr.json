@@ -8334,5 +8334,22 @@
     "notAllowed": "Réservé à qui gère le registre des biens.",
     "aim": "Cadrez la page — la lecture reste sur ce téléphone",
     "typeInstead": "Saisir à la main"
+  },
+  "proposals": {
+    "waiting": "{{count}} documents ressemblent à de nouveaux biens",
+    "title": "Un nouveau bien à confirmer",
+    "intro": "{{who}} l’a envoyé. Rien n’a été créé.",
+    "sentBy": "Envoyé par {{who}}",
+    "review": "Examiner",
+    "unnamed": "Quelque chose sans nom",
+    "openDocument": "Ouvrir la page",
+    "pickKindFirst": "Choisissez un type pour voir.",
+    "cannot": "Cela ne peut pas être créé en l’état.",
+    "accept": "L’ajouter",
+    "refuse": "Refuser",
+    "why": "Pourquoi pas (le membre le lit)",
+    "whyPh": "C’est l’ancien contrat…",
+    "accepted": "Ajouté et remis.",
+    "refused": "Refusé."
   }
 }

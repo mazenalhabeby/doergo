@@ -2204,5 +2204,26 @@
     "notAllowed": "Only somebody who manages the asset register can do this.",
     "aim": "Get the page in shot — the reading stays on this phone",
     "typeInstead": "Type it instead"
+  },
+  "sendDoc": {
+    "title": "Send a document",
+    "check": "Check before sending",
+    "aim": "Get the page in shot — it is read on this phone",
+    "looksLike": "This looks like a contract for a new asset",
+    "notSure": "Not sure what this is",
+    "notSureSub": "You can still send it — somebody will look.",
+    "what": "What it is",
+    "send": "Send it in",
+    "sendAnyway": "Send it anyway",
+    "sent": "Sent — somebody will confirm it.",
+    "sendFailed": "Could not send it",
+    "hint": "Nothing is created. Somebody responsible for you decides.",
+    "readFailed": "Could not read it — you can still send the page.",
+    "photoFailed": "The page did not upload — sending what was read anyway.",
+    "pageAttached": "The page will be sent too",
+    "noPage": "No page",
+    "mine": "Documents I sent in",
+    "withdrawn": "Taken back",
+    "aPage": "A page"
   }
 }

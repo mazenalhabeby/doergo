@@ -1702,6 +1702,34 @@ export interface ContractProposalInput {
   retireReplaced?: boolean;
 }
 
+/** A page a member sent in, waiting on somebody responsible. */
+export interface AssetProposal {
+  id: string;
+  fields: ContractFields;
+  signals?: string[];
+  documentKind: 'asset-contract' | 'unknown';
+  categoryId: string | null;
+  raisedById: string;
+  holderUserId: string | null;
+  raisedBy?: CustodyHolderRef | null;
+  holder?: CustodyHolderRef | null;
+  hasDocument: boolean;
+  fileName?: string | null;
+  createdAt: string;
+}
+
+/** One of mine, and what happened to it. */
+export interface MyAssetProposal {
+  id: string;
+  fields: ContractFields;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAssetId: string | null;
+  hasDocument: boolean;
+  createdAt: string;
+}
+
 /** One expense waiting on a decision, in the office's queue. */
 export interface PendingExpense extends AssetMoneyEntry {
   assetId: string;
@@ -2148,6 +2176,55 @@ export const assetsApi = {
     const response = await api.post<{ success: boolean; data: { closed: number; opened: number; at: string } }>(
       `/assets/${assetId}/custody`,
       input,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // ============================================
+  // PROPOSALS — a member sends a page, the office decides
+  // ============================================
+
+  getPendingProposals: async () => {
+    const response = await api.get<{ success: boolean; data: { proposals: AssetProposal[] } }>('/assets/proposals/pending');
+    if (response.error) throw new Error(response.error);
+    return response.data?.data?.proposals ?? [];
+  },
+
+  /**
+   * Accept it: create the thing, hand it over, retire what it replaces.
+   *
+   * ⚠️ The plan is built by the server AT THIS MOMENT, from the kind and from
+   * what the member holds today — never from anything stored when the page was
+   * uploaded. A page sent three weeks ago may name a van since given to
+   * somebody else.
+   */
+  acceptProposal: async (
+    id: string,
+    input: { categoryId?: string; typeId?: string; fields?: ContractFields; retireReplaced?: boolean },
+  ) => {
+    const response = await api.post<{ success: boolean; data: { id: string; assetId: string | null } }>(
+      `/assets/proposals/${id}/accept`,
+      input,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  rejectProposal: async (id: string, note?: string) => {
+    const response = await api.post<{ success: boolean; data: { id: string } }>(
+      `/assets/proposals/${id}/reject`,
+      { note },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /** A short-lived link to the page. A POST, and nothing lists these. */
+  getProposalDocumentUrl: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: { url: string; mimeType: string | null } }>(
+      `/assets/proposals/${id}/document-url`,
+      {},
     );
     if (response.error) throw new Error(response.error);
     return response.data?.data;

@@ -8325,5 +8325,22 @@
     "notAllowed": "Only somebody who manages the asset register can do this.",
     "aim": "Get the page in shot — the reading stays on this phone",
     "typeInstead": "Type it instead"
+  },
+  "proposals": {
+    "waiting": "{{count}} documents look like new assets",
+    "title": "A new asset to confirm",
+    "intro": "{{who}} sent this in. Nothing has been created.",
+    "sentBy": "Sent by {{who}}",
+    "review": "Review",
+    "unnamed": "Something unnamed",
+    "openDocument": "Open the page",
+    "pickKindFirst": "Choose a type to see.",
+    "cannot": "That cannot be created as it stands.",
+    "accept": "Add it",
+    "refuse": "Refuse it",
+    "why": "Why not (the member sees this)",
+    "whyPh": "That is the old contract…",
+    "accepted": "Added and handed over.",
+    "refused": "Refused."
   }
 }

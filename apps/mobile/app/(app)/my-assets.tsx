@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { assetsApi, type HeldAsset, type MyExpense } from '../../src/lib/api';
+import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal } from '../../src/lib/api';
 import { normalizeKindShape, custodyDays } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
@@ -36,6 +36,8 @@ export default function MyAssetsScreen() {
 
   const [held, setHeld] = useState<HeldAsset[] | null>(null);
   const [expenses, setExpenses] = useState<MyExpense[]>([]);
+  const [sent, setSent] = useState<MyProposal[]>([]);
+  const [canPropose, setCanPropose] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (showSpinner = false) => {
@@ -43,9 +45,15 @@ export default function MyAssetsScreen() {
     try {
       // Both at once: two independent reads, and waiting for the first to
       // finish before starting the second doubles the time on a phone.
-      const [mine, sent] = await Promise.all([assetsApi.mine(), assetsApi.myExpenses()]);
-      setHeld(mine);
+      const [mine, sent, proposals] = await Promise.all([
+        assetsApi.mine(),
+        assetsApi.myExpenses(),
+        assetProposalsApi.mine(),
+      ]);
+      setHeld(mine.periods);
+      setCanPropose(mine.canPropose);
       setExpenses(sent);
+      setSent(proposals);
     } catch (e: any) {
       toast.error(e?.message || t('myAssets.loadFailed', 'Could not load what you hold'));
       setHeld([]);
@@ -83,6 +91,32 @@ export default function MyAssetsScreen() {
             </View>
           ) : (
             held.map((h) => <HeldCard key={h.id} held={h} colors={colors} t={t} />)
+          )}
+
+          {canPropose && (
+            <TouchableOpacity
+              style={[s.secondary, { borderColor: colors.border }]}
+              onPress={() => router.push('/send-document')}
+            >
+              <Ionicons name="document-attach-outline" size={17} color={COLORS.primary} />
+              <Text style={[s.secondaryText, { color: COLORS.primary }]}>
+                {t('sendDoc.title', 'Send a document')}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/*
+            Pages sent in, and what happened to them. A proposal that is never
+            mentioned again is how a member learns to stop sending them — so
+            "waiting", "added" and "refused, because…" all show here.
+          */}
+          {sent.length > 0 && (
+            <>
+              <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
+                {t('sendDoc.mine', 'Documents I sent in')}
+              </Text>
+              {sent.map((p) => <ProposalRow key={p.id} proposal={p} colors={colors} t={t} />)}
+            </>
           )}
 
           {expenses.length > 0 && (
@@ -176,6 +210,34 @@ function ExpenseRow({ expense, colors, t }: { expense: MyExpense; colors: any; t
   );
 }
 
+function ProposalRow({ proposal, colors, t }: { proposal: MyProposal; colors: any; t: any }) {
+  const tone =
+    proposal.status === 'ACCEPTED' ? { c: '#22c55e', icon: 'checkmark-circle' as const, label: t('expenses.accepted', 'Accepted') }
+    : proposal.status === 'REJECTED' ? { c: colors.textMuted, icon: 'close-circle' as const, label: t('expenses.rejected', 'Refused') }
+    : proposal.status === 'WITHDRAWN' ? { c: colors.textMuted, icon: 'arrow-undo' as const, label: t('sendDoc.withdrawn', 'Taken back') }
+    : { c: '#f59e0b', icon: 'time' as const, label: t('expenses.pending', 'Waiting') };
+
+  const f = proposal.fields ?? {};
+  const name = f.name || f.registration || f.serial || [f.manufacturer, f.model].filter(Boolean).join(' ');
+
+  return (
+    <View style={[s.expense, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Ionicons name={tone.icon} size={18} color={tone.c} />
+      <View style={s.grow}>
+        <Text style={[s.expenseTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+          {name || t('sendDoc.aPage', 'A page')}
+        </Text>
+        <Text style={[s.cardSub, { color: colors.textMuted }]} numberOfLines={2}>
+          {new Date(proposal.createdAt).toLocaleDateString()} · {tone.label}
+          {/* The reason it was refused, verbatim. A refusal with none teaches
+              nothing and gets re-sent unchanged. */}
+          {proposal.reviewNote ? ` — ${proposal.reviewNote}` : ''}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -199,6 +261,8 @@ const s = StyleSheet.create({
 
   primary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: RADIUS.md, height: 44, marginTop: SPACING.md },
   primaryText: { color: '#fff', fontSize: FONT_SIZE.base, fontWeight: '700' },
+  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderRadius: RADIUS.md, height: 46, marginTop: SPACING.sm },
+  secondaryText: { fontSize: FONT_SIZE.base, fontWeight: '700' },
 
   sectionTitle: { fontSize: FONT_SIZE.xs, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: SPACING.lg, marginBottom: SPACING.sm },
   expense: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },

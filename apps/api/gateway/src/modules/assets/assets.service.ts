@@ -110,6 +110,39 @@ export class AssetsService extends BaseGatewayService {
     return this.send({ cmd: 'asset_expense_receipt_url' }, data);
   }
 
+  // Proposals — a member sends a page, the office decides.
+  async proposalPresign(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_presign' }, data);
+  }
+
+  async proposalRaise(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_raise' }, data);
+  }
+
+  async proposalMine(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_mine' }, data);
+  }
+
+  async proposalPending(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_pending' }, data);
+  }
+
+  async proposalAccept(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_accept' }, data);
+  }
+
+  async proposalReject(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_reject' }, data);
+  }
+
+  async proposalWithdraw(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_withdraw' }, data);
+  }
+
+  async proposalDocumentUrl(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_proposal_document_url' }, data);
+  }
+
   // Contracts — read, then propose, then apply.
   async contractRead(data: Record<string, any>) {
     return this.send({ cmd: 'asset_contract_read' }, data);

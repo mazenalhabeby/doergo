@@ -11,6 +11,7 @@ import { TaskNotificationHandler } from './handlers/task-notification.handler';
 import { AttendanceNotificationHandler } from './handlers/attendance-notification.handler';
 import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
 import { SupportNotificationHandler } from './handlers/support-notification.handler';
+import { AssetProposalNotificationHandler } from './handlers/asset-proposal-notification.handler';
 import { ShiftIssueNotificationHandler } from './handlers/shift-issue-notification.handler';
 import { ChatNotificationHandler } from './handlers/chat-notification.handler';
 import { ReportNotificationHandler } from './handlers/report-notification.handler';
@@ -38,6 +39,7 @@ import { NotificationStore } from './common/notification-store.service';
     JoinRequestNotificationHandler,
     SupportNotificationHandler,
     ShiftIssueNotificationHandler,
+    AssetProposalNotificationHandler,
     ChatNotificationHandler,
     ReportNotificationHandler,
     CrmReminderHandler,

@@ -2204,5 +2204,26 @@
     "notAllowed": "Solo quien gestiona el inventario puede hacer esto.",
     "aim": "Encuadra la página: lo leído se queda en este teléfono",
     "typeInstead": "Escribirlo a mano"
+  },
+  "sendDoc": {
+    "title": "Enviar un documento",
+    "check": "Comprueba antes de enviar",
+    "aim": "Encuadra la página: se lee en este teléfono",
+    "looksLike": "Esto parece un contrato de un activo nuevo",
+    "notSure": "No está claro qué es",
+    "notSureSub": "Puedes enviarlo igualmente: alguien lo mirará.",
+    "what": "De qué se trata",
+    "send": "Enviar",
+    "sendAnyway": "Enviar igualmente",
+    "sent": "Enviado: alguien lo confirmará.",
+    "sendFailed": "No se pudo enviar",
+    "hint": "No se crea nada. Decide alguien responsable de ti.",
+    "readFailed": "No se pudo leer: aun así puedes enviar la página.",
+    "photoFailed": "La página no se subió: se envía lo leído igualmente.",
+    "pageAttached": "La página se enviará también",
+    "noPage": "Sin página",
+    "mine": "Documentos que he enviado",
+    "withdrawn": "Retirado",
+    "aPage": "Una página"
   }
 }

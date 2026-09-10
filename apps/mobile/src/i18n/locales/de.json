@@ -2204,5 +2204,26 @@
     "notAllowed": "Das darf nur jemand, der das Anlagenverzeichnis verwaltet.",
     "aim": "Die Seite ins Bild nehmen — das Gelesene bleibt auf diesem Telefon",
     "typeInstead": "Stattdessen eingeben"
+  },
+  "sendDoc": {
+    "title": "Dokument senden",
+    "check": "Vor dem Senden prüfen",
+    "aim": "Die Seite ins Bild nehmen — sie wird auf diesem Telefon gelesen",
+    "looksLike": "Das sieht nach einem Vertrag für ein neues Objekt aus",
+    "notSure": "Unklar, was das ist",
+    "notSureSub": "Sie können es trotzdem senden — jemand sieht es sich an.",
+    "what": "Worum es geht",
+    "send": "Absenden",
+    "sendAnyway": "Trotzdem senden",
+    "sent": "Gesendet — jemand bestätigt es.",
+    "sendFailed": "Konnte nicht gesendet werden",
+    "hint": "Es wird nichts angelegt. Jemand, der für Sie zuständig ist, entscheidet.",
+    "readFailed": "Konnte nicht gelesen werden — die Seite können Sie trotzdem senden.",
+    "photoFailed": "Die Seite wurde nicht hochgeladen — das Gelesene geht trotzdem raus.",
+    "pageAttached": "Die Seite wird mitgesendet",
+    "noPage": "Keine Seite",
+    "mine": "Gesendete Dokumente",
+    "withdrawn": "Zurückgezogen",
+    "aPage": "Eine Seite"
   }
 }

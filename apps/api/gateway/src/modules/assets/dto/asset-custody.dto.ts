@@ -209,3 +209,100 @@ export class ReadContractDto {
   @MaxLength(20_000)
   text!: string;
 }
+
+/**
+ * A member sending a page in.
+ *
+ * ⚠️ No `steps`, no `closeAssetId`, no `categoryId` from a driver. What a member
+ * knows is what is printed on the paper in their hand; the organization's asset
+ * taxonomy and what would be retired are the reviewer's business, worked out at
+ * review time from what the member holds THEN.
+ */
+export class RaiseProposalDto {
+  @ApiProperty({ type: ContractFieldsDto })
+  @ValidateNested()
+  @Type(() => ContractFieldsDto)
+  fields!: ContractFieldsDto;
+
+  @ApiPropertyOptional({ description: 'Why the reader thought this was a contract.' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  signals?: string[];
+
+  @ApiPropertyOptional({ enum: ['asset-contract', 'unknown'] })
+  @IsOptional()
+  @IsIn(['asset-contract', 'unknown'])
+  documentKind?: string;
+
+  @ApiPropertyOptional({ description: 'The key returned by presign. Checked against this organization.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(400)
+  fileKey?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  fileName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  fileMime?: string;
+
+  @ApiPropertyOptional({ description: 'Only honoured for somebody who manages the register.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  holderUserId?: string;
+
+  @ApiPropertyOptional({ description: 'Likewise — a member does not know the taxonomy.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  categoryId?: string;
+}
+
+/** The reviewer's decision, with their own corrections. */
+export class AcceptProposalDto {
+  @ApiPropertyOptional({ description: 'Required unless the proposal already names one.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  categoryId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  typeId?: string;
+
+  @ApiPropertyOptional({ type: ContractFieldsDto, description: 'Overrides what was sent in.' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ContractFieldsDto)
+  fields?: ContractFieldsDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  retireReplaced?: boolean;
+}
+
+/** A place to put the page, before the proposal exists. */
+export class ProposalPresignDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(255)
+  fileName!: string;
+
+  @ApiProperty()
+  @IsString()
+  @MaxLength(100)
+  mimeType!: string;
+}

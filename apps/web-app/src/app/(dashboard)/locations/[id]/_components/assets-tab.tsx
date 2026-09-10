@@ -20,6 +20,7 @@ import { SectionHeader, EmptyState } from "./section-header"
 import { AssetKindDialog } from "./asset-kind-dialog"
 import { AssetRecordDialog, type AssetRecord } from "@/components/assets/asset-record-dialog"
 import { ContractDialog } from "@/components/assets/contract-dialog"
+import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { OrphanAssetsCard } from "./orphan-assets-card"
 
 /**
@@ -133,6 +134,21 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
           </div>
         }
       />
+
+      {/*
+        Pages members have sent in that look like new assets. Above everything,
+        because it is somebody WAITING — a driver who photographed a rental
+        agreement at a desk and cannot do anything else until this is answered.
+
+        Renders nothing at all when empty, and only for people who could act.
+
+        It lives HERE rather than on the Assets page beside the expense queue
+        because reviewing one needs the workspace's KINDS — the reviewer has to
+        say what sort of thing this is — and this is the component that has
+        them. It therefore appears on both surfaces that show assets, which is
+        two chances to notice somebody waiting rather than a duplicate.
+      */}
+      {canManageAssets && <ProposalQueue kinds={kinds} />}
 
       {/* Assets that belong to no space, and so show on no other screen. Above
           the types rather than below them: it is a problem to clear, not a

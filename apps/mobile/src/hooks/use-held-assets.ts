@@ -18,28 +18,38 @@ import { assetsApi, type HeldAsset } from '../lib/api';
  * a colleague on the same device and a value derived only from "enabled" would
  * show the previous person's van.
  */
-let cache: { userId: string; held: HeldAsset[] } | null = null;
+let cache: { userId: string; held: HeldAsset[]; canPropose: boolean } | null = null;
 
 /** Called after a handover or an expense, so the next read is fresh. */
 export function forgetHeldAssets(): void {
   cache = null;
 }
 
-export function useHeldAssets(): { held: HeldAsset[]; loading: boolean; refresh: () => Promise<void> } {
+export function useHeldAssets(): {
+  held: HeldAsset[];
+  /** Does this organization hand things to members at all? */
+  canPropose: boolean;
+  loading: boolean;
+  refresh: () => Promise<void>;
+} {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
   const [held, setHeld] = useState<HeldAsset[]>(
     cache && cache.userId === userId ? cache.held : [],
   );
+  const [canPropose, setCanPropose] = useState<boolean>(
+    cache && cache.userId === userId ? cache.canPropose : false,
+  );
   const [loading, setLoading] = useState(!cache || cache.userId !== userId);
 
   const load = useCallback(async () => {
-    if (!userId) { setHeld([]); setLoading(false); return; }
+    if (!userId) { setHeld([]); setCanPropose(false); setLoading(false); return; }
     try {
-      const rows = await assetsApi.mine();
-      cache = { userId, held: rows };
-      setHeld(rows);
+      const { periods, canPropose: may } = await assetsApi.mine();
+      cache = { userId, held: periods, canPropose: may };
+      setHeld(periods);
+      setCanPropose(may);
     } catch {
       /*
         Swallowed on purpose. This decides whether a MENU ROW appears; an
@@ -48,17 +58,20 @@ export function useHeldAssets(): { held: HeldAsset[]; loading: boolean; refresh:
         on a screen they opened to change their password.
       */
       setHeld([]);
+      setCanPropose(false);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    if (cache && cache.userId === userId) { setHeld(cache.held); setLoading(false); return; }
+    if (cache && cache.userId === userId) {
+      setHeld(cache.held); setCanPropose(cache.canPropose); setLoading(false); return;
+    }
     void load();
   }, [userId, load]);
 
   const refresh = useCallback(async () => { cache = null; await load(); }, [load]);
 
-  return { held, loading, refresh };
+  return { held, canPropose, loading, refresh };
 }

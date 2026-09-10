@@ -8334,5 +8334,22 @@
     "notAllowed": "Può farlo solo chi gestisce il registro dei beni.",
     "aim": "Inquadra la pagina — la lettura resta su questo telefono",
     "typeInstead": "Scrivilo a mano"
+  },
+  "proposals": {
+    "waiting": "{{count}} documenti sembrano beni nuovi",
+    "title": "Un bene nuovo da confermare",
+    "intro": "{{who}} l’ha inviato. Non è stato creato nulla.",
+    "sentBy": "Inviato da {{who}}",
+    "review": "Esamina",
+    "unnamed": "Qualcosa senza nome",
+    "openDocument": "Apri la pagina",
+    "pickKindFirst": "Scegli un tipo per vedere.",
+    "cannot": "Così non si può creare.",
+    "accept": "Aggiungilo",
+    "refuse": "Rifiuta",
+    "why": "Perché no (il membro lo legge)",
+    "whyPh": "Quello è il contratto vecchio…",
+    "accepted": "Aggiunto e consegnato.",
+    "refused": "Rifiutato."
   }
 }

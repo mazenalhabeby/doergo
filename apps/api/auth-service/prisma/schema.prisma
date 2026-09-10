@@ -1283,6 +1283,68 @@ model AssetMoney {
   @@map("asset_money")
 }
 
+/// A member sent in a document; something has to decide whether it becomes a thing.
+///
+/// The driver is handed a rental agreement at a desk. They cannot create assets
+/// — creating a record, reassigning the organization's property and taking a
+/// vehicle off the books is `canManageAssets`, and it always will be. What they
+/// CAN do is send the page in, and the reader decides whether it looks like a
+/// contract for a thing. If it does, this row is what lands in front of the
+/// person responsible for them.
+///
+/// ⚠️ The FIELDS are stored, not a plan. Which custody would close and which
+/// record would be retired are recomputed at review time from the kind and from
+/// what the member holds THEN — a plan frozen at upload would be stale the
+/// moment anything else changed, and would be executed anyway.
+model AssetProposal {
+  id             String @id @default(cuid())
+  organizationId String
+
+  /// Who sent it in. A plain marker id, like every other author in this module.
+  raisedById   String
+  /// Who would receive it — normally whoever raised it, but a manager may raise
+  /// one on somebody's behalf.
+  holderUserId String?
+
+  /// Which KIND it would be created in. Nullable because the member does not
+  /// know the organization's taxonomy and must not be asked to guess: the
+  /// reviewer chooses, unless there is exactly one kind it could be.
+  categoryId String?
+
+  /// What the reader made of the page, after the member's corrections:
+  /// { registration, vin, serial, manufacturer, model, startsOn, endsOn, name }.
+  fields Json
+
+  /// What the classifier thought, and why — shown to the reviewer so a wrong
+  /// verdict is correctable rather than mysterious.
+  documentKind String @default("asset-contract")
+  signals      Json?
+
+  /// The page itself. The KEY only: a stored URL outlives its signature.
+  fileKey  String?
+  fileName String?
+  fileMime String?
+
+  /// PENDING · ACCEPTED · REJECTED · WITHDRAWN (the member changed their mind).
+  status       String    @default("PENDING")
+  reviewedById String?
+  reviewedAt   DateTime?
+  /// Why it was refused, in the words the member reads.
+  reviewNote   String?
+
+  /// What it became, once accepted.
+  createdAssetId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The reviewer's queue.
+  @@index([organizationId, status, createdAt])
+  /// "What have I sent in" — the member's own list.
+  @@index([raisedById, createdAt])
+  @@map("asset_proposals")
+}
+
 /// One stretch of time during which one party held one asset.
 ///
 /// `AssetHolder` answers "who has it NOW" and deletes the row on a handover, so

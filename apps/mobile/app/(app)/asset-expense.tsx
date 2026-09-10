@@ -75,11 +75,11 @@ export default function AssetExpenseScreen() {
     let alive = true;
     (async () => {
       try {
-        const mine = await assetsApi.mine();
+        const { periods } = await assetsApi.mine();
         if (!alive) return;
         // Read from what I HOLD, never fetched by id: this screen must not be
         // a way to look up an asset somebody was not given.
-        setHeld(mine.find((h) => h.assetId === assetId) ?? null);
+        setHeld(periods.find((h) => h.assetId === assetId) ?? null);
       } catch (e: any) {
         if (alive) toast.error(e?.message || t('expenses.loadFailed', 'Could not open that'));
       } finally {

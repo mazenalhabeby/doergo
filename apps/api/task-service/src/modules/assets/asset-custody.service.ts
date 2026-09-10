@@ -406,10 +406,37 @@ export class AssetCustodyService {
    * names the caller.
    */
   async mine(data: { userId: string; organizationId: string }) {
-    return this.periodsFor(
-      { userId: data.userId, organizationId: data.organizationId, endedAt: null },
-      data.organizationId,
-    );
+    const [held, canPropose] = await Promise.all([
+      this.periodsFor(
+        { userId: data.userId, organizationId: data.organizationId, endedAt: null },
+        data.organizationId,
+      ),
+      this.organizationHoldsThings(data.organizationId),
+    ]);
+    /*
+      `canPropose` is what lets the phone decide whether to OFFER "send a
+      document" at all.
+
+      An empty `periods` cannot answer it: a member holds nothing both when the
+      organization runs no assets and when they simply have not been given one —
+      and the second is precisely the person the proposals feature exists for.
+      Without this the button would be hidden from everybody who needs it, or
+      shown to every organization that never bought Assets.
+    */
+    return success({ ...(held as any).data, canPropose });
+  }
+
+  /** Does anything here get handed to a member at all? One small query. */
+  private async organizationHoldsThings(organizationId: string): Promise<boolean> {
+    const kinds = await this.prisma.assetCategory.findMany({
+      where: { organizationId },
+      select: { config: true },
+      take: 50,
+    });
+    return kinds.some((k) => {
+      const shape = normalizeKindShape(k.config);
+      return shape.holder.enabled && shape.holder.members;
+    });
   }
 
   private async periodsFor(where: Prisma.AssetCustodyWhereInput, organizationId: string) {
