@@ -24,7 +24,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'HBCField',
     slug: 'doergo',
-    version: '1.0.4',
+    /*
+      1.0.5 — the store release carrying the business-card scanner.
+
+      ⚠️ `runtimeVersion` follows this, so bumping it opens a NEW OTA train.
+      Updates published from here reach 1.0.5 installs only; anyone still on
+      1.0.4 keeps the JS they have and stops receiving updates, which is correct
+      — their binary has different native code. Never publish current JS to an
+      older train: the older native side crashes on it.
+    */
+    version: '1.0.5',
     // 'default' allows landscape on tablets. Phones are kept portrait so their
     // phone-first UI is never shown rotated: iPhone via the idiom-specific
     // infoPlist keys below, Android phones via a runtime lock in the root layout.
