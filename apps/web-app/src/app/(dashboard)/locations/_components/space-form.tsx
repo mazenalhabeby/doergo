@@ -397,10 +397,12 @@ export function SpaceForm({
                 </div>
                 {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => (
                   <label
+                    htmlFor={`space-module-${mod.key}`}
                     key={mod.key}
                     className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                   >
                     <input
+                      id={`space-module-${mod.key}`}
                       type="checkbox"
                       checked={enabledModules.includes(mod.key)}
                       onChange={() => toggleModule(mod.key)}

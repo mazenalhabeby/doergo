@@ -218,8 +218,22 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
             const unmet = moduleRequires(mod.key).filter((r) => !enabledModules.includes(r))
             const locked = !isEnabled && unmet.length > 0
             return (
+              /*
+                ⚠️ `htmlFor` is load-bearing, not tidiness.
+
+                A <label> with no `for` controls the first LABELABLE descendant
+                in tree order — and <button> is labelable. The explainer "i"
+                sits before the checkbox here, so the label's control was the
+                BUTTON: clicking the switch opened the description and never
+                toggled the module. Naming the control explicitly ends the
+                argument, whatever order the row is later rearranged into.
+
+                (The same two components in space-form.tsx happen to put the
+                checkbox first, which is why only this screen was broken.)
+              */
               <label
                 key={mod.key}
+                htmlFor={`module-${mod.key}`}
                 className={cn(
                   "flex items-center justify-between p-3 rounded-lg border transition-colors",
                   isEnabled
@@ -279,6 +293,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                 </div>
                 <div className="relative inline-flex items-center shrink-0">
                   <input
+                    id={`module-${mod.key}`}
                     type="checkbox"
                     checked={isEnabled}
                     disabled={locked}
