@@ -1964,7 +1964,8 @@
       "reading": "Dokument wird gelesen…",
       "dateFromDocument": "Aus dem Dokument gelesen — bitte prüfen",
       "dateGuessed": "Aus dem Text im Dokument übernommen. Bitte prüfen.",
-      "dateNotFound": "Hier war nichts lesbar — bitte das Datum vom Dokument eintragen."
+      "dateNotFound": "Datum nicht lesbar — trotzdem senden, das Büro bestätigt es.",
+      "expiresOnOptional": "Gültig bis"
     },
     "status": {
       "pendingVerification": "Wird geprüft",
@@ -2110,6 +2111,16 @@
     "allow": "Kamera erlauben",
     "failed": "Die Karte konnte nicht gelesen werden.",
     "nothingRead": "Es konnte nichts gelesen werden — bitte mit mehr Licht erneut versuchen.",
-    "notAllowed": "Sie haben keine Berechtigung, Kunden hinzuzufügen."
+    "notAllowed": "Sie haben keine Berechtigung, Kunden hinzuzufügen.",
+    "permission": {
+      "title": "Visitenkarte scannen",
+      "subtitle": "Richten Sie die Kamera auf eine Karte — die Kundendaten füllen sich von selbst aus.",
+      "onDevice": "Wird auf diesem Gerät gelesen — die Karte wird nie hochgeladen",
+      "deleted": "Das Foto wird gelöscht, sobald es gelesen wurde",
+      "youConfirm": "Sie prüfen jedes Feld, bevor etwas gespeichert wird",
+      "blocked": "Der Kamerazugriff ist für diese App deaktiviert.",
+      "openSettings": "Einstellungen öffnen",
+      "enterByHand": "Daten manuell eingeben"
+    }
   }
 }

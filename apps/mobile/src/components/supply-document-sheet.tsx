@@ -200,10 +200,21 @@ export function SupplyDocumentSheet({
 
   const submit = async () => {
     if (!type || !photo) return;
-    if (needsDate && !expiresOn) {
-      toast.error(t('documents.supply.needDate'));
-      return;
-    }
+    /*
+      ⚠️ NO LONGER REFUSED FOR A MISSING DATE.
+
+      The reader tries the machine-readable zone, then the printed text; when
+      both come up empty the member was blocked — someone standing in a van
+      holding a licence, told to type a date off a document they are trying to
+      photograph. An unfiled licence is worth strictly less than a filed one
+      with its date still to be confirmed.
+
+      The obligation moves rather than disappears: the document goes to the
+      verification queue, and the server will not APPROVE a type that has an
+      expiry until the reviewer — who has the image on a desktop screen —
+      supplies one. Until then it stands as EXPIRY_UNKNOWN on the compliance
+      board, which is chased, not silently counted as covered.
+    */
     setBusy(true);
     try {
       // Already uploaded while the member was confirming the date.
@@ -223,7 +234,8 @@ export function SupplyDocumentSheet({
         title: type.label,
         // Date only. A timestamp would put an expiry a few hours either side of
         // midnight into the wrong day depending on where the phone is.
-        expiresOn: needsDate && expiresOn ? toIsoDate(expiresOn) : undefined,
+        // Sent when known — read off the document or typed. Absent is allowed.
+        expiresOn: expiresOn ? toIsoDate(expiresOn) : undefined,
         // Raw, unparsed. The server recomputes the check digits, so a client
         // that invented a zone gets a SUSPECT verdict rather than a pass.
         mrzText: scanned?.barcodeData,

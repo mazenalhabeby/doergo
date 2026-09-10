@@ -1964,7 +1964,8 @@
       "reading": "Reading the document…",
       "dateFromDocument": "Read from the document — check it matches",
       "dateGuessed": "Taken from the text on the document. Please check it.",
-      "dateNotFound": "Nothing readable found on this one — please enter the date from the document."
+      "dateNotFound": "Couldn't read the date — send it anyway, the office will confirm it.",
+      "expiresOnOptional": "Expires on (optional)"
     },
     "status": {
       "pendingVerification": "Awaiting review",
@@ -2110,6 +2111,16 @@
     "allow": "Allow camera",
     "failed": "Could not read the card.",
     "nothingRead": "Nothing could be read — try again with more light.",
-    "notAllowed": "You do not have permission to add clients."
+    "notAllowed": "You do not have permission to add clients.",
+    "permission": {
+      "title": "Scan a business card",
+      "subtitle": "Point the camera at a card and the client details fill themselves in.",
+      "onDevice": "Read on this phone — the card is never uploaded",
+      "deleted": "The photo is deleted the moment it has been read",
+      "youConfirm": "You check every field before anything is saved",
+      "blocked": "Camera access is turned off for this app.",
+      "openSettings": "Open settings",
+      "enterByHand": "Enter the details by hand"
+    }
   }
 }

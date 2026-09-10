@@ -1964,7 +1964,8 @@
       "reading": "Leyendo el documento…",
       "dateFromDocument": "Leída del documento: compruébala",
       "dateGuessed": "Tomada del texto del documento. Por favor, compruébala.",
-      "dateNotFound": "No se pudo leer nada aquí: introduce la fecha que figura en el documento."
+      "dateNotFound": "No se pudo leer la fecha: envíelo igualmente, la oficina lo confirmará.",
+      "expiresOnOptional": "Caduca el"
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",
@@ -2110,6 +2111,16 @@
     "allow": "Permitir cámara",
     "failed": "No se pudo leer la tarjeta.",
     "nothingRead": "No se pudo leer nada: inténtalo con más luz.",
-    "notAllowed": "No tienes permiso para añadir clientes."
+    "notAllowed": "No tienes permiso para añadir clientes.",
+    "permission": {
+      "title": "Escanear una tarjeta",
+      "subtitle": "Apunte la cámara a una tarjeta y los datos del cliente se rellenan solos.",
+      "onDevice": "Se lee en este teléfono: la tarjeta nunca se sube",
+      "deleted": "La foto se borra en cuanto se ha leído",
+      "youConfirm": "Usted revisa cada campo antes de guardar nada",
+      "blocked": "El acceso a la cámara está desactivado para esta app.",
+      "openSettings": "Abrir ajustes",
+      "enterByHand": "Introducir los datos a mano"
+    }
   }
 }

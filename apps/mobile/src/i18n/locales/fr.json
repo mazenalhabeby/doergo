@@ -1964,7 +1964,8 @@
       "reading": "Lecture du document…",
       "dateFromDocument": "Lue sur le document — vérifiez-la",
       "dateGuessed": "Reprise du texte du document. Merci de vérifier.",
-      "dateNotFound": "Rien de lisible ici — saisissez la date figurant sur le document."
+      "dateNotFound": "Date illisible — envoyez quand même, le bureau la confirmera.",
+      "expiresOnOptional": "Expire le"
     },
     "status": {
       "pendingVerification": "En attente de vérification",
@@ -2110,6 +2111,16 @@
     "allow": "Autoriser l’appareil photo",
     "failed": "Impossible de lire la carte.",
     "nothingRead": "Rien n’a pu être lu — réessayez avec plus de lumière.",
-    "notAllowed": "Vous n’avez pas la permission d’ajouter des clients."
+    "notAllowed": "Vous n’avez pas la permission d’ajouter des clients.",
+    "permission": {
+      "title": "Scanner une carte de visite",
+      "subtitle": "Pointez la caméra vers une carte et les informations du client se remplissent toutes seules.",
+      "onDevice": "Lu sur ce téléphone — la carte n'est jamais envoyée",
+      "deleted": "La photo est supprimée dès qu'elle a été lue",
+      "youConfirm": "Vous vérifiez chaque champ avant tout enregistrement",
+      "blocked": "L'accès à la caméra est désactivé pour cette application.",
+      "openSettings": "Ouvrir les réglages",
+      "enterByHand": "Saisir les informations à la main"
+    }
   }
 }

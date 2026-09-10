@@ -140,10 +140,35 @@ describe('requirementStatuses', () => {
     expect(status([{ typeId: 'licence', status: 'SIGNED', expiresOn: future(400) }]).state).toBe('MET');
   });
 
-  it('is MET for an accepted document with no expiry at all', () => {
-    // A qualification that does not lapse is legitimate and must not read as
-    // expired for want of a date.
-    expect(status([{ typeId: 'licence', status: 'ISSUED', expiresOn: null }]).state).toBe('MET');
+  /*
+    A type that HAS an expiry, held by a document that names none, is UNKNOWN —
+    not met.
+
+    ⚠️ This used to read MET, and that was the compliance hole: `credentialStanding`
+    answers 'VALID' for a null date, so a licence filed without one counted as
+    covered FOREVER and no screen ever asked again. Worse than the nuisance it
+    replaced, because it is invisible — an expired licence nobody is chasing.
+
+    It matters now that a member's upload is accepted without a date when the
+    reader cannot find one; this is what stops that becoming a silent hole.
+  */
+  it('is EXPIRY_UNKNOWN when the type expires and the document names no date', () => {
+    expect(status([{ typeId: 'licence', status: 'ISSUED', expiresOn: null }]).state).toBe('EXPIRY_UNKNOWN');
+  });
+
+  it('is still MET when the TYPE does not expire', () => {
+    // The case the old test was really about: a qualification that does not
+    // lapse is legitimate and must not be chased for a date it will never have.
+    const NEVER_EXPIRES = [type({ requiredFromAll: true, hasExpiry: false })];
+    expect(
+      status([{ typeId: 'licence', status: 'ISSUED', expiresOn: null }], NEVER_EXPIRES).state,
+    ).toBe('MET');
+  });
+
+  it('does not block work merely because the date is unknown', () => {
+    // Unknown is not expired. Punishing the member for the reader's failure
+    // would be a worse outcome than the missing date.
+    expect(status([{ typeId: 'licence', status: 'ISSUED', expiresOn: null }]).blocksWork).toBe(false);
   });
 
   it('never reads MET for anything the dispatch gate would refuse', () => {
@@ -228,9 +253,22 @@ describe('what still needs doing', () => {
   it('leaves out one that is merely expiring — that is a reminder, not a task', () => {
     const statuses = requirementStatuses({ memberRoleId: TECH }, types, [
       { typeId: 'licence', status: 'ISSUED', expiresOn: future(10) },
-      { typeId: 'id', status: 'ISSUED', expiresOn: null },
+      { typeId: 'id', status: 'ISSUED', expiresOn: future(400) },
     ], NOW);
     expect(outstanding(statuses)).toEqual([]);
+  });
+
+  /*
+    But an unknown expiry IS a task — somebody has to read the document and say
+    when it runs out. This is the whole reason the state exists: left out of
+    `outstanding`, it would never be chased.
+  */
+  it('includes one whose expiry nobody has established', () => {
+    const statuses = requirementStatuses({ memberRoleId: TECH }, types, [
+      { typeId: 'licence', status: 'ISSUED', expiresOn: future(400) },
+      { typeId: 'id', status: 'ISSUED', expiresOn: null },
+    ], NOW);
+    expect(outstanding(statuses).map((s) => s.typeId)).toEqual(['id']);
   });
 
   it('knows whose turn it is', () => {

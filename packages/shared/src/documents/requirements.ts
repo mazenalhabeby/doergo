@@ -45,6 +45,20 @@ export type RequirementState =
   | 'MET'
   /** Accepted, in date, but not for much longer. */
   | 'EXPIRING'
+  /**
+   * Held, accepted, and nobody knows when it runs out.
+   *
+   * ⚠️ NOT 'MET'. A type with `hasExpiry` whose document carries no expiry used
+   * to fall through `credentialStanding(null)` → 'VALID' → MET, so a licence
+   * filed without a date read as covered FOREVER and no screen ever asked
+   * again. That is a worse failure than the nuisance it replaced, because it is
+   * invisible: an expired licence that nobody is chasing.
+   *
+   * Not EXPIRED either — it is not known to have run out, and blocking work on
+   * a document somebody has actually supplied would punish the member for the
+   * reader's failure.
+   */
+  | 'EXPIRY_UNKNOWN'
   /** Accepted and out of date. */
   | 'EXPIRED';
 
@@ -123,9 +137,18 @@ export function requirementStatuses(
         .map((d) => (d.expiresOn ? new Date(d.expiresOn) : null))
         .sort((a, b) => (b?.getTime() ?? Infinity) - (a?.getTime() ?? Infinity))[0] ?? null;
 
+      /*
+        A type that HAS an expiry, held by a document that does not name one,
+        is not met — it is unknown. `credentialStanding` answers 'VALID' for a
+        null date, which is right for a document that genuinely never expires
+        and wrong for one whose date could not be read.
+      */
       const standing: CredentialStanding = credentialStanding(best, now);
       const state: RequirementState =
-        standing === 'EXPIRED' ? 'EXPIRED' : standing === 'EXPIRING' ? 'EXPIRING' : 'MET';
+        type.hasExpiry && !best ? 'EXPIRY_UNKNOWN'
+        : standing === 'EXPIRED' ? 'EXPIRED'
+        : standing === 'EXPIRING' ? 'EXPIRING'
+        : 'MET';
 
       return {
         typeId: type.id,
@@ -148,6 +171,8 @@ export function requirementStatuses(
 
 /** The ones that still need something doing. */
 export function outstanding(statuses: RequirementStatus[]): RequirementStatus[] {
+  // EXPIRY_UNKNOWN is outstanding: somebody has to look at the document and
+  // say when it runs out, or it never gets chased again.
   return statuses.filter((s) => s.state !== 'MET' && s.state !== 'EXPIRING');
 }
 

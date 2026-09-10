@@ -272,11 +272,23 @@ describe('DocumentsService — what the member supplies', () => {
       expect(store.get).not.toHaveBeenCalled();
     });
 
-    it('demands an expiry date when the type expires', async () => {
-      // A certificate with no date can never lapse, so it would sit on the
-      // compliance board as permanently valid.
+    /*
+      ⚠️ INVERTED, on purpose.
+
+      This used to demand a date, for a good reason: "a certificate with no date
+      can never lapse, so it would sit on the compliance board as permanently
+      valid." That risk was real — and it is now answered where it belongs,
+      by `EXPIRY_UNKNOWN`, rather than by refusing the document.
+
+      Refusing meant a member in a van, holding a licence whose date the reader
+      could not find, could not file it AT ALL. An unfiled licence is worth
+      strictly less than a filed one with its date still to be settled, and the
+      verification queue — a person at a desk with the image on screen — will
+      not approve it until they supply one.
+    */
+    it('accepts an upload whose expiry could not be read', async () => {
       prisma.documentType.findFirst.mockResolvedValue(LICENCE);
-      await expect(submit({ expiresOn: undefined })).rejects.toThrow(/expiry date/i);
+      await expect(submit({ expiresOn: undefined })).resolves.toBeTruthy();
     });
 
     it('accepts an expiry in the past', async () => {
@@ -429,5 +441,51 @@ describe('DocumentsService — what the member supplies', () => {
       notifications.emit.mockImplementationOnce(() => { throw new Error('redis down'); });
       await expect(submit()).resolves.toBeTruthy();
     });
+  });
+});
+
+/**
+ * The date the member could not supply is settled at approval.
+ *
+ * Accepting an upload without an expiry is only safe because this step insists
+ * on one. Without it the pair of changes would trade a visible nuisance for an
+ * invisible compliance hole — a licence filed, approved, and never chased.
+ */
+describe('verification settles a missing expiry', () => {
+  const src = require('fs').readFileSync(
+    require('path').join(__dirname, '..', 'documents.service.ts'),
+    'utf8',
+  );
+
+  const verify = (() => {
+    const start = src.indexOf('async verifyDocument(');
+    expect(start).toBeGreaterThan(-1);
+    return src.slice(start, start + 2500);
+  })();
+
+  it('refuses to approve a type that expires with no date anywhere', () => {
+    expect(verify).toContain('document.type.hasExpiry');
+    expect(verify).toMatch(/needs an expiry date before it can be approved/);
+  });
+
+  it('takes the date from the reviewer', () => {
+    expect(verify).toContain('data.expiresOn');
+  });
+
+  /*
+    Never overwrite a date read off the document itself with nothing. The MRZ is
+    checksummed; a reviewer who leaves the field alone is not asking to erase it.
+  */
+  it('only writes an expiry when one was actually supplied', () => {
+    expect(verify).toMatch(/\.\.\.\(suppliedExpiry \?/);
+  });
+
+  /*
+    Noon, not midnight. The column is a DATE, but the value arrives as an
+    instant: "2030-03-01T00:00:00Z" lands on 28 February for anyone west of
+    Greenwich, which is how an expiry shifts a day depending on the server.
+  */
+  it('parses the date at midday, so it cannot slip to the day before', () => {
+    expect(verify).toContain('T12:00:00Z');
   });
 });

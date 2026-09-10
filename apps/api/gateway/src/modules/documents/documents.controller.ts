@@ -326,11 +326,18 @@ export class DocumentsController {
   async verifyDocument(
     @CurrentUser() user: CurrentUserData,
     @Param('id') id: string,
+    /*
+      The expiry is settled at approval when the member's upload could not be
+      read. The reviewer has the image in front of them; the member, standing
+      somewhere with a phone, did not.
+    */
+    @Body() body: { expiresOn?: string | null },
     @Req() req: any,
   ) {
     return this.documents.verifyDocument({
       actor: documentActor(user),
       documentId: id,
+      expiresOn: body?.expiresOn ?? null,
       ctx: requestContext(req),
     });
   }

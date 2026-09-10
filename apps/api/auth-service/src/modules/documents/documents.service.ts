@@ -1255,9 +1255,23 @@ export class DocumentsService {
     );
     const type = await this.assertMemberSuppliableType(data.typeId, data.actor.organizationId);
 
-    if (type.hasExpiry && !data.expiresOn) {
-      throw new BadRequestException(`${type.label} needs an expiry date`);
-    }
+    /*
+      ⚠️ A MISSING EXPIRY NO LONGER REFUSES THE DOCUMENT — deliberately.
+
+      This is the member's OWN path: somebody in a van holding a licence, whose
+      photograph the reader could not get a date out of. Refusing it means the
+      document is not filed at all, and an unfiled licence is worth strictly
+      less than a filed one with a date still to be confirmed.
+
+      The date is not abandoned, it MOVES. A supplied document goes to the
+      verification queue where a person is already looking at the image at a
+      desk, and `verifyDocument` will not approve a type that has an expiry
+      until they supply one. The obligation now sits with whoever can actually
+      satisfy it.
+
+      ⚠️ The office path (line ~562) still insists, and should: nothing reviews
+      it afterwards, so a date missing there is missing for good.
+    */
     const expiresOn = data.expiresOn ? new Date(data.expiresOn) : null;
     if (expiresOn && Number.isNaN(expiresOn.getTime())) {
       throw new BadRequestException('That expiry date could not be read');
@@ -1932,9 +1946,32 @@ export class DocumentsService {
    * `AND verifiedAt IS NOT NULL` away from silently failing open — and every
    * administrator-filed document would need a verification it never had.
    */
-  async verifyDocument(data: { actor: DocumentActor; documentId: string; ctx?: RequestContext }) {
+  async verifyDocument(data: {
+    actor: DocumentActor;
+    documentId: string;
+    /** Supplied here when the member's upload could not be read — "YYYY-MM-DD". */
+    expiresOn?: string | null;
+    ctx?: RequestContext;
+  }) {
     this.assertCanIssue(data.actor);
     const document = await this.findPendingOr404(data.actor, data.documentId);
+
+    /*
+      The expiry is settled HERE, by the person looking at the image.
+
+      A member's upload is no longer refused for want of a date — see the note
+      in `fileOwnDocument`. This is the step that catches it: whoever approves
+      the document is at a desk with it on screen, and can read the date the
+      scanner missed. Approving a credential with no expiry would put it on the
+      compliance board as EXPIRY_UNKNOWN and leave it there.
+    */
+    const suppliedExpiry = data.expiresOn ? new Date(`${data.expiresOn}T12:00:00Z`) : null;
+    if (suppliedExpiry && Number.isNaN(suppliedExpiry.getTime())) {
+      throw new BadRequestException('That expiry date could not be read');
+    }
+    if (document.type.hasExpiry && !document.expiresOn && !suppliedExpiry) {
+      throw new BadRequestException(`${document.type.label} needs an expiry date before it can be approved`);
+    }
 
     const verifiedAt = new Date();
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -1946,6 +1983,9 @@ export class DocumentsService {
           status: isBlocking(document.type.signatureMode) ? 'AWAITING_SIGNATURE' : 'ISSUED',
           verifiedAt,
           verifiedById: data.actor.userId,
+          // Only when one was supplied — never overwrite a date already read
+          // off the document itself with nothing.
+          ...(suppliedExpiry ? { expiresOn: suppliedExpiry } : {}),
           // Cleared, so a resubmission that is approved does not keep showing
           // the reason an earlier one was refused.
           rejectionReason: null,
@@ -2030,7 +2070,8 @@ export class DocumentsService {
       },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
-        type: { select: { label: true, signatureMode: true } },
+        // `hasExpiry` so verification can insist on a date the reader missed.
+        type: { select: { label: true, signatureMode: true, hasExpiry: true } },
       },
     });
     if (!document) throw new NotFoundException('No document is waiting for review');

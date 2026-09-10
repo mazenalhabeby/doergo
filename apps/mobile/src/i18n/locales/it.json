@@ -1964,7 +1964,8 @@
       "reading": "Lettura del documento…",
       "dateFromDocument": "Letta dal documento: controllala",
       "dateGuessed": "Presa dal testo del documento. Controllala.",
-      "dateNotFound": "Qui non è stato letto nulla: inserisci la data riportata sul documento."
+      "dateNotFound": "Data non leggibile — invia comunque, l'ufficio la confermerà.",
+      "expiresOnOptional": "Scade il"
     },
     "status": {
       "pendingVerification": "In attesa di verifica",
@@ -2110,6 +2111,16 @@
     "allow": "Consenti fotocamera",
     "failed": "Impossibile leggere il biglietto.",
     "nothingRead": "Non è stato letto nulla: riprova con più luce.",
-    "notAllowed": "Non hai il permesso di aggiungere clienti."
+    "notAllowed": "Non hai il permesso di aggiungere clienti.",
+    "permission": {
+      "title": "Scansiona un biglietto da visita",
+      "subtitle": "Inquadra un biglietto e i dati del cliente si compilano da soli.",
+      "onDevice": "Letto su questo telefono — il biglietto non viene mai caricato",
+      "deleted": "La foto viene eliminata appena è stata letta",
+      "youConfirm": "Controlli ogni campo prima che venga salvato qualcosa",
+      "blocked": "L'accesso alla fotocamera è disattivato per questa app.",
+      "openSettings": "Apri impostazioni",
+      "enterByHand": "Inserisci i dati a mano"
+    }
   }
 }

@@ -12,6 +12,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { scanBusinessCard, type ParsedCard } from '../../src/lib/card-scan';
 import { frameToImageCrop } from '@hbcfield/shared/client';
+import { CameraPermissionScreen } from '../../src/components/scan/camera-permission-screen';
 import { customersApi } from '../../src/lib/api';
 import { File as FsFile } from 'expo-file-system';
 import { useAuth } from '../../src/contexts/auth-context';
@@ -208,15 +209,16 @@ export default function ScanCardScreen() {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
         <Header colors={colors} title={t('scan.title', 'Scan a card')} />
-        <View style={s.centre}>
-          <Ionicons name="camera-outline" size={44} color={colors.textMuted} />
-          <Text style={[s.hint, { color: colors.textMuted }]}>
-            {t('scan.needCamera', 'The camera is needed to read a business card.')}
-          </Text>
-          <TouchableOpacity style={[s.primary, { backgroundColor: COLORS.primary }]} onPress={requestPermission}>
-            <Text style={s.primaryText}>{t('scan.allow', 'Allow camera')}</Text>
-          </TouchableOpacity>
-        </View>
+        {/*
+          `canAskAgain` defaults to true only while the hook is still resolving;
+          once the system has stopped asking it is false, and the screen offers
+          Settings instead of a button that opens nothing.
+        */}
+        <CameraPermissionScreen
+          canAskAgain={permission?.canAskAgain !== false}
+          onAllow={requestPermission}
+          onCancel={() => router.back()}
+        />
       </SafeAreaView>
     );
   }
