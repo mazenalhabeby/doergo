@@ -74,6 +74,9 @@ export * from './access/asset-kind-shape';
 // merge fields. Pure data + pure functions, so both entries carry it.
 export * from './documents';
 
+// Custody (who holds a thing, and when) and reading a receipt off a photo.
+export * from './assets';
+
 export * from './access/asset-kind-templates';
 export * from './access/workflow-status-label';
 

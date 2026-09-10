@@ -9,6 +9,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
+import { AssetCustodyService } from './asset-custody.service';
 import { AssetActivityService } from './asset-activity.service';
 
 /**
@@ -25,6 +26,7 @@ export class AssetsService {
     private readonly access: AssetAccessService,
     private readonly activity: AssetActivityService,
     private readonly holderService: AssetHoldersService,
+    private readonly custody: AssetCustodyService,
   ) {}
 
   /**
@@ -191,6 +193,25 @@ export class AssetsService {
         // transaction, so a record never exists for an instant with the wrong
         // people on it.
         holders: holderRows.length ? { create: holderRows } : undefined,
+        /*
+          …and the custody that holder row is the open end of.
+
+          A van created WITH a driver has been in that driver's hands since it
+          was recorded, and saying so here is what makes the very first fuel
+          receipt attributable. Opened at the same instant, in the same nested
+          create, so the two can never exist apart.
+        */
+        custody: holderRows.length
+          ? {
+              create: holderRows.map((h) => ({
+                organizationId: data.organizationId,
+                userId: h.userId,
+                customerId: h.customerId,
+                startedAt: new Date(),
+                openedById: data.userId,
+              })),
+            }
+          : undefined,
       },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
@@ -441,6 +462,8 @@ export class AssetsService {
     const wanted: HolderInput[] | undefined = AssetHoldersService.fromLegacy(data);
     let holderRows: Array<{ userId: string | null; customerId: string | null }> | null = null;
     let before: Array<{ userId: string | null; customerId: string | null }> | null = null;
+    /** How many the DESTINATION kind allows — the custody write is capped by it too. */
+    let holderLimit = 1;
 
     if (wanted !== undefined) {
       const owner = await this.prisma.asset.findFirst({
@@ -463,10 +486,25 @@ export class AssetsService {
           : owner.category?.config ?? null;
 
       holderRows = await this.holderService.resolve(wanted, data.organizationId, kindConfig);
+      holderLimit = this.holderService.limitFor(kindConfig);
       before = owner.holders;
     }
 
-    const updated = await this.prisma.asset.update({
+    /*
+      The write, and the custody it implies, in ONE transaction.
+
+      Changing who holds a record here is exactly the same event as pressing
+      "hand it over", so it goes through the same service and writes the same
+      period. Left out, an edit would move the holder without a timeline entry
+      and every cost after it would be attributed to the person who no longer
+      has it — silently, and with nothing on any screen to suggest why.
+
+      Atomic because the two halves are one fact: an asset whose holder row says
+      one thing and whose open period says another cannot be repaired by
+      looking at it.
+    */
+    const updated = await this.prisma.$transaction(async (tx) => {
+    const row = await tx.asset.update({
       where: { id: data.id },
       data: {
         ...(data.name && { name: data.name }),
@@ -482,12 +520,14 @@ export class AssetsService {
         ...(data.notes !== undefined && { notes: data.notes }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.typeId !== undefined && { typeId: data.typeId }),
-        // Holders are replaced as a SET: sending the list re-decides all of it,
-        // so moving a thing from a member to a client clears the member in one
-        // go and no stale row survives a change of mind.
-        ...(holderRows
-          ? { holders: { deleteMany: {}, ...(holderRows.length ? { create: holderRows } : {}) } }
-          : {}),
+        /*
+          ⚠️ Holders are NOT written here any more.
+
+          They are the open end of a custody period, and the custody service
+          writes both — in this same transaction, just below. Writing them here
+          as well would be a second author for one fact, and the two would
+          disagree the first time either changed alone.
+        */
         /*
           A move drops the fields the destination kind does not ask for.
 
@@ -510,6 +550,34 @@ export class AssetsService {
           details: normalizeDetailRows(data.details) as unknown as Prisma.InputJsonValue,
         }),
       },
+      select: { id: true },
+    });
+
+      if (holderRows) {
+        await this.custody.apply(tx as any, {
+          assetId: data.id,
+          organizationId: data.organizationId,
+          actorId: data.userId,
+          to: holderRows.map((h) => (h.userId ? { userId: h.userId } : { customerId: h.customerId })),
+          limit: holderLimit,
+          /*
+            Strict, and safely so: `resolve` above has already refused anything
+            the kind forbids, and the one remaining "problem" — the same people
+            keeping it — is handled as a no-op before this can throw. What
+            strict buys is that a real refusal surfaces instead of the holder
+            change silently not happening.
+          */
+          strict: true,
+        });
+      }
+      return row;
+    });
+
+    // Re-read with everything the caller expects. Outside the transaction on
+    // purpose: it is a read, and holding a connection open for it under
+    // PgBouncer's transaction pooling is exactly the wrong trade.
+    const full = await this.prisma.asset.findUniqueOrThrow({
+      where: { id: updated.id },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
         type: { select: { id: true, name: true } },
@@ -521,7 +589,7 @@ export class AssetsService {
       await this.activity.logHolderChange(data.id, data.organizationId, data.userId, before, holderRows);
     }
 
-    return success(await this.withHolders(updated));
+    return success(await this.withHolders(full));
   }
 
   /**

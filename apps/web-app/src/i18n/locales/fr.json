@@ -8254,5 +8254,46 @@
       "break": "En pause",
       "away": "Absents"
     }
+  },
+  "custody": {
+    "tab": "Garde",
+    "handOver": "Remettre",
+    "whoGetsIt": "Qui le reçoit",
+    "reason": "Pourquoi (facultatif)",
+    "reasonPh": "Fin de location, changement de dépôt…",
+    "whatHappens": "Ce qui se passe",
+    "noChange": "Rien ne change — c’est déjà cette personne.",
+    "oneAtATime": "Ce type est détenu par une seule personne à la fois.",
+    "closes": "Clôt la garde de {{name}} ; à partir d’aujourd’hui plus rien ne lui est imputé.",
+    "opens": "Ouvre une nouvelle garde à partir de maintenant. Les frais suivants lui reviennent.",
+    "toNobody": "Ensuite, personne ne l’a.",
+    "confirm": "Confirmer",
+    "done": "Remis.",
+    "empty": "Personne ne l’a encore eu.",
+    "now": "L’a en ce moment",
+    "present": "maintenant",
+    "days": "{{count}} jours",
+    "entriesCount": "{{count}} écritures",
+    "unattributed": "Hors de toute garde",
+    "unattributedHint": "{{count}} écritures datées d’une période sans détenteur — au compte de l’entreprise.",
+    "memberEmpty": "Rien n’a été remis à ce membre.",
+    "holdingNow": "Détient",
+    "everHeld": "Détenu au total",
+    "spendTotal": "Dépensé pour eux",
+    "previously": "Auparavant",
+    "whileHeld": "pendant la détention",
+    "anAsset": "Un bien"
+  },
+  "expenses": {
+    "waiting": "{{count}} dépenses en attente de votre décision",
+    "waitingHere": "{{count}} en attente d’une décision",
+    "accept": "Accepter",
+    "reject": "Refuser",
+    "accepted": "Acceptée",
+    "rejected": "Refusée",
+    "pending": "En attente",
+    "viewReceipt": "Voir le reçu",
+    "someone": "Quelqu’un",
+    "anAsset": "Un bien"
   }
 }

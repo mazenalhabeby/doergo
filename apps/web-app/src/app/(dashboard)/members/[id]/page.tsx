@@ -18,6 +18,7 @@ import {
   Calendar,
   Umbrella,
   BarChart3,
+  Package,
 } from "lucide-react"
 
 import { useMemberData } from "./_lib/use-member-data"
@@ -38,6 +39,7 @@ import { TasksTab } from "./_components/tasks-tab"
 import { AttendanceTab } from "./_components/attendance-tab"
 import { LocationsTab } from "./_components/locations-tab"
 import { ScheduleTab } from "./_components/schedule-tab"
+import { HoldingsTab } from "./_components/holdings-tab"
 // Performance tab pulls in recharts — load it as its own chunk only when the tab
 // is opened, so every other visitor doesn't pay for the chart lib (P11).
 const PerformanceTab = dynamic(
@@ -576,6 +578,15 @@ export default function MemberProfilePage({
                       <MapPin className="size-3.5" />
                       {t("technicians.detail.tabs.locations")}
                     </TabsTrigger>
+                    {/* What has been handed to them — a van, a laptop, a key.
+                        Shown for everybody who can see the operational tabs:
+                        the tab body says "nothing" when there is nothing, which
+                        is a real answer and the one somebody checking asset
+                        returns on a leaver's last day is looking for. */}
+                    <TabsTrigger value="holdings" className={triggerCls}>
+                      <Package className="size-3.5" />
+                      {t("custody.tab", "Custody")}
+                    </TabsTrigger>
                     {/* Weekly schedule only applies to FIXED-hours members; flexible/
                         none members work to a monthly budget, so hide the tab. */}
                     {member.scheduleType === "FIXED" && (
@@ -655,6 +666,9 @@ export default function MemberProfilePage({
                       />
                     </TabsContent>
                   )}
+                  <TabsContent value="holdings" className="mt-6">
+                    <HoldingsTab memberId={memberId} />
+                  </TabsContent>
                   <TabsContent value="locations" className="mt-6">
                     <LocationsTab
                       assignments={memberAssignments}

@@ -82,6 +82,8 @@ export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput, Colleag
 export { overtimeApi } from './overtime';
 export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
+export { assetsApi } from './assets';
+export type { HeldAsset, MyExpense, SubmitExpenseInput } from './assets';
 
 export { supportApi } from './support';
 export { chatApi } from './chat';

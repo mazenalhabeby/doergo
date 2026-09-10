@@ -8245,5 +8245,46 @@
       "break": "On a break",
       "away": "Away"
     }
+  },
+  "custody": {
+    "tab": "Custody",
+    "handOver": "Hand it over",
+    "whoGetsIt": "Who gets it",
+    "reason": "Why (optional)",
+    "reasonPh": "Rental ended, moved depot…",
+    "whatHappens": "What happens",
+    "noChange": "Nothing changes — that is who has it already.",
+    "oneAtATime": "This type is held by one at a time.",
+    "closes": "Closes {{name}}’s custody, and everything after today stops counting against them.",
+    "opens": "Opens a new custody from now. Costs dated after this belong to them.",
+    "toNobody": "Nobody holds it after this.",
+    "confirm": "Confirm",
+    "done": "Handed over.",
+    "empty": "Nobody has held this yet.",
+    "now": "Has it now",
+    "present": "now",
+    "days": "{{count}} days",
+    "entriesCount": "{{count}} entries",
+    "unattributed": "Outside anybody’s custody",
+    "unattributedHint": "{{count}} entries dated when nobody held it — the organisation’s own cost.",
+    "memberEmpty": "Nothing has been handed to this member.",
+    "holdingNow": "Holding now",
+    "everHeld": "Held in total",
+    "spendTotal": "Spent on them",
+    "previously": "Previously",
+    "whileHeld": "while they had it",
+    "anAsset": "An asset"
+  },
+  "expenses": {
+    "waiting": "{{count}} expenses waiting on you",
+    "waitingHere": "{{count}} waiting on a decision",
+    "accept": "Accept",
+    "reject": "Refuse",
+    "accepted": "Accepted",
+    "rejected": "Refused",
+    "pending": "Waiting",
+    "viewReceipt": "View the receipt",
+    "someone": "Someone",
+    "anAsset": "An asset"
   }
 }

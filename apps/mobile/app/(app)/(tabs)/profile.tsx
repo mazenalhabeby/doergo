@@ -21,6 +21,7 @@ import { orgHasAddOn } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
+import { useHeldAssets } from '../../../src/hooks/use-held-assets';
 import { useDocumentRequirements } from '../../../src/contexts/document-requirements-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
@@ -72,6 +73,14 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   // Already loaded for the home card — this reads the same fetch, not a second one.
   const { total: outstandingDocs, blocksWork: docsBlockWork } = useDocumentRequirements();
+  /*
+    Whether "What I have" appears at all.
+
+    Decided by whether this member actually holds anything, not by a permission
+    and not by a module flag: most members hold nothing, and a permanent row
+    that opens an empty screen is how a menu teaches people to stop reading it.
+  */
+  const { held } = useHeldAssets();
 
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [savingPresence, setSavingPresence] = useState(false);
@@ -327,6 +336,24 @@ export default function ProfileScreen() {
             is never a permission — so an organization that has not bought
             Member Documents sees no entry, and nothing changes for them.
           */}
+          {held.length > 0 && (
+            <>
+              <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+              <MenuItem
+                icon="cube-outline"
+                iconColor={COLORS.primary}
+                iconBg={colors.primaryLight}
+                label={t('myAssets.title', 'What I have')}
+                onPress={() => router.push('/my-assets' as Href)}
+                trailing={
+                  <View style={[styles.menuBadge, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.menuBadgeText, { color: colors.textPrimary }]}>{held.length}</Text>
+                  </View>
+                }
+                themeColors={colors}
+              />
+            </>
+          )}
           {orgHasAddOn(user?.orgAddOns ?? null, 'documents') && (
             <>
               <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />

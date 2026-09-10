@@ -2122,5 +2122,45 @@
       "openSettings": "Apri impostazioni",
       "enterByHand": "Inserisci i dati a mano"
     }
+  },
+  "myAssets": {
+    "title": "Cosa ho",
+    "empty": "Non ti è ancora stato consegnato nulla.",
+    "loadFailed": "Impossibile caricare",
+    "anAsset": "Un bene",
+    "since": "Dal",
+    "spent": "Speso",
+    "addExpense": "Aggiungi una ricevuta",
+    "sent": "Cosa ho inviato"
+  },
+  "custody": {
+    "days": "{{count}} giorni"
+  },
+  "expenses": {
+    "title": "Aggiungi una ricevuta",
+    "review": "Controlla prima di inviare",
+    "amount": "Importo",
+    "date": "Data",
+    "category": "Per cosa",
+    "note": "Nota",
+    "notePh": "Dove o per cosa",
+    "send": "Invia",
+    "sent": "Inviata — l’ufficio la confermerà.",
+    "sendFailed": "Invio non riuscito",
+    "pendingHint": "Conta quando l’ufficio l’accetta.",
+    "aim": "Inquadra tutto lo scontrino",
+    "typeInstead": "Scrivilo a mano",
+    "takePhoto": "Scatta una foto",
+    "retake": "Rifai",
+    "photoAttached": "Foto allegata",
+    "noPhoto": "Nessuna foto",
+    "photoFailed": "La foto non è stata caricata — l’importo parte lo stesso.",
+    "readFailed": "Non si è potuta leggere — controlla tu l’importo.",
+    "noTotal": "Totale non trovato — scrivilo.",
+    "notYours": "Questo non ce l’hai tu.",
+    "loadFailed": "Impossibile aprire",
+    "accepted": "Accettata",
+    "rejected": "Rifiutata",
+    "pending": "In attesa"
   }
 }

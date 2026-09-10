@@ -466,7 +466,7 @@ model Organization {
   agreedNote         String?
   agreedSetAt        DateTime?
   agreedSetById      String?
-  vatId             String?
+  vatId              String?
 
   // Customer invoicing: default billable labor rate (what you CHARGE a customer
   // per hour, distinct from internal worker cost). Integer EUR cents. Null = no
@@ -504,8 +504,8 @@ model Organization {
   /// on users can drift into two owners or none, which no application code can
   /// make impossible. Nullable so the column can exist before it is filled, and
   /// so an owner's row disappearing leaves the organization standing.
-  ownerId        String?              @unique
-  owner          User?                @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  ownerId String? @unique
+  owner   User?   @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
   grantedAccess  OrganizationAccess[] @relation("Grantor") // Access this org has granted to others
   receivedAccess OrganizationAccess[] @relation("Grantee") // Access this org has received from others
@@ -518,7 +518,7 @@ model Organization {
   serviceReports ServiceReport[]
 
   // Customers (first-class entity for customer-scoped work + reporting)
-  customers Customer[]
+  customers         Customer[]
   customerSignLinks CustomerSignLink[]
 
   // Customer portal (optional B2B2C / B2C module: residents/recipients submit requests)
@@ -681,8 +681,8 @@ model SpaceShareRequest {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String @id @default(cuid())
+  email        String @unique
   passwordHash String
   firstName    String
   lastName     String
@@ -694,11 +694,11 @@ model User {
   /// Also what re-enables the identity comparison in `checkScan`, which has
   /// always been able to match a scanned passport against the member record and
   /// never had a record to match against.
-  dateOfBirth  DateTime? @db.Date
-  role         Role
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  dateOfBirth DateTime? @db.Date
+  role        Role
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Security: Account lockout fields
   failedLoginAttempts Int       @default(0)
@@ -729,21 +729,21 @@ model User {
   // Which build of the app this person is actually running. Written only when
   // it changes, from a header the app sends — the steady state costs nothing.
   // Without it, "who is still on the old version" had no answer at all.
-  lastAppVersion      String?
-  lastAppPlatform     String?   // "android" | "ios"
-  lastAppSeenAt       DateTime?
+  lastAppVersion    String?
+  lastAppPlatform   String? // "android" | "ios"
+  lastAppSeenAt     DateTime?
   // Contact directory / access — open within the org by default; admins restrict
   // via the Access Builder (canContact:false, or contactScope SELECTED).
-  contactable         Boolean           @default(true) // CHAT: reachable in chat / messaging (inbound)
-  contactScope        String            @default("NONE") // Who this member may contact: NONE | ALL | SELECTED (Phase 3: default none → space-driven)
-  contactAllowedIds   String[]          @default([]) // When SELECTED: the specific contact user IDs this member may reach
+  contactable       Boolean   @default(true) // CHAT: reachable in chat / messaging (inbound)
+  contactScope      String    @default("NONE") // Who this member may contact: NONE | ALL | SELECTED (Phase 3: default none → space-driven)
+  contactAllowedIds String[]  @default([]) // When SELECTED: the specific contact user IDs this member may reach
   // MANAGEMENT DIRECTORY (separate from chat): surfaces this member in the org
   // "Management" contacts list teammates use to reach leadership. Admins always
   // appear regardless. Decoupled from chat `contactable` and from the perm role.
-  showInManagement    Boolean           @default(false) // Listed in the Management directory
+  showInManagement  Boolean   @default(false) // Listed in the Management directory
   // Per-recipient notification opt-outs by category, e.g. { "attendance": false }.
   // Missing/true = subscribed. Filters what THIS user receives (see NotificationWatch).
-  notificationPrefs   Json?
+  notificationPrefs Json?
 
   // Worker configuration
   position          String? // Free-form: "technician", "driver", "sales", "office_manager"
@@ -768,7 +768,7 @@ model User {
   /// (`isSystem` blocks deletion, not editing), so anything deciding this by
   /// matching a role's NAME would fail the day somebody edits that word — and
   /// fail towards granting access.
-  isExternal        Boolean @default(false)
+  isExternal Boolean @default(false)
 
   // Employee fields
   specialty    String? // e.g., "Electrical", "Plumbing", "Mechanical", "General"
@@ -800,11 +800,11 @@ model User {
   // "Help & guides" button. Existing users are backfilled to true (no re-show).
   guidesSeen Boolean @default(false)
 
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId       String?
+  organization         Organization? @relation(fields: [organizationId], references: [id])
   /// The organization this user owns, if any. Back-reference for ownerId above.
-  ownedOrganization Organization? @relation("OrganizationOwner")
-  breaksAddedForOthers Break[]     @relation("BreaksAddedForOthers")
+  ownedOrganization    Organization? @relation("OrganizationOwner")
+  breaksAddedForOthers Break[]       @relation("BreaksAddedForOthers")
 
   // Customer portal: for role=CUSTOMER, the Customer they log in as + optional
   // default unit. Null for staff (ADMIN/EMPLOYEE). See [[customer-portal]].
@@ -1247,14 +1247,92 @@ model AssetMoney {
   note        String?
 
   /// When the money moved, which is not when somebody typed it in.
+  ///
+  /// ⚠️ This is also WHO IT BELONGS TO. Custody is stored as periods, so the
+  /// holder at this instant is a lookup (`holderOn`) — deliberately not a
+  /// column here. Two versions of the truth would disagree the first time
+  /// somebody corrected a handover date, which is the likeliest repair there is.
   occurredAt DateTime @default(now())
   /// Plain marker id, no FK — removing a member must not erase the books.
   authorId   String?
 
+  /// The photograph of the slip, in the same bucket as everything else. The key
+  /// only: a URL stored in the database is a URL that outlives its signature.
+  receiptKey  String?
+  receiptName String?
+  receiptMime String?
+
+  /// RECORDED (typed in by the office, counts) · SUBMITTED (sent from a phone,
+  /// waiting) · REJECTED (does not count).
+  ///
+  /// Defaults to RECORDED so every entry that predates this stays in its
+  /// totals — the opposite default would empty every asset's ledger overnight.
+  status       String    @default("RECORDED")
+  reviewedById String?
+  reviewedAt   DateTime?
+  /// Why it was refused, in the words the member reads.
+  reviewNote   String?
+
   createdAt DateTime @default(now())
 
   @@index([assetId, occurredAt])
+  /// The review queue: everything an organization has waiting.
+  @@index([organizationId, status, occurredAt])
+  /// "What have I sent in" — the member's own list, on the phone.
+  @@index([authorId, occurredAt])
   @@map("asset_money")
+}
+
+/// One stretch of time during which one party held one asset.
+///
+/// `AssetHolder` answers "who has it NOW" and deletes the row on a handover, so
+/// the moment a van goes back there is no record that anybody ever drove it.
+/// Every question the business actually asks is about a period: what did this
+/// van cost while Ahmed had it, which vans has Ahmed had this year, whose fuel
+/// receipt is this. So custody is periods, and "now" is the period with no end.
+///
+/// `AssetHolder` is kept — it is a fast, uniquely-constrained index of the
+/// present, and one service writes both, in one transaction, so they cannot
+/// drift.
+///
+/// Neither party is a foreign key. This is HISTORY: removing a member or a
+/// client must never be blocked by it and must never erase it — the same
+/// reasoning as `AssetMoney.authorId`.
+model AssetCustody {
+  id             String @id @default(cuid())
+  organizationId String
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  /// A member of this organization…
+  userId     String?
+  /// …or a client of it. Exactly one, enforced in the service.
+  customerId String?
+
+  startedAt DateTime
+  /// NULL means they hold it now. Nullable rather than a far-future sentinel:
+  /// a sentinel sorts and compares like a real date, so one off-by-one renders
+  /// "held until 9999" to a person and every query must know the magic value.
+  endedAt   DateTime?
+
+  /// Free text: "rental ended", "moved to the Linz depot".
+  reason String?
+
+  /// Who performed the handover, at each end. Plain marker ids.
+  openedById String?
+  closedById String?
+
+  createdAt DateTime @default(now())
+
+  /// The record's timeline.
+  @@index([assetId, startedAt])
+  /// "What has this person held" — and, with endedAt, "what do they hold now",
+  /// which is the query the phone opens on.
+  @@index([userId, endedAt])
+  @@index([userId, startedAt])
+  @@index([customerId, startedAt])
+  @@map("asset_custody")
 }
 
 /// One row of a table on a record: a part on a machine, a key on an apartment.
@@ -1435,6 +1513,8 @@ model Asset {
   /// Who has it. A kind decides whether that is one person or several; the
   /// join table carries both cases, so "several" is not a second code path.
   holders     AssetHolder[]
+  /// Who has had it, and when. `holders` is this, filtered to the open rows.
+  custody     AssetCustody[]
   activities  AssetActivity[]
   money       AssetMoney[]
   listRows    AssetListRow[]
@@ -1544,11 +1624,11 @@ model Customer {
   documentSignerSteps DocumentSigner[]
   documentSignatures  DocumentSignature[]
   /// Who works at this company (only meaningful when type = COMPANY).
-  contactsAsCompany CustomerContact[] @relation("CompanyContacts")
+  contactsAsCompany   CustomerContact[]   @relation("CompanyContacts")
   /// Which companies this person is a contact at (type = PERSON).
-  contactsAsPerson  CustomerContact[] @relation("PersonContacts")
+  contactsAsPerson    CustomerContact[]   @relation("PersonContacts")
 
-  signLinks           CustomerSignLink[]
+  signLinks CustomerSignLink[]
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])
@@ -1569,7 +1649,7 @@ model Customer {
 /// the one to ring first. Neither has anywhere to live on a plain foreign key,
 /// and a person can genuinely contact two firms — a consultant, a group.
 model CustomerContact {
-  id             String   @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
 
   /// Customer with type = COMPANY. Enforced in the service; the database cannot
@@ -1957,24 +2037,24 @@ model PartUsed {
 // geofencing) or a logical workspace/project (no coordinates). Every task
 // belongs to a space; modules + workflow are configured per space.
 model CompanyLocation {
-  id                String    @id @default(cuid())
-  name              String // "Main Office", "Warehouse A", "General"
-  address           String? // Full address string
-  lat               Float? // Latitude (only for physical locations / attendance)
-  lng               Float? // Longitude (only for physical locations / attendance)
+  id              String    @id @default(cuid())
+  name            String // "Main Office", "Warehouse A", "General"
+  address         String? // Full address string
+  lat             Float? // Latitude (only for physical locations / attendance)
+  lng             Float? // Longitude (only for physical locations / attendance)
   /// Radius in metres for the clock-in zone, used when no boundary is drawn.
   /// Default matches ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS — it read 15
   /// here while the constant said 50, so a space created without the field got
   /// a fence too small to accept somebody standing at the building.
-  geofenceRadius    Int       @default(50)
+  geofenceRadius  Int       @default(50)
   /// The site's actual outline, as [{lat,lng}]. When set it REPLACES the radius:
   /// an address geocodes to the front door, so a circle cannot describe a
   /// property with a yard or several buildings. Validated on write
   /// (validateGeofencePolygon) — vertex count, coordinate range and a maximum
   /// area, so a boundary cannot be drawn around a district to disable the check.
-  geofencePolygon   Json?
-  timezone          String    @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
-  workModel         WorkModel @default(NONE) // How attendance is interpreted for this space
+  geofencePolygon Json?
+  timezone        String    @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
+  workModel       WorkModel @default(NONE) // How attendance is interpreted for this space
 
   /// Whether anybody may clock in for this workspace without standing in it.
   ///
@@ -2142,7 +2222,7 @@ model TimeEntry {
   /// the workspace they are ROSTERED to, keeping its shift, its rests and its
   /// expected hours. The bucket remains only for somebody assigned to no
   /// workspace at all.
-  isRemote      Boolean @default(false)
+  isRemote Boolean @default(false)
 
   /// Why they were away — "visiting a client", "on the road". Free text, chosen
   /// from a short list on the phone, and read by nobody but a human.
@@ -2160,7 +2240,7 @@ model TimeEntry {
 
   // ── Shift expectation (resolved once at clock-in; server-authoritative) ──
   shiftId            String? // Resolved shift for this clock-in (null = no shift / task / flex)
-  shift              Shift?             @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  shift              Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   /// Absolute UTC instant the shift was expected to START.
   ///
   /// Resolved at clock-in like its sibling below, and until now thrown away
@@ -2182,9 +2262,9 @@ model TimeEntry {
   /// Whole minutes, never negative, net of unpaid rests. The one number payroll
   /// reads; null on an entry that has not been closed yet.
   paidMinutes    Int?
-  reminderState      ShiftReminderState @default(NONE) // Reminder/escalation lifecycle for an open entry
-  nextRemindAt       DateTime? // When the next reminder push is due (null = nothing scheduled)
-  reminderCount      Int                @default(0) // How many reminders have been sent for this entry
+  reminderState  ShiftReminderState @default(NONE) // Reminder/escalation lifecycle for an open entry
+  nextRemindAt   DateTime? // When the next reminder push is due (null = nothing scheduled)
+  reminderCount  Int                @default(0) // How many reminders have been sent for this entry
 
   // Break duration (calculated from breaks)
   breakMinutes Int @default(0)
@@ -2763,8 +2843,8 @@ model SpaceAssignment {
   roleId String?
   role   AccessRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
-  isPrimary     Boolean   @default(false)
-  schedule      String[]  @default([]) // Work days: ["MON","TUE",...]
+  isPrimary Boolean  @default(false)
+  schedule  String[] @default([]) // Work days: ["MON","TUE",...]
 
   /// May this member work away from THIS workspace?
   ///
@@ -2856,8 +2936,8 @@ model Invitation {
   /// invitation rather than set after they join, so the person is external from
   /// their very first session — there is no window in which they exist as
   /// ordinary staff. Refused together with `memberRoleId`; see User.isExternal.
-  isExternal      Boolean @default(false)
-  memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
+  isExternal Boolean     @default(false)
+  memberRole AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
   position          String?
@@ -3949,35 +4029,35 @@ enum PlanTier {
 /// and the question an operator actually asks is "what changed recently, and
 /// have we looked at it?" — which is a list with a state, not a notification.
 model BillingAlert {
-  id             String           @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   /// What kind of thing happened. See BillingAlertKind.
-  kind           BillingAlertKind @default(DROP)
+  kind BillingAlertKind @default(DROP)
 
   /// What it was billed before, and what it is now — in monthly EUR cents.
   /// Null for kinds that are not about an amount.
-  fromCents      Int?
-  toCents        Int?
+  fromCents Int?
+  toCents   Int?
   /// fromCents - toCents. Stored rather than derived so the console can sort
   /// and filter on it without computing over the table.
-  dropCents      Int?
+  dropCents Int?
 
   /// Why, in the words of whatever refused — Stripe's own message for a sync
   /// failure. Truncated at write: an error is a clue, not a log file.
-  detail         String?
+  detail      String?
   /// How many times this has happened since it was first seen and last looked
   /// at. A failing sync retries on every member change, and an operator needs
   /// ONE row saying "47 times" rather than 47 rows saying the same thing.
-  occurrences    Int              @default(1)
-  lastSeenAt     DateTime         @default(now())
+  occurrences Int      @default(1)
+  lastSeenAt  DateTime @default(now())
 
   /// Cleared by an operator once they have looked. Null = still needs a look.
   acknowledgedAt DateTime?
   acknowledgedBy String?
 
-  createdAt      DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   /// The console opens on "what is unacknowledged, newest first".
   @@index([acknowledgedAt, createdAt])
@@ -4412,7 +4492,7 @@ model Document {
   periodMonth Int?
 
   /// Content-addressed key — {orgId}/documents/{sha[0:2]}/{sha}.ext
-  storageKey String
+  storageKey     String
   /// The document as ISSUED, before any signature.
   ///
   /// Each signing re-renders from here: original + ONE signature block + ONE
@@ -4420,9 +4500,9 @@ model Document {
   /// another pair of pages, so three signers would produce six.
   originalKey    String?
   originalSha256 String?
-  sha256     String
-  sizeBytes  Int
-  mimeType   String @default("application/pdf")
+  sha256         String
+  sizeBytes      Int
+  mimeType       String  @default("application/pdf")
 
   status DocumentStatus @default(ISSUED)
 
@@ -4476,7 +4556,7 @@ model Document {
   /// list so the old one-signature reads become the first element.
   signatures DocumentSignature[]
   signers    DocumentSigner[]
-  events    DocumentEvent[]
+  events     DocumentEvent[]
 
   // The member's own list: their documents, by type, newest year first.
   @@index([userId, typeId, periodYear])
@@ -4537,7 +4617,7 @@ model DocumentSigner {
   /// Where a signing link was sent, when the customer has no account.
   email String?
 
-  status     DocumentSignerStatus @default(PENDING)
+  status DocumentSignerStatus @default(PENDING)
 
   /// The counterparty's display name when they are not a member and not a CRM
   /// record — a space's contact, or somebody typed in for this one document.
@@ -4555,7 +4635,7 @@ model DocumentSigner {
   /// When this signer first opened THIS document. Evidence, not a gate: forcing
   /// somebody to open ten identical time sheets buys clicking-through, which is
   /// a worse signature than the honest one. The certificate reports it.
-  openedAt DateTime?
+  openedAt   DateTime?
   notifiedAt DateTime?
   signedAt   DateTime?
 
@@ -4662,12 +4742,10 @@ model CustomerSignLink {
 
   /**
    * WHO the link is for — an address, not a record.
-   *
    * Keyed on the email because that is the only identity every counterparty
    * has. A CRM client has a row; a client space has a contact; somebody typed
    * in for one document has neither. Keying on `customerId` served exactly one
    * of those three and left the other two unable to hold a link at all.
-   *
    * It is also the right scope. A link resolves the signer rows addressed to
    * THIS address, so a one-off contact sees the one document sent to them and
    * never a client's history — which keying on a client record could not
@@ -4690,8 +4768,8 @@ model CustomerSignLink {
 
   /// Rate limiting without new infrastructure: "send me a new link" refuses if
   /// this is recent, so the form cannot be used to mail-bomb a client.
-  lastSentAt   DateTime?
-  sentCount    Int       @default(0)
+  lastSentAt    DateTime?
+  sentCount     Int       @default(0)
   /// Whether anybody has actually followed it — the difference between "sent"
   /// and "seen" on the admin register, and the difference between chasing a
   /// client and chasing your mail provider.

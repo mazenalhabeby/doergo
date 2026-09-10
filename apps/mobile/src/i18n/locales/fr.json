@@ -2122,5 +2122,45 @@
       "openSettings": "Ouvrir les réglages",
       "enterByHand": "Saisir les informations à la main"
     }
+  },
+  "myAssets": {
+    "title": "Ce que j’ai",
+    "empty": "Rien ne vous a encore été remis.",
+    "loadFailed": "Chargement impossible",
+    "anAsset": "Un bien",
+    "since": "Depuis",
+    "spent": "Dépensé",
+    "addExpense": "Ajouter un reçu",
+    "sent": "Ce que j’ai envoyé"
+  },
+  "custody": {
+    "days": "{{count}} jours"
+  },
+  "expenses": {
+    "title": "Ajouter un reçu",
+    "review": "Vérifiez avant d’envoyer",
+    "amount": "Montant",
+    "date": "Date",
+    "category": "Pour quoi",
+    "note": "Note",
+    "notePh": "Où, ou pour quoi",
+    "send": "Envoyer",
+    "sent": "Envoyé — le bureau confirmera.",
+    "sendFailed": "Envoi impossible",
+    "pendingHint": "Il compte une fois accepté par le bureau.",
+    "aim": "Cadrez le ticket en entier",
+    "typeInstead": "Saisir à la main",
+    "takePhoto": "Prendre une photo",
+    "retake": "Reprendre",
+    "photoAttached": "Photo jointe",
+    "noPhoto": "Pas de photo",
+    "photoFailed": "La photo n’est pas partie — le montant est envoyé quand même.",
+    "readFailed": "Lecture impossible — vérifiez le montant vous-même.",
+    "noTotal": "Total introuvable — saisissez-le.",
+    "notYours": "Vous n’avez pas celui-ci.",
+    "loadFailed": "Ouverture impossible",
+    "accepted": "Acceptée",
+    "rejected": "Refusée",
+    "pending": "En attente"
   }
 }

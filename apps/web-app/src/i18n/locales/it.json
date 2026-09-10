@@ -8254,5 +8254,46 @@
       "break": "In pausa",
       "away": "Assenti"
     }
+  },
+  "custody": {
+    "tab": "Custodia",
+    "handOver": "Consegna",
+    "whoGetsIt": "Chi lo riceve",
+    "reason": "Perché (facoltativo)",
+    "reasonPh": "Noleggio finito, cambio deposito…",
+    "whatHappens": "Cosa succede",
+    "noChange": "Non cambia nulla: ce l’ha già quella persona.",
+    "oneAtATime": "Questo tipo lo tiene una persona alla volta.",
+    "closes": "Chiude la custodia di {{name}}: da oggi non le viene più addebitato nulla.",
+    "opens": "Apre una nuova custodia da adesso. Le spese successive sono sue.",
+    "toNobody": "Dopo non ce l’ha nessuno.",
+    "confirm": "Conferma",
+    "done": "Consegnato.",
+    "empty": "Non l’ha ancora avuto nessuno.",
+    "now": "Ce l’ha adesso",
+    "present": "adesso",
+    "days": "{{count}} giorni",
+    "entriesCount": "{{count}} voci",
+    "unattributed": "Fuori da ogni custodia",
+    "unattributedHint": "{{count}} voci di quando non ce l’aveva nessuno: costo dell’azienda.",
+    "memberEmpty": "A questo membro non è stato consegnato nulla.",
+    "holdingNow": "Ha adesso",
+    "everHeld": "Avuti in totale",
+    "spendTotal": "Speso per loro",
+    "previously": "In precedenza",
+    "whileHeld": "mentre l’aveva",
+    "anAsset": "Un bene"
+  },
+  "expenses": {
+    "waiting": "{{count}} spese in attesa di te",
+    "waitingHere": "{{count}} in attesa di una decisione",
+    "accept": "Accetta",
+    "reject": "Rifiuta",
+    "accepted": "Accettata",
+    "rejected": "Rifiutata",
+    "pending": "In attesa",
+    "viewReceipt": "Vedi la ricevuta",
+    "someone": "Qualcuno",
+    "anAsset": "Un bene"
   }
 }

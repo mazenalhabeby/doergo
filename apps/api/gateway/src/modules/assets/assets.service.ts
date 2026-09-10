@@ -63,6 +63,53 @@ export class AssetsService extends BaseGatewayService {
     return this.send({ cmd: 'remove_asset_money' }, data);
   }
 
+  // Custody — who held it, and when.
+  async custodyTimeline(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_custody_timeline' }, data);
+  }
+
+  async custodyForMember(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_custody_for_member' }, data);
+  }
+
+  async custodyMine(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_custody_mine' }, data);
+  }
+
+  /*
+    A write that does NOT go through the queue, like a money entry and a note.
+    The queue is there to make task creation exactly-once under a burst; a
+    handover is one person pressing one button and watching for the result.
+  */
+  async custodyHandOver(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_custody_handover' }, data);
+  }
+
+  // Expenses — a member spends, the office accepts.
+  async expensePresign(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_presign' }, data);
+  }
+
+  async expenseSubmit(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_submit' }, data);
+  }
+
+  async expenseMine(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_mine' }, data);
+  }
+
+  async expensePending(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_pending' }, data);
+  }
+
+  async expenseReview(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_review' }, data);
+  }
+
+  async expenseReceiptUrl(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_receipt_url' }, data);
+  }
+
   async listRows(data: Record<string, any>) {
     return this.send({ cmd: 'list_asset_rows' }, data);
   }

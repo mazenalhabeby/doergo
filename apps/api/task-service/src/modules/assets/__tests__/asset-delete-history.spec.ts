@@ -5,6 +5,7 @@ import { AssetsService } from '../assets.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetActivityService } from '../asset-activity.service';
 import { AssetHoldersService } from '../asset-holders.service';
+import { AssetCustodyService } from '../asset-custody.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -43,6 +44,8 @@ describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
         { provide: AssetActivityService, useValue: { record: jest.fn() } },
         { provide: AssetHoldersService, useValue: {} },
+        // Delete touches no custody; a stub is enough to satisfy the constructor.
+        { provide: AssetCustodyService, useValue: {} },
       ],
     }).compile();
     service = module.get(AssetsService);

@@ -6,22 +6,26 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft, Clock, ListChecks, Loader2, Mail, MapPin, Package, Phone, Plus, Settings2, Smartphone, Trash2, UserCheck,
+  ArrowLeft, Check, Clock, ListChecks, Loader2, Mail, MapPin, Package, Phone, Plus, Receipt,
+  Settings2, Smartphone, Trash2, UserCheck, X,
 } from "lucide-react"
 
 import {
   assetsApi,
-  type AssetActivity, type AssetCategory, type AssetMoneyEntry, type MaintenanceHistoryItem,
+  type AssetActivity, type AssetCategory, type AssetMoneyEntry, type CustodyPeriodDto,
+  type MaintenanceHistoryItem,
 } from "@/lib/api"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents,
-  type KindShape,
+  attribute, type CustodyPeriod, type KindShape,
 } from "@hbcfield/shared/client"
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { AssetListTable } from "@/components/assets/asset-list-table"
 import { AssetFaults } from "@/components/assets/asset-faults"
 import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
 import { AssetInviteClient } from "@/components/assets/asset-invite-client"
+import { AssetCustodyPanel } from "@/components/assets/asset-custody-panel"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -71,6 +75,11 @@ export default function AssetRecordPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ?? ""
   const qc = useQueryClient()
+  const { user } = useAuth()
+  // A token minted before this capability existed carries neither flag; an
+  // admin is one either way, which is what stops an old session losing buttons
+  // it had yesterday.
+  const canManageAssets = !!(user?.canManageAssets ?? user?.canManageUsers) || user?.role === "ADMIN"
   // A list tab is keyed by its own name, so adding a list adds a tab.
   const [tab, setTab] = useState<string>("activity")
 
@@ -87,6 +96,19 @@ export default function AssetRecordPage() {
     queryFn: () => assetsApi.getAssetHistory(id),
     enabled: !!asset,
   })
+  /*
+    The periods, read once here and shared.
+
+    The ledger needs them to say WHO held it when each entry was dated — which
+    is computed, never stored — and the Custody tab needs them to draw the
+    timeline. One query, so the two can never show a different history.
+  */
+  const custodyQ = useQuery({
+    queryKey: ["asset-custody", id],
+    queryFn: () => assetsApi.getCustody(id),
+    enabled: !!asset && normalizeKindShape(asset?.category?.config).holder.enabled,
+  })
+
   const moneyQ = useQuery({
     queryKey: ["asset-money", id],
     queryFn: () => assetsApi.getMoney(id),
@@ -304,7 +326,10 @@ export default function AssetRecordPage() {
               ["activity", t("assetRecords.activity", "Activity"), (actQ.data ?? []).length],
               ["history", t("assetRecords.jobs", "Jobs"), openCount || null],
               ...(shape.money.enabled
-                ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.entries.length || null] as const]
+                ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.totals?.waitingCount || moneyQ.data?.entries.length || null] as const]
+                : []),
+              ...(shape.holder.enabled
+                ? [["custody", t("custody.tab", "Custody"), (custodyQ.data?.periods ?? []).length || null] as const]
                 : []),
               ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
             ] as const).map(([key, label, count]) => (
@@ -338,6 +363,8 @@ export default function AssetRecordPage() {
                 ? <AssetFaults assetId={id} assetName={asset.name} spaceId={kind?.spaceId} list={list} shape={shape} />
                 : <AssetListTable assetId={id} list={list} />
             })()
+          ) : tab === "custody" ? (
+            <AssetCustodyPanel assetId={id} shape={shape} canManage={canManageAssets} />
           ) : tab === "money" ? (
             <MoneyPanel
               assetId={id}
@@ -345,7 +372,13 @@ export default function AssetRecordPage() {
               loading={moneyQ.isLoading}
               entries={moneyQ.data?.entries ?? []}
               totals={moneyQ.data?.totals}
-              onChanged={() => qc.invalidateQueries({ queryKey: ["asset-money", id] })}
+              periods={custodyQ.data?.periods ?? []}
+              canManage={canManageAssets}
+              onChanged={() => {
+                qc.invalidateQueries({ queryKey: ["asset-money", id] })
+                qc.invalidateQueries({ queryKey: ["asset-expenses-pending"] })
+                qc.invalidateQueries({ queryKey: ["asset-custody", id] })
+              }}
             />
           ) : tab === "activity" ? (
             <div className="space-y-3">
@@ -467,13 +500,16 @@ function Timeline({ loading, activities }: { loading: boolean; activities: Asset
  * rows on screen — those are only the most recent ones.
  */
 function MoneyPanel({
-  assetId, shape, loading, entries, totals, onChanged,
+  assetId, shape, loading, entries, totals, periods, canManage, onChanged,
 }: {
   assetId: string
   shape: KindShape
   loading: boolean
   entries: AssetMoneyEntry[]
-  totals?: { inCents: number; outCents: number; netCents: number }
+  totals?: { inCents: number; outCents: number; netCents: number; waitingCount?: number; waitingCents?: number }
+  /** Who held it, when — so each row can say whose cost it was. */
+  periods: CustodyPeriodDto[]
+  canManage: boolean
   onChanged: () => void
 }) {
   const { t } = useTranslation()
@@ -500,6 +536,33 @@ function MoneyPanel({
     onError: (e: Error) => notify.error(e.message),
   })
 
+  /*
+    Whose cost was this?
+
+    Computed here from the dates, by the same function the server uses — never
+    read off the entry, which does not carry a holder and deliberately never
+    will. Correct a handover date and every row in this list re-attributes with
+    it, because there is only ever one answer to look up.
+  */
+  const holderNames = new Map(
+    periods.map((p) => [
+      p.id,
+      p.user ? `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim() || p.user.email || "" : p.customer?.name ?? "",
+    ]),
+  )
+  const attributed = new Map(
+    attribute(entries, periods as unknown as CustodyPeriod[]).map(({ entry, heldBy }) => [
+      entry.id,
+      heldBy?.id ? holderNames.get(heldBy.id) ?? "" : "",
+    ]),
+  )
+
+  const review = useMutation({
+    mutationFn: (v: { id: string; decision: "accept" | "reject" }) => assetsApi.reviewExpense(v.id, v.decision),
+    onSuccess: onChanged,
+    onError: (e: Error) => notify.error(e.message),
+  })
+
   const parsed = parseFloat(amount.replace(",", "."))
   const canAdd = !!category && Number.isFinite(parsed) && parsed > 0 && !add.isPending
 
@@ -519,6 +582,23 @@ function MoneyPanel({
           <Total label={t("assetMoney.in", "In")} cents={totals.inCents} tone="in" />
           <Total label={t("assetMoney.out", "Out")} cents={totals.outCents} tone="out" />
           <Total label={t("assetMoney.net", "Net")} cents={totals.netCents} tone={totals.netCents >= 0 ? "in" : "out"} />
+        </div>
+      )}
+
+      {/*
+        Waiting is shown BESIDE the totals, never inside them. An expense sent
+        from a phone counts for nothing until somebody accepts it — but a
+        figure nobody can see is a figure nobody acts on.
+      */}
+      {!!totals?.waitingCount && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-300/70 bg-amber-50/60 px-3 py-2 text-sm dark:border-amber-900/60 dark:bg-amber-950/20">
+          <Receipt className="h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
+          <span className="text-amber-900 dark:text-amber-200">
+            {t("expenses.waitingHere", "{{count}} waiting on a decision", { count: totals.waitingCount })}
+          </span>
+          <span className="ml-auto font-semibold tabular-nums text-amber-900 dark:text-amber-200">
+            {formatCents(totals.waitingCents ?? 0)}
+          </span>
         </div>
       )}
 
@@ -562,30 +642,76 @@ function MoneyPanel({
         <p className="py-8 text-center text-sm text-muted-foreground">{t("assetMoney.empty", "Nothing logged yet.")}</p>
       ) : (
         <div className="space-y-2">
-          {entries.map((e) => (
-            <div key={e.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+          {entries.map((e) => {
+            const waiting = e.status === "SUBMITTED"
+            const refused = e.status === "REJECTED"
+            const heldBy = attributed.get(e.id)
+            return (
+            <div key={e.id} className={cn(
+              "group flex items-center gap-3 rounded-xl border bg-card p-3",
+              waiting ? "border-amber-300/70 dark:border-amber-900/60" : "border-border",
+              refused && "opacity-60",
+            )}>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{e.category}</p>
+                <p className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
+                  <span className={cn("truncate", refused && "line-through")}>{e.category}</span>
+                  {e.hasReceipt && <Receipt className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {new Date(e.occurredAt).toLocaleDateString()}
+                  {/* Whose cost it was — computed from the date, never stored. */}
+                  {heldBy ? ` · ${heldBy}` : ""}
                   {e.note ? ` · ${e.note}` : ""}
                 </p>
               </div>
+
+              {waiting && (
+                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                  {t("expenses.pending", "Waiting")}
+                </span>
+              )}
+              {refused && (
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  {t("expenses.rejected", "Refused")}
+                </span>
+              )}
+
               <span className={cn(
                 "shrink-0 text-sm font-semibold tabular-nums",
-                e.direction === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
+                refused ? "text-muted-foreground"
+                  : e.direction === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
               )}>
                 {e.direction === "IN" ? "+" : "−"} {formatCents(e.amountCents)}
               </span>
-              <button
-                onClick={() => remove.mutate(e.id)}
-                className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                aria-label={t("common.remove", "Remove")}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+
+              {waiting && canManage ? (
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => review.mutate({ id: e.id, decision: "reject" })}
+                    className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
+                    aria-label={t("expenses.reject", "Refuse")}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => review.mutate({ id: e.id, decision: "accept" })}
+                    className="rounded p-1 text-muted-foreground transition-colors hover:text-emerald-600"
+                    aria-label={t("expenses.accept", "Accept")}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => remove.mutate(e.id)}
+                  className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                  aria-label={t("common.remove", "Remove")}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
-          ))}
+          )})}
         </div>
       )}
     </div>

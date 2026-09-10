@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
+import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 
 /**
  * Money logged against a record, and the totals over the whole ledger.
@@ -11,6 +12,7 @@ export class AssetLedgerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AssetAccessService,
+    private readonly expenses: AssetExpenseService,
   ) {}
 
   /**
@@ -38,9 +40,18 @@ export class AssetLedgerService {
         orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
         take,
       }),
+      /*
+        ⚠️ The totals count only what has been ACCEPTED.
+
+        An expense sent from a phone is visible in the list from the moment it
+        arrives — that is the point of sending it — but it is in no total until
+        somebody with the register in their care says so. Summing everything
+        would let anyone holding a van move the organization's figures by
+        photographing a slip, and would make a rejected expense go on counting.
+      */
       this.prisma.assetMoney.groupBy({
         by: ['direction'],
-        where: { assetId: data.id },
+        where: { assetId: data.id, status: EXPENSE_STATUS.RECORDED },
         _sum: { amountCents: true },
       }),
     ]);
@@ -50,9 +61,21 @@ export class AssetLedgerService {
     const inCents = totalFor('IN');
     const outCents = totalFor('OUT');
 
+    const waiting = entries.filter((e) => e.status === EXPENSE_STATUS.SUBMITTED);
+
     return success({
-      entries,
-      totals: { inCents, outCents, netCents: inCents - outCents },
+      // The receipt KEY never leaves the server — only whether there is one, so
+      // the screen can offer to open it through the endpoint that mints a link.
+      entries: entries.map(({ receiptKey, ...e }) => ({ ...e, hasReceipt: !!receiptKey })),
+      totals: {
+        inCents,
+        outCents,
+        netCents: inCents - outCents,
+        // Shown beside the total rather than inside it: "€184 waiting" is the
+        // sentence that gets a queue looked at.
+        waitingCount: waiting.length,
+        waitingCents: waiting.reduce((n, e) => n + (e.direction === 'IN' ? 0 : e.amountCents), 0),
+      },
     });
   }
 
@@ -131,10 +154,17 @@ export class AssetLedgerService {
     this.access.assertMay(data as any, 'update assets');
     await this.access.assetInOrg(data.id, data.organizationId);
 
-    const { count } = await this.prisma.assetMoney.deleteMany({
+    // Read the key BEFORE the row goes, or the object behind it is orphaned in
+    // the bucket forever — a photograph of somebody's receipt that nothing
+    // points at and no retention rule can find.
+    const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, assetId: data.id, organizationId: data.organizationId },
+      select: { id: true, receiptKey: true },
     });
-    if (!count) throw new NotFoundException('Entry not found');
+    if (!entry) throw new NotFoundException('Entry not found');
+
+    await this.prisma.assetMoney.delete({ where: { id: entry.id } });
+    void this.expenses.forgetReceipt(entry.receiptKey);
 
     return success({ id: data.entryId });
   }

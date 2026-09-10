@@ -26,6 +26,7 @@ import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
 import {
   CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
+  HandOverDto, ReceiptPresignDto, SubmitExpenseDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
@@ -123,6 +124,116 @@ export class AssetsController {
   @ApiOperation({ summary: 'Assets that belong to no space' })
   async listOrphans(@Request() req: any) {
     return this.assetsService.listOrphans({
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    What the CALLER holds. Also before `:id` — see the note above.
+
+    ⚠️ Deliberately NOT gated on `canViewAllTasks`. A driver is not an asset
+    manager and never will be, and asking them to be one to see their own van is
+    how a feature ends up unusable by the only people who need it. The FILTER is
+    the authorization: the service can only ever return rows whose custody names
+    the caller.
+  */
+  @Get('mine')
+  @ApiOperation({ summary: 'What I hold right now' })
+  async mine(@Request() req: any) {
+    return this.assetsService.custodyMine({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** What I have sent in, and what happened to it. Mine, so no permission. */
+  @Get('expenses/mine')
+  @ApiOperation({ summary: 'Expenses I submitted' })
+  async myExpenses(@Query('limit') limit: number, @Request() req: any) {
+    return this.assetsService.expenseMine({
+      limit,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** The office's queue: everything waiting on a decision. */
+  @Get('expenses/pending')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Expenses waiting for a decision' })
+  async pendingExpenses(@Query('limit') limit: number, @Request() req: any) {
+    return this.assetsService.expensePending({
+      limit,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    Accept an expense, or refuse it with a reason.
+
+    A WRITE against the organization's books, so it asks the write permission —
+    the same reasoning that moved every other asset mutation off
+    `canViewAllTasks`.
+  */
+  @Post('expenses/:entryId/review')
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'Accept or refuse a submitted expense' })
+  async reviewExpense(
+    @Param('entryId') entryId: string,
+    @Body() body: { decision?: 'accept' | 'reject'; note?: string },
+    @Request() req: any,
+  ) {
+    return this.assetsService.expenseReview({
+      entryId,
+      decision: body?.decision === 'reject' ? 'reject' : 'accept',
+      note: body?.note,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    A link to the slip, minted here and short-lived.
+
+    ⚠️ A POST, and no list anywhere returns a receipt URL. A URL handed out in
+    bulk outlives the reason it was issued; minting one per request keeps
+    looking at somebody's spending an act rather than a side effect of opening
+    a page. Same rule as a member document's download link.
+  */
+  @Post('expenses/:entryId/receipt-url')
+  @ApiOperation({ summary: 'A short-lived link to one receipt' })
+  async receiptUrl(@Param('entryId') entryId: string, @Request() req: any) {
+    return this.assetsService.expenseReceiptUrl({
+      entryId,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canManageAssets: req.user.canManageAssets,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** Everything one member holds or has held — the other half of a timeline. */
+  @Get('custody/member/:memberId')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'What this member holds, and has held' })
+  @ApiQuery({ name: 'open', required: false, description: 'Only what they hold now' })
+  async custodyForMember(
+    @Param('memberId') memberId: string,
+    @Query('open') open: string,
+    @Request() req: any,
+  ) {
+    return this.assetsService.custodyForMember({
+      memberId,
+      open: open === 'true' || open === '1',
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
@@ -342,6 +453,94 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    Who has held this, and what it cost each of them.
+
+    The costs are NOT stored against a holder — every entry carries the date the
+    money moved, and the split is computed from the periods. Two versions of
+    that truth would disagree the first time somebody corrected a handover date.
+  */
+  @Get(':id/custody')
+  @RequirePermission('canViewAllTasks')
+  @ApiOperation({ summary: 'Who has held this, and what it cost them' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async custody(@Param('id') id: string, @Request() req: any) {
+    return this.assetsService.custodyTimeline({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** Hand it to somebody — or take it back, by sending nobody. */
+  @Post(':id/custody')
+  @RequirePermission('canManageAssets')
+  @ApiOperation({ summary: 'Hand this over' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async handOver(
+    @Param('id') id: string,
+    @Body() dto: HandOverDto,
+    @Request() req: any,
+  ) {
+    return this.assetsService.custodyHandOver({
+      id,
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    A place to put the photograph. Bytes go phone → S3 directly; nothing large
+    passes through here.
+
+    No permission decorator, and that is the point: what a member may file
+    against is what they HELD ON THAT DATE, which is a fact about custody and
+    not about a role. The service checks it.
+  */
+  @Post(':id/expenses/presign')
+  @ApiOperation({ summary: 'Upload URL for a receipt' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async presignReceipt(
+    @Param('id') id: string,
+    @Body() dto: ReceiptPresignDto,
+    @Request() req: any,
+  ) {
+    return this.assetsService.expensePresign({
+      id,
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canManageAssets: req.user.canManageAssets,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** File it. Counted only once somebody with the register accepts it. */
+  @Post(':id/expenses')
+  @ApiOperation({ summary: 'File an expense against something I hold' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async submitExpense(
+    @Param('id') id: string,
+    @Body() dto: SubmitExpenseDto,
+    @Request() req: any,
+  ) {
+    return this.assetsService.expenseSubmit({
+      id,
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canManageAssets: req.user.canManageAssets,
       organizationId: req.user.organizationId,
     });
   }

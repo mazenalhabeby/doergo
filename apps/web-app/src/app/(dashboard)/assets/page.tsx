@@ -23,6 +23,7 @@ import { Package } from "lucide-react"
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { SpaceTabs } from "@/components/space-tabs"
 import { AssetsTab } from "../locations/[id]/_components/assets-tab"
+import { ExpenseQueue } from "@/components/assets/expense-queue"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -36,6 +37,16 @@ export default function AssetsPage() {
           {scope.space ? scope.space.name : t("assets.subtitle")}
         </p>
       </div>
+
+      {/*
+        Receipts sent in from phones, waiting on somebody here. Above the
+        workspace tabs because it is ORG-WIDE — a queue filtered to the tab you
+        happen to be looking at is a queue that hides work.
+
+        Renders nothing at all when it is empty: a permanent empty panel teaches
+        people to stop looking at that part of the screen.
+      */}
+      <ExpenseQueue />
 
       {scope.showTabs && (
         <SpaceTabs

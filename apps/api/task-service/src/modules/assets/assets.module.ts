@@ -7,6 +7,8 @@ import { AssetLedgerService } from './asset-ledger.service';
 import { AssetActivityService } from './asset-activity.service';
 import { AssetUsageService } from './asset-usage.service';
 import { AssetHoldersService } from './asset-holders.service';
+import { AssetCustodyService } from './asset-custody.service';
+import { AssetExpenseService } from './asset-expense.service';
 import { AssetsController } from './assets.controller';
 import { AssetsProcessor } from './assets.processor';
 
@@ -26,6 +28,9 @@ const SERVICES = [
   AssetActivityService,
   AssetUsageService,
   AssetHoldersService,
+  // Who held it and when, and what they spent on it while they did.
+  AssetCustodyService,
+  AssetExpenseService,
 ];
 
 @Module({

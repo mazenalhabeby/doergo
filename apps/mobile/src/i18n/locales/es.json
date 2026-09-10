@@ -2122,5 +2122,45 @@
       "openSettings": "Abrir ajustes",
       "enterByHand": "Introducir los datos a mano"
     }
+  },
+  "myAssets": {
+    "title": "Lo que tengo",
+    "empty": "Todavía no te han entregado nada.",
+    "loadFailed": "No se pudo cargar",
+    "anAsset": "Un activo",
+    "since": "Desde",
+    "spent": "Gastado",
+    "addExpense": "Añadir un recibo",
+    "sent": "Lo que he enviado"
+  },
+  "custody": {
+    "days": "{{count}} días"
+  },
+  "expenses": {
+    "title": "Añadir un recibo",
+    "review": "Comprueba antes de enviar",
+    "amount": "Importe",
+    "date": "Fecha",
+    "category": "Para qué",
+    "note": "Nota",
+    "notePh": "Dónde o para qué",
+    "send": "Enviar",
+    "sent": "Enviado: la oficina lo confirmará.",
+    "sendFailed": "No se pudo enviar",
+    "pendingHint": "Cuenta cuando la oficina lo acepte.",
+    "aim": "Que salga el ticket entero",
+    "typeInstead": "Escribirlo a mano",
+    "takePhoto": "Hacer una foto",
+    "retake": "Repetir",
+    "photoAttached": "Foto adjunta",
+    "noPhoto": "Sin foto",
+    "photoFailed": "La foto no se subió: se envía el importe igualmente.",
+    "readFailed": "No se pudo leer: comprueba tú el importe.",
+    "noTotal": "No se encontró el total: escríbelo.",
+    "notYours": "Este no lo tienes tú.",
+    "loadFailed": "No se pudo abrir",
+    "accepted": "Aceptado",
+    "rejected": "Rechazado",
+    "pending": "Pendiente"
   }
 }

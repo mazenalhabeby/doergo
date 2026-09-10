@@ -64,6 +64,11 @@ export * from './constants/join-code';
 // merge fields. Pure data + pure functions, so both entries carry it.
 export * from './documents';
 
+// Custody periods and the receipt reader. Pure, and the phone runs both: it
+// decides what a photograph said and what a handover would do BEFORE anything
+// is sent, so the screen and the server cannot disagree about either.
+export * from './assets';
+
 // Role helpers (isAdmin, hasRole, …). The PURE module, not `guards/index`,
 // which re-exports NestJS guard classes. The client needs isAdmin so its
 // permission gate can agree with PermissionsGuard rather than approximate it.

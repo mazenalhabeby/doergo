@@ -1581,6 +1581,9 @@ export interface AssetListRow {
   position: number;
 }
 
+/** RECORDED counts. SUBMITTED is waiting on the office. REJECTED never counts. */
+export type AssetExpenseStatus = 'RECORDED' | 'SUBMITTED' | 'REJECTED';
+
 export interface AssetMoneyEntry {
   id: string;
   category: string;
@@ -1589,11 +1592,74 @@ export interface AssetMoneyEntry {
   note: string | null;
   occurredAt: string;
   authorId: string | null;
+  status?: AssetExpenseStatus;
+  reviewNote?: string | null;
+  /** Whether a slip is attached — never the key, and never a URL. */
+  hasReceipt?: boolean;
 }
 
 export interface AssetMoneySummary {
   entries: AssetMoneyEntry[];
-  totals: { inCents: number; outCents: number; netCents: number };
+  totals: {
+    inCents: number;
+    outCents: number;
+    netCents: number;
+    /** Sent from a phone, in no total until somebody accepts it. */
+    waitingCount?: number;
+    waitingCents?: number;
+  };
+}
+
+/** One party of a custody period — a member, or a client. */
+export interface CustodyHolderRef {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string | null;
+  avatarUrl?: string | null;
+}
+
+/**
+ * One stretch during which one party held one asset.
+ *
+ * `endedAt: null` means they hold it now. `totals` is what the asset cost
+ * DURING this period — computed from the dates, never stored against a holder.
+ */
+export interface CustodyPeriodDto {
+  id: string;
+  assetId: string;
+  userId: string | null;
+  customerId: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  reason: string | null;
+  user?: CustodyHolderRef | null;
+  customer?: CustodyHolderRef | null;
+  totals: { inCents: number; outCents: number; netCents: number; entries: number };
+  asset?: {
+    id: string;
+    name: string;
+    status: AssetStatus;
+    serialNumber?: string | null;
+    model?: string | null;
+    manufacturer?: string | null;
+    category?: AssetCategory | null;
+  };
+}
+
+export interface CustodyTimeline {
+  periods: CustodyPeriodDto[];
+  /** Money that falls in no period — real, and deliberately not hidden. */
+  unattributed: { inCents: number; outCents: number; netCents: number; entries: number };
+}
+
+/** One expense waiting on a decision, in the office's queue. */
+export interface PendingExpense extends AssetMoneyEntry {
+  assetId: string;
+  asset?: { id: string; name: string } | null;
+  author?: CustodyHolderRef | null;
+  createdAt: string;
 }
 
 export interface AssetActivity {
@@ -2001,6 +2067,79 @@ export const assetsApi = {
     const response = await api.delete<{ success: boolean }>(`/assets/${assetId}/money/${entryId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
+  },
+
+  // ============================================
+  // CUSTODY — who held it, and when
+  // ============================================
+
+  /** One asset's timeline, with what it cost during each period. */
+  getCustody: async (assetId: string) => {
+    const response = await api.get<{ success: boolean; data: CustodyTimeline }>(`/assets/${assetId}/custody`);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? { periods: [], unattributed: { inCents: 0, outCents: 0, netCents: 0, entries: 0 } };
+  },
+
+  /** Everything one member holds or has held — the same rows, read the other way. */
+  getMemberCustody: async (memberId: string, openOnly = false) => {
+    const response = await api.get<{ success: boolean; data: { periods: CustodyPeriodDto[] } }>(
+      `/assets/custody/member/${memberId}${openOnly ? '?open=true' : ''}`,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data?.periods ?? [];
+  },
+
+  /**
+   * Hand it over. An empty `to` takes it back to nobody.
+   *
+   * What this will DO is decided by `planHandover` in shared, which the confirm
+   * dialog renders and the server executes — so what somebody agreed to and
+   * what was written cannot differ.
+   */
+  handOver: async (assetId: string, input: { to: Array<{ userId?: string; customerId?: string }>; at?: string; reason?: string }) => {
+    const response = await api.post<{ success: boolean; data: { closed: number; opened: number; at: string } }>(
+      `/assets/${assetId}/custody`,
+      input,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  // ============================================
+  // EXPENSES — a member spends, the office accepts
+  // ============================================
+
+  getPendingExpenses: async () => {
+    const response = await api.get<{ success: boolean; data: { entries: PendingExpense[]; totalCents: number } }>(
+      '/assets/expenses/pending',
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? { entries: [], totalCents: 0 };
+  },
+
+  reviewExpense: async (entryId: string, decision: 'accept' | 'reject', note?: string) => {
+    const response = await api.post<{ success: boolean; data: { id: string; status: AssetExpenseStatus } }>(
+      `/assets/expenses/${entryId}/review`,
+      { decision, note },
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  /**
+   * A short-lived link to one receipt.
+   *
+   * ⚠️ A POST, and nothing lists these. A URL handed out in bulk outlives the
+   * reason it was issued; minting one per request keeps looking at somebody's
+   * spending an act rather than a side effect of opening a page.
+   */
+  getReceiptUrl: async (entryId: string) => {
+    const response = await api.post<{ success: boolean; data: { url: string; mimeType: string | null } }>(
+      `/assets/expenses/${entryId}/receipt-url`,
+      {},
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
   },
 
   // scope 'all' includes work still open — the record page needs it, or a

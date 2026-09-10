@@ -4,9 +4,10 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Ban, Building2, Check, Plus, Search, Smartphone, Trash2, User, X } from "lucide-react"
+import { Building2, Plus, Trash2 } from "lucide-react"
 
-import { assetsApi, customersApi, locationsApi, organizationsApi, type AssetCategory, type OrgMember } from "@/lib/api"
+import { assetsApi, locationsApi, type AssetCategory } from "@/lib/api"
+import { HolderPicker, decodeHolders, encodeHolderList, type HolderKey } from "./holder-picker"
 import { fieldsDroppedByMove } from "@hbcfield/shared/client"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel,
@@ -52,17 +53,13 @@ export interface AssetRecord {
   two parallel lists that can disagree about who is chosen — and makes the
   single case a list of length one rather than a separate code path.
 */
-const encodeHolders = (r?: AssetRecord): string[] => {
-  if (r?.holders?.length) {
-    return r.holders.map((h) => (h.userId ? `u:${h.userId}` : `c:${h.customerId}`)).filter(Boolean) as string[]
-  }
+const encodeHolders = (r?: AssetRecord): HolderKey[] => {
+  if (r?.holders?.length) return encodeHolderList(r.holders)
   // A record saved before types could hold several still answers the old way.
   if (r?.holderUserId) return [`u:${r.holderUserId}`]
   if (r?.customerId) return [`c:${r.customerId}`]
   return []
 }
-const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
-const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
 /**
  * Add or edit one record, built from what its KIND says.
@@ -155,15 +152,6 @@ export function AssetRecordDialog({
     server enforces — reached here it just stops adding rather than letting
     somebody build a list that will be refused on save.
   */
-  const toggleHolder = (value: string) =>
-    setHolders((prev) => {
-      if (!shape.holder.multiple) return prev[0] === value ? [] : [value]
-      if (prev.includes(value)) return prev.filter((v) => v !== value)
-      if (prev.length >= KIND_SHAPE_LIMITS.maxHolders) return prev
-      return [...prev, value]
-    })
-  const [tab, setTab] = useState<"members" | "clients">(shape.holder.members ? "members" : "clients")
-  const [q, setQ] = useState("")
   const [rows, setRows] = useState<DetailRow[]>(detailRowsForKind(shape, existing?.details))
 
   const setRow = (i: number, patch: Partial<DetailRow>) =>
@@ -186,20 +174,6 @@ export function AssetRecordDialog({
   }, {})
   const duplicated = (label: string) => (labelCounts[label.trim().toLowerCase()] ?? 0) > 1
 
-  const membersQ = useQuery({
-    queryKey: ["org-members-assignable"],
-    queryFn: () => organizationsApi.getMembers({ limit: 100 }),
-    enabled: open && shape.holder.enabled && shape.holder.members,
-  })
-  const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
-
-  const clientsQ = useQuery({
-    queryKey: ["space-clients", spaceId],
-    queryFn: () => customersApi.list({ spaceId, limit: 100 }),
-    enabled: open && shape.holder.enabled && shape.holder.clients,
-  })
-  const clients = clientsQ.data?.data ?? []
-
   const save = useMutation({
     mutationFn: () => {
       const base = {
@@ -210,9 +184,7 @@ export function AssetRecordDialog({
         // Always sent, never omitted: an absent key means "leave them alone",
         // and an empty list means "nobody". Clearing the last resident has to
         // reach the server as a decision.
-        holders: shape.holder.enabled
-          ? holders.map((h) => (h.startsWith("u:") ? { userId: h.slice(2) } : { customerId: h.slice(2) }))
-          : [],
+        holders: shape.holder.enabled ? decodeHolders(holders) : [],
         // Empty answers are kept, so a prompted field that nobody filled in
         // still shows as waiting rather than vanishing from the record.
         details: rows
@@ -248,33 +220,11 @@ export function AssetRecordDialog({
       setLng(existing?.locationLng ?? null)
       setHolders(encodeHolders(existing))
       setRows(detailRowsForKind(shape, existing?.details))
-      setQ("")
     }
     setOpen(next)
   }
 
   const holderLabel = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
-  const list = (tab === "members"
-    ? members.map((m) => ({ value: `u:${m.id}`, name: memberName(m), sub: t("assetRecords.memberTag", "Member (staff)") }))
-    : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
-  ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
-  const loadingList = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
-
-  /*
-    A chosen person's name, from whichever side of the picker they came.
-
-    Looked up across BOTH lists rather than the open tab: a flat can hold a
-    member and a client at once, and a chip that read "Unknown" whenever the
-    other tab was showing would be a bug nobody could explain.
-  */
-  const holderName = (value: string) => {
-    if (value.startsWith("u:")) {
-      const m = members.find((x) => x.id === value.slice(2))
-      return m ? memberName(m) : t("assetRecords.formerMember", "Former member")
-    }
-    const c = clients.find((x) => x.id === value.slice(2))
-    return c?.name ?? t("assetRecords.client", "Client")
-  }
 
   return (
     <Dialog open={open} onOpenChange={reset}>
@@ -327,73 +277,17 @@ export function AssetRecordDialog({
           {shape.holder.enabled && (
             <div className="space-y-1.5">
               <Label>{holderLabel}</Label>
-              {/* Who is on it right now. Only when several are allowed: with one
-                  holder the list below already shows the choice, and a chip
-                  repeating it would just be the same fact twice. */}
-              {shape.holder.multiple && holders.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {holders.map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      onClick={() => toggleHolder(h)}
-                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
-                    >
-                      {holderName(h)}
-                      <X className="h-3 w-3" />
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="rounded-xl border border-border">
-                <div className="flex items-center gap-1 border-b border-border p-1">
-                  {shape.holder.members && (
-                    <TabBtn active={tab === "members"} onClick={() => { setTab("members"); setQ("") }}
-                      icon={User} label={t("assetRecords.members", "Members")} />
-                  )}
-                  {shape.holder.clients && (
-                    <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }}
-                      icon={Smartphone} label={t("assetRecords.clients", "Clients")} />
-                  )}
-                  <button type="button" onClick={() => setHolders([])}
-                    className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                      holders.length === 0 ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-                    <Ban className="h-3.5 w-3.5" /> {t("assetRecords.nobody", "Nobody")}
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
-                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("common.search", "Search…")}
-                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
-                </div>
-                <div className="max-h-52 overflow-y-auto p-1">
-                  {loadingList ? (
-                    <p className="py-6 text-center text-xs text-muted-foreground">{t("common.loading", "Loading…")}</p>
-                  ) : list.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-muted-foreground">
-                      {tab === "clients"
-                        ? t("assetRecords.noClients", "No clients in this workspace yet")
-                        : t("assetRecords.noMembers", "No members to choose from")}
-                    </p>
-                  ) : list.map((r) => {
-                    const sel = holders.includes(r.value)
-                    return (
-                      <button key={r.value} type="button" onClick={() => toggleHolder(r.value)}
-                        className={cn("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                          sel ? "bg-primary/10" : "hover:bg-muted")}>
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                          {initials(r.name)}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-foreground">{r.name}</span>
-                          <span className="block text-[11px] text-muted-foreground">{r.sub}</span>
-                        </span>
-                        {sel && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+              {/* The same picker the handover dialog uses. Two copies of a
+                  control that enforces a kind's rules is how a single-holder van
+                  ends up with two drivers on one screen and one on the other. */}
+              <HolderPicker
+                shape={shape}
+                spaceId={spaceId}
+                value={holders}
+                onChange={setHolders}
+                enabled={open}
+                showChips={shape.holder.multiple}
+              />
             </div>
           )}
 
@@ -568,14 +462,3 @@ export function AssetRecordDialog({
   )
 }
 
-function TabBtn({ active, onClick, icon: Icon, label }: {
-  active: boolean; onClick: () => void; icon: typeof User; label: string
-}) {
-  return (
-    <button type="button" onClick={onClick}
-      className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}>
-      <Icon className="h-3.5 w-3.5" /> {label}
-    </button>
-  )
-}

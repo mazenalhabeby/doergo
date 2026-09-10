@@ -2122,5 +2122,45 @@
       "openSettings": "Einstellungen öffnen",
       "enterByHand": "Daten manuell eingeben"
     }
+  },
+  "myAssets": {
+    "title": "Was ich habe",
+    "empty": "Ihnen wurde noch nichts übergeben.",
+    "loadFailed": "Konnte nicht geladen werden",
+    "anAsset": "Ein Objekt",
+    "since": "Seit",
+    "spent": "Ausgegeben",
+    "addExpense": "Beleg hinzufügen",
+    "sent": "Was ich eingereicht habe"
+  },
+  "custody": {
+    "days": "{{count}} Tage"
+  },
+  "expenses": {
+    "title": "Beleg hinzufügen",
+    "review": "Vor dem Senden prüfen",
+    "amount": "Betrag",
+    "date": "Datum",
+    "category": "Wofür",
+    "note": "Notiz",
+    "notePh": "Wo oder wofür",
+    "send": "Absenden",
+    "sent": "Gesendet — das Büro bestätigt ihn.",
+    "sendFailed": "Konnte nicht gesendet werden",
+    "pendingHint": "Er zählt, sobald das Büro ihn annimmt.",
+    "aim": "Den ganzen Beleg ins Bild nehmen",
+    "typeInstead": "Stattdessen eingeben",
+    "takePhoto": "Foto machen",
+    "retake": "Neu aufnehmen",
+    "photoAttached": "Foto angehängt",
+    "noPhoto": "Kein Foto",
+    "photoFailed": "Das Foto wurde nicht hochgeladen — der Betrag geht trotzdem raus.",
+    "readFailed": "Konnte nicht gelesen werden — Betrag bitte selbst prüfen.",
+    "noTotal": "Keine Summe gefunden — bitte eingeben.",
+    "notYours": "Das haben Sie nicht.",
+    "loadFailed": "Konnte nicht geöffnet werden",
+    "accepted": "Angenommen",
+    "rejected": "Abgelehnt",
+    "pending": "Wartet"
   }
 }

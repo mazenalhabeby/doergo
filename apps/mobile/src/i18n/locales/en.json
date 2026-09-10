@@ -2122,5 +2122,45 @@
       "openSettings": "Open settings",
       "enterByHand": "Enter the details by hand"
     }
+  },
+  "myAssets": {
+    "title": "What I have",
+    "empty": "Nothing has been handed to you yet.",
+    "loadFailed": "Could not load what you hold",
+    "anAsset": "An asset",
+    "since": "Since",
+    "spent": "Spent",
+    "addExpense": "Add a receipt",
+    "sent": "What I sent in"
+  },
+  "custody": {
+    "days": "{{count}} days"
+  },
+  "expenses": {
+    "title": "Add a receipt",
+    "review": "Check before sending",
+    "amount": "Amount",
+    "date": "Date",
+    "category": "What for",
+    "note": "Note",
+    "notePh": "Where, or what for",
+    "send": "Send it in",
+    "sent": "Sent — the office will confirm it.",
+    "sendFailed": "Could not send it",
+    "pendingHint": "It counts once the office accepts it.",
+    "aim": "Get the whole slip in shot",
+    "typeInstead": "Type it instead",
+    "takePhoto": "Take one",
+    "retake": "Retake",
+    "photoAttached": "Photo attached",
+    "noPhoto": "No photo",
+    "photoFailed": "The photo did not upload — sending the amount anyway.",
+    "readFailed": "Could not read it — check the amount yourself.",
+    "noTotal": "Could not find a total — type it in.",
+    "notYours": "You do not have this one.",
+    "loadFailed": "Could not open that",
+    "accepted": "Accepted",
+    "rejected": "Refused",
+    "pending": "Waiting"
   }
 }

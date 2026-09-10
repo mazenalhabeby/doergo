@@ -117,30 +117,19 @@ export class AssetHoldersService {
     ];
   }
 
-  /**
-   * Replace an asset's holders with exactly this set.
-   *
-   * Delete-then-insert in one transaction rather than a diff: the set is small
-   * and bounded, the write is atomic either way, and a diff here would be three
-   * queries and a class of bug in exchange for saving one.
-   */
-  async set(
-    assetId: string,
-    rows: Array<{ userId: string | null; customerId: string | null }>,
-    tx?: Pick<PrismaService, 'assetHolder'>,
-  ): Promise<void> {
-    const run = async (db: Pick<PrismaService, 'assetHolder'>) => {
-      await db.assetHolder.deleteMany({ where: { assetId } });
-      if (rows.length) {
-        await db.assetHolder.createMany({
-          data: rows.map((r) => ({ assetId, userId: r.userId, customerId: r.customerId })),
-          skipDuplicates: true,
-        });
-      }
-    };
-    if (tx) return run(tx);
-    await this.prisma.$transaction(async (t) => run(t as unknown as Pick<PrismaService, 'assetHolder'>));
-  }
+  /*
+    ⚠️ `set()` USED TO LIVE HERE, AND ITS REMOVAL IS DELIBERATE.
+
+    Holders are the open end of a custody period now, and `AssetCustodyService`
+    writes both — in one transaction, as one fact. A second writer for the same
+    two tables is exactly how the row saying "who has it now" and the period
+    saying "who has had it" come to disagree, which is a state nothing on any
+    screen reveals and no reader can repair.
+
+    This service still owns the RULES — whether a kind may have that holder, how
+    many, and whether the people named are ours. The custody service asks it,
+    then writes.
+  */
 
   /**
    * A request may still speak the old single-holder language.

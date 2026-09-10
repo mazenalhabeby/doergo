@@ -206,6 +206,8 @@ User { id, email, passwordHash, firstName, lastName, role, organizationId, faile
 RefreshToken { id, tokenHash, expiresAt, userId, usedAt, replacedByTokenHash, cachedAccessToken, cachedRefreshToken }
 PasswordResetToken { id, tokenHash, expiresAt, used, userId }
 Task { id, title, description, status, priority, dueDate, locationLat, locationLng, locationAddress, organizationId, createdById, assignedToId, routeStartedAt, routeEndedAt, routeDistance, assetId }
+AssetCustody { id, organizationId, assetId, userId?, customerId?, startedAt, endedAt?, reason?, openedById?, closedById? }  # endedAt NULL = holds it now
+AssetMoney { …, receiptKey?, receiptName?, receiptMime?, status (RECORDED|SUBMITTED|REJECTED), reviewedById?, reviewedAt?, reviewNote? }
 CustomerContact { id, organizationId, companyId, personId, role?, isPrimary }  # a person who works at a company (@@unique companyId+personId)
 Comment { id, content, taskId, userId }
 Attachment { id, fileName, fileUrl, fileType, fileSize, taskId, uploadedById }
@@ -429,6 +431,30 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **A contact is not a client.** `Customer.isContact` keeps them out of the client list AND out of `BILLABLE_CLIENT_WHERE` — the CRM ladder charges per active client, and a firm with six contacts is not six clients.
 >
 > ⚠️ **Linking is not gated on `Customer.type`.** A real book of clients reads "BILLA AG", "Siemens AG" — all saved as PERSON, because the Person/Company toggle is an afterthought. The two ends are told apart by their POSITION in the link; the panels split by type, the service does not. A↔B both ways round is refused.
+
+### Custody & expenses (`/assets`) — who holds a thing, and what they spend on it
+> `AssetHolder` answers "who has it NOW" and deletes the row on a handover. `AssetCustody` is the same fact as PERIODS, so "what did the Ford cost while Ahmed had it" and "which vans has Ahmed had" are both queries rather than a scan of activity JSON.
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET | `/assets/mine` | What the CALLER holds — the phone's home | **none: the filter IS the authorization** |
+| GET | `/assets/:id/custody` | Who has held it, and what each cost | `canViewAllTasks` |
+| POST | `/assets/:id/custody` | Hand it over (empty `to` = take it back) | `canManageAssets` |
+| GET | `/assets/custody/member/:id` | What one member holds, and has held | `canViewAllTasks` |
+| POST | `/assets/:id/expenses/presign` → `/expenses` | A member files what they spent, with the slip | **custody on the RECEIPT'S date** |
+| GET | `/assets/expenses/mine` | What I sent in, and what happened to it | mine |
+| GET · POST | `/assets/expenses/pending` · `/expenses/:id/review` | The office's queue, and the decision | read `canViewAllTasks` · write `canManageAssets` |
+| POST | `/assets/expenses/:id/receipt-url` | **Mint a link to one slip** — no list ever returns a URL | author, or `canManageAssets` |
+
+> ⚠️ **THE HOLDER IS NEVER WRITTEN ONTO A COST.** Every entry carries the date the money moved; who held the asset that day is a LOOKUP (`holderOn` in shared). Storing it too gives two versions of the truth the first time somebody corrects a handover date — the likeliest repair in the whole feature.
+>
+> ⚠️ **Filing an expense is authorised by CUSTODY, not by a permission.** A driver is not an asset manager and never will be; `canManageAssets` here would lock every driver out of the only screen built for them. Asked of the day the money moved, not today — so yesterday's fuel is still filable the morning after the van goes back, and a receipt for a van they never drove is not.
+>
+> ⚠️ **A member's expense is SUBMITTED and counts for NOTHING until the office accepts it.** Totals sum `status = RECORDED` only. Recorded on arrival, anybody holding a van could move the organization's figures by photographing a slip.
+>
+> ⚠️ **One writer for two tables.** `AssetCustodyService` writes `AssetCustody` AND `AssetHolder`, in one transaction, and `AssetHoldersService.set()` was DELETED so nothing else can. An edit that changes the driver goes through the same path as the button — a drift here is a ledger attributed to the wrong person with nothing on screen to suggest it. The mirror self-heals: a holder row with no open period is repaired on the next save.
+>
+> ⚠️ The migration BACKFILLS an open period per existing holder row, dated from `AssetHolder.createdAt`. Without it every asset in somebody's hands reads "held by nobody" on the day it ships, and its whole ledger attributes to nobody with it.
 
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
@@ -1069,6 +1095,10 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
+| `planHandover()`, `canHandOver()`, `partiesAfter()` | What handing an asset over WILL do — the confirm dialog renders it, the server executes it |
+| `holderOn()`, `holdersOn()`, `totalsByPeriod()`, `attribute()` | Whose cost was this? Computed from the date, never stored |
+| `custodyDays()`, `openPeriods()`, `partyKey()` | One custody, read for a screen |
+| `parseReceipt()`, `moneyToCents()`, `categoryForReceipt()` | A photographed slip → amount, date, vendor. On-device, nothing calls out |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
 | `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
@@ -1223,6 +1253,20 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-09-10) — Custody: who holds a thing, and what they spend on it
+
+Migration `20260910120000_asset_custody` (additive + backfill; verified locally: 8 holder rows → 8 open periods, re-run is a no-op). Detail in memory `asset-custody-and-expenses`. **Not deployed yet.**
+
+- **`AssetHolder` could not answer any question the business asks.** It is "who has it now" and the row is deleted on a handover, so the moment a driver gives a van back there is no record they ever had it. Custody is stored as PERIODS now (`AssetCustody`, `endedAt: null` = has it now), and `AssetHolder` stays as a fast index of the present that every existing screen already reads.
+- ⚠️ **The holder is never written onto a cost.** See the endpoint table above — this is the decision the whole design rests on.
+- ⚠️ **One writer for both tables.** `AssetHoldersService.set()` was deleted; `AssetCustodyService.apply()` writes both in one transaction, and the asset EDIT path goes through it too. An edit that quietly skipped it would move the driver with no timeline entry and re-attribute every later cost, silently.
+- **A member files an expense from the pump.** On-device OCR (`expo-mlkit-ocr`, the same optional binding as the card scanner) reads the slip; `parseReceipt` in shared decides which figure is the total. ⚠️ **"Biggest number wins" reads the odometer** — a labelled figure beats an unlabelled one whatever the amounts, and dates are stripped before the scan because "09.09.2026" contains "202".
+- ⚠️ **Authorised by custody, not a permission**, and asked of the RECEIPT'S date. ⚠️ **SUBMITTED counts for nothing** until somebody with `canManageAssets` accepts it.
+- **Web**: a Custody tab on the record (timeline + what each period cost), a handover dialog that renders `planHandover`'s own plan before you agree to it, a Custody tab on the member (both cars, costs split at the handover), and an org-wide queue on `/assets` that renders nothing when empty.
+- **Mobile**: "What I have" (custody, so no picker of the org's equipment) → camera → check-before-sending with read-vs-guess colouring. The entry appears only when the member actually holds something.
+- **DRY**: the holder picker was extracted from the record dialog and is now shared with the handover dialog — two copies of a control that enforces a kind's rules is how a single-holder van gets two drivers on one screen and one on the other.
+- Guards: `expense-authorization.spec.ts` (proved by planting a permission on the member route), `asset-custody.spec.ts` (both tables move together, drift self-heals), `custody.spec.ts` + `receipt.spec.ts` in shared.
 
 ### Recently Completed (2026-09-08) — Draw the site, sell to clients, drive the route
 

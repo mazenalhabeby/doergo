@@ -291,6 +291,10 @@ export default function AppLayout() {
         <Stack.Screen name="documents" options={{ headerShown: false }} />
         <Stack.Screen name="sign-document" options={{ headerShown: false }} />
         <Stack.Screen name="scan-card" options={{ headerShown: false }} />
+        <Stack.Screen name="my-assets" options={{ headerShown: false }} />
+        {/* Full-bleed camera, like the card scanner — an inherited header both
+            covers the viewfinder and titles it "asset-expense". */}
+        <Stack.Screen name="asset-expense" options={{ headerShown: false }} />
         <Stack.Screen name="overtime/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="overtime/sign/[id]" options={{ headerShown: false }} />
         {/* A nested stack. It draws the header for every page inside it, so the

@@ -8245,5 +8245,46 @@
       "break": "In der Pause",
       "away": "Abwesend"
     }
+  },
+  "custody": {
+    "tab": "Übergabe",
+    "handOver": "Übergeben",
+    "whoGetsIt": "Wer bekommt es",
+    "reason": "Warum (optional)",
+    "reasonPh": "Miete beendet, Depot gewechselt…",
+    "whatHappens": "Was passiert",
+    "noChange": "Nichts ändert sich — diese Person hat es bereits.",
+    "oneAtATime": "Diese Art wird von einer Person gleichzeitig gehalten.",
+    "closes": "Beendet die Übergabe an {{name}}; ab heute zählt nichts mehr auf diese Person.",
+    "opens": "Beginnt ab jetzt eine neue Übergabe. Spätere Kosten gehören dieser Person.",
+    "toNobody": "Danach hat es niemand.",
+    "confirm": "Bestätigen",
+    "done": "Übergeben.",
+    "empty": "Das hatte noch niemand.",
+    "now": "Hat es jetzt",
+    "present": "jetzt",
+    "days": "{{count}} Tage",
+    "entriesCount": "{{count}} Einträge",
+    "unattributed": "Außerhalb jeder Übergabe",
+    "unattributedHint": "{{count}} Einträge aus einer Zeit ohne Halter — Kosten des Unternehmens.",
+    "memberEmpty": "Diesem Mitglied wurde nichts übergeben.",
+    "holdingNow": "Hat aktuell",
+    "everHeld": "Insgesamt gehalten",
+    "spendTotal": "Dafür ausgegeben",
+    "previously": "Früher",
+    "whileHeld": "während der Nutzung",
+    "anAsset": "Ein Objekt"
+  },
+  "expenses": {
+    "waiting": "{{count}} Ausgaben warten auf Sie",
+    "waitingHere": "{{count}} warten auf eine Entscheidung",
+    "accept": "Annehmen",
+    "reject": "Ablehnen",
+    "accepted": "Angenommen",
+    "rejected": "Abgelehnt",
+    "pending": "Wartet",
+    "viewReceipt": "Beleg ansehen",
+    "someone": "Jemand",
+    "anAsset": "Ein Objekt"
   }
 }

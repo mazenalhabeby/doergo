@@ -1,0 +1,357 @@
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { randomUUID } from 'crypto';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { success, normalizeKindShape, findMoneyCategory } from '@hbcfield/shared';
+import { AssetAccessService } from './asset-access.service';
+import { AssetCustodyService } from './asset-custody.service';
+
+/** A receipt is a photograph or a PDF. Nothing else needs to reach this bucket. */
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
+const EXT: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/heic': 'heic', 'image/heif': 'heif', 'application/pdf': 'pdf',
+};
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
+/** A receipt older than this is not a field expense, it is bookkeeping. */
+const MAX_BACKDATE_DAYS = 120;
+
+export const EXPENSE_STATUS = { SUBMITTED: 'SUBMITTED', RECORDED: 'RECORDED', REJECTED: 'REJECTED' } as const;
+
+/**
+ * A member spends money on something they hold, and sends the slip.
+ *
+ * The whole point is that it happens AT THE PUMP. The realistic alternative is
+ * a fistful of paper handed in at the end of the month and typed by somebody in
+ * the office, which is why this path exists at all and why it asks for as
+ * little as it does: a photograph, an amount, a heading.
+ *
+ * ⚠️ AUTHORIZATION IS CUSTODY, NOT A PERMISSION. A driver is not an asset
+ * manager and never will be; requiring `canManageAssets` to file fuel would
+ * make the feature unusable by the only people who need it. What they may file
+ * against is exactly what they held ON THE DAY THE MONEY MOVED — asked of the
+ * receipt's date, not of today, so yesterday's fuel can still be filed the
+ * morning after the van goes back, and a receipt for a van they have never
+ * driven cannot be filed at all.
+ *
+ * ⚠️ AND IT DOES NOT COUNT UNTIL THE OFFICE ACCEPTS IT. A submitted entry is
+ * visible everywhere and is in NO total. The office decides what the books say
+ * — the same rule as every other financial record in this product.
+ */
+@Injectable()
+export class AssetExpenseService {
+  private readonly logger = new Logger(AssetExpenseService.name);
+  private readonly s3: S3Client;
+  private readonly bucket: string;
+  private readonly endpoint: string;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly access: AssetAccessService,
+    private readonly custody: AssetCustodyService,
+  ) {
+    this.endpoint = this.config.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
+    this.bucket = this.config.get<string>('S3_BUCKET', 'hbcfield');
+    this.s3 = new S3Client({
+      endpoint: this.endpoint,
+      region: this.config.get<string>('S3_REGION', 'eu-central'),
+      credentials: {
+        accessKeyId: this.config.get<string>('S3_ACCESS_KEY', ''),
+        secretAccessKey: this.config.get<string>('S3_SECRET_KEY', ''),
+      },
+      forcePathStyle: true,
+    });
+  }
+
+  /** Everything a receipt for this asset lives under. Also the anti-IDOR check. */
+  private prefix(organizationId: string, assetId: string): string {
+    return `${organizationId}/asset-receipts/${assetId}/`;
+  }
+
+  /**
+   * A date the money could plausibly have moved.
+   *
+   * Bounded on both sides. The future is refused outright — a receipt is proof
+   * of something that has happened — and the past is bounded because a slip
+   * from two years ago belongs in the office's books, not filed from a phone
+   * against a custody nobody can now remember.
+   */
+  private readDate(raw: string | undefined, now = new Date()): Date {
+    const at = raw ? new Date(raw) : now;
+    if (Number.isNaN(at.getTime())) throw new BadRequestException('That date could not be read');
+    if (at.getTime() > now.getTime() + 86_400_000) {
+      throw new BadRequestException('A receipt cannot be dated in the future');
+    }
+    if (now.getTime() - at.getTime() > MAX_BACKDATE_DAYS * 86_400_000) {
+      throw new BadRequestException(`A receipt older than ${MAX_BACKDATE_DAYS} days has to be filed by the office`);
+    }
+    return at;
+  }
+
+  /**
+   * May this person file against this asset, for this date?
+   *
+   * Held it then, or manages assets. Returns the asset's kind, because every
+   * caller needs it next and reading it twice is a second round trip on a path
+   * that runs at a petrol pump on one bar of signal.
+   */
+  private async gate(data: {
+    id: string;
+    organizationId: string;
+    userId: string;
+    canManageAssets?: boolean;
+  }, when: Date) {
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true, name: true, category: { select: { config: true } } },
+    });
+    if (!asset) throw new NotFoundException('Asset not found in this organization');
+
+    if (!data.canManageAssets && !(await this.custody.heldBy(data.id, data.userId, when))) {
+      /*
+        404-shaped in wording, 403 in code, deliberately: the caller already
+        knows this asset exists — they had to pick it from a list of what they
+        hold — so there is nothing to conceal, and "you did not have it then" is
+        the sentence that actually tells them what to do.
+      */
+      throw new ForbiddenException('You did not have this on that date');
+    }
+    return asset;
+  }
+
+  // ── The slip ───────────────────────────────────────────────────────────────
+
+  /**
+   * A URL to put the photograph at.
+   *
+   * Bytes go phone → S3 directly; nothing large passes through the API. The
+   * object is presigned under a prefix that names the organization and the
+   * asset, and the confirm step refuses anything outside it — which is what
+   * stops a key from another tenant being attached to an entry here.
+   */
+  async presignReceipt(data: {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    occurredAt?: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+    canManageAssets?: boolean;
+  }) {
+    const when = this.readDate(data.occurredAt);
+    await this.gate(data, when);
+
+    if (!ALLOWED.includes(data.mimeType)) throw new BadRequestException('That kind of file is not a receipt');
+    if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
+
+    // The name is never taken from the client: a filename is attacker-controlled
+    // and this one becomes an object key.
+    const key = `${this.prefix(data.organizationId, data.id)}${randomUUID()}.${EXT[data.mimeType] ?? 'bin'}`;
+    const uploadUrl = await getSignedUrl(
+      this.s3,
+      new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: data.mimeType }),
+      { expiresIn: 900 },
+    );
+    return success({ uploadUrl, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
+  }
+
+  /**
+   * A link to look at one, minted on demand and short-lived.
+   *
+   * ⚠️ No list ever returns a receipt URL. A URL stored or handed out in bulk
+   * outlives the reason it was issued; minting one per request keeps looking at
+   * a member's spending an act rather than a side effect of opening a page.
+   */
+  async receiptUrl(data: {
+    entryId: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+    canManageAssets?: boolean;
+  }) {
+    const entry = await this.prisma.assetMoney.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId },
+      select: { id: true, receiptKey: true, receiptMime: true, authorId: true },
+    });
+    if (!entry?.receiptKey) throw new NotFoundException('No receipt on that entry');
+    // The person who sent it, or somebody who may manage the register.
+    if (entry.authorId !== data.userId && !data.canManageAssets) {
+      this.access.assertMay(data as any, 'view assets');
+    }
+    const url = await getSignedUrl(
+      this.s3,
+      new GetObjectCommand({ Bucket: this.bucket, Key: entry.receiptKey }),
+      { expiresIn: 600 },
+    );
+    return success({ url, expiresIn: 600, mimeType: entry.receiptMime });
+  }
+
+  // ── Filing it ──────────────────────────────────────────────────────────────
+
+  async submit(data: {
+    id: string;
+    category: string;
+    amountCents: number;
+    note?: string;
+    occurredAt?: string;
+    receiptKey?: string;
+    receiptName?: string;
+    receiptMime?: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+    canManageAssets?: boolean;
+  }) {
+    const when = this.readDate(data.occurredAt);
+    const asset = await this.gate(data, when);
+
+    const shape = normalizeKindShape(asset.category?.config);
+    if (!shape.money.enabled) throw new BadRequestException('This kind does not track money');
+
+    const category = findMoneyCategory(shape, data.category ?? '');
+    if (!category) throw new BadRequestException(`"${data.category}" is not a category on this kind`);
+
+    const amountCents = Math.abs(Math.round(Number(data.amountCents)));
+    if (!Number.isFinite(amountCents) || amountCents <= 0) throw new BadRequestException('An amount is needed');
+
+    // The key must be one WE presigned, for THIS asset, in THIS organization.
+    // Anything else is a key from somewhere the caller should not be reading.
+    let receiptKey: string | null = null;
+    if (data.receiptKey) {
+      if (!data.receiptKey.startsWith(this.prefix(data.organizationId, data.id))) {
+        throw new BadRequestException('Invalid receipt');
+      }
+      receiptKey = data.receiptKey;
+    }
+
+    const entry = await this.prisma.assetMoney.create({
+      data: {
+        organizationId: data.organizationId,
+        assetId: data.id,
+        category: category.label,
+        direction: category.direction === 'in' ? 'IN' : 'OUT',
+        amountCents,
+        note: data.note?.trim().slice(0, 500) || null,
+        occurredAt: when,
+        authorId: data.userId,
+        receiptKey,
+        receiptName: receiptKey ? data.receiptName?.slice(0, 255) ?? null : null,
+        receiptMime: receiptKey ? data.receiptMime ?? null : null,
+        /*
+          Somebody who manages the register is the office. Their entry counts
+          immediately — asking them to approve their own typing would be a
+          queue of one item that only ever says yes, and it would make the
+          existing "log money" button behave differently for no reason.
+        */
+        status: data.canManageAssets ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.SUBMITTED,
+      },
+    });
+
+    return success(entry);
+  }
+
+  /** What the caller has sent in, newest first — the phone's "my expenses". */
+  async mine(data: { userId: string; organizationId: string; limit?: number }) {
+    const take = Math.min(Math.max(data.limit ?? 50, 1), 100);
+    const entries = await this.prisma.assetMoney.findMany({
+      where: { organizationId: data.organizationId, authorId: data.userId },
+      orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
+      take,
+      select: {
+        id: true, assetId: true, category: true, direction: true, amountCents: true, note: true,
+        occurredAt: true, status: true, reviewNote: true, reviewedAt: true, receiptKey: true,
+        asset: { select: { id: true, name: true } },
+      },
+    });
+    // The KEY is never sent to a client — only whether there is one, so the
+    // screen can offer to open it through the endpoint that mints a link.
+    return success(entries.map(({ receiptKey, ...e }) => ({ ...e, hasReceipt: !!receiptKey })));
+  }
+
+  // ── The office's queue ─────────────────────────────────────────────────────
+
+  /** Everything waiting on a decision. */
+  async pending(data: { userId: string; userRole: string; organizationId: string; limit?: number }) {
+    this.access.assertMay(data as any, 'view assets');
+    const take = Math.min(Math.max(data.limit ?? 100, 1), 200);
+
+    const entries = await this.prisma.assetMoney.findMany({
+      where: { organizationId: data.organizationId, status: EXPENSE_STATUS.SUBMITTED },
+      orderBy: [{ occurredAt: 'desc' }],
+      take,
+      select: {
+        id: true, assetId: true, category: true, direction: true, amountCents: true, note: true,
+        occurredAt: true, authorId: true, receiptKey: true, createdAt: true,
+        asset: { select: { id: true, name: true } },
+      },
+    });
+    if (entries.length === 0) return success({ entries: [], totalCents: 0 });
+
+    const authorIds = [...new Set(entries.map((e) => e.authorId).filter((v): v is string => !!v))];
+    const authors = authorIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: authorIds }, organizationId: data.organizationId },
+          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+        })
+      : [];
+    const byId = new Map(authors.map((a) => [a.id, a]));
+
+    return success({
+      entries: entries.map(({ receiptKey, ...e }) => ({
+        ...e,
+        hasReceipt: !!receiptKey,
+        author: e.authorId ? byId.get(e.authorId) ?? null : null,
+      })),
+      totalCents: entries.reduce((n, e) => n + (e.direction === 'IN' ? 0 : e.amountCents), 0),
+    });
+  }
+
+  /**
+   * Accept it, or refuse it with a reason.
+   *
+   * Only ever moves a SUBMITTED entry, and the `where` says so rather than a
+   * read-then-write: two people opening the queue at once would otherwise both
+   * see it pending and the second decision would silently overwrite the first.
+   */
+  async review(data: {
+    entryId: string;
+    decision: 'accept' | 'reject';
+    note?: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+  }) {
+    this.access.assertMay(data as any, 'update assets');
+
+    const { count } = await this.prisma.assetMoney.updateMany({
+      where: {
+        id: data.entryId,
+        organizationId: data.organizationId,
+        status: EXPENSE_STATUS.SUBMITTED,
+      },
+      data: {
+        status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED,
+        reviewedById: data.userId,
+        reviewedAt: new Date(),
+        reviewNote: data.note?.trim().slice(0, 300) || null,
+      },
+    });
+    if (!count) throw new NotFoundException('That expense is not waiting for a decision');
+
+    return success({ id: data.entryId, status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED });
+  }
+
+  /** Remove the object behind a deleted entry. Best effort, never blocking. */
+  async forgetReceipt(key: string | null | undefined): Promise<void> {
+    if (!key) return;
+    try {
+      await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+    } catch (e) {
+      this.logger.warn(`Could not remove receipt ${key}: ${(e as Error).message}`);
+    }
+  }
+}

@@ -6,6 +6,8 @@ import { AssetRowsService } from './asset-rows.service';
 import { AssetLedgerService } from './asset-ledger.service';
 import { AssetActivityService } from './asset-activity.service';
 import { AssetUsageService } from './asset-usage.service';
+import { AssetCustodyService } from './asset-custody.service';
+import { AssetExpenseService } from './asset-expense.service';
 
 @Controller()
 export class AssetsController {
@@ -16,6 +18,8 @@ export class AssetsController {
     private readonly ledger: AssetLedgerService,
     private readonly activity: AssetActivityService,
     private readonly usage: AssetUsageService,
+    private readonly custody: AssetCustodyService,
+    private readonly expenses: AssetExpenseService,
   ) {}
 
   // ============================================
@@ -90,6 +94,72 @@ export class AssetsController {
   @MessagePattern({ cmd: 'remove_asset_money' })
   async removeMoney(@Payload() data: any) {
     return this.ledger.removeMoney(data);
+  }
+
+  // ============================================
+  // CUSTODY — who held it, and when
+  // ============================================
+
+  @MessagePattern({ cmd: 'asset_custody_timeline' })
+  async custodyTimeline(@Payload() data: any) {
+    return this.custody.timeline(data);
+  }
+
+  /*
+    A write, and it goes STRAIGHT to the service rather than through the queue —
+    the same choice as a money entry or a note. The queue exists to make task
+    creation exactly-once under a burst; a handover is one person pressing one
+    button and waiting to see the result, and a round trip through Redis buys
+    nothing but latency on a screen somebody is watching.
+  */
+  @MessagePattern({ cmd: 'asset_custody_handover' })
+  async handOver(@Payload() data: any) {
+    return this.custody.handOver(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_custody_for_member' })
+  async custodyForMember(@Payload() data: any) {
+    return this.custody.forMember(data);
+  }
+
+  /** What the CALLER holds — the phone opens on this. */
+  @MessagePattern({ cmd: 'asset_custody_mine' })
+  async custodyMine(@Payload() data: any) {
+    return this.custody.mine(data);
+  }
+
+  // ============================================
+  // EXPENSES — a member spends, the office accepts
+  // ============================================
+
+  @MessagePattern({ cmd: 'asset_expense_presign' })
+  async expensePresign(@Payload() data: any) {
+    return this.expenses.presignReceipt(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_expense_submit' })
+  async expenseSubmit(@Payload() data: any) {
+    return this.expenses.submit(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_expense_mine' })
+  async expenseMine(@Payload() data: any) {
+    return this.expenses.mine(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_expense_pending' })
+  async expensePending(@Payload() data: any) {
+    return this.expenses.pending(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_expense_review' })
+  async expenseReview(@Payload() data: any) {
+    return this.expenses.review(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_expense_receipt_url' })
+  async expenseReceiptUrl(@Payload() data: any) {
+    return this.expenses.receiptUrl(data);
   }
 
   @MessagePattern({ cmd: 'list_asset_rows' })
