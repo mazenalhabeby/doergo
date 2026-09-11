@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "prebuild": "expo prebuild",
     "eas-build-post-install": "cd ../../packages/shared && npx tsc",
-    "test": "jest"
+    "test": "jest",
+    "lint:hooks": "eslint . --rule '{\"react-hooks/exhaustive-deps\":\"off\"}'"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",

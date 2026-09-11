@@ -84,9 +84,18 @@ export default function RoutePlannerScreen() {
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { useMyLocation(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { locateMe(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const useMyLocation = async () => {
+  /*
+    ⚠️ NOT A HOOK, and it used to be called `useMyLocation`.
+
+    Everything named `use*` is a hook as far as the rules-of-hooks lint is
+    concerned, so this plain async function made the linter report two errors it
+    could do nothing about — and a file whose errors are known-false is a file
+    nobody reads the errors of. It was also simply untrue: it takes no state,
+    returns nothing, and is called from a button.
+  */
+  const locateMe = async () => {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -372,7 +381,7 @@ export default function RoutePlannerScreen() {
           <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
         </PressableScale>
         <View style={styles.floatTopRight}>
-          <PressableScale onPress={() => { useMyLocation(); fitToRoute(true); }} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.useMyLocation', 'Use my location')}>
+          <PressableScale onPress={() => { locateMe(); fitToRoute(true); }} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.useMyLocation', 'Use my location')}>
             {locating
               ? <ActivityIndicator size="small" color={COLORS.primary} />
               : <Ionicons name="locate" size={20} color={COLORS.primary} />}

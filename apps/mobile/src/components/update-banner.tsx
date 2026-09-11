@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import type { VersionStatus } from '../lib/version-gate';
-import { openUpdate, onDownloaded } from '../lib/in-app-updates';
+import { openUpdate, onDownloaded, IN_APP_UPDATES_SUPPORTED } from '../lib/in-app-updates';
 
 const DISMISS_KEY = 'update_banner_snoozed';
 
@@ -41,6 +41,23 @@ export function UpdateBanner({ status }: { status: VersionStatus }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [dismissed, setDismissed] = useState<boolean | null>(null);
+  /*
+    ⚠️ EVERY HOOK IN THIS COMPONENT BELONGS ABOVE THE EARLY RETURN.
+
+    `ready` and its listener used to sit BELOW it, next to the markup that uses
+    them, which reads naturally and crashes the app: React counts hooks per
+    render, and this component returns null on most of them. The first render
+    that got past the guard called two more hooks than the one before it —
+    "Rendered more hooks than during the previous render", a red screen, and no
+    way back except force-quitting.
+
+    It never fired while the banner was effectively unreachable. Fixing the
+    banner so it ACTUALLY APPEARS is what detonated it, on a real member's phone
+    within hours. A latent crash behind a feature that does not run is still a
+    crash; fixing the feature is what ships it.
+  */
+  const [ready, setReady] = useState(false);
+  useEffect(() => onDownloaded(() => setReady(true)), []);
 
   const version = status.latest ?? '';
 
@@ -73,11 +90,6 @@ export function UpdateBanner({ status }: { status: VersionStatus }) {
 
   const open = () => openUpdate(status.downloadUrl);
 
-  // A flexible update that downloads and is never installed is the usual way
-  // this feature quietly does nothing, so say when it is ready.
-  const [ready, setReady] = useState(false);
-  useEffect(() => onDownloaded(() => setReady(true)), []);
-
   const storeName =
     Platform.OS === 'ios'
       ? t('updateRequired.appStore', 'the App Store')
@@ -89,10 +101,23 @@ export function UpdateBanner({ status }: { status: VersionStatus }) {
         <View style={styles.dot} />
         <View style={styles.textCol}>
           <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
-            {t('updateBanner.title', { version, defaultValue: 'Version {{version}} is available' })}
+            {ready
+              ? t('updateBanner.readyTitle')
+              : t('updateBanner.title', { version, defaultValue: 'Version {{version}} is available' })}
           </Text>
+          {/*
+            A download that finished and was never installed is the usual way
+            this feature quietly does nothing. `ready` was being tracked and
+            never shown — so on Android the update downloaded in the background
+            and the banner went on saying "update from Google Play", with
+            nothing to tell anybody the only step left was a restart.
+          */}
           <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-            {t('updateBanner.subtitle', { store: storeName, defaultValue: 'Update from {{store}}' })}
+            {ready
+              ? t('updateBanner.readySubtitle')
+              : IN_APP_UPDATES_SUPPORTED
+                ? t('updateBanner.subtitleInApp')
+                : t('updateBanner.subtitle', { store: storeName, defaultValue: 'Update from {{store}}' })}
           </Text>
         </View>
         {!!status.downloadUrl && (
