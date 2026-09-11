@@ -26,7 +26,7 @@ import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
 import {
   CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
-  HandOverDto, ReceiptPresignDto, SubmitExpenseDto,
+  HandOverDto, ReceiptPresignDto, ReadReceiptDto, SubmitExpenseDto,
   ContractProposalDto, ReadContractDto,
   RaiseProposalDto, AcceptProposalDto, ProposalPresignDto,
 } from './dto';
@@ -707,6 +707,37 @@ export class AssetsController {
     @Request() req: any,
   ) {
     return this.assetsService.expensePresign({
+      id,
+      ...dto,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canManageAssets: req.user.canManageAssets,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /**
+   * Read a PDF receipt before filing it.
+   *
+   * ⚠️ Deliberately NOT gated on a permission, exactly like the presign above.
+   * What a member may read here is the file THEY just uploaded against
+   * something they HELD on that date — a fact about custody, which the service
+   * checks. `canManageAssets` here would lock every driver out of the one
+   * screen built for them.
+   *
+   * Images are not read here: the phone reads those on-device, better and for
+   * free. This exists for the file a phone cannot open at all.
+   */
+  @Post(':id/expenses/read')
+  @ApiOperation({ summary: 'Read a PDF receipt I just uploaded' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async readReceipt(
+    @Param('id') id: string,
+    @Body() dto: ReadReceiptDto,
+    @Request() req: any,
+  ) {
+    return this.assetsService.expenseRead({
       id,
       ...dto,
       userId: req.user.id,

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
@@ -60,6 +61,12 @@ export default function AssetExpenseScreen() {
 
   /** The photograph, kept only until it is uploaded — then deleted. */
   const [shot, setShot] = useState<{ uri: string; mime: string } | null>(null);
+  /*
+    A PDF is uploaded BEFORE the amount is typed, because the server has to see
+    it to read it. Remembering the key stops the submit sending the same bytes a
+    second time — and a second object in the bucket that nothing points at.
+  */
+  const [uploadedKey, setUploadedKey] = useState<string | null>(null);
   const [read, setRead] = useState<ParsedReceipt | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -133,7 +140,88 @@ export default function AssetExpenseScreen() {
     }
   }, [busy, applyRead, t, toast]);
 
+  /**
+   * A file the driver was SENT rather than handed at a counter.
+   *
+   * ⚠️ A PDF is the one shape the camera path can never open: on-device OCR
+   * reads pixels and a PDF has none until something renders it. Yet a PDF is
+   * what a supplier emails, which makes it the likeliest form of exactly the
+   * invoices worth the most money — and until now the only way to file one was
+   * to photograph a screen.
+   *
+   * So the bytes go up first and the SERVER reads them, off the text layer —
+   * which is better than any OCR of the same page, because those are the
+   * characters the document was written with rather than a guess at their shape.
+   *
+   * An image chosen here is read on the device exactly as a photograph is: the
+   * local reader is better and costs nothing, and sending it would trade a good
+   * answer for a worse one plus a round trip.
+   */
+  const pickFile = useCallback(async () => {
+    if (busy) return;
+    const picked = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'image/*'],
+      copyToCacheDirectory: true,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    const file = picked.assets[0];
+    const mime = file.mimeType ?? (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+    setBusy(true);
+    try {
+      setShot({ uri: file.uri, mime });
+
+      if (mime !== 'application/pdf') {
+        // Same path as the camera: read it here, where it is cheaper and better.
+        if (canScanReceipts()) {
+          const { receipt } = await scanReceipt(file.uri);
+          applyRead(receipt);
+          if (!receipt.totalCents) toast.info(t('expenses.noTotal', 'Could not find a total — type it in.'));
+        }
+        setStage('review');
+        return;
+      }
+
+      /*
+        The upload has to happen anyway, so doing it now costs nothing and is
+        what lets the server see the file at all. `fileKey` is remembered so the
+        submit does not send the same bytes twice.
+      */
+      const presigned = await assetsApi.presignReceipt(assetId, {
+        fileName: file.name ?? 'receipt.pdf',
+        mimeType: 'application/pdf',
+        // The same shape the submit sends: the gate reads a DATE, and a bare
+        // "2026-09-11" and an instant must not disagree about which day it is.
+        occurredAt: new Date(when).toISOString(),
+      });
+      await uploadToPresignedUrl(presigned.uploadUrl, file.uri, 'application/pdf');
+      setUploadedKey(presigned.fileKey);
+
+      const answer = await assetsApi.readReceipt(assetId, {
+        fileKey: presigned.fileKey,
+        occurredAt: new Date(when).toISOString(),
+      });
+      if (answer.read) {
+        applyRead(answer.receipt);
+        if (!answer.receipt.totalCents) toast.info(t('expenses.noTotal', 'Could not find a total — type it in.'));
+      } else {
+        // A scanned PDF is a photocopy in a wrapper: nothing to read, and
+        // inventing a total from nothing is worse than an empty field.
+        toast.info(t('expenses.pdfNoText', 'That PDF has no readable text — type the amount.'));
+      }
+      setStage('review');
+    } catch {
+      toast.error(t('expenses.readFailed', 'Could not read it — check the amount yourself.'));
+      setStage('review');
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, assetId, when, applyRead, t, toast]);
+
   const discardShot = useCallback(() => {
+    // Whatever was uploaded belongs to the file being discarded; keeping the
+    // key would attach the old PDF to the next receipt.
+    setUploadedKey(null);
     if (!shot) return;
     try { new FsFile(shot.uri).delete(); } catch { /* already gone */ }
     setShot(null);
@@ -155,7 +243,14 @@ export default function AssetExpenseScreen() {
         are what the books need; the photograph is evidence, and losing it to a
         motorway signal must not cost somebody the entry as well.
       */
-      if (shot) {
+      if (uploadedKey) {
+        /*
+          A PDF went up already — it had to, or the server could not have read
+          it. Uploading again would put a second identical object in the bucket
+          that nothing points at, and pay for the transfer twice on a phone.
+        */
+        receiptKey = uploadedKey;
+      } else if (shot) {
         try {
           const presign = await assetsApi.presignReceipt(assetId, {
             fileName: `receipt-${Date.now()}.jpg`,
@@ -364,6 +459,14 @@ export default function AssetExpenseScreen() {
         </View>
 
         <View style={s.camFoot}>
+          {/*
+            Two ways in, and the camera is still the primary one — it is what a
+            driver at a pump has. "Choose a file" is for the invoice that
+            arrived by email, which is the only way a PDF ever gets here.
+          */}
+          <TouchableOpacity onPress={pickFile} disabled={busy} style={s.skip}>
+            <Text style={s.skipText}>{t('expenses.chooseFile', 'Choose a file')}</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => setStage('review')} style={s.skip}>
             <Text style={s.skipText}>{t('expenses.typeInstead', 'Type it instead')}</Text>
           </TouchableOpacity>

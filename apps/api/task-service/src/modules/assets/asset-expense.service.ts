@@ -1,10 +1,11 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { pdfToLines } from './pdf-lines';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, normalizeKindShape, findMoneyCategory } from '@hbcfield/shared';
+import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 
@@ -157,6 +158,77 @@ export class AssetExpenseService {
       { expiresIn: 900 },
     );
     return success({ uploadUrl, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
+  }
+
+  /**
+   * Read a receipt the phone could not — a PDF.
+   *
+   * ⚠️ THE ONE FILE TYPE THE CAMERA PATH CAN NEVER OPEN. On-device OCR reads
+   * pixels; a PDF has none until something renders it, and no phone build here
+   * carries a renderer. Yet a PDF is what a supplier EMAILS, which makes it the
+   * likeliest shape for exactly the invoices worth the most money.
+   *
+   * The text layer beats any OCR of the same page: those are the characters the
+   * document was written with, not a guess at their shape. In a field where a
+   * misread digit is money, that difference is the whole point.
+   *
+   * ⚠️ Same gate as filing one. Reading somebody's invoice tells you what they
+   * spent and with whom — so the authorisation is custody on the receipt's own
+   * date, exactly as `presignReceipt` and `submit` demand, and never a
+   * permission a driver will never hold.
+   *
+   * Never throws for an unreadable file. A scanned PDF has no text layer and a
+   * corrupt one has nothing at all; both come back `read: false`, and the
+   * person types the amount as they would have anyway.
+   */
+  async readReceipt(data: {
+    id: string;
+    fileKey: string;
+    occurredAt?: string;
+    userId: string;
+    userRole: string;
+    organizationId: string;
+    canManageAssets?: boolean;
+  }) {
+    const when = this.readDate(data.occurredAt);
+    await this.gate(data, when);
+
+    /*
+      The key must be one WE presigned, for THIS asset, in THIS organization —
+      the same check `submit` makes. Without it the field is a reader for any
+      object in the bucket whose key somebody can guess.
+    */
+    if (!data.fileKey.startsWith(this.prefix(data.organizationId, data.id))) {
+      throw new BadRequestException('That file does not belong to this asset');
+    }
+    if (!data.fileKey.endsWith('.pdf')) {
+      // Images are read ON the phone, better and for free. Saying so beats
+      // running a worse reader here and overwriting a good answer.
+      return success({ read: false, reason: 'NOT_A_PDF' as const });
+    }
+
+    let bytes: Buffer;
+    try {
+      const obj = await this.s3.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: data.fileKey }),
+      );
+      bytes = Buffer.from(await obj.Body!.transformToByteArray());
+    } catch {
+      throw new BadRequestException('The upload did not complete — please try again');
+    }
+
+    const lines = await pdfToLines(bytes);
+    if (lines.length === 0) {
+      /*
+        A PDF that is a photocopy in a wrapper. Nothing was read, and inventing
+        a total from nothing is the one outcome worse than an empty field.
+      */
+      return success({ read: false, reason: 'NO_TEXT_LAYER' as const });
+    }
+
+    // The same rules the phone runs on a photograph, from `packages/shared`.
+    const receipt = parseReceipt(lines);
+    return success({ read: true, receipt });
   }
 
   /**

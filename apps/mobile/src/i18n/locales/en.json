@@ -2169,7 +2169,9 @@
     "loadFailed": "Could not open that",
     "accepted": "Accepted",
     "rejected": "Refused",
-    "pending": "Waiting"
+    "pending": "Waiting",
+    "chooseFile": "Choose a file",
+    "pdfNoText": "That PDF has no readable text — type the amount."
   },
   "contract": {
     "title": "From a contract",

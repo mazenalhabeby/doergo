@@ -2169,7 +2169,9 @@
     "loadFailed": "No se pudo abrir",
     "accepted": "Aceptado",
     "rejected": "Rechazado",
-    "pending": "Pendiente"
+    "pending": "Pendiente",
+    "chooseFile": "Elegir un archivo",
+    "pdfNoText": "Ese PDF no tiene texto legible: escriba el importe."
   },
   "contract": {
     "title": "Desde un contrato",

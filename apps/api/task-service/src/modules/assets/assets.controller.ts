@@ -141,6 +141,11 @@ export class AssetsController {
     return this.expenses.presignReceipt(data);
   }
 
+  @MessagePattern({ cmd: 'asset_expense_read' })
+  async expenseRead(@Payload() data: any) {
+    return this.expenses.readReceipt(data);
+  }
+
   @MessagePattern({ cmd: 'asset_expense_submit' })
   async expenseSubmit(@Payload() data: any) {
     return this.expenses.submit(data);

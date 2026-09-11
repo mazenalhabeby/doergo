@@ -1,3 +1,4 @@
+import type { ParsedReceipt } from '@hbcfield/shared/client';
 import { fetchWithAuth } from './client';
 
 /**
@@ -87,6 +88,24 @@ export const assetsApi = {
       `/assets/${assetId}/expenses/presign`,
       { method: 'POST', body: JSON.stringify(input) },
     ),
+
+  /**
+   * Read a PDF receipt the phone itself cannot open.
+   *
+   * ⚠️ Images are NOT sent here. The on-device reader is better than anything
+   * the server could run on the same photograph, and free — calling this for an
+   * image would trade a good local answer for a worse remote one, plus a round
+   * trip at a petrol pump on one bar of signal.
+   *
+   * `read: false` is a normal answer, not an error: a scanned PDF has no text
+   * layer and there is nothing to find. The amount gets typed, as it would have
+   * been anyway.
+   */
+  readReceipt: (assetId: string, input: { fileKey: string; occurredAt?: string }) =>
+    fetchWithAuth<
+      | { read: true; receipt: ParsedReceipt }
+      | { read: false; reason: 'NOT_A_PDF' | 'NO_TEXT_LAYER' }
+    >(`/assets/${assetId}/expenses/read`, { method: 'POST', body: JSON.stringify(input) }),
 
   submitExpense: (assetId: string, input: SubmitExpenseInput) =>
     fetchWithAuth<MyExpense>(`/assets/${assetId}/expenses`, {

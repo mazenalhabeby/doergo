@@ -90,6 +90,11 @@ export class AssetsService extends BaseGatewayService {
     return this.send({ cmd: 'asset_expense_presign' }, data);
   }
 
+  /** Read a PDF receipt — the one file the phone's own reader cannot open. */
+  async expenseRead(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_expense_read' }, data);
+  }
+
   async expenseSubmit(data: Record<string, any>) {
     return this.send({ cmd: 'asset_expense_submit' }, data);
   }

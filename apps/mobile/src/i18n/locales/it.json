@@ -2169,7 +2169,9 @@
     "loadFailed": "Impossibile aprire",
     "accepted": "Accettata",
     "rejected": "Rifiutata",
-    "pending": "In attesa"
+    "pending": "In attesa",
+    "chooseFile": "Scegli un file",
+    "pdfNoText": "Questo PDF non contiene testo leggibile — inserisca l’importo."
   },
   "contract": {
     "title": "Da un contratto",

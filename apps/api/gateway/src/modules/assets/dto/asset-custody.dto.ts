@@ -56,6 +56,26 @@ export class ReceiptPresignDto {
 }
 
 /**
+ * Read a receipt already uploaded, before the amount is typed.
+ *
+ * The key is the one `presignReceipt` just handed out. It is checked against
+ * this organization's and this asset's own prefix in the service — a key from
+ * somewhere else is refused there, not here, because that is where the
+ * organization is known.
+ */
+export class ReadReceiptDto {
+  @ApiProperty({ description: 'The key returned by the presign step.' })
+  @IsString()
+  @MaxLength(512)
+  fileKey!: string;
+
+  @ApiPropertyOptional({ description: 'When the money moved — it decides WHO may read this.' })
+  @IsOptional()
+  @IsDateString()
+  occurredAt?: string;
+}
+
+/**
  * An expense filed against something the caller holds.
  *
  * The amount is integer CENTS and is capped. Money in floating point is a
