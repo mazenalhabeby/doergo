@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,9 +18,16 @@ import * as ImagePicker from 'expo-image-picker';
  *     `granted: true`, renders a viewfinder, and asks the OS for frames it will
  *     not give. The app's idea of its own permissions outlives the permission.
  *
- * So the status is re-read on every focus with the tuple's THIRD element, which
- * fetches without prompting. Returning from Settings is a focus event — exactly
- * when the answer has changed.
+ * So the status is re-read with the tuple's THIRD element, which fetches
+ * without prompting — on screen focus AND on the app returning to the
+ * foreground.
+ *
+ * ⚠️ Both, because they are different events. This comment used to claim
+ * "returning from Settings is a focus event". It is not: the screen never
+ * blurred, so the navigator never re-focuses it. Opening Settings is the ONE
+ * action a blocked screen offers, so with only the focus half somebody changes
+ * the permission, comes back, and is shown the same "Open settings" button —
+ * which was reported from a real phone.
  *
  * ⚠️ AND `null` IS NOT "DENIED". Until the first read lands, nothing is known.
  * Code that reads it as denied flashes "blocked" at somebody who has granted
@@ -62,11 +70,39 @@ function useAccess<P extends { granted: boolean; canAskAgain: boolean }>(
   const [permission, request, get] = tuple;
   const [asking, setAsking] = useState(false);
 
+  /*
+    Two different "came back", and only one of them is a navigation event.
+
+    ⚠️ `useFocusEffect` fires when this screen is focused WITHIN the navigator —
+    going back and opening it again. It does NOT fire when the person leaves the
+    app entirely and returns, because the screen never blurred: as far as the
+    navigator is concerned it was focused the whole time.
+
+    Which is exactly the case that matters here. The only button on a blocked
+    screen is "Open settings", and that sends somebody OUT of the app to the
+    one place the answer can change. Without the AppState half they come back,
+    the screen still says blocked, and the button offers to open Settings again
+    — the loop this hook exists to prevent.
+  */
+  const focused = useRef(false);
+
   useFocusEffect(
     useCallback(() => {
+      focused.current = true;
       void get();
+      return () => { focused.current = false; };
     }, [get]),
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      // Only the screen somebody is actually looking at. `get()` prompts
+      // nobody, but re-reading it for every mounted scanner on every
+      // foreground is work with no reader.
+      if (state === 'active' && focused.current) void get();
+    });
+    return () => sub.remove();
+  }, [get]);
 
   /**
    * Ask, and return the ANSWER.

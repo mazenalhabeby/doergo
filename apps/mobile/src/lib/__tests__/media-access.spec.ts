@@ -98,6 +98,18 @@ describe('permission state is read continuously, and never guessed', () => {
     expect(offenders).toEqual([]);
   });
 
+  /*
+    ⚠️ Returning from the Settings app is NOT a navigation focus event — the
+    screen never blurred. The only button on a blocked screen sends people
+    there, so without this the answer never refreshes and "Open settings" just
+    opens Settings again, forever.
+  */
+  it('re-reads when the app itself comes back, not only on navigation', () => {
+    const src = stripComments(fs.readFileSync(path.join(PERMISSIONS_DIR, 'use-media-access.ts'), 'utf8'));
+    expect(src).toContain('AppState.addEventListener');
+    expect(src).toMatch(/state === 'active'[\s\S]{0,120}get\(\)/);
+  });
+
   it('re-reads on focus, without prompting', () => {
     const src = stripComments(fs.readFileSync(path.join(PERMISSIONS_DIR, 'use-media-access.ts'), 'utf8'));
     expect(src).toContain('useFocusEffect');
