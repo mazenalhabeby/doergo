@@ -112,7 +112,7 @@ describe('the rest of the app', () => {
  * rather than trusted to have learned it.
  */
 describe('the appointment-time components follow the theme', () => {
-  const MINE = ['tasks/be-there-card.tsx', 'time-picker-modal.tsx', 'scan/camera-permission-screen.tsx'];
+  const MINE = ['tasks/be-there-card.tsx', 'time-picker-modal.tsx', '../permissions/media-access-screen.tsx'];
 
   it.each(MINE)('%s takes its colours from useTheme', (rel) => {
     expect(readFileSync(join(COMPONENTS, rel), 'utf8')).toContain('useTheme');

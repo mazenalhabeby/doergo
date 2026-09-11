@@ -2225,5 +2225,63 @@
     "mine": "Documents I sent in",
     "withdrawn": "Taken back",
     "aPage": "A page"
+  },
+  "perm": {
+    "p": {
+      "readHere": "Read on this phone — the image never leaves it",
+      "textStaysHere": "Read on this phone — the text never leaves it",
+      "deletedAfterReading": "The photo is deleted the moment it has been read",
+      "youCheckFirst": "You check every field before anything is saved",
+      "sentWithIt": "The photo is sent with it, so the office can check it",
+      "nothingCreatedYet": "Nothing is created until somebody confirms it",
+      "yourFileOnly": "It goes into your own personnel file, nobody else’s",
+      "onTheJob": "It is attached to this job, where your team can see it",
+      "youCanRemove": "You can remove it afterwards"
+    },
+    "card": {
+      "title": "Scan a business card",
+      "sub": "Point the camera at a card and the client details fill themselves in.",
+      "cancel": "Enter the details by hand"
+    },
+    "receipt": {
+      "title": "Photograph the receipt",
+      "sub": "Point the camera at the slip and the amount, the date and the shop fill themselves in.",
+      "cancel": "Type it instead"
+    },
+    "doc": {
+      "title": "Photograph the document",
+      "sub": "Point the camera at the page and it works out what it is.",
+      "cancel": "Type it instead"
+    },
+    "contract": {
+      "title": "Photograph the contract",
+      "sub": "Point the camera at the agreement and the plate, the make and the dates fill themselves in.",
+      "cancel": "Type it instead"
+    },
+    "id": {
+      "title": "Photograph the document",
+      "sub": "Your licence, passport or certificate — the dates are read for you.",
+      "cancel": "Choose a file instead"
+    },
+    "task": {
+      "title": "Add a photo to the job",
+      "sub": "Show what you found, or what you fixed."
+    },
+    "issue": {
+      "title": "Show the problem",
+      "sub": "A photo reaches whoever can act on it faster than a description."
+    },
+    "worklog": {
+      "title": "Add a photo to your day",
+      "sub": "A note with a picture is worth more at the end of the month."
+    },
+    "avatar": {
+      "title": "Choose a profile picture",
+      "sub": "So your colleagues can tell who is who."
+    },
+    "allow": "Allow camera",
+    "openSettings": "Open settings",
+    "blocked": "Camera access is turned off for this app.",
+    "blockedLibrary": "Photo access is turned off for this app."
   }
 }

@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
   useWindowDimensions,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -12,7 +12,8 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { scanBusinessCard, type ParsedCard } from '../../src/lib/card-scan';
 import { frameToImageCrop } from '@hbcfield/shared/client';
-import { CameraPermissionScreen } from '../../src/components/scan/camera-permission-screen';
+import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
+import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { customersApi } from '../../src/lib/api';
 import { File as FsFile } from 'expo-file-system';
 import { useAuth } from '../../src/contexts/auth-context';
@@ -38,7 +39,7 @@ export default function ScanCardScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
-  const [permission, requestPermission] = useCameraPermissions();
+  const cam = useCameraAccess();
   const { user } = useAuth();
   const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -205,18 +206,21 @@ export default function ScanCardScreen() {
   }
 
   // ── Camera permission ─────────────────────────────────────────────────────
-  if (!permission?.granted) {
+  if (!cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
         <Header colors={colors} title={t('scan.title', 'Scan a card')} />
         {/*
-          `canAskAgain` defaults to true only while the hook is still resolving;
-          once the system has stopped asking it is false, and the screen offers
-          Settings instead of a button that opens nothing.
+          ⚠️ This used to pass `canAskAgain={permission?.canAskAgain !== false}`,
+          which reads TRUE while the first check is still in flight — so a phone
+          where the system had stopped asking was offered a button that did
+          nothing. `useCameraAccess` names the unresolved state instead, and
+          re-reads the permission on every focus so returning from Settings is
+          noticed without restarting the app.
         */}
-        <CameraPermissionScreen
-          canAskAgain={permission?.canAskAgain !== false}
-          onAllow={requestPermission}
+        <MediaAccessScreen
+          purpose="business-card"
+          access={cam}
           onCancel={() => router.back()}
         />
       </SafeAreaView>

@@ -140,8 +140,8 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
     } finally { setBusy(false); }
   }, [title, description, severity, timeEntryId, spaceId, picked, onCreated]);
 
-  const addGallery = useCallback(async () => { const imgs = await pickFromGallery(); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
-  const addCamera = useCallback(async () => { const img = await takePhoto(); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
+  const addGallery = useCallback(async () => { const imgs = await pickFromGallery('issue-photo'); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
+  const addCamera = useCallback(async () => { const img = await takePhoto('issue-photo'); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
 
   return (
     <BlurSheet visible={visible} onClose={onClose}>
@@ -243,8 +243,8 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
     } catch { /* noop */ } finally { setBusy(false); }
   }, [issueId, draft, picked, load]);
 
-  const addGallery = useCallback(async () => { const imgs = await pickFromGallery(); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
-  const addCamera = useCallback(async () => { const img = await takePhoto(); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
+  const addGallery = useCallback(async () => { const imgs = await pickFromGallery('issue-photo'); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
+  const addCamera = useCallback(async () => { const img = await takePhoto('issue-photo'); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
 
   const act = useCallback(async (fn: () => Promise<any>) => { try { await fn(); await load(); } catch { /* noop */ } }, [load]);
 

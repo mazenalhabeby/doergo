@@ -2225,5 +2225,63 @@
     "mine": "Gesendete Dokumente",
     "withdrawn": "Zurückgezogen",
     "aPage": "Eine Seite"
+  },
+  "perm": {
+    "p": {
+      "readHere": "Auf diesem Telefon gelesen — das Bild verlässt es nie",
+      "textStaysHere": "Auf diesem Telefon gelesen — der Text verlässt es nie",
+      "deletedAfterReading": "Das Foto wird gelöscht, sobald es gelesen wurde",
+      "youCheckFirst": "Sie prüfen jedes Feld, bevor etwas gespeichert wird",
+      "sentWithIt": "Das Foto wird mitgesendet, damit das Büro es prüfen kann",
+      "nothingCreatedYet": "Es wird nichts angelegt, bevor jemand bestätigt",
+      "yourFileOnly": "Es kommt in Ihre eigene Personalakte, in keine andere",
+      "onTheJob": "Es hängt an diesem Auftrag, wo Ihr Team es sieht",
+      "youCanRemove": "Sie können es danach wieder entfernen"
+    },
+    "card": {
+      "title": "Visitenkarte scannen",
+      "sub": "Die Kamera auf eine Karte richten und die Kundendaten füllen sich selbst aus.",
+      "cancel": "Daten selbst eingeben"
+    },
+    "receipt": {
+      "title": "Beleg fotografieren",
+      "sub": "Die Kamera auf den Beleg richten und Betrag, Datum und Geschäft füllen sich selbst aus.",
+      "cancel": "Stattdessen eingeben"
+    },
+    "doc": {
+      "title": "Dokument fotografieren",
+      "sub": "Die Kamera auf die Seite richten und es erkennt, worum es sich handelt.",
+      "cancel": "Stattdessen eingeben"
+    },
+    "contract": {
+      "title": "Vertrag fotografieren",
+      "sub": "Die Kamera auf den Vertrag richten und Kennzeichen, Marke und Daten füllen sich selbst aus.",
+      "cancel": "Stattdessen eingeben"
+    },
+    "id": {
+      "title": "Dokument fotografieren",
+      "sub": "Führerschein, Reisepass oder Zeugnis — die Daten werden für Sie gelesen.",
+      "cancel": "Stattdessen Datei wählen"
+    },
+    "task": {
+      "title": "Foto zum Auftrag hinzufügen",
+      "sub": "Zeigen, was Sie vorgefunden oder behoben haben."
+    },
+    "issue": {
+      "title": "Das Problem zeigen",
+      "sub": "Ein Foto erreicht schneller die richtige Person als eine Beschreibung."
+    },
+    "worklog": {
+      "title": "Foto zu Ihrem Tag hinzufügen",
+      "sub": "Eine Notiz mit Bild ist am Monatsende mehr wert."
+    },
+    "avatar": {
+      "title": "Profilbild wählen",
+      "sub": "Damit Ihre Kolleg:innen sehen, wer wer ist."
+    },
+    "allow": "Kamera erlauben",
+    "openSettings": "Einstellungen öffnen",
+    "blocked": "Der Kamerazugriff ist für diese App deaktiviert.",
+    "blockedLibrary": "Der Fotozugriff ist für diese App deaktiviert."
   }
 }

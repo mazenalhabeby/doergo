@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -11,7 +11,8 @@ import { File as FsFile } from 'expo-file-system';
 
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { CameraPermissionScreen } from '../../src/components/scan/camera-permission-screen';
+import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
+import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
 import {
@@ -48,7 +49,7 @@ export default function AssetExpenseScreen() {
   const params = useLocalSearchParams<{ assetId?: string }>();
   const assetId = typeof params.assetId === 'string' ? params.assetId : '';
 
-  const [permission, requestPermission] = useCameraPermissions();
+  const cam = useCameraAccess();
   const camera = useRef<CameraView>(null);
 
   const [held, setHeld] = useState<HeldAsset | null>(null);
@@ -217,16 +218,13 @@ export default function AssetExpenseScreen() {
   }
 
   // ── Camera permission ─────────────────────────────────────────────────────
-  if (stage === 'camera' && !permission?.granted) {
+  if (stage === 'camera' && !cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
         <Header colors={colors} title={t('expenses.title', 'Add a receipt')} />
-        <CameraPermissionScreen
-          canAskAgain={permission?.canAskAgain !== false}
-          onAllow={requestPermission}
-          /* Not a dead end. Somebody who will not give the camera away still
-             has an expense to file, and typing it in is the whole feature
-             minus the convenience. */
+        <MediaAccessScreen
+          purpose="receipt"
+          access={cam}
           onCancel={() => setStage('review')}
         />
       </SafeAreaView>

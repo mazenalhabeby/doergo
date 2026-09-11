@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, Switch,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,7 +13,8 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { useAuth } from '../../src/contexts/auth-context';
 import { holds } from '../../src/lib/permissions';
-import { CameraPermissionScreen } from '../../src/components/scan/camera-permission-screen';
+import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
+import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanContracts, scanContract } from '../../src/lib/receipt-scan';
 import {
   assetContractsApi, membersApi,
@@ -55,7 +56,7 @@ export default function AssetContractScreen() {
   const toast = useToast();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [permission, requestPermission] = useCameraPermissions();
+  const cam = useCameraAccess();
   const camera = useRef<CameraView>(null);
 
   const canManage = holds(user, 'canManageAssets');
@@ -219,15 +220,13 @@ export default function AssetContractScreen() {
     );
   }
 
-  if (stage === 'camera' && !permission?.granted) {
+  if (stage === 'camera' && !cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
         <Header colors={colors} title={t('contract.title', 'From a contract')} />
-        <CameraPermissionScreen
-          canAskAgain={permission?.canAskAgain !== false}
-          onAllow={requestPermission}
-          // Not a dead end: typing six fields is the whole feature minus the
-          // convenience.
+        <MediaAccessScreen
+          purpose="contract"
+          access={cam}
           onCancel={() => setStage('fields')}
         />
       </SafeAreaView>

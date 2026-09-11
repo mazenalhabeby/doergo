@@ -161,10 +161,10 @@ export default function ProfileScreen() {
         { options, cancelButtonIndex: cancelIndex, destructiveButtonIndex: destructiveIndex },
         async (idx) => {
           if (idx === 0) {
-            const photo = await takePhoto();
+            const photo = await takePhoto('avatar');
             if (photo) uploadAvatar(photo.uri, photo.fileName, photo.mimeType);
           } else if (idx === 1) {
-            const images = await pickFromGallery();
+            const images = await pickFromGallery('avatar');
             if (images.length > 0) {
               const img = images[0]!;
               uploadAvatar(img.uri, img.fileName, img.mimeType);
@@ -178,11 +178,11 @@ export default function ProfileScreen() {
       // Android fallback using Alert
       const buttons: any[] = [
         { text: t('profile.takePhoto'), onPress: async () => {
-          const photo = await takePhoto();
+          const photo = await takePhoto('avatar');
           if (photo) uploadAvatar(photo.uri, photo.fileName, photo.mimeType);
         }},
         { text: t('profile.chooseFromGallery'), onPress: async () => {
-          const images = await pickFromGallery();
+          const images = await pickFromGallery('avatar');
           if (images.length > 0) {
             const img = images[0]!;
             uploadAvatar(img.uri, img.fileName, img.mimeType);

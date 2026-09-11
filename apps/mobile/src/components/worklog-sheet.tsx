@@ -211,12 +211,12 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
   }, [load]);
 
   const addFromGallery = useCallback(async () => {
-    const imgs = await pickFromGallery();
+    const imgs = await pickFromGallery('worklog-photo');
     if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5));
   }, [pickFromGallery]);
 
   const addFromCamera = useCallback(async () => {
-    const img = await takePhoto();
+    const img = await takePhoto('worklog-photo');
     if (img) setPicked((p) => [...p, img].slice(0, 5));
   }, [takePhoto]);
 

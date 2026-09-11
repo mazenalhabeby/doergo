@@ -22,6 +22,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';
 import { Role } from '@hbcfield/shared/client';
+import { MediaAccessHost } from '../../src/permissions/media-access-host';
 
 // Send a lightweight presence ping using CACHED location (no fresh GPS).
 // Runs once on app start and every 10 minutes — uses getLastKnownPositionAsync
@@ -355,6 +356,9 @@ export default function AppLayout() {
           }}
         />
       </Stack>
+      {/* One permission sheet for every image picker in the app. Mounted here
+          so seven call sites share it without seven copies. */}
+      <MediaAccessHost />
       <SubscriptionGate />
       </TourProvider>
       </View>

@@ -2225,5 +2225,63 @@
     "mine": "Documenti che ho inviato",
     "withdrawn": "Ritirato",
     "aPage": "Una pagina"
+  },
+  "perm": {
+    "p": {
+      "readHere": "Letta su questo telefono — l’immagine non esce mai",
+      "textStaysHere": "Letto su questo telefono — il testo non esce mai",
+      "deletedAfterReading": "La foto viene eliminata appena è stata letta",
+      "youCheckFirst": "Controlli ogni campo prima che venga salvato qualcosa",
+      "sentWithIt": "La foto viene inviata con essa, così l’ufficio può controllare",
+      "nothingCreatedYet": "Non viene creato nulla finché qualcuno non conferma",
+      "yourFileOnly": "Va nel tuo fascicolo personale, in nessun altro",
+      "onTheJob": "Resta su questo lavoro, dove il tuo team la vede",
+      "youCanRemove": "Puoi rimuoverla in seguito"
+    },
+    "card": {
+      "title": "Scansiona un biglietto da visita",
+      "sub": "Inquadra il biglietto e i dati del cliente si compilano da soli.",
+      "cancel": "Inserire i dati a mano"
+    },
+    "receipt": {
+      "title": "Fotografa la ricevuta",
+      "sub": "Inquadra lo scontrino e importo, data e negozio si compilano da soli.",
+      "cancel": "Scrivilo a mano"
+    },
+    "doc": {
+      "title": "Fotografa il documento",
+      "sub": "Inquadra la pagina e capisce di cosa si tratta.",
+      "cancel": "Scrivilo a mano"
+    },
+    "contract": {
+      "title": "Fotografa il contratto",
+      "sub": "Inquadra il contratto e targa, marca e date si compilano da sole.",
+      "cancel": "Scrivilo a mano"
+    },
+    "id": {
+      "title": "Fotografa il documento",
+      "sub": "Patente, passaporto o certificato — le date vengono lette per te.",
+      "cancel": "Scegli un file"
+    },
+    "task": {
+      "title": "Aggiungi una foto al lavoro",
+      "sub": "Mostra cosa hai trovato, o cosa hai riparato."
+    },
+    "issue": {
+      "title": "Mostra il problema",
+      "sub": "Una foto arriva prima a chi può intervenire di una descrizione."
+    },
+    "worklog": {
+      "title": "Aggiungi una foto alla tua giornata",
+      "sub": "Una nota con foto vale di più a fine mese."
+    },
+    "avatar": {
+      "title": "Scegli una foto profilo",
+      "sub": "Così i colleghi sanno chi è chi."
+    },
+    "allow": "Consenti la fotocamera",
+    "openSettings": "Apri impostazioni",
+    "blocked": "L’accesso alla fotocamera è disattivato per questa app.",
+    "blockedLibrary": "L’accesso alle foto è disattivato per questa app."
   }
 }

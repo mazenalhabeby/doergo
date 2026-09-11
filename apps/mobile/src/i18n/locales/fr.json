@@ -2225,5 +2225,63 @@
     "mine": "Documents que j’ai envoyés",
     "withdrawn": "Retiré",
     "aPage": "Une page"
+  },
+  "perm": {
+    "p": {
+      "readHere": "Lu sur ce téléphone — l’image n’en sort jamais",
+      "textStaysHere": "Lu sur ce téléphone — le texte n’en sort jamais",
+      "deletedAfterReading": "La photo est supprimée dès qu’elle a été lue",
+      "youCheckFirst": "Vous vérifiez chaque champ avant tout enregistrement",
+      "sentWithIt": "La photo est envoyée avec, pour que le bureau vérifie",
+      "nothingCreatedYet": "Rien n’est créé tant que personne n’a confirmé",
+      "yourFileOnly": "Elle va dans votre propre dossier, celui de personne d’autre",
+      "onTheJob": "Elle est jointe à cette intervention, visible par votre équipe",
+      "youCanRemove": "Vous pouvez la retirer ensuite"
+    },
+    "card": {
+      "title": "Scanner une carte de visite",
+      "sub": "Visez une carte et les coordonnées du client se remplissent seules.",
+      "cancel": "Saisir les informations à la main"
+    },
+    "receipt": {
+      "title": "Photographier le reçu",
+      "sub": "Visez le ticket et le montant, la date et le commerce se remplissent seuls.",
+      "cancel": "Saisir à la main"
+    },
+    "doc": {
+      "title": "Photographier le document",
+      "sub": "Visez la page et l’application détermine ce que c’est.",
+      "cancel": "Saisir à la main"
+    },
+    "contract": {
+      "title": "Photographier le contrat",
+      "sub": "Visez le contrat et l’immatriculation, la marque et les dates se remplissent seules.",
+      "cancel": "Saisir à la main"
+    },
+    "id": {
+      "title": "Photographier le document",
+      "sub": "Permis, passeport ou attestation — les dates sont lues pour vous.",
+      "cancel": "Choisir un fichier"
+    },
+    "task": {
+      "title": "Ajouter une photo à l’intervention",
+      "sub": "Montrez ce que vous avez trouvé, ou réparé."
+    },
+    "issue": {
+      "title": "Montrez le problème",
+      "sub": "Une photo atteint plus vite la personne qui peut agir qu’une description."
+    },
+    "worklog": {
+      "title": "Ajouter une photo à votre journée",
+      "sub": "Une note avec photo vaut davantage en fin de mois."
+    },
+    "avatar": {
+      "title": "Choisir une photo de profil",
+      "sub": "Pour que vos collègues sachent qui est qui."
+    },
+    "allow": "Autoriser la caméra",
+    "openSettings": "Ouvrir les réglages",
+    "blocked": "L’accès à la caméra est désactivé pour cette application.",
+    "blockedLibrary": "L’accès aux photos est désactivé pour cette application."
   }
 }

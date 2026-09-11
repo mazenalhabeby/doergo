@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Image, Dimensions,
 } from 'react-native';
-import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { CameraView, type BarcodeScanningResult } from 'expo-camera';
 import { File as FsFile } from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { PressableScale } from './pressable-scale';
+import { useCameraAccess } from '../permissions/use-media-access';
+import { MediaAccessScreen } from '../permissions/media-access-screen';
 import { scanAspect, frameToImageCrop, type ScanShape, type Rect } from '@hbcfield/shared/client';
 
 /**
@@ -117,7 +119,7 @@ export function DocumentScanner({
   const { colors } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = useCameraPermissions();
+  const cam = useCameraAccess();
   const camera = useRef<CameraView>(null);
 
   const [side, setSide] = useState<'front' | 'back'>('front');
@@ -223,24 +225,30 @@ export function DocumentScanner({
 
   if (!visible) return null;
 
-  // ── Permission ────────────────────────────────────────────────────────────
-  if (permission && !permission.granted) {
+  /*
+    ── Permission ────────────────────────────────────────────────────────────
+
+    ⚠️ This read `if (permission && !permission.granted)`, and `permission` is
+    NULL until the first check resolves — so on every first render the condition
+    was false and the code fell straight through to <CameraView>. The camera was
+    mounted before anybody knew whether it was allowed.
+
+    `cam.granted` is false for null as well as for a refusal, so the gate now
+    holds while the answer is still unknown, which is the only safe default.
+    `useCameraAccess` also re-reads on focus, so a permission revoked in
+    Settings is noticed on the way back instead of being trusted until restart.
+  */
+  if (!cam.granted) {
+    /*
+      The same screen every other scanner shows. This had its own Modal with a
+      camera glyph and two lines of text — a second visual language for one
+      question, and the only one of the five that did not say what the photo
+      was for.
+    */
     return (
       <Modal visible transparent={false} animationType="slide" onRequestClose={onCancel}>
-        <View style={[s.permission, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-          <Ionicons name="camera-outline" size={48} color={colors.textSecondary} />
-          <Text style={[s.permissionTitle, { color: colors.textPrimary }]}>
-            {t('documents.scanner.cameraNeeded')}
-          </Text>
-          <Text style={[s.permissionBody, { color: colors.textSecondary }]}>
-            {t('documents.scanner.cameraWhy')}
-          </Text>
-          <PressableScale onPress={requestPermission} style={[s.primary, { backgroundColor: COLORS.primary }]}>
-            <Text style={s.primaryText}>{t('documents.scanner.allowCamera')}</Text>
-          </PressableScale>
-          <Pressable onPress={onCancel} hitSlop={10}>
-            <Text style={[s.link, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
-          </Pressable>
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+          <MediaAccessScreen purpose="id-document" access={cam} onCancel={onCancel} />
         </View>
       </Modal>
     );

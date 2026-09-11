@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -11,7 +11,8 @@ import { File as FsFile } from 'expo-file-system';
 
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { CameraPermissionScreen } from '../../src/components/scan/camera-permission-screen';
+import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
+import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanContracts, scanContract } from '../../src/lib/receipt-scan';
 import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '../../src/lib/api';
 import { classifyDocument, type DocumentClassification } from '@hbcfield/shared/client';
@@ -46,7 +47,7 @@ export default function SendDocumentScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = useCameraPermissions();
+  const cam = useCameraAccess();
   const camera = useRef<CameraView>(null);
 
   const [stage, setStage] = useState<Stage>('camera');
@@ -149,15 +150,13 @@ export default function SendDocumentScreen() {
   }, [named, shot, fields, verdict, discardShot, t, toast]);
 
   // ── Camera permission ─────────────────────────────────────────────────────
-  if (stage === 'camera' && !permission?.granted) {
+  if (stage === 'camera' && !cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
         <Header colors={colors} title={t('sendDoc.title', 'Send a document')} />
-        <CameraPermissionScreen
-          canAskAgain={permission?.canAskAgain !== false}
-          onAllow={requestPermission}
-          // Not a dead end: typing what the paper says is the whole errand minus
-          // the convenience.
+        <MediaAccessScreen
+          purpose="document"
+          access={cam}
           onCancel={() => setStage('review')}
         />
       </SafeAreaView>

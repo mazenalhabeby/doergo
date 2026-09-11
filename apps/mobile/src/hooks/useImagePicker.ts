@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { Alert, Linking } from 'react-native';
+import { requestMediaAccess } from '../permissions/media-access-host';
+import type { MediaPurpose } from '../permissions/purposes';
 
 export interface PickedImage {
   uri: string;
@@ -26,29 +27,28 @@ function assetToPickedImage(asset: ImagePicker.ImagePickerAsset): PickedImage {
 export function useImagePicker() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  const requestPermission = useCallback(async (type: 'camera' | 'library') => {
-    const request = type === 'camera'
-      ? ImagePicker.requestCameraPermissionsAsync
-      : ImagePicker.requestMediaLibraryPermissionsAsync;
+  /*
+    ⚠️ This was a hard-coded English `Alert.alert` in an app that ships five
+    languages, and it said "allow it in settings" the FIRST time somebody
+    declined — when simply asking again would have worked. It also made no case
+    at all for why the camera was wanted.
 
-    const { status } = await request();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        `Please allow ${type === 'camera' ? 'camera' : 'photo library'} access in settings.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => Linking.openSettings() },
-        ],
-      );
-      return false;
-    }
-    return true;
-  }, []);
+    `requestMediaAccess` asks properly: it reads the CURRENT status first, asks
+    only when asking can still succeed, and explains the purpose in the person's
+    own language before sending anybody to Settings.
+  */
+  const requestPermission = useCallback(
+    (type: 'camera' | 'library', purpose: MediaPurpose) => requestMediaAccess(type, purpose),
+    [],
+  );
 
-  const pickFromGallery = useCallback(async (): Promise<PickedImage[]> => {
+  const pickFromGallery = useCallback(async (
+    /* What the picture is FOR. Drives the wording of the permission sheet, so
+       a profile picture is not explained as a job photo. */
+    purpose: MediaPurpose = 'task-photo',
+  ): Promise<PickedImage[]> => {
     if (isPickerOpen) return [];
-    const hasPermission = await requestPermission('library');
+    const hasPermission = await requestPermission('library', purpose);
     if (!hasPermission) return [];
 
     setIsPickerOpen(true);
@@ -67,9 +67,11 @@ export function useImagePicker() {
     }
   }, [isPickerOpen, requestPermission]);
 
-  const takePhoto = useCallback(async (): Promise<PickedImage | null> => {
+  const takePhoto = useCallback(async (
+    purpose: MediaPurpose = 'task-photo',
+  ): Promise<PickedImage | null> => {
     if (isPickerOpen) return null;
-    const hasPermission = await requestPermission('camera');
+    const hasPermission = await requestPermission('camera', purpose);
     if (!hasPermission) return null;
 
     setIsPickerOpen(true);

@@ -107,7 +107,7 @@ export function SupplyDocumentSheet({
    * and it is the one that produces a straight, complete image.
    */
   const pickExisting = async () => {
-    const fromGallery = await pickFromGallery();
+    const fromGallery = await pickFromGallery('id-document');
     const first = Array.isArray(fromGallery) ? fromGallery[0] : fromGallery;
     if (!first) return;
 

@@ -2225,5 +2225,63 @@
     "mine": "Documentos que he enviado",
     "withdrawn": "Retirado",
     "aPage": "Una página"
+  },
+  "perm": {
+    "p": {
+      "readHere": "Se lee en este teléfono: la imagen no sale de aquí",
+      "textStaysHere": "Se lee en este teléfono: el texto no sale de aquí",
+      "deletedAfterReading": "La foto se borra en cuanto se ha leído",
+      "youCheckFirst": "Compruebas cada campo antes de guardar nada",
+      "sentWithIt": "La foto se envía con ello, para que la oficina lo compruebe",
+      "nothingCreatedYet": "No se crea nada hasta que alguien lo confirma",
+      "yourFileOnly": "Va a tu propio expediente, al de nadie más",
+      "onTheJob": "Queda en este trabajo, donde tu equipo lo ve",
+      "youCanRemove": "Puedes quitarla después"
+    },
+    "card": {
+      "title": "Escanear una tarjeta",
+      "sub": "Apunta la cámara a la tarjeta y los datos del cliente se rellenan solos.",
+      "cancel": "Escribir los datos a mano"
+    },
+    "receipt": {
+      "title": "Fotografiar el recibo",
+      "sub": "Apunta la cámara al ticket y el importe, la fecha y la tienda se rellenan solos.",
+      "cancel": "Escribirlo a mano"
+    },
+    "doc": {
+      "title": "Fotografiar el documento",
+      "sub": "Apunta la cámara a la página y averigua qué es.",
+      "cancel": "Escribirlo a mano"
+    },
+    "contract": {
+      "title": "Fotografiar el contrato",
+      "sub": "Apunta la cámara al contrato y la matrícula, la marca y las fechas se rellenan solas.",
+      "cancel": "Escribirlo a mano"
+    },
+    "id": {
+      "title": "Fotografiar el documento",
+      "sub": "Tu carné, pasaporte o certificado: las fechas se leen por ti.",
+      "cancel": "Elegir un archivo"
+    },
+    "task": {
+      "title": "Añadir una foto al trabajo",
+      "sub": "Muestra lo que encontraste, o lo que arreglaste."
+    },
+    "issue": {
+      "title": "Muestra el problema",
+      "sub": "Una foto llega a quien puede actuar antes que una descripción."
+    },
+    "worklog": {
+      "title": "Añadir una foto a tu día",
+      "sub": "Una nota con foto vale más a final de mes."
+    },
+    "avatar": {
+      "title": "Elegir foto de perfil",
+      "sub": "Para que tus compañeros sepan quién es quién."
+    },
+    "allow": "Permitir la cámara",
+    "openSettings": "Abrir ajustes",
+    "blocked": "El acceso a la cámara está desactivado para esta app.",
+    "blockedLibrary": "El acceso a las fotos está desactivado para esta app."
   }
 }
