@@ -175,6 +175,25 @@ describe('DocumentsService — reading before filing', () => {
     expect(r.fields).toBeNull();
   });
 
+  it('refuses a PDF deliberately, without pretending it is a picture', async () => {
+    /*
+      ⚠️ The type came back from the object store and was thrown away, then
+      replaced with a hard-coded 'image/jpeg' at the read — so a staged PDF was
+      handed to sharp as a JPEG, which threw, which was caught and logged. The
+      right ANSWER, reached by way of an exception and a warning line for every
+      PDF anybody uploaded.
+
+      It is not a dead end for the member: the browser reads a PDF's text layer
+      before it uploads, and this NOTHING is what lets that reading stand rather
+      than being overwritten by a worse one.
+    */
+    store.head.mockResolvedValue({ exists: true, sizeBytes: 100, contentType: 'application/pdf' });
+    const r = await service.readOwnUpload({ actor: actor(), stagingKey: OWN_KEY });
+
+    expect(r).toEqual({ source: 'NOTHING', expiresOn: null, fields: null, verdict: null });
+    expect(ocr.read).not.toHaveBeenCalled();
+  });
+
   it('says plainly when it read nothing at all', async () => {
     // The common case for a gas certificate photographed at an angle. Silence
     // dressed up as success would leave somebody staring at an empty field

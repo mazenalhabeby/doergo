@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Upload, Loader2, FileText, AlertTriangle, ShieldCheck, CalendarDays, Pencil } from "lucide-react"
-import { expiryPrompt, expiryReady, formatCalendarDate } from "@hbcfield/shared/client"
+import { expiryPrompt, expiryReady, formatCalendarDate, suggestExpiry } from "@hbcfield/shared/client"
 import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -124,6 +124,39 @@ export function SupplyDocumentDialog({
 
     setReading(true)
     try {
+      /*
+        A PDF is read HERE, and it is the only way it can be read at all.
+
+        ⚠️ The server's OCR refuses anything that is not an image — rasterising
+        a PDF needs a renderer auth-service does not have — so every certificate
+        that arrives as a PDF, which is most of the ones that arrive by email,
+        came back "nothing readable" and the member typed the date off a file
+        they were looking at.
+
+        The product could already do this. `extractPdfText` has been reading
+        dropped PDFs on the office's batch screen for months; it just lived one
+        directory out of reach of this dialog. And the text LAYER beats OCR
+        outright — it is the characters the document was written with, not a
+        guess at their shape — so where a PDF has one, this is the best reading
+        available anywhere in the product.
+
+        The file is already in the browser, so it costs no upload and answers
+        before the upload the member is sending anyway has finished.
+      */
+      if (picked.type === "application/pdf") {
+        // pdf.js is ~1MB — fetched the first time somebody actually hands over
+        // a PDF, never as a tax on opening the dialog.
+        const { extractPdfText } = await import("@/lib/pdf-text")
+        const text = await extractPdfText(picked).catch(() => "")
+        // The same rule the server runs on an image and the phone runs on a
+        // photograph. One set of rules, three places they can run.
+        const found = text ? suggestExpiry(text) : null
+        if (found) {
+          setDateSource("TEXT")
+          setExpiresOn(found.iso)
+        }
+      }
+
       const presigned = await documentsApi.ownUploadUrl({
         typeId: type.id,
         mimeType: picked.type || "application/pdf",
@@ -134,11 +167,24 @@ export function SupplyDocumentDialog({
       setStaged(presigned.key)
 
       const read = await documentsApi.readOwnUpload(presigned.key)
-      setDateSource(read?.source ?? "NOTHING")
-      if (read?.expiresOn) setExpiresOn(read.expiresOn)
+      /*
+        The server's answer wins where it HAS one — a zone expiry carries a
+        check digit and a text layer does not. Where it found nothing, what was
+        read here is kept rather than wiped back to "nothing readable": losing a
+        date already on screen because a second, weaker reader missed it would
+        be the worst of both.
+      */
+      if (read?.expiresOn) {
+        setDateSource(read.source ?? "TEXT")
+        setExpiresOn(read.expiresOn)
+      } else {
+        setDateSource((prev) => (prev === "TEXT" ? prev : read?.source ?? "NOTHING"))
+      }
     } catch {
       // A failed read is not a failed upload: they can still type the date.
-      setDateSource("NOTHING")
+      // ⚠️ Only when nothing was read here either — an upload can fail long
+      // after a perfectly good text-layer read.
+      setDateSource((prev) => (prev === "TEXT" ? prev : "NOTHING"))
     } finally {
       setReading(false)
       setProgress(0)

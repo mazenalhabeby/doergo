@@ -154,7 +154,7 @@ export default function IssueDocumentsPage() {
       before any of this existed.
     */
     void (async () => {
-      const { extractPdfText, mapWithLimit } = await import("./_lib/pdf-text")
+      const { extractPdfText, mapWithLimit } = await import("@/lib/pdf-text")
       await mapWithLimit(toScan, 3, async ({ file, i }) => {
         let refined: FileMatch | null = null
         try {

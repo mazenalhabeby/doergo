@@ -71,10 +71,26 @@ describe('the native card reader is never imported at module scope', () => {
   });
 
   it('binds through the OPTIONAL native API, which answers null instead of throwing', () => {
-    const code = stripComments(fs.readFileSync(path.join(MOBILE, 'src/lib/card-scan.ts'), 'utf8'));
+    const code = stripComments(fs.readFileSync(path.join(MOBILE, 'src/lib/ocr.ts'), 'utf8'));
     expect(code).toContain('requireOptionalNativeModule');
     // The throwing form must never appear here.
     expect(code).not.toMatch(/requireNativeModule\s*</);
+  });
+
+  it('binds in exactly ONE file', () => {
+    /*
+      It was three. `card-scan.ts` and `receipt-scan.ts` each carried their own
+      binding and capability cache, identical down to the comments — three
+      chances to get wrong the one thing that crashes a screen for every
+      existing user over the air, and three places to fix it when it is.
+
+      The rule did not change when it moved; its home did. A second binding
+      appearing anywhere is the drift this catches.
+    */
+    const binders = files
+      .filter((f) => stripComments(fs.readFileSync(f, 'utf8')).includes('requireOptionalNativeModule'))
+      .map((f) => path.relative(MOBILE, f));
+    expect(binders).toEqual(['src/lib/ocr.ts']);
   });
 
   it('reports "cannot scan" rather than throwing when the module is absent', () => {
@@ -122,8 +138,9 @@ describe('the scanner keeps the card on the phone', () => {
   it('asks the native module its capability once, not on every render', () => {
     // `isSupported()` crosses the bridge and this is called from a list
     // screen's render path; the answer cannot change mid-session.
-    expect(lib).toMatch(/let supported: boolean \| null = null/);
-    expect(lib).toMatch(/if \(supported !== null\) return supported/);
+    const reader = stripComments(fs.readFileSync(path.join(MOBILE, 'src/lib/ocr.ts'), 'utf8'));
+    expect(reader).toMatch(/let supported: boolean \| null = null/);
+    expect(reader).toMatch(/if \(supported !== null\) return supported/);
   });
 
   it('refuses the screen to anyone who may not add a client', () => {

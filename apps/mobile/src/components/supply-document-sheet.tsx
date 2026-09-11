@@ -12,6 +12,8 @@ import { documentsApi, type DocumentType } from '../lib/api/documents';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { documentTypeIcon } from '../lib/document-icons';
+import { canReadText } from '../lib/ocr';
+import { readExpiryOnDevice } from '../lib/document-scan';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { PressableScale } from './pressable-scale';
@@ -181,6 +183,32 @@ export function SupplyDocumentSheet({
     ) => {
       setReading(true);
       try {
+        /*
+          READ IT HERE FIRST, before a single byte goes anywhere.
+
+          ⚠️ This flow used to upload the photograph and ask the SERVER what was
+          on it — tesseract, over the wire, after the upload finished — while
+          ML Kit sat unused in the member's pocket, already reading business
+          cards, fuel receipts and rental agreements in this same app. A member
+          on a yard's worth of signal watched a spinner for the length of an
+          upload to learn a date their phone could have read instantly.
+
+          On-device is better on every axis that matters here: it is immediate,
+          it works with one bar, it costs nothing per document, and ML Kit reads
+          a photographed page more accurately than tesseract does.
+
+          ⚠️ IT DOES NOT REPLACE THE SERVER READ, and must not. The zone's check
+          digits, and whether the name on the document is the member's, are
+          EVIDENCE — and a client's own reading of its own document is not
+          evidence. The phone fills the field; the server still decides the
+          verdict, on bytes it fetched itself.
+        */
+        const onDevice = canReadText() ? await readExpiryOnDevice(picked.uri) : null;
+        if (onDevice) {
+          setDateSource('TEXT');
+          setExpiresOn(new Date(onDevice));
+        }
+
         const put = async (uri: string, sizeBytes: number) => {
           const p = await documentsApi.ownUploadUrl({
             typeId: forType.id,
@@ -212,12 +240,27 @@ export function SupplyDocumentSheet({
           crop,
           backKey ? { stagingKey: backKey, crop: back?.crop ?? null } : null,
         );
-        setDateSource(read.source);
-        if (read.expiresOn) setExpiresOn(new Date(read.expiresOn));
+        /*
+          The server's answer wins where it HAS one.
+
+          A zone expiry is proved by a check digit and the phone's reading of
+          printed text is not, so MRZ must overrule it. Where the server found
+          nothing, what the phone read is kept rather than being wiped back to
+          "nothing readable" — losing a date already on screen because a second,
+          weaker reader missed it would be the worst of both.
+        */
+        if (read.expiresOn) {
+          setDateSource(read.source);
+          setExpiresOn(new Date(read.expiresOn));
+        } else if (!onDevice) {
+          setDateSource(read.source);
+        }
       } catch {
         // A failed read is not a failed upload attempt: the member can still
         // type the date and send it. Silence beats an error about OCR.
-        setDateSource('NOTHING');
+        // ⚠️ Only when the phone found nothing either — the upload can fail
+        // long after a perfectly good on-device read.
+        setDateSource((prev) => (prev === 'TEXT' ? prev : 'NOTHING'));
       } finally {
         setReading(false);
       }

@@ -1548,7 +1548,7 @@ export class DocumentsService {
     stagingKey: string,
     userId: string,
     crop?: Rect | null,
-  ): Promise<Buffer> {
+  ): Promise<{ bytes: Buffer; mimeType: string }> {
     this.assertStagingKey(stagingKey, this.ownStagingPrefix(organizationId, userId));
     const store = this.requireStore();
     const head = await this.withStorage('checking an upload', () => store.head(stagingKey));
@@ -1556,7 +1556,22 @@ export class DocumentsService {
       throw new BadRequestException('The upload did not complete — please try again');
     }
     const raw = await this.withStorage('reading an upload', () => store.get(stagingKey));
-    return this.applyCrop(raw, crop);
+    const bytes = await this.applyCrop(raw, crop);
+    /*
+      ⚠️ The type CAME BACK WITH THE OBJECT and was being thrown away, then
+      replaced with a hard-coded 'image/jpeg' at the read. A staged PDF was
+      therefore handed to sharp as a JPEG, which threw, which was caught and
+      logged as a failed read — the right ANSWER by way of an exception and a
+      warning line per upload. Saying "this is a PDF" up front makes the refusal
+      deliberate, and is what lets the caller explain itself.
+
+      `applyCrop` returns the buffer UNCHANGED when there is no usable crop, and
+      a new one when it cropped — which it can only have done to an image. So an
+      identity check is what tells the two apart, and a PDF (which the crop
+      silently declines) keeps the type it arrived with.
+    */
+    const mimeType = bytes !== raw ? 'image/jpeg' : head.contentType ?? 'application/octet-stream';
+    return { bytes, mimeType };
   }
 
   /**
@@ -1594,8 +1609,24 @@ export class DocumentsService {
       ? await this.peekStaged(organizationId, data.backStagingKey, userId, data.backCrop)
       : null;
 
+    /*
+      A PDF cannot be read here, and the honest thing is to say so rather than
+      to fail at it.
+
+      Rasterising needs a renderer this service does not have — `pdf-lib`
+      manipulates PDFs, it does not draw them. ⚠️ Which is NOT the end of the
+      story for the member: the browser reads a PDF's TEXT LAYER before it
+      uploads (`src/lib/pdf-text.ts`), and a text layer is the characters the
+      document was written with rather than a guess at their shape, so it beats
+      anything OCR could return. This answer is what lets that reading stand
+      instead of being overwritten with a worse one.
+    */
+    if (!front.mimeType.startsWith('image/')) {
+      return { source: 'NOTHING' as const, expiresOn: null, fields: null, verdict: null };
+    }
+
     // Read the two sides together. On an ID card the zone is only on the back.
-    const bytes = await this.composeSides(front, back);
+    const bytes = await this.composeSides(front.bytes, back?.bytes ?? null);
     const text = await this.ocr.read(bytes, 'image/jpeg');
 
     if (!text) {

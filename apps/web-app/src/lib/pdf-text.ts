@@ -16,6 +16,13 @@
  * set by hand, and the server re-validates the period it is finally sent
  * (`periodIsValid`). A browser that extracted nonsense produces a row somebody
  * corrects, never a document filed wrongly.
+ *
+ * ⚠️ It lived under `documents/_lib/` and was used by ONE screen, while the
+ * member's own supply dialog — the other place in the product where somebody
+ * hands over a PDF — asked the server to read it and was told nothing, because
+ * the server's OCR cannot rasterise a PDF and never will without a renderer it
+ * does not have. The capability existed and was one directory out of reach. It
+ * is in `src/lib` now because two route trees read PDFs, not one.
  */
 
 /** How much of a document is worth reading. */
