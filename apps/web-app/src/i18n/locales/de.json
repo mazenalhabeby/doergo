@@ -7623,6 +7623,11 @@
         "blank": {
           "name": "Leer beginnen",
           "description": "Eine leere Seite, wenn Sie eigenen Text einfügen."
+        },
+        "invitation_letter": {
+          "name": "Einladungsschreiben",
+          "description": "Für eine Person, die zu einem Projekt im Ausland reist — mit Reisepassnummer und Einsatzort.",
+          "body": "Sehr geehrte Damen und Herren,\n\n{{org.legalName}}, {{org.address}}, möchte {{member.fullName}}, Inhaber der Reisepassnummer {{member.passportNumber}}, einladen, bei einem bevorstehenden Projekt für uns mitzuwirken.\n\nAls Fachkraft im Bereich {{member.specialty}} möchten wir die Person auf unserem Projekt bei {{contract.siteName}}, {{contract.siteAddress}}, einsetzen.\n\nDarüber hinaus wird {{member.fullName}} von unseren Mitarbeitern an den dort eingesetzten Maschinen und Anlagen geschult und eingewiesen, zur Vorbereitung auf künftige Einsätze in unseren Projekten.\n\nDer Einsatzzeitraum läuft von {{contract.startDate}} bis {{contract.endDate}}, im Rotationsprinzip von {{contract.rotation}}, und kann im gegenseitigen Einvernehmen um weitere Rotationszyklen verlängert werden.\n\nWir ersuchen, {{member.fullName}} auf Grundlage des gültigen Visums und dieses Schreibens einreisen zu lassen.\n\nVielen Dank für Ihre Unterstützung und Zusammenarbeit.\n\nMit freundlichen Grüßen\n\n{{issuer.fullName}}\n{{issuer.jobTitle}}, {{org.legalName}}\n\nAusgestellt am {{contract.issuedOn}}. {{org.email}} · {{org.phone}}"
         }
       },
       "fieldLabels": {
@@ -7632,7 +7637,9 @@
           "lastName": "Nachname",
           "email": "E-Mail",
           "jobTitle": "Position",
-          "specialty": "Fachgebiet"
+          "specialty": "Fachgebiet",
+          "passportNumber": "Pass-/Ausweisnummer",
+          "nationality": "Staatsangehörigkeit"
         },
         "org": {
           "legalName": "Unternehmen",
@@ -7648,7 +7655,15 @@
         "contract": {
           "startDate": "Eintrittsdatum",
           "weeklyHours": "Wochenstunden",
-          "issuedOn": "Ausstellungsdatum"
+          "issuedOn": "Ausstellungsdatum",
+          "endDate": "Enddatum",
+          "siteName": "Einsatzort / Projekt",
+          "siteAddress": "Adresse des Einsatzorts",
+          "rotation": "Rotation"
+        },
+        "issuer": {
+          "fullName": "Unterzeichnet von",
+          "jobTitle": "Unterzeichnet von — Funktion"
         }
       },
       "alreadyCovered": "Alle Betroffenen erhalten bereits eine genauere Vorlage: {{templates}}. Grenzen Sie diese ein oder bearbeiten Sie stattdessen jene.",
@@ -7820,6 +7835,10 @@
         "id_card": {
           "label": "Personalausweis",
           "description": "Amtlicher Lichtbildausweis. Identität und Arbeitsberechtigung, mit Ablaufdatum."
+        },
+        "invitation_letter": {
+          "label": "Einladungsschreiben",
+          "description": "Ausgestellt für eine Person, die zu einem Projekt ins Ausland reist, zur Vorlage an der Grenze."
         }
       },
       "stepRequired": "Wird es verlangt?",

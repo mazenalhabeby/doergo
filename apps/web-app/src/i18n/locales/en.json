@@ -7623,6 +7623,11 @@
         "blank": {
           "name": "Start from nothing",
           "description": "An empty page, if you are pasting in your own wording."
+        },
+        "invitation_letter": {
+          "name": "Invitation letter",
+          "description": "For a member travelling to a project abroad — carries their passport number and the site.",
+          "body": "To whom it may concern,\n\n{{org.legalName}}, {{org.address}}, wishes to invite {{member.fullName}}, holder of passport number {{member.passportNumber}}, to assist on an upcoming project for us.\n\nAs a skilled professional in {{member.specialty}}, we would like to deploy them on our project at {{contract.siteName}}, {{contract.siteAddress}}.\n\nIn addition, {{member.fullName}} will be trained and instructed by our staff on the machinery and equipment used there, in preparation for future assignments on our projects.\n\nThe assignment period runs from {{contract.startDate}} through {{contract.endDate}}, on a rotational basis of {{contract.rotation}}, and may be extended by mutual agreement for subsequent rotation cycles.\n\nPlease allow {{member.fullName}} to enter on the basis of their valid visa and this letter.\n\nThank you for your support and collaboration.\n\nSincerely,\n\n{{issuer.fullName}}\n{{issuer.jobTitle}}, {{org.legalName}}\n\nIssued on {{contract.issuedOn}}. {{org.email}} · {{org.phone}}"
         }
       },
       "fieldLabels": {
@@ -7632,7 +7637,9 @@
           "lastName": "Last name",
           "email": "Email",
           "jobTitle": "Job title",
-          "specialty": "Specialty"
+          "specialty": "Specialty",
+          "passportNumber": "Passport / ID number",
+          "nationality": "Nationality"
         },
         "org": {
           "legalName": "Company",
@@ -7648,7 +7655,15 @@
         "contract": {
           "startDate": "Start date",
           "weeklyHours": "Weekly hours",
-          "issuedOn": "Issue date"
+          "issuedOn": "Issue date",
+          "endDate": "End date",
+          "siteName": "Site / project",
+          "siteAddress": "Site address",
+          "rotation": "Rotation"
+        },
+        "issuer": {
+          "fullName": "Signed by",
+          "jobTitle": "Signed by — title"
         }
       },
       "alreadyCovered": "Everyone it would cover already gets a more specific template: {{templates}}. Narrow this one, or edit that one instead.",
@@ -7820,6 +7835,10 @@
         "id_card": {
           "label": "ID card",
           "description": "A national identity card. Identity and right to work, and it expires."
+        },
+        "invitation_letter": {
+          "label": "Invitation letter",
+          "description": "Issued to a member travelling to a project abroad, to be shown at a border."
         }
       },
       "stepRequired": "Do you require it?",

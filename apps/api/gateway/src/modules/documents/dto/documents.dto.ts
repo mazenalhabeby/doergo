@@ -722,6 +722,36 @@ export class IssueFromTemplateDto {
   @Min(0)
   @Max(168)
   weeklyHours?: number;
+
+  /*
+    Terms an assignment carries that a member record does not.
+
+    Bounded lengths because every one of these is printed verbatim into a PDF
+    that somebody presents at a border: a field with no ceiling is a field that
+    can push the signature block onto a third page.
+  */
+  @ApiPropertyOptional({ example: '2026-12-11' })
+  @IsOptional()
+  @IsISO8601()
+  endDate?: string;
+
+  @ApiPropertyOptional({ example: 'Binderholz Enfield LLC' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 200)
+  siteName?: string;
+
+  @ApiPropertyOptional({ example: '260 Piper Lane, Enfield, NC 27823' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  siteAddress?: string;
+
+  @ApiPropertyOptional({ example: 'three (3) months on assignment followed by two (2) weeks at home' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  rotation?: string;
 }
 
 export class SignDocumentDto {

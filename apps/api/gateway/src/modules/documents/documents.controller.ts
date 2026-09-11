@@ -460,7 +460,14 @@ export class DocumentsController {
       actor: documentActor(user),
       userId: body.userId,
       templateId: body.templateId,
-      contract: { startDate: body.startDate, weeklyHours: body.weeklyHours },
+      contract: {
+        startDate: body.startDate,
+        weeklyHours: body.weeklyHours,
+        endDate: body.endDate,
+        siteName: body.siteName,
+        siteAddress: body.siteAddress,
+        rotation: body.rotation,
+      },
       ctx: requestContext(req),
     });
   }

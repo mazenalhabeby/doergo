@@ -158,6 +158,43 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     ].join('\n'),
   },
   {
+    key: 'invitation_letter',
+    name: 'Invitation letter',
+    description: 'For a member travelling to a project abroad — carries their passport number and the site.',
+    /*
+      NOBODY SIGNS THIS, and that is not an omission.
+
+      It is addressed to a border officer, not to the member: there is no second
+      party to agree to anything, and asking the member to countersign their own
+      invitation would put a signature block on a document whose reader has no
+      idea what it means. It is issued, and it is handed over.
+    */
+    signatureMode: 'NONE',
+    suggestedTypeKey: 'invitation_letter',
+    body: [
+      'To whom it may concern,',
+      '',
+      '{{org.legalName}}, {{org.address}}, wishes to invite {{member.fullName}}, holder of passport number {{member.passportNumber}}, to assist on an upcoming project for us.',
+      '',
+      'As a skilled professional in {{member.specialty}}, we would like to deploy them on our project at {{contract.siteName}}, {{contract.siteAddress}}.',
+      '',
+      'In addition, {{member.fullName}} will be trained and instructed by our staff on the machinery and equipment used there, in preparation for future assignments on our projects.',
+      '',
+      'The assignment period runs from {{contract.startDate}} through {{contract.endDate}}, on a rotational basis of {{contract.rotation}}, and may be extended by mutual agreement for subsequent rotation cycles.',
+      '',
+      'Please allow {{member.fullName}} to enter on the basis of their valid visa and this letter.',
+      '',
+      'Thank you for your support and collaboration.',
+      '',
+      'Sincerely,',
+      '',
+      '{{issuer.fullName}}',
+      '{{issuer.jobTitle}}, {{org.legalName}}',
+      '',
+      'Issued on {{contract.issuedOn}}. {{org.email}} · {{org.phone}}',
+    ].join('\n'),
+  },
+  {
     key: 'blank',
     name: 'Start from nothing',
     description: 'An empty page, if you are pasting in your own wording.',

@@ -123,6 +123,31 @@ export const STARTER_DOCUMENT_TYPES: StarterDocumentType[] = [
     retentionMonths: YEARS(30),
   },
   {
+    key: 'invitation_letter',
+    label: 'Invitation letter',
+    description: 'Issued to a member travelling to a project abroad, to be shown at a border.',
+    cadence: 'ONE_OFF',
+    direction: 'ISSUED',
+    /*
+      Nobody signs it. It is addressed to a border officer rather than to the
+      member, so there is no second party to agree to anything — and a signature
+      block would invite whoever reads it to wonder what was agreed.
+    */
+    signatureMode: 'NONE',
+    isCredential: false,
+    /*
+      ⚠️ It DOES run out — the assignment period ends — but it is not a
+      credential and must never gate work. `isCredential` is what puts a type on
+      the compliance board and takes somebody off a job when it lapses; an
+      expired invitation letter means a trip is over, not that a technician may
+      not hold a spanner.
+    */
+    hasExpiry: false,
+    twoSided: false,
+    scanShape: 'CARD',
+    retentionMonths: YEARS(7),
+  },
+  {
     key: 'safety_briefing',
     label: 'Safety briefing',
     description: 'Read and confirmed rather than signed. Proof that it was received.',

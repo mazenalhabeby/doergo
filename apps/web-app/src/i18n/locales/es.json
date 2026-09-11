@@ -7623,6 +7623,11 @@
         "blank": {
           "name": "Empezar en blanco",
           "description": "Una página vacía, si vas a pegar tu propio texto."
+        },
+        "invitation_letter": {
+          "name": "Carta de invitación",
+          "description": "Para un miembro que viaja a un proyecto en el extranjero: incluye su pasaporte y el emplazamiento.",
+          "body": "A quien corresponda,\n\n{{org.legalName}}, {{org.address}}, desea invitar a {{member.fullName}}, titular del pasaporte número {{member.passportNumber}}, a colaborar en un próximo proyecto para nosotros.\n\nComo profesional cualificado en {{member.specialty}}, deseamos destinarle a nuestro proyecto en {{contract.siteName}}, {{contract.siteAddress}}.\n\nAdemás, {{member.fullName}} recibirá formación e instrucción por parte de nuestro personal sobre la maquinaria y los equipos utilizados allí, como preparación para futuras asignaciones en nuestros proyectos.\n\nEl periodo de asignación va del {{contract.startDate}} al {{contract.endDate}}, en régimen de rotación de {{contract.rotation}}, y podrá prorrogarse de mutuo acuerdo por ciclos de rotación posteriores.\n\nLe rogamos que permita la entrada de {{member.fullName}} en virtud de su visado válido y de la presente carta.\n\nGracias por su apoyo y colaboración.\n\nAtentamente,\n\n{{issuer.fullName}}\n{{issuer.jobTitle}}, {{org.legalName}}\n\nExpedida el {{contract.issuedOn}}. {{org.email}} · {{org.phone}}"
         }
       },
       "fieldLabels": {
@@ -7632,7 +7637,9 @@
           "lastName": "Apellidos",
           "email": "Correo",
           "jobTitle": "Puesto",
-          "specialty": "Especialidad"
+          "specialty": "Especialidad",
+          "passportNumber": "Número de pasaporte / DNI",
+          "nationality": "Nacionalidad"
         },
         "org": {
           "legalName": "Empresa",
@@ -7648,7 +7655,15 @@
         "contract": {
           "startDate": "Fecha de inicio",
           "weeklyHours": "Horas semanales",
-          "issuedOn": "Fecha de emisión"
+          "issuedOn": "Fecha de emisión",
+          "endDate": "Fecha de fin",
+          "siteName": "Emplazamiento / proyecto",
+          "siteAddress": "Dirección del emplazamiento",
+          "rotation": "Rotación"
+        },
+        "issuer": {
+          "fullName": "Firmado por",
+          "jobTitle": "Firmado por — cargo"
         }
       },
       "alreadyCovered": "Todas las personas que cubriría ya reciben una plantilla más específica: {{templates}}. Acota esta o edita aquella.",
@@ -7820,6 +7835,10 @@
         "id_card": {
           "label": "DNI",
           "description": "Documento nacional de identidad. Identidad y permiso de trabajo, y caduca."
+        },
+        "invitation_letter": {
+          "label": "Carta de invitación",
+          "description": "Emitida a un miembro que viaja a un proyecto en el extranjero, para presentar en la frontera."
         }
       },
       "stepRequired": "¿Lo exiges?",

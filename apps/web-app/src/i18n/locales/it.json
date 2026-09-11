@@ -7632,6 +7632,11 @@
         "blank": {
           "name": "Partire da zero",
           "description": "Una pagina vuota, se incolli un testo tuo."
+        },
+        "invitation_letter": {
+          "name": "Lettera di invito",
+          "description": "Per un membro in trasferta su un progetto all’estero — riporta il passaporto e il sito.",
+          "body": "A chi di competenza,\n\n{{org.legalName}}, {{org.address}}, desidera invitare {{member.fullName}}, titolare del passaporto numero {{member.passportNumber}}, a collaborare a un prossimo progetto per noi.\n\nIn quanto professionista qualificato nel settore {{member.specialty}}, desideriamo impiegarlo presso il nostro progetto a {{contract.siteName}}, {{contract.siteAddress}}.\n\nInoltre, {{member.fullName}} sarà formato e istruito dal nostro personale sui macchinari e sulle attrezzature ivi utilizzati, in preparazione di futuri incarichi nei nostri progetti.\n\nIl periodo di incarico va dal {{contract.startDate}} al {{contract.endDate}}, con rotazione di {{contract.rotation}}, e potrà essere prorogato di comune accordo per cicli di rotazione successivi.\n\nVi preghiamo di consentire l’ingresso di {{member.fullName}} sulla base del visto valido e della presente lettera.\n\nVi ringraziamo per il supporto e la collaborazione.\n\nCordiali saluti,\n\n{{issuer.fullName}}\n{{issuer.jobTitle}}, {{org.legalName}}\n\nRilasciata il {{contract.issuedOn}}. {{org.email}} · {{org.phone}}"
         }
       },
       "fieldLabels": {
@@ -7641,7 +7646,9 @@
           "lastName": "Cognome",
           "email": "E-mail",
           "jobTitle": "Mansione",
-          "specialty": "Specializzazione"
+          "specialty": "Specializzazione",
+          "passportNumber": "Numero di passaporto / documento",
+          "nationality": "Nazionalità"
         },
         "org": {
           "legalName": "Azienda",
@@ -7657,7 +7664,15 @@
         "contract": {
           "startDate": "Data di inizio",
           "weeklyHours": "Ore settimanali",
-          "issuedOn": "Data di emissione"
+          "issuedOn": "Data di emissione",
+          "endDate": "Data di fine",
+          "siteName": "Sito / progetto",
+          "siteAddress": "Indirizzo del sito",
+          "rotation": "Rotazione"
+        },
+        "issuer": {
+          "fullName": "Firmato da",
+          "jobTitle": "Firmato da — qualifica"
         }
       },
       "alreadyCovered": "Tutte le persone interessate ricevono già un modello più specifico: {{templates}}. Restringi questo, oppure modifica quello.",
@@ -7829,6 +7844,10 @@
         "id_card": {
           "label": "Carta d’identità",
           "description": "Documento nazionale d’identità. Identità e diritto al lavoro, con scadenza."
+        },
+        "invitation_letter": {
+          "label": "Lettera di invito",
+          "description": "Rilasciata a un membro in trasferta su un progetto all’estero, da esibire alla frontiera."
         }
       },
       "stepRequired": "È obbligatorio?",

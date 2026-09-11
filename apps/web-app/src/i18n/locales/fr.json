@@ -7632,6 +7632,11 @@
         "blank": {
           "name": "Partir de zéro",
           "description": "Une page vide, si vous collez votre propre texte."
+        },
+        "invitation_letter": {
+          "name": "Lettre d’invitation",
+          "description": "Pour un membre se rendant sur un projet à l’étranger — porte son passeport et le site.",
+          "body": "À qui de droit,\n\n{{org.legalName}}, {{org.address}}, souhaite inviter {{member.fullName}}, titulaire du passeport numéro {{member.passportNumber}}, à participer à un projet à venir pour notre compte.\n\nEn tant que professionnel qualifié dans le domaine {{member.specialty}}, nous souhaitons l’affecter à notre projet sur le site {{contract.siteName}}, {{contract.siteAddress}}.\n\nPar ailleurs, {{member.fullName}} sera formé et encadré par notre personnel sur les machines et équipements qui y sont utilisés, en préparation de futures affectations sur nos projets.\n\nLa période d’affectation court du {{contract.startDate}} au {{contract.endDate}}, selon une rotation de {{contract.rotation}}, et pourra être prolongée d’un commun accord pour des cycles ultérieurs.\n\nNous vous prions de bien vouloir autoriser {{member.fullName}} à entrer sur le territoire sur la base de son visa en cours de validité et de la présente lettre.\n\nNous vous remercions de votre soutien et de votre collaboration.\n\nVeuillez agréer nos salutations distinguées,\n\n{{issuer.fullName}}\n{{issuer.jobTitle}}, {{org.legalName}}\n\nDélivrée le {{contract.issuedOn}}. {{org.email}} · {{org.phone}}"
         }
       },
       "fieldLabels": {
@@ -7641,7 +7646,9 @@
           "lastName": "Nom",
           "email": "E-mail",
           "jobTitle": "Poste",
-          "specialty": "Spécialité"
+          "specialty": "Spécialité",
+          "passportNumber": "Numéro de passeport / pièce d’identité",
+          "nationality": "Nationalité"
         },
         "org": {
           "legalName": "Société",
@@ -7657,7 +7664,15 @@
         "contract": {
           "startDate": "Date d’entrée",
           "weeklyHours": "Heures hebdomadaires",
-          "issuedOn": "Date d’émission"
+          "issuedOn": "Date d’émission",
+          "endDate": "Date de fin",
+          "siteName": "Site / projet",
+          "siteAddress": "Adresse du site",
+          "rotation": "Rotation"
+        },
+        "issuer": {
+          "fullName": "Signé par",
+          "jobTitle": "Signé par — fonction"
         }
       },
       "alreadyCovered": "Toutes les personnes concernées reçoivent déjà un modèle plus précis : {{templates}}. Restreignez celui-ci, ou modifiez plutôt l’autre.",
@@ -7829,6 +7844,10 @@
         "id_card": {
           "label": "Carte d’identité",
           "description": "Carte nationale d’identité. Identité et droit de travailler, avec une date d’expiration."
+        },
+        "invitation_letter": {
+          "label": "Lettre d’invitation",
+          "description": "Délivrée à un membre se rendant sur un projet à l’étranger, à présenter à la frontière."
         }
       },
       "stepRequired": "Est-ce exigé ?",

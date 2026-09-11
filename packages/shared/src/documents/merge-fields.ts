@@ -13,7 +13,7 @@
  * token silently breaks every document that used it.
  */
 
-export type MergeNamespace = 'member' | 'org' | 'space' | 'contract';
+export type MergeNamespace = 'member' | 'org' | 'space' | 'contract' | 'issuer';
 
 export interface MergeFieldDef {
   /** The token as written in a template, without braces. */
@@ -35,6 +35,22 @@ export const MERGE_FIELDS: MergeFieldDef[] = [
   { token: 'member.email', namespace: 'member', label: 'Email', example: 'monika@example.com', required: false },
   { token: 'member.jobTitle', namespace: 'member', label: 'Job title', example: 'Field Technician', required: true },
   { token: 'member.specialty', namespace: 'member', label: 'Specialty', example: 'Electrical', required: false },
+  /*
+    Read off the passport the member already filed, never typed again.
+
+    An invitation letter has to carry a passport number, and typing it a second
+    time is how a letter goes to a border with a digit wrong. It comes from the
+    member's own ID document — scanned, checked against them, and VERIFIED —
+    which is the only copy of that number the organization should be quoting.
+
+    ⚠️ Optional, and that is not a softening. `missingRequired` checks EVERY
+    required field regardless of which template is being issued, so one required
+    token here would block every existing contract for anyone with no passport
+    on file. A template that actually uses it is refused by `renderTemplate`'s
+    own unfilled check, which is the precise behaviour.
+  */
+  { token: 'member.passportNumber', namespace: 'member', label: 'Passport / ID number', example: 'B0334448', required: false },
+  { token: 'member.nationality', namespace: 'member', label: 'Nationality', example: 'ECU', required: false },
 
   // ── The employer ─────────────────────────────────────────────────────────
   { token: 'org.legalName', namespace: 'org', label: 'Company name', example: 'HBC Group GmbH', required: true },
@@ -60,6 +76,31 @@ export const MERGE_FIELDS: MergeFieldDef[] = [
     required: false,
   },
   { token: 'contract.issuedOn', namespace: 'contract', label: 'Issue date', example: '28.08.2026', required: true },
+  /*
+    Where somebody is being sent, and until when.
+
+    Not `space.*`. A workspace is somewhere the organization runs; a deployment
+    site is wherever this assignment happens to be — a customer's plant in
+    another country, named once on one letter. Sourcing it from the member's
+    spaces would put whichever site the resolver picked first onto a document
+    somebody presents at a border.
+  */
+  { token: 'contract.endDate', namespace: 'contract', label: 'End date', example: '11.12.2026', required: false },
+  { token: 'contract.siteName', namespace: 'contract', label: 'Site / project', example: 'Binderholz Enfield LLC', required: false },
+  { token: 'contract.siteAddress', namespace: 'contract', label: 'Site address', example: '260 Piper Lane, Enfield, NC 27823', required: false },
+  { token: 'contract.rotation', namespace: 'contract', label: 'Rotation', example: 'three (3) months on assignment followed by two (2) weeks at home', required: false },
+
+  // ── Who signs it ─────────────────────────────────────────────────────────
+  /*
+    The person issuing, not the company.
+
+    A letter addressed "to whom it may concern" is signed by a named human with
+    a title, and that name was being typed into the body of every template —
+    so it went stale the day that person changed role, on a document already
+    issued to fifty people.
+  */
+  { token: 'issuer.fullName', namespace: 'issuer', label: 'Signed by', example: 'Andreas Holub', required: false },
+  { token: 'issuer.jobTitle', namespace: 'issuer', label: 'Signed by — title', example: 'CFO', required: false },
 ];
 
 const TOKEN_SET = new Set(MERGE_FIELDS.map((f) => f.token));

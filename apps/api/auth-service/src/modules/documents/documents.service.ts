@@ -796,7 +796,7 @@ export class DocumentsService {
     userId: string;
     templateId?: string;
     /** Terms that are not on the member record. */
-    contract?: { startDate?: string; weeklyHours?: number | string };
+    contract?: ContractTerms;
     ctx?: RequestContext;
   }) {
     this.assertCanIssue(data.actor);
@@ -840,7 +840,61 @@ export class DocumentsService {
     }
 
     const issuedAt = new Date();
-    const values = contractValues(member, data.contract, issuedAt);
+
+    /*
+      The passport number comes off the passport, and the signer off the person
+      signing.
+
+      ⚠️ Only from a VERIFIED identity document. A number read off a photograph
+      somebody uploaded an hour ago and nobody has looked at yet would go onto a
+      letter presented at a border with the organization's name on it — the one
+      place a misread digit is expensive. Until a reviewer has confirmed it, the
+      token stays empty and the issue is refused with the field named, which is
+      a person being told what to do rather than a wrong letter going out.
+
+      Newest first: a renewed passport supersedes the old one, and the old row
+      stays for history.
+    */
+    const identity = await this.prisma.document.findFirst({
+      where: {
+        userId: member.id,
+        organizationId: data.actor.organizationId,
+        /*
+          `documentNumber` IS the identity test, and a better one than the type.
+
+          It is only ever written by the scan, off a machine-readable zone or a
+          barcode — which a passport and an ID card have and a gas certificate
+          does not. Matching on the type's key instead would miss every
+          organization that renamed "Passport" to "Reisepass", which is most of
+          them.
+        */
+        documentNumber: { not: null },
+        verifiedAt: { not: null },
+        /*
+          ⚠️ SCOPED, like every other read of somebody else's document.
+
+          `document-scope-guard.spec.ts` caught this one on the way in, and it
+          was right to. `canIssueDocuments` says who may send a document out; it
+          does not say whose passport somebody may read. A clerk who issues
+          letters but is not granted the identity type would otherwise have that
+          member's passport number lifted onto a letter under their name —
+          reading, by way of a feature that does not look like reading.
+
+          Out of scope means the token stays empty and the issue is refused with
+          the field named, which is the same outcome as no passport on file.
+        */
+        ...typeScope(data.actor),
+      },
+      orderBy: { issuedAt: 'desc' },
+      select: { documentNumber: true, issuingState: true },
+    });
+
+    const issuer = await this.prisma.user.findFirst({
+      where: { id: data.actor.userId },
+      select: { firstName: true, lastName: true, position: true },
+    });
+
+    const values = contractValues(member, data.contract, issuedAt, { identity, issuer });
 
     const missing = missingRequired(values);
     if (missing.length > 0) {
@@ -5045,8 +5099,20 @@ function contractValues(
       email: string | null; phone: string | null;
     } | null;
   },
-  contract: { startDate?: string; weeklyHours?: number | string } | undefined,
+  contract: ContractTerms | undefined,
   issuedAt: Date,
+  /**
+   * What was read off the member's own ID document, and who is issuing.
+   *
+   * Both are LOOKED UP rather than typed. A passport number retyped into a
+   * letter is a letter that reaches a border with a digit wrong, and a signer's
+   * name typed into a template body goes stale the day that person changes
+   * role — on every document already issued from it.
+   */
+  extra?: {
+    identity?: { documentNumber: string | null; issuingState: string | null } | null;
+    issuer?: { firstName: string; lastName: string; position: string | null } | null;
+  },
 ): Record<string, string | number | null> {
   const org = member.organization;
   const address = [org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(' ')]
@@ -5072,10 +5138,30 @@ function contractValues(
     // one space, and picking arbitrarily would put the wrong site on a contract.
     'space.name': null,
     'space.address': null,
+    'member.passportNumber': extra?.identity?.documentNumber ?? null,
+    'member.nationality': extra?.identity?.issuingState ?? null,
     'contract.startDate': startDate,
     'contract.weeklyHours': contract?.weeklyHours ?? null,
     'contract.issuedOn': isoDate(issuedAt),
+    'contract.endDate': contract?.endDate ?? null,
+    'contract.siteName': contract?.siteName ?? null,
+    'contract.siteAddress': contract?.siteAddress ?? null,
+    'contract.rotation': contract?.rotation ?? null,
+    'issuer.fullName': extra?.issuer
+      ? `${extra.issuer.firstName} ${extra.issuer.lastName}`.trim()
+      : null,
+    'issuer.jobTitle': extra?.issuer?.position ?? null,
   };
+}
+
+/** Terms that are not on the member record and are supplied at issue time. */
+export interface ContractTerms {
+  startDate?: string;
+  weeklyHours?: number | string;
+  endDate?: string;
+  siteName?: string;
+  siteAddress?: string;
+  rotation?: string;
 }
 
 function isoDate(d: Date): string {
