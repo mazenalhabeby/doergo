@@ -179,3 +179,22 @@ export function getEndOfMonth(date: Date = new Date()): Date {
   d.setHours(23, 59, 59, 999);
   return d;
 }
+
+/**
+ * A calendar date, in the reader's own format, without moving it.
+ *
+ * ⚠️ `new Date('2030-12-31').toLocaleDateString()` PRINTS 30 DECEMBER anywhere
+ * west of Greenwich. The ISO short form is parsed as UTC midnight and then
+ * rendered in local time, so every `@db.Date` column — an expiry, a term end, a
+ * date of birth — reads a day early for a reader in New York and correctly for
+ * one in Vienna. A date with no time on it has no time zone to be converted
+ * between; building it from its parts keeps it the day it says it is.
+ *
+ * `undefined` locale on purpose: the reader's own, not a pinned one.
+ */
+export function formatCalendarDate(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return '-';
+  return new Date(y, m - 1, d).toLocaleDateString();
+}

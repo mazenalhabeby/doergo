@@ -20,7 +20,7 @@ import { PressableScale } from './pressable-scale';
 // rather than an over-the-air update — a heavy price for one date field.
 import { DatePickerModal } from './date-picker-modal';
 import { DocumentScanner, type ScannedDocument } from './document-scanner';
-import { expiryPrompt, expiryReady, type Rect } from '@hbcfield/shared/client';
+import { expiryPrompt, formatCalendarDate, type Rect } from '@hbcfield/shared/client';
 
 /**
  * The member supplying a document from their phone.
@@ -470,7 +470,7 @@ export function SupplyDocumentSheet({
                   />
                   <Text style={[s.expiryValue, { color: colors.textPrimary }]}>
                     {t('documents.supply.expiresOnValue', {
-                      date: new Date(prompt.value).toLocaleDateString(),
+                      date: formatCalendarDate(prompt.value),
                     })}
                   </Text>
                 </View>

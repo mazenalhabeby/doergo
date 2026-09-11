@@ -88,3 +88,40 @@ describe('the strings both surfaces need exist in all five languages', () => {
     expect(en.documents.supply.expiresOnValue).toContain('{{date}}');
   });
 });
+
+describe('a calendar date is not moved by a time zone', () => {
+  /*
+    ⚠️ `new Date('2030-12-31').toLocaleDateString()` prints 30 DECEMBER anywhere
+    west of Greenwich: the ISO short form parses as UTC midnight and is then
+    rendered in local time. An expiry is a `@db.Date` — a day, with no time on
+    it and so no zone to be converted between — and a member in New York being
+    shown the day before the one printed on their licence is the kind of wrong
+    that gets confirmed, because the app said it.
+  */
+  const { formatCalendarDate } = require('@hbcfield/shared/client');
+
+  it('keeps the day it was given', () => {
+    expect(formatCalendarDate('2030-12-31')).toBe(new Date(2030, 11, 31).toLocaleDateString());
+  });
+
+  it('ignores anything after the date', () => {
+    expect(formatCalendarDate('2030-12-31T23:00:00.000Z')).toBe(
+      new Date(2030, 11, 31).toLocaleDateString(),
+    );
+  });
+
+  it('says nothing rather than "Invalid Date"', () => {
+    for (const bad of [null, undefined, '', 'not a date']) {
+      expect(formatCalendarDate(bad as string)).toBe('-');
+    }
+  });
+
+  it('is what both surfaces call', () => {
+    // A local `new Date(iso)` in either screen reintroduces the shift.
+    for (const [, file] of SURFACES) {
+      const src = stripComments(fs.readFileSync(file, 'utf8'));
+      expect(src).toContain('formatCalendarDate(prompt.value)');
+      expect(src).not.toMatch(/new Date\(prompt\.value\)/);
+    }
+  });
+});

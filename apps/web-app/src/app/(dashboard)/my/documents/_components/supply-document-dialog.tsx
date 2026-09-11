@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Upload, Loader2, FileText, AlertTriangle, ShieldCheck, CalendarDays, Pencil } from "lucide-react"
-import { expiryPrompt, expiryReady } from "@hbcfield/shared/client"
+import { expiryPrompt, expiryReady, formatCalendarDate } from "@hbcfield/shared/client"
 import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -314,7 +314,7 @@ export function SupplyDocumentDialog({
                     : <CalendarDays className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />}
                   <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     {t("documents.supply.expiresOnValue", {
-                      date: new Date(prompt.value).toLocaleDateString(),
+                      date: formatCalendarDate(prompt.value),
                     })}
                   </span>
                 </div>
