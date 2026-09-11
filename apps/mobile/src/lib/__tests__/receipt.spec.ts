@@ -143,3 +143,131 @@ describe('choosing the heading it goes under', () => {
     expect(categoryForReceipt({}, cats)?.label).toBe('Werkstatt');
   });
 });
+
+/**
+ * An INVOICE, which is not a till slip.
+ *
+ * ⚠️ Reported from real use: "it sees the first amount and that's all, not the
+ * total". A till slip prints one figure that matters, at the bottom, under one
+ * word. An invoice prints a table of line items, then a net, then a tax, then a
+ * gross — and the word "Summe" can sit over any of them. The old rule took the
+ * biggest unlabelled figure, which on such a page is a line item.
+ */
+describe('a workshop invoice', () => {
+  const INVOICE = [
+    'Kfz-Werkstatt Huber GmbH',
+    'Rechnung Nr. 2026-0481',
+    'Rechnungsdatum 05.09.2026',
+    'Pos  Bezeichnung            Menge   Einzelpreis   Betrag',
+    '1    Bremsscheiben vorne    2       145,00        290,00',
+    '2    Bremsbelaege           1       89,50         89,50',
+    '3    Arbeitszeit 3,5 Std    3,5     95,00         332,50',
+    'Zwischensumme                                     712,00',
+    'Rabatt 5%                                         -35,60',
+    'Nettobetrag                                       676,40',
+    'MwSt 20%                                          135,28',
+    'Gesamtbetrag                                      811,68',
+    'Zahlbar innerhalb 14 Tagen ohne Abzug',
+  ];
+
+  const read = parseReceipt(INVOICE, NOW);
+
+  it('takes the gross total, not a line item and not the first figure', () => {
+    // 290,00 is the first amount on the page and the biggest line item.
+    // 712,00 is the subtotal. 676,40 is the net. 135,28 is the tax.
+    expect(read.totalCents?.value).toBe(81_168);
+  });
+
+  it('says it is certain, because the line names it', () => {
+    expect(read.totalCents?.confidence).toBe('certain');
+  });
+
+  it('reads the invoice date rather than a payment term', () => {
+    expect(read.date?.value).toBe('2026-09-05');
+  });
+
+  it('knows it was a repair', () => {
+    expect(read.hint).toBe('service');
+  });
+});
+
+describe('an invoice whose total sits in the next line — which is what a table is', () => {
+  /*
+    ⚠️ THE FAILURE MODE THAT PRODUCED THE REPORT. OCR reads a two-column
+    summary block as separate lines, because half a page of whitespace sits
+    between the label and the figure. The labelled line then carries no number
+    at all, everything falls through to "bare figure that looks like money",
+    and the answer is whichever amount happened to be biggest.
+  */
+  const INVOICE = [
+    'Autohaus Gruber',
+    'Rechnung 12.09.2026',
+    'Wartung Intervall 60.000 km',
+    'Ersatzteile',
+    '412,00',
+    'Arbeitszeit',
+    '285,00',
+    'Nettobetrag',
+    '697,00',
+    'MwSt 20%',
+    '139,40',
+    'Gesamtbetrag',
+    '836,40',
+  ];
+
+  const read = parseReceipt(INVOICE, NOW);
+
+  it('reaches forward for the figure its label has no room for', () => {
+    expect(read.totalCents?.value).toBe(83_640);
+    expect(read.totalCents?.confidence).toBe('certain');
+  });
+
+  it('does not reach across an excluded line and read the tax', () => {
+    // "Nettobetrag" then "697,00" — the net must never be adopted as a total.
+    expect(read.totalCents?.value).not.toBe(69_700);
+    expect(read.totalCents?.value).not.toBe(13_940);
+  });
+});
+
+describe('words that merely CONTAIN a forbidden word', () => {
+  /*
+    ⚠️ `includes` was striking out any line containing "net" — which is inside
+    Internet, Kabinett and Magnetventil — and "bar", inside Barcode. The line
+    struck out is sometimes the one carrying the total.
+  */
+  it('does not lose a total to the word "Magnetventil"', () => {
+    const read = parseReceipt(
+      ['Werkstatt Huber', '11.09.2026', 'Magnetventil getauscht', 'Gesamtbetrag 240,00'],
+      NOW,
+    );
+    expect(read.totalCents?.value).toBe(24_000);
+  });
+
+  it('still strikes out the real word', () => {
+    const read = parseReceipt(
+      ['Huber', '11.09.2026', 'Netto 200,00', 'MwSt 40,00', 'Gesamtbetrag 240,00'],
+      NOW,
+    );
+    expect(read.totalCents?.value).toBe(24_000);
+  });
+});
+
+describe('an English invoice', () => {
+  const read = parseReceipt(
+    [
+      'Fleet Services Ltd',
+      'Invoice date 03.09.2026',
+      'Tyres x4                    480.00',
+      'Alignment                    65.00',
+      'Subtotal                    545.00',
+      'VAT 20%                     109.00',
+      'Total due                   654.00',
+    ],
+    NOW,
+  );
+
+  it('takes the amount due', () => {
+    expect(read.totalCents?.value).toBe(65_400);
+    expect(read.totalCents?.confidence).toBe('certain');
+  });
+});

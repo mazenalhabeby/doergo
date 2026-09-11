@@ -57,16 +57,44 @@ const fold = (s: string): string =>
   a fuel receipt prints the litre price, the odometer, the pump number and the
   card's last four, and at least one of those beats the total on a bad read.
 */
-const TOTAL_WORDS = [
-  'total', 'gesamt', 'gesamtbetrag', 'summe', 'zu zahlen', 'zahlbetrag', 'endbetrag',
-  'betrag', 'importe', 'suma', 'totale', 'montant', 'a payer', 'importo', 'totaal',
+/*
+  THE FINAL, PAYABLE AMOUNT. On an invoice this is the gross — what the customer
+  actually transfers — and it is the one figure that is never a subtotal, never
+  a net, and never a tax line.
+*/
+const GRAND_TOTAL_WORDS = [
+  'gesamtbetrag', 'rechnungsbetrag', 'gesamtsumme', 'bruttobetrag', 'endbetrag',
+  'zu zahlen', 'zu zahlender betrag', 'zahlbetrag', 'zahlungsbetrag',
+  'grand total', 'total due', 'amount due', 'balance due', 'total amount',
+  'total ttc', 'net a payer', 'montant total', 'totale documento', 'importo totale',
+  'total a pagar', 'importe total', 'te betalen', 'totaalbedrag',
 ];
 
-/* Words that sit beside a number which is NOT the total, however large. */
+/*
+  A total, probably — but the word alone does not say WHICH total. An invoice
+  prints "Summe" over the net and again over the gross; a till slip prints
+  "TOTAL" once and means it.
+*/
+const TOTAL_WORDS = [
+  'total', 'gesamt', 'summe', 'betrag', 'importe', 'suma', 'totale', 'montant',
+  'a payer', 'importo', 'totaal', 'brutto', 'inkl', 'incl',
+];
+
+/*
+  Words that sit beside a number which is NOT the total, however large.
+
+  ⚠️ MATCHED ON WORD BOUNDARIES, never as substrings — see `has()`. As a plain
+  `includes` this list was actively destructive: 'net' struck out any line
+  containing "Internet", "Kabinett" or "Magnetventil", and 'bar' struck out
+  "Barcode". A workshop invoice with an internet-service line lost its total to
+  a three-letter substring.
+*/
 const NOT_TOTAL_WORDS = [
-  'zwischensumme', 'subtotal', 'sub total', 'netto', 'net', 'mwst', 'ust', 'vat', 'tax',
-  'iva', 'tva', 'rabatt', 'discount', 'change', 'ruckgeld', 'given', 'gegeben', 'bar',
-  'preis/l', 'eur/l', 'liter', 'litre', 'menge', 'einzelpreis', 'unit',
+  'zwischensumme', 'subtotal', 'sub total', 'netto', 'net', 'nettobetrag',
+  'mwst', 'ust', 'vat', 'tax', 'steuer', 'iva', 'tva', 'taxe',
+  'rabatt', 'discount', 'skonto', 'change', 'ruckgeld', 'given', 'gegeben', 'bar',
+  'anzahlung', 'deposit', 'guthaben', 'credit',
+  'preis/l', 'eur/l', 'liter', 'litre', 'menge', 'einzelpreis', 'unit', 'stk',
 ];
 
 const CURRENCIES: Array<[RegExp, string]> = [
@@ -142,8 +170,26 @@ const stripDates = (row: string): string =>
  */
 const looksLikeMoney = (figure: string): boolean => /[.,]\d{2}$/.test(figure);
 
+/**
+ * Does this line carry one of these words — as a WORD, not as a substring?
+ *
+ * ⚠️ `includes` was doing real damage. 'net' matched inside "Internet",
+ * "Kabinett" and "Magnetventil"; 'bar' matched inside "Barcode"; 'tax' inside
+ * "Taxi". Each of those silently struck a line out of the running, and the line
+ * struck out is sometimes the one carrying the total.
+ *
+ * Multi-word entries ("zu zahlen") still have to match across a space, so the
+ * boundary is built around the whole phrase rather than tokenising.
+ */
 const has = (haystack: string, words: string[]): boolean =>
-  words.some((w) => haystack.includes(w));
+  words.some((w) => {
+    const i = haystack.indexOf(w);
+    if (i === -1) return false;
+    const before = i === 0 ? '' : haystack[i - 1]!;
+    const after = haystack[i + w.length] ?? '';
+    const isLetter = (c: string) => c !== '' && /[\p{L}\p{N}]/u.test(c);
+    return !isLetter(before) && !isLetter(after);
+  });
 
 /**
  * Read a receipt out of the lines an OCR returned, in order.
@@ -161,37 +207,102 @@ export function parseReceipt(lines: string[], now: Date = new Date()): ParsedRec
   }
 
   // ── The total ──────────────────────────────────────────────────────────────
-  let best: { cents: number; raw: string; confidence: ReadConfidence } | null = null;
+  /*
+    SCORED, not a yes/no label.
 
-  for (const row of rows) {
+    The old rule had two tiers — "a line says total" and "everything else" — and
+    within the second it took the biggest figure. That is right for a till slip
+    and wrong for an invoice, which is what was reported: an invoice prints a
+    net, a tax and a gross, plus a table of line items, and the word "Summe"
+    can sit over any of them. The biggest unlabelled figure on such a page is
+    frequently a line item, and the first one found is almost never the total.
+
+    Three tiers now:
+
+      3  a GRAND total — "Gesamtbetrag", "Total due", "Zu zahlen". The final
+         payable figure, by name. Nothing outranks it.
+      2  a total word — "Summe", "Total", "Brutto". Probably right, and when a
+         page has several the largest is the gross, which is the one wanted.
+      1  a bare figure that looks like money. Last resort, still offered,
+         clearly marked a guess.
+
+    ⚠️ AND THE LABEL NEED NOT BE ON THE SAME LINE. An invoice is a table: OCR
+    returns "Gesamtbetrag" and "1.234,56" as separate lines because they are
+    separated by half a page of whitespace. Reading only the labelled line finds
+    no figure at all and falls through to tier 1 — which is exactly how a total
+    becomes "the first amount on the page". A label with no figure of its own
+    adopts the next line that has one.
+  */
+  type Candidate = { cents: number; raw: string; tier: number };
+  let best: Candidate | null = null;
+  /*
+    How many lines claimed to be a total.
+
+    ⚠️ This is what separates a till slip from an invoice. "GESAMT EUR 81,41" on
+    a fuel slip is THE total and deserves to be reported as read. The same word
+    on an invoice appears over the net, again over the tax and again over the
+    gross — and then it says nothing about which one this is. One claim is a
+    fact; several are a choice, and a choice is a guess.
+  */
+  let totalClaims = 0;
+
+  const consider = (cents: number, raw: string, tier: number) => {
+    if (!best || tier > best.tier || (tier === best.tier && cents > best.cents)) {
+      best = { cents, raw, tier };
+    }
+  };
+
+  /** How far a label will reach for its number. Two lines: a table row, no more. */
+  const LABEL_REACH = 2;
+
+  const figuresOn = (row: string): string[] => stripDates(row).match(MONEY) ?? [];
+
+  rows.forEach((row, i) => {
     const flat = fold(row);
-    if (has(flat, NOT_TOTAL_WORDS)) continue;
-    const labelled = has(flat, TOTAL_WORDS);
-    const figures = stripDates(row).match(MONEY) ?? [];
-    for (const figure of figures) {
-      if (!labelled && !looksLikeMoney(figure)) continue;
-      const cents = moneyToCents(figure);
-      if (cents == null) continue;
-      /*
-        A labelled figure beats any unlabelled one, whatever the amounts.
+    if (has(flat, NOT_TOTAL_WORDS)) return;
 
-        The other way round — biggest wins — reads the odometer off a fuel slip
-        ("184 320 km") as a €184,320 fill. Confidence is the point of the
-        distinction, not a tie-break.
-      */
-      if (labelled) {
-        if (!best || best.confidence !== 'certain' || cents > best.cents) {
-          best = { cents, raw: figure, confidence: 'certain' };
-        }
-      } else if (!best) {
-        best = { cents, raw: figure, confidence: 'likely' };
-      } else if (best.confidence === 'likely' && cents > best.cents) {
-        best = { cents, raw: figure, confidence: 'likely' };
+    const tier = has(flat, GRAND_TOTAL_WORDS) ? 3 : has(flat, TOTAL_WORDS) ? 2 : 1;
+
+    let figures = figuresOn(row).filter((f) => tier > 1 || looksLikeMoney(f));
+
+    /*
+      A labelled line with no number reaches forward for one. Only forward, and
+      only past lines that carry no figure of their own: a label reaching over
+      somebody else's amount would attribute it to the wrong row.
+    */
+    if (tier > 1 && figures.length === 0) {
+      for (let j = i + 1; j <= i + LABEL_REACH && j < rows.length; j++) {
+        const next = fold(rows[j]!);
+        // Never adopt a figure that belongs to an excluded line — the tax row
+        // immediately under "Summe" is the classic way to read VAT as a total.
+        if (has(next, NOT_TOTAL_WORDS)) break;
+        const found = figuresOn(rows[j]!).filter(looksLikeMoney);
+        if (found.length > 0) { figures = found; break; }
       }
     }
-  }
 
-  if (best) out.totalCents = { value: best.cents, confidence: best.confidence, raw: best.raw };
+    let took = false;
+    for (const figure of figures) {
+      const cents = moneyToCents(figure);
+      if (cents == null) continue;
+      consider(cents, figure, tier);
+      took = true;
+    }
+    if (took && tier >= 2) totalClaims++;
+  });
+
+  if (best) {
+    /*
+      A named grand total is the only thing reported as certain.
+
+      Tier 2 is a total word with no guarantee of WHICH total, and tier 1 is a
+      figure that merely looks like money — both are offered, both are marked a
+      guess, and the screen colours them differently so the person checks.
+    */
+    const b: Candidate = best;
+    const certain = b.tier === 3 || (b.tier === 2 && totalClaims === 1);
+    out.totalCents = { value: b.cents, raw: b.raw, confidence: certain ? 'certain' : 'likely' };
+  }
 
   // ── The date ───────────────────────────────────────────────────────────────
   /*
