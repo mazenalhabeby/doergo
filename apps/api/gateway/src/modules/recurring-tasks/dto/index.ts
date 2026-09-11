@@ -67,6 +67,11 @@ export class CreateRecurringTaskDto {
   @IsOptional()
   locationAddress?: string;
 
+  @ApiPropertyOptional({ description: 'The client this repeats for; copied onto every task it generates' })
+  @IsString()
+  @IsOptional()
+  customerId?: string;
+
   @ApiPropertyOptional({ description: 'Array of user IDs to assign', type: [String] })
   @IsArray()
   @IsString({ each: true })
@@ -161,6 +166,11 @@ export class UpdateRecurringTaskDto {
   @IsString()
   @IsOptional()
   locationAddress?: string;
+
+  @ApiPropertyOptional({ description: 'The client this repeats for' })
+  @IsString()
+  @IsOptional()
+  customerId?: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsArray()

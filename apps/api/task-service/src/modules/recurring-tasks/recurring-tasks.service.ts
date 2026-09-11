@@ -75,6 +75,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     priority?: string;
     spaceId?: string;
     workflowId?: string;
+    customerId?: string;
     locationLat?: number;
     locationLng?: number;
     locationAddress?: string;
@@ -128,6 +129,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         priority: (data.priority as any) || 'MEDIUM',
         spaceId: data.spaceId ?? null,
         workflowId: data.workflowId ?? null,
+        customerId: data.customerId ?? null,
         locationLat: data.locationLat,
         locationLng: data.locationLng,
         locationAddress: data.locationAddress,
@@ -163,6 +165,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     priority?: string;
     spaceId?: string | null;
     workflowId?: string | null;
+    customerId?: string | null;
     locationLat?: number;
     locationLng?: number;
     locationAddress?: string;
@@ -227,6 +230,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         ...(data.priority !== undefined && { priority: data.priority as any }),
         ...(data.spaceId !== undefined && { spaceId: data.spaceId }),
         ...(data.workflowId !== undefined && { workflowId: data.workflowId }),
+        ...(data.customerId !== undefined && { customerId: data.customerId }),
         ...(data.locationLat !== undefined && { locationLat: data.locationLat }),
         ...(data.locationLng !== undefined && { locationLng: data.locationLng }),
         ...(data.locationAddress !== undefined && { locationAddress: data.locationAddress }),
@@ -483,6 +487,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       priority: any;
       spaceId: string | null;
       workflowId: string | null;
+      customerId: string | null;
       locationLat: number | null;
       locationLng: number | null;
       locationAddress: string | null;
@@ -508,6 +513,9 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         status: status as any,
         spaceId: template.spaceId ?? null,
         workflowId: template.workflowId ?? null,
+        // The client it repeats for, onto every task it makes. Without this a
+        // monthly service call produced the right address and no client.
+        customerId: template.customerId ?? null,
         locationLat: template.locationLat,
         locationLng: template.locationLng,
         locationAddress: template.locationAddress,

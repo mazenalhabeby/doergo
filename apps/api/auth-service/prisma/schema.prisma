@@ -1697,6 +1697,9 @@ model Customer {
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
+  /// Repeating visits booked for this client.
+  recurringTasks RecurringTaskTemplate[] @relation("RecurringTaskCustomer")
+
 }
 
 /// A person who works at a company — the contact you actually ring.
@@ -3719,6 +3722,15 @@ model RecurringTaskTemplate {
   locationLat     Float?
   locationLng     Float?
   locationAddress String?
+  /// The client this repeats FOR, copied onto every task it generates.
+  ///
+  /// ⚠️ A one-off visit has carried this since client visits shipped; a
+  /// repeating one silently did not, so the commonest visit of all — the
+  /// monthly service call to a customer — produced tasks with the right address
+  /// and no client on them. "What have we done for this client" then answers
+  /// with one-offs only, and nobody notices because the tasks look complete.
+  customerId      String?
+  customer        Customer?           @relation("RecurringTaskCustomer", fields: [customerId], references: [id], onDelete: SetNull)
   assigneeIds     Json? // array of user IDs to assign
   estimatedHours  Float?
   checklist       Json? // array of { text: string }
@@ -3740,6 +3752,7 @@ model RecurringTaskTemplate {
   @@index([nextRunAt, isActive])
   @@index([spaceId])
   @@index([workflowId])
+  @@index([customerId])
   @@map("recurring_task_templates")
 }
 

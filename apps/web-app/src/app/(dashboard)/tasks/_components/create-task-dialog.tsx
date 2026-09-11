@@ -712,6 +712,18 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         endDate: recurEnd ? new Date(recurEnd).toISOString() : null,
         estimatedHours: parsedHours && !isNaN(parsedHours) ? parsedHours : null,
         locationAddress: locationAddress.trim() || null,
+        /*
+          The client it repeats FOR.
+
+          ⚠️ The one-off path has sent this since client visits shipped and the
+          recurring path did not, so the commonest visit of all — the monthly
+          service call to a customer — generated tasks with the right address
+          and no client on them. "What have we done for this client" then
+          answered with one-offs only, and nothing on screen suggested anything
+          was missing. Exactly the same mistake, and the same shape, as the
+          coordinates immediately below.
+        */
+        customerId: customerId !== "none" ? customerId : null,
         // The recurring API accepts these and the dialog was not sending them,
         // so a repeating task kept the address text and lost the point on the
         // map — every task it generated had no coordinates to route to.
