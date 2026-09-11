@@ -1606,27 +1606,53 @@ export class DocumentsService {
     const scan = checkScan({ mrzText: text, member });
 
     if (scan.raw) {
+      const fields = {
+        holderName: scan.extracted.holderName,
+        documentNumber: scan.extracted.documentNumber,
+        dateOfBirth: scan.extracted.dateOfBirth,
+        issuingState: scan.extracted.issuingState,
+      };
+
       /*
-        A zone was read. The expiry is only offered when the arithmetic agrees:
-        a failed check digit means the read is wrong OR the document is, and
-        pre-filling a field from either would be putting a wrong date in front
-        of somebody with the app's authority behind it.
+        A zone was read, and its arithmetic agrees. This is the only expiry in
+        the product that is a FACT rather than a reading.
       */
+      if (scan.raw.allChecksPassed) {
+        return {
+          source: 'MRZ' as const,
+          expiresOn: scan.extracted.dateOfExpiry,
+          fields,
+          verdict: scan.verdict,
+        };
+      }
+
+      /*
+        The check digit disagrees, so the zone's own date is not offered — it
+        would be a wrong date with the app's authority behind it.
+        ⚠️ But that used to end the matter, and the member was left typing.
+        The band is the lower third of the picture; the date is very often
+        printed in the part of the page the band never covered. So look at the
+        whole frame before giving up, and label what comes back as the guess it
+        is. Costs a second pass, on the rare path where the first one failed.
+      */
+      const printed = await this.ocr.read(bytes, 'image/jpeg', { wholeFrame: true });
+      const fallback = printed ? suggestExpiry(printed) : null;
       return {
-        source: 'MRZ' as const,
-        expiresOn: scan.raw.allChecksPassed ? scan.extracted.dateOfExpiry : null,
-        fields: {
-          holderName: scan.extracted.holderName,
-          documentNumber: scan.extracted.documentNumber,
-          dateOfBirth: scan.extracted.dateOfBirth,
-          issuingState: scan.extracted.issuingState,
-        },
+        source: fallback ? ('TEXT' as const) : ('NOTHING' as const),
+        expiresOn: fallback?.iso ?? null,
+        fields,
         verdict: scan.verdict,
       };
     }
 
-    // No zone: a licence or a certificate. The best that can be done is the
-    // latest date printed on it, clearly labelled as a guess.
+    /*
+      No zone: a licence, a certificate, an insurance card — which is MOST of
+      what this product files.
+
+      ⚠️ This branch was unreachable until the OCR stopped discarding text that
+      did not look like a zone. `suggestExpiry` has been sitting here, tested
+      and correct, never once called with anything but null.
+    */
     const guess = suggestExpiry(text);
     return {
       source: guess ? ('TEXT' as const) : ('NOTHING' as const),

@@ -20,7 +20,7 @@ import { PressableScale } from './pressable-scale';
 // rather than an over-the-air update — a heavy price for one date field.
 import { DatePickerModal } from './date-picker-modal';
 import { DocumentScanner, type ScannedDocument } from './document-scanner';
-import type { Rect } from '@hbcfield/shared/client';
+import { expiryPrompt, expiryReady, type Rect } from '@hbcfield/shared/client';
 
 /**
  * The member supplying a document from their phone.
@@ -81,6 +81,15 @@ export function SupplyDocumentSheet({
   */
   const [dateSource, setDateSource] = useState<'MRZ' | 'TEXT' | 'NOTHING' | null>(null);
   const [reading, setReading] = useState(false);
+  /*
+    The member has asked to set the date themselves.
+
+    Being certain is not the same as being right — a card photographed at an
+    angle produces a confident wrong answer — so the correction is always one
+    tap away. Never entered automatically: an app that quietly reopens the
+    field it just filled in has saved nobody anything.
+  */
+  const [overriding, setOverriding] = useState(false);
   const [staged, setStaged] = useState<{
     key: string;
     crop: Rect | null;
@@ -88,13 +97,31 @@ export function SupplyDocumentSheet({
   } | null>(null);
 
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
-  const needsDate = !!type?.hasExpiry;
+
+  /*
+    One rule, shared with the web.
+
+    Both surfaces had the reading wired and both still LED with the picker:
+    `needsDate` was `!!type?.hasExpiry` alone, so "Expires on — pick a date"
+    rendered the moment a type was chosen, before any photo existed, for a date
+    printed on the document about to be photographed. Filling it in afterwards
+    does not undo that — by then somebody has tapped through a calendar.
+  */
+  const prompt = expiryPrompt({
+    hasExpiry: !!type?.hasExpiry,
+    hasFile: !!photo,
+    reading,
+    source: dateSource,
+    value: expiresOn ? toIsoDate(expiresOn) : null,
+    overriding,
+  });
 
   const reset = () => {
     setPhoto(null);
     setScanned(null);
     setExpiresOn(null);
     setDateSource(null);
+    setOverriding(false);
     setStaged(null);
     setBusy(false);
   };
@@ -409,8 +436,71 @@ export function SupplyDocumentSheet({
               </>
             )}
 
-            {/* Its expiry, asked for where it belongs */}
-            {needsDate && (
+            {/* Its expiry — read off the document, not asked for */}
+            {prompt.state === 'READING' && (
+              <View style={[s.expiryRow, { backgroundColor: colors.surfaceRaised }]}>
+                <Ionicons name="hourglass-outline" size={18} color={colors.textMuted} />
+                <Text style={[s.expiryReading, { color: colors.textSecondary }]}>
+                  {t('documents.supply.reading')}
+                </Text>
+              </View>
+            )}
+
+            {prompt.state === 'FOUND' && (
+              /*
+                STATED, not requested. The date sits here as something the app
+                has read, with its provenance beside it — a zone expiry is
+                proved by a check digit, a date off printed text is the latest
+                one the page happened to show. Both save the typing; only one is
+                a fact, and somebody confirming it is entitled to know which.
+              */
+              <View
+                style={[
+                  s.expiryFound,
+                  prompt.certainty === 'PROVEN'
+                    ? { backgroundColor: colors.primaryLight, borderColor: COLORS.primary }
+                    : { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+                ]}
+              >
+                <View style={s.expiryRow}>
+                  <Ionicons
+                    name={prompt.certainty === 'PROVEN' ? 'shield-checkmark' : 'calendar-outline'}
+                    size={18}
+                    color={prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary}
+                  />
+                  <Text style={[s.expiryValue, { color: colors.textPrimary }]}>
+                    {t('documents.supply.expiresOnValue', {
+                      date: new Date(prompt.value).toLocaleDateString(),
+                    })}
+                  </Text>
+                </View>
+                <View style={s.expiryFoot}>
+                  <Text
+                    style={[
+                      s.dateNote,
+                      { color: prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary },
+                    ]}
+                  >
+                    {prompt.certainty === 'PROVEN'
+                      ? t('documents.supply.dateFromDocument')
+                      : t('documents.supply.dateGuessed')}
+                  </Text>
+                  <PressableScale onPress={() => setOverriding(true)} style={s.changeDate}>
+                    <Ionicons name="create-outline" size={13} color={colors.textSecondary} />
+                    <Text style={[s.changeDateText, { color: colors.textSecondary }]}>
+                      {t('documents.supply.changeDate')}
+                    </Text>
+                  </PressableScale>
+                </View>
+              </View>
+            )}
+
+            {prompt.state === 'ASK' && (
+              /*
+                The last resort, and it says why it is asking. A bare date
+                button with no explanation is what the member was given before,
+                on every document that was not a passport.
+              */
               <>
                 <Text style={[s.eyebrow, { color: colors.textMuted }]}>
                   {t('documents.supply.expiresOn')}
@@ -420,7 +510,7 @@ export function SupplyDocumentSheet({
                   style={[s.dateButton, { backgroundColor: colors.surfaceRaised }]}
                 >
                   <Ionicons
-                    name={reading ? 'hourglass-outline' : 'calendar-outline'}
+                    name="calendar-outline"
                     size={18}
                     color={expiresOn ? COLORS.primary : colors.textMuted}
                   />
@@ -431,52 +521,29 @@ export function SupplyDocumentSheet({
                       expiresOn && s.dateTextSet,
                     ]}
                   >
-                    {reading
-                      ? t('documents.supply.reading')
-                      : expiresOn
-                        ? expiresOn.toLocaleDateString()
-                        : t('documents.supply.pickDate')}
+                    {expiresOn ? expiresOn.toLocaleDateString() : t('documents.supply.pickDate')}
                   </Text>
                   <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                 </PressableScale>
-
-                {/*
-                  Where the date came from, in the member's words.
-
-                  A date the app filled in is a claim the app is making, and
-                  somebody about to confirm it deserves to know whether it was
-                  READ from a machine-readable zone — proved by a check digit —
-                  or GUESSED from printed text, which a driving licence is,
-                  because a European licence has no zone at all.
-                */}
-                {!reading && dateSource === 'MRZ' && expiresOn && (
-                  <Text style={[s.dateNote, { color: COLORS.primary }]}>
-                    {t('documents.supply.dateFromDocument')}
-                  </Text>
-                )}
-                {!reading && dateSource === 'TEXT' && expiresOn && (
-                  <Text style={[s.dateNote, { color: colors.textSecondary }]}>
-                    {t('documents.supply.dateGuessed')}
-                  </Text>
-                )}
-                {!reading && dateSource === 'NOTHING' && (
-                  <Text style={[s.dateNote, { color: colors.textSecondary }]}>
-                    {t('documents.supply.dateNotFound')}
-                  </Text>
-                )}
-                <DatePickerModal
-                  visible={showDate}
-                  selectedDate={expiresOn}
-                  onSelect={(d) => { setExpiresOn(d); setShowDate(false); }}
-                  onClear={() => { setExpiresOn(null); setShowDate(false); }}
-                  onClose={() => setShowDate(false)}
-                  // An expiry date is in the future — the calendar no longer
-                  // assumes that for everybody.
-                  minDate={new Date()}
-                  title={t('documents.supply.expiresOn')}
-                />
+                <Text style={[s.dateNote, { color: colors.textSecondary }]}>
+                  {prompt.reason === 'CORRECTING'
+                    ? t('documents.supply.dateCorrecting')
+                    : t('documents.supply.dateNotFound')}
+                </Text>
               </>
             )}
+
+            <DatePickerModal
+              visible={showDate}
+              selectedDate={expiresOn}
+              onSelect={(d) => { setExpiresOn(d); setShowDate(false); }}
+              onClear={() => { setExpiresOn(null); setShowDate(false); }}
+              onClose={() => setShowDate(false)}
+              // An expiry date is in the future — the calendar no longer
+              // assumes that for everybody.
+              minDate={new Date()}
+              title={t('documents.supply.expiresOn')}
+            />
 
             {/* What happens next. Somebody who believes an upload covers them
                 for the work finds out on site that it does not. */}
@@ -507,7 +574,16 @@ export function SupplyDocumentSheet({
         {suppliable.length > 0 && (
           <PressableScale
             onPress={submit}
-            disabled={!photo || busy}
+            /*
+              ⚠️ A missing date does NOT block sending HERE, and that is a
+              deliberate difference from the web — see `dateNotFound`, which
+              says "send it anyway, the office will confirm it". Typing a date
+              is hardest on the surface somebody is holding in a yard, and the
+              document is on its way to a person who can read it. What DOES
+              block is a read still in flight: sending then races the staged
+              upload and sends the same photo twice.
+            */
+            disabled={!photo || busy || reading}
             /*
               A dimmed version of the live colour is the worst disabled state
               there is: it still reads as the button, just badly rendered, so
@@ -647,6 +723,41 @@ const s = StyleSheet.create({
   },
   dateText: { flex: 1, fontSize: FONT_SIZE.lg },
   dateTextSet: { fontWeight: FONT_WEIGHT.semibold },
+  expiryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  expiryReading: {
+    fontSize: FONT_SIZE.sm,
+  },
+  expiryFound: {
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
+    gap: 4,
+  },
+  expiryValue: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  expiryFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+    paddingLeft: 26,
+  },
+  changeDate: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  changeDateText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.medium,
+  },
   dateNote: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginLeft: SPACING.xs },
 
   notice: {

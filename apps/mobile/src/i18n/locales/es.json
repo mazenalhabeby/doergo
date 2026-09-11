@@ -1970,7 +1970,10 @@
       "dateFromDocument": "Leída del documento: compruébala",
       "dateGuessed": "Tomada del texto del documento. Por favor, compruébala.",
       "dateNotFound": "No se pudo leer la fecha: envíelo igualmente, la oficina lo confirmará.",
-      "expiresOnOptional": "Caduca el"
+      "expiresOnOptional": "Caduca el",
+      "expiresOnValue": "Caduca el {{date}}",
+      "changeDate": "Cambiar",
+      "dateCorrecting": "Introduzca la fecha tal como aparece en el documento."
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",

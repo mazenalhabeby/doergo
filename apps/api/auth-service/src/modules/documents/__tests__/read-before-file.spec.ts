@@ -109,24 +109,63 @@ describe('DocumentsService — reading before filing', () => {
     expect(r.fields?.documentNumber).toBe('P1234567');
   });
 
-  it('offers NO expiry when the check digits disagree', async () => {
+  it('never offers the ZONE\'s expiry when the check digits disagree', async () => {
     /*
       A failed check digit means the read is wrong or the document is. Filling
       the field from either would put a wrong date in front of somebody with the
       app's authority behind it — and they would confirm it, because the app
       said so.
     */
-    ocr.read.mockResolvedValue(passport('310630').replace('3106305', '3506305'));
+    const bad = passport('310630').replace('3106305', '3506305');
+    ocr.read.mockResolvedValue(bad); // the same page on the second pass: no dates printed
     const r = await service.readOwnUpload({ actor: actor(), stagingKey: OWN_KEY });
 
-    expect(r.source).toBe('MRZ');
     expect(r.expiresOn).toBeNull();
     expect(r.verdict).toBe('SUSPECT');
+    // The zone's own date is gone; the source now describes where the DATE came
+    // from, and it came from nowhere.
+    expect(r.source).toBe('NOTHING');
+  });
+
+  it('looks at the rest of the page when the zone fails its own arithmetic', async () => {
+    /*
+      ⚠️ A failed check digit used to end the matter, and the member was left
+      typing — on the very document the app had just proved it could see.
+
+      The band is the lower third of the picture: on a passport that is the
+      zone, and the expiry is very often printed higher up the page, in a part
+      the band never covered. So the whole frame is read before giving up, and
+      what comes back is labelled the guess it is. Costs a second pass, only on
+      the path where the first one already failed.
+    */
+    const bad = passport('310630').replace('3106305', '3506305');
+    ocr.read
+      .mockResolvedValueOnce(bad)
+      .mockResolvedValueOnce('REPUBLIK ÖSTERREICH  gültig bis 30.06.2031');
+
+    const r = await service.readOwnUpload({ actor: actor(), stagingKey: OWN_KEY });
+
+    expect(r.source).toBe('TEXT');
+    expect(r.expiresOn).toBe('2031-06-30');
+    // The scan verdict is untouched: the date is a guess AND the zone is still
+    // suspect. Two separate facts, and the reviewer needs both.
+    expect(r.verdict).toBe('SUSPECT');
+    expect(r.fields?.documentNumber).toBe('P1234567');
+    expect(ocr.read).toHaveBeenLastCalledWith(expect.anything(), 'image/jpeg', { wholeFrame: true });
   });
 
   it('falls back to the printed text for a document with no zone', async () => {
-    // A European driving licence: three printed dates, no machine-readable zone
-    // anywhere on it.
+    /*
+      A European driving licence: three printed dates, no machine-readable zone
+      anywhere on it.
+
+      ⚠️ THIS TEST PASSED FOR MONTHS WHILE THE FEATURE DID NOT WORK. `ocr` is a
+      mock here, so it handed the service text the real `MrzOcrService` could
+      never have produced: `attempt()` discarded any recognised text without two
+      MRZ-shaped lines, so a licence arrived as null and this branch was
+      unreachable in production. Pinned for real in `ocr-keeps-text.spec.ts` —
+      a mock at the seam of the broken thing proves nothing about it.
+    */
     ocr.read.mockResolvedValue('3. 15.08.1985  4a. 01.03.2020  4b. 01.03.2035  5. 12345678');
     const r = await service.readOwnUpload({ actor: actor(), stagingKey: OWN_KEY });
 

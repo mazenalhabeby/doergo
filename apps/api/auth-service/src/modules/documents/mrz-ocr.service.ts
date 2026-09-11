@@ -108,22 +108,43 @@ export class MrzOcrService implements OnModuleDestroy {
   private queue: Promise<unknown> = Promise.resolve();
 
   /**
-   * The zone as text, or null.
+   * What the document says, as text. Null only when nothing could be read.
+   *
+   * ⚠️ THIS USED TO RETURN THE ZONE OR NOTHING AT ALL, and that single line
+   * made the product's "read the date off the document" promise true for
+   * passports and false for everything else.
+   *
+   * `attempt()` ended with `mrzLines(text).length >= 2 ? text : null`, so any
+   * page without a machine-readable zone had its recognised text DISCARDED —
+   * and a driving licence has no zone, nor does a gas certificate, a first-aid
+   * card or an insurance letter. The caller then fell through to
+   * `suggestExpiry`, which never ran once, because the text it needed had
+   * already been thrown away. Members typed the expiry on every document that
+   * was not a passport, and the code that was supposed to save them the typing
+   * was unreachable.
+   *
+   * Deciding what the text IS belongs to the caller. `checkScan` already
+   * handles arbitrary text — it tries an MRZ, then a barcode, then records
+   * "no zone" as a SKIP rather than a failure — so handing it prose costs
+   * nothing and hands the expiry reader the one thing it was missing.
    *
    * Never throws. A failed read is a document filed without a scan verdict,
-   * which is exactly what happens for the gas certificates and training records
-   * that have no zone at all — and far better than a failed upload.
+   * exactly as a gas certificate is — far better than a failed upload.
    */
-  async read(image: Buffer, mimeType: string): Promise<string | null> {
+  async read(
+    image: Buffer,
+    mimeType: string,
+    opts: { wholeFrame?: boolean } = {},
+  ): Promise<string | null> {
     // A PDF is a scan somebody already made; rasterising one needs a renderer
     // this service does not have, and the member's own camera path produces an
     // image anyway.
     if (!mimeType.startsWith('image/')) return null;
 
     try {
-      return await this.withTimeout(this.attempt(image), ocrTimeoutMs());
+      return await this.withTimeout(this.attempt(image, opts.wholeFrame === true), ocrTimeoutMs());
     } catch (err) {
-      this.logger.warn(`MRZ read failed: ${(err as Error).message}`);
+      this.logger.warn(`Document read failed: ${(err as Error).message}`);
       return null;
     }
   }
@@ -134,19 +155,29 @@ export class MrzOcrService implements OnModuleDestroy {
    * Two passes, because the crop is a guess about where the zone sits. It is
    * right for a passport page and for the back of an ID card, and wrong when
    * somebody photographs the card at a distance — so a miss falls back to the
-   * full frame rather than reporting no zone.
+   * full frame.
+   *
+   * The band is tried first and returned ONLY when it really is a zone: it is
+   * the lower third of the image, so on a certificate it is the bottom of the
+   * page and its text is worth much less than the whole. What changed is the
+   * ending — a full-frame read is now returned as it is, instead of being
+   * measured against a shape it was never going to have.
+   *
+   * `wholeFrame` skips the band entirely, for a caller that wants the printed
+   * text and has already had its answer about the zone.
    */
-  private async attempt(image: Buffer): Promise<string | null> {
+  private async attempt(image: Buffer, wholeFrame: boolean): Promise<string | null> {
     const meta = await (await openUntrustedImage(image)).metadata();
     if (!meta.width || meta.width < MIN_USABLE_WIDTH) return null;
 
-    const band = await this.prepare(image, true);
-    const fromBand = await this.recognise(band);
-    if (fromBand && mrzLines(fromBand).length >= 2) return fromBand;
+    if (!wholeFrame) {
+      const band = await this.prepare(image, true);
+      const fromBand = await this.recognise(band);
+      if (fromBand && mrzLines(fromBand).length >= 2) return fromBand;
+    }
 
     const whole = await this.prepare(image, false);
-    const fromWhole = await this.recognise(whole);
-    return fromWhole && mrzLines(fromWhole).length >= 2 ? fromWhole : null;
+    return (await this.recognise(whole)) || null;
   }
 
   /**

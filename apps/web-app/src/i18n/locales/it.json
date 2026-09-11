@@ -7902,7 +7902,10 @@
       "reading": "Lettura del documento…",
       "dateFromDocument": "Letta dal documento: controllala",
       "dateGuessed": "Presa dal testo del documento. Controllala.",
-      "dateNotFound": "Non è stato letto nulla: inserisci la data riportata sul documento."
+      "dateNotFound": "Non è stato letto nulla: inserisci la data riportata sul documento.",
+      "expiresOnValue": "Scade il {{date}}",
+      "changeDate": "Modifica",
+      "dateCorrecting": "Inserisca la data come è stampata sul documento."
     },
     "status": {
       "pendingVerification": "In attesa di verifica",

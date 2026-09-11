@@ -1970,7 +1970,10 @@
       "dateFromDocument": "Lue sur le document — vérifiez-la",
       "dateGuessed": "Reprise du texte du document. Merci de vérifier.",
       "dateNotFound": "Date illisible — envoyez quand même, le bureau la confirmera.",
-      "expiresOnOptional": "Expire le"
+      "expiresOnOptional": "Expire le",
+      "expiresOnValue": "Expire le {{date}}",
+      "changeDate": "Modifier",
+      "dateCorrecting": "Saisissez la date telle qu'elle figure sur le document."
     },
     "status": {
       "pendingVerification": "En attente de vérification",

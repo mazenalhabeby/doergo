@@ -14,4 +14,5 @@ export * from './mrz';
 export * from './aamva';
 export * from './scan-checks';
 export * from './dates-from-text';
+export * from './expiry-prompt';
 export * from './frame-crop';

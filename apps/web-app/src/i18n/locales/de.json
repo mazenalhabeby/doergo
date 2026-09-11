@@ -7893,7 +7893,10 @@
       "reading": "Dokument wird gelesen…",
       "dateFromDocument": "Aus dem Dokument gelesen — bitte prüfen",
       "dateGuessed": "Aus dem Text im Dokument übernommen. Bitte prüfen.",
-      "dateNotFound": "Nichts Lesbares gefunden — bitte das Datum vom Dokument eintragen."
+      "dateNotFound": "Nichts Lesbares gefunden — bitte das Datum vom Dokument eintragen.",
+      "expiresOnValue": "Gültig bis {{date}}",
+      "changeDate": "Ändern",
+      "dateCorrecting": "Geben Sie das Datum so ein, wie es auf dem Dokument steht."
     },
     "status": {
       "pendingVerification": "Wird geprüft",

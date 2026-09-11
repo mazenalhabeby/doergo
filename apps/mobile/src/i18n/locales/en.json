@@ -1970,7 +1970,10 @@
       "dateFromDocument": "Read from the document — check it matches",
       "dateGuessed": "Taken from the text on the document. Please check it.",
       "dateNotFound": "Couldn't read the date — send it anyway, the office will confirm it.",
-      "expiresOnOptional": "Expires on (optional)"
+      "expiresOnOptional": "Expires on (optional)",
+      "expiresOnValue": "Expires {{date}}",
+      "changeDate": "Change",
+      "dateCorrecting": "Set the date as printed on the document."
     },
     "status": {
       "pendingVerification": "Awaiting review",

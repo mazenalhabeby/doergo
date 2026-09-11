@@ -1970,7 +1970,10 @@
       "dateFromDocument": "Letta dal documento: controllala",
       "dateGuessed": "Presa dal testo del documento. Controllala.",
       "dateNotFound": "Data non leggibile — invia comunque, l'ufficio la confermerà.",
-      "expiresOnOptional": "Scade il"
+      "expiresOnOptional": "Scade il",
+      "expiresOnValue": "Scade il {{date}}",
+      "changeDate": "Modifica",
+      "dateCorrecting": "Inserisca la data come è stampata sul documento."
     },
     "status": {
       "pendingVerification": "In attesa di verifica",

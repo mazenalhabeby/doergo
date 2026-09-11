@@ -7902,7 +7902,10 @@
       "reading": "Lecture du document…",
       "dateFromDocument": "Lue sur le document — vérifiez-la",
       "dateGuessed": "Reprise du texte du document. Merci de vérifier.",
-      "dateNotFound": "Rien de lisible trouvé — saisissez la date figurant sur le document."
+      "dateNotFound": "Rien de lisible trouvé — saisissez la date figurant sur le document.",
+      "expiresOnValue": "Expire le {{date}}",
+      "changeDate": "Modifier",
+      "dateCorrecting": "Saisissez la date telle qu'elle figure sur le document."
     },
     "status": {
       "pendingVerification": "En attente de vérification",

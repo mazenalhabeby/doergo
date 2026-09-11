@@ -7893,7 +7893,10 @@
       "reading": "Reading the document…",
       "dateFromDocument": "Read from the document — check it matches",
       "dateGuessed": "Taken from the text on the document. Please check it.",
-      "dateNotFound": "Nothing readable found — please enter the date from the document."
+      "dateNotFound": "Nothing readable found — please enter the date from the document.",
+      "expiresOnValue": "Expires {{date}}",
+      "changeDate": "Change",
+      "dateCorrecting": "Set the date as printed on the document."
     },
     "status": {
       "pendingVerification": "Awaiting review",

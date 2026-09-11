@@ -3,7 +3,8 @@
 import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Upload, Loader2, FileText, AlertTriangle } from "lucide-react"
+import { Upload, Loader2, FileText, AlertTriangle, ShieldCheck, CalendarDays, Pencil } from "lucide-react"
+import { expiryPrompt, expiryReady } from "@hbcfield/shared/client"
 import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -27,9 +28,11 @@ import { cn } from "@/lib/utils"
      in the list. The server refuses them anyway; the screen should not put
      somebody in a position to be refused.
 
-  2. IT ASKS FOR THE EXPIRY WHERE THE EXPIRY IS. A certificate is uploaded with
-     its date in the same breath, not chased afterwards — and the field appears
-     only for types that have one.
+  2. IT DOES NOT ASK FOR A DATE THAT IS PRINTED ON THE DOCUMENT. The expiry is
+     read off the upload and STATED; the picker appears only when the document
+     could not answer, or when the member disagrees with what was read. The
+     ordering rule is `expiryPrompt` in shared, so the phone cannot drift from
+     this — see the note on `overriding` below.
 
   3. IT SAYS WHAT HAPPENS NEXT. The upload goes into a queue for review, and a
      screen that just says "uploaded" would leave somebody believing they were
@@ -79,6 +82,15 @@ export function SupplyDocumentDialog({
   const [staged, setStaged] = useState<string | null>(null)
   const [dateSource, setDateSource] = useState<"MRZ" | "TEXT" | "NOTHING" | null>(null)
   const [reading, setReading] = useState(false)
+  /*
+    The member has asked to set the date themselves.
+
+    Being certain is not the same as being right — a licence photographed at an
+    angle produces a confident wrong answer — so the correction is always one
+    click away. It is never entered automatically: an app that quietly reopens
+    the field it just filled in has not saved anybody anything.
+  */
+  const [overriding, setOverriding] = useState(false)
 
   /*
     DERIVED, not initialised from state.
@@ -101,6 +113,8 @@ export function SupplyDocumentDialog({
     setFile(picked)
     setStaged(null)
     setDateSource(null)
+    setExpiresOn("")
+    setOverriding(false)
     if (!picked || !type) return
     if (picked.size > MAX_BYTES) {
       notify.error(t("documents.supply.tooLarge"))
@@ -173,11 +187,28 @@ export function SupplyDocumentDialog({
     setExpiresOn("")
     setStaged(null)
     setDateSource(null)
+    setOverriding(false)
     setProgress(0)
   }
 
-  const needsDate = !!type?.hasExpiry
-  const canSubmit = !!file && !!type && (!needsDate || !!expiresOn) && !submit.isPending
+  /*
+    One rule, shared with the phone.
+
+    Both surfaces had the reading wired and both still LED with the picker: the
+    block rendered the moment a type was chosen, before any file existed, so the
+    first thing on screen was an empty date field for a date printed on the
+    document about to be uploaded. Pre-filling it afterwards does not undo
+    that — by then somebody has typed it.
+  */
+  const prompt = expiryPrompt({
+    hasExpiry: !!type?.hasExpiry,
+    hasFile: !!file,
+    reading,
+    source: dateSource,
+    value: expiresOn || null,
+    overriding,
+  })
+  const canSubmit = !!file && !!type && expiryReady(prompt) && !submit.isPending
 
   return (
     <Dialog
@@ -253,36 +284,83 @@ export function SupplyDocumentDialog({
               </button>
             </div>
 
-            {/* Its expiry, asked for where it belongs */}
-            {needsDate && (
+            {/* Its expiry — read off the document, not asked for */}
+            {prompt.state === "READING" && (
+              <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-400">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                {t("documents.supply.reading")}
+              </div>
+            )}
+
+            {prompt.state === "FOUND" && (
+              /*
+                STATED, not requested. The date sits here as something the app
+                has read, with its provenance beside it — a zone expiry is
+                proved by a check digit, a date off printed text is the latest
+                one the page happened to show. Both save the typing; only one
+                is a fact, and somebody confirming it is entitled to know which.
+              */
+              <div
+                className={cn(
+                  "rounded-lg border px-3 py-2.5",
+                  prompt.certainty === "PROVEN"
+                    ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
+                    : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  {prompt.certainty === "PROVEN"
+                    ? <ShieldCheck className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                    : <CalendarDays className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />}
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    {t("documents.supply.expiresOnValue", {
+                      date: new Date(prompt.value).toLocaleDateString(),
+                    })}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3 pl-6">
+                  <span className={cn(
+                    "text-xs",
+                    prompt.certainty === "PROVEN"
+                      ? "text-blue-700 dark:text-blue-300"
+                      : "text-slate-500 dark:text-slate-400",
+                  )}>
+                    {prompt.certainty === "PROVEN"
+                      ? t("documents.supply.dateFromDocument")
+                      : t("documents.supply.dateGuessed")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOverriding(true)}
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-slate-600 underline-offset-2 hover:underline dark:text-slate-300"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    {t("documents.supply.changeDate")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {prompt.state === "ASK" && (
+              /*
+                The last resort, and it says why it is asking. A bare required
+                field with no explanation is what the member was given before,
+                on every document that was not a passport.
+              */
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   {t("documents.supply.expiresOn")}
                 </span>
                 <Input
                   type="date"
+                  autoFocus={prompt.reason === "CORRECTING"}
                   value={expiresOn}
-                  onChange={(e) => { setExpiresOn(e.target.value); setDateSource(null) }}
+                  onChange={(e) => setExpiresOn(e.target.value)}
                 />
-                {/*
-                  Where the date came from, in the member's words. A date the
-                  app filled in is a claim the app is making, and somebody about
-                  to confirm it deserves to know whether it was READ from a
-                  machine-readable zone or GUESSED from printed text.
-                */}
-                <span className={cn(
-                  "mt-1 block text-xs",
-                  dateSource === "MRZ" ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400",
-                )}>
-                  {reading
-                    ? t("documents.supply.reading")
-                    : dateSource === "MRZ"
-                      ? t("documents.supply.dateFromDocument")
-                      : dateSource === "TEXT"
-                        ? t("documents.supply.dateGuessed")
-                        : dateSource === "NOTHING"
-                          ? t("documents.supply.dateNotFound")
-                          : t("documents.supply.expiresHint")}
+                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                  {prompt.reason === "CORRECTING"
+                    ? t("documents.supply.dateCorrecting")
+                    : t("documents.supply.dateNotFound")}
                 </span>
               </label>
             )}

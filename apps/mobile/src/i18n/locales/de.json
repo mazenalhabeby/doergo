@@ -1970,7 +1970,10 @@
       "dateFromDocument": "Aus dem Dokument gelesen — bitte prüfen",
       "dateGuessed": "Aus dem Text im Dokument übernommen. Bitte prüfen.",
       "dateNotFound": "Datum nicht lesbar — trotzdem senden, das Büro bestätigt es.",
-      "expiresOnOptional": "Gültig bis"
+      "expiresOnOptional": "Gültig bis",
+      "expiresOnValue": "Gültig bis {{date}}",
+      "changeDate": "Ändern",
+      "dateCorrecting": "Geben Sie das Datum so ein, wie es auf dem Dokument steht."
     },
     "status": {
       "pendingVerification": "Wird geprüft",
