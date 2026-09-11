@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import type { VersionStatus } from '../lib/version-gate';
-import { IN_APP_UPDATES_SUPPORTED, startStoreUpdate, onDownloaded } from '../lib/in-app-updates';
+import { openUpdate, onDownloaded } from '../lib/in-app-updates';
 
-const DISMISS_KEY = 'update_banner_dismissed_for';
+const DISMISS_KEY = 'update_banner_snoozed';
+
+/**
+ * ⚠️ "Not now" is not "never".
+ *
+ * Dismissal used to be stored as the version and checked for equality, so ONE
+ * tap of the X — including an accidental one — silenced that release for good.
+ * The whole point of this banner is that everybody hears about an update, and a
+ * permanent hide from a single tap defeats it.
+ *
+ * A snooze expires. The same release speaks up again the next day, and the
+ * entry in Profile (which cannot be dismissed at all) is there the whole time.
+ */
+const SNOOZE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * A newer version exists — said once, without taking the app away.
@@ -19,8 +32,9 @@ const DISMISS_KEY = 'update_banner_dismissed_for';
  * locked out of an app that works perfectly. That happened. This reaches the
  * same people with the same message and costs nothing when the store is behind.
  *
- * Dismissal is remembered PER VERSION: closing it means "not about 1.0.1
- * again", not "never tell me anything". The next release speaks up once more.
+ * Closing it is a SNOOZE, not a mute — see SNOOZE_MS. And it is not the only
+ * channel: Profile carries an entry that cannot be dismissed at all, so a tap
+ * here never costs somebody the news.
  */
 export function UpdateBanner({ status }: { status: VersionStatus }) {
   const { t } = useTranslation();
@@ -33,8 +47,12 @@ export function UpdateBanner({ status }: { status: VersionStatus }) {
   useEffect(() => {
     let cancelled = false;
     AsyncStorage.getItem(DISMISS_KEY)
-      .then((v) => {
-        if (!cancelled) setDismissed(v === version);
+      .then((raw) => {
+        if (cancelled) return;
+        // `{version}|{when}`. A snooze belongs to one release AND expires.
+        const [snoozedVersion, at] = (raw ?? '').split('|');
+        const fresh = Number(at) > 0 && Date.now() - Number(at) < SNOOZE_MS;
+        setDismissed(snoozedVersion === version && fresh);
       })
       // Never let a storage failure hide the message — showing it twice is a
       // smaller cost than never showing it at all.
@@ -50,19 +68,10 @@ export function UpdateBanner({ status }: { status: VersionStatus }) {
 
   const close = () => {
     setDismissed(true);
-    AsyncStorage.setItem(DISMISS_KEY, version).catch(() => {});
+    AsyncStorage.setItem(DISMISS_KEY, `${version}|${Date.now()}`).catch(() => {});
   };
 
-  /*
-    Android updates in place; iOS opens the store, because Apple offers no
-    equivalent. Falls back to the link whenever Play cannot start one — a
-    device without Play Services, a managed install — so the button never
-    appears to do nothing.
-  */
-  const open = async () => {
-    if (IN_APP_UPDATES_SUPPORTED && (await startStoreUpdate(false))) return;
-    if (status.downloadUrl) Linking.openURL(status.downloadUrl).catch(() => {});
-  };
+  const open = () => openUpdate(status.downloadUrl);
 
   // A flexible update that downloads and is never installed is the usual way
   // this feature quietly does nothing, so say when it is ready.

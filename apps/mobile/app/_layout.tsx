@@ -27,7 +27,7 @@ import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { ToastProvider } from '../src/contexts/toast-context';
 import { UpdateRequired } from '../src/components/update-required';
 import { UpdateBanner } from '../src/components/update-banner';
-import { checkVersion, type VersionStatus } from '../src/lib/version-gate';
+import { VersionProvider, useVersionStatus } from '../src/contexts/version-context';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
 import { LocationConsentModal } from '../src/components/LocationConsentModal';
@@ -108,23 +108,19 @@ function RootLayoutNav() {
   }, [isAuthenticated, needsOnboarding, isLoading, segments, showAnimatedSplash, user?.role]);
 
   /*
-    Is this build still allowed to run?
+    Is this build still allowed to run, and is there a newer one?
 
-    Checked once per launch, before anything is rendered. Starts as null
-    meaning "not answered yet", and only a definite `blocked: true` shows the
-    wall — every failure inside checkVersion resolves to blocked:false, so a
-    timeout or an older API cannot lock anyone out of a working app.
+    Starts as null meaning "not answered yet", and only a definite
+    `blocked: true` shows the wall — every failure inside checkVersion resolves
+    to blocked:false, so a timeout or an older API cannot lock anyone out of a
+    working app.
+
+    ⚠️ This was a once-per-launch `checkVersion()` here, which is how the 1.0.5
+    release went unannounced: `MOBILE_LATEST_VERSION` is raised the moment the
+    store publishes, and every app already open had asked BEFORE that and been
+    told nothing was new. The provider re-asks on foreground.
   */
-  const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    checkVersion().then((s) => {
-      if (!cancelled) setVersionStatus(s);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { status: versionStatus } = useVersionStatus();
 
   const handleSplashComplete = useCallback(() => {
     setShowAnimatedSplash(false);
@@ -197,7 +193,11 @@ export default function RootLayout() {
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <ThemeProvider>
             <AuthProvider>
-              <RootLayoutNav />
+              {/* Above the navigator, so the banner and the entry in Profile
+                  read one answer to one question. */}
+              <VersionProvider>
+                <RootLayoutNav />
+              </VersionProvider>
             </AuthProvider>
           </ThemeProvider>
         </SafeAreaProvider>

@@ -855,6 +855,7 @@
       "termsOfService": "Nutzungsbedingungen",
       "privacyPolicy": "Datenschutzerklärung",
       "about": "Über",
+      "updateAvailable": "Version {{version}} ist verfügbar",
       "language": "Sprache",
       "timeFormat": "Zeitformat",
       "guidedTour": "Geführte Touren"

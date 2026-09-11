@@ -17,6 +17,8 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
+import { useVersionStatus } from '../../../src/contexts/version-context';
+import { openUpdate } from '../../../src/lib/in-app-updates';
 import { orgHasAddOn } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
@@ -116,6 +118,7 @@ export default function ProfileScreen() {
 
   const isTechnician = user?.role === Role.EMPLOYEE;
   const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const { status: versionStatus } = useVersionStatus();
   const hasAvatar = !!user?.avatarUrl;
 
   // ---- avatar upload flow ------------------------------------------------
@@ -321,6 +324,34 @@ export default function ProfileScreen() {
 
       {/* ── 2. Settings Menu ──────────────────────────────────────────── */}
       <View style={styles.section}>
+        {/*
+          A newer version exists — the one place saying so that cannot be
+          dismissed.
+
+          ⚠️ The banner was the ONLY channel, and it can be closed with one tap
+          of an ✕ that is easy to hit by accident. Somebody who does that, or
+          who simply never had the app open in the minutes it was shown, has no
+          way left to find out. This row stays until the update is installed,
+          and it sits above every other setting because that is the point.
+        */}
+        {versionStatus?.updateAvailable && !!versionStatus.downloadUrl && (
+          <View style={[styles.menuCard, { backgroundColor: colors.card, marginBottom: SPACING.xl }]}>
+            <MenuItem
+              icon="arrow-down-circle-outline"
+              iconColor={COLORS.primary}
+              iconBg={colors.primaryLight}
+              label={t('profile.menu.updateAvailable', { version: versionStatus.latest })}
+              onPress={() => { void openUpdate(versionStatus.downloadUrl); }}
+              trailing={
+                <View style={styles.menuTrailingRow}>
+                  <Text style={styles.updateAction}>{t('updateBanner.action')}</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </View>
+              }
+              themeColors={colors}
+            />
+          </View>
+        )}
         <Text style={[styles.menuGroupLabel, { color: colors.textMuted }]}>{t('profile.menu.general')}</Text>
         <TourTarget name="profile-menu" style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <MenuItem
@@ -538,7 +569,16 @@ export default function ProfileScreen() {
             onPress={() => router.push('/profile/about' as Href)}
             trailing={
               <View style={styles.menuTrailingRow}>
-                <Text style={[styles.menuTrailingText, { color: colors.textMuted }]}>v{appVersion}</Text>
+                <Text
+                  style={[
+                    styles.menuTrailingText,
+                    // Not a second notice — the same fact, where somebody looks
+                    // when they go to check what version they are on.
+                    { color: versionStatus?.updateAvailable ? COLORS.primary : colors.textMuted },
+                  ]}
+                >
+                  v{appVersion}
+                </Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             }
@@ -801,6 +841,11 @@ const styles = StyleSheet.create({
   },
 
   // ── Footer ──
+  updateAction: {
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
   version: {
     textAlign: 'center',
     fontSize: FONT_SIZE.sm,

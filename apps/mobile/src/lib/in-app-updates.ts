@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 /**
  * Play In-App Updates — Android only.
@@ -134,4 +134,20 @@ export function onDownloaded(cb: () => void): () => void {
   } catch {
     return () => {};
   }
+}
+
+/**
+ * Take somebody to the update, from wherever they tapped.
+ *
+ * ⚠️ Both the banner and the entry in Profile need this, and a second copy is
+ * a second chance for one of them to skip the Play path and silently open a
+ * web page on a device that could have updated in place.
+ *
+ * Android updates without leaving the app; iOS opens the store, because Apple
+ * offers no equivalent. Falls back to the link whenever Play cannot start one
+ * — no Play Services, a managed install — so the button never appears dead.
+ */
+export async function openUpdate(downloadUrl: string | null): Promise<void> {
+  if (IN_APP_UPDATES_SUPPORTED && (await startStoreUpdate(false))) return;
+  if (downloadUrl) Linking.openURL(downloadUrl).catch(() => {});
 }
