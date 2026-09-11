@@ -2,7 +2,15 @@
 
 import { Languages, Check } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { changeLanguage, supportedLanguages } from "@/i18n"
+/*
+  ⚠️ `@/i18n/languages`, NOT `@/i18n`.
+
+  This component sits in the marketing header, and `@/i18n` statically imports
+  `en.json` — so importing two symbols from it shipped the entire English
+  catalogue, ~95 KB over the wire, to every visitor of the public home page in
+  order to draw a dropdown of five flags.
+*/
+import { changeLanguage, supportedLanguages } from "@/i18n/languages"
 import { cn } from "@/lib/utils"
 import {
   DropdownMenu,

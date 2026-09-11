@@ -171,3 +171,50 @@ describe('client bundle must not contain the translation catalogue', () => {
     }
   });
 });
+
+describe('the marketing pages do not carry the application catalogue', () => {
+  /*
+    ⚠️ 25% OF THE PUBLIC HOME PAGE'S JAVASCRIPT WAS `en.json`.
+
+    English is bundled on purpose — it is the SSR language and the fallback —
+    but "bundled" must not mean "on every page". The marketing tree reached it
+    through `language-switcher.tsx`, which imported `changeLanguage` and
+    `supportedLanguages` from `@/i18n`, a module that statically imports the
+    catalogue. Two symbols, neither needing a single translated string, and the
+    whole of documents, attendance, tasks and the guided tours came with them:
+    293 KB raw, ~95 KB over the wire, to draw a dropdown of five flags.
+
+    Exactly the shape of the `lib/industries.ts` incident this file already
+    documents. AN IMPORT IS A MODULE, NOT A SYMBOL — and the second occurrence
+    is what turns a lesson into a test.
+
+    The catalogue-free half lives in `src/i18n/languages.ts`.
+  */
+  const CATALOGUE = 'src/i18n/locales/en.json';
+  const MARKETING_ENTRIES = [
+    'src/app/_home/HomeClient.tsx',
+    'src/components/language-switcher.tsx',
+  ];
+
+  it.each(MARKETING_ENTRIES)('%s does not statically reach the catalogue', (entry) => {
+    const file = path.join(process.cwd(), entry);
+    expect(fs.existsSync(file)).toBe(true);
+
+    const chain = chainTo(file, (f) => rel(f).replace(/\\/g, '/') === CATALOGUE);
+    // The chain is printed on failure: the point is to name the ONE import that
+    // did it, because the offending file is never the one that looks wrong.
+    expect(chain ? chain.join('\n  → ') : null).toBeNull();
+  });
+
+  it('the language list and the catalogue live in different modules', () => {
+    // A re-export would put it straight back: `export * from './index'` in
+    // languages.ts reads like tidying and undoes the whole thing.
+    const src = stripComments(
+      fs.readFileSync(path.join(process.cwd(), 'src/i18n/languages.ts'), 'utf8'),
+    );
+    expect(src).not.toMatch(/(?:^|\n)\s*(?:import|export)[^\n]*['"][^'"]*locales\//);
+    expect(src).not.toMatch(/(?:^|\n)\s*(?:import|export)\s+(?!\()[^\n;]*from\s*['"]\.\/index['"]/);
+    // …and it still reaches the real implementation, lazily.
+    expect(src).toMatch(/await import\(['"]\.\/index['"]\)/);
+  });
+});

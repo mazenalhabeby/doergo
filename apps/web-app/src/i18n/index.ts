@@ -2,9 +2,16 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 
-const LANGUAGE_KEY = 'hbcfield_language';
-const SUPPORTED = ['en', 'de', 'es', 'fr', 'it'] as const;
-type Supported = (typeof SUPPORTED)[number];
+/*
+  The language list and the key live in `./languages`, which imports no
+  catalogue — see the warning at the top of that file. Two copies of "which
+  languages exist" is how one of them starts offering a language the other
+  cannot load.
+*/
+import { LANGUAGE_KEY, SUPPORTED, isSupported, supportedLanguages, type Supported } from './languages';
+
+export { supportedLanguages };
+export type { Supported };
 
 /*
   ENGLISH IS BUNDLED; THE OTHER FOUR ARE FETCHED WHEN ASKED FOR.
@@ -34,10 +41,6 @@ const LOADERS: Record<Exclude<Supported, 'en'>, () => Promise<{ default: unknown
 };
 
 const loaded = new Set<string>(['en']);
-
-function isSupported(lang: string): lang is Supported {
-  return (SUPPORTED as readonly string[]).includes(lang);
-}
 
 function getStoredLanguage(): string {
   if (typeof window === 'undefined') return 'en';
@@ -141,12 +144,6 @@ export function getCurrentLanguage(): string {
   return i18n.language || 'en';
 }
 
-export const supportedLanguages = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-] as const;
+
 
 export default i18n;
