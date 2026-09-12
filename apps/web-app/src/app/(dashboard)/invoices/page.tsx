@@ -46,6 +46,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { dateLocale } from "@/lib/format-date"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
+import { SpaceTabs } from "@/components/space-tabs"
+import { useSpaceScope } from "@/hooks/use-space-scope"
 import { formatMoney } from "@/lib/money"
 
 
@@ -141,14 +143,32 @@ function InvoicesPageInner() {
    */
   const [bandFilter, setBandFilter] = useState<AgeBand | null>(null)
 
+  /*
+    WHICH WORKSPACE'S BOOK.
+
+    ⚠️ Invoices were a TAB inside one workspace's settings — Spaces → a
+    workspace → Configure → Invoices, and the same four steps again for the
+    next one. Clients, assets and portals made this move already: they are what
+    a workspace HAS, not how it is configured, and that page is configuration.
+    Invoices are the same thing and were left behind, with the note that
+    "per-space billing IS a setting" — which was true of the module and never
+    of the invoices.
+
+    ⚠️ Filtered by KIND, not by a module. You invoice a customer site, never
+    your own warehouse, and offering an internal workspace would be a tab
+    leading to a screen where nothing can be created.
+  */
+  const scope = useSpaceScope({ kind: "CUSTOMER" })
+
   /** Take a step, asking first where the lifecycle says to. */
   const step = (inv: Invoice, s: LifecycleStep) =>
     s.confirm ? setSendTarget({ inv, step: s }) : statusMutation.mutate({ id: inv.id, status: s.to })
 
   const { data, isLoading } = useQuery({
-    queryKey: ["invoices", statusFilter],
+    queryKey: ["invoices", statusFilter, scope.spaceId],
     queryFn: () => invoicesApi.list({
       status: statusFilter !== "__all__" ? statusFilter : undefined,
+      spaceId: scope.spaceId ?? undefined,
       limit: 50,
     }),
   })
@@ -248,14 +268,40 @@ function InvoicesPageInner() {
             <h1 data-tour="page-invoices" className="text-2xl font-semibold tracking-tight text-foreground">
               {t("invoices.title")}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t("invoices.subtitle")}</p>
+            {/*
+              Which workspace, said in words when the tabs are not there to say
+              it. A single-workspace organization should still know whose book
+              it is looking at.
+            */}
+            <p className="mt-1 text-sm text-muted-foreground">
+              {scope.space
+                ? t("invoices.inWorkspace", { name: scope.space.name })
+                : t("invoices.subtitle")}
+            </p>
           </div>
           {isAdmin && (
-            <Button className="gap-1.5" onClick={() => router.push("/invoices/new")}>
+            <Button
+              className="gap-1.5"
+              /* ⚠️ Carries the workspace through. Choosing one here and then
+                 being asked again on the next screen is the same question
+                 twice, and the second answer is the one that counts. */
+              onClick={() => router.push(scope.spaceId ? `/invoices/new?spaceId=${scope.spaceId}` : "/invoices/new")}
+            >
               <Plus className="size-4" /> {t("invoices.newInvoice")}
             </Button>
           )}
         </div>
+
+        {scope.showTabs && (
+          <div className={cn(PAGE_WIDTH, "pb-1")}>
+            <SpaceTabs
+              spaces={scope.spaces.map((sp) => ({ id: sp.id, name: sp.name }))}
+              value={scope.spaceId}
+              onChange={scope.setSpaceId}
+              allLabel={t("invoices.allSpaces")}
+            />
+          </div>
+        )}
       </div>
 
       <div className={cn(PAGE_WIDTH, "py-6")}>

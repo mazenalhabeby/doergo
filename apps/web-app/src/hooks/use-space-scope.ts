@@ -54,6 +54,17 @@ export function useSpaceScope(options: {
    */
   module?: string
   /**
+   * The ownership kind a workspace must be.
+   *
+   * ⚠️ Not every screen that belongs to a workspace belongs to a MODULE.
+   * Invoicing is an organization Option, not a per-space module, and what
+   * decides whether a workspace can be billed is what it IS: you invoice a
+   * customer site, never your own warehouse. Offering an internal workspace
+   * here would be a tab leading to a screen where nothing can be created —
+   * the same failure the module filter exists to prevent, asked the other way.
+   */
+  kind?: string
+  /**
    * Whether "All" is a real answer here.
    *
    * It is for clients and assets, whose lists the API can return unfiltered.
@@ -63,7 +74,7 @@ export function useSpaceScope(options: {
    */
   allowAll?: boolean
 }): SpaceScope {
-  const { module, allowAll = true } = options
+  const { module, kind, allowAll = true } = options
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -83,6 +94,8 @@ export function useSpaceScope(options: {
     const all: CompanyLocation[] = (data as { data?: CompanyLocation[] } | undefined)?.data ?? []
     return all.filter((s) => {
       if (s.isActive === false) return false
+      // What a workspace IS, before what it has switched on.
+      if (kind && s.kind !== kind) return false
       /*
         A space's own module list wins; an absent one means the space has never
         been configured and inherits the organization's — the same precedence
@@ -93,7 +106,7 @@ export function useSpaceScope(options: {
       const mods = (Array.isArray(s.enabledModules) ? s.enabledModules : user?.orgModules ?? []) as string[]
       return mods.includes(module)
     })
-  }, [data, module, user?.orgModules])
+  }, [data, module, kind, user?.orgModules])
 
   const param = searchParams.get("space")
   /*

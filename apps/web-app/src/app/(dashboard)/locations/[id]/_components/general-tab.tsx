@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Boxes, Building2, CheckCircle2, Inbox, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, ChevronRight } from "lucide-react"
+import { Boxes, Building2, CheckCircle2, Inbox, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, FileText, ChevronRight } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AuditTrail } from "@/components/audit-trail"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { DangerZone } from "./danger-zone"
+import { useAuth } from "@/contexts/auth-context"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } =
   ATTENDANCE_CONSTANTS
@@ -37,6 +38,7 @@ const LocationPicker = dynamic(() => import("../../_components/location-picker")
 export function GeneralTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { hasPlanFeature } = useAuth()
 
   const [makingDefault, setMakingDefault] = useState(false)
   const [name, setName] = useState(space.name)
@@ -146,6 +148,17 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
     { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") },
     { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") },
     { href: "/portals", label: t("portal.title", "Client portal"), Icon: LayoutTemplate, show: mods.includes("b2c_portal") },
+    /*
+      ⚠️ Invoicing is an organization OPTION, not a per-space module, so it is
+      not in `mods` — and what decides whether this workspace can be billed is
+      what it IS. You invoice a customer site, never your own warehouse.
+    */
+    {
+      href: "/invoices",
+      label: t("invoices.title"),
+      Icon: FileText,
+      show: space.kind === "CUSTOMER" && hasPlanFeature("invoicing"),
+    },
   ].filter((l) => l.show)
 
   return (

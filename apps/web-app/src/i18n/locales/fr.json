@@ -4441,7 +4441,9 @@
     "noneMatch": "Aucune facture ne correspond à ces filtres.",
     "showing": "{{count}} sur {{total}}",
     "issuedOn": "Émise {{date}}",
-    "dueOn": "Échéance {{date}}"
+    "dueOn": "Échéance {{date}}",
+    "allSpaces": "Tous",
+    "inWorkspace": "Dans {{name}}"
   },
   "overtime": {
     "title": "Gestion des heures supplémentaires",

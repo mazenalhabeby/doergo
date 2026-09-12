@@ -4432,7 +4432,9 @@
     "noneMatch": "Ninguna factura coincide con estos filtros.",
     "showing": "{{count}} de {{total}}",
     "issuedOn": "Emitida {{date}}",
-    "dueOn": "Vence {{date}}"
+    "dueOn": "Vence {{date}}",
+    "allSpaces": "Todos",
+    "inWorkspace": "En {{name}}"
   },
   "overtime": {
     "title": "Gestión de horas extra",

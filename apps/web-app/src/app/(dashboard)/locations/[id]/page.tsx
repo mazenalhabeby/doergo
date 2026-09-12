@@ -11,7 +11,6 @@ import {
   Building2,
   CalendarClock,
   ChevronRight as ChevronRightNav,
-  FileText,
   Home,
   Loader2,
   Share2,
@@ -38,7 +37,6 @@ const AttendanceTab = dynamic(() => import("./_components/attendance-tab").then(
 const ModulesTab = dynamic(() => import("./_components/modules-tab").then((m) => m.ModulesTab), { ssr: false })
 const WorkflowTab = dynamic(() => import("./_components/workflow-tab").then((m) => m.WorkflowTab), { ssr: false })
 const MembersTab = dynamic(() => import("./_components/members-tab").then((m) => m.MembersTab), { ssr: false })
-const InvoicesTab = dynamic(() => import("./_components/invoices-tab").then((m) => m.InvoicesTab), { ssr: false })
 const SharingTab = dynamic(() => import("./_components/sharing-tab").then((m) => m.SharingTab), { ssr: false })
 
 
@@ -52,6 +50,14 @@ const MOVED_TABS: Record<string, string> = {
   customers: "/clients",
   assets: "/assets",
   portal: "/portals",
+  /*
+    ⚠️ Invoices was left behind when the other three moved, on the grounds that
+    "per-space billing IS a setting". That is true of the MODULE and was never
+    true of the invoices: reaching one meant Spaces → a workspace → Configure →
+    Invoices, and the same four steps again for the next workspace. The list at
+    /invoices asks which workspace the way every other content screen does.
+  */
+  invoices: "/invoices",
 }
 
 export default function SpaceSettingsPage() {
@@ -155,12 +161,11 @@ export default function SpaceSettingsPage() {
     { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
     { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
     /*
-      Customers, Assets and Client portal used to sit here. They are the
-      workspace's CONTENT, not its configuration, and each now has its own
-      address where the same component is mounted — see MOVED_TABS above and the
-      links on the General tab. Invoices stays: per-space billing IS a setting.
+      Customers, Assets, Client portal and Invoices used to sit here. They are
+      the workspace's CONTENT, not its configuration, and each now has its own
+      address where the same screen lives — see MOVED_TABS above and the links
+      on the General tab.
     */
-    { value: "invoices", label: t("invoices.title"), icon: FileText, show: space?.kind === "CUSTOMER" && optionAllows("invoices") },
   ].filter((s) => s.show)
 
   // Gate the whole page on the user-management permission (mirrors other admin pages).
@@ -293,13 +298,6 @@ export default function SpaceSettingsPage() {
               <TabsContent value="sharing" className="mt-0">
                 <SharingTab spaceId={spaceId} spaceName={space.name} />
               </TabsContent>
-              {space?.kind === "CUSTOMER" && (
-                <TabsContent value="invoices" className="mt-0">
-                  <PlanGate feature="invoicing">
-                    <InvoicesTab spaceId={spaceId} spaceName={space.name} />
-                  </PlanGate>
-                </TabsContent>
-              )}
             </div>
           </Tabs>
         )}

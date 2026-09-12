@@ -38,7 +38,13 @@ export const NAV_OPTION: Readonly<Record<string, string>> = {
  */
 export const SPACE_TAB_OPTION: Readonly<Record<string, string>> = {
   workflow: 'workflows',
-  invoices: 'invoicing',
+  /*
+    ⚠️ `invoices` is gone from here because the TAB is gone. Invoices moved out
+    of a workspace's settings to /invoices, alongside clients, assets and
+    portals — they are what a workspace HAS, not how it is configured. The
+    Option still owns the surface; it is owned through NAV_OPTION now, which is
+    where a page rather than a tab is claimed.
+  */
 } as const;
 
 /** A settings section, keyed to the Option that owns it. */

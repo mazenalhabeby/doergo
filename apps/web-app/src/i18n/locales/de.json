@@ -4432,7 +4432,9 @@
     "noneMatch": "Keine Rechnungen entsprechen diesen Filtern.",
     "showing": "{{count}} von {{total}}",
     "issuedOn": "Ausgestellt {{date}}",
-    "dueOn": "Fällig {{date}}"
+    "dueOn": "Fällig {{date}}",
+    "allSpaces": "Alle",
+    "inWorkspace": "In {{name}}"
   },
   "overtime": {
     "title": "Überstundenverwaltung",

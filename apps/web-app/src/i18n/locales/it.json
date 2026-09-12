@@ -4441,7 +4441,9 @@
     "noneMatch": "Nessuna fattura corrisponde a questi filtri.",
     "showing": "{{count}} di {{total}}",
     "issuedOn": "Emessa {{date}}",
-    "dueOn": "Scade {{date}}"
+    "dueOn": "Scade {{date}}",
+    "allSpaces": "Tutti",
+    "inWorkspace": "In {{name}}"
   },
   "overtime": {
     "title": "Gestione degli straordinari",

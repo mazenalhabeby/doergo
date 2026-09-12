@@ -4432,7 +4432,9 @@
     "noneMatch": "No invoices match these filters.",
     "showing": "{{count}} of {{total}}",
     "issuedOn": "Issued {{date}}",
-    "dueOn": "Due {{date}}"
+    "dueOn": "Due {{date}}",
+    "allSpaces": "All",
+    "inWorkspace": "In {{name}}"
   },
   "overtime": {
     "title": "Overtime Management",
