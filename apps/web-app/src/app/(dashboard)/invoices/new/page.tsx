@@ -45,7 +45,36 @@ interface WorkEntry {
 }
 interface ManualLine { description: string; quantity: number; unitPrice: number }
 
-function todayIso() { return new Date().toISOString().slice(0, 10) }
+/**
+ * A Date → `YYYY-MM-DD`, from the LOCAL parts.
+ *
+ * ⚠️ Not `toISOString().slice(0,10)`. That converts to UTC first, so east of
+ * Greenwich the 1st of a month becomes the 31st of the one before — and a
+ * period preset called "last month" would quietly start a day early, on a
+ * screen whose entire job is to say which days are being charged for.
+ */
+function isoOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+function todayIso() { return isoOf(new Date()) }
+
+/** The first and last day of a whole month, `shift` months from now. */
+function monthBounds(shift: number): [string, string] {
+  const now = new Date()
+  const first = new Date(now.getFullYear(), now.getMonth() + shift, 1)
+  // Day 0 of the NEXT month is the last day of this one — which gets February
+  // and the 31st right without a table of month lengths.
+  const last = new Date(now.getFullYear(), now.getMonth() + shift + 1, 0)
+  return [isoOf(first), isoOf(last)]
+}
+
+/** Is the chosen range exactly this preset? Decides which chip reads as active. */
+function isPreset(key: "lastMonth" | "thisMonth" | "all", from: string, to: string): boolean {
+  if (key === "all") return !from && !to
+  const [f, t] = monthBounds(key === "lastMonth" ? -1 : 0)
+  return from === f && to === t
+}
 
 /**
  * A section's heading.
@@ -133,6 +162,21 @@ function NewInvoiceInner() {
     invites them to hunt for the controls that made it.
   */
   const [view, setView] = useState<"build" | "client">("build")
+
+  /*
+    THE SERVICE PERIOD — which work this invoice is for.
+
+    ⚠️ Without one the screen pulled EVERY unbilled job for the client, ever. A
+    company that invoices monthly could not bill August separately from
+    September, and the first invoice anybody raised swept up work they had not
+    meant to bill yet — silently, because an invoice full of real jobs looks
+    correct.
+
+    Blank means "everything outstanding", which is the right answer for a
+    one-off and was the only answer before.
+  */
+  const [periodFrom, setPeriodFrom] = useState("")
+  const [periodTo, setPeriodTo] = useState("")
 
   const spaceId = source === "space" ? pickedSpaceId || undefined : undefined
 
@@ -227,11 +271,29 @@ function NewInvoiceInner() {
   const clients = clientPage?.data ?? []
   const mayAddClient = clientPage?.meta?.crmCaps?.manage === true || clientPage?.meta?.crmCaps?.editInfo === true
 
-  // Completed, unbilled work — from whichever end was chosen.
+  // Completed, unbilled work — from whichever end was chosen, over whichever
+  // days were named. Both ends are optional: blank means everything still
+  // outstanding, which is right for a one-off job.
+  const period = { from: periodFrom || undefined, to: periodTo || undefined }
+
+  /**
+   * The period, as the client reads it on the document.
+   *
+   * ⚠️ An invoice that says "37.5h — €1,500" without saying WHICH DAYS cannot be
+   * checked against anything on the client's side, and the question comes back
+   * as an email a week later. Where a period was chosen, the document states it.
+   */
+  const periodLabel = periodFrom && periodTo
+    ? `${fmtDate(periodFrom)} – ${fmtDate(periodTo)}`
+    : periodFrom
+      ? t("invoices.create.periodFromOnly", { from: fmtDate(periodFrom) })
+      : periodTo
+        ? t("invoices.create.periodToOnly", { to: fmtDate(periodTo) })
+        : ""
   const gatherSource = source === "space" && spaceId
-    ? { spaceId }
+    ? { spaceId, ...period }
     : source === "client" && customerId
-      ? { customerId }
+      ? { customerId, ...period }
       : null
   const { data: gather, isLoading: gatherLoading } = useQuery({
     queryKey: ["invoice-gather", gatherSource],
@@ -449,6 +511,10 @@ function NewInvoiceInner() {
         discount: Number(discount) || 0,
         issueDate,
         dueDate: dueDate || undefined,
+        // Kept on the invoice so it can still say which days it covers long
+        // after the gather that built it would return something different.
+        servicePeriodFrom: periodFrom || undefined,
+        servicePeriodTo: periodTo || undefined,
         notes: notes.trim() || undefined,
         items,
       })
@@ -654,6 +720,71 @@ function NewInvoiceInner() {
 
               {source === "none" && (
                 <p className="mt-3 text-xs text-muted-foreground">{t("invoices.create.nothingHint")}</p>
+              )}
+
+              {/*
+                WHICH WORK — the service period.
+
+                ⚠️ Presets first, because the answer is nearly always "last
+                month". Somebody invoicing on the 1st should not have to reason
+                about two dates to say the obvious thing, and a pair of empty
+                calendars gives no clue a period was even expected.
+
+                Blank stays legitimate: "everything outstanding" is right for a
+                one-off, and is what this screen did before a period existed.
+              */}
+              {source !== "none" && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <Label className="text-xs">{t("invoices.create.period")}</Label>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {([
+                      ["lastMonth", t("invoices.create.periodLastMonth")],
+                      ["thisMonth", t("invoices.create.periodThisMonth")],
+                      ["all", t("invoices.create.periodAll")],
+                    ] as const).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          if (key === "all") { setPeriodFrom(""); setPeriodTo(""); return }
+                          const [from, to] = monthBounds(key === "lastMonth" ? -1 : 0)
+                          setPeriodFrom(from)
+                          setPeriodTo(to)
+                        }}
+                        className={cn(
+                          "rounded-lg border px-2.5 py-1 text-xs transition-colors",
+                          isPreset(key, periodFrom, periodTo)
+                            ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                            : "border-border text-muted-foreground hover:border-slate-400",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-2 space-y-2">
+                    <DatePicker
+                      value={periodFrom}
+                      onChange={setPeriodFrom}
+                      placeholder={t("invoices.create.periodFrom")}
+                      clearable
+                    />
+                    <DatePicker
+                      value={periodTo}
+                      onChange={setPeriodTo}
+                      placeholder={t("invoices.create.periodTo")}
+                      clearable
+                      fromDate={periodFrom ? new Date(periodFrom) : undefined}
+                    />
+                  </div>
+
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {periodFrom || periodTo
+                      ? t("invoices.create.periodHint")
+                      : t("invoices.create.periodAllHint")}
+                  </p>
+                </div>
               )}
 
               {/*
@@ -1116,6 +1247,12 @@ function NewInvoiceInner() {
                     <div className="flex justify-between gap-4">
                       <dt className="text-muted-foreground">{t("invoices.create.dueDate")}</dt>
                       <dd className="tabular-nums">{fmtDate(dueDate)}</dd>
+                    </div>
+                  )}
+                  {periodLabel && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">{t("invoices.create.servicePeriod")}</dt>
+                      <dd className="tabular-nums">{periodLabel}</dd>
                     </div>
                   )}
                   <div className="flex justify-between gap-4">

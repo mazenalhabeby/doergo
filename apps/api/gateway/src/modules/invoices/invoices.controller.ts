@@ -117,6 +117,9 @@ export class InvoicesController {
   async gather(
     @Query('spaceId') spaceId: string | undefined,
     @Query('customerId') customerId: string | undefined,
+    /** Service period, inclusive, `YYYY-MM-DD`. Either end may be omitted. */
+    @Query('from') from: string | undefined,
+    @Query('to') to: string | undefined,
     @CurrentUser() user: CurrentUserData,
   ) {
     /*
@@ -133,6 +136,8 @@ export class InvoicesController {
         organizationId: user.organizationId,
         spaceId: spaceId || undefined,
         customerId: customerId || undefined,
+        from: from || undefined,
+        to: to || undefined,
       }),
     );
     if (result && result.success === false) {

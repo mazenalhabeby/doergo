@@ -47,6 +47,9 @@ export interface InvoicePdfData {
   total: number
   issueDate?: string | Date | null
   dueDate?: string | Date | null
+  /** The days the work was done, if the invoice covers a defined period. */
+  servicePeriodFrom?: string | Date | null
+  servicePeriodTo?: string | Date | null
   notes?: string | null
   items: InvoicePdfItem[]
 }
@@ -180,6 +183,25 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
     ["Issue date", fmtDate(inv.issueDate)],
     ["Due date", inv.dueDate ? fmtDate(inv.dueDate) : "On receipt"],
   ]
+
+  /*
+    The days billed, where the invoice covers a defined period.
+
+    ⚠️ Only when there is one. An invoice for a single job covers no period, and
+    a row reading "Service period —" invites the question it was added to
+    answer. Where hours ARE being charged, though, the client has no way to
+    check "37.5h" against their own records without knowing which days it is.
+  */
+  if (inv.servicePeriodFrom || inv.servicePeriodTo) {
+    metaRows.push([
+      "Service period",
+      inv.servicePeriodFrom && inv.servicePeriodTo
+        ? `${fmtDate(inv.servicePeriodFrom)} - ${fmtDate(inv.servicePeriodTo)}`
+        : inv.servicePeriodFrom
+          ? `From ${fmtDate(inv.servicePeriodFrom)}`
+          : `Up to ${fmtDate(inv.servicePeriodTo)}`,
+    ])
+  }
   let my = y
   for (const [k, v] of metaRows) {
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)

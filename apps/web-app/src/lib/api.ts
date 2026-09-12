@@ -5574,6 +5574,13 @@ export interface Invoice {
   issueDate: string;
   dueDate?: string | null;
   paidAt?: string | null;
+  /**
+   * The days this invoice covers — the SERVICE period, not the billing dates.
+   * Null at either end is normal: an invoice can legitimately cover
+   * "everything outstanding".
+   */
+  servicePeriodFrom?: string | null;
+  servicePeriodTo?: string | null;
   notes?: string | null;
   organizationId: string;
   createdById: string;
@@ -5594,6 +5601,9 @@ export interface CreateInvoiceInput {
   /** Both accepted by the server; it defaults issueDate to now when omitted. */
   issueDate?: string;
   dueDate?: string;
+  /** The days billed, `YYYY-MM-DD`. Omit both for "everything outstanding". */
+  servicePeriodFrom?: string;
+  servicePeriodTo?: string;
   notes?: string;
   items?: Array<Omit<InvoiceItem, 'id' | 'invoiceId' | 'amount' | 'createdAt'> & { amount?: number }>;
 }
@@ -5656,6 +5666,9 @@ export interface InvoiceGatherEntry {
 export interface InvoiceGatherResult {
   /** Null when the work was gathered by CLIENT rather than by workspace. */
   spaceId: string | null;
+  /** The service period this covers, echoed back. Null ends mean "everything". */
+  periodFrom?: string | null;
+  periodTo?: string | null;
   customerId?: string | null;
   clientName?: string | null;
   clientEmail?: string | null;
@@ -5692,7 +5705,7 @@ export const invoicesApi = {
    * then reads as "nothing to bill" when it means "these two do not overlap".
    * The server refuses the combination rather than guessing which was meant.
    */
-  gather: async (source: { spaceId?: string; customerId?: string }) => {
+  gather: async (source: { spaceId?: string; customerId?: string; from?: string; to?: string }) => {
     const response = await api.get<{ success: boolean; data: InvoiceGatherResult }>(
       buildUrlWithQuery('/invoices/gather', source),
     );

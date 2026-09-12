@@ -2,6 +2,24 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { paginated, snapshotRates, usesTwoRates, cleanRateCents } from '@hbcfield/shared';
 
+/**
+ * `YYYY-MM-DD` → the first and last instant of that day.
+ *
+ * ⚠️ Both ends INCLUSIVE, and the `to` end is pushed to 23:59:59.999. A
+ * half-open range silently drops everything finished on the last day of the
+ * month, which is the single most common day to close a job before billing it.
+ *
+ * ⚠️ One pair of helpers for the gather filter AND for what is written onto the
+ * invoice, so the days an invoice SAYS it covers are the same days it was built
+ * from. Two parsers here is how those two quietly come apart by a day.
+ */
+function dayStart(iso?: string | null): Date | null {
+  return iso ? new Date(`${iso}T00:00:00.000Z`) : null;
+}
+function dayEnd(iso?: string | null): Date | null {
+  return iso ? new Date(`${iso}T23:59:59.999Z`) : null;
+}
+
 @Injectable()
 export class InvoiceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,6 +36,9 @@ export class InvoiceService {
     discount?: number;
     issueDate?: string;
     dueDate?: string;
+    /** The days this invoice covers, `YYYY-MM-DD`. Either end may be omitted. */
+    servicePeriodFrom?: string;
+    servicePeriodTo?: string;
     notes?: string;
     items?: {
       description: string;
@@ -123,6 +144,14 @@ export class InvoiceService {
             total,
             issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
             dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+            /*
+              The days billed, as the client is told them — kept rather than
+              re-derived from the lines, because a quiet fortnight gathers
+              nothing and an invoice must not then claim a different period
+              than the one it was raised for.
+            */
+            servicePeriodFrom: dayStart(data.servicePeriodFrom) ?? undefined,
+            servicePeriodTo: dayEnd(data.servicePeriodTo) ?? undefined,
             notes: data.notes,
             organizationId: data.organizationId,
             createdById: data.createdById,
@@ -220,6 +249,8 @@ export class InvoiceService {
       discount?: number;
       issueDate?: string;
       dueDate?: string;
+      servicePeriodFrom?: string | null;
+      servicePeriodTo?: string | null;
       notes?: string;
     },
   ) {
@@ -251,6 +282,10 @@ export class InvoiceService {
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.issueDate !== undefined) updateData.issueDate = new Date(data.issueDate);
     if (data.dueDate !== undefined) updateData.dueDate = new Date(data.dueDate);
+    // Null clears the period back to "everything outstanding" — a real answer,
+    // so it has to be distinguishable from "not mentioned in this request".
+    if (data.servicePeriodFrom !== undefined) updateData.servicePeriodFrom = dayStart(data.servicePeriodFrom);
+    if (data.servicePeriodTo !== undefined) updateData.servicePeriodTo = dayEnd(data.servicePeriodTo);
 
     // If taxRate or discount changed, recalculate totals
     if (data.taxRate !== undefined || data.discount !== undefined) {
@@ -507,7 +542,14 @@ export class InvoiceService {
    * task filter. A customer id from another tenant fails to resolve and returns
    * 404 — it never reaches a query that could return that tenant's work.
    */
-  async gather(data: { organizationId: string; spaceId?: string; customerId?: string }) {
+  async gather(data: {
+    organizationId: string;
+    spaceId?: string;
+    customerId?: string;
+    /** Service period — inclusive, `YYYY-MM-DD`. Either end may be omitted. */
+    from?: string;
+    to?: string;
+  }) {
     if (!data.spaceId && !data.customerId) {
       return {
         success: false,
@@ -584,11 +626,47 @@ export class InvoiceService {
     const rateCents = space?.billableRateCents ?? org?.billableRateCents ?? null;
     const rate = rateCents != null ? rateCents / 100 : null; // currency units/hour
 
+    /*
+      THE SERVICE PERIOD.
+
+      ⚠️ Without one this returned EVERY unbilled job for the client, ever — so
+      a company that invoices monthly could not invoice August separately from
+      September, and the first invoice anybody raised swept up work they had
+      not meant to bill yet. Both ends are optional: omitting them keeps the old
+      behaviour, which is right for "bill me everything outstanding".
+
+      ⚠️ The date a job COUNTS on is when the work was done, not when the row
+      was touched. That is the report's `completedAt` where there is a report,
+      and `updatedAt` only as a fallback for a task closed without one — which
+      is why this is an OR over two columns rather than a filter on one. A
+      filter on `updatedAt` alone would move a job into a different month
+      because somebody edited its title.
+
+      ⚠️ Inclusive at both ends, and `to` is pushed to the end of that day. A
+      half-open range here silently drops everything done on the last day of the
+      month, which is the single most common day to finish a job before billing.
+    */
+    const from = dayStart(data.from);
+    const to = dayEnd(data.to);
+    const withinPeriod =
+      from || to
+        ? {
+            OR: [
+              { serviceReport: { completedAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } },
+              {
+                serviceReport: null,
+                updatedAt: { ...(from && { gte: from }), ...(to && { lte: to }) },
+              },
+            ],
+          }
+        : {};
+
     const tasks = await this.prisma.task.findMany({
       where: {
         organizationId: data.organizationId,
         ...(space ? { spaceId: space.id } : { customerId: customer!.id }),
         status: { in: ['COMPLETED', 'CLOSED'] },
+        ...withinPeriod,
       },
       select: {
         id: true,
@@ -754,6 +832,10 @@ export class InvoiceService {
           shown a margin column; the day somebody enters one it is worth having.
           A switch here would be a feature nobody finds.
         */
+        /* Echoed so the invoice can state the period it covers — which is what
+           makes two monthly invoices for one client tellable apart. */
+        periodFrom: data.from ?? null,
+        periodTo: data.to ?? null,
         twoRates: usesTwoRates([
           { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
           space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,

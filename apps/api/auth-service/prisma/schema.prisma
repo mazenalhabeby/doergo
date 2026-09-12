@@ -3832,6 +3832,18 @@ model Invoice {
   dueDate   DateTime?
   paidAt    DateTime?
 
+  // The days this invoice covers — the SERVICE period, not the billing dates.
+  //
+  // ⚠️ Stored, not recomputed from the lines. The gather that produced them can
+  // legitimately return nothing on a quiet fortnight, and an invoice whose dates
+  // come from its own lines would then claim to cover a different period than
+  // the one that was actually billed. It is also what the client is told, so it
+  // has to survive exactly as issued.
+  //
+  // Both null is normal: "everything outstanding" is a real answer.
+  servicePeriodFrom DateTime?
+  servicePeriodTo   DateTime?
+
   // Notes
   notes String?
 

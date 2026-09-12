@@ -57,8 +57,23 @@ describe("where the work comes from", () => {
       result then reads as "nothing to bill" when it means "these two do not
       overlap". The shape makes both-at-once unrepresentable.
     */
+    /*
+      ⚠️ Asserted by STRUCTURE, not by the exact text of the object. This pinned
+      a literal `{ spaceId }` and broke the day the service period was added —
+      the property it protects was untouched, only the object grew a spread.
+      A guard that fails on unrelated growth gets loosened in a hurry by
+      somebody who is not thinking about what it was for.
+
+      What matters is the ternary: one branch each, never both.
+    */
     const src = code(PAGE)
-    expect(src).toMatch(/gatherSource\s*=[\s\S]{0,260}\{ spaceId \}[\s\S]{0,160}\{ customerId \}/)
+    const chain = src.match(/gatherSource\s*=[\s\S]{0,500}?:\s*null/)?.[0] ?? ""
+    expect(chain).toMatch(/source === "space" && spaceId/)
+    expect(chain).toMatch(/source === "client" && customerId/)
+    // Each branch names its own end and only its own end.
+    const [spaceBranch, clientBranch] = chain.split(/source === "client" && customerId/)
+    expect(spaceBranch).not.toContain("customerId:")
+    expect(clientBranch).not.toContain("spaceId:")
   })
 
   it("re-seeds when the source changes", () => {

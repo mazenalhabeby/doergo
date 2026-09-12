@@ -70,6 +70,8 @@ function toPdfData(inv: Invoice): InvoicePdfData {
     total: inv.total,
     issueDate: inv.issueDate,
     dueDate: inv.dueDate,
+    servicePeriodFrom: inv.servicePeriodFrom,
+    servicePeriodTo: inv.servicePeriodTo,
     notes: inv.notes,
     items: (inv.items || []).map((i) => ({
       description: i.description,
@@ -219,6 +221,18 @@ function InvoiceDetailInner({ id }: { id: string }) {
             <div className="text-right space-y-1">
               <div className="flex justify-between"><span className="text-xs text-muted-foreground">{t("invoices.create.issueDate")}</span><span className="text-xs font-medium">{fmtDate(inv.issueDate)}</span></div>
               <div className="flex justify-between"><span className="text-xs text-muted-foreground">{t("invoices.create.dueDate")}</span><span className="text-xs font-medium">{fmtDate(inv.dueDate)}</span></div>
+              {(inv.servicePeriodFrom || inv.servicePeriodTo) && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">{t("invoices.create.servicePeriod")}</span>
+                  <span className="text-xs font-medium">
+                    {inv.servicePeriodFrom && inv.servicePeriodTo
+                      ? `${fmtDate(inv.servicePeriodFrom)} – ${fmtDate(inv.servicePeriodTo)}`
+                      : inv.servicePeriodFrom
+                        ? t("invoices.create.periodFromOnly", { from: fmtDate(inv.servicePeriodFrom) })
+                        : t("invoices.create.periodToOnly", { to: fmtDate(inv.servicePeriodTo) })}
+                  </span>
+                </div>
+              )}
               {inv.paidAt && <div className="flex justify-between"><span className="text-xs text-muted-foreground">{t("invoices.statuses.paid")}</span><span className="text-xs font-medium">{fmtDate(inv.paidAt)}</span></div>}
             </div>
           </div>
