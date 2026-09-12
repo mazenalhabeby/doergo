@@ -599,6 +599,18 @@ export function EditMemberDialog({
             )}
 
             {/*
+              ⚠️ NOT FOR AN EXTERNAL MEMBER — they work for a client or a
+              partner, not for us. We do not pay them, so there is no cost; the
+              rest of this section already hides start date and holiday for
+              exactly that reason, and an hourly cost describes the same
+              employment we do not have with them.
+
+              It sat OUTSIDE that guard and rendered for them, which is the
+              mistake being fixed.
+            */}
+            {!isExternalMember && (
+            <>
+            {/*
               Their hourly rates — COST FIRST, and that order is the point.
 
               ⚠️ The bill rate led here at first and it read as "what this
@@ -637,6 +649,8 @@ export function EditMemberDialog({
               <p className="text-[11px] text-muted-foreground">
                 {t("members.memberEditor.costRateHidden")}
               </p>
+            )}
+            </>
             )}
 
             {/*

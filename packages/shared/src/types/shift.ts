@@ -172,7 +172,8 @@ export interface SpaceMember {
    */
   inheritedBillRateCents?: number | null;
   // Populated relations (optional)
-  user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null; position?: string | null };
+  /** `isExternal`: works for a client or partner — no rate, no clock, no file. */
+  user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null; position?: string | null; isExternal?: boolean };
   spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions'> | null;
   // Per-member, per-space routing override (Phase 4d). Empty = space default.
   notifyRoleIds?: string[];

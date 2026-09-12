@@ -128,6 +128,37 @@ describe("the client-facing rate lives on the assignment", () => {
     expect(src()).toMatch(/value\.trim\(\) === ""[\s\S]{0,20}\? null/)
   })
 
+  it("is not offered to an EXTERNAL member, anywhere", () => {
+    /*
+      ⚠️ An external member works for a client or a partner, not for us. We
+      neither pay them nor bill their hours, so a rate on them is a number with
+      no meaning — and on a customer workspace, which is exactly where externals
+      appear, it would be the most visible field on their row.
+
+      Both screens AND the server: a list must not be looser than the check
+      behind it, or a stored rate quietly feeds the ladder onto an invoice.
+    */
+    const tab = code("../locations/[id]/_components/members-tab.tsx")
+    expect(tab).toMatch(/m\.user\?\.isExternal !== true/)
+
+    /*
+      Anchored on STRUCTURE, not on how far apart the two happen to sit. A
+      distance window broke the moment the explanatory comment above the block
+      grew — a test failing on layout rather than on behaviour, which is the
+      second time that shape has bitten in this file.
+    */
+    const member = code(MEMBER)
+    const guard = member.indexOf("{!isExternalMember && (\n            <>")
+    expect(guard).toBeGreaterThan(-1)
+    expect(member.indexOf("costRateLabel")).toBeGreaterThan(guard)
+
+    const svc = fs.readFileSync(
+      path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles/space-roles.service.ts"),
+      "utf8",
+    ).replace(/(^|\s)\/\*[\s\S]*?\*\//g, "$1")
+    expect(svc).toMatch(/member\.user\?\.isExternal/)
+  })
+
   it("resolves the inherited rate on the SERVER", () => {
     // The order of the four levels is written down once, in `resolveRate`. A
     // second copy in a browser is a second answer to "why is this €40".

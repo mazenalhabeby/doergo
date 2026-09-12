@@ -581,7 +581,14 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                     Only on a CUSTOMER workspace: on your own depot there is
                     nobody to bill, and offering it invites somebody to fill it in.
                   */}
-                  {space?.kind === "CUSTOMER" && (
+                  {/*
+                    ⚠️ And never for an EXTERNAL member. They work for a client
+                    or a partner, not for us: we neither pay them nor bill their
+                    hours, so a rate on them is a number with no meaning — and
+                    on a customer workspace, which is where externals most often
+                    appear, it would be the most visible field on their row.
+                  */}
+                  {space?.kind === "CUSTOMER" && m.user?.isExternal !== true && (
                     <MemberRateChip
                       member={m}
                       open={rateOpen === m.id}

@@ -23,7 +23,16 @@ const SPACE_PERMISSION_KEYS = ACCESS_PERMISSION_SCHEMA
 // displays a field should carry it rather than have the browser join it back
 // on from somewhere else.
 const userSelect = {
-  select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true, position: true },
+  /*
+    ⚠️ `isExternal` is here so the screen can tell the two apart. An external
+    member works for a client or a partner, not for us — we neither pay them nor
+    bill their hours, so a rate is meaningless on them, and the roster must be
+    able to say so without a second request per row.
+  */
+  select: {
+    id: true, firstName: true, lastName: true, email: true,
+    avatarUrl: true, position: true, isExternal: true,
+  },
 };
 const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true } };
 
@@ -305,8 +314,22 @@ export class SpaceRolesService {
   }) {
     const member = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
+      include: { user: { select: { isExternal: true } } },
     });
     if (!member) throw new NotFoundException('Space member not found');
+
+    /*
+      ⚠️ AN EXTERNAL MEMBER HAS NO RATE, and the server says so rather than
+      trusting the screen to have hidden the field.
+
+      They work for a client or a partner, not for us: we neither pay them nor
+      bill their hours, so the number would mean nothing — and a stored one
+      would quietly feed the ladder and land on an invoice. A list must not be
+      looser than the check behind it.
+    */
+    if (member.user?.isExternal) {
+      throw new BadRequestException('An external member has no billing rate — they do not work for you');
+    }
 
     const patch: Record<string, number | null> = {};
     if (data.billRateCents !== undefined) patch.billRateCents = cleanRateCents(data.billRateCents);
