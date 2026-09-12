@@ -3797,6 +3797,19 @@ model RecurringTaskTemplate {
 
 enum InvoiceStatus {
   DRAFT
+
+  // Final and numbered, but not yet delivered. The step that was missing.
+  //
+  // ⚠️ A draft's PDF carries a DRAFT watermark, deliberately — nobody should
+  // pay or file one. So the only way to get a clean PDF used to be to press
+  // "Mark as sent", which was untrue at that moment AND locked the invoice
+  // one-way. Issuing separates "this document is final" from "the client has
+  // it", which are two different facts and always were.
+  //
+  // Reversible back to DRAFT, and ONLY from here: nothing has left the
+  // building yet. That is what makes issuing safe to press.
+  ISSUED
+
   SENT
   PAID
   OVERDUE

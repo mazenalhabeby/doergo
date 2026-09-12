@@ -4236,7 +4236,8 @@
       "paid": "Pagata",
       "overdue": "Scaduta",
       "canceled": "Annullata",
-      "refunded": "Rimborsata"
+      "refunded": "Rimborsata",
+      "issued": "Emessa"
     },
     "empty": "Ancora nessuna fattura",
     "emptyHint": "Clicca su \"Nuova fattura\" per crearne una",
@@ -4246,7 +4247,9 @@
       "markPaid": "Segna come pagata",
       "print": "Stampa",
       "pdf": "PDF",
-      "cancelInvoice": "Annulla fattura"
+      "cancelInvoice": "Annulla fattura",
+      "issue": "Emetti fattura",
+      "backToDraft": "Torna a bozza"
     },
     "toast": {
       "statusUpdated": "Stato della fattura aggiornato",
@@ -4423,6 +4426,10 @@
       "tax": "IVA",
       "total": "Totale",
       "notes": "Note"
+    },
+    "markSent": {
+      "title": "Segnare questa fattura come inviata?",
+      "desc": "{{number}} verrà registrata come consegnata a {{client}} e non potrà più tornare in bozza. Non viene inviata alcuna e-mail: invia prima tu il PDF."
     }
   },
   "overtime": {

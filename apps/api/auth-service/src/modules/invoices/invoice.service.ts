@@ -331,8 +331,35 @@ export class InvoiceService {
       };
     }
 
+    /*
+      THE LIFE OF AN INVOICE.
+
+        DRAFT ──issue──▶ ISSUED ──mark as sent──▶ SENT ──mark paid──▶ PAID
+          ▲                │
+          └──back to draft─┘
+
+      ⚠️ ISSUED is the step that was missing, and its absence forced a lie. A
+      draft's PDF carries a DRAFT watermark — correctly, since nobody should pay
+      or file a draft — so the only way to get a clean document to send was to
+      mark it SENT before sending it. That recorded a delivery that had not
+      happened and locked the invoice in the same click.
+
+      ⚠️ ISSUED → DRAFT is the ONLY backward step in the whole table, and it is
+      deliberate: at that point the document is final but nothing has left the
+      building, so unlocking it costs nobody anything. It is also what makes
+      issuing safe to press — the complaint about the old flow was an
+      irreversible action behind a one-click button with no warning.
+
+      ⚠️ Once SENT there is no way back. A customer is holding it; the remedy
+      for a wrong invoice is a credit note or a cancellation, never a quiet
+      rewrite of a document somebody has already filed.
+
+      ⚠️ DRAFT → SENT is gone. Anything that still asks for it is code written
+      against the old flow, and should be issuing instead.
+    */
     const validTransitions: Record<string, string[]> = {
-      DRAFT: ['SENT', 'CANCELED'],
+      DRAFT: ['ISSUED', 'CANCELED'],
+      ISSUED: ['DRAFT', 'SENT', 'CANCELED'],
       SENT: ['PAID', 'OVERDUE', 'CANCELED'],
       OVERDUE: ['PAID', 'CANCELED'],
       PAID: ['REFUNDED'],

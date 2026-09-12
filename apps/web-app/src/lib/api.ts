@@ -5554,7 +5554,12 @@ export interface InvoiceItem {
   createdAt: string;
 }
 
-export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELED';
+/**
+ * ⚠️ ISSUED sits between DRAFT and SENT: final and numbered, not yet delivered.
+ * See `invoices/_lib/lifecycle.ts` for why the step exists and which way it
+ * flows. REFUNDED exists in the database enum and has never been reachable.
+ */
+export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELED';
 
 export interface Invoice {
   id: string;

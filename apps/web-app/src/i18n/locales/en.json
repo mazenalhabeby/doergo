@@ -4227,7 +4227,8 @@
       "paid": "Paid",
       "overdue": "Overdue",
       "canceled": "Canceled",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "issued": "Issued"
     },
     "empty": "No invoices yet",
     "emptyHint": "Click \"New Invoice\" to create one",
@@ -4237,7 +4238,9 @@
       "markPaid": "Mark Paid",
       "print": "Print",
       "pdf": "PDF",
-      "cancelInvoice": "Cancel invoice"
+      "cancelInvoice": "Cancel invoice",
+      "issue": "Issue invoice",
+      "backToDraft": "Back to draft"
     },
     "toast": {
       "statusUpdated": "Invoice status updated",
@@ -4414,6 +4417,10 @@
       "tax": "Tax",
       "total": "Total",
       "notes": "Notes"
+    },
+    "markSent": {
+      "title": "Mark this invoice as sent?",
+      "desc": "{{number}} will be recorded as delivered to {{client}} and can no longer be taken back to draft. Nothing is emailed — send the PDF yourself first."
     }
   },
   "overtime": {

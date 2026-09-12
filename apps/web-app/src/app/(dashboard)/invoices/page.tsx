@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, type Invoice } from "@/lib/api"
 import { summarise, byUrgency, daysOverdue, bandFor, isOutstanding, AGE_BANDS, type AgeBand } from "./_lib/aging"
+import { statusStyle, primaryStep, otherSteps, isDeletable, type LifecycleStep } from "./_lib/lifecycle"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -53,14 +54,6 @@ import {
 import { dateLocale } from "@/lib/format-date"
 import { formatMoney } from "@/lib/money"
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400", label: "Draft" },
-  SENT: { bg: "bg-blue-100 dark:bg-blue-500/20", text: "text-blue-700 dark:text-blue-400", label: "Sent" },
-  PAID: { bg: "bg-green-100 dark:bg-green-500/20", text: "text-green-700 dark:text-green-400", label: "Paid" },
-  OVERDUE: { bg: "bg-red-100 dark:bg-red-500/20", text: "text-red-700 dark:text-red-400", label: "Overdue" },
-  CANCELED: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-500 dark:text-slate-500", label: "Canceled" },
-  REFUNDED: { bg: "bg-amber-100 dark:bg-amber-500/20", text: "text-amber-700 dark:text-amber-400", label: "Refunded" },
-}
 
 function formatCurrency(amount: number, currency = "USD") {
   // Locale-aware: "1.234,56 €" in de/es/fr/it, "€1,234.56" in en. Was pinned to
@@ -89,8 +82,20 @@ function InvoicesPageInner() {
     and the dialog has to be able to say WHICH invoice and for how much.
   */
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null)
+  /**
+   * The one-way step, held until it is confirmed.
+   *
+   * ⚠️ Confirmed HERE too, not only on the invoice page. Marking sent from a
+   * list row is the easiest place in the product to do it by accident — the
+   * button sits inches from Mark Paid and the document is not even on screen.
+   */
+  const [sendTarget, setSendTarget] = useState<{ inv: Invoice; step: LifecycleStep } | null>(null)
   const [statusFilter, setStatusFilter] = useState("__all__")
   const [search, setSearch] = useState("")
+
+  /** Take a step, asking first where the lifecycle says to. */
+  const step = (inv: Invoice, s: LifecycleStep) =>
+    s.confirm ? setSendTarget({ inv, step: s }) : statusMutation.mutate({ id: inv.id, status: s.to })
 
   const { data, isLoading } = useQuery({
     queryKey: ["invoices", statusFilter],
@@ -269,6 +274,10 @@ function InvoicesPageInner() {
             <SelectContent>
               <SelectItem value="__all__">{t("common.allStatuses")}</SelectItem>
               <SelectItem value="DRAFT">{t("invoices.statuses.draft")}</SelectItem>
+              {/* ⚠️ In lifecycle order, so the list reads the way the work
+                  happens. Issued invoices are the ones waiting on somebody
+                  here, which makes this the most useful filter on the menu. */}
+              <SelectItem value="ISSUED">{t("invoices.statuses.issued")}</SelectItem>
               <SelectItem value="SENT">{t("invoices.statuses.sent")}</SelectItem>
               <SelectItem value="PAID">{t("invoices.statuses.paid")}</SelectItem>
               <SelectItem value="OVERDUE">{t("invoices.statuses.overdue")}</SelectItem>
@@ -301,7 +310,9 @@ function InvoicesPageInner() {
             </div>
           ) : (
             rows.map((inv) => {
-              const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
+              const status = statusStyle(inv.status)
+              const primary = primaryStep(inv.status)
+              const others = otherSteps(inv.status)
               return (
                 <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_110px_80px_120px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">
                   <span className="text-sm font-mono font-medium text-foreground">{inv.invoiceNumber}</span>
@@ -341,16 +352,13 @@ function InvoicesPageInner() {
                     {/* The next step, stated. Burying "Mark paid" in a kebab
                         menu makes the one action a row exists for the hardest
                         thing on it to find. */}
-                    {isAdmin && (inv.status === "DRAFT" || inv.status === "SENT" || inv.status === "OVERDUE") && (
+                    {isAdmin && primary && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          statusMutation.mutate({ id: inv.id, status: inv.status === "DRAFT" ? "SENT" : "PAID" })
-                        }}
+                        onClick={(e) => { e.stopPropagation(); step(inv, primary) }}
                         disabled={statusMutation.isPending}
                         className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
                       >
-                        {inv.status === "DRAFT" ? t("invoices.actions.send") : t("invoices.actions.markPaid")}
+                        {t(primary.labelKey)}
                       </button>
                     )}
                   {isAdmin && (
@@ -362,31 +370,34 @@ function InvoicesPageInner() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenuItem onClick={() => router.push(`/invoices/${inv.id}`)}><Eye className="size-3.5 mr-2" /> {t("invoices.actions.view")}</DropdownMenuItem>
-                        {inv.status === "DRAFT" && (
-                          <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "SENT" })}>
-                            <FileCheck className="size-3.5 mr-2" /> {t("invoices.actions.send")}
+                        {/*
+                          ⚠️ The SAME lifecycle the invoice page reads. This row
+                          and that bar each had their own idea of what came next
+                          and already disagreed about where Cancel lived — and
+                          this one still offered DRAFT → SENT, a transition the
+                          server no longer allows.
+                        */}
+                        {primary && (
+                          <DropdownMenuItem onClick={() => step(inv, primary)}>
+                            <primary.icon className="size-3.5 mr-2" /> {t(primary.labelKey)}
                           </DropdownMenuItem>
                         )}
-                        {/* OVERDUE too, not just SENT. Being paid late is the
-                            most likely thing to happen to an overdue invoice,
-                            and the only option here used to be Cancel — which
-                            records that it was never owed. */}
-                        {(inv.status === "SENT" || inv.status === "OVERDUE") && (
-                          <DropdownMenuItem onClick={() => statusMutation.mutate({ id: inv.id, status: "PAID" })}>
-                            <CheckCircle className="size-3.5 mr-2" /> {t("invoices.actions.markPaid")}
+                        {others.filter((o) => !o.destructive).map((o) => (
+                          <DropdownMenuItem key={o.to} onClick={() => step(inv, o)}>
+                            <o.icon className="size-3.5 mr-2" /> {t(o.labelKey)}
                           </DropdownMenuItem>
-                        )}
+                        ))}
                         <DropdownMenuSeparator />
-                        {inv.status === "DRAFT" && (
+                        {isDeletable(inv.status) && (
                           <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTarget(inv)}>
                             <XCircle className="size-3.5 mr-2" /> {t("common.delete")}
                           </DropdownMenuItem>
                         )}
-                        {(inv.status === "SENT" || inv.status === "OVERDUE") && (
-                          <DropdownMenuItem className="text-red-600" onClick={() => statusMutation.mutate({ id: inv.id, status: "CANCELED" })}>
-                            <XCircle className="size-3.5 mr-2" /> {t("common.cancel")}
+                        {others.filter((o) => o.destructive).map((o) => (
+                          <DropdownMenuItem key={o.to} className="text-red-600" onClick={() => step(inv, o)}>
+                            <o.icon className="size-3.5 mr-2" /> {t(o.labelKey)}
                           </DropdownMenuItem>
-                        )}
+                        ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -397,6 +408,42 @@ function InvoicesPageInner() {
           )}
         </div>
       </div>
+
+      {/*
+        ── Marking it sent: the one step with no way back ────────────────
+
+        ⚠️ And the place to say what this product does NOT do. Nothing here
+        emails the invoice — the button records a delivery the person performs
+        themselves — and "Mark as sent" reads exactly like a button that sends.
+      */}
+      <AlertDialog open={!!sendTarget} onOpenChange={(open) => !open && setSendTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("invoices.markSent.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("invoices.markSent.desc", {
+                number: sendTarget?.inv.invoiceNumber ?? "",
+                client: sendTarget?.inv.clientName ?? "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg"
+              onClick={() => {
+                /* ⚠️ The HELD step's destination, never a literal — the dialog
+                   must agree with the button that opened it. */
+                const target = sendTarget
+                setSendTarget(null)
+                if (target) statusMutation.mutate({ id: target.inv.id, status: target.step.to })
+              }}
+            >
+              {t("invoices.actions.send")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Delete confirmation ─────────────────────────────────────────── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

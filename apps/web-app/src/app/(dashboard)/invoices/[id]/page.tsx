@@ -5,7 +5,8 @@ import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Download, Printer, FileCheck, CheckCircle, XCircle, Trash2, Pencil, Loader2, MoreHorizontal } from "lucide-react"
+// The lifecycle brings its own icons — see `_lib/lifecycle.ts`.
+import { Download, Printer, Trash2, Pencil, Loader2, MoreHorizontal } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
@@ -32,15 +33,10 @@ import { formatMoney } from "@/lib/money"
 import { InvoiceTopBar } from "../_components/invoice-shell"
 import { InvoiceDocument } from "../_components/invoice-document"
 import { daysOverdue } from "../_lib/aging"
+import {
+  statusStyle, primaryStep, otherSteps, isEditable, isDeletable, type LifecycleStep,
+} from "../_lib/lifecycle"
 
-const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400" },
-  SENT: { bg: "bg-blue-100 dark:bg-blue-500/20", text: "text-blue-700 dark:text-blue-400" },
-  PAID: { bg: "bg-green-100 dark:bg-green-500/20", text: "text-green-700 dark:text-green-400" },
-  OVERDUE: { bg: "bg-red-100 dark:bg-red-500/20", text: "text-red-700 dark:text-red-400" },
-  CANCELED: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-500" },
-  REFUNDED: { bg: "bg-amber-100 dark:bg-amber-500/20", text: "text-amber-700 dark:text-amber-400" },
-}
 
 function money(n: number, currency: string) {
   return formatMoney(n, currency)
@@ -120,6 +116,8 @@ function InvoiceDetailInner({ id }: { id: string }) {
     the same sentence to read.
   */
   const [confirmDelete, setConfirmDelete] = useState(false)
+  /** The one-way step, held until it is confirmed. */
+  const [confirmStep, setConfirmStep] = useState<LifecycleStep | null>(null)
 
   const deleteMutation = useMutation({
     mutationFn: () => invoicesApi.delete(id),
@@ -166,7 +164,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
     )
   }
 
-  const style = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
+  const style = statusStyle(inv.status)
   const statusLabel = t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)
 
   /*
@@ -208,8 +206,18 @@ function InvoiceDetailInner({ id }: { id: string }) {
         ? t("invoices.create.periodToOnly", { to: fmtDate(inv.servicePeriodTo) })
         : ""
 
-  const canEdit = isAdmin && inv.status === "DRAFT"
-  const canCancel = isAdmin && (inv.status === "SENT" || inv.status === "OVERDUE")
+  const primary = primaryStep(inv.status)
+  const others = otherSteps(inv.status)
+
+  /*
+    ⚠️ Only the ONE-WAY step asks first. Issuing is reversible and "back to
+    draft" is reversible, so a dialog on those would teach people to click
+    through dialogs — which is how the one that matters gets clicked through
+    too. Marking as sent cannot be undone, and nothing in this product emails
+    the invoice, so the dialog is also where that is said.
+  */
+  const step = (s: LifecycleStep) =>
+    s.confirm ? setConfirmStep(s) : statusMutation.mutate(s.to)
 
   return (
     <div className="min-h-full bg-background">
@@ -229,18 +237,14 @@ function InvoiceDetailInner({ id }: { id: string }) {
         </Button>
 
         {/*
-          ⚠️ ONE primary action, decided by where the invoice stands. A draft is
-          sent; a sent invoice is paid. Showing both at once would ask somebody
-          to work out which one this invoice is up to.
+          ⚠️ ONE primary action, and the lifecycle decides which. A draft is
+          issued; an issued invoice is marked sent; a sent one is marked paid.
+          Offering two at once asks somebody to work out which step this
+          invoice is up to, which is the screen's job.
         */}
-        {isAdmin && inv.status === "DRAFT" && (
-          <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("SENT")}>
-            <FileCheck className="size-3.5" /> {t("invoices.actions.send")}
-          </Button>
-        )}
-        {isAdmin && (inv.status === "SENT" || inv.status === "OVERDUE") && (
-          <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("PAID")}>
-            <CheckCircle className="size-3.5" /> {t("invoices.actions.markPaid")}
+        {isAdmin && primary && (
+          <Button size="sm" className="gap-1.5" onClick={() => step(primary)}>
+            <primary.icon className="size-3.5" /> {t(primary.labelKey)}
           </Button>
         )}
 
@@ -250,7 +254,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
           page, two of them destructive and one of them red next to "Edit".
           They belong with the other actions, and behind one more click.
         */}
-        {(canEdit || canCancel) && (
+        {isAdmin && (others.length > 0 || isEditable(inv.status)) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="size-8 shrink-0" aria-label={t("common.more", "More")}>
@@ -258,17 +262,21 @@ function InvoiceDetailInner({ id }: { id: string }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {canEdit && (
+              {isEditable(inv.status) && (
                 <DropdownMenuItem onClick={() => router.push(`/invoices/${id}/edit`)}>
                   <Pencil className="mr-2 size-3.5" /> {t("common.edit", "Edit")}
                 </DropdownMenuItem>
               )}
-              {canCancel && (
-                <DropdownMenuItem className="text-red-600" onClick={() => statusMutation.mutate("CANCELED")}>
-                  <XCircle className="mr-2 size-3.5" /> {t("invoices.actions.cancelInvoice", "Cancel invoice")}
+              {others.map((o) => (
+                <DropdownMenuItem
+                  key={o.to}
+                  className={cn(o.destructive && "text-red-600")}
+                  onClick={() => step(o)}
+                >
+                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
                 </DropdownMenuItem>
-              )}
-              {canEdit && (
+              ))}
+              {isDeletable(inv.status) && (
                 <DropdownMenuItem className="text-red-600" onClick={() => setConfirmDelete(true)}>
                   <Trash2 className="mr-2 size-3.5" /> {t("common.delete")}
                 </DropdownMenuItem>
@@ -354,6 +362,37 @@ function InvoiceDetailInner({ id }: { id: string }) {
         </div>
       </div>
 
+
+      {/*
+        ── Marking it sent: the one step with no way back ────────────────
+
+        ⚠️ And the place to say what this product does NOT do. Nothing here
+        emails the invoice — the button records a delivery the person performs
+        themselves — and "Mark as sent" reads exactly like a button that sends.
+      */}
+      <AlertDialog open={!!confirmStep} onOpenChange={(open) => !open && setConfirmStep(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("invoices.markSent.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("invoices.markSent.desc", { number: inv.invoiceNumber, client: inv.clientName })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg"
+              onClick={() => {
+                const to = confirmStep?.to
+                setConfirmStep(null)
+                if (to) statusMutation.mutate(to)
+              }}
+            >
+              {t("invoices.actions.send")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Delete confirmation ─────────────────────────────────────────── */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

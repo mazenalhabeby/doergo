@@ -10,11 +10,16 @@
  *   CANCELED  was an invoice, is not owed.
  *   PAID      conventional, and useful to whoever opens the file later.
  *
- * SENT, OVERDUE and REFUNDED are deliberately absent. Beyond telling the reader
- * little — "SENT" is news to nobody holding the thing — they go STALE. A PDF is
- * a frozen copy that outlives the state it was made in, so one stamped OVERDUE
- * still says so a year after it was settled. A status that changes must not be
- * baked into a file.
+ * ISSUED, SENT, OVERDUE and REFUNDED are deliberately absent. Beyond telling
+ * the reader little — "SENT" is news to nobody holding the thing — they go
+ * STALE. A PDF is a frozen copy that outlives the state it was made in, so one
+ * stamped OVERDUE still says so a year after it was settled. A status that
+ * changes must not be baked into a file.
+ *
+ * ⚠️ ISSUED IS THE WHOLE POINT OF THE STATE. A draft is watermarked so nobody
+ * pays or files it, which meant the only way to get a clean PDF was to record a
+ * delivery that had not happened. An issued invoice is a real invoice, so it
+ * carries no mark — that is what "issued" MEANS here.
  */
 export function invoiceStamp(
   status: string,
@@ -31,6 +36,10 @@ export function invoiceStamp(
       return { text: "CANCELED", color: RED };
     case "PAID":
       return { text: "PAID", color: GREEN };
+    // Named rather than left to the default, so nobody later "fixes" the gap
+    // by stamping it. See above: a clean document is the point of the state.
+    case "ISSUED":
+      return null;
     default:
       return null;
   }

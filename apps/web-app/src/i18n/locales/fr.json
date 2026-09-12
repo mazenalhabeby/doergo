@@ -4236,7 +4236,8 @@
       "paid": "Payée",
       "overdue": "En retard",
       "canceled": "Annulée",
-      "refunded": "Remboursée"
+      "refunded": "Remboursée",
+      "issued": "Émise"
     },
     "empty": "Aucune facture pour l'instant",
     "emptyHint": "Cliquez sur « Nouvelle facture » pour en créer une",
@@ -4246,7 +4247,9 @@
       "markPaid": "Marquer comme payée",
       "print": "Imprimer",
       "pdf": "PDF",
-      "cancelInvoice": "Annuler la facture"
+      "cancelInvoice": "Annuler la facture",
+      "issue": "Émettre la facture",
+      "backToDraft": "Revenir au brouillon"
     },
     "toast": {
       "statusUpdated": "Statut de la facture mis à jour",
@@ -4423,6 +4426,10 @@
       "tax": "TVA",
       "total": "Total",
       "notes": "Notes"
+    },
+    "markSent": {
+      "title": "Marquer cette facture comme envoyée ?",
+      "desc": "{{number}} sera enregistrée comme remise à {{client}} et ne pourra plus revenir au brouillon. Aucun e-mail n'est envoyé — envoyez d'abord le PDF vous-même."
     }
   },
   "overtime": {

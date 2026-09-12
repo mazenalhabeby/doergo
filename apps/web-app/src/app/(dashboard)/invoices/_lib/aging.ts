@@ -42,7 +42,13 @@ export function bandFor(days: number | null): AgeBand {
  * chase today.
  */
 export function isOutstanding(inv: Pick<Invoice, "status">): boolean {
-  return inv.status === "SENT" || inv.status === "OVERDUE"
+  /*
+    ⚠️ ISSUED counts. The invoice DATE sets the payment term, not the day
+    somebody happened to email the PDF — so an issued invoice is already owed,
+    and one that was issued and then forgotten is precisely the thing this
+    figure exists to surface. Leaving it out would hide the worst case.
+  */
+  return inv.status === "ISSUED" || inv.status === "SENT" || inv.status === "OVERDUE"
 }
 
 export interface AgingSummary {

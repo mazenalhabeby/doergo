@@ -4227,17 +4227,20 @@
       "paid": "Bezahlt",
       "overdue": "Überfällig",
       "canceled": "Storniert",
-      "refunded": "Erstattet"
+      "refunded": "Erstattet",
+      "issued": "Ausgestellt"
     },
     "empty": "Noch keine Rechnungen",
     "emptyHint": "Klicken Sie auf „Neue Rechnung“, um eine zu erstellen",
     "actions": {
       "view": "Ansehen",
-      "send": "Als gesendet markieren",
+      "send": "Als versendet markieren",
       "markPaid": "Als bezahlt markieren",
       "print": "Drucken",
       "pdf": "PDF",
-      "cancelInvoice": "Rechnung stornieren"
+      "cancelInvoice": "Rechnung stornieren",
+      "issue": "Rechnung ausstellen",
+      "backToDraft": "Zurück zum Entwurf"
     },
     "toast": {
       "statusUpdated": "Rechnungsstatus aktualisiert",
@@ -4414,6 +4417,10 @@
       "tax": "Steuer",
       "total": "Gesamt",
       "notes": "Notizen"
+    },
+    "markSent": {
+      "title": "Diese Rechnung als versendet markieren?",
+      "desc": "{{number}} wird als an {{client}} zugestellt erfasst und kann nicht mehr in den Entwurf zurückgesetzt werden. Es wird nichts per E-Mail verschickt — senden Sie das PDF bitte zuerst selbst."
     }
   },
   "overtime": {
