@@ -101,6 +101,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { dateLocale } from "@/lib/format-date"
+import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -832,7 +833,7 @@ export default function MembersPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[1440px] mx-auto px-6 py-6">
+      <div className={PAGE_SHELL}>
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">

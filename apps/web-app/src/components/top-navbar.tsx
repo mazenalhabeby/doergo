@@ -61,6 +61,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { PAGE_WIDTH } from "@/components/ui/page-width";
 
 // ---------------------------------------------------------------------------
 // Nav item active-state helper
@@ -381,7 +382,7 @@ export function TopNavbar() {
     */
     <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
       {/* ── Row 1 ─────────────────────────────────────────────────────────── */}
-      <div className="mx-auto flex h-12 max-w-[1440px] items-center gap-4 px-6">
+      <div className={cn(PAGE_WIDTH, "flex h-12 items-center gap-4")}>
       {/* Logo */}
       <Link
         href="/dashboard"
@@ -415,7 +416,7 @@ export function TopNavbar() {
       </div>
 
       {/* ── Row 2 — navigation, with the full width to itself ─────────────── */}
-      <div className="mx-auto flex h-11 max-w-[1440px] items-center border-t border-border/50 px-6">
+      <div className={cn(PAGE_WIDTH, "flex h-11 items-center border-t border-border/50")}>
       {/* Mobile hamburger menu */}
       <MobileMenu
         pathname={pathname}

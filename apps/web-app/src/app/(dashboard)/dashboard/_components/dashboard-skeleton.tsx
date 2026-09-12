@@ -5,6 +5,7 @@ import { getSpaceScope } from "@hbcfield/shared/client"
 import { WORKSPACE_CARD, workspaceCardCols } from "@/components/dashboard"
 import { Shimmer as S } from "@/components/skeletons/primitives"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL } from "@/components/ui/page-width";
 
 /**
  * Loading state for /dashboard — a structural stand-in, not a generic grey box.
@@ -235,7 +236,7 @@ export function DashboardPageSkeleton({ variant = "spaces" }: DashboardPageSkele
       <div style={{ display: "flex", width: "100%", height: "100%" }}>
         <div style={{ flex: 1, overflow: "hidden" }}>
           <HeaderSkeleton />
-          <div className="max-w-[1440px] mx-auto px-6 py-6">
+          <div className={PAGE_SHELL}>
             <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
               <section>
                 <S className="mb-3 h-3 w-24 rounded" />
@@ -294,7 +295,7 @@ export function DashboardPageSkeleton({ variant = "spaces" }: DashboardPageSkele
     <div style={{ display: "flex", width: "100%", height: "100%" }}>
       <div style={{ flex: 1, overflow: "hidden" }}>
         <HeaderSkeleton centered />
-        <div className="max-w-[1440px] mx-auto px-6 py-6">
+        <div className={PAGE_SHELL}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: WORKSPACE_CARD.GRID_GAP }}>
             {CARD_SHAPE.map((nodes, i) => (
               <CardSkeleton key={i} nodes={nodes} index={i} />

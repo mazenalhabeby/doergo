@@ -65,6 +65,7 @@ const CompleteSprintDialog = dynamic(() => import("./_components/sprint-manageme
 const DeleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.DeleteSprintDialog), { ssr: false })
 const EpicFormDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.EpicFormDialog), { ssr: false })
 import { hasAccessModule, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
+import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // Priority sort order
 const PRIORITY_ORDER: Record<string, number> = {
@@ -1110,7 +1111,7 @@ export default function TasksPage() {
         }
       `}</style>
 
-      <div className="max-w-[1440px] mx-auto px-6 py-6">
+      <div className={PAGE_SHELL}>
         {/* ── Header ─────────────────────────────────────────── */}
         <div className="mb-6">
           <div className="flex items-start justify-between">

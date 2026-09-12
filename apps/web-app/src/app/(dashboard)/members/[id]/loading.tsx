@@ -1,6 +1,9 @@
+import { cn } from "@/lib/utils";
+import { PAGE_SHELL } from "@/components/ui/page-width";
+
 export default function Loading() {
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-6 animate-pulse">
+    <div className={cn(PAGE_SHELL, "animate-pulse")}>
       <div className="flex items-center gap-4 mb-6">
         <div className="size-14 rounded-full bg-muted" />
         <div className="space-y-2">

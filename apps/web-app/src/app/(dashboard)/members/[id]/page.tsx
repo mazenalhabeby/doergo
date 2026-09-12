@@ -76,6 +76,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatRelativeDay, formatDayMonth, dateLocale } from "@/lib/format-date"
+import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -133,7 +134,7 @@ export default function MemberProfilePage({
   if (memberLoading) {
     return (
       <div className="min-h-full bg-background">
-        <div className="max-w-[1440px] mx-auto px-6 py-6">
+        <div className={PAGE_SHELL}>
           <Skeleton className="h-5 w-32 mb-6" />
           <div className="bg-card rounded-xl border border-border/80 p-6 space-y-4">
             <div className="flex items-center gap-4">
@@ -155,7 +156,7 @@ export default function MemberProfilePage({
   if (memberError) {
     return (
       <div className="min-h-full bg-background">
-        <div className="max-w-[1440px] mx-auto px-6 py-6">
+        <div className={PAGE_SHELL}>
           <Button
             variant="ghost"
             size="sm"
@@ -179,7 +180,7 @@ export default function MemberProfilePage({
   if (!member) {
     return (
       <div className="min-h-full bg-background">
-        <div className="max-w-[1440px] mx-auto px-6 py-6">
+        <div className={PAGE_SHELL}>
           <Button
             variant="ghost"
             size="sm"
@@ -211,7 +212,7 @@ export default function MemberProfilePage({
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[1440px] mx-auto px-6 py-6 space-y-6">
+      <div className={cn(PAGE_SHELL, "space-y-6")}>
         {/* Back button */}
         <Button
           variant="ghost"

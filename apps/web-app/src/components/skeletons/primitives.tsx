@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { PAGE_WIDTH } from "@/components/ui/page-width";
 
 // Leaf skeleton pieces with no dependencies of their own. They live apart from
 // dashboard-skeleton.tsx so RouteSkeleton can use the generic content shape
@@ -48,7 +49,7 @@ export function Shimmer({
 export function NavbarSkeleton() {
   return (
     <header className="sticky top-0 z-50 h-14 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-full max-w-[1440px] items-center px-6">
+      <div className={cn(PAGE_WIDTH, "flex h-full items-center")}>
         {/* Logo */}
         <div className="mr-6 flex items-center gap-2">
           <Shimmer className="w-6 h-6 rounded" />

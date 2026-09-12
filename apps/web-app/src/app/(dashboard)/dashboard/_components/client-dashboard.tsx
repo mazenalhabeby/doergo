@@ -44,6 +44,8 @@ import { useDashboardData } from "../_lib/use-dashboard-data"
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"
+import { cn } from "@/lib/utils";
+import { PAGE_SHELL, PAGE_WIDTH } from "@/components/ui/page-width";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -433,7 +435,7 @@ export function ClientDashboard() {
           </div>
 
           {/* Balanced two columns: Spaces | My Tasks (stacks on small screens) */}
-          <div className="max-w-[1440px] mx-auto px-6 py-6">
+          <div className={PAGE_SHELL}>
             <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
               {/* Spaces — a single space opens automatically */}
               <section data-tour="dash-spaces">
@@ -507,14 +509,14 @@ export function ClientDashboard() {
         {/* Outstanding personal documents — once, here, and a count on the nav
             item. See the component for why it is not on every page. Renders
             nothing when there is none, which is the normal case. */}
-        <div className="max-w-[1440px] mx-auto px-6 pt-4">
+        <div className={cn(PAGE_WIDTH, "pt-4")}>
           <DocumentsReminderBanner />
         </div>
 
         {/* Workspace Grid — contained. While the welcome guide runs on an empty
             team, `displayBoxes` becomes an example space so the tour has real
             teammates to demonstrate; it reverts the instant the guide ends. */}
-        <div data-tour="dash-spaces" className="max-w-[1440px] mx-auto px-6 py-6">
+        <div data-tour="dash-spaces" className={PAGE_SHELL}>
           {showExampleInSpaces && (
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {t("dashboard.client.exampleLabel")}

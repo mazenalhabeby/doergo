@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { buildLabourLines, labourTotalCents, type LabourGrouping, type LabourEntry } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -567,8 +568,20 @@ function NewInvoiceInner() {
       the invoice is the only lifted surface on the page.
     */
     <div className="min-h-full bg-background">
-      {/* ── The bar: the way out, what it is, and the way to commit ────── */}
-      <div className="sticky top-0 z-30 flex items-center gap-3.5 border-b border-border bg-background/85 px-4 py-2.5 backdrop-blur-md sm:px-5">
+      {/*
+        ── The bar: the way out, what it is, and the way to commit ──────
+
+        ⚠️ BAND OUTSIDE, COLUMN INSIDE. The border, the ground and the blur have
+        to reach both edges of the window — a divider that stops in mid-air
+        looks broken — while the contents line up with the navigation above.
+
+        This page used to put both on one element, so on a wide display the
+        back arrow sat in the far corner and Save draft in the other, two
+        hundred pixels outside the column every other page and the navbar keep
+        to. It is invisible at 1440px, which is where the page was built.
+      */}
+      <div className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
+      <div className={cn(PAGE_WIDTH, "flex items-center gap-3.5 py-2.5")}>
         <Button variant="outline" size="icon" className="size-[30px] shrink-0" onClick={() => router.back()}>
           <ArrowLeft className="size-4" />
         </Button>
@@ -593,6 +606,7 @@ function NewInvoiceInner() {
           {t("invoices.create.saveDraft")}
         </Button>
       </div>
+      </div>
 
       {/*
         ⚠️ SAYS WHY SAVE IS OFF, rather than only greying it. A disabled action
@@ -601,14 +615,23 @@ function NewInvoiceInner() {
         rail they have already scrolled past.
       */}
       {!canSave && (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 sm:px-5">
-          {clientName.trim().length === 0
-            ? t("invoices.create.needsClient")
-            : t("invoices.create.needsLines")}
+        <div className="border-b border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+          <div className={cn(PAGE_WIDTH, "py-2 text-center text-xs")}>
+            {clientName.trim().length === 0
+              ? t("invoices.create.needsClient")
+              : t("invoices.create.needsLines")}
+          </div>
         </div>
       )}
 
-      <div className="grid items-start lg:grid-cols-[320px_minmax(0,1fr)]">
+      {/*
+        The workbench sits in the same column as the bar above it, so the rail's
+        outer edge falls on the same line as the logo rather than on the bezel.
+
+        The rail and the canvas keep their own inner padding on top of this —
+        the gutter positions the PANEL, and the panel positions its contents.
+      */}
+      <div className={cn(PAGE_WIDTH, "grid items-start lg:grid-cols-[320px_minmax(0,1fr)]")}>
         {/*
           THE TOOL. Settings live here and stay put; the document never moves
           while somebody changes them — which is the other half of what was

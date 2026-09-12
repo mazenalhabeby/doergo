@@ -63,6 +63,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { dateLocale } from "@/lib/format-date"
+import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // ============================================================================
 // Constants
@@ -653,7 +654,7 @@ export function RecurringPanel({
 
   return (
     <div className={embedded ? "" : "min-h-full bg-muted/30"}>
-      <div className={embedded ? "" : "max-w-[1440px] mx-auto px-6 py-6"}>
+      <div className={embedded ? "" : PAGE_SHELL}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
