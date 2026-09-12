@@ -4318,7 +4318,12 @@
       "groupByBoth": "Je Person, Aufträge aufgelistet",
       "groupByTaskHint": "Der Kunde sieht jeden Auftrag und dessen Kosten.",
       "groupByMemberHint": "Der Kunde sieht, wer wie lange gearbeitet hat.",
-      "groupByBothHint": "Abgerechnet je Person, mit den Aufträgen darunter — ohne Mehrkosten."
+      "groupByBothHint": "Abgerechnet je Person, mit den Aufträgen darunter — ohne Mehrkosten.",
+      "preview": "Was der Kunde sehen wird",
+      "descriptionCol": "Beschreibung",
+      "amount": "Betrag",
+      "included": "enthalten",
+      "labourTotal": "Summe Arbeitszeit"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

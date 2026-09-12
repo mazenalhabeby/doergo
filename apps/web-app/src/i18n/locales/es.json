@@ -4318,7 +4318,12 @@
       "groupByBoth": "Por persona, con los trabajos",
       "groupByTaskHint": "El cliente ve cada trabajo y su importe.",
       "groupByMemberHint": "El cliente ve quién trabajó y cuánto tiempo.",
-      "groupByBothHint": "Se factura por persona, con sus trabajos debajo sin coste adicional."
+      "groupByBothHint": "Se factura por persona, con sus trabajos debajo sin coste adicional.",
+      "preview": "Lo que verá el cliente",
+      "descriptionCol": "Descripción",
+      "amount": "Importe",
+      "included": "incluido",
+      "labourTotal": "Total mano de obra"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

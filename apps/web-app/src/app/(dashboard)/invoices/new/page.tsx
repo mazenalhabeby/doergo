@@ -9,7 +9,7 @@ import { ArrowLeft, Plus, Trash2, Loader2, Clock, Package, FileText, ChevronDown
 
 import { invoicesApi, locationsApi, customersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import { buildLabourLines, type LabourGrouping, type LabourEntry } from "@hbcfield/shared/client"
+import { buildLabourLines, labourTotalCents, type LabourGrouping, type LabourEntry } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,7 @@ interface WorkEntry {
 interface ManualLine { description: string; quantity: number; unitPrice: number }
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
+const round2 = (n: number) => Math.round(n * 100) / 100
 function money(n: number, currency: string) {
   try { return new Intl.NumberFormat("en-IE", { style: "currency", currency: currency || "EUR" }).format(n || 0) }
   catch { return `${(n || 0).toFixed(2)} ${currency}` }
@@ -259,10 +260,43 @@ function NewInvoiceInner() {
     e.include && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
   const entryParts = (e: WorkEntry) => (e.include && e.includeParts ? e.parts.reduce((s, p) => s + p.quantity * p.unitCost, 0) : 0)
 
-  const workSubtotal = useMemo(
-    () => entries.reduce((s, e) => s + entryLabor(e) + entryParts(e), 0),
+  /*
+    ⚠️ ONE CALCULATION, SHOWN AND SENT.
+
+    The screen used to total the work with its own loop while the mutation built
+    the lines with another — so choosing a grouping changed what was SENT and
+    nothing on screen moved, which is exactly how it was reported. Two
+    arithmetics over one invoice is also how a displayed total quietly stops
+    matching the document it produced.
+
+    So the lines are built once, here, by the shared rule; the preview renders
+    them and the mutation sends them.
+  */
+  const labourEntries = useMemo<LabourEntry[]>(
+    () =>
+      entries
+        .filter((e) => e.include)
+        .map((e) => ({
+          taskId: e.taskId,
+          taskTitle: e.taskTitle,
+          reportId: e.reportId ?? null,
+          workerName: e.workerName ?? null,
+          hours: e.hours,
+          // The form's fallback rate applies where the ladder had no answer.
+          billRateCents: e.billRateCents ?? (rateNum > 0 ? Math.round(rateNum * 100) : null),
+          costRateCents: e.costRateCents ?? null,
+        })),
     [entries, rateNum],
   )
+
+  const labourLines = useMemo(
+    () => buildLabourLines(labourEntries, grouping, t("invoices.create.unassignedWorker")),
+    [labourEntries, grouping, t],
+  )
+
+  const labourSubtotal = useMemo(() => labourTotalCents(labourLines) / 100, [labourLines])
+  const partsSubtotal = useMemo(() => entries.reduce((s, e) => s + entryParts(e), 0), [entries])
+  const workSubtotal = labourSubtotal + partsSubtotal
   const manualSubtotal = useMemo(
     () => manualLines.reduce((s, m) => s + (Number(m.quantity) || 0) * (Number(m.unitPrice) || 0), 0),
     [manualLines],
@@ -300,25 +334,11 @@ function NewInvoiceInner() {
       const items: InvoiceItemInput[] = []
 
       /*
-        ⚠️ THE LABOUR LINES COME FROM `buildLabourLines` IN SHARED, not from a
-        loop here. The three groupings have one arithmetic between them, and the
-        property that every line multiplies out is the sort that dies quietly
-        when a screen keeps its own copy of the rules.
+        ⚠️ THE VERY LINES THE PREVIEW RENDERED. Not rebuilt here — rebuilt is
+        how the screen and the document drift apart, and the drift is invisible
+        until a customer compares them.
       */
-      const labour: LabourEntry[] = entries
-        .filter((e) => e.include)
-        .map((e) => ({
-          taskId: e.taskId,
-          taskTitle: e.taskTitle,
-          reportId: e.reportId ?? null,
-          workerName: e.workerName ?? null,
-          hours: e.hours,
-          // The form's fallback rate applies where the ladder had no answer.
-          billRateCents: e.billRateCents ?? (rateNum > 0 ? Math.round(rateNum * 100) : null),
-          costRateCents: e.costRateCents ?? null,
-        }))
-
-      for (const line of buildLabourLines(labour, grouping, t("invoices.create.unassignedWorker"))) {
+      for (const line of labourLines) {
         items.push({
           description: line.description,
           quantity: line.quantity,
@@ -662,24 +682,73 @@ function NewInvoiceInner() {
           </div>
         )}
 
-        {/* Worker hours summary */}
-        {spaceId && (totalHours > 0 || workerSummary.length > 0) && (
-          <div className="bg-card rounded-2xl border border-border p-4 mb-5">
-            <div className="flex items-center gap-2 mb-3">
+        {/*
+          WHAT THE CLIENT WILL SEE — the actual lines, live.
+
+          ⚠️ This is the fix for "I don't see the change when I choose between
+          the three". The grouping used to alter only what was SENT, so picking
+          a different one moved nothing on screen and read as a dead control.
+
+          These are not a rendering OF the invoice; they are the invoice. The
+          same array is handed to the mutation, so what is previewed and what is
+          filed cannot disagree — a second calculation for display is how a
+          shown total quietly stops matching the document it produced.
+        */}
+        {labourLines.length > 0 && (
+          <div className="bg-card rounded-2xl border border-border overflow-hidden mb-5">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
               <Clock className="size-4 text-brand-600" />
-              <p className="text-sm font-medium text-foreground">{t("invoices.create.hoursByWorker")}</p>
-              <span className="text-xs text-muted-foreground ml-auto">{t("invoices.create.totalHours", { hours: totalHours })}</span>
+              <p className="text-sm font-medium text-foreground">{t("invoices.create.preview")}</p>
+              <span className="text-xs text-muted-foreground ml-auto tabular-nums">
+                {t("invoices.create.totalHours", { hours: round2(totalHours) })}
+              </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {workerSummary.length === 0 ? (
-                <span className="text-xs text-muted-foreground">{t("invoices.create.noHours")}</span>
-              ) : workerSummary.map((w) => (
-                <div key={w.name} className="flex items-center gap-2 rounded-full bg-muted/60 pl-1 pr-3 py-1">
-                  <span className="size-6 rounded-full bg-brand-600/15 text-brand-700 dark:text-brand-300 text-[10px] font-semibold flex items-center justify-center">{initials(w.name)}</span>
-                  <span className="text-xs font-medium text-foreground">{w.name}</span>
-                  <span className="text-xs text-muted-foreground tabular-nums">{w.hours}h</span>
-                </div>
-              ))}
+
+            <div className="scroll-x overflow-x-auto">
+              <table className="w-full text-sm min-w-[30rem]">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="text-left font-medium px-4 py-2">{t("invoices.create.descriptionCol")}</th>
+                    <th className="text-right font-medium px-2 py-2 w-20">{t("invoices.create.qty")}</th>
+                    <th className="text-right font-medium px-2 py-2 w-24">{t("invoices.create.unitPrice")}</th>
+                    <th className="text-right font-medium px-4 py-2 w-28">{t("invoices.create.amount")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {labourLines.map((line, i) => (
+                    <tr
+                      key={`${line.taskId ?? "sum"}-${i}`}
+                      className={cn(
+                        "border-t border-border/60",
+                        // A descriptive line is work shown and NOT charged — it
+                        // must not look like a line somebody forgot to price.
+                        line.descriptive && "text-muted-foreground",
+                      )}
+                    >
+                      <td className={cn("px-4 py-2", line.descriptive && "pl-9")}>
+                        {line.descriptive && <span className="mr-1.5 opacity-50">↳</span>}
+                        {line.description}
+                      </td>
+                      <td className="px-2 py-2 text-right tabular-nums">
+                        {line.descriptive ? "" : line.quantity}
+                      </td>
+                      <td className="px-2 py-2 text-right tabular-nums">
+                        {line.descriptive ? "" : money(line.unitPriceCents / 100, currency)}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        {line.descriptive
+                          ? <span className="text-xs">{t("invoices.create.included")}</span>
+                          : money(line.amountCents / 100, currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/30">
+              <span className="text-xs text-muted-foreground">{t("invoices.create.labourTotal")}</span>
+              <span className="text-sm font-semibold tabular-nums text-foreground">{money(labourSubtotal, currency)}</span>
             </div>
           </div>
         )}

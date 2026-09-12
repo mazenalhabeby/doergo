@@ -222,6 +222,38 @@ describe("how the labour is written up", () => {
     }
   })
 
+  it("PREVIEWS the lines, so the choice visibly does something", () => {
+    /*
+      ⚠️ Reported: "I don't see the change when I choose between the three."
+      The grouping altered only what was SENT, so picking a different one moved
+      nothing on screen and read as a dead control.
+
+      The preview renders the very array the mutation sends — not a rendering of
+      the invoice, the invoice.
+    */
+    const src = code(PAGE)
+    expect(src).toContain("invoices.create.preview")
+    expect(src).toMatch(/labourLines\.map\(/)
+  })
+
+  it("shows and sends ONE calculation", () => {
+    /*
+      The screen used to total the work with its own loop while the mutation
+      built the lines with another. Two arithmetics over one invoice is how a
+      displayed total quietly stops matching the document it produced.
+    */
+    const src = code(PAGE)
+    expect(src).toMatch(/labourSubtotal[\s\S]{0,80}labourTotalCents\(labourLines\)/)
+    expect(src).toMatch(/for \(const line of labourLines\)/)
+    // The old independent sum must be gone, not merely unused.
+    expect(src).not.toMatch(/entries\.reduce\(\(s, e\) => s \+ entryLabor\(e\)/)
+  })
+
+  it("marks a descriptive line as included rather than unpriced", () => {
+    // A zero in the amount column reads as a line somebody forgot to price.
+    expect(code(PAGE)).toContain("invoices.create.included")
+  })
+
   it("builds the lines with the SHARED rule, not a loop of its own", () => {
     /*
       ⚠️ The three groupings share one arithmetic, and the property that every
@@ -246,6 +278,7 @@ describe("how the labour is written up", () => {
       const missing = [
         "groupBy", "groupByTask", "groupByMember", "groupByBoth",
         "groupByTaskHint", "groupByMemberHint", "groupByBothHint",
+        "preview", "descriptionCol", "amount", "included", "labourTotal",
       ].filter((k) => typeof d.invoices?.create?.[k] !== "string")
       expect({ lang, missing }).toEqual({ lang, missing: [] })
     }

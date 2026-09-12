@@ -4318,7 +4318,12 @@
       "groupByBoth": "Per person, jobs listed",
       "groupByTaskHint": "The client sees each job and what it cost.",
       "groupByMemberHint": "The client sees who worked and for how long.",
-      "groupByBothHint": "Charged per person, with their jobs listed underneath at no extra charge."
+      "groupByBothHint": "Charged per person, with their jobs listed underneath at no extra charge.",
+      "preview": "What the client will see",
+      "descriptionCol": "Description",
+      "amount": "Amount",
+      "included": "included",
+      "labourTotal": "Labour total"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

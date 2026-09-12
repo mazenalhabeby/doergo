@@ -4327,7 +4327,12 @@
       "groupByBoth": "Par personne, interventions listées",
       "groupByTaskHint": "Le client voit chaque intervention et son montant.",
       "groupByMemberHint": "Le client voit qui a travaillé et combien de temps.",
-      "groupByBothHint": "Facturé par personne, avec ses interventions listées sans supplément."
+      "groupByBothHint": "Facturé par personne, avec ses interventions listées sans supplément.",
+      "preview": "Ce que verra le client",
+      "descriptionCol": "Description",
+      "amount": "Montant",
+      "included": "inclus",
+      "labourTotal": "Total main-d’œuvre"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",
