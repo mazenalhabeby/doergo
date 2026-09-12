@@ -501,6 +501,7 @@ export class InvoiceService {
           select: {
             id: true,
             name: true,
+            kind: true,
             contactName: true,
             contactEmail: true,
             address: true,
@@ -510,6 +511,24 @@ export class InvoiceService {
       : null;
     if (data.spaceId && !space) {
       return { success: false, message: 'Space not found', statusCode: HttpStatus.NOT_FOUND };
+    }
+    /*
+      ⚠️ ONLY A CUSTOMER WORKSPACE CAN BE BILLED, and the server says so rather
+      than trusting the picker to have filtered.
+
+      A workspace is a project, your own company, or a customer you do work for.
+      The schema already carries that: `contactName`, `contactEmail` and the
+      per-space billable rate exist on the CUSTOMER kind alone, and the Invoices
+      tab on a workspace only appears for it. A list must not be stricter OR
+      looser than the check behind it — the picker hides these, and this is what
+      makes hiding them a rule instead of a decoration.
+    */
+    if (space && space.kind !== 'CUSTOMER') {
+      return {
+        success: false,
+        message: `${space.name} is not a customer workspace, so it cannot be invoiced`,
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
     }
 
     const customer = data.customerId

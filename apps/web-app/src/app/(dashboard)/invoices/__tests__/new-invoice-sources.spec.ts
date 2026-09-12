@@ -58,6 +58,48 @@ describe("where the work comes from", () => {
   })
 })
 
+describe("only a workspace that is a customer can be billed", () => {
+  /*
+    ⚠️ A workspace is one of three things — a project, your own company, or a
+    customer you do work for — and only the last can be sent a bill. The picker
+    listed all of them, which invited somebody to invoice their own depot.
+
+    The schema already said so: `contactName`, `contactEmail` and the per-space
+    billable rate exist on the CUSTOMER kind alone, and the Invoices tab on a
+    workspace only appears for it. This picker was the one place that did not
+    agree.
+  */
+  it("filters the picker to customer workspaces", () => {
+    const src = code(PAGE)
+    expect(src).toMatch(/billableSpaces[\s\S]{0,200}kind === "CUSTOMER"/)
+    // Archived is finished; Remote is not a place.
+    expect(src).toMatch(/isActive !== false/)
+    expect(src).toMatch(/!sp\.isRemote/)
+  })
+
+  it("renders the filtered list, not the raw one", () => {
+    const src = code(PAGE)
+    expect(src).toContain("{billableSpaces.map(")
+    expect(src).not.toMatch(/\{\(spacePage\?\.data \?\? \[\]\)\.map/)
+  })
+
+  it("says why the list is empty instead of showing an empty dropdown", () => {
+    expect(code(PAGE)).toContain("invoices.create.noCustomerSpaces")
+  })
+
+  it("the SERVER refuses one too — the list is not the rule", () => {
+    /*
+      A list must not be stricter OR looser than the check behind it. The picker
+      hiding them is what makes it convenient; this is what makes it a rule.
+    */
+    const svc = fs.readFileSync(
+      path.join(ROOT, "../../../../../api/auth-service/src/modules/invoices/invoice.service.ts"),
+      "utf8",
+    ).replace(/(^|\s)\/\*[\s\S]*?\*\//g, "$1")
+    expect(svc).toMatch(/space\.kind !== 'CUSTOMER'/)
+  })
+})
+
 describe("the CRM, when there is one", () => {
   it("is detected from the session, not from a request", () => {
     // It arrives with the user, so it costs nothing, cannot disagree with the
@@ -115,6 +157,7 @@ describe("the nav label", () => {
     const missing = [
       "billFrom", "fromSpace", "fromClient", "fromNothing", "workspace", "client",
       "choose", "clientFillsHeader", "nothingHint", "alsoAddClient", "clientAdded", "clientAddFailed",
+      "noCustomerSpaces",
     ].filter((k) => typeof c[k] !== "string")
     expect({ lang, missing }).toEqual({ lang, missing: [] })
   })

@@ -4297,7 +4297,8 @@
       "nothingHint": "No work will be pulled in. Add the lines yourself below.",
       "alsoAddClient": "Also save this client to the CRM",
       "clientAdded": "Client saved",
-      "clientAddFailed": "The invoice was created, but the client could not be saved."
+      "clientAddFailed": "The invoice was created, but the client could not be saved.",
+      "noCustomerSpaces": "No customer workspaces yet — a workspace has to be a customer before it can be billed."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

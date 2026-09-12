@@ -4306,7 +4306,8 @@
       "nothingHint": "Aucun travail ne sera repris. Ajoutez les lignes ci-dessous.",
       "alsoAddClient": "Enregistrer aussi ce client dans le CRM",
       "clientAdded": "Client enregistré",
-      "clientAddFailed": "La facture a été créée, mais le client n'a pas pu être enregistré."
+      "clientAddFailed": "La facture a été créée, mais le client n'a pas pu être enregistré.",
+      "noCustomerSpaces": "Aucun espace client pour l’instant — un espace doit être un client pour pouvoir être facturé."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

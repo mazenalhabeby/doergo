@@ -4297,7 +4297,8 @@
       "nothingHint": "Es werden keine Arbeiten übernommen. Erfassen Sie die Positionen unten selbst.",
       "alsoAddClient": "Diesen Kunden auch im CRM speichern",
       "clientAdded": "Kunde gespeichert",
-      "clientAddFailed": "Die Rechnung wurde erstellt, der Kunde konnte aber nicht gespeichert werden."
+      "clientAddFailed": "Die Rechnung wurde erstellt, der Kunde konnte aber nicht gespeichert werden.",
+      "noCustomerSpaces": "Noch keine Kunden-Arbeitsbereiche — ein Arbeitsbereich muss ein Kunde sein, bevor er abgerechnet werden kann."
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

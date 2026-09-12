@@ -133,6 +133,24 @@ function NewInvoiceInner() {
   })
 
   /*
+    ⚠️ ONLY THE WORKSPACES THAT ARE CUSTOMERS.
+
+    A workspace is one of three things — a project, your own company, or a
+    customer you do work for — and only the last can be sent a bill. Offering
+    the warehouse and the head office invited somebody to invoice their own
+    depot, and the schema already says so: `contactName`, `contactEmail` and the
+    per-space billable rate all exist on the CUSTOMER kind alone.
+    
+    The product agrees everywhere else: the Invoices tab on a workspace only
+    appears when `kind === "CUSTOMER"`. This picker was the one place that did
+    not. Archived spaces and the Remote bucket are out for the usual reasons —
+    one is finished, the other is not a place.
+  */
+  const billableSpaces = (spacePage?.data ?? []).filter(
+    (sp) => sp.kind === "CUSTOMER" && sp.isActive !== false && !sp.isRemote,
+  )
+
+  /*
     The client list, and — from the same response — whether this person may
     CREATE one. `crmCaps` is the server's own answer, so the "also add them"
     offer cannot appear for somebody the server would refuse.
@@ -386,10 +404,13 @@ function NewInvoiceInner() {
                 className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
               >
                 <option value="">{t("invoices.create.choose")}</option>
-                {(spacePage?.data ?? []).map((sp) => (
+                {billableSpaces.map((sp) => (
                   <option key={sp.id} value={sp.id}>{sp.name}</option>
                 ))}
               </select>
+              {billableSpaces.length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.noCustomerSpaces")}</p>
+              )}
             </div>
           )}
 

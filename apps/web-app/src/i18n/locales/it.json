@@ -4306,7 +4306,8 @@
       "nothingHint": "Non verrà importato alcun lavoro. Aggiunga le voci qui sotto.",
       "alsoAddClient": "Salva questo cliente anche nel CRM",
       "clientAdded": "Cliente salvato",
-      "clientAddFailed": "La fattura è stata creata, ma il cliente non è stato salvato."
+      "clientAddFailed": "La fattura è stata creata, ma il cliente non è stato salvato.",
+      "noCustomerSpaces": "Nessuno spazio cliente — uno spazio deve essere un cliente per poter essere fatturato."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

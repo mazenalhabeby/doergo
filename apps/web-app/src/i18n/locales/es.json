@@ -4297,7 +4297,8 @@
       "nothingHint": "No se traerá ningún trabajo. Añada las líneas abajo.",
       "alsoAddClient": "Guardar también este cliente en el CRM",
       "clientAdded": "Cliente guardado",
-      "clientAddFailed": "La factura se creó, pero el cliente no pudo guardarse."
+      "clientAddFailed": "La factura se creó, pero el cliente no pudo guardarse.",
+      "noCustomerSpaces": "Aún no hay espacios de cliente: un espacio debe ser un cliente para poder facturarlo."
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",
