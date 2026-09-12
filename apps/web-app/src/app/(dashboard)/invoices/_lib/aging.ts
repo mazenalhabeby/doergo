@@ -114,3 +114,60 @@ export function byUrgency(a: Invoice, b: Invoice, now = new Date()): number {
   const bd = daysOverdue(b.dueDate, now) ?? -Infinity
   return bd - ad
 }
+
+/**
+ * What a person actually came here to sort out.
+ *
+ * ⚠️ The list answered "here are all your invoices", in one flat run sorted by
+ * urgency. That is the right ORDER and the wrong SHAPE: a row four months late
+ * and a draft nobody has finished sit in the same column of the same table, so
+ * the reader has to reconstruct the four piles in their head every time they
+ * open the page.
+ *
+ * Four buckets, mutually exclusive, in the order the work happens:
+ *
+ *   overdue   money that is late — the only pile with a deadline attached
+ *   open      issued or sent, not yet due — nothing to do but wait
+ *   draft     not an invoice yet; it is waiting on US, not on a customer
+ *   settled   paid or cancelled — kept, and out of the way
+ *
+ * ⚠️ ISSUED lands in overdue/open by its DATE, like a sent invoice, because the
+ * invoice date sets the term. See `isOutstanding`.
+ */
+export type Bucket = "overdue" | "open" | "draft" | "settled"
+
+export const BUCKETS: Bucket[] = ["overdue", "open", "draft", "settled"]
+
+export function bucketOf(inv: Pick<Invoice, "status" | "dueDate">, now = new Date()): Bucket {
+  if ((inv.status || "").toUpperCase() === "DRAFT") return "draft"
+  if (!isOutstanding(inv)) return "settled"
+  const days = daysOverdue(inv.dueDate, now)
+  return days !== null && days > 0 ? "overdue" : "open"
+}
+
+/** One bucket's rows, its count and what it comes to. */
+export interface BucketGroup {
+  bucket: Bucket
+  rows: Invoice[]
+  total: number
+}
+
+/**
+ * Split a sorted list into its buckets, keeping the order within each.
+ *
+ * Empty buckets are dropped: a heading over nothing is noise, and "Overdue (0)"
+ * is a worse way of saying the good news than not saying it at all.
+ */
+export function groupByBucket(invoices: Invoice[], now = new Date()): BucketGroup[] {
+  const map = new Map<Bucket, Invoice[]>()
+  for (const inv of invoices) {
+    const b = bucketOf(inv, now)
+    const list = map.get(b)
+    if (list) list.push(inv)
+    else map.set(b, [inv])
+  }
+  return BUCKETS.filter((b) => map.has(b)).map((b) => {
+    const rows = map.get(b)!
+    return { bucket: b, rows, total: rows.reduce((s, i) => s + (i.total || 0), 0) }
+  })
+}

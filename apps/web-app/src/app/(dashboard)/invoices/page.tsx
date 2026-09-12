@@ -5,22 +5,15 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import {
-  FileText,
-  Plus,
-  Search,
-  MoreHorizontal,
-  FileCheck,
-  CheckCircle,
-  XCircle,
-  DollarSign,
-  Calendar,
-  Eye,
-} from "lucide-react"
+// The lifecycle brings the step icons — see `_lib/lifecycle.ts`.
+import { FileText, Plus, Search, MoreHorizontal, XCircle, Eye } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, type Invoice } from "@/lib/api"
-import { summarise, byUrgency, daysOverdue, bandFor, isOutstanding, AGE_BANDS, type AgeBand } from "./_lib/aging"
+import {
+  summarise, byUrgency, daysOverdue, bandFor, isOutstanding, groupByBucket,
+  AGE_BANDS, type AgeBand, type Bucket,
+} from "./_lib/aging"
 import { statusStyle, primaryStep, otherSteps, isDeletable, type LifecycleStep } from "./_lib/lifecycle"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
@@ -52,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { dateLocale } from "@/lib/format-date"
+import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { formatMoney } from "@/lib/money"
 
 
@@ -59,6 +53,52 @@ function formatCurrency(amount: number, currency = "USD") {
   // Locale-aware: "1.234,56 €" in de/es/fr/it, "€1,234.56" in en. Was pinned to
   // en-US, which printed US currency convention on a European product.
   return formatMoney(amount, currency)
+}
+
+/**
+ * One quiet fact, and — where there is something to do about it — a way in.
+ *
+ * ⚠️ `onClick` is what separates a figure from a control. "Overdue €18,740"
+ * that cannot be clicked is a number a person then has to go and act on
+ * somewhere else; the same number that filters the list below is the shortest
+ * path between noticing and doing. It is only offered where there is something
+ * to show — a nil figure that looks clickable and does nothing is worse than
+ * one that plainly is not.
+ */
+function Stat({
+  label, value, tone, onClick,
+}: {
+  label: string
+  value: string
+  tone: "bad" | "warn" | "good" | "muted"
+  onClick?: () => void
+}) {
+  const TONE = {
+    bad: "text-red-600 dark:text-red-400",
+    warn: "text-amber-600 dark:text-amber-400",
+    good: "text-emerald-600 dark:text-emerald-400",
+    muted: "text-foreground",
+  } as const
+
+  const body = (
+    <>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className={cn("mt-1 text-xl font-semibold tabular-nums", TONE[tone])}>{value}</p>
+    </>
+  )
+
+  if (!onClick) {
+    return <div className="rounded-2xl border border-border bg-card px-4 py-3.5">{body}</div>
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-2xl border border-border bg-card px-4 py-3.5 text-left transition-colors hover:border-slate-400 focus-visible:border-slate-400 focus-visible:outline-none"
+    >
+      {body}
+    </button>
+  )
 }
 
 export default function InvoicesPage() {
@@ -92,6 +132,14 @@ function InvoicesPageInner() {
   const [sendTarget, setSendTarget] = useState<{ inv: Invoice; step: LifecycleStep } | null>(null)
   const [statusFilter, setStatusFilter] = useState("__all__")
   const [search, setSearch] = useState("")
+  /**
+   * One ageing band, chosen from the summary.
+   *
+   * ⚠️ The legend used to be five inert labels: a person read "90+ days
+   * €13,450" and then had to find those invoices by hand in a list of fifty.
+   * Reading a figure and acting on it were two different jobs on one screen.
+   */
+  const [bandFilter, setBandFilter] = useState<AgeBand | null>(null)
 
   /** Take a step, asking first where the lifecycle says to. */
   const step = (inv: Invoice, s: LifecycleStep) =>
@@ -124,12 +172,21 @@ function InvoicesPageInner() {
   })
 
   const invoices: Invoice[] = data?.data ?? []
-  const filtered = search
-    ? invoices.filter((inv) =>
-        inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
-        inv.clientName?.toLowerCase().includes(search.toLowerCase())
-      )
-    : invoices
+  const needle = search.trim().toLowerCase()
+  const filtered = invoices.filter((inv) => {
+    if (needle && !(
+      inv.invoiceNumber?.toLowerCase().includes(needle) ||
+      inv.clientName?.toLowerCase().includes(needle) ||
+      inv.clientEmail?.toLowerCase().includes(needle)
+    )) return false
+    /*
+      ⚠️ A band only describes money that is OWED. Applying it to a paid or
+      draft invoice would put settled rows under "90+ days", which is the one
+      reading this figure must never produce.
+    */
+    if (bandFilter && (!isOutstanding(inv) || bandFor(daysOverdue(inv.dueDate)) !== bandFilter)) return false
+    return true
+  })
 
   // Most urgent first. A list ordered by invoice number says nothing about what
   // to do next, which is the only question this page exists to answer.
@@ -152,7 +209,12 @@ function InvoicesPageInner() {
   */
   const ccy = aging.currencies[0] ?? invoices[0]?.currency ?? "EUR"
   const mixedCurrencies = aging.currencies.length > 1
-  const totalPaid = invoices.filter((i) => i.status === "PAID").reduce((s: number, i: Invoice) => s + (i.total || 0), 0)
+  /*
+    Finished documents the client has not been given — the pile the ISSUED
+    state created. Nothing else on this page would show them: they are not
+    late, and they are not drafts.
+  */
+  const awaiting = invoices.filter((i) => i.status === "ISSUED").length
 
   const BAND_STYLE: Record<AgeBand, { bar: string; dot: string; label: string }> = {
     current:  { bar: "bg-emerald-500",  dot: "bg-emerald-500",  label: t("invoices.aging.current") },
@@ -162,249 +224,441 @@ function InvoicesPageInner() {
     d90_plus: { bar: "bg-red-700",      dot: "bg-red-700",      label: t("invoices.aging.d90_plus") },
   }
 
+  const BUCKET_STYLE: Record<Bucket, { label: string; accent: string; dot: string }> = {
+    overdue:  { label: t("invoices.buckets.overdue"),  accent: "bg-red-500",     dot: "bg-red-500" },
+    open:     { label: t("invoices.buckets.open"),     accent: "bg-blue-500",    dot: "bg-blue-500" },
+    draft:    { label: t("invoices.buckets.draft"),    accent: "bg-transparent", dot: "bg-slate-400" },
+    settled:  { label: t("invoices.buckets.settled"),  accent: "bg-transparent", dot: "bg-emerald-500" },
+  }
+
+  const groups = groupByBucket(rows)
+  const filtering = search.trim() !== "" || statusFilter !== "__all__" || bandFilter !== null
+
   return (
     <div className="min-h-full bg-background">
-      <div className="p-8 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      {/*
+        ⚠️ BAND OUTSIDE, COLUMN INSIDE — the same rule as every invoice screen.
+        This page was `max-w-6xl`, three hundred pixels narrower than the
+        navigation above it, so the title floated in from the left edge while
+        every other page in the product started under the logo.
+      */}
+      <div className="border-b border-border bg-card/40">
+        <div className={cn(PAGE_WIDTH, "flex flex-wrap items-end justify-between gap-4 py-6")}>
           <div>
-            <h1 data-tour="page-invoices" className="text-2xl font-semibold text-foreground">{t("invoices.title")}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{t("invoices.subtitle")}</p>
+            <h1 data-tour="page-invoices" className="text-2xl font-semibold tracking-tight text-foreground">
+              {t("invoices.title")}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t("invoices.subtitle")}</p>
           </div>
           {isAdmin && (
-            <Button size="sm" className="gap-1.5" onClick={() => router.push("/invoices/new")}>
-              <Plus className="size-3.5" /> {t("invoices.newInvoice")}
+            <Button className="gap-1.5" onClick={() => router.push("/invoices/new")}>
+              <Plus className="size-4" /> {t("invoices.newInvoice")}
             </Button>
           )}
         </div>
+      </div>
 
-        {/* One figure that matters, and the shape of it. */}
-        <div className="grid gap-4 mb-6 lg:grid-cols-[1.6fr_1fr]">
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">{t("invoices.outstanding")}</p>
-                <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">
-                  {formatCurrency(aging.outstanding, ccy)}
-                </p>
-              </div>
-              {aging.overdueCount > 0 && (
-                <div className="text-right">
-                  <p className="text-xs font-medium text-red-600 dark:text-red-400">{t("invoices.overdue")}</p>
-                  <p className="text-lg font-semibold tabular-nums text-red-600 dark:text-red-400">
-                    {formatCurrency(aging.overdue, ccy)}
-                  </p>
-                </div>
-              )}
-            </div>
+      <div className={cn(PAGE_WIDTH, "py-6")}>
+        {/* ── The money, and the shape of it ──────────────────────────── */}
+        <div className="grid gap-4 lg:grid-cols-[1.65fr_1fr]">
+          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {t("invoices.outstanding")}
+            </p>
+            <p className="mt-1.5 text-[40px] font-semibold leading-none tabular-nums tracking-tight text-foreground">
+              {formatCurrency(aging.outstanding, ccy)}
+            </p>
 
-            {/* The ageing bar. Proportional, so the eye lands on the oldest
-                money without reading a single number. */}
             {aging.outstanding > 0 ? (
               <>
-                <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                {/* Proportional, so the eye lands on the oldest money without
+                    reading a single number. */}
+                <div className="mt-5 flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
                   {AGE_BANDS.map((b) => {
                     const pct = (aging.bands[b].amount / aging.outstanding) * 100
                     if (pct <= 0) return null
-                    return <div key={b} className={cn("h-full", BAND_STYLE[b].bar)} style={{ width: `${pct}%` }} title={BAND_STYLE[b].label} />
+                    return (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setBandFilter(bandFilter === b ? null : b)}
+                        title={BAND_STYLE[b].label}
+                        aria-label={BAND_STYLE[b].label}
+                        className={cn(
+                          "h-full transition-opacity hover:opacity-80",
+                          BAND_STYLE[b].bar,
+                          bandFilter !== null && bandFilter !== b && "opacity-30",
+                        )}
+                        style={{ width: `${pct}%` }}
+                      />
+                    )
                   })}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+
+                {/*
+                  ⚠️ THE LEGEND IS THE FILTER. It used to be five inert labels:
+                  a person read "90+ days €13,450" and then had to go and find
+                  those invoices by hand, in a list of fifty. Reading a figure
+                  and acting on it were two different jobs on one screen.
+                */}
+                <div className="mt-4 flex flex-wrap gap-1.5">
                   {AGE_BANDS.map((b) => {
                     const cell = aging.bands[b]
                     if (!cell.count) return null
+                    const on = bandFilter === b
                     return (
-                      <span key={b} className="flex items-center gap-1.5 text-xs">
-                        <span className={cn("size-2 rounded-full", BAND_STYLE[b].dot)} />
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setBandFilter(on ? null : b)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors",
+                          on
+                            ? "border-foreground/25 bg-muted"
+                            : "border-border hover:border-slate-400",
+                        )}
+                      >
+                        <span className={cn("size-2 shrink-0 rounded-full", BAND_STYLE[b].dot)} />
                         <span className="text-muted-foreground">{BAND_STYLE[b].label}</span>
-                        <span className="font-medium tabular-nums text-foreground">{formatCurrency(cell.amount, ccy)}</span>
-                      </span>
+                        <span className="font-medium tabular-nums text-foreground">
+                          {formatCurrency(cell.amount, ccy)}
+                        </span>
+                      </button>
                     )
                   })}
                 </div>
               </>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">{t("invoices.nothingOutstanding")}</p>
+              <p className="mt-5 text-sm text-muted-foreground">{t("invoices.nothingOutstanding")}</p>
             )}
+
             {/* Adding euros to dollars produces a number that means nothing.
                 Better to admit it than to print a confident total. */}
             {mixedCurrencies && (
-              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+              <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
                 {t("invoices.mixedCurrencies", { list: aging.currencies.join(", ") })}
               </p>
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs font-medium text-muted-foreground">{t("invoices.paid")}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(totalPaid, ccy)}
-              </p>
-            </div>
-            {/* The oldest debt, because that is the one that decides what to do
-                today — an average would hide it. */}
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs font-medium text-muted-foreground">{t("invoices.oldestDebt")}</p>
-              <p className={cn("mt-1 text-xl font-semibold tabular-nums",
-                aging.oldestDays === null ? "text-muted-foreground"
-                : aging.oldestDays > 60 ? "text-red-600 dark:text-red-400"
-                : "text-amber-600 dark:text-amber-400")}>
-                {aging.oldestDays === null ? "—" : t("invoices.daysCount", { count: aging.oldestDays })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("invoices.searchPlaceholder")}
-              className="h-8 text-sm pl-8"
+          {/*
+            The three quieter facts. Each one is a QUESTION with an answer, and
+            two of them are also a way into the list — see `awaiting`, which
+            only exists because ISSUED does.
+          */}
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            <Stat
+              label={t("invoices.overdue")}
+              value={formatCurrency(aging.overdue, ccy)}
+              tone={aging.overdue > 0 ? "bad" : "muted"}
+              onClick={aging.overdueCount > 0 ? () => { setBandFilter(null); setStatusFilter("__all__"); setSearch("") } : undefined}
+            />
+            {/*
+              ⚠️ The pile the new ISSUED state created: finished documents the
+              client has not been given. Nothing else on this page would show
+              them — they are not late, and they are not drafts.
+            */}
+            <Stat
+              label={t("invoices.awaitingSend")}
+              value={String(awaiting)}
+              tone={awaiting > 0 ? "warn" : "muted"}
+              onClick={awaiting > 0 ? () => { setBandFilter(null); setStatusFilter("ISSUED") } : undefined}
+            />
+            <Stat
+              label={t("invoices.oldestDebt")}
+              value={aging.oldestDays === null ? "—" : t("invoices.daysCount", { count: aging.oldestDays })}
+              tone={aging.oldestDays === null ? "muted" : aging.oldestDays > 60 ? "bad" : "warn"}
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-8 text-sm w-[140px]">
-              <SelectValue placeholder={t("common.status")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">{t("common.allStatuses")}</SelectItem>
-              <SelectItem value="DRAFT">{t("invoices.statuses.draft")}</SelectItem>
-              {/* ⚠️ In lifecycle order, so the list reads the way the work
-                  happens. Issued invoices are the ones waiting on somebody
-                  here, which makes this the most useful filter on the menu. */}
-              <SelectItem value="ISSUED">{t("invoices.statuses.issued")}</SelectItem>
-              <SelectItem value="SENT">{t("invoices.statuses.sent")}</SelectItem>
-              <SelectItem value="PAID">{t("invoices.statuses.paid")}</SelectItem>
-              <SelectItem value="OVERDUE">{t("invoices.statuses.overdue")}</SelectItem>
-              <SelectItem value="CANCELED">{t("invoices.statuses.canceled")}</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
-        {/* Table */}
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
-          <div className="grid grid-cols-[100px_1fr_120px_100px_110px_80px_120px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
-            <div>{t("invoices.columns.invoiceNumber")}</div>
-            <div>{t("invoices.columns.client")}</div>
-            <div className="text-right">{t("invoices.columns.amount")}</div>
-            <div>{t("invoices.columns.issueDate")}</div>
-            <div>{t("invoices.columns.dueDate")}</div>
-            <div>{t("invoices.columns.status")}</div>
-            <div />
+        {/* ── The list ─────────────────────────────────────────────────── */}
+        <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
+          {/*
+            The controls belong TO the list, so they sit on it. They used to
+            float in the gap above, attached to nothing.
+          */}
+          <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+            <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("invoices.searchPlaceholder")}
+                className="h-9 pl-8 text-sm"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-[150px] text-sm">
+                <SelectValue placeholder={t("common.status")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{t("common.allStatuses")}</SelectItem>
+                <SelectItem value="DRAFT">{t("invoices.statuses.draft")}</SelectItem>
+                {/* ⚠️ In lifecycle order, so the list reads the way the work
+                    happens. Issued invoices are the ones waiting on somebody
+                    here, which makes this the most useful filter on the menu. */}
+                <SelectItem value="ISSUED">{t("invoices.statuses.issued")}</SelectItem>
+                <SelectItem value="SENT">{t("invoices.statuses.sent")}</SelectItem>
+                <SelectItem value="PAID">{t("invoices.statuses.paid")}</SelectItem>
+                <SelectItem value="OVERDUE">{t("invoices.statuses.overdue")}</SelectItem>
+                <SelectItem value="CANCELED">{t("invoices.statuses.canceled")}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <span className="flex-1" />
+
+            {/*
+              ⚠️ SAYS WHAT IS BEING HIDDEN. A filtered list and a nearly-empty
+              business look identical, and the ageing chips make it easy to
+              leave one on by accident — so the count is stated and there is one
+              obvious way back to everything.
+            */}
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {t("invoices.showing", { count: rows.length, total: invoices.length })}
+            </span>
+            {filtering && (
+              <Button
+                variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground"
+                onClick={() => { setSearch(""); setStatusFilter("__all__"); setBandFilter(null) }}
+              >
+                <XCircle className="size-3.5" /> {t("common.clear", "Clear")}
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+            <div className="divide-y divide-border/20">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-64" />
+                  </div>
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              ))}
             </div>
           ) : rows.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="size-10 mx-auto text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">{t("invoices.empty")}</p>
-              {isAdmin && <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.emptyHint")}</p>}
+            <div className="px-4 py-16 text-center">
+              <FileText className="mx-auto mb-3 size-10 text-muted-foreground/20" />
+              <p className="text-sm text-muted-foreground">
+                {filtering ? t("invoices.noneMatch") : t("invoices.empty")}
+              </p>
+              {filtering ? (
+                <Button
+                  variant="outline" size="sm" className="mt-4"
+                  onClick={() => { setSearch(""); setStatusFilter("__all__"); setBandFilter(null) }}
+                >
+                  {t("common.clear", "Clear")}
+                </Button>
+              ) : (
+                isAdmin && (
+                  <>
+                    <p className="mt-1 text-xs text-muted-foreground/60">{t("invoices.emptyHint")}</p>
+                    <Button size="sm" className="mt-4 gap-1.5" onClick={() => router.push("/invoices/new")}>
+                      <Plus className="size-3.5" /> {t("invoices.newInvoice")}
+                    </Button>
+                  </>
+                )
+              )}
             </div>
           ) : (
-            rows.map((inv) => {
-              const status = statusStyle(inv.status)
-              const primary = primaryStep(inv.status)
-              const others = otherSteps(inv.status)
-              return (
-                <div key={inv.id} onClick={() => router.push(`/invoices/${inv.id}`)} className="grid grid-cols-[100px_1fr_120px_100px_110px_80px_120px] gap-3 px-4 py-3 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors items-center cursor-pointer">
-                  <span className="text-sm font-mono font-medium text-foreground">{inv.invoiceNumber}</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{inv.clientName}</p>
-                    {inv.clientEmail && <p className="text-[11px] text-muted-foreground truncate">{inv.clientEmail}</p>}
-                  </div>
-                  <span className="text-sm font-semibold text-foreground text-right tabular-nums">{formatCurrency(inv.total, inv.currency)}</span>
-                  <span className="text-xs text-muted-foreground">{new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })}</span>
-                  {/* The due date alone does not say how late something is —
-                      the reader has to do the arithmetic for every row. The age
-                      is the thing that decides whether this is a reminder or a
-                      phone call, so it is stated. */}
-                  <span className="text-xs">
-                    <span className="text-muted-foreground">
-                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) : "—"}
-                    </span>
-                    {(() => {
-                      if (!isOutstanding(inv)) return null
-                      const d = daysOverdue(inv.dueDate)
-                      if (d === null || d <= 0) return null
-                      const band = bandFor(d)
-                      return (
-                        <span className={cn(
-                          "mt-0.5 block font-medium",
-                          band === "d1_30" ? "text-amber-600 dark:text-amber-400"
-                          : band === "d31_60" ? "text-orange-600 dark:text-orange-400"
-                          : "text-red-600 dark:text-red-400",
-                        )}>
-                          {t("invoices.daysLate", { count: d })}
-                        </span>
-                      )
-                    })()}
+            groups.map((group) => (
+              <section key={group.bucket}>
+                {/*
+                  ⚠️ FOUR PILES, NOT ONE RUN. The list was sorted by urgency —
+                  the right order — but a row four months late and a draft
+                  nobody has finished sat in the same column of the same table,
+                  so the reader rebuilt the piles in their head on every visit.
+
+                  The heading carries the count AND the sum, because "six
+                  overdue" and "six overdue worth €18,740" are different facts
+                  and only the second one decides what to do this morning.
+                */}
+                <div className="flex items-center gap-2.5 border-b border-border/40 bg-muted/25 px-4 py-2">
+                  <span className={cn("size-1.5 rounded-full", BUCKET_STYLE[group.bucket].dot)} />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">
+                    {BUCKET_STYLE[group.bucket].label}
                   </span>
-                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full text-center", status.bg, status.text)}>{t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}</span>
-                  <div className="flex items-center justify-end gap-1">
-                    {/* The next step, stated. Burying "Mark paid" in a kebab
-                        menu makes the one action a row exists for the hardest
-                        thing on it to find. */}
-                    {isAdmin && primary && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); step(inv, primary) }}
-                        disabled={statusMutation.isPending}
-                        className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
-                      >
-                        {t(primary.labelKey)}
-                      </button>
-                    )}
-                  {isAdmin && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button onClick={(e) => e.stopPropagation()} className="size-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                          <MoreHorizontal className="size-3.5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => router.push(`/invoices/${inv.id}`)}><Eye className="size-3.5 mr-2" /> {t("invoices.actions.view")}</DropdownMenuItem>
-                        {/*
-                          ⚠️ The SAME lifecycle the invoice page reads. This row
-                          and that bar each had their own idea of what came next
-                          and already disagreed about where Cancel lived — and
-                          this one still offered DRAFT → SENT, a transition the
-                          server no longer allows.
-                        */}
-                        {primary && (
-                          <DropdownMenuItem onClick={() => step(inv, primary)}>
-                            <primary.icon className="size-3.5 mr-2" /> {t(primary.labelKey)}
-                          </DropdownMenuItem>
-                        )}
-                        {others.filter((o) => !o.destructive).map((o) => (
-                          <DropdownMenuItem key={o.to} onClick={() => step(inv, o)}>
-                            <o.icon className="size-3.5 mr-2" /> {t(o.labelKey)}
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        {isDeletable(inv.status) && (
-                          <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTarget(inv)}>
-                            <XCircle className="size-3.5 mr-2" /> {t("common.delete")}
-                          </DropdownMenuItem>
-                        )}
-                        {others.filter((o) => o.destructive).map((o) => (
-                          <DropdownMenuItem key={o.to} className="text-red-600" onClick={() => step(inv, o)}>
-                            <o.icon className="size-3.5 mr-2" /> {t(o.labelKey)}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  </div>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">{group.rows.length}</span>
+                  <span className="flex-1" />
+                  <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                    {formatCurrency(group.total, ccy)}
+                  </span>
                 </div>
-              )
-            })
+
+                {group.rows.map((inv) => {
+                  const status = statusStyle(inv.status)
+                  const primary = primaryStep(inv.status)
+                  const others = otherSteps(inv.status)
+                  const late = isOutstanding(inv) ? daysOverdue(inv.dueDate) : null
+                  const lateBand = late !== null && late > 0 ? bandFor(late) : null
+
+                  return (
+                    <div
+                      key={inv.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => router.push(`/invoices/${inv.id}`)}
+                      onKeyDown={(e) => {
+                        // ⚠️ A clickable div is unreachable without this. The
+                        // whole row is the target, so it has to behave like one.
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          router.push(`/invoices/${inv.id}`)
+                        }
+                      }}
+                      className="group relative flex cursor-pointer items-center gap-4 border-b border-border/20 px-4 py-3.5 pl-5 transition-colors last:border-0 hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:outline-none"
+                    >
+                      {/*
+                        A hairline in the age's own colour. The band is already
+                        on the screen twice — as a bar and as a pill — and this
+                        makes a late row findable while SCROLLING, which is how
+                        this list is actually read.
+                      */}
+                      {lateBand && (
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute inset-y-0 left-0 w-[3px]",
+                            lateBand === "d1_30" ? "bg-amber-400"
+                            : lateBand === "d31_60" ? "bg-orange-500"
+                            : lateBand === "d61_90" ? "bg-red-500"
+                            : "bg-red-700",
+                          )}
+                        />
+                      )}
+
+                      {/*
+                        ⚠️ THE CLIENT LEADS. The number was first and in mono at
+                        100px, so "INV-DEMO-2026-0010" wrapped onto two lines in
+                        every row — and it is not what anybody scans by. It is a
+                        reference: needed when you have it, never searched for.
+                      */}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{inv.clientName}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          <span className="font-mono">{inv.invoiceNumber}</span>
+                          {inv.clientEmail && <span className="opacity-60"> · {inv.clientEmail}</span>}
+                        </p>
+                      </div>
+
+                      {/* The two dates together, since they are read together. */}
+                      <div className="hidden w-[8.5rem] shrink-0 text-right text-[11px] leading-tight text-muted-foreground sm:block">
+                        <p className="tabular-nums">
+                          {t("invoices.issuedOn", {
+                            date: new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }),
+                          })}
+                        </p>
+                        <p className="tabular-nums">
+                          {inv.dueDate
+                            ? t("invoices.dueOn", {
+                                date: new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }),
+                              })
+                            : t("invoices.create.onReceipt")}
+                        </p>
+                      </div>
+
+                      {/*
+                        The due date alone does not say how late something is —
+                        the reader has to do the arithmetic for every row. The
+                        age decides whether this is a reminder or a phone call,
+                        so it is stated.
+                      */}
+                      <div className="w-[6.5rem] shrink-0 text-right">
+                        <p className="text-sm font-semibold tabular-nums text-foreground">
+                          {formatCurrency(inv.total, inv.currency)}
+                        </p>
+                        {late !== null && late > 0 && (
+                          <p className={cn(
+                            "text-[11px] font-medium tabular-nums",
+                            lateBand === "d1_30" ? "text-amber-600 dark:text-amber-400"
+                            : lateBand === "d31_60" ? "text-orange-600 dark:text-orange-400"
+                            : "text-red-600 dark:text-red-400",
+                          )}>
+                            {t("invoices.daysLate", { count: late })}
+                          </p>
+                        )}
+                      </div>
+
+                      <span className={cn(
+                        "hidden w-[5.5rem] shrink-0 rounded-full px-2 py-0.5 text-center text-[10px] font-semibold uppercase tracking-[0.08em] md:block",
+                        status.bg, status.text,
+                      )}>
+                        {t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}
+                      </span>
+
+                      <div className="flex w-[7.5rem] shrink-0 items-center justify-end gap-1">
+                        {/*
+                          ⚠️ The next step, stated — and only on hover or focus
+                          once the row is not the one being acted on. Fifty rows
+                          each shouting an action is fifty things competing with
+                          the figure beside them; revealing it keeps the column
+                          quiet without burying the one action a row exists for.
+                        */}
+                        {isAdmin && primary && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); step(inv, primary) }}
+                            disabled={statusMutation.isPending}
+                            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground opacity-0 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+                          >
+                            {t(primary.labelKey)}
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={t("common.more", "More")}
+                                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                              >
+                                <MoreHorizontal className="size-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem onClick={() => router.push(`/invoices/${inv.id}`)}>
+                                <Eye className="mr-2 size-3.5" /> {t("invoices.actions.view")}
+                              </DropdownMenuItem>
+                              {/*
+                                ⚠️ The SAME lifecycle the invoice page reads.
+                                This row and that bar each had their own idea of
+                                what came next and already disagreed about where
+                                Cancel lived — and this one still offered
+                                DRAFT → SENT, which the server no longer allows.
+                              */}
+                              {primary && (
+                                <DropdownMenuItem onClick={() => step(inv, primary)}>
+                                  <primary.icon className="mr-2 size-3.5" /> {t(primary.labelKey)}
+                                </DropdownMenuItem>
+                              )}
+                              {others.filter((o) => !o.destructive).map((o) => (
+                                <DropdownMenuItem key={o.to} onClick={() => step(inv, o)}>
+                                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
+                                </DropdownMenuItem>
+                              ))}
+                              <DropdownMenuSeparator />
+                              {isDeletable(inv.status) && (
+                                <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTarget(inv)}>
+                                  <XCircle className="mr-2 size-3.5" /> {t("common.delete")}
+                                </DropdownMenuItem>
+                              )}
+                              {others.filter((o) => o.destructive).map((o) => (
+                                <DropdownMenuItem key={o.to} className="text-red-600" onClick={() => step(inv, o)}>
+                                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </section>
+            ))
           )}
         </div>
       </div>

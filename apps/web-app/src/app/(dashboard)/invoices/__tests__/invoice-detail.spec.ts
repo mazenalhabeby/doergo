@@ -132,3 +132,72 @@ describe("the way out", () => {
     expect(src).toMatch(/onClick=\{\(\) => router\.push\(`\/invoices\/\$\{id\}`\)\}/)
   })
 })
+
+describe("the invoice list", () => {
+  const LIST = "page.tsx"
+
+  it("sits in the app's column", () => {
+    // It was `max-w-6xl` — three hundred pixels narrower than the navigation
+    // above it, so the title floated in from the left edge.
+    const src = code(LIST)
+    expect(src).toMatch(/cn\(PAGE_WIDTH/)
+    expect(src).not.toMatch(/max-w-6xl mx-auto/)
+  })
+
+  it("makes the ageing legend a way into the list, not a label", () => {
+    /*
+      ⚠️ A person read "90+ days €13,450" and then had to find those invoices
+      by hand in a list of fifty. Reading a figure and acting on it were two
+      different jobs on one screen.
+    */
+    const src = code(LIST)
+    expect(src).toContain("setBandFilter")
+    expect(src).toMatch(/bandFilter &&[\s\S]{0,200}bandFor\(daysOverdue/)
+  })
+
+  it("never files a settled invoice under an ageing band", () => {
+    // A band describes money that is OWED. The filter has to say so.
+    expect(code(LIST)).toMatch(/bandFilter && \(!isOutstanding\(inv\)/)
+  })
+
+  it("groups the list into the four piles", () => {
+    const src = code(LIST)
+    expect(src).toContain("groupByBucket")
+    for (const k of ["invoices.buckets.overdue", "invoices.buckets.open", "invoices.buckets.draft", "invoices.buckets.settled"]) {
+      expect(src).toContain(k)
+    }
+  })
+
+  it("surfaces the pile the ISSUED state created", () => {
+    /*
+      Finished documents the client has not been given. Nothing else on the
+      page would show them — they are not late, and they are not drafts.
+    */
+    const src = code(LIST)
+    expect(src).toMatch(/status === "ISSUED"/)
+    expect(src).toContain("invoices.awaitingSend")
+  })
+
+  it("says how much of the list is being hidden", () => {
+    // A filtered list and a nearly-empty business look identical.
+    const src = code(LIST)
+    expect(src).toContain("invoices.showing")
+    expect(src).toContain("invoices.noneMatch")
+  })
+
+  it("lets a keyboard open a row", () => {
+    // The whole row is the target, so it has to behave like one.
+    const src = code(LIST)
+    expect(src).toMatch(/role="button"/)
+    expect(src).toMatch(/tabIndex=\{0\}/)
+    expect(src).toMatch(/e\.key === "Enter" \|\| e\.key === " "/)
+  })
+
+  it.each(["en", "de", "es", "fr", "it"])("names the four piles in %s", (lang) => {
+    const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+    for (const k of ["overdue", "open", "draft", "settled"]) {
+      expect(typeof d.invoices?.buckets?.[k]).toBe("string")
+    }
+    expect(typeof d.invoices?.awaitingSend).toBe("string")
+  })
+})

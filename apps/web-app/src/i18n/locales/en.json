@@ -4421,7 +4421,18 @@
     "markSent": {
       "title": "Mark this invoice as sent?",
       "desc": "{{number}} will be recorded as delivered to {{client}} and can no longer be taken back to draft. Nothing is emailed — send the PDF yourself first."
-    }
+    },
+    "buckets": {
+      "overdue": "Overdue",
+      "open": "Open",
+      "draft": "Drafts",
+      "settled": "Settled"
+    },
+    "awaitingSend": "Awaiting send",
+    "noneMatch": "No invoices match these filters.",
+    "showing": "{{count}} of {{total}}",
+    "issuedOn": "Issued {{date}}",
+    "dueOn": "Due {{date}}"
   },
   "overtime": {
     "title": "Overtime Management",

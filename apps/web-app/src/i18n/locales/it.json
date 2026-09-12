@@ -4430,7 +4430,18 @@
     "markSent": {
       "title": "Segnare questa fattura come inviata?",
       "desc": "{{number}} verrà registrata come consegnata a {{client}} e non potrà più tornare in bozza. Non viene inviata alcuna e-mail: invia prima tu il PDF."
-    }
+    },
+    "buckets": {
+      "overdue": "Scadute",
+      "open": "Aperte",
+      "draft": "Bozze",
+      "settled": "Chiuse"
+    },
+    "awaitingSend": "Da inviare",
+    "noneMatch": "Nessuna fattura corrisponde a questi filtri.",
+    "showing": "{{count}} di {{total}}",
+    "issuedOn": "Emessa {{date}}",
+    "dueOn": "Scade {{date}}"
   },
   "overtime": {
     "title": "Gestione degli straordinari",

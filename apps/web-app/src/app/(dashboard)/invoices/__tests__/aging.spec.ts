@@ -1,4 +1,5 @@
-import { daysOverdue, bandFor, summarise, byUrgency, isOutstanding } from "../_lib/aging"
+import { daysOverdue, bandFor, summarise, byUrgency, isOutstanding, bucketOf, groupByBucket } from "../_lib/aging"
+import type { Invoice } from "@/lib/api"
 
 /**
  * The invoice list reported how many invoices were overdue and nothing else, so
@@ -120,5 +121,71 @@ describe("invoice ageing", () => {
       // Even though the paid one is far older, it needs no action at all.
       expect([...rows].sort((a, b) => byUrgency(a, b, NOW))[0].id).toBe("owed")
     })
+  })
+})
+
+describe("the four piles", () => {
+  /*
+    ⚠️ The list was one flat run sorted by urgency — the right ORDER and the
+    wrong SHAPE. A row four months late and a draft nobody has finished sat in
+    the same column of the same table, so the reader rebuilt the piles in their
+    head on every visit.
+  */
+  const inv = (over: Partial<Invoice>): Invoice => ({
+    id: "i", invoiceNumber: "INV-1", status: "SENT", clientName: "C",
+    subtotal: 0, taxAmount: 0, discount: 0, total: 100, currency: "EUR",
+    issueDate: "2026-01-01", organizationId: "o", createdById: "u",
+    items: [], createdAt: "", updatedAt: "", ...over,
+  } as Invoice)
+
+  const NOW = new Date("2026-09-13T12:00:00Z")
+
+  it("puts each invoice in exactly one pile", () => {
+    expect(bucketOf(inv({ status: "DRAFT" }), NOW)).toBe("draft")
+    expect(bucketOf(inv({ status: "PAID" }), NOW)).toBe("settled")
+    expect(bucketOf(inv({ status: "CANCELED" }), NOW)).toBe("settled")
+    expect(bucketOf(inv({ status: "SENT", dueDate: "2026-08-01" }), NOW)).toBe("overdue")
+    expect(bucketOf(inv({ status: "SENT", dueDate: "2026-12-01" }), NOW)).toBe("open")
+  })
+
+  it("files an ISSUED invoice by its DATE, like a sent one", () => {
+    /*
+      ⚠️ The invoice date sets the payment term, not the day somebody happened
+      to email the PDF. An invoice issued in July and never sent is LATE, and
+      it is exactly the case this page exists to surface.
+    */
+    expect(bucketOf(inv({ status: "ISSUED", dueDate: "2026-08-01" }), NOW)).toBe("overdue")
+    expect(bucketOf(inv({ status: "ISSUED", dueDate: "2026-12-01" }), NOW)).toBe("open")
+  })
+
+  it("never files a settled invoice as late", () => {
+    // The one reading a figure about money owed must never produce.
+    expect(bucketOf(inv({ status: "PAID", dueDate: "2020-01-01" }), NOW)).toBe("settled")
+  })
+
+  it("drops empty piles rather than heading nothing", () => {
+    // "Overdue (0)" is a worse way of saying the good news than not saying it.
+    const groups = groupByBucket([inv({ status: "PAID" }), inv({ status: "PAID" })], NOW)
+    expect(groups.map((g) => g.bucket)).toEqual(["settled"])
+    expect(groups[0]!.rows).toHaveLength(2)
+  })
+
+  it("carries each pile's total, not just its count", () => {
+    /*
+      "Six overdue" and "six overdue worth €18,740" are different facts, and
+      only the second one decides what to do this morning.
+    */
+    const groups = groupByBucket(
+      [inv({ total: 100, dueDate: "2026-08-01" }), inv({ total: 250, dueDate: "2026-08-01" })],
+      NOW,
+    )
+    expect(groups[0]!.total).toBe(350)
+  })
+
+  it("keeps the order it was given", () => {
+    // The caller sorts by urgency; grouping must not reshuffle within a pile.
+    const a = inv({ id: "a", total: 1, dueDate: "2026-01-01" })
+    const b = inv({ id: "b", total: 2, dueDate: "2026-05-01" })
+    expect(groupByBucket([a, b], NOW)[0]!.rows.map((r) => r.id)).toEqual(["a", "b"])
   })
 })

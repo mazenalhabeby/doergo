@@ -4430,7 +4430,18 @@
     "markSent": {
       "title": "Marquer cette facture comme envoyée ?",
       "desc": "{{number}} sera enregistrée comme remise à {{client}} et ne pourra plus revenir au brouillon. Aucun e-mail n'est envoyé — envoyez d'abord le PDF vous-même."
-    }
+    },
+    "buckets": {
+      "overdue": "En retard",
+      "open": "Ouvertes",
+      "draft": "Brouillons",
+      "settled": "Réglées"
+    },
+    "awaitingSend": "À envoyer",
+    "noneMatch": "Aucune facture ne correspond à ces filtres.",
+    "showing": "{{count}} sur {{total}}",
+    "issuedOn": "Émise {{date}}",
+    "dueOn": "Échéance {{date}}"
   },
   "overtime": {
     "title": "Gestion des heures supplémentaires",
