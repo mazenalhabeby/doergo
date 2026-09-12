@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Combobox } from "@/components/ui/combobox"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PartEntry { name: string; partNumber?: string | null; quantity: number; unitCost: number }
@@ -809,15 +810,38 @@ function NewInvoiceInner() {
               <div className="space-y-3">
                 {/* Two dates side by side is the one pairing that survives a
                     narrow column: both are short, and they are read together. */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">{t("invoices.create.issueDate")}</Label>
-                    <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className="h-9 mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{t("invoices.create.dueDate")}</Label>
-                    <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-9 mt-1" />
-                  </div>
+                {/*
+                  ⚠️ The app's own picker, not `<input type="date">`. The native
+                  control renders differently in every browser and in a narrow
+                  column shows "dd.m" with a clipped spinner — which is exactly
+                  how it appeared here. The calendar is what the rest of the
+                  product uses.
+
+                  Stacked, not side by side: two calendar triggers in a 320px
+                  rail leave no room for either date to be readable.
+                */}
+                <div>
+                  <Label className="text-xs" htmlFor="inv-issue">{t("invoices.create.issueDate")}</Label>
+                  <DatePicker
+                    id="inv-issue"
+                    value={issueDate}
+                    onChange={setIssueDate}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs" htmlFor="inv-due">{t("invoices.create.dueDate")}</Label>
+                  <DatePicker
+                    id="inv-due"
+                    value={dueDate}
+                    onChange={setDueDate}
+                    placeholder={t("invoices.create.noDueDate")}
+                    clearable
+                    /* A due date before the invoice was issued is not a term,
+                       it is a typo — and one nobody re-reads on a draft. */
+                    fromDate={issueDate ? new Date(issueDate) : undefined}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-xs">{t("invoices.create.rate")}</Label>

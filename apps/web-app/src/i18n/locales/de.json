@@ -665,7 +665,8 @@
     "clear": "Zurücksetzen",
     "undo": "Rückgängig",
     "moveUp": "Nach oben",
-    "moveDown": "Nach unten"
+    "moveDown": "Nach unten",
+    "selectDate": "Datum wählen"
   },
   "auth": {
     "login": {
@@ -4348,7 +4349,8 @@
       "termsSection": "Termine & Satz",
       "rateHint": "Gilt für Stunden ohne eigenen Satz.",
       "clientEmailPlaceholder": "rechnung@kunde.at",
-      "clientAddressPlaceholder": "Straße, Ort, PLZ"
+      "clientAddressPlaceholder": "Straße, Ort, PLZ",
+      "noDueDate": "Kein Fälligkeitsdatum"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

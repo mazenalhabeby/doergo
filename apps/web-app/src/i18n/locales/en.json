@@ -665,7 +665,8 @@
     "clear": "Clear",
     "undo": "Undo",
     "moveUp": "Move up",
-    "moveDown": "Move down"
+    "moveDown": "Move down",
+    "selectDate": "Pick a date"
   },
   "auth": {
     "login": {
@@ -4348,7 +4349,8 @@
       "termsSection": "Dates & rate",
       "rateHint": "Applied to hours with no rate of their own.",
       "clientEmailPlaceholder": "billing@client.com",
-      "clientAddressPlaceholder": "Street, town, postcode"
+      "clientAddressPlaceholder": "Street, town, postcode",
+      "noDueDate": "No due date"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

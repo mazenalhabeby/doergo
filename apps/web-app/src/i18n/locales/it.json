@@ -665,7 +665,8 @@
     "clear": "Cancella",
     "undo": "Annulla",
     "moveUp": "Sposta su",
-    "moveDown": "Sposta giù"
+    "moveDown": "Sposta giù",
+    "selectDate": "Scegli una data"
   },
   "auth": {
     "login": {
@@ -4357,7 +4358,8 @@
       "termsSection": "Date e tariffa",
       "rateHint": "Applicata alle ore senza tariffa propria.",
       "clientEmailPlaceholder": "fatturazione@cliente.it",
-      "clientAddressPlaceholder": "Via, città, CAP"
+      "clientAddressPlaceholder": "Via, città, CAP",
+      "noDueDate": "Nessuna scadenza"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

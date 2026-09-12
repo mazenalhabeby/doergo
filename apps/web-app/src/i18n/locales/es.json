@@ -665,7 +665,8 @@
     "clear": "Borrar",
     "undo": "Deshacer",
     "moveUp": "Subir",
-    "moveDown": "Bajar"
+    "moveDown": "Bajar",
+    "selectDate": "Elegir fecha"
   },
   "auth": {
     "login": {
@@ -4348,7 +4349,8 @@
       "termsSection": "Fechas y tarifa",
       "rateHint": "Se aplica a las horas sin tarifa propia.",
       "clientEmailPlaceholder": "facturacion@cliente.com",
-      "clientAddressPlaceholder": "Calle, ciudad, código postal"
+      "clientAddressPlaceholder": "Calle, ciudad, código postal",
+      "noDueDate": "Sin fecha de vencimiento"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

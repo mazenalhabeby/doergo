@@ -665,7 +665,8 @@
     "clear": "Effacer",
     "undo": "Annuler",
     "moveUp": "Monter",
-    "moveDown": "Descendre"
+    "moveDown": "Descendre",
+    "selectDate": "Choisir une date"
   },
   "auth": {
     "login": {
@@ -4357,7 +4358,8 @@
       "termsSection": "Dates et tarif",
       "rateHint": "Appliqué aux heures sans tarif propre.",
       "clientEmailPlaceholder": "facturation@client.com",
-      "clientAddressPlaceholder": "Rue, ville, code postal"
+      "clientAddressPlaceholder": "Rue, ville, code postal",
+      "noDueDate": "Pas d’échéance"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",
