@@ -4320,7 +4320,14 @@
       "billed": "Fatturato",
       "labourCost": "Costo del lavoro",
       "margin": "Margine",
-      "marginHint": "Solo manodopera — ricambi e voci extra non sono valorizzati. Mai visibile al cliente."
+      "marginHint": "Solo manodopera — ricambi e voci extra non sono valorizzati. Mai visibile al cliente.",
+      "groupBy": "Presenta la manodopera come",
+      "groupByTask": "Una riga per lavoro",
+      "groupByMember": "Una riga per persona",
+      "groupByBoth": "Per persona, con i lavori",
+      "groupByTaskHint": "Il cliente vede ogni lavoro e il relativo importo.",
+      "groupByMemberHint": "Il cliente vede chi ha lavorato e per quanto tempo.",
+      "groupByBothHint": "Fatturato per persona, con i suoi lavori elencati sotto senza costi aggiuntivi."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

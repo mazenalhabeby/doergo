@@ -4311,7 +4311,14 @@
       "billed": "Verrechnet",
       "labourCost": "Lohnkosten",
       "margin": "Marge",
-      "marginHint": "Nur Arbeitszeit — Teile und Zusatzpositionen sind nicht kalkuliert. Für Kunden nie sichtbar."
+      "marginHint": "Nur Arbeitszeit — Teile und Zusatzpositionen sind nicht kalkuliert. Für Kunden nie sichtbar.",
+      "groupBy": "Arbeitszeit ausweisen als",
+      "groupByTask": "Eine Zeile je Auftrag",
+      "groupByMember": "Eine Zeile je Person",
+      "groupByBoth": "Je Person, Aufträge aufgelistet",
+      "groupByTaskHint": "Der Kunde sieht jeden Auftrag und dessen Kosten.",
+      "groupByMemberHint": "Der Kunde sieht, wer wie lange gearbeitet hat.",
+      "groupByBothHint": "Abgerechnet je Person, mit den Aufträgen darunter — ohne Mehrkosten."
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

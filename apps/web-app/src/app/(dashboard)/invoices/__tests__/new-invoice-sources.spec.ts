@@ -205,3 +205,49 @@ describe("the nav label", () => {
     expect({ lang, missing }).toEqual({ lang, missing: [] })
   })
 })
+
+describe("how the labour is written up", () => {
+  /*
+    Asked for: bill by tasks, by total time per member, or both.
+
+    A managing agent wants the jobs; a staffing client wants the hours; somebody
+    presenting to a board wants a figure with the detail underneath. All three
+    describe the same work for the same money — a choice about the DOCUMENT, not
+    about the price.
+  */
+  it("offers all three", () => {
+    const src = code(PAGE)
+    for (const k of ["groupByTask", "groupByMember", "groupByBoth"]) {
+      expect(src).toContain(`invoices.create.${k}`)
+    }
+  })
+
+  it("builds the lines with the SHARED rule, not a loop of its own", () => {
+    /*
+      ⚠️ The three groupings share one arithmetic, and the property that every
+      line multiplies out is exactly the sort that dies quietly when a screen
+      keeps its own copy of the rules.
+    */
+    const src = code(PAGE)
+    expect(src).toContain("buildLabourLines(")
+    // The old per-entry line construction must be gone, not merely bypassed.
+    expect(src).not.toMatch(/description: `\$\{e\.taskTitle\}[\s\S]{0,80}quantity: e\.hours/)
+  })
+
+  it("only offers it once there is labour to group", () => {
+    // A control with nothing to act on is a control somebody reads as broken.
+    expect(code(PAGE)).toMatch(/entries\.some\(\(e\) => e\.include && e\.hours > 0\)/)
+  })
+
+  it("is translated in all five languages", () => {
+    const LOCALES = path.join(ROOT, "../../../i18n/locales")
+    for (const lang of ["en", "de", "es", "fr", "it"]) {
+      const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+      const missing = [
+        "groupBy", "groupByTask", "groupByMember", "groupByBoth",
+        "groupByTaskHint", "groupByMemberHint", "groupByBothHint",
+      ].filter((k) => typeof d.invoices?.create?.[k] !== "string")
+      expect({ lang, missing }).toEqual({ lang, missing: [] })
+    }
+  })
+})

@@ -4320,7 +4320,14 @@
       "billed": "Facturé",
       "labourCost": "Coût de main-d’œuvre",
       "margin": "Marge",
-      "marginHint": "Main-d’œuvre uniquement — pièces et lignes supplémentaires non valorisées. Jamais visible du client."
+      "marginHint": "Main-d’œuvre uniquement — pièces et lignes supplémentaires non valorisées. Jamais visible du client.",
+      "groupBy": "Présenter la main-d’œuvre comme",
+      "groupByTask": "Une ligne par intervention",
+      "groupByMember": "Une ligne par personne",
+      "groupByBoth": "Par personne, interventions listées",
+      "groupByTaskHint": "Le client voit chaque intervention et son montant.",
+      "groupByMemberHint": "Le client voit qui a travaillé et combien de temps.",
+      "groupByBothHint": "Facturé par personne, avec ses interventions listées sans supplément."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

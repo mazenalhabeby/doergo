@@ -9,6 +9,7 @@ import { ArrowLeft, Plus, Trash2, Loader2, Clock, Package, FileText, ChevronDown
 
 import { invoicesApi, locationsApi, customersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { buildLabourLines, type LabourGrouping, type LabourEntry } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -90,6 +91,15 @@ function NewInvoiceInner() {
   const [customerId, setCustomerId] = useState("")
   /** Type a client by hand, and offer to keep them. Only where there is a CRM. */
   const [addToCrm, setAddToCrm] = useState(false)
+  /*
+    HOW THE LABOUR IS WRITTEN UP — the customer's preference, not ours.
+
+    A managing agent wants the jobs. A staffing client wants the hours. Somebody
+    presenting to a board wants a figure with the detail underneath it. All
+    three describe the same work for the same money, so this is a choice about
+    the document rather than about the price.
+  */
+  const [grouping, setGrouping] = useState<LabourGrouping>("task")
 
   const spaceId = source === "space" ? pickedSpaceId || undefined : undefined
 
@@ -288,38 +298,41 @@ function NewInvoiceInner() {
   const createMutation = useMutation({
     mutationFn: () => {
       const items: InvoiceItemInput[] = []
+
+      /*
+        ⚠️ THE LABOUR LINES COME FROM `buildLabourLines` IN SHARED, not from a
+        loop here. The three groupings have one arithmetic between them, and the
+        property that every line multiplies out is the sort that dies quietly
+        when a screen keeps its own copy of the rules.
+      */
+      const labour: LabourEntry[] = entries
+        .filter((e) => e.include)
+        .map((e) => ({
+          taskId: e.taskId,
+          taskTitle: e.taskTitle,
+          reportId: e.reportId ?? null,
+          workerName: e.workerName ?? null,
+          hours: e.hours,
+          // The form's fallback rate applies where the ladder had no answer.
+          billRateCents: e.billRateCents ?? (rateNum > 0 ? Math.round(rateNum * 100) : null),
+          costRateCents: e.costRateCents ?? null,
+        }))
+
+      for (const line of buildLabourLines(labour, grouping, t("invoices.create.unassignedWorker"))) {
+        items.push({
+          description: line.description,
+          quantity: line.quantity,
+          unitPrice: line.unitPriceCents / 100,
+          taskId: line.taskId || undefined,
+          reportId: line.reportId || undefined,
+          billRateCents: line.billRateCents,
+          costRateCents: line.costRateCents,
+          billedHours: line.billedHours,
+        })
+      }
+
       for (const e of entries) {
         if (!e.include) continue
-        const lineRate = entryRate(e)
-        if (e.hours > 0 && lineRate > 0) {
-          items.push({
-            description: `${e.taskTitle}${e.workerName ? ` — ${e.workerName}` : ""} · ${e.hours}h`,
-            quantity: e.hours,
-            unitPrice: lineRate,
-            taskId: e.taskId,
-            reportId: e.reportId || undefined,
-            /*
-              ⚠️ THE RATES AS THEY WERE TODAY, sent with the line.
-
-              Not a convenience — the record. The ladder answers "what is this
-              rate now"; an issued invoice has to keep answering "what was it
-              then", or a raise next month moves an invoice already paid. These
-              are the exact numbers shown on this screen before Save.
-            */
-            billRateCents: e.billRateCents ?? Math.round(lineRate * 100),
-            costRateCents: e.costRateCents ?? null,
-            billedHours: e.hours,
-          })
-        } else {
-          // No tracked hours (or no rate) → a task line the admin can price by hand.
-          items.push({
-            description: `${e.taskTitle}${e.workerName ? ` — ${e.workerName}` : ""}`,
-            quantity: 1,
-            unitPrice: 0,
-            taskId: e.taskId,
-            reportId: e.reportId || undefined,
-          })
-        }
         if (e.includeParts) {
           for (const p of e.parts) {
             items.push({
@@ -474,6 +487,48 @@ function NewInvoiceInner() {
 
           {source === "none" && (
             <p className="mt-3 text-xs text-muted-foreground">{t("invoices.create.nothingHint")}</p>
+          )}
+
+          {/*
+            How the labour is written up — shown only once there is labour.
+
+            ⚠️ All three price the same work identically where the hours are
+            clean, so this is a choice about the DOCUMENT and never about the
+            amount. Offering it before any work has been gathered would be a
+            control with nothing to act on.
+          */}
+          {entries.some((e) => e.include && e.hours > 0) && (
+            <div className="mt-4 border-t border-border pt-3">
+              <Label className="text-xs">{t("invoices.create.groupBy")}</Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {([
+                  ["task", t("invoices.create.groupByTask")],
+                  ["member", t("invoices.create.groupByMember")],
+                  ["both", t("invoices.create.groupByBoth")],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setGrouping(key as LabourGrouping)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+                      grouping === key
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                        : "border-border text-muted-foreground hover:border-slate-400",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {grouping === "task"
+                  ? t("invoices.create.groupByTaskHint")
+                  : grouping === "member"
+                    ? t("invoices.create.groupByMemberHint")
+                    : t("invoices.create.groupByBothHint")}
+              </p>
+            </div>
           )}
         </div>
 

@@ -4311,7 +4311,14 @@
       "billed": "Billed",
       "labourCost": "Labour cost",
       "margin": "Margin",
-      "marginHint": "Labour only — parts and extra lines are not costed. Never shown to the client."
+      "marginHint": "Labour only — parts and extra lines are not costed. Never shown to the client.",
+      "groupBy": "Write the labour up as",
+      "groupByTask": "One line per job",
+      "groupByMember": "One line per person",
+      "groupByBoth": "Per person, jobs listed",
+      "groupByTaskHint": "The client sees each job and what it cost.",
+      "groupByMemberHint": "The client sees who worked and for how long.",
+      "groupByBothHint": "Charged per person, with their jobs listed underneath at no extra charge."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

@@ -37,19 +37,28 @@ describe("the invoice draft", () => {
   })
 
   it("bills each line at that member's own rate, not one rate for the job", () => {
-    // One job rate is wrong the moment two people with different rates work the
-    // same site — the normal case for anyone billing labour at all.
+    /*
+      One job rate is wrong the moment two people with different rates work the
+      same site — the normal case for anyone billing labour at all.
+
+      The per-entry rate now flows into the SHARED line builder rather than into
+      a loop here, so this asserts the rate reaches it rather than how the loop
+      was written.
+    */
     const src = code(DRAFT)
-    expect(src).toMatch(/entryRate = \(e: WorkEntry\)/)
-    expect(src).toMatch(/unitPrice: lineRate/)
+    expect(src).toMatch(/billRateCents: e\.billRateCents/)
+    expect(src).toContain("buildLabourLines(")
   })
 
   it("sends the rates with the line, so an issued invoice stops moving", () => {
+    // The ladder answers "what is the rate now"; a paid invoice has to keep
+    // answering "what was it then".
     const src = code(DRAFT)
-    expect(src).toMatch(/billRateCents: e\.billRateCents/)
-    expect(src).toMatch(/costRateCents: e\.costRateCents/)
-    expect(src).toContain("billedHours: e.hours")
+    expect(src).toMatch(/billRateCents: line\.billRateCents/)
+    expect(src).toMatch(/costRateCents: line\.costRateCents/)
+    expect(src).toMatch(/billedHours: line\.billedHours/)
   })
+
 })
 
 describe("the member editor carries COST, and only cost", () => {
