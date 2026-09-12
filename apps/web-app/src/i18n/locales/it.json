@@ -2250,7 +2250,12 @@
       "allowanceLabel": "Giorni di ferie all’anno",
       "allowancePlaceholder": "Valore predefinito dell’organizzazione",
       "allowanceHint": "Lascia vuoto per usare il valore dell’organizzazione. Inserisci 0 se non ha ferie retribuite.",
-      "dateOfBirth": "Data di nascita"
+      "dateOfBirth": "Data di nascita",
+      "billRateLabel": "Fatturato (all’ora)",
+      "costRateLabel": "Ci costa (all’ora)",
+      "ratePlaceholder": "Vuoto = eredita",
+      "billRateHint": "Vuoto eredita la tariffa del cliente, poi quella dell’organizzazione. Di norma vuoto.",
+      "costRateHint": "Quanto costa questa persona all’ora. Compilarne uno attiva il margine."
     },
     "detail": {
       "backToTeam": "Torna al team",
@@ -4309,7 +4314,12 @@
       "clientAddFailed": "La fattura è stata creata, ma il cliente non è stato salvato.",
       "noCustomerSpaces": "Nessuno spazio cliente — uno spazio deve essere un cliente per poter essere fatturato.",
       "alsoAddClientWhen": "«{{name}}» sarà aggiunto ai suoi clienti al salvataggio della fattura.",
-      "alsoAddClientNeedsName": "Inserisca sopra un nome cliente per usare questa opzione."
+      "alsoAddClientNeedsName": "Inserisca sopra un nome cliente per usare questa opzione.",
+      "marginTitle": "Quanto rende questa fattura",
+      "billed": "Fatturato",
+      "labourCost": "Costo del lavoro",
+      "margin": "Margine",
+      "marginHint": "Solo manodopera — ricambi e voci extra non sono valorizzati. Mai visibile al cliente."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

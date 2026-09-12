@@ -2256,7 +2256,12 @@
       "allowanceLabel": "Vacation days per year",
       "allowancePlaceholder": "Organization default",
       "allowanceHint": "Leave blank to use the organization's default. Enter 0 for no paid vacation.",
-      "dateOfBirth": "Date of birth"
+      "dateOfBirth": "Date of birth",
+      "billRateLabel": "Bills at (per hour)",
+      "costRateLabel": "Costs us (per hour)",
+      "ratePlaceholder": "Leave blank to inherit",
+      "billRateHint": "Blank inherits the client’s rate, then the organisation’s. Usually blank.",
+      "costRateHint": "What this person costs per hour. Setting one anywhere turns on margin."
     },
     "detail": {
       "backToTeam": "Back to Team",
@@ -4300,7 +4305,12 @@
       "clientAddFailed": "The invoice was created, but the client could not be saved.",
       "noCustomerSpaces": "No customer workspaces yet — a workspace has to be a customer before it can be billed.",
       "alsoAddClientWhen": "“{{name}}” will be added to your clients when the invoice is saved.",
-      "alsoAddClientNeedsName": "Enter a client name above to use this."
+      "alsoAddClientNeedsName": "Enter a client name above to use this.",
+      "marginTitle": "What this invoice makes",
+      "billed": "Billed",
+      "labourCost": "Labour cost",
+      "margin": "Margin",
+      "marginHint": "Labour only — parts and extra lines are not costed. Never shown to the client."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

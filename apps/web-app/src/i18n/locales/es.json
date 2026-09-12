@@ -2250,7 +2250,12 @@
       "allowanceLabel": "Días de vacaciones al año",
       "allowancePlaceholder": "Valor por defecto de la organización",
       "allowanceHint": "Déjelo en blanco para usar el valor de la organización. Introduzca 0 si no tiene vacaciones pagadas.",
-      "dateOfBirth": "Fecha de nacimiento"
+      "dateOfBirth": "Fecha de nacimiento",
+      "billRateLabel": "Factura a (por hora)",
+      "costRateLabel": "Nos cuesta (por hora)",
+      "ratePlaceholder": "En blanco = heredar",
+      "billRateHint": "En blanco hereda la tarifa del cliente y luego la de la organización. Normalmente vacío.",
+      "costRateHint": "Lo que cuesta esta persona por hora. Rellenar uno activa el margen."
     },
     "detail": {
       "backToTeam": "Volver a Equipo",
@@ -4300,7 +4305,12 @@
       "clientAddFailed": "La factura se creó, pero el cliente no pudo guardarse.",
       "noCustomerSpaces": "Aún no hay espacios de cliente: un espacio debe ser un cliente para poder facturarlo.",
       "alsoAddClientWhen": "«{{name}}» se añadirá a sus clientes al guardar la factura.",
-      "alsoAddClientNeedsName": "Escriba arriba un nombre de cliente para usar esto."
+      "alsoAddClientNeedsName": "Escriba arriba un nombre de cliente para usar esto.",
+      "marginTitle": "Lo que deja esta factura",
+      "billed": "Facturado",
+      "labourCost": "Coste de mano de obra",
+      "margin": "Margen",
+      "marginHint": "Solo mano de obra: piezas y líneas extra no se costean. Nunca se muestra al cliente."
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

@@ -236,6 +236,16 @@ export interface CreateEmployeeInput {
  * Input for updating an employee
  */
 export interface UpdateEmployeeInput {
+  /**
+   * Hourly rates, in integer cents.
+   *
+   * ⚠️ `undefined` and `null` are different on the wire. Undefined is "not
+   * mentioned in this request" and leaves the column alone; null is "clear it,
+   * inherit from the level above". A form that sends 0 for an empty field has
+   * told the server this person bills nothing — which is a rate, not a blank.
+   */
+  billRateCents?: number | null;
+  costRateCents?: number | null;
   firstName?: string;
   lastName?: string;
   position?: string;

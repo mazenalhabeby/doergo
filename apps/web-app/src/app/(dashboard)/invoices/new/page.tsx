@@ -20,6 +20,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface PartEntry { name: string; partNumber?: string | null; quantity: number; unitCost: number }
 interface WorkEntry {
+  /*
+    ⚠️ The rate for THIS person, not one rate for the job. A single job rate is
+    wrong the moment two people with different rates work the same site — which
+    is the normal case for anyone billing labour at all. `rate` below survives
+    as the fallback for entries the ladder could not answer for.
+  */
+  billRateCents: number | null
+  costRateCents: number | null
   taskId: string
   taskTitle: string
   reportId?: string | null
@@ -215,6 +223,8 @@ function NewInvoiceInner() {
           reportId: w.reportId,
           workerName: w.workerName,
           hours: w.hours ?? 0,
+          billRateCents: (w as { billRateCents?: number | null }).billRateCents ?? null,
+          costRateCents: (w as { costRateCents?: number | null }).costRateCents ?? null,
           notes: w.notes,
           completedAt: w.completedAt,
           parts: w.parts || [],
@@ -232,7 +242,11 @@ function NewInvoiceInner() {
   const setEntry = (taskId: string, patch: Partial<WorkEntry>) =>
     setEntries((prev) => prev.map((e) => (e.taskId === taskId ? { ...e, ...patch } : e)))
 
-  const entryLabor = (e: WorkEntry) => (e.include ? e.hours * rateNum : 0)
+  /** This entry's own hourly rate in euros, or the form's fallback. */
+  const entryRate = (e: WorkEntry) => (e.billRateCents != null ? e.billRateCents / 100 : rateNum)
+  const entryLabor = (e: WorkEntry) => (e.include ? e.hours * entryRate(e) : 0)
+  const entryCost = (e: WorkEntry) =>
+    e.include && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
   const entryParts = (e: WorkEntry) => (e.include && e.includeParts ? e.parts.reduce((s, p) => s + p.quantity * p.unitCost, 0) : 0)
 
   const workSubtotal = useMemo(
@@ -258,6 +272,15 @@ function NewInvoiceInner() {
   }, [entries])
   const totalHours = workerSummary.reduce((s, w) => s + w.hours, 0)
 
+  /*
+    Cost only ever comes from entries the SERVER resolved — never re-derived
+    here. A browser that computed a margin from rates it happened to hold would
+    be a second answer to the question the boundary exists to control.
+  */
+  const workCost = useMemo(() => entries.reduce((s, e) => s + entryCost(e), 0), [entries])
+  const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
+  const showMargin = canViewLabourCost && gather?.twoRates === true && entries.some((e) => e.include && e.costRateCents != null)
+
   const addManual = () => setManualLines((p) => [...p, { description: "", quantity: 1, unitPrice: 0 }])
   const setManual = (i: number, patch: Partial<ManualLine>) => setManualLines((p) => p.map((m, idx) => (idx === i ? { ...m, ...patch } : m)))
   const removeManual = (i: number) => setManualLines((p) => p.filter((_, idx) => idx !== i))
@@ -267,13 +290,25 @@ function NewInvoiceInner() {
       const items: InvoiceItemInput[] = []
       for (const e of entries) {
         if (!e.include) continue
-        if (e.hours > 0 && rateNum > 0) {
+        const lineRate = entryRate(e)
+        if (e.hours > 0 && lineRate > 0) {
           items.push({
             description: `${e.taskTitle}${e.workerName ? ` — ${e.workerName}` : ""} · ${e.hours}h`,
             quantity: e.hours,
-            unitPrice: rateNum,
+            unitPrice: lineRate,
             taskId: e.taskId,
             reportId: e.reportId || undefined,
+            /*
+              ⚠️ THE RATES AS THEY WERE TODAY, sent with the line.
+
+              Not a convenience — the record. The ladder answers "what is this
+              rate now"; an issued invoice has to keep answering "what was it
+              then", or a raise next month moves an invoice already paid. These
+              are the exact numbers shown on this screen before Save.
+            */
+            billRateCents: e.billRateCents ?? Math.round(lineRate * 100),
+            costRateCents: e.costRateCents ?? null,
+            billedHours: e.hours,
           })
         } else {
           // No tracked hours (or no rate) → a task line the admin can price by hand.
@@ -521,6 +556,47 @@ function NewInvoiceInner() {
             </div>
           </div>
         </div>
+
+        {/*
+          What this invoice makes.
+
+          ⚠️ TWO CONDITIONS, both necessary. `twoRates` says the organisation
+          actually works with a cost — a one-rate company must never be shown a
+          row of dashes it has to learn to ignore. `canViewLabourCost` says this
+          person may know: raising an invoice is an office job, and what the
+          labour cost the company is a different question asked by a different
+          person.
+
+          The server strips cost from the response on the same permission, so
+          this is the screen agreeing with the boundary — not the boundary.
+        */}
+        {showMargin && (
+          <div className="bg-card rounded-2xl border border-border p-4 mb-5">
+            <p className="text-sm font-medium text-foreground mb-3">{t("invoices.create.marginTitle")}</p>
+            <div className="flex flex-wrap gap-x-8 gap-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground">{t("invoices.create.billed")}</p>
+                <p className="text-lg font-semibold tabular-nums text-foreground">{money(workSubtotal, currency)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t("invoices.create.labourCost")}</p>
+                <p className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(workCost, currency)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t("invoices.create.margin")}</p>
+                <p className={cn(
+                  "text-lg font-semibold tabular-nums",
+                  workSubtotal - workCost < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400",
+                )}>
+                  {money(workSubtotal - workCost, currency)}
+                </p>
+              </div>
+            </div>
+            {/* Billing under cost is a real thing — a fixed price, a goodwill
+                rate — and hiding it is how somebody finds out at quarter end. */}
+            <p className="mt-2 text-[11px] text-muted-foreground">{t("invoices.create.marginHint")}</p>
+          </div>
+        )}
 
         {/* Worker hours summary */}
         {spaceId && (totalHours > 0 || workerSummary.length > 0) && (

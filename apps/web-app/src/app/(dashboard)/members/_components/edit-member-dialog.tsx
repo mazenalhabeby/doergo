@@ -195,6 +195,16 @@ export function EditMemberDialog({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  /*
+    ⚠️ The COST field is gated; the BILL field is not. What the work is worth is
+    not a secret — an office manager who edits members needs it. What the
+    company PAYS for that hour is a different question, and learning it should
+    not be a side effect of being allowed to fix somebody's job title.
+
+    The server strips cost from every invoice response on the same permission,
+    so this is the screen agreeing with the boundary rather than enforcing it.
+  */
+  const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -213,6 +223,21 @@ export function EditMemberDialog({
   // Empty string means "use the organization's default" — distinct from "0",
   // which is a real answer meaning no paid leave.
   const [leaveAllowance, setLeaveAllowance] = useState("")
+  /*
+    What this person bills and costs, per hour.
+
+    ⚠️ Held as EUROS in the form and sent as CENTS, because that is what a
+    person types and what money must be stored as. And empty string means
+    "inherit from the level above" — distinct from "0", which is a real rate of
+    nothing. Collapsing those two is how somebody who cleared a field ends up
+    billing a client €0.
+
+    ⚠️ Usually only COST is filled in here. The bill rate normally lives on the
+    customer workspace, because that is the contract — and leaving this blank is
+    what lets the client's rate win.
+  */
+  const [billRate, setBillRate] = useState("")
+  const [costRate, setCostRate] = useState("")
   /*
     Works for a client or partner.
 
@@ -242,6 +267,9 @@ export function EditMemberDialog({
     const m = member as { leaveAllowance?: number | null; employmentStartDate?: string | null }
     setLeaveAllowance(m.leaveAllowance === null || m.leaveAllowance === undefined ? "" : String(m.leaveAllowance))
     setEmploymentStartDate(m.employmentStartDate ? String(m.employmentStartDate).slice(0, 10) : "")
+    const r = member as { billRateCents?: number | null; costRateCents?: number | null }
+    setBillRate(r.billRateCents == null ? "" : String(r.billRateCents / 100))
+    setCostRate(r.costRateCents == null ? "" : String(r.costRateCents / 100))
   }, [member])
 
   // ── Data (self-contained; shared query keys dedupe across pages) ──
@@ -404,6 +432,13 @@ export function EditMemberDialog({
       */
       leaveAllowance: isExternalMember ? null : leaveAllowance.trim() === "" ? null : Number(leaveAllowance),
       employmentStartDate: isExternalMember ? null : employmentStartDate || null,
+      /*
+        ⚠️ Blank sends NULL, never 0. Null means "inherit"; 0 would mean this
+        person bills nothing, and the ladder cannot tell the difference after
+        the fact.
+      */
+      billRateCents: billRate.trim() === "" ? null : Math.round(Number(billRate) * 100),
+      costRateCents: costRate.trim() === "" ? null : Math.round(Number(costRate) * 100),
     }
     workerMutation.mutate(workerPatch)
   }
@@ -564,6 +599,45 @@ export function EditMemberDialog({
                   as "no holiday" and types a number they did not need to. */}
               <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.allowanceHint")}</p>
             </div>
+            )}
+
+            {/*
+              Their hourly rates.
+
+              ⚠️ Shown to anyone who may edit a member — the BILL rate is not
+              sensitive, it is what the work is worth. The COST field is the one
+              that is, and it is gated on `canViewLabourCost` below: an office
+              manager who edits members has no reason to learn the company's
+              margin on every person.
+            */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("members.memberEditor.billRateLabel")}
+              </Label>
+              <Input
+                type="number" min={0} step="0.01" inputMode="decimal"
+                value={billRate}
+                onChange={(e) => setBillRate(e.target.value)}
+                placeholder={t("members.memberEditor.ratePlaceholder")}
+                className="h-9"
+              />
+              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.billRateHint")}</p>
+            </div>
+
+            {canViewLabourCost && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("members.memberEditor.costRateLabel")}
+                </Label>
+                <Input
+                  type="number" min={0} step="0.01" inputMode="decimal"
+                  value={costRate}
+                  onChange={(e) => setCostRate(e.target.value)}
+                  placeholder={t("members.memberEditor.ratePlaceholder")}
+                  className="h-9"
+                />
+                <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.costRateHint")}</p>
+              </div>
             )}
           </div>
 

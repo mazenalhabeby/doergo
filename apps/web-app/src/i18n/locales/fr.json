@@ -2250,7 +2250,12 @@
       "allowanceLabel": "Jours de congés par an",
       "allowancePlaceholder": "Valeur par défaut de l’organisation",
       "allowanceHint": "Laissez vide pour utiliser la valeur de l’organisation. Saisissez 0 pour aucun congé payé.",
-      "dateOfBirth": "Date de naissance"
+      "dateOfBirth": "Date de naissance",
+      "billRateLabel": "Facturé (par heure)",
+      "costRateLabel": "Nous coûte (par heure)",
+      "ratePlaceholder": "Vide = hériter",
+      "billRateHint": "Vide hérite du tarif du client, puis de celui de l’organisation. Généralement vide.",
+      "costRateHint": "Ce que cette personne coûte par heure. En saisir un active la marge."
     },
     "detail": {
       "backToTeam": "Retour à l'équipe",
@@ -4309,7 +4314,12 @@
       "clientAddFailed": "La facture a été créée, mais le client n'a pas pu être enregistré.",
       "noCustomerSpaces": "Aucun espace client pour l’instant — un espace doit être un client pour pouvoir être facturé.",
       "alsoAddClientWhen": "« {{name}} » sera ajouté à vos clients à l’enregistrement de la facture.",
-      "alsoAddClientNeedsName": "Saisissez un nom de client ci-dessus pour l’utiliser."
+      "alsoAddClientNeedsName": "Saisissez un nom de client ci-dessus pour l’utiliser.",
+      "marginTitle": "Ce que rapporte cette facture",
+      "billed": "Facturé",
+      "labourCost": "Coût de main-d’œuvre",
+      "margin": "Marge",
+      "marginHint": "Main-d’œuvre uniquement — pièces et lignes supplémentaires non valorisées. Jamais visible du client."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

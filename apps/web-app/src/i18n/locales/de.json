@@ -2256,7 +2256,12 @@
       "allowanceLabel": "Urlaubstage pro Jahr",
       "allowancePlaceholder": "Standard der Organisation",
       "allowanceHint": "Leer lassen für den Standard der Organisation. 0 bedeutet kein bezahlter Urlaub.",
-      "dateOfBirth": "Geburtsdatum"
+      "dateOfBirth": "Geburtsdatum",
+      "billRateLabel": "Verrechnet (pro Stunde)",
+      "costRateLabel": "Kostet uns (pro Stunde)",
+      "ratePlaceholder": "Leer = erben",
+      "billRateHint": "Leer übernimmt den Kundensatz, danach den der Organisation. Meist leer.",
+      "costRateHint": "Was diese Person pro Stunde kostet. Ein Wert irgendwo aktiviert die Marge."
     },
     "detail": {
       "backToTeam": "Zurück zum Team",
@@ -4300,7 +4305,12 @@
       "clientAddFailed": "Die Rechnung wurde erstellt, der Kunde konnte aber nicht gespeichert werden.",
       "noCustomerSpaces": "Noch keine Kunden-Arbeitsbereiche — ein Arbeitsbereich muss ein Kunde sein, bevor er abgerechnet werden kann.",
       "alsoAddClientWhen": "„{{name}}“ wird zu Ihren Kunden hinzugefügt, sobald die Rechnung gespeichert ist.",
-      "alsoAddClientNeedsName": "Geben Sie oben einen Kundennamen ein, um dies zu nutzen."
+      "alsoAddClientNeedsName": "Geben Sie oben einen Kundennamen ein, um dies zu nutzen.",
+      "marginTitle": "Was diese Rechnung einbringt",
+      "billed": "Verrechnet",
+      "labourCost": "Lohnkosten",
+      "margin": "Marge",
+      "marginHint": "Nur Arbeitszeit — Teile und Zusatzpositionen sind nicht kalkuliert. Für Kunden nie sichtbar."
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

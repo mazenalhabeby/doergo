@@ -5589,6 +5589,16 @@ export interface InvoiceItemInput {
   unitPrice: number;
   taskId?: string | null;
   reportId?: string | null;
+  /**
+   * The rates that applied when this line was drawn up, in integer cents.
+   *
+   * ⚠️ The record, not a cache. The ladder answers "what is this rate now"; an
+   * issued invoice has to keep answering "what was it then", or a raise next
+   * month moves an invoice already paid.
+   */
+  billRateCents?: number | null;
+  costRateCents?: number | null;
+  billedHours?: number | null;
 }
 
 /** A part fitted during a job, priced for the invoice. */
@@ -5602,6 +5612,9 @@ export interface InvoiceGatherPart {
 
 /** One completed job the gather endpoint offers as billable work. */
 export interface InvoiceGatherEntry {
+  /** This member's own resolved rates, from the ladder. */
+  billRateCents?: number | null;
+  costRateCents?: number | null;
   taskId: string;
   taskTitle: string;
   reportId?: string | null;
@@ -5636,6 +5649,14 @@ export interface InvoiceGatherResult {
   taskCount: number;
   totalHours: number;
   workerSummary: Array<{ name: string; hours: number }>;
+  /**
+   * Does this organisation work with two rates?
+   *
+   * ⚠️ Read off the DATA by the server, never a setting — and stripped to false
+   * for anyone without `canViewLabourCost`, because "there is a margin here" is
+   * itself an answer to the question they were not allowed to ask.
+   */
+  twoRates?: boolean;
   workEntries: InvoiceGatherEntry[];
 }
 
