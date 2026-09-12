@@ -4344,7 +4344,11 @@
       "noCompanyAddress": "Añada su dirección en Ajustes → Organización",
       "noBankDetails": "Añada sus datos de pago en Ajustes → Organización",
       "searchWorkspace": "Buscar espacios…",
-      "searchClient": "Buscar por nombre, correo o dirección…"
+      "searchClient": "Buscar por nombre, correo o dirección…",
+      "termsSection": "Fechas y tarifa",
+      "rateHint": "Se aplica a las horas sin tarifa propia.",
+      "clientEmailPlaceholder": "facturacion@cliente.com",
+      "clientAddressPlaceholder": "Calle, ciudad, código postal"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

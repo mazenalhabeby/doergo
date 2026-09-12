@@ -460,3 +460,52 @@ describe("the pickers", () => {
     }
   })
 })
+
+describe("the rail survives being narrow", () => {
+  /*
+    ⚠️ Reported with a screenshot, and the port's own fault: the "who it is for"
+    block kept the two-column grid it had when the page was full width, and was
+    dropped into a 320px rail. "Issue date" wrapped onto two lines, "Rate (per
+    hour)" onto three, and the currency box showed "EUF".
+
+    A layout is not portable just because it is responsive — `sm:grid-cols-2`
+    asks about the VIEWPORT, and what got narrow here was the container.
+  */
+  const src = () => code(PAGE)
+
+  it("does not ask the viewport about a 320px column", () => {
+    const s = src()
+    const rail = s.slice(s.indexOf("<aside"), s.indexOf("</aside>"))
+    expect(rail).not.toMatch(/sm:grid-cols-2/)
+  })
+
+  it("separates the terms from the client", () => {
+    // A section called "who it is for" that also sets the hourly rate is a
+    // section somebody reads twice to use once.
+    const s = src()
+    expect(s).toContain("invoices.create.termsSection")
+    const who = s.indexOf("invoices.create.clientSection")
+    const terms = s.indexOf("invoices.create.termsSection")
+    expect(terms).toBeGreaterThan(who)
+    // The rate moved with them.
+    expect(s.indexOf("invoices.create.rateHint")).toBeGreaterThan(who)
+  })
+
+  it("gives an address room to be an address", () => {
+    // It went to the client's copy as a single squeezed input, so a real one
+    // was truncated in a 60px box.
+    const s = src()
+    expect(s).toMatch(/Textarea[\s\S]{0,200}setClientAddress/)
+  })
+
+  it("stacks the three-way choices instead of wrapping them", () => {
+    /*
+      Three options of very different lengths in a flex-wrap put two on one row
+      and the third alone underneath — which reads as two choices and an
+      afterthought rather than as one choice of three.
+    */
+    const s = src()
+    expect(s).not.toMatch(/flex flex-wrap gap-2/)
+    expect(s.match(/grid gap-1 rounded-xl border border-border bg-muted\/50 p-1/g) ?? []).toHaveLength(2)
+  })
+})

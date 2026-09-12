@@ -552,7 +552,13 @@ function NewInvoiceInner() {
             {/* Where the work comes from */}
             <div className="bg-card rounded-2xl border border-border p-5">
               <SectionHead step={1} title={t("invoices.create.billFrom")} />
-              <div className="flex flex-wrap gap-2">
+              {/*
+            ⚠️ STACKED, not wrapped. Three options of very different lengths in
+            a flex-wrap put two on one row and the third alone underneath —
+            which reads as two choices and an afterthought rather than as one
+            choice of three. A column gives them equal weight and equal width.
+          */}
+          <div className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
                 {([
                   ["space", t("invoices.create.fromSpace")],
                   ...(hasCrm ? [["client", t("invoices.create.fromClient")] as const] : []),
@@ -660,7 +666,7 @@ function NewInvoiceInner() {
               {entries.some((e) => e.include && e.hours > 0) && (
                 <div className="mt-4 border-t border-border pt-3">
                   <Label className="text-xs">{t("invoices.create.groupBy")}</Label>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-2 grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
                     {([
                       ["task", t("invoices.create.groupByTask")],
                       ["member", t("invoices.create.groupByMember")],
@@ -695,7 +701,15 @@ function NewInvoiceInner() {
             {/* Client + meta */}
             <div className="bg-card rounded-2xl border border-border p-5">
               <SectionHead step={2} title={t("invoices.create.clientSection")} />
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/*
+                ⚠️ ONE COLUMN. This block kept the two-column grid it had when
+                the page was full width, and the port dropped it into a 320px
+                rail — where "Issue date" wrapped onto two lines, "Rate (per
+                hour)" onto three, and the currency box showed "EUF". A layout
+                is not portable just because it is responsive: `sm:grid-cols-2`
+                asks about the VIEWPORT, and what got narrow here was the
+                container.
+              */}
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs">{t("invoices.create.clientName")} *</Label>
@@ -752,37 +766,100 @@ function NewInvoiceInner() {
                     </label>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">{t("invoices.create.clientEmail")}</Label>
-                    <Input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="h-9 mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{t("invoices.create.clientAddress")}</Label>
-                    <Input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="h-9 mt-1" />
-                  </div>
+                <div>
+                  <Label className="text-xs">{t("invoices.create.clientEmail")}</Label>
+                  <Input
+                    type="email"
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                    placeholder={t("invoices.create.clientEmailPlaceholder")}
+                    className="h-9 mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t("invoices.create.clientAddress")}</Label>
+                  {/*
+                    A textarea, because an address is not one line. It went onto
+                    the client's copy as a single squeezed input, so anybody who
+                    typed a real one saw it truncated in a 60px box.
+                  */}
+                  <Textarea
+                    value={clientAddress}
+                    onChange={(e) => setClientAddress(e.target.value)}
+                    rows={2}
+                    placeholder={t("invoices.create.clientAddressPlaceholder")}
+                    className="mt-1 resize-none text-sm"
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">{t("invoices.create.issueDate")}</Label>
-                  <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className="h-9 mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs">{t("invoices.create.dueDate")}</Label>
-                  <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-9 mt-1" />
+            </div>
+
+            {/*
+              ⚠️ DATES, RATE AND CURRENCY ARE NOT "WHO IT IS FOR".
+
+              They sat in that card because the old full-width layout had room
+              for a second column and something had to fill it. In a rail that
+              produced "Rate (per hour)" wrapped over three lines beside a
+              currency box reading "EUF" — but the labels were only the symptom.
+              A section called "who it is for" that also sets the hourly rate is
+              a section somebody has to read twice to use once.
+            */}
+            <div className="bg-card rounded-2xl border border-border p-5">
+              <SectionHead step={3} title={t("invoices.create.termsSection")} />
+              <div className="space-y-3">
+                {/* Two dates side by side is the one pairing that survives a
+                    narrow column: both are short, and they are read together. */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{t("invoices.create.issueDate")}</Label>
+                    <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className="h-9 mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{t("invoices.create.dueDate")}</Label>
+                    <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-9 mt-1" />
+                  </div>
                 </div>
                 <div>
                   <Label className="text-xs">{t("invoices.create.rate")}</Label>
-                  <Input type="number" min={0} step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} className="h-9 mt-1" placeholder={t("invoices.create.ratePlaceholder")} />
+                  <Input
+                    type="number" min={0} step="0.01" value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    className="h-9 mt-1 tabular-nums"
+                    placeholder={t("invoices.create.ratePlaceholder")}
+                  />
+                  {/* Says what it is FOR. A bare "Rate" in an invoice form is
+                      ambiguous with every other rate on the page. */}
+                  <p className="mt-1 text-[11px] text-muted-foreground">{t("invoices.create.rateHint")}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{t("invoices.create.currency")}</Label>
+                    <Input
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
+                      className="h-9 mt-1 uppercase tabular-nums"
+                      maxLength={3}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{t("invoices.create.taxRate")}</Label>
+                    <Input
+                      type="number" min={0} value={taxPct}
+                      onChange={(e) => setTaxPct(e.target.value)}
+                      className="h-9 mt-1 tabular-nums"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-xs">{t("invoices.create.currency")}</Label>
-                  <Input value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))} className="h-9 mt-1" />
+                  <Label className="text-xs">{t("invoices.create.discount")}</Label>
+                  <Input
+                    type="number" min={0} value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                    className="h-9 mt-1 tabular-nums"
+                  />
                 </div>
               </div>
               </div>
-            </div>
 
           </div>
         </aside>

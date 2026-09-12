@@ -4344,7 +4344,11 @@
       "noCompanyAddress": "Add your address in Settings → Organisation",
       "noBankDetails": "Add your payment details in Settings → Organisation",
       "searchWorkspace": "Search workspaces…",
-      "searchClient": "Search by name, email or address…"
+      "searchClient": "Search by name, email or address…",
+      "termsSection": "Dates & rate",
+      "rateHint": "Applied to hours with no rate of their own.",
+      "clientEmailPlaceholder": "billing@client.com",
+      "clientAddressPlaceholder": "Street, town, postcode"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

@@ -4353,7 +4353,11 @@
       "noCompanyAddress": "Ajoutez votre adresse dans Paramètres → Organisation",
       "noBankDetails": "Ajoutez vos coordonnées bancaires dans Paramètres → Organisation",
       "searchWorkspace": "Rechercher un espace…",
-      "searchClient": "Rechercher par nom, e-mail ou adresse…"
+      "searchClient": "Rechercher par nom, e-mail ou adresse…",
+      "termsSection": "Dates et tarif",
+      "rateHint": "Appliqué aux heures sans tarif propre.",
+      "clientEmailPlaceholder": "facturation@client.com",
+      "clientAddressPlaceholder": "Rue, ville, code postal"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

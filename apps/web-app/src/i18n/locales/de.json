@@ -4344,7 +4344,11 @@
       "noCompanyAddress": "Adresse unter Einstellungen → Organisation ergänzen",
       "noBankDetails": "Zahlungsdaten unter Einstellungen → Organisation ergänzen",
       "searchWorkspace": "Arbeitsbereiche suchen…",
-      "searchClient": "Nach Name, E-Mail oder Adresse suchen…"
+      "searchClient": "Nach Name, E-Mail oder Adresse suchen…",
+      "termsSection": "Termine & Satz",
+      "rateHint": "Gilt für Stunden ohne eigenen Satz.",
+      "clientEmailPlaceholder": "rechnung@kunde.at",
+      "clientAddressPlaceholder": "Straße, Ort, PLZ"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

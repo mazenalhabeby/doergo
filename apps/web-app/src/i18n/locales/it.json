@@ -4353,7 +4353,11 @@
       "noCompanyAddress": "Aggiunga l’indirizzo in Impostazioni → Organizzazione",
       "noBankDetails": "Aggiunga i dati di pagamento in Impostazioni → Organizzazione",
       "searchWorkspace": "Cerca spazi…",
-      "searchClient": "Cerca per nome, email o indirizzo…"
+      "searchClient": "Cerca per nome, email o indirizzo…",
+      "termsSection": "Date e tariffa",
+      "rateHint": "Applicata alle ore senza tariffa propria.",
+      "clientEmailPlaceholder": "fatturazione@cliente.it",
+      "clientAddressPlaceholder": "Via, città, CAP"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",
