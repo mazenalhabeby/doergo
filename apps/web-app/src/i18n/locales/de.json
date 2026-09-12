@@ -4342,7 +4342,9 @@
       "payment": "Zahlung",
       "yourCompany": "Ihr Unternehmen",
       "noCompanyAddress": "Adresse unter Einstellungen → Organisation ergänzen",
-      "noBankDetails": "Zahlungsdaten unter Einstellungen → Organisation ergänzen"
+      "noBankDetails": "Zahlungsdaten unter Einstellungen → Organisation ergänzen",
+      "searchWorkspace": "Arbeitsbereiche suchen…",
+      "searchClient": "Nach Name, E-Mail oder Adresse suchen…"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

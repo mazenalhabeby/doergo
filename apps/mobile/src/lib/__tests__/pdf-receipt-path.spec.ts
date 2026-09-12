@@ -39,7 +39,7 @@ const read = (p: string) => fs.readFileSync(p, 'utf8');
   is written that way and a path segment never is.
 */
 const stripComments = (s: string) =>
-  s.replace(/(^|\s)\/\*[\s\S]*?\*\//g, '$1').replace(/(^|[^:/])\/\/[^\n]*/g, '$1');
+  s.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, '$1').replace(/(^|[^:/])\/\/[^\n]*/g, '$1');
 
 const SCREEN = path.join(MOBILE, 'app/(app)/asset-expense.tsx');
 

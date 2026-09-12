@@ -106,7 +106,7 @@ describe('a rate on its way into the database', () => {
 
 describe('the controller funnels every response', () => {
   const SRC = fs.readFileSync(path.join(__dirname, '..', 'invoices.controller.ts'), 'utf8');
-  const code = SRC.replace(/(^|\s)\/\*[\s\S]*?\*\//g, '$1').replace(/(^|[^:/])\/\/[^\n]*/g, '$1');
+  const code = SRC.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, '$1').replace(/(^|[^:/])\/\/[^\n]*/g, '$1');
 
   it('has no route returning the raw microservice result', () => {
     /*

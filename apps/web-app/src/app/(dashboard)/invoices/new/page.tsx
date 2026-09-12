@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Combobox } from "@/components/ui/combobox"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PartEntry { name: string; partNumber?: string | null; quantity: number; unitCost: number }
@@ -576,16 +577,31 @@ function NewInvoiceInner() {
               {source === "space" && (
                 <div className="mt-3">
                   <Label className="text-xs">{t("invoices.create.workspace")}</Label>
-                  <select
+                  {/*
+                    ⚠️ A COMBOBOX, not a <select>. A native select is a scroll
+                    with no search — fine for three customer workspaces, useless
+                    at thirty, and there is no moment where anybody notices it
+                    became useless. It just gets slower every time a customer is
+                    added.
+
+                    The app already had this component, searchable and
+                    result-capped; a second picker here would have been a second
+                    set of keyboard behaviour to get right and keep right.
+                  */}
+                  <Combobox
                     value={pickedSpaceId}
-                    onChange={(e) => setPickedSpaceId(e.target.value)}
-                    className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
-                  >
-                    <option value="">{t("invoices.create.choose")}</option>
-                    {billableSpaces.map((sp) => (
-                      <option key={sp.id} value={sp.id}>{sp.name}</option>
-                    ))}
-                  </select>
+                    onChange={setPickedSpaceId}
+                    options={billableSpaces.map((sp) => ({
+                      value: sp.id,
+                      label: sp.name,
+                      // Searchable by address and contact too: people know a
+                      // site by where it is as often as by what it is called.
+                      keywords: [sp.address, sp.contactName].filter(Boolean).join(" "),
+                    }))}
+                    placeholder={t("invoices.create.choose")}
+                    searchPlaceholder={t("invoices.create.searchWorkspace")}
+                    className="mt-1"
+                  />
                   {billableSpaces.length === 0 && (
                     <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.noCustomerSpaces")}</p>
                   )}
@@ -595,16 +611,30 @@ function NewInvoiceInner() {
               {source === "client" && (
                 <div className="mt-3">
                   <Label className="text-xs">{t("invoices.create.client")}</Label>
-                  <select
+                  {/*
+                    ⚠️ This is the list that gets long. A real book of clients
+                    runs to hundreds and the query caps at 200 — so without a
+                    search box the two hundredth client is unreachable by
+                    anything except scrolling, and nobody ever notices the
+                    moment a native <select> stopped being usable. It just gets
+                    slower every time a customer is added.
+
+                    Matched on email and address as well as name: somebody
+                    looking for a client they invoiced last year remembers the
+                    town far more often than the exact registered name.
+                  */}
+                  <Combobox
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
-                  >
-                    <option value="">{t("invoices.create.choose")}</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                    onChange={setCustomerId}
+                    options={clients.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                      keywords: [c.email, c.address, c.phone].filter(Boolean).join(" "),
+                    }))}
+                    placeholder={t("invoices.create.choose")}
+                    searchPlaceholder={t("invoices.create.searchClient")}
+                    className="mt-1"
+                  />
                   {/*
                     The client's details fill the header below, and stay editable —
                     an invoice sometimes goes to a different address than the one on

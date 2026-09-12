@@ -4351,7 +4351,9 @@
       "payment": "Paiement",
       "yourCompany": "Votre société",
       "noCompanyAddress": "Ajoutez votre adresse dans Paramètres → Organisation",
-      "noBankDetails": "Ajoutez vos coordonnées bancaires dans Paramètres → Organisation"
+      "noBankDetails": "Ajoutez vos coordonnées bancaires dans Paramètres → Organisation",
+      "searchWorkspace": "Rechercher un espace…",
+      "searchClient": "Rechercher par nom, e-mail ou adresse…"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

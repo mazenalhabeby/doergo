@@ -12,7 +12,7 @@ import path from "path"
 const ROOT = path.join(__dirname, "..")
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8")
 const code = (p: string) =>
-  read(p).replace(/(^|\s)\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
+  read(p).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 const DRAFT = "new/page.tsx"
 const MEMBER = "../members/_components/edit-member-dialog.tsx"
@@ -164,7 +164,7 @@ describe("the client-facing rate lives on the assignment", () => {
     const svc = fs.readFileSync(
       path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles/space-roles.service.ts"),
       "utf8",
-    ).replace(/(^|\s)\/\*[\s\S]*?\*\//g, "$1")
+    ).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1")
     expect(svc).toMatch(/member\.user\?\.isExternal/)
   })
 

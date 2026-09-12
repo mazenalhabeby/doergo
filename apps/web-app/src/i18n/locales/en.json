@@ -4342,7 +4342,9 @@
       "payment": "Payment",
       "yourCompany": "Your company",
       "noCompanyAddress": "Add your address in Settings → Organisation",
-      "noBankDetails": "Add your payment details in Settings → Organisation"
+      "noBankDetails": "Add your payment details in Settings → Organisation",
+      "searchWorkspace": "Search workspaces…",
+      "searchClient": "Search by name, email or address…"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

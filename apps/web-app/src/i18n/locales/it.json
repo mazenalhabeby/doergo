@@ -4351,7 +4351,9 @@
       "payment": "Pagamento",
       "yourCompany": "La sua azienda",
       "noCompanyAddress": "Aggiunga l’indirizzo in Impostazioni → Organizzazione",
-      "noBankDetails": "Aggiunga i dati di pagamento in Impostazioni → Organizzazione"
+      "noBankDetails": "Aggiunga i dati di pagamento in Impostazioni → Organizzazione",
+      "searchWorkspace": "Cerca spazi…",
+      "searchClient": "Cerca per nome, email o indirizzo…"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

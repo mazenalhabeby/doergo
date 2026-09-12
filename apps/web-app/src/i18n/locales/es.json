@@ -4342,7 +4342,9 @@
       "payment": "Pago",
       "yourCompany": "Su empresa",
       "noCompanyAddress": "Añada su dirección en Ajustes → Organización",
-      "noBankDetails": "Añada sus datos de pago en Ajustes → Organización"
+      "noBankDetails": "Añada sus datos de pago en Ajustes → Organización",
+      "searchWorkspace": "Buscar espacios…",
+      "searchClient": "Buscar por nombre, correo o dirección…"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

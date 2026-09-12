@@ -20,8 +20,19 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8")
   Code only. A string containing a slash-star opens a comment as far as a regex
   is concerned, so the opener must follow whitespace or a line start.
 */
+/*
+  ⚠️ TWO TRAPS, ONE REGEX, AND I HAVE FALLEN INTO BOTH.
+
+  The naive `\/\*[\s\S]*?\*\/` treats the slash-star inside a string like a
+  media type as a comment opener and eats the code after it. Requiring
+  whitespace before the opener fixes that — and immediately stops stripping JSX
+  comments, which open as brace-slash-star and are therefore preceded by a
+  brace, so every warning written in this file's own prose counts as code.
+
+  So: whitespace OR a brace. Both forms are comments; neither appears mid-token.
+*/
 const code = (p: string) =>
-  read(p).replace(/(^|\s)\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
+  read(p).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 const PAGE = "new/page.tsx"
 
@@ -95,7 +106,7 @@ describe("only a workspace that is a customer can be billed", () => {
     const svc = fs.readFileSync(
       path.join(ROOT, "../../../../../api/auth-service/src/modules/invoices/invoice.service.ts"),
       "utf8",
-    ).replace(/(^|\s)\/\*[\s\S]*?\*\//g, "$1")
+    ).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1")
     expect(svc).toMatch(/space\.kind !== 'CUSTOMER'/)
   })
 })
@@ -404,5 +415,48 @@ describe("the document is the document", () => {
     const table = s.slice(s.indexOf("documentItems.map("), s.indexOf("</table>", s.indexOf("documentItems.map(")))
     expect(table.match(/tabular-nums/g)?.length ?? 0).toBeGreaterThanOrEqual(3)
     expect(table).toMatch(/text-right/)
+  })
+})
+
+describe("the pickers", () => {
+  /*
+    ⚠️ Both were native selects — a scroll with no search. Fine for three
+    workspaces, useless at thirty, and there is no moment where anybody notices
+    it became useless: it simply gets slower every time a customer is added.
+
+    The client list is the one that bites. A real book runs to hundreds and the
+    query caps at 200, so the two hundredth client was unreachable by anything
+    except scrolling.
+  */
+  const src = () => code(PAGE)
+
+  it("are searchable, not native selects", () => {
+    const s = src()
+    expect(s.match(/<Combobox/g) ?? []).toHaveLength(2)
+    expect(s).not.toMatch(/<select\b/)
+  })
+
+  it("match on more than the name", () => {
+    // Somebody looking for a client they invoiced last year remembers the town
+    // far more often than the exact registered name.
+    const s = src()
+    expect(s).toMatch(/keywords: \[c\.email, c\.address/)
+    expect(s).toMatch(/keywords: \[sp\.address, sp\.contactName/)
+  })
+
+  it("reuses the app's own component rather than a second one", () => {
+    // A second picker here is a second set of keyboard behaviour to get right
+    // and keep right.
+    expect(src()).toContain('from "@/components/ui/combobox"')
+  })
+
+  it("labels the search box in all five languages", () => {
+    const LOCALES = path.join(ROOT, "../../../i18n/locales")
+    for (const lang of ["en", "de", "es", "fr", "it"]) {
+      const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+      const missing = ["searchWorkspace", "searchClient"]
+        .filter((k) => typeof d.invoices?.create?.[k] !== "string")
+      expect({ lang, missing }).toEqual({ lang, missing: [] })
+    }
   })
 })
