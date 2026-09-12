@@ -75,6 +75,11 @@ export class SpaceRolesController {
     return this.service.removeMember(data);
   }
 
+  @MessagePattern({ cmd: 'update_space_member_rate' })
+  updateMemberRate(@Payload() data: any) {
+    return this.service.updateMemberRate(data);
+  }
+
   @MessagePattern({ cmd: 'update_space_member_routing' })
   updateMemberRouting(
     @Payload()

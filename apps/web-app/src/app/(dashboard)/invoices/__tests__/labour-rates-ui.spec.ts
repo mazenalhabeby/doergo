@@ -52,51 +52,75 @@ describe("the invoice draft", () => {
   })
 })
 
-describe("the member editor", () => {
+describe("the member editor carries COST, and only cost", () => {
   const src = () => code(MEMBER)
 
-  it("offers the bill rate to anyone who may edit a member", () => {
-    // What the work is worth is not a secret; learning what the company PAYS
-    // for that hour should not be a side effect of fixing a job title.
-    expect(src()).toContain("members.memberEditor.billRateLabel")
+  it("has no client-facing rate on it", () => {
+    /*
+      ⚠️ Reported, and right: a bill rate on a member reads backwards. What
+      somebody COSTS is a fact about the person and follows them everywhere;
+      what a CLIENT pays for their hour is a fact about that client, and the
+      same engineer is routinely worth €45 at one customer and €60 at another.
+      A single field on a person cannot say that.
+    */
+    const s = src()
+    expect(s).not.toContain("members.memberEditor.billRateLabel")
+    expect(s).not.toMatch(/setBillRate/)
   })
 
-  it("gates the cost rate on the permission, and says so when it is hidden", () => {
-    /*
-      ⚠️ Reported: "why is 'Bills at' on the member — shouldn't it be what they
-      cost me?" Correct instinct, and the screen was showing the wrong half:
-      the cost field was gated on a permission NOBODY held (it was never wired
-      into the session), so the only rate visible on a person was the exception.
-
-      An absence explains nothing. Hidden now says it is hidden.
-    */
+  it("gates the cost rate, and says so when it is hidden", () => {
+    // An absence explains nothing — somebody expecting a cost field and
+    // finding none concludes the product has it the wrong way round.
     const s = src()
     expect(s).toMatch(/canViewLabourCost \?[\s\S]{0,500}costRateLabel/)
     expect(s).toContain("members.memberEditor.costRateHidden")
   })
 
-  it("puts COST first, because that is the rate that belongs to a person", () => {
-    // Ahmed costs €20 wherever he works; what the client pays is a fact about
-    // the contract and lives on the customer workspace.
-    const s = src()
-    expect(s.indexOf("costRateLabel")).toBeLessThan(s.indexOf("billRateLabel"))
-  })
-
   it("sends null for a blank field, never zero", () => {
-    /*
-      ⚠️ Null means "inherit"; 0 means this person bills nothing, and the ladder
-      cannot tell them apart after the fact. A form that sends 0 for an empty
-      box has quietly set a rate.
-    */
-    const s = src()
-    expect(s).toMatch(/billRate\.trim\(\) === ""[\s\S]{0,30}\? null/)
-    expect(s).toMatch(/costRate\.trim\(\) === ""[\s\S]{0,30}\? null/)
+    // Null means "inherit"; 0 means this person costs nothing.
+    expect(src()).toMatch(/costRate\.trim\(\) === ""[\s\S]{0,30}\? null/)
+  })
+})
+
+describe("the client-facing rate lives on the assignment", () => {
+  const EDITOR = "../locations/[id]/_components/member-rate-editor.tsx"
+  const src = () => code(EDITOR)
+
+  it("exists, and is per workspace", () => {
+    expect(src()).toContain("spaceMembersApi.updateRate")
   })
 
-  it("shows euros and stores cents", () => {
+  it("shows what it would inherit rather than an empty box", () => {
+    /*
+      An empty box with no number beside it reads as "this person bills nothing
+      here", which is the one reading that must not happen on a screen about
+      money.
+    */
+    expect(src()).toContain("inheritedBillRateCents")
+    expect(src()).toContain("scheduling.members.rateInherits")
+  })
+
+  it("offers to copy the inherited figure so it can be edited", () => {
+    // The common edit is "the usual rate, but different here" — copying beats
+    // making somebody find the number on another screen and retype it.
     const s = src()
-    expect(s).toMatch(/billRateCents \/ 100/)
-    expect(s).toMatch(/Number\(billRate\) \* 100/)
+    expect(s).toContain("scheduling.members.copyRate")
+    expect(s).toMatch(/setValue\(String\(inherited \/ 100\)\)/)
+  })
+
+  it("sends null for blank, never zero", () => {
+    expect(src()).toMatch(/value\.trim\(\) === ""[\s\S]{0,20}\? null/)
+  })
+
+  it("resolves the inherited rate on the SERVER", () => {
+    // The order of the four levels is written down once, in `resolveRate`. A
+    // second copy in a browser is a second answer to "why is this €40".
+    const svc = fs.readFileSync(
+      path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles/space-roles.service.ts"),
+      "utf8",
+    )
+    expect(svc).toContain("inheritedBillRateCents")
+    expect(svc).toContain("resolveRate(")
   })
 })
 
@@ -106,8 +130,11 @@ describe("every new string is translated", () => {
     const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
     const missingInvoice = ["marginTitle", "billed", "labourCost", "margin", "marginHint"]
       .filter((k) => typeof d.invoices?.create?.[k] !== "string")
-    const missingMember = ["billRateLabel", "costRateLabel", "ratePlaceholder", "billRateHint", "costRateHint", "costRateHidden"]
+    const missingMember = ["costRateLabel", "ratePlaceholder", "costRateHint", "costRateHidden"]
       .filter((k) => typeof d.members?.memberEditor?.[k] !== "string")
+    const missingRate = ["rateLabel", "rateInherits", "rateNone", "copyRate", "rateSaved", "rateBlankHint", "rateSetHint"]
+      .filter((k) => typeof d.scheduling?.members?.[k] !== "string")
+    expect({ lang, missingRate }).toEqual({ lang, missingRate: [] })
     expect({ lang, missingInvoice, missingMember })
       .toEqual({ lang, missingInvoice: [], missingMember: [] })
   })

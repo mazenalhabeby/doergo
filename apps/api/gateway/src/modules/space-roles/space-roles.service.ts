@@ -69,4 +69,15 @@ export class SpaceRolesService extends BaseGatewayService {
   }) {
     return this.send({ cmd: 'update_space_member_routing' }, data);
   }
+
+  /** What this member is billed at for THIS client — the top rung of the ladder. */
+  updateMemberRate(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    billRateCents?: number | null;
+    costRateCents?: number | null;
+  }) {
+    return this.send({ cmd: 'update_space_member_rate' }, data);
+  }
 }

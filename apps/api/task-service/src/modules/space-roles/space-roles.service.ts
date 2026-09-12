@@ -2,6 +2,8 @@ import { Injectable, BadRequestException, NotFoundException, ForbiddenException,
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
+  cleanRateCents,
+  resolveRate,
   BUILTIN_ROLES,
   ACCESS_PERMISSION_SCHEMA,
   permissionsExceed,
@@ -137,9 +139,39 @@ export class SpaceRolesService {
     await this.assertSpaceInOrg(data.organizationId, data.spaceId);
     const members = await this.prisma.spaceAssignment.findMany({
       where: { organizationId: data.organizationId, spaceId: data.spaceId },
-      include: { user: userSelect, role: roleSelect },
+      include: {
+        user: userSelect,
+        role: roleSelect,
+      },
       orderBy: { createdAt: 'asc' },
     });
+
+    /*
+      What each member's rate WOULD be if this assignment stayed blank.
+
+      ⚠️ Resolved HERE and sent down, rather than worked out in the browser. The
+      order of the four levels is written down exactly once, in `resolveRate` —
+      a second copy in a screen is a second answer to "why is this €40", and the
+      first person to find them disagreeing is looking at an invoice.
+
+      Two queries for the whole list, not one per row.
+    */
+    const [space, org, users] = await Promise.all([
+      this.prisma.companyLocation.findUnique({
+        where: { id: data.spaceId },
+        select: { billableRateCents: true, costRateCents: true },
+      }),
+      this.prisma.organization.findUnique({
+        where: { id: data.organizationId },
+        select: { billableRateCents: true, costRateCents: true },
+      }),
+      this.prisma.user.findMany({
+        where: { id: { in: members.map((m) => m.userId) } },
+        select: { id: true, billRateCents: true, costRateCents: true },
+      }),
+    ]);
+    const byUser = new Map(users.map((u) => [u.id, u]));
+
     // Shape to match the old response (spaceRole → role, + routing arrays).
     return success(
       members.map((m) => ({
@@ -148,6 +180,18 @@ export class SpaceRolesService {
         spaceId: m.spaceId,
         user: m.user,
         spaceRole: m.role,
+        billRateCents: m.billRateCents,
+        costRateCents: m.costRateCents,
+        // What it falls back to — the ladder MINUS this assignment's own rung.
+        inheritedBillRateCents: resolveRate('bill', {
+          member: byUser.get(m.userId) ?? null,
+          client: space
+            ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents }
+            : null,
+          organization: org
+            ? { billRateCents: org.billableRateCents, costRateCents: org.costRateCents }
+            : null,
+        }).cents,
         notifyRoleIds: m.notifyRoleIds,
         notifyUserIds: m.notifyUserIds,
         contactRoleIds: m.contactRoleIds,
@@ -239,6 +283,44 @@ export class SpaceRolesService {
   }
 
   /** Set the per-member, per-space routing override. Whitelists ids to arrays. */
+  /**
+   * What this member is billed at, AT THIS CLIENT — the top rung of the ladder.
+   *
+   * ⚠️ This is where a customer-facing rate belongs. What somebody COSTS is a
+   * fact about the person and follows them everywhere; what a client PAYS for
+   * their hour is a fact about that client, and the same engineer is routinely
+   * worth €45 at one customer and €60 at another. One field on the person
+   * cannot express that, and forking the person's record per customer is worse.
+   *
+   * ⚠️ Undefined leaves the column alone; null clears it back to "inherit the
+   * member's rate, then the client's, then the organisation's". Collapsing them
+   * makes every save wipe a rate somebody set elsewhere.
+   */
+  async updateMemberRate(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    billRateCents?: number | null;
+    costRateCents?: number | null;
+  }) {
+    const member = await this.prisma.spaceAssignment.findFirst({
+      where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
+    });
+    if (!member) throw new NotFoundException('Space member not found');
+
+    const patch: Record<string, number | null> = {};
+    if (data.billRateCents !== undefined) patch.billRateCents = cleanRateCents(data.billRateCents);
+    if (data.costRateCents !== undefined) patch.costRateCents = cleanRateCents(data.costRateCents);
+    if (Object.keys(patch).length === 0) return success(member);
+
+    const updated = await this.prisma.spaceAssignment.update({
+      where: { id: member.id },
+      data: patch,
+      select: { id: true, billRateCents: true, costRateCents: true },
+    });
+    return success(updated);
+  }
+
   async updateMemberRouting(data: {
     organizationId: string;
     spaceId: string;

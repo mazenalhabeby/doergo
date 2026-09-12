@@ -7,7 +7,7 @@ import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, 
 import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
-import { spaceRolesApi, spaceMembersApi, organizationsApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
+import { locationsApi, spaceRolesApi, spaceMembersApi, organizationsApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
 import { fetchAllPages } from "@/lib/paginate"
 import {
   ACCESS_PERMISSION_SCHEMA,
@@ -62,6 +62,7 @@ import {
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
 import { MemberRoutingEditor } from "./member-routing-editor"
+import { MemberRateEditor } from "./member-rate-editor"
 
 const fullName = (p: { firstName?: string | null; lastName?: string | null }) =>
   `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
@@ -387,6 +388,15 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
     queryKey: ["space-members", spaceId],
     queryFn: () => spaceMembersApi.list(spaceId),
   })
+  /*
+    Which kind of workspace this is — a rate is only meaningful on a CUSTOMER.
+    The same query key the rest of the page uses, so this costs no request.
+  */
+  const { data: space } = useQuery({
+    queryKey: ["location", spaceId],
+    queryFn: () => locationsApi.getById(spaceId),
+    staleTime: 60_000,
+  })
   // Apartments this space owns — for the per-member "lives in" control.
   const { data: unitData } = useQuery({
     queryKey: ["space-member-units", spaceId],
@@ -584,6 +594,14 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                   </Button>
                 </div>
               </div>
+              {/*
+                ⚠️ Only on a CUSTOMER workspace. A rate here is what this client
+                pays for this person; on your own depot there is nobody to bill,
+                and offering the field would invite somebody to fill it in.
+              */}
+              {space?.kind === "CUSTOMER" && (
+                <MemberRateEditor spaceId={spaceId} member={m} />
+              )}
               {routingOpen === m.id && (
                 <MemberRoutingEditor spaceId={spaceId} member={m} roster={members} />
               )}

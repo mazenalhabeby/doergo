@@ -6305,7 +6305,14 @@
       "removeTitle": "Aus dem Space entfernen?",
       "removeConfirm": "{{name}} verliert die Rolle und Weiterleitung in diesem Space. Aus der Organisation wird die Person dadurch nicht entfernt.",
       "roleFor": "Rolle in diesem Arbeitsbereich",
-      "setRole": "Rolle festlegen"
+      "setRole": "Rolle festlegen",
+      "rateLabel": "Verrechnet, hier (pro Stunde)",
+      "rateInherits": "Erbt {{rate}}",
+      "rateNone": "Nirgends ein Satz hinterlegt",
+      "copyRate": "{{rate}} übernehmen",
+      "rateSaved": "Satz gespeichert",
+      "rateBlankHint": "Leer erbt. Nur ausfüllen, wenn dieser Kunde für diese Person anders zahlt.",
+      "rateSetHint": "Diesem Kunden wird für diese Person dieser Satz verrechnet — unabhängig vom üblichen."
     },
     "attendanceTab": {
       "heading": "Anwesenheit",

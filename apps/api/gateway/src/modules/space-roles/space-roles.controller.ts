@@ -202,4 +202,41 @@ export class SpaceRolesController {
     assertCanManageSpace(req.user, spaceId);
     return this.service.updateMemberRouting({ ...body, spaceId, memberId, organizationId: req.user.organizationId });
   }
+
+  /**
+   * What this member is billed at, AT THIS CLIENT.
+   *
+   * ⚠️ This is where a customer-facing rate belongs, and putting it on the
+   * member record was the mistake. What somebody COSTS is a fact about the
+   * person — it follows them everywhere. What a client PAYS for their hour is a
+   * fact about that client, and the same engineer is routinely worth €45 at one
+   * customer and €60 at another. One field on the person cannot express that,
+   * and asking somebody to fork the person's record per customer is worse.
+   *
+   * ⚠️ `canManageSpace`, not the invoicing permission: this is a term of the
+   * agreement with THIS customer, set by whoever runs that customer's
+   * workspace. Null clears it back to inherit.
+   */
+  @Patch('spaces/:spaceId/members/:memberId/rate')
+  @ApiOperation({ summary: 'Set what this member is billed at for this client' })
+  updateMemberRate(
+    @Param('spaceId') spaceId: string,
+    @Param('memberId') memberId: string,
+    @Body() body: { billRateCents?: number | null; costRateCents?: number | null },
+    @Request() req: any,
+  ) {
+    assertCanManageSpace(req.user, spaceId);
+    return this.service.updateMemberRate({
+      spaceId,
+      memberId,
+      organizationId: req.user.organizationId,
+      billRateCents: body.billRateCents,
+      /*
+        ⚠️ A per-client COST is only accepted from somebody who may see costs at
+        all. It is rare and real — a contractor who charges more for one site —
+        but writing it must not be a way to learn it.
+      */
+      costRateCents: req.user?.canViewLabourCost === true ? body.costRateCents : undefined,
+    });
+  }
 }

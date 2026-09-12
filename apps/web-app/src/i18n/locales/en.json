@@ -6305,7 +6305,14 @@
       "removeTitle": "Remove from workspace?",
       "removeConfirm": "{{name}} will lose their role and routing in this workspace. This does not remove them from the organization.",
       "roleFor": "Role in this workspace",
-      "setRole": "Add role"
+      "setRole": "Add role",
+      "rateLabel": "Billed at, here (per hour)",
+      "rateInherits": "Inherits {{rate}}",
+      "rateNone": "No rate set anywhere",
+      "copyRate": "Copy {{rate}}",
+      "rateSaved": "Rate saved",
+      "rateBlankHint": "Blank inherits. Set one only if this client pays differently for this person.",
+      "rateSetHint": "This client is billed this rate for this person, whatever their usual one is."
     },
     "attendanceTab": {
       "heading": "Attendance",

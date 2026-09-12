@@ -4804,6 +4804,24 @@ export const spaceMembersApi = {
     if (res.error) throw new Error(res.error);
     return res.data;
   },
+  /**
+   * What this member is billed at, AT THIS CLIENT.
+   *
+   * ⚠️ Null clears it back to inherit — the member's own rate, then the
+   * client's, then the organisation's. Sending 0 says "billed at nothing",
+   * which is a rate and not a blank.
+   */
+  updateRate: async (
+    spaceId: string,
+    memberId: string,
+    data: { billRateCents?: number | null; costRateCents?: number | null },
+  ) => {
+    const res = await api.patch<{ success: boolean; data: unknown }>(
+      `/spaces/${spaceId}/members/${memberId}/rate`, data,
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
   updateRouting: async (
     spaceId: string,
     memberId: string,

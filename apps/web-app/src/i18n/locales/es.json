@@ -6305,7 +6305,14 @@
       "removeTitle": "¿Quitar del espacio de trabajo?",
       "removeConfirm": "{{name}} perderá su rol y enrutamiento en este espacio de trabajo. Esto no lo elimina de la organización.",
       "roleFor": "Rol en este espacio",
-      "setRole": "Añadir rol"
+      "setRole": "Añadir rol",
+      "rateLabel": "Facturado aquí (por hora)",
+      "rateInherits": "Hereda {{rate}}",
+      "rateNone": "Sin tarifa en ningún nivel",
+      "copyRate": "Copiar {{rate}}",
+      "rateSaved": "Tarifa guardada",
+      "rateBlankHint": "En blanco hereda. Rellene solo si este cliente paga distinto por esta persona.",
+      "rateSetHint": "A este cliente se le factura esta tarifa por esta persona, sea cual sea la habitual."
     },
     "attendanceTab": {
       "heading": "Asistencia",

@@ -6314,7 +6314,14 @@
       "removeTitle": "Rimuovere dallo spazio di lavoro?",
       "removeConfirm": "{{name}} perderà il ruolo e l instradamento in questo spazio di lavoro. Non viene rimosso dall organizzazione.",
       "roleFor": "Ruolo in questo spazio",
-      "setRole": "Aggiungi ruolo"
+      "setRole": "Aggiungi ruolo",
+      "rateLabel": "Fatturato qui (all’ora)",
+      "rateInherits": "Eredita {{rate}}",
+      "rateNone": "Nessuna tariffa impostata",
+      "copyRate": "Copia {{rate}}",
+      "rateSaved": "Tariffa salvata",
+      "rateBlankHint": "Vuoto eredita. Compilare solo se questo cliente paga diversamente per questa persona.",
+      "rateSetHint": "A questo cliente viene fatturata questa tariffa per questa persona, qualunque sia quella abituale."
     },
     "attendanceTab": {
       "heading": "Presenze",

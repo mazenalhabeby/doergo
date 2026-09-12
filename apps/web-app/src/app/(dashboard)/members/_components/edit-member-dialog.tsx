@@ -236,7 +236,6 @@ export function EditMemberDialog({
     customer workspace, because that is the contract — and leaving this blank is
     what lets the client's rate win.
   */
-  const [billRate, setBillRate] = useState("")
   const [costRate, setCostRate] = useState("")
   /*
     Works for a client or partner.
@@ -268,7 +267,6 @@ export function EditMemberDialog({
     setLeaveAllowance(m.leaveAllowance === null || m.leaveAllowance === undefined ? "" : String(m.leaveAllowance))
     setEmploymentStartDate(m.employmentStartDate ? String(m.employmentStartDate).slice(0, 10) : "")
     const r = member as { billRateCents?: number | null; costRateCents?: number | null }
-    setBillRate(r.billRateCents == null ? "" : String(r.billRateCents / 100))
     setCostRate(r.costRateCents == null ? "" : String(r.costRateCents / 100))
   }, [member])
 
@@ -437,7 +435,6 @@ export function EditMemberDialog({
         person bills nothing, and the ladder cannot tell the difference after
         the fact.
       */
-      billRateCents: billRate.trim() === "" ? null : Math.round(Number(billRate) * 100),
       costRateCents: costRate.trim() === "" ? null : Math.round(Number(costRate) * 100),
     }
     workerMutation.mutate(workerPatch)
@@ -642,19 +639,20 @@ export function EditMemberDialog({
               </p>
             )}
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("members.memberEditor.billRateLabel")}
-              </Label>
-              <Input
-                type="number" min={0} step="0.01" inputMode="decimal"
-                value={billRate}
-                onChange={(e) => setBillRate(e.target.value)}
-                placeholder={t("members.memberEditor.ratePlaceholder")}
-                className="h-9"
-              />
-              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.billRateHint")}</p>
-            </div>
+            {/*
+              ⚠️ NO BILL RATE HERE, and that is the correction.
+
+              It was on this screen and read backwards, which is how it was
+              reported. What somebody COSTS is a fact about the person and
+              belongs on their record; what a CLIENT pays for their hour is a
+              fact about that client — and the same engineer is routinely worth
+              €45 at one customer and €60 at another. A single field on a person
+              cannot say that.
+
+              It lives on the assignment now: Workspaces → the customer →
+              Members, where each person has a rate for THAT client, prefilled
+              from what they would otherwise inherit.
+            */}
           </div>
 
 

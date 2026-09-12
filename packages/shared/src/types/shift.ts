@@ -150,6 +150,27 @@ export interface SpaceMember {
   id: string;
   userId: string;
   spaceId?: string;
+  /**
+   * What this member is billed at, AT THIS CLIENT — the top rung of the ladder.
+   *
+   * ⚠️ Where a customer-facing rate belongs. What somebody COSTS is a fact
+   * about the person and follows them everywhere; what a client PAYS for their
+   * hour is a fact about that client, and the same engineer is routinely worth
+   * €45 at one customer and €60 at another.
+   *
+   * Null inherits — the member's own rate, then the client's, then the
+   * organisation's. Blank on almost every assignment, which is correct.
+   */
+  billRateCents?: number | null;
+  costRateCents?: number | null;
+  /**
+   * What it WOULD be if this stayed blank, resolved by the server.
+   *
+   * Sent so the screen can show the inherited figure without re-implementing
+   * the ladder in a browser — a second copy of that order is a second answer to
+   * "why is this €40".
+   */
+  inheritedBillRateCents?: number | null;
   // Populated relations (optional)
   user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null; position?: string | null };
   spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions'> | null;
