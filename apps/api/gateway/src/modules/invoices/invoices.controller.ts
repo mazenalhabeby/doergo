@@ -85,16 +85,24 @@ export class InvoicesController {
   @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: "Build draft invoice lines from a customer space's completed work" })
   async gather(
-    @Query('spaceId') spaceId: string,
+    @Query('spaceId') spaceId: string | undefined,
+    @Query('customerId') customerId: string | undefined,
     @CurrentUser() user: CurrentUserData,
   ) {
-    if (!spaceId) {
-      throw new HttpException({ message: 'spaceId is required' }, HttpStatus.BAD_REQUEST);
-    }
+    /*
+      ⚠️ Exactly one source, and the service says so rather than this route.
+      A workspace and a client would silently INTERSECT, and an empty result
+      then reads as "nothing to bill" when it means "these two do not overlap".
+
+      The organization comes from the token, never the query — so a client id
+      from another tenant fails to resolve and 404s, and never reaches a query
+      that could return that tenant's work.
+    */
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'invoice_gather' }, {
         organizationId: user.organizationId,
-        spaceId,
+        spaceId: spaceId || undefined,
+        customerId: customerId || undefined,
       }),
     );
     if (result && result.success === false) {

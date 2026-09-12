@@ -373,8 +373,8 @@ export function TopNavbar() {
       Row 2 — where you can go, with the WHOLE width to itself.
 
       The single row carried eleven links and seven controls in 56px. Labels are
-      written by translators ("Customer Invoices" is 17 characters; "Facturas de
-      clientes" is 20), so it overflowed in some language at any width, and the
+      written by translators ("Time & Attendance" is 17 characters; "Personale e
+      presenze" is 19), so it overflowed in some language at any width, and the
       previous fixes each failed visibly: a breakpoint was wrong in Spanish, and
       scrolling clipped a label mid-word with nothing to say more existed.
       Giving navigation its own row removes the competition instead of rationing it.

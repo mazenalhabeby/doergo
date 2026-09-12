@@ -1,13 +1,14 @@
 "use client"
 
 import { PlanGate } from "@/components/plan-gate"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Loader2, Clock, Package, FileText, ChevronDown, ChevronRight } from "lucide-react"
 
-import { invoicesApi, locationsApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
+import { invoicesApi, locationsApi, customersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -61,7 +62,42 @@ function NewInvoiceInner() {
   const router = useRouter()
   const params = useSearchParams()
   const queryClient = useQueryClient()
-  const spaceId = params.get("spaceId") || undefined
+  const { user } = useAuth()
+  const spaceIdFromUrl = params.get("spaceId") || undefined
+
+  /*
+    WHERE THE WORK COMES FROM — a choice, not a URL parameter.
+
+    ⚠️ This screen could only ever bill a WORKSPACE, and only when something
+    else had put `?spaceId=` in the address. Opening it from the Invoices page
+    gave an empty form with no way to pull any work at all, and a company that
+    bills a CLIENT whose jobs sit in three workspaces — or in none — could not
+    produce that invoice here.
+
+    Three sources, because all three are real: a workspace, a client, or nothing
+    at all (a charge that was never a task).
+  */
+  const [source, setSource] = useState<"space" | "client" | "none">(spaceIdFromUrl ? "space" : "none")
+  const [pickedSpaceId, setPickedSpaceId] = useState(spaceIdFromUrl ?? "")
+  const [customerId, setCustomerId] = useState("")
+  /** Type a client by hand, and offer to keep them. Only where there is a CRM. */
+  const [addToCrm, setAddToCrm] = useState(false)
+
+  const spaceId = source === "space" ? pickedSpaceId || undefined : undefined
+
+  /*
+    IS THERE A CRM? Answered from the session, so it costs no request and cannot
+    disagree with the navigation — and it needs no reload, because the answer
+    arrives with the user.
+
+    ⚠️ Absent and empty are different answers, exactly as the navbar has it: a
+    session that predates `spaceModules` carries none at all, and reading that
+    as "no workspace runs anything" would take the client picker away from
+    people who had it a minute ago.
+  */
+  const hasCrm = user
+    ? (user.spaceModules === undefined ? (user.orgModules ?? []) : user.spaceModules).includes("crm")
+    : false
 
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
@@ -85,11 +121,41 @@ function NewInvoiceInner() {
     enabled: !!spaceId,
   })
 
-  // Dynamically load the customer's completed, unbilled work on open.
+  /** The workspaces to choose from, only once somebody is choosing one. */
+  const { data: spacePage } = useQuery({
+    queryKey: ["locations", "for-invoice"],
+    // ⚠️ Paginated: the payload is `{ data, meta }`, not an array. Reading it as
+    // one silently yields nothing and an empty picker that looks like "no
+    // workspaces exist".
+    queryFn: () => locationsApi.list(),
+    enabled: source === "space",
+    staleTime: 5 * 60_000,
+  })
+
+  /*
+    The client list, and — from the same response — whether this person may
+    CREATE one. `crmCaps` is the server's own answer, so the "also add them"
+    offer cannot appear for somebody the server would refuse.
+  */
+  const { data: clientPage } = useQuery({
+    queryKey: ["customers", "for-invoice"],
+    queryFn: () => customersApi.list({ limit: 200, contacts: "exclude", status: "active" }),
+    enabled: hasCrm,
+    staleTime: 60_000,
+  })
+  const clients = clientPage?.data ?? []
+  const mayAddClient = clientPage?.meta?.crmCaps?.manage === true || clientPage?.meta?.crmCaps?.editInfo === true
+
+  // Completed, unbilled work — from whichever end was chosen.
+  const gatherSource = source === "space" && spaceId
+    ? { spaceId }
+    : source === "client" && customerId
+      ? { customerId }
+      : null
   const { data: gather, isLoading: gatherLoading } = useQuery({
-    queryKey: ["invoice-gather", spaceId],
-    queryFn: () => invoicesApi.gather(spaceId!),
-    enabled: !!spaceId,
+    queryKey: ["invoice-gather", gatherSource],
+    queryFn: () => invoicesApi.gather(gatherSource!),
+    enabled: !!gatherSource,
   })
 
   useEffect(() => {
@@ -99,6 +165,19 @@ function NewInvoiceInner() {
       setClientAddress((p) => p || space.address || "")
     }
   }, [space, seeded])
+
+  /*
+    ⚠️ THE SEED LATCH RELEASES WHEN THE SOURCE CHANGES. `seeded` exists so the
+    form stops overwriting what somebody has typed — but it also meant that
+    picking a second workspace, or switching from a workspace to a client,
+    filled in nothing at all and looked broken.
+  */
+  const seedKey = JSON.stringify(gatherSource)
+  const lastSeedKey = useRef<string | null>(null)
+  useEffect(() => {
+    if (lastSeedKey.current !== null && lastSeedKey.current !== seedKey) setSeeded(false)
+    lastSeedKey.current = seedKey
+  }, [seedKey])
 
   useEffect(() => {
     if (gather && !seeded) {
@@ -218,9 +297,33 @@ function NewInvoiceInner() {
         items,
       })
     },
-    onSuccess: (inv: Invoice) => {
+    onSuccess: async (inv: Invoice) => {
       notify.success(t("invoices.create.created"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+
+      /*
+        Keep the client, if they asked — AFTER the invoice exists, and never
+        instead of it.
+
+        ⚠️ A failure here must not cost them the invoice. Adding to the CRM is a
+        convenience on top of the thing they came to do; wrapping the two in one
+        promise would let a duplicate-name refusal throw away a finished
+        invoice. So it is awaited, reported quietly, and moved past either way.
+      */
+      if (addToCrm && clientName.trim()) {
+        try {
+          await customersApi.create({
+            name: clientName.trim(),
+            email: clientEmail.trim() || undefined,
+            address: clientAddress.trim() || undefined,
+          })
+          queryClient.invalidateQueries({ queryKey: ["customers"] })
+          notify.success(t("invoices.create.clientAdded"))
+        } catch {
+          notify.error(t("invoices.create.clientAddFailed"))
+        }
+      }
+
       router.push(`/invoices/${inv.id}`)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -249,12 +352,94 @@ function NewInvoiceInner() {
           </Button>
         </div>
 
+        {/* Where the work comes from */}
+        <div className="bg-card rounded-2xl border border-border p-5 mb-5">
+          <Label className="text-xs">{t("invoices.create.billFrom")}</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {([
+              ["space", t("invoices.create.fromSpace")],
+              ...(hasCrm ? [["client", t("invoices.create.fromClient")] as const] : []),
+              ["none", t("invoices.create.fromNothing")],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSource(key as typeof source)}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+                  source === key
+                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                    : "border-border text-muted-foreground hover:border-slate-400",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {source === "space" && (
+            <div className="mt-3">
+              <Label className="text-xs">{t("invoices.create.workspace")}</Label>
+              <select
+                value={pickedSpaceId}
+                onChange={(e) => setPickedSpaceId(e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+              >
+                <option value="">{t("invoices.create.choose")}</option>
+                {(spacePage?.data ?? []).map((sp) => (
+                  <option key={sp.id} value={sp.id}>{sp.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {source === "client" && (
+            <div className="mt-3">
+              <Label className="text-xs">{t("invoices.create.client")}</Label>
+              <select
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+              >
+                <option value="">{t("invoices.create.choose")}</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {/*
+                The client's details fill the header below, and stay editable —
+                an invoice sometimes goes to a different address than the one on
+                the record, and refusing that would send people back to the CRM
+                to edit a client in order to send one invoice.
+              */}
+              <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.clientFillsHeader")}</p>
+            </div>
+          )}
+
+          {source === "none" && (
+            <p className="mt-3 text-xs text-muted-foreground">{t("invoices.create.nothingHint")}</p>
+          )}
+        </div>
+
         {/* Client + meta */}
         <div className="bg-card rounded-2xl border border-border p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div className="space-y-3">
             <div>
               <Label className="text-xs">{t("invoices.create.clientName")} *</Label>
               <Input value={clientName} onChange={(e) => setClientName(e.target.value)} className="h-9 mt-1" />
+              {/*
+                Typed by hand, with a CRM present and the right to add to it:
+                offer to keep them. ⚠️ Never when the name CAME from the CRM —
+                that would quietly create a duplicate of the record it was read
+                from. And never without `crmCaps`, which is the server's own
+                answer about who may create a client.
+              */}
+              {hasCrm && mayAddClient && source !== "client" && clientName.trim().length > 1 && (
+                <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox checked={addToCrm} onCheckedChange={(v) => setAddToCrm(v === true)} />
+                  {t("invoices.create.alsoAddClient")}
+                </label>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

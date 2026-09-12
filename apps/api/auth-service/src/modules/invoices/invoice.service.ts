@@ -460,33 +460,84 @@ export class InvoiceService {
    * The builder UI renders these as selectable cards and flattens the chosen ones
    * into invoice line items on save.
    */
-  async gatherFromSpace(data: { organizationId: string; spaceId: string }) {
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: data.spaceId, organizationId: data.organizationId },
-      select: {
-        id: true,
-        name: true,
-        contactName: true,
-        contactEmail: true,
-        address: true,
-        billableRateCents: true,
-      },
-    });
-    if (!space) {
+  /**
+   * The work worth billing, from whichever end the biller has.
+   *
+   * ⚠️ IT ONLY EVER ANSWERED FOR A WORKSPACE, and a workspace is not how every
+   * organization bills. A field company bills a CLIENT — whose jobs may sit in
+   * three workspaces or in none — and plenty of invoices are for something that
+   * was never a task at all. Requiring a space made the first case impossible
+   * and the third look broken.
+   *
+   * So the source is a choice: a workspace, a client, or nothing. Exactly one
+   * of the first two, because "all the completed work in the organization" is
+   * not an invoice, it is an accident waiting to be sent to somebody.
+   *
+   * ⚠️ Both are scoped to the caller's organization in the lookup, not in the
+   * task filter. A customer id from another tenant fails to resolve and returns
+   * 404 — it never reaches a query that could return that tenant's work.
+   */
+  async gather(data: { organizationId: string; spaceId?: string; customerId?: string }) {
+    if (!data.spaceId && !data.customerId) {
+      return {
+        success: false,
+        message: 'Choose a workspace or a client to gather work from',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+    if (data.spaceId && data.customerId) {
+      // Two sources would silently intersect — and an empty result then reads
+      // as "nothing to bill" when it means "these two do not overlap".
+      return {
+        success: false,
+        message: 'Gather from a workspace or a client, not both',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+
+    const space = data.spaceId
+      ? await this.prisma.companyLocation.findFirst({
+          where: { id: data.spaceId, organizationId: data.organizationId },
+          select: {
+            id: true,
+            name: true,
+            contactName: true,
+            contactEmail: true,
+            address: true,
+            billableRateCents: true,
+          },
+        })
+      : null;
+    if (data.spaceId && !space) {
       return { success: false, message: 'Space not found', statusCode: HttpStatus.NOT_FOUND };
+    }
+
+    const customer = data.customerId
+      ? await this.prisma.customer.findFirst({
+          where: { id: data.customerId, organizationId: data.organizationId },
+          select: { id: true, name: true, email: true, address: true },
+        })
+      : null;
+    if (data.customerId && !customer) {
+      return { success: false, message: 'Client not found', statusCode: HttpStatus.NOT_FOUND };
     }
 
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
       select: { billableRateCents: true },
     });
-    const rateCents = space.billableRateCents ?? org?.billableRateCents ?? null;
+    /*
+      A client has no rate of its own, so it falls to the organization's. That is
+      the honest answer rather than nothing: the form shows the rate and the
+      biller changes it, and a blank costs them a lookup they should not need.
+    */
+    const rateCents = space?.billableRateCents ?? org?.billableRateCents ?? null;
     const rate = rateCents != null ? rateCents / 100 : null; // currency units/hour
 
     const tasks = await this.prisma.task.findMany({
       where: {
         organizationId: data.organizationId,
-        spaceId: data.spaceId,
+        ...(space ? { spaceId: space.id } : { customerId: customer!.id }),
         status: { in: ['COMPLETED', 'CLOSED'] },
       },
       select: {
@@ -571,10 +622,11 @@ export class InvoiceService {
     return {
       success: true,
       data: {
-        spaceId: space.id,
-        clientName: space.contactName || space.name,
-        clientEmail: space.contactEmail ?? null,
-        clientAddress: space.address ?? null,
+        spaceId: space?.id ?? null,
+        customerId: customer?.id ?? null,
+        clientName: space ? space.contactName || space.name : customer!.name,
+        clientEmail: (space ? space.contactEmail : customer!.email) ?? null,
+        clientAddress: (space ? space.address : customer!.address) ?? null,
         currency: 'EUR',
         billableRateCents: rateCents,
         rate,

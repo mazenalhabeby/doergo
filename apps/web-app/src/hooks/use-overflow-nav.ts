@@ -12,8 +12,8 @@ export interface OverflowNavItem {
  * rest behind a "More" menu.
  *
  * The navbar carries up to eleven items whose labels are written by translators,
- * not by us. "Customer Invoices" is 17 characters in English and "Facturas de
- * clientes" is 20; "Duty Roster" is "Turni di servizio" in Italian. Any fixed
+ * not by us. "Time & Attendance" is 17 characters in English and "Personale e
+ * presenze" is 19; "Duty Roster" is "Turni di servizio" in Italian. Any fixed
  * breakpoint is therefore wrong in at least one language, and the previous
  * approaches both failed visibly: overflowing the flex row pushed items under the
  * search box, and scrolling the row clipped a label mid-word with no affordance

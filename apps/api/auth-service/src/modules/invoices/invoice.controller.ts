@@ -18,7 +18,7 @@ export class InvoiceController {
 
   @MessagePattern({ cmd: 'invoice_gather' })
   async gather(@Payload() data: { organizationId: string; spaceId: string }) {
-    return this.invoiceService.gatherFromSpace(data);
+    return this.invoiceService.gather(data);
   }
 
   @MessagePattern({ cmd: 'invoice_get' })

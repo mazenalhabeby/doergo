@@ -5623,7 +5623,9 @@ export interface InvoiceGatherEntry {
  * a per-worker hours summary.
  */
 export interface InvoiceGatherResult {
-  spaceId: string;
+  /** Null when the work was gathered by CLIENT rather than by workspace. */
+  spaceId: string | null;
+  customerId?: string | null;
   clientName?: string | null;
   clientEmail?: string | null;
   clientAddress?: string | null;
@@ -5644,9 +5646,17 @@ export const invoicesApi = {
     if (response.error) throw new Error(response.error);
     return response.data;
   },
-  /** Build (unsaved) draft line items from a customer space's completed work. */
-  gather: async (spaceId: string) => {
-    const response = await api.get<{ success: boolean; data: InvoiceGatherResult }>(buildUrlWithQuery('/invoices/gather', { spaceId }));
+  /**
+   * Draft lines from completed work — from a workspace OR from a client.
+   *
+   * ⚠️ Exactly one. Both together would silently intersect, and an empty result
+   * then reads as "nothing to bill" when it means "these two do not overlap".
+   * The server refuses the combination rather than guessing which was meant.
+   */
+  gather: async (source: { spaceId?: string; customerId?: string }) => {
+    const response = await api.get<{ success: boolean; data: InvoiceGatherResult }>(
+      buildUrlWithQuery('/invoices/gather', source),
+    );
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
