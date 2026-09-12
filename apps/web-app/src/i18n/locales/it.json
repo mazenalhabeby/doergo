@@ -4332,7 +4332,11 @@
       "descriptionCol": "Descrizione",
       "amount": "Importo",
       "included": "incluso",
-      "labourTotal": "Totale manodopera"
+      "labourTotal": "Totale manodopera",
+      "summary": "Riepilogo",
+      "needsClient": "Manca il nome del cliente",
+      "needsLines": "Aggiunga almeno una voce",
+      "clientSection": "Per chi"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

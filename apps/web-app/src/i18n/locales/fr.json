@@ -4332,7 +4332,11 @@
       "descriptionCol": "Description",
       "amount": "Montant",
       "included": "inclus",
-      "labourTotal": "Total main-d’œuvre"
+      "labourTotal": "Total main-d’œuvre",
+      "summary": "Récapitulatif",
+      "needsClient": "Nom du client manquant",
+      "needsLines": "Ajoutez au moins une ligne",
+      "clientSection": "Destinataire"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

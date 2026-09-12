@@ -44,6 +44,28 @@ interface WorkEntry {
 interface ManualLine { description: string; quantity: number; unitPrice: number }
 
 function todayIso() { return new Date().toISOString().slice(0, 10) }
+
+/**
+ * A section's heading.
+ *
+ * ⚠️ The page was nine identically-weighted cards, which is the whole of why it
+ * read as old: with everything shouting equally there is no spine, and a person
+ * has to read each block to find out what it is. A numbered eyebrow costs one
+ * line and gives the eye somewhere to land.
+ */
+function SectionHead({ step, title, hint }: { step: number; title: string; hint?: string }) {
+  return (
+    <div className="mb-3 flex items-baseline gap-2.5">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground">
+        {step}
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-sm font-semibold leading-none text-foreground">{title}</h2>
+        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      </div>
+    </div>
+  )
+}
 const round2 = (n: number) => Math.round(n * 100) / 100
 function money(n: number, currency: string) {
   try { return new Intl.NumberFormat("en-IE", { style: "currency", currency: currency || "EUR" }).format(n || 0) }
@@ -420,28 +442,64 @@ function NewInvoiceInner() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="p-6 sm:p-8 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => router.back()}>
-              <ArrowLeft className="size-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">{t("invoices.create.title")}</h1>
-              {space && <p className="text-sm text-muted-foreground mt-0.5">{t("invoices.create.forSpace", { name: space.name })}</p>}
-            </div>
+      {/*
+        ⚠️ A STICKY HEAD, not a title that scrolls away. Building an invoice is a
+        long page — a source, a client, a table of work, extra lines — and the
+        way out and the way to save both used to disappear the moment somebody
+        started reading their own jobs.
+      */}
+      <div className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-3 sm:px-8">
+          <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => router.back()}>
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-lg font-semibold leading-tight text-foreground">
+              {t("invoices.create.title")}
+            </h1>
+            {space && (
+              <p className="truncate text-xs text-muted-foreground">
+                {t("invoices.create.forSpace", { name: space.name })}
+              </p>
+            )}
           </div>
-          <Button disabled={!canSave || createMutation.isPending} onClick={() => createMutation.mutate()}>
+          {/* The total, in the head, because it is the number somebody is
+              actually watching while they tick jobs on and off. */}
+          <span className="hidden text-right sm:block">
+            <span className="block text-[11px] uppercase tracking-wider text-muted-foreground">
+              {t("invoices.create.total")}
+            </span>
+            <span className="block text-base font-semibold tabular-nums text-foreground">
+              {money(total, currency)}
+            </span>
+          </span>
+          <Button
+            className="shrink-0"
+            disabled={!canSave || createMutation.isPending}
+            onClick={() => createMutation.mutate()}
+          >
             {createMutation.isPending && <Loader2 className="size-4 mr-1.5 animate-spin" />}
             {t("invoices.create.saveDraft")}
           </Button>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl p-6 sm:p-8">
+        {/*
+          Two columns, and the money follows you.
+
+          ⚠️ It was ONE column of nine identically-weighted cards with the totals
+          at the bottom of the scroll — so the figure somebody is deciding about
+          was the one thing they could not see while deciding. A summary rail is
+          the standard shape for this screen for exactly that reason.
+        */}
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="min-w-0 space-y-5">
 
         {/* Where the work comes from */}
-        <div className="bg-card rounded-2xl border border-border p-5 mb-5">
-          <Label className="text-xs">{t("invoices.create.billFrom")}</Label>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <div className="bg-card rounded-2xl border border-border p-5">
+          <SectionHead step={1} title={t("invoices.create.billFrom")} />
+          <div className="flex flex-wrap gap-2">
             {([
               ["space", t("invoices.create.fromSpace")],
               ...(hasCrm ? [["client", t("invoices.create.fromClient")] as const] : []),
@@ -553,7 +611,9 @@ function NewInvoiceInner() {
         </div>
 
         {/* Client + meta */}
-        <div className="bg-card rounded-2xl border border-border p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        <div className="bg-card rounded-2xl border border-border p-5">
+          <SectionHead step={2} title={t("invoices.create.clientSection")} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-3">
             <div>
               <Label className="text-xs">{t("invoices.create.clientName")} *</Label>
@@ -639,6 +699,7 @@ function NewInvoiceInner() {
               <Input value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))} className="h-9 mt-1" />
             </div>
           </div>
+          </div>
         </div>
 
         {/*
@@ -655,7 +716,7 @@ function NewInvoiceInner() {
           this is the screen agreeing with the boundary — not the boundary.
         */}
         {showMargin && (
-          <div className="bg-card rounded-2xl border border-border p-4 mb-5">
+          <div className="bg-card rounded-2xl border border-border p-4">
             <p className="text-sm font-medium text-foreground mb-3">{t("invoices.create.marginTitle")}</p>
             <div className="flex flex-wrap gap-x-8 gap-y-3">
               <div>
@@ -695,10 +756,10 @@ function NewInvoiceInner() {
           shown total quietly stops matching the document it produced.
         */}
         {labourLines.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border overflow-hidden mb-5">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-              <Clock className="size-4 text-brand-600" />
-              <p className="text-sm font-medium text-foreground">{t("invoices.create.preview")}</p>
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground">3</span>
+              <p className="text-sm font-semibold text-foreground">{t("invoices.create.preview")}</p>
               <span className="text-xs text-muted-foreground ml-auto tabular-nums">
                 {t("invoices.create.totalHours", { hours: round2(totalHours) })}
               </span>
@@ -757,7 +818,10 @@ function NewInvoiceInner() {
         {spaceId && (
           <div className="mb-5">
             <div className="flex items-center justify-between mb-2 px-1">
-              <p className="text-sm font-semibold text-foreground">{t("invoices.create.billableWork")}</p>
+              <span className="flex items-center gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground">4</span>
+                <span className="text-sm font-semibold text-foreground">{t("invoices.create.billableWork")}</span>
+              </span>
               <span className="text-xs text-muted-foreground">{t("invoices.create.jobsSelected", { count: includedCount, total: entries.length })}</span>
             </div>
 
@@ -841,7 +905,7 @@ function NewInvoiceInner() {
         )}
 
         {/* Manual / extra lines */}
-        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-5">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40">
             <p className="text-sm font-medium text-foreground">{t("invoices.create.extraLines")}</p>
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground h-7" onClick={addManual}>
@@ -863,37 +927,102 @@ function NewInvoiceInner() {
           )}
         </div>
 
-        {/* Totals + notes */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div className="bg-card rounded-2xl border border-border p-5">
-            <Label className="text-xs">{t("invoices.create.notes")}</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="mt-1 resize-none" placeholder={t("invoices.create.notesPlaceholder")} />
-          </div>
-          <div className="bg-card rounded-2xl border border-border p-5 space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("invoices.create.subtotal")}</span><span className="tabular-nums">{money(subtotal, currency)}</span></div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">{t("invoices.create.discount")}</span>
-              <Input type="number" min={0} value={discount} onChange={(e) => setDiscount(e.target.value)} className="h-7 w-24 text-sm text-right" />
+            {/* Notes stay with the document — they are part of what is sent. */}
+            <div className="bg-card rounded-2xl border border-border p-5">
+              <Label className="text-xs">{t("invoices.create.notes")}</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="mt-1 resize-none"
+                placeholder={t("invoices.create.notesPlaceholder")}
+              />
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">{t("invoices.create.taxRate")}</span>
-              <div className="flex items-center gap-1">
-                <Input type="number" min={0} value={taxPct} onChange={(e) => setTaxPct(e.target.value)} className="h-7 w-16 text-sm text-right" />
-                <span className="text-muted-foreground text-xs">%</span>
-              </div>
-            </div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("invoices.create.tax")}</span><span className="tabular-nums">{money(taxAmount, currency)}</span></div>
-            <div className="flex justify-between text-base font-semibold pt-2 border-t border-border"><span>{t("invoices.create.total")}</span><span className="tabular-nums">{money(total, currency)}</span></div>
           </div>
-        </div>
 
-        {/* Bottom action */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="outline" onClick={() => router.back()}>{t("common.cancel")}</Button>
-          <Button disabled={!canSave || createMutation.isPending} onClick={() => createMutation.mutate()}>
-            {createMutation.isPending && <Loader2 className="size-4 mr-1.5 animate-spin" />}
-            {t("invoices.create.saveDraft")}
-          </Button>
+          {/*
+            THE SUMMARY RAIL — sticky, because this is the number being decided
+            about while somebody ticks jobs on and off further up the page.
+
+            ⚠️ `top-[4.5rem]` clears the sticky header above it. A rail that
+            slides under a header is worse than one that does not move at all.
+          */}
+          <aside className="lg:sticky lg:top-[4.5rem]">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("invoices.create.summary")}
+              </p>
+
+              <dl className="space-y-2.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">{t("invoices.create.subtotal")}</dt>
+                  <dd className="tabular-nums">{money(subtotal, currency)}</dd>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">{t("invoices.create.discount")}</dt>
+                  <dd>
+                    <Input
+                      type="number" min={0} value={discount}
+                      onChange={(e) => setDiscount(e.target.value)}
+                      className="h-8 w-24 text-right text-sm tabular-nums"
+                    />
+                  </dd>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">{t("invoices.create.taxRate")}</dt>
+                  <dd className="flex items-center gap-1">
+                    <Input
+                      type="number" min={0} value={taxPct}
+                      onChange={(e) => setTaxPct(e.target.value)}
+                      className="h-8 w-16 text-right text-sm tabular-nums"
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </dd>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">{t("invoices.create.tax")}</dt>
+                  <dd className="tabular-nums">{money(taxAmount, currency)}</dd>
+                </div>
+              </dl>
+
+              {/* The one number the page is about — sized so it reads as such. */}
+              <div className="mt-4 flex items-baseline justify-between border-t border-border pt-3">
+                <span className="text-sm font-medium">{t("invoices.create.total")}</span>
+                <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+                  {money(total, currency)}
+                </span>
+              </div>
+
+              <Button
+                className="mt-4 w-full"
+                disabled={!canSave || createMutation.isPending}
+                onClick={() => createMutation.mutate()}
+              >
+                {createMutation.isPending && <Loader2 className="size-4 mr-1.5 animate-spin" />}
+                {t("invoices.create.saveDraft")}
+              </Button>
+
+              {/*
+                Says what is MISSING rather than only disabling the button. A
+                greyed-out action with no reason beside it is the commonest way
+                a form wastes somebody's afternoon.
+              */}
+              {!canSave && (
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  {clientName.trim().length === 0
+                    ? t("invoices.create.needsClient")
+                    : t("invoices.create.needsLines")}
+                </p>
+              )}
+
+              <Button variant="ghost" className="mt-1 w-full" onClick={() => router.back()}>
+                {t("common.cancel")}
+              </Button>
+            </div>
+          </aside>
         </div>
       </div>
     </div>

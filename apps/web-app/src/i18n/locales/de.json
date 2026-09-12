@@ -4323,7 +4323,11 @@
       "descriptionCol": "Beschreibung",
       "amount": "Betrag",
       "included": "enthalten",
-      "labourTotal": "Summe Arbeitszeit"
+      "labourTotal": "Summe Arbeitszeit",
+      "summary": "Zusammenfassung",
+      "needsClient": "Kundenname fehlt",
+      "needsLines": "Mindestens eine Position hinzufügen",
+      "clientSection": "Für wen"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

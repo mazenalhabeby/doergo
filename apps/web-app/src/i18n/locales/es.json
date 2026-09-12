@@ -4323,7 +4323,11 @@
       "descriptionCol": "Descripción",
       "amount": "Importe",
       "included": "incluido",
-      "labourTotal": "Total mano de obra"
+      "labourTotal": "Total mano de obra",
+      "summary": "Resumen",
+      "needsClient": "Falta el nombre del cliente",
+      "needsLines": "Añada al menos una línea",
+      "clientSection": "Para quién"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

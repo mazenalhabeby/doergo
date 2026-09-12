@@ -284,3 +284,54 @@ describe("how the labour is written up", () => {
     }
   })
 })
+
+describe("the page has a shape", () => {
+  /*
+    ⚠️ It was nine identically-weighted cards in one column, max-w-4xl, with the
+    totals at the bottom of the scroll and the save button duplicated top and
+    bottom. Everything shouting equally is the whole of why it read as old: with
+    no hierarchy a person has to read each block to find out what it is, and the
+    figure they are deciding about is the one thing they cannot see while
+    deciding.
+  */
+  const src = () => code(PAGE)
+
+  it("keeps the total and the action in reach while the page scrolls", () => {
+    const s = src()
+    /*
+      Asserted by ORDER, not by distance — a window broke the moment the markup
+      between them grew, which is a test failing on layout rather than on
+      behaviour and has already bitten twice in this repo.
+    */
+    const sticky = s.indexOf("sticky top-0")
+    expect(sticky).toBeGreaterThan(-1)
+    expect(s.indexOf("invoices.create.title")).toBeGreaterThan(sticky)
+    expect(s).toMatch(/lg:sticky/)
+  })
+
+  it("puts the money in a rail beside the document, not under it", () => {
+    const s = src()
+    expect(s).toContain("invoices.create.summary")
+    expect(s).toMatch(/lg:grid-cols-\[minmax\(0,1fr\)_19rem\]/)
+  })
+
+  it("says what is missing instead of only disabling Save", () => {
+    // A greyed-out action with no reason beside it is the commonest way a form
+    // wastes somebody's afternoon.
+    const s = src()
+    expect(s).toContain("invoices.create.needsClient")
+    expect(s).toContain("invoices.create.needsLines")
+  })
+
+  it("numbers the sections so the eye has somewhere to land", () => {
+    expect(src()).toMatch(/<SectionHead step=\{1\}/)
+    expect(src()).toMatch(/<SectionHead step=\{2\}/)
+  })
+
+  it("does not repeat the save action at the foot of the page", () => {
+    // The rail carries it; a second copy at the bottom was there only because
+    // the first one had scrolled away.
+    const s = src()
+    expect(s.match(/invoices\.create\.saveDraft/g) ?? []).toHaveLength(2)
+  })
+})

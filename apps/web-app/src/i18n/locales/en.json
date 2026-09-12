@@ -4323,7 +4323,11 @@
       "descriptionCol": "Description",
       "amount": "Amount",
       "included": "included",
-      "labourTotal": "Labour total"
+      "labourTotal": "Labour total",
+      "summary": "Summary",
+      "needsClient": "Add a client name to save",
+      "needsLines": "Add at least one line to save",
+      "clientSection": "Who it is for"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",
