@@ -62,7 +62,7 @@ import {
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
 import { MemberRoutingEditor } from "./member-routing-editor"
-import { MemberRateEditor } from "./member-rate-editor"
+import { MemberRateChip, MemberRateEditor } from "./member-rate-editor"
 
 const fullName = (p: { firstName?: string | null; lastName?: string | null }) =>
   `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
@@ -382,6 +382,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
   const [selectedUserId, setSelectedUserId] = useState("")
   const [selectedRoleId, setSelectedRoleId] = useState(NO_ROLE)
   const [routingOpen, setRoutingOpen] = useState<string | null>(null)
+  const [rateOpen, setRateOpen] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<SpaceMember | null>(null)
 
   const { data: members, isLoading } = useQuery({
@@ -571,6 +572,22 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                       unit={units.find((u) => u.residentUserId === m.userId) ?? null}
                     />
                   )}
+                  {/*
+                    ⚠️ A chip, not a field. A rate is read far more often than it
+                    is edited and blank is the normal state, so the resting form
+                    shows the number that applies and the editor opens on
+                    demand — the same shape as Routing beside it.
+
+                    Only on a CUSTOMER workspace: on your own depot there is
+                    nobody to bill, and offering it invites somebody to fill it in.
+                  */}
+                  {space?.kind === "CUSTOMER" && (
+                    <MemberRateChip
+                      member={m}
+                      open={rateOpen === m.id}
+                      onToggle={() => setRateOpen(rateOpen === m.id ? null : m.id)}
+                    />
+                  )}
                   <Button
                     variant={routingOpen === m.id ? "secondary" : "ghost"}
                     size="sm"
@@ -594,13 +611,8 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                   </Button>
                 </div>
               </div>
-              {/*
-                ⚠️ Only on a CUSTOMER workspace. A rate here is what this client
-                pays for this person; on your own depot there is nobody to bill,
-                and offering the field would invite somebody to fill it in.
-              */}
-              {space?.kind === "CUSTOMER" && (
-                <MemberRateEditor spaceId={spaceId} member={m} />
+              {rateOpen === m.id && (
+                <MemberRateEditor spaceId={spaceId} member={m} onDone={() => setRateOpen(null)} />
               )}
               {routingOpen === m.id && (
                 <MemberRoutingEditor spaceId={spaceId} member={m} roster={members} />

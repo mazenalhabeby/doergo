@@ -90,14 +90,30 @@ describe("the client-facing rate lives on the assignment", () => {
     expect(src()).toContain("spaceMembersApi.updateRate")
   })
 
-  it("shows what it would inherit rather than an empty box", () => {
+  it("rests as a chip showing the figure, not a field on every row", () => {
     /*
-      An empty box with no number beside it reads as "this person bills nothing
-      here", which is the one reading that must not happen on a screen about
-      money.
+      ⚠️ The first version put a label, a full-width input and a sentence of
+      hint under EVERY member — eight copies of the same sentence on a roster of
+      eight, tripling each row and repeating an organisation-level fact ("no
+      rate set anywhere") as though it were about each person.
+
+      A rate is read far more often than edited and blank is the normal state,
+      so the resting form shows the number and the editor opens on demand.
     */
-    expect(src()).toContain("inheritedBillRateCents")
-    expect(src()).toContain("scheduling.members.rateInherits")
+    const s = src()
+    expect(s).toMatch(/export function MemberRateChip/)
+    expect(s).toContain("effective != null")
+    // The hint belongs inside the editor, not on the row.
+    const chipEnd = s.indexOf("export function MemberRateEditor")
+    expect(s.slice(0, chipEnd)).not.toContain("rateSetHint")
+  })
+
+  it("shows a figure wherever one exists, inherited or not", () => {
+    // An empty box with nothing beside it reads as "this person bills nothing
+    // here" — the one reading that must not happen on a screen about money.
+    const s = src()
+    expect(s).toContain("inheritedBillRateCents")
+    expect(s).toMatch(/own \?\? inherited/)
   })
 
   it("offers to copy the inherited figure so it can be edited", () => {
@@ -132,7 +148,7 @@ describe("every new string is translated", () => {
       .filter((k) => typeof d.invoices?.create?.[k] !== "string")
     const missingMember = ["costRateLabel", "ratePlaceholder", "costRateHint", "costRateHidden"]
       .filter((k) => typeof d.members?.memberEditor?.[k] !== "string")
-    const missingRate = ["rateLabel", "rateInherits", "rateNone", "copyRate", "rateSaved", "rateBlankHint", "rateSetHint"]
+    const missingRate = ["rateSet", "rateSetHere", "rateInherited", "rateNone", "copyRate", "rateSaved", "rateClear", "rateBlankInherits", "rateBlankNone", "rateSetHint"]
       .filter((k) => typeof d.scheduling?.members?.[k] !== "string")
     expect({ lang, missingRate }).toEqual({ lang, missingRate: [] })
     expect({ lang, missingInvoice, missingMember })

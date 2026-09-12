@@ -6315,13 +6315,16 @@
       "removeConfirm": "{{name}} perdra son rôle et son routage dans cet espace de travail. Cela ne le retire pas de l organisation.",
       "roleFor": "Rôle dans cet espace",
       "setRole": "Définir un rôle",
-      "rateLabel": "Facturé ici (par heure)",
-      "rateInherits": "Hérite de {{rate}}",
       "rateNone": "Aucun tarif défini nulle part",
       "copyRate": "Copier {{rate}}",
       "rateSaved": "Tarif enregistré",
-      "rateBlankHint": "Vide hérite. À remplir seulement si ce client paie différemment pour cette personne.",
-      "rateSetHint": "Ce client est facturé à ce tarif pour cette personne, quel que soit son tarif habituel."
+      "rateSetHint": "Ce client est facturé à ce tarif pour cette personne, quel que soit son tarif habituel.",
+      "rateSet": "Définir un tarif",
+      "rateSetHere": "Défini pour ce client",
+      "rateInherited": "Hérité — non défini pour ce client",
+      "rateClear": "Effacer",
+      "rateBlankInherits": "Vide hérite de {{rate}} — son tarif habituel.",
+      "rateBlankNone": "Aucun tarif sur cette personne, ce client ni l’organisation."
     },
     "attendanceTab": {
       "heading": "Présence",
