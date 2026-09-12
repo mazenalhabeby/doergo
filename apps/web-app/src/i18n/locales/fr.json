@@ -4304,10 +4304,12 @@
       "choose": "Choisir…",
       "clientFillsHeader": "Ses coordonnées remplissent la facture ci-dessous et restent modifiables.",
       "nothingHint": "Aucun travail ne sera repris. Ajoutez les lignes ci-dessous.",
-      "alsoAddClient": "Enregistrer aussi ce client dans le CRM",
+      "alsoAddClient": "Enregistrer ce client dans le CRM",
       "clientAdded": "Client enregistré",
       "clientAddFailed": "La facture a été créée, mais le client n'a pas pu être enregistré.",
-      "noCustomerSpaces": "Aucun espace client pour l’instant — un espace doit être un client pour pouvoir être facturé."
+      "noCustomerSpaces": "Aucun espace client pour l’instant — un espace doit être un client pour pouvoir être facturé.",
+      "alsoAddClientWhen": "« {{name}} » sera ajouté à vos clients à l’enregistrement de la facture.",
+      "alsoAddClientNeedsName": "Saisissez un nom de client ci-dessus pour l’utiliser."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

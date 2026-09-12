@@ -4295,10 +4295,12 @@
       "choose": "Elegir…",
       "clientFillsHeader": "Sus datos rellenan la factura de abajo y siguen siendo editables.",
       "nothingHint": "No se traerá ningún trabajo. Añada las líneas abajo.",
-      "alsoAddClient": "Guardar también este cliente en el CRM",
+      "alsoAddClient": "Guardar este cliente en el CRM",
       "clientAdded": "Cliente guardado",
       "clientAddFailed": "La factura se creó, pero el cliente no pudo guardarse.",
-      "noCustomerSpaces": "Aún no hay espacios de cliente: un espacio debe ser un cliente para poder facturarlo."
+      "noCustomerSpaces": "Aún no hay espacios de cliente: un espacio debe ser un cliente para poder facturarlo.",
+      "alsoAddClientWhen": "«{{name}}» se añadirá a sus clientes al guardar la factura.",
+      "alsoAddClientNeedsName": "Escriba arriba un nombre de cliente para usar esto."
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

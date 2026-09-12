@@ -449,16 +449,45 @@ function NewInvoiceInner() {
               <Label className="text-xs">{t("invoices.create.clientName")} *</Label>
               <Input value={clientName} onChange={(e) => setClientName(e.target.value)} className="h-9 mt-1" />
               {/*
-                Typed by hand, with a CRM present and the right to add to it:
-                offer to keep them. ⚠️ Never when the name CAME from the CRM —
-                that would quietly create a duplicate of the record it was read
-                from. And never without `crmCaps`, which is the server's own
-                answer about who may create a client.
+                Keep the client, when there is a CRM and a right to add to it.
+
+                ⚠️ VISIBLE BEFORE IT IS USABLE, and that is the fix. It first
+                appeared only once two characters had been typed, as muted text
+                the size of a footnote, and did nothing until Save — so somebody
+                filling in a client by hand had no way to know the option
+                existed at all, which is exactly how it was reported.
+
+                Shown as soon as the option APPLIES, disabled with its reason
+                until there is a name, and it says WHEN it will happen so nobody
+                waits for something that has not been asked for yet.
+
+                ⚠️ Never for a client that came FROM the CRM — that would
+                quietly duplicate the record it was read from. And never without
+                `crmCaps`, the server's own answer about who may create one.
               */}
-              {hasCrm && mayAddClient && source !== "client" && clientName.trim().length > 1 && (
-                <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Checkbox checked={addToCrm} onCheckedChange={(v) => setAddToCrm(v === true)} />
-                  {t("invoices.create.alsoAddClient")}
+              {hasCrm && mayAddClient && source !== "client" && (
+                <label
+                  className={cn(
+                    "mt-2 flex items-start gap-2.5 rounded-lg border p-2.5 transition-colors",
+                    clientName.trim().length > 1
+                      ? "cursor-pointer border-border hover:border-slate-400"
+                      : "border-dashed border-border opacity-60",
+                  )}
+                >
+                  <Checkbox
+                    className="mt-0.5"
+                    disabled={clientName.trim().length <= 1}
+                    checked={addToCrm}
+                    onCheckedChange={(v) => setAddToCrm(v === true)}
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm text-foreground">{t("invoices.create.alsoAddClient")}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {clientName.trim().length > 1
+                        ? t("invoices.create.alsoAddClientWhen", { name: clientName.trim() })
+                        : t("invoices.create.alsoAddClientNeedsName")}
+                    </span>
+                  </span>
                 </label>
               )}
             </div>

@@ -4295,10 +4295,12 @@
       "choose": "Choose…",
       "clientFillsHeader": "Their details fill the invoice below, and stay editable.",
       "nothingHint": "No work will be pulled in. Add the lines yourself below.",
-      "alsoAddClient": "Also save this client to the CRM",
+      "alsoAddClient": "Save this client to the CRM",
       "clientAdded": "Client saved",
       "clientAddFailed": "The invoice was created, but the client could not be saved.",
-      "noCustomerSpaces": "No customer workspaces yet — a workspace has to be a customer before it can be billed."
+      "noCustomerSpaces": "No customer workspaces yet — a workspace has to be a customer before it can be billed.",
+      "alsoAddClientWhen": "“{{name}}” will be added to your clients when the invoice is saved.",
+      "alsoAddClientNeedsName": "Enter a client name above to use this."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

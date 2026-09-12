@@ -4304,10 +4304,12 @@
       "choose": "Scegli…",
       "clientFillsHeader": "I suoi dati compilano la fattura qui sotto e restano modificabili.",
       "nothingHint": "Non verrà importato alcun lavoro. Aggiunga le voci qui sotto.",
-      "alsoAddClient": "Salva questo cliente anche nel CRM",
+      "alsoAddClient": "Salva questo cliente nel CRM",
       "clientAdded": "Cliente salvato",
       "clientAddFailed": "La fattura è stata creata, ma il cliente non è stato salvato.",
-      "noCustomerSpaces": "Nessuno spazio cliente — uno spazio deve essere un cliente per poter essere fatturato."
+      "noCustomerSpaces": "Nessuno spazio cliente — uno spazio deve essere un cliente per poter essere fatturato.",
+      "alsoAddClientWhen": "«{{name}}» sarà aggiunto ai suoi clienti al salvataggio della fattura.",
+      "alsoAddClientNeedsName": "Inserisca sopra un nome cliente per usare questa opzione."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

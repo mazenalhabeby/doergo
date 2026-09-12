@@ -114,6 +114,41 @@ describe("the CRM, when there is one", () => {
     expect(src).toMatch(/hasCrm \?[\s\S]{0,120}fromClient/)
   })
 
+  it("shows the save-to-CRM option BEFORE it is usable", () => {
+    /*
+      ⚠️ Reported: "when I choose nothing and enter the lines, how do I save
+      this as a client?" — the option existed, and could not be found. It
+      appeared only after two characters had been typed, as muted text the size
+      of a footnote, and did nothing until Save.
+
+      It is rendered as soon as it APPLIES, disabled with its reason until there
+      is a name, and it says WHEN it will happen. Gating it on the name meant
+      the answer to "can I do this at all" was "type something and find out".
+    */
+    const src = code(PAGE)
+    // The option's visibility must NOT depend on what has been typed…
+    expect(src).toMatch(/hasCrm && mayAddClient && source !== "client" && \(/)
+    // …only whether it can be acted on.
+    expect(src).toMatch(/disabled=\{clientName\.trim\(\)\.length <= 1\}/)
+    expect(src).toContain("invoices.create.alsoAddClientNeedsName")
+    // And it says when the client will actually be created.
+    expect(src).toContain("invoices.create.alsoAddClientWhen")
+  })
+
+  it("works from the 'nothing' source, which is where it was asked for", () => {
+    /*
+      Entering the lines by hand is precisely when there is no CRM record yet,
+      so excluding that source would remove the option from the only case that
+      needs it.
+
+      Asserted on the CONDITION, not on the distance to the label below it — a
+      proximity match broke the moment the block between them grew, which is a
+      test failing on layout rather than on behaviour.
+    */
+    const gate = code(PAGE).match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
+    expect(gate).toBe('hasCrm && mayAddClient && source !== "client"')
+  })
+
   it("offers to keep a hand-typed client — but only where one may be created", () => {
     /*
       `crmCaps` is the SERVER's own answer about who may create a client, so the
@@ -157,7 +192,7 @@ describe("the nav label", () => {
     const missing = [
       "billFrom", "fromSpace", "fromClient", "fromNothing", "workspace", "client",
       "choose", "clientFillsHeader", "nothingHint", "alsoAddClient", "clientAdded", "clientAddFailed",
-      "noCustomerSpaces",
+      "noCustomerSpaces", "alsoAddClientWhen", "alsoAddClientNeedsName",
     ].filter((k) => typeof c[k] !== "string")
     expect({ lang, missing }).toEqual({ lang, missing: [] })
   })

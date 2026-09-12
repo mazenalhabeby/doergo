@@ -4295,10 +4295,12 @@
       "choose": "Auswählen…",
       "clientFillsHeader": "Die Daten füllen die Rechnung unten aus und bleiben änderbar.",
       "nothingHint": "Es werden keine Arbeiten übernommen. Erfassen Sie die Positionen unten selbst.",
-      "alsoAddClient": "Diesen Kunden auch im CRM speichern",
+      "alsoAddClient": "Diesen Kunden im CRM speichern",
       "clientAdded": "Kunde gespeichert",
       "clientAddFailed": "Die Rechnung wurde erstellt, der Kunde konnte aber nicht gespeichert werden.",
-      "noCustomerSpaces": "Noch keine Kunden-Arbeitsbereiche — ein Arbeitsbereich muss ein Kunde sein, bevor er abgerechnet werden kann."
+      "noCustomerSpaces": "Noch keine Kunden-Arbeitsbereiche — ein Arbeitsbereich muss ein Kunde sein, bevor er abgerechnet werden kann.",
+      "alsoAddClientWhen": "„{{name}}“ wird zu Ihren Kunden hinzugefügt, sobald die Rechnung gespeichert ist.",
+      "alsoAddClientNeedsName": "Geben Sie oben einen Kundennamen ein, um dies zu nutzen."
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",
