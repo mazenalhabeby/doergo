@@ -496,11 +496,20 @@ function NewInvoiceInner() {
                 until there is a name, and it says WHEN it will happen so nobody
                 waits for something that has not been asked for yet.
 
-                ⚠️ Never for a client that came FROM the CRM — that would
-                quietly duplicate the record it was read from. And never without
-                `crmCaps`, the server's own answer about who may create one.
+                ⚠️ ONLY when the lines are being entered by hand, because that
+                is the only case where the client is genuinely new to us.
+
+                Picked FROM the CRM: it is already there, and offering to add it
+                would duplicate the record it was read from. Gathered from a
+                WORKSPACE: that customer already exists as a customer workspace,
+                and adding it again makes a second version of one relationship
+                for somebody to keep in step.
+
+                And never without `crmCaps` — the server's own answer about who
+                may create a client — so the offer cannot appear to somebody it
+                would then refuse.
               */}
-              {hasCrm && mayAddClient && source !== "client" && (
+              {hasCrm && mayAddClient && source === "none" && (
                 <label
                   className={cn(
                     "mt-2 flex items-start gap-2.5 rounded-lg border p-2.5 transition-colors",

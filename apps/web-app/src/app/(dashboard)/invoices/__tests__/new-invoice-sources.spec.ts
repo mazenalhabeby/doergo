@@ -127,7 +127,7 @@ describe("the CRM, when there is one", () => {
     */
     const src = code(PAGE)
     // The option's visibility must NOT depend on what has been typed…
-    expect(src).toMatch(/hasCrm && mayAddClient && source !== "client" && \(/)
+    expect(src).toMatch(/hasCrm && mayAddClient && source === "none" && \(/)
     // …only whether it can be acted on.
     expect(src).toMatch(/disabled=\{clientName\.trim\(\)\.length <= 1\}/)
     expect(src).toContain("invoices.create.alsoAddClientNeedsName")
@@ -135,7 +135,7 @@ describe("the CRM, when there is one", () => {
     expect(src).toContain("invoices.create.alsoAddClientWhen")
   })
 
-  it("works from the 'nothing' source, which is where it was asked for", () => {
+  it("is reachable from the 'nothing' source, which is where it was asked for", () => {
     /*
       Entering the lines by hand is precisely when there is no CRM record yet,
       so excluding that source would remove the option from the only case that
@@ -146,7 +146,7 @@ describe("the CRM, when there is one", () => {
       test failing on layout rather than on behaviour.
     */
     const gate = code(PAGE).match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
-    expect(gate).toBe('hasCrm && mayAddClient && source !== "client"')
+    expect(gate).toBe('hasCrm && mayAddClient && source === "none"')
   })
 
   it("offers to keep a hand-typed client — but only where one may be created", () => {
@@ -159,9 +159,17 @@ describe("the CRM, when there is one", () => {
     expect(src).toMatch(/hasCrm && mayAddClient/)
   })
 
-  it("never offers to re-add a client that CAME from the CRM", () => {
-    // That would quietly duplicate the record it was read from.
-    expect(code(PAGE)).toMatch(/mayAddClient && source !== "client"/)
+  it("offers to save the client ONLY when the lines are typed by hand", () => {
+    /*
+      ⚠️ That is the only case where the client is genuinely new to us.
+
+      Picked FROM the CRM: already there, and adding it would duplicate the
+      record it was read from. Gathered from a WORKSPACE: that customer already
+      exists as a customer workspace, and adding it again makes a second version
+      of one relationship for somebody to keep in step.
+    */
+    const gate = code(PAGE).match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
+    expect(gate).toBe('hasCrm && mayAddClient && source === "none"')
   })
 
   it("saves the client after the invoice, and never instead of it", () => {
