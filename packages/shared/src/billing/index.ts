@@ -11,3 +11,4 @@ export * from './module-pricing';
 export * from './usage-pricing';
 export * from './seats';
 export * from './types';
+export * from './rate-ladder';

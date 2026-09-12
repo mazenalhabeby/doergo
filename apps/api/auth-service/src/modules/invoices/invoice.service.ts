@@ -1,6 +1,6 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { paginated } from '@hbcfield/shared';
+import { paginated, snapshotRates, usesTwoRates, cleanRateCents } from '@hbcfield/shared';
 
 @Injectable()
 export class InvoiceService {
@@ -25,6 +25,10 @@ export class InvoiceService {
       unitPrice?: number;
       taskId?: string;
       reportId?: string;
+      /** The rates that applied when this line was drawn up. See below. */
+      billRateCents?: number | null;
+      costRateCents?: number | null;
+      billedHours?: number | null;
     }[];
   }) {
     // When tied to a CUSTOMER space, snapshot its contact details as fallbacks so
@@ -61,6 +65,32 @@ export class InvoiceService {
         amount: quantity * unitPrice,
         taskId: item.taskId,
         reportId: item.reportId,
+        /*
+          ⚠️ THE RATES AS THEY WERE ON THE DAY, written onto the line.
+
+          Not a cache of the ladder — the record of it. The ladder answers "what
+          is this rate now"; an issued invoice has to keep answering "what was
+          it then". Give somebody a raise in June and a paid invoice from March
+          moves the instant anything re-resolves instead of reading these.
+
+          Sent by the caller, which is the screen that showed the biller those
+          exact numbers before they pressed save — so what is filed is what was
+          agreed to, not what the database happens to say a second later.
+        */
+        /*
+          ⚠️ CLEANED, not trusted. These arrive from a browser, are multiplied
+          by hours, and land in an organization's books — an unbounded integer
+          is a way to put an absurd total on an invoice from a form, and a
+          fractional cent is a rounding bug waiting for a large one. Anything
+          unusable becomes null, which reads as "no rate recorded" rather than
+          as a rate of nothing.
+        */
+        billRateCents: cleanRateCents(item.billRateCents),
+        costRateCents: cleanRateCents(item.costRateCents),
+        billedHours:
+          typeof item.billedHours === 'number' && Number.isFinite(item.billedHours) && item.billedHours >= 0
+            ? Math.min(item.billedHours, 100_000)
+            : null,
       };
     });
 
@@ -506,6 +536,7 @@ export class InvoiceService {
             contactEmail: true,
             address: true,
             billableRateCents: true,
+            costRateCents: true,
           },
         })
       : null;
@@ -543,7 +574,7 @@ export class InvoiceService {
 
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
-      select: { billableRateCents: true },
+      select: { billableRateCents: true, costRateCents: true },
     });
     /*
       A client has no rate of its own, so it falls to the organization's. That is
@@ -563,7 +594,12 @@ export class InvoiceService {
         id: true,
         title: true,
         updatedAt: true,
-        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        assignedTo: {
+          select: {
+            id: true, firstName: true, lastName: true,
+            billRateCents: true, costRateCents: true,
+          },
+        },
         serviceReport: {
           select: {
             id: true,
@@ -571,7 +607,12 @@ export class InvoiceService {
             workPerformed: true,
             workDuration: true,
             completedAt: true,
-            completedBy: { select: { id: true, firstName: true, lastName: true } },
+            completedBy: {
+              select: {
+                id: true, firstName: true, lastName: true,
+                billRateCents: true, costRateCents: true,
+              },
+            },
             partsUsed: {
               select: { name: true, partNumber: true, quantity: true, unitCost: true },
             },
@@ -597,6 +638,48 @@ export class InvoiceService {
     const fullName = (u?: { firstName: string | null; lastName: string | null } | null) =>
       u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || null : null;
 
+    /*
+      The top rung: what THIS member was agreed at for THIS client.
+
+      One query for every worker on the job rather than one per line — the
+      alternative is a round trip per task, on a screen that opens with fifty of
+      them. Blank on almost every assignment, because it exists for the
+      exception and not the rule.
+    */
+    const workerIds = Array.from(
+      new Set(
+        tasks
+          .flatMap((t) => [t.serviceReport?.completedBy?.id, t.assignedTo?.id])
+          .filter((id): id is string => !!id),
+      ),
+    );
+    const contractRates = new Map<string, { billRateCents: number | null; costRateCents: number | null }>();
+    if (space && workerIds.length > 0) {
+      const assignments = await this.prisma.spaceAssignment.findMany({
+        where: { spaceId: space.id, userId: { in: workerIds } },
+        select: { userId: true, billRateCents: true, costRateCents: true },
+      });
+      for (const a of assignments) {
+        contractRates.set(a.userId, { billRateCents: a.billRateCents, costRateCents: a.costRateCents });
+      }
+    }
+
+    /*
+      ⚠️ ONE resolver, shared with the screen and the phone. The order of the
+      four levels is written down exactly once, in `resolveRate` — a second copy
+      here would be a second answer to "why is this €40", and the first person
+      to find them disagreeing is looking at an invoice that is already wrong.
+    */
+    const ratesFor = (worker: { billRateCents?: number | null; costRateCents?: number | null; id?: string } | null) =>
+      snapshotRates({
+        contract: worker?.id ? contractRates.get(worker.id) ?? null : null,
+        member: worker ? { billRateCents: worker.billRateCents, costRateCents: worker.costRateCents } : null,
+        client: space
+          ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents }
+          : null,
+        organization: { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
+      });
+
     const workEntries: any[] = [];
     const workerHours = new Map<string, { name: string; hours: number }>();
 
@@ -617,6 +700,17 @@ export class InvoiceService {
         amount: (p.quantity ?? 1) * (p.unitCost ?? 0),
       }));
 
+      /*
+        The rate THIS person is billed at, not one rate for the job.
+
+        ⚠️ A single job rate was the old behaviour, and it is wrong the moment
+        two people with different rates work the same site — which is the normal
+        case for anyone who bills labour at all. `laborAmount` keeps its meaning
+        and stops being a lie.
+      */
+      const resolved = ratesFor(worker);
+      const billRate = resolved.billRateCents != null ? resolved.billRateCents / 100 : rate;
+
       workEntries.push({
         taskId: t.id,
         taskTitle: t.title,
@@ -624,7 +718,9 @@ export class InvoiceService {
         workerId: worker?.id ?? null,
         workerName,
         hours,
-        laborAmount: rate != null ? Math.round(hours * rate * 100) / 100 : 0,
+        billRateCents: resolved.billRateCents,
+        costRateCents: resolved.costRateCents,
+        laborAmount: billRate != null ? Math.round(hours * billRate * 100) / 100 : 0,
         completedAt: report?.completedAt ?? t.updatedAt ?? null,
         notes: report?.workPerformed || report?.summary || null,
         parts,
@@ -652,6 +748,17 @@ export class InvoiceService {
         taskCount: workEntries.length,
         totalHours: Array.from(workerHours.values()).reduce((s, w) => s + w.hours, 0),
         workerSummary: Array.from(workerHours.values()).sort((a, b) => b.hours - a.hours),
+        /*
+          ⚠️ Answered from the DATA, never from a setting. An organization that
+          has never entered a cost rate is a one-rate business and must not be
+          shown a margin column; the day somebody enters one it is worth having.
+          A switch here would be a feature nobody finds.
+        */
+        twoRates: usesTwoRates([
+          { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
+          space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,
+          ...workEntries.map((w: any) => ({ costRateCents: w.costRateCents })),
+        ]),
         workEntries,
       },
     };

@@ -41,6 +41,11 @@ export const PERMISSION_KEYS = [
   // customers and delete assets", so a bookkeeper could not be given the first
   // without the second.
   'canManageInvoices',
+  // What labour COSTS, as opposed to what it is billed at. Split from
+  // canManageInvoices because they are different people: whoever raises an
+  // invoice needs the bill rate and the margin is none of their business,
+  // while an owner reading margin has no reason to issue anything.
+  'canViewLabourCost',
   'canManageAssets',
   // Creating and configuring workspaces — the space itself, its roles, and who
   // outside the organization may see it. Split out of canManageUsers, where
@@ -101,6 +106,7 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'crmCreateClients', label: 'Add clients', description: 'Add a new client — without the power to reassign or delete one', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
   { key: 'canManageInvoices', label: 'Customer invoices', description: 'Open customer invoicing and see what has been billed', domain: 'billing', scopes: ['org'] },
+  { key: 'canViewLabourCost', label: 'Labour cost and margin', description: 'See what an hour costs as well as what it bills at', domain: 'billing', scopes: ['org'] },
   { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] },
   { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] },
   { key: 'canManagePortals', label: 'Manage client portals', description: 'Create and configure the portals customers log in to', domain: 'crm', scopes: ['org'] },

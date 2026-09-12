@@ -14,7 +14,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, stripLabourCost } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -36,6 +36,36 @@ export class InvoicesController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
   ) {}
+
+  /**
+   * Everything leaving this controller passes through here.
+   *
+   * ⚠️ COST IS STRIPPED AT THE BOUNDARY, not hidden by the screen. A field that
+   * reaches the browser has been disclosed whatever the UI chooses to draw, and
+   * this one is the number a client must never see beside their own.
+   *
+   * ⚠️ And `canManageInvoices` does NOT imply it. Raising an invoice is an
+   * office job; what the labour cost the company is a different question asked
+   * by a different person. Bundling them lets the first clerk hired read the
+   * margin on every job — the sort of thing nobody notices until it matters.
+   *
+   * One funnel rather than a check per route: eight routes return invoices, and
+   * the ninth somebody adds is the one that forgets.
+   */
+  private forCaller(result: any, user: CurrentUserData) {
+    const may = (user as any)?.canViewLabourCost === true;
+    if (!result || typeof result !== 'object') return result;
+    /*
+      Three shapes leave here: a list of invoices, one invoice, and the gather
+      result — whose `workEntries` carry the same rates under a different name.
+      All three go through the same strip, which is why it knows both names.
+    */
+    if (Array.isArray(result?.data)) {
+      return { ...result, data: result.data.map((inv: any) => stripLabourCost(inv, may)) };
+    }
+    if (result?.data) return { ...result, data: stripLabourCost(result.data, may) };
+    return stripLabourCost(result, may);
+  }
 
   @Post()
   @Roles(Role.ADMIN)
@@ -59,7 +89,7 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Get()
@@ -111,7 +141,7 @@ export class InvoicesController {
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Get(':id')
@@ -135,7 +165,7 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Patch(':id')
@@ -163,7 +193,7 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Patch(':id/status')
@@ -189,7 +219,7 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Delete(':id')
@@ -213,7 +243,7 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Post(':id/items')
@@ -239,7 +269,7 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 
   @Delete(':id/items/:itemId')
@@ -265,6 +295,6 @@ export class InvoicesController {
       );
     }
 
-    return result;
+    return this.forCaller(result, user);
   }
 }

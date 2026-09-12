@@ -473,6 +473,13 @@ model Organization {
   // default → labor lines start blank for manual entry. A CUSTOMER space may
   // override this via CompanyLocation.billableRateCents.
   billableRateCents Int?
+  /// What an hour COSTS, when the organization works with two rates.
+  ///
+  /// ⚠️ Null is not zero. Null means "inherit / not set" and is what every
+  /// organization starts as; zero is a real rate of nothing. An organization
+  /// with no cost rate anywhere is a ONE-rate business and never sees a margin
+  /// column — the mode is read off the data, never configured.
+  costRateCents     Int?
 
   // Support routing: manual pin to a support team (overrides routing rules). Null
   // = routed by rules / triage. Not a hard cascade — clearing the team keeps orgs.
@@ -697,6 +704,20 @@ model User {
   dateOfBirth DateTime? @db.Date
   role        Role
   isActive    Boolean   @default(true)
+  /// What this person bills and costs per hour, in integer cents.
+  ///
+  /// ⚠️ The natural home for COST — Ahmed costs €20/h wherever he works — while
+  /// the BILL usually lives on the customer workspace, because that is the
+  /// contract. Both are here because either can be person-specific: a senior
+  /// engineer bills more at the same client.
+  ///
+  /// ⚠️ Null means INHERIT, never zero. Zero is a real rate of nothing, and one
+  /// typed into the wrong box bills a client €0 without a word. The ladder that
+  /// reads these is `resolveRate` in packages/shared — four levels, most
+  /// specific wins, and it is the only place the order is written down.
+  billRateCents  Int?
+  costRateCents  Int?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -2153,6 +2174,10 @@ model CompanyLocation {
   // CUSTOMER kind: per-space override of the org's default billable labor rate
   // (integer EUR cents). Null → fall back to Organization.billableRateCents.
   billableRateCents Int?
+  /// CUSTOMER kind: what an hour at this client costs us, if that is a fact
+  /// about the client rather than about the person. Usually null — cost
+  /// normally lives on the member, and the BILL lives here.
+  costRateCents     Int?
   isActive          Boolean   @default(true)
   isDefault         Boolean   @default(false) // The org's default space (holds otherwise-unassigned tasks)
   isRemote          Boolean   @default(false) // The org's "Remote" bucket for WFH clock-ins (no coords, geofence-exempt, hidden from pickers)
@@ -2907,6 +2932,16 @@ model SpaceAssignment {
 
   roleId String?
   role   AccessRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  /// The negotiated rate for THIS member at THIS client — the top rung.
+  ///
+  /// ⚠️ Blank on almost every assignment, and that is correct: it exists for
+  /// the exception, not the rule. A client who agreed €45/h for one named
+  /// engineer sets it here rather than forking that engineer's record.
+  ///
+  /// Null inherits; zero does not.
+  billRateCents Int?
+  costRateCents Int?
 
   isPrimary Boolean  @default(false)
   schedule  String[] @default([]) // Work days: ["MON","TUE",...]
@@ -3835,6 +3870,21 @@ model InvoiceItem {
   createdAt DateTime @default(now())
 
   @@index([invoiceId])
+  /// The rates that applied ON THE DAY this line was issued.
+  ///
+  /// ⚠️ NOT a cache of the ladder — the record of it. The ladder answers "what
+  /// is the rate now"; a paid invoice has to keep answering "what was it then".
+  /// Give somebody a raise in June and a March invoice moves the instant a
+  /// screen re-resolves instead of reading these.
+  ///
+  /// ⚠️ `costRateCents` is INTERNAL. It never reaches the PDF, the client
+  /// portal or any response a customer can read — a client seeing your €20
+  /// beside their €40 is a contract problem. Gated on `canViewLabourCost`.
+  billRateCents Int?
+  costRateCents Int?
+  /// Hours this line was billed for, when it came from tracked work.
+  billedHours   Float?
+
   @@map("invoice_items")
 }
 
