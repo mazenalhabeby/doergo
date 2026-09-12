@@ -2251,11 +2251,12 @@
       "allowancePlaceholder": "Valore predefinito dell’organizzazione",
       "allowanceHint": "Lascia vuoto per usare il valore dell’organizzazione. Inserisci 0 se non ha ferie retribuite.",
       "dateOfBirth": "Data di nascita",
-      "billRateLabel": "Fatturato (all’ora)",
+      "billRateLabel": "Fatturato (all’ora) — eccezione",
       "costRateLabel": "Ci costa (all’ora)",
       "ratePlaceholder": "Vuoto = eredita",
-      "billRateHint": "Vuoto eredita la tariffa del cliente, poi quella dell’organizzazione. Di norma vuoto.",
-      "costRateHint": "Quanto costa questa persona all’ora. Compilarne uno attiva il margine."
+      "billRateHint": "Solo se QUESTA persona viene fatturata diversamente. Vuoto usa la tariffa del contratto cliente — di norma vuoto.",
+      "costRateHint": "Quanto ci costa questa persona all’ora. È la tariffa che appartiene a una persona.",
+      "costRateHidden": "Il costo orario è nascosto: richiede il permesso «Costo del lavoro e margine»."
     },
     "detail": {
       "backToTeam": "Torna al team",

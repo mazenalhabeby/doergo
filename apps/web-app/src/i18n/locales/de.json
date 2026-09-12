@@ -2257,11 +2257,12 @@
       "allowancePlaceholder": "Standard der Organisation",
       "allowanceHint": "Leer lassen für den Standard der Organisation. 0 bedeutet kein bezahlter Urlaub.",
       "dateOfBirth": "Geburtsdatum",
-      "billRateLabel": "Verrechnet (pro Stunde)",
+      "billRateLabel": "Verrechnet (pro Stunde) — Ausnahme",
       "costRateLabel": "Kostet uns (pro Stunde)",
       "ratePlaceholder": "Leer = erben",
-      "billRateHint": "Leer übernimmt den Kundensatz, danach den der Organisation. Meist leer.",
-      "costRateHint": "Was diese Person pro Stunde kostet. Ein Wert irgendwo aktiviert die Marge."
+      "billRateHint": "Nur wenn DIESE Person abweichend verrechnet wird. Leer nimmt den Vertragssatz des Kunden — meist leer.",
+      "costRateHint": "Was diese Person uns pro Stunde kostet. Das ist der Satz, der zu einer Person gehört.",
+      "costRateHidden": "Der Stundensatz ist ausgeblendet — dafür wird die Berechtigung „Lohnkosten und Marge“ benötigt."
     },
     "detail": {
       "backToTeam": "Zurück zum Team",

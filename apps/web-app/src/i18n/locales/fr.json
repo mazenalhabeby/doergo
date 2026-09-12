@@ -2251,11 +2251,12 @@
       "allowancePlaceholder": "Valeur par défaut de l’organisation",
       "allowanceHint": "Laissez vide pour utiliser la valeur de l’organisation. Saisissez 0 pour aucun congé payé.",
       "dateOfBirth": "Date de naissance",
-      "billRateLabel": "Facturé (par heure)",
+      "billRateLabel": "Facturé (par heure) — exception",
       "costRateLabel": "Nous coûte (par heure)",
       "ratePlaceholder": "Vide = hériter",
-      "billRateHint": "Vide hérite du tarif du client, puis de celui de l’organisation. Généralement vide.",
-      "costRateHint": "Ce que cette personne coûte par heure. En saisir un active la marge."
+      "billRateHint": "Uniquement si CETTE personne est facturée différemment. Vide utilise le tarif du contrat client — généralement vide.",
+      "costRateHint": "Ce que cette personne nous coûte par heure. C’est le tarif qui appartient à une personne.",
+      "costRateHidden": "Le coût horaire est masqué — il requiert l’autorisation « Coût de main-d’œuvre et marge »."
     },
     "detail": {
       "backToTeam": "Retour à l'équipe",

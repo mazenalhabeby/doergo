@@ -122,6 +122,21 @@ function orgPermissionFields(
     */
     canManageInvoices:
       accessAllows(access, 'canManageInvoices') || accessAllows(access, 'canViewAllTasks'),
+    /*
+      What labour COSTS, as opposed to what it bills at.
+
+      ⚠️ Deliberately NOT bridged to `canManageInvoices`. Raising an invoice is
+      an office job — build it, send it, chase it — and the margin is a
+      different question asked by a different person. Bundling them lets the
+      first bookkeeper hired read the company's margin on every job.
+
+      Bridged to `canManageUsers` instead, which is the grant that already
+      carries employment terms: whoever sets somebody's start date and holiday
+      entitlement is the person who may reasonably know what their hour costs.
+      That also means an owner has it on day one without hunting for a switch.
+    */
+    canViewLabourCost:
+      accessAllows(access, 'canViewLabourCost') || accessAllows(access, 'canManageUsers'),
     canManageAssets:
       accessAllows(access, 'canManageAssets') || accessAllows(access, 'canManageUsers'),
     canManageWorkspaces:

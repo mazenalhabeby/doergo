@@ -2257,11 +2257,12 @@
       "allowancePlaceholder": "Organization default",
       "allowanceHint": "Leave blank to use the organization's default. Enter 0 for no paid vacation.",
       "dateOfBirth": "Date of birth",
-      "billRateLabel": "Bills at (per hour)",
+      "billRateLabel": "Bills at (per hour) — override",
       "costRateLabel": "Costs us (per hour)",
       "ratePlaceholder": "Leave blank to inherit",
-      "billRateHint": "Blank inherits the client’s rate, then the organisation’s. Usually blank.",
-      "costRateHint": "What this person costs per hour. Setting one anywhere turns on margin."
+      "billRateHint": "Only if THIS person bills differently. Blank uses the client’s contract rate — usually blank.",
+      "costRateHint": "What this person costs us per hour. This is the rate that belongs to a person.",
+      "costRateHidden": "The hourly cost is hidden — it needs the “Labour cost and margin” permission."
     },
     "detail": {
       "backToTeam": "Back to Team",

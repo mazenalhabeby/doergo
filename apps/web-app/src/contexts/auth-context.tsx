@@ -49,6 +49,8 @@ export interface User {
   canManageWorkspaces?: boolean;
   canManageRota?: boolean;
   canManageInvoices?: boolean;
+  /** What labour COSTS, as opposed to what it bills at. */
+  canViewLabourCost?: boolean;
   canManageAssets?: boolean;
   canManagePortals?: boolean;
   canManageTaskTypes?: boolean;

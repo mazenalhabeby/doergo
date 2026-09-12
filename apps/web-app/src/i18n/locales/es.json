@@ -2251,11 +2251,12 @@
       "allowancePlaceholder": "Valor por defecto de la organización",
       "allowanceHint": "Déjelo en blanco para usar el valor de la organización. Introduzca 0 si no tiene vacaciones pagadas.",
       "dateOfBirth": "Fecha de nacimiento",
-      "billRateLabel": "Factura a (por hora)",
+      "billRateLabel": "Factura a (por hora) — excepción",
       "costRateLabel": "Nos cuesta (por hora)",
       "ratePlaceholder": "En blanco = heredar",
-      "billRateHint": "En blanco hereda la tarifa del cliente y luego la de la organización. Normalmente vacío.",
-      "costRateHint": "Lo que cuesta esta persona por hora. Rellenar uno activa el margen."
+      "billRateHint": "Solo si ESTA persona se factura distinto. En blanco usa la tarifa del contrato del cliente: normalmente vacío.",
+      "costRateHint": "Lo que esta persona nos cuesta por hora. Esta es la tarifa que pertenece a una persona.",
+      "costRateHidden": "El coste por hora está oculto: requiere el permiso «Coste de mano de obra y margen»."
     },
     "detail": {
       "backToTeam": "Volver a Equipo",

@@ -164,6 +164,8 @@ export interface User extends BaseEntity {
   canManageWorkspaces?: boolean;
   canManageRota?: boolean;
   canManageInvoices?: boolean;
+  /** What labour COSTS, as opposed to what it bills at. See the ladder in billing/. */
+  canViewLabourCost?: boolean;
   canManageAssets?: boolean;
   canViewReports?: boolean;
   // Technician-specific fields

@@ -61,8 +61,25 @@ describe("the member editor", () => {
     expect(src()).toContain("members.memberEditor.billRateLabel")
   })
 
-  it("gates the cost rate on the permission", () => {
-    expect(src()).toMatch(/canViewLabourCost && \([\s\S]{0,400}costRateLabel/)
+  it("gates the cost rate on the permission, and says so when it is hidden", () => {
+    /*
+      ⚠️ Reported: "why is 'Bills at' on the member — shouldn't it be what they
+      cost me?" Correct instinct, and the screen was showing the wrong half:
+      the cost field was gated on a permission NOBODY held (it was never wired
+      into the session), so the only rate visible on a person was the exception.
+
+      An absence explains nothing. Hidden now says it is hidden.
+    */
+    const s = src()
+    expect(s).toMatch(/canViewLabourCost \?[\s\S]{0,500}costRateLabel/)
+    expect(s).toContain("members.memberEditor.costRateHidden")
+  })
+
+  it("puts COST first, because that is the rate that belongs to a person", () => {
+    // Ahmed costs €20 wherever he works; what the client pays is a fact about
+    // the contract and lives on the customer workspace.
+    const s = src()
+    expect(s.indexOf("costRateLabel")).toBeLessThan(s.indexOf("billRateLabel"))
   })
 
   it("sends null for a blank field, never zero", () => {
@@ -89,7 +106,7 @@ describe("every new string is translated", () => {
     const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
     const missingInvoice = ["marginTitle", "billed", "labourCost", "margin", "marginHint"]
       .filter((k) => typeof d.invoices?.create?.[k] !== "string")
-    const missingMember = ["billRateLabel", "costRateLabel", "ratePlaceholder", "billRateHint", "costRateHint"]
+    const missingMember = ["billRateLabel", "costRateLabel", "ratePlaceholder", "billRateHint", "costRateHint", "costRateHidden"]
       .filter((k) => typeof d.members?.memberEditor?.[k] !== "string")
     expect({ lang, missingInvoice, missingMember })
       .toEqual({ lang, missingInvoice: [], missingMember: [] })

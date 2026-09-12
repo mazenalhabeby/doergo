@@ -602,29 +602,21 @@ export function EditMemberDialog({
             )}
 
             {/*
-              Their hourly rates.
+              Their hourly rates — COST FIRST, and that order is the point.
 
-              ⚠️ Shown to anyone who may edit a member — the BILL rate is not
-              sensitive, it is what the work is worth. The COST field is the one
-              that is, and it is gated on `canViewLabourCost` below: an office
-              manager who edits members has no reason to learn the company's
-              margin on every person.
+              ⚠️ The bill rate led here at first and it read as "what this
+              person charges", which is not what a member record is for. What
+              belongs to a PERSON is what they cost you: Ahmed costs €20 an hour
+              wherever he works. What the client pays is a fact about the
+              CONTRACT and lives on the customer workspace — which is why the
+              bill field below is usually blank and says so.
+
+              The cost field is gated on `canViewLabourCost`; the bill field is
+              not. What the work is worth is not a secret, and learning what the
+              company PAYS for that hour should not be a side effect of being
+              allowed to fix somebody's job title.
             */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("members.memberEditor.billRateLabel")}
-              </Label>
-              <Input
-                type="number" min={0} step="0.01" inputMode="decimal"
-                value={billRate}
-                onChange={(e) => setBillRate(e.target.value)}
-                placeholder={t("members.memberEditor.ratePlaceholder")}
-                className="h-9"
-              />
-              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.billRateHint")}</p>
-            </div>
-
-            {canViewLabourCost && (
+            {canViewLabourCost ? (
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">
                   {t("members.memberEditor.costRateLabel")}
@@ -638,8 +630,33 @@ export function EditMemberDialog({
                 />
                 <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.costRateHint")}</p>
               </div>
+            ) : (
+              /*
+                ⚠️ Say it is hidden rather than simply omitting it. A person who
+                expects a cost field and finds only a bill rate concludes the
+                product has it the wrong way round — which is exactly what was
+                reported. An absence explains nothing; this does.
+              */
+              <p className="text-[11px] text-muted-foreground">
+                {t("members.memberEditor.costRateHidden")}
+              </p>
             )}
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("members.memberEditor.billRateLabel")}
+              </Label>
+              <Input
+                type="number" min={0} step="0.01" inputMode="decimal"
+                value={billRate}
+                onChange={(e) => setBillRate(e.target.value)}
+                placeholder={t("members.memberEditor.ratePlaceholder")}
+                className="h-9"
+              />
+              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.billRateHint")}</p>
+            </div>
           </div>
+
 
           {/* A schedule is the hours WE expect. Theirs are their own employer's
               business, and a rota line for somebody who never appears raises
