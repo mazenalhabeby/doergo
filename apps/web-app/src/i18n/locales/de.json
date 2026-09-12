@@ -4236,7 +4236,8 @@
       "send": "Als gesendet markieren",
       "markPaid": "Als bezahlt markieren",
       "print": "Drucken",
-      "pdf": "PDF"
+      "pdf": "PDF",
+      "cancelInvoice": "Rechnung stornieren"
     },
     "toast": {
       "statusUpdated": "Rechnungsstatus aktualisiert",
@@ -4249,7 +4250,14 @@
     "emptyForSpaceHint": "Erstellen Sie eine oder übernehmen Sie abgeschlossene Arbeiten in einen Entwurf.",
     "detail": {
       "billTo": "Rechnungsempfänger",
-      "noItems": "Keine Positionen"
+      "noItems": "Keine Positionen",
+      "amountPaid": "Bezahlter Betrag",
+      "paidOn": "Bezahlt am {{date}}",
+      "overdueBy_one": "{{count}} Tag überfällig",
+      "overdueBy_other": "{{count}} Tage überfällig",
+      "dueToday": "Heute fällig",
+      "dueIn_one": "Fällig in {{count}} Tag",
+      "dueIn_other": "Fällig in {{count}} Tagen"
     },
     "create": {
       "title": "Neue Rechnung",
@@ -4361,7 +4369,8 @@
       "periodAllHint": "Alle noch nicht abgerechneten Arbeiten.",
       "servicePeriod": "Leistungszeitraum",
       "periodFromOnly": "Ab {{from}}",
-      "periodToOnly": "Bis {{to}}"
+      "periodToOnly": "Bis {{to}}",
+      "onReceipt": "Sofort fällig"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

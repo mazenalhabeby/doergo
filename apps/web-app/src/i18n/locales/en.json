@@ -4236,7 +4236,8 @@
       "send": "Mark as sent",
       "markPaid": "Mark Paid",
       "print": "Print",
-      "pdf": "PDF"
+      "pdf": "PDF",
+      "cancelInvoice": "Cancel invoice"
     },
     "toast": {
       "statusUpdated": "Invoice status updated",
@@ -4249,7 +4250,14 @@
     "emptyForSpaceHint": "Create one, or pull completed work into a draft.",
     "detail": {
       "billTo": "Bill to",
-      "noItems": "No line items"
+      "noItems": "No line items",
+      "amountPaid": "Amount paid",
+      "paidOn": "Paid on {{date}}",
+      "overdueBy_one": "{{count}} day overdue",
+      "overdueBy_other": "{{count}} days overdue",
+      "dueToday": "Due today",
+      "dueIn_one": "Due in {{count}} day",
+      "dueIn_other": "Due in {{count}} days"
     },
     "create": {
       "title": "New Invoice",
@@ -4361,7 +4369,8 @@
       "periodAllHint": "All work that has not been invoiced yet.",
       "servicePeriod": "Service period",
       "periodFromOnly": "From {{from}}",
-      "periodToOnly": "Up to {{to}}"
+      "periodToOnly": "Up to {{to}}",
+      "onReceipt": "On receipt"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

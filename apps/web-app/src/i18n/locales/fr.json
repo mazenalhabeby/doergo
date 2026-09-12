@@ -4245,7 +4245,8 @@
       "send": "Marquer comme envoyée",
       "markPaid": "Marquer comme payée",
       "print": "Imprimer",
-      "pdf": "PDF"
+      "pdf": "PDF",
+      "cancelInvoice": "Annuler la facture"
     },
     "toast": {
       "statusUpdated": "Statut de la facture mis à jour",
@@ -4258,7 +4259,14 @@
     "emptyForSpaceHint": "Créez-en une ou intégrez le travail terminé dans un brouillon.",
     "detail": {
       "billTo": "Facturer à",
-      "noItems": "Aucune ligne"
+      "noItems": "Aucune ligne",
+      "amountPaid": "Montant payé",
+      "paidOn": "Payée le {{date}}",
+      "overdueBy_one": "{{count}} jour de retard",
+      "overdueBy_other": "{{count}} jours de retard",
+      "dueToday": "Échéance aujourd'hui",
+      "dueIn_one": "Échéance dans {{count}} jour",
+      "dueIn_other": "Échéance dans {{count}} jours"
     },
     "create": {
       "title": "Nouvelle facture",
@@ -4370,7 +4378,8 @@
       "periodAllHint": "Tous les travaux qui ne sont pas encore facturés.",
       "servicePeriod": "Période de prestation",
       "periodFromOnly": "À partir du {{from}}",
-      "periodToOnly": "Jusqu'au {{to}}"
+      "periodToOnly": "Jusqu'au {{to}}",
+      "onReceipt": "À réception"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

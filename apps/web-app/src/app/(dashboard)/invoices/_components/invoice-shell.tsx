@@ -52,8 +52,14 @@ export function InvoiceTopBar({
   title: string
   /** Who it is for, or the invoice number — whichever identifies this one. */
   subtitle?: string
-  /** The state chip. Hidden below `sm`, where the title needs the room. */
-  status?: string
+  /**
+   * The state chip. Hidden below `sm`, where the title needs the room.
+   *
+   * ⚠️ The caller brings its own colour. A draft and an overdue invoice are the
+   * same control and must not read the same: an amber chip on a document that
+   * is four months late says "in progress", which is the opposite of true.
+   */
+  status?: { label: string; className?: string }
   onBack: () => void
   /** The actions. Right-aligned; the committing one goes last. */
   children?: ReactNode
@@ -72,8 +78,14 @@ export function InvoiceTopBar({
         </div>
         <span className="flex-1" />
         {status && (
-          <span className="hidden rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 sm:inline">
-            {status}
+          <span
+            className={cn(
+              "hidden rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] sm:inline",
+              status.className ??
+                "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+            )}
+          >
+            {status.label}
           </span>
         )}
         {children}

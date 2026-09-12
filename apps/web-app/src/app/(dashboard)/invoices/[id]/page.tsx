@@ -5,7 +5,7 @@ import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Download, Printer, FileCheck, CheckCircle, XCircle, Trash2, Pencil, Loader2 } from "lucide-react"
+import { Download, Printer, FileCheck, CheckCircle, XCircle, Trash2, Pencil, Loader2, MoreHorizontal } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
@@ -24,7 +24,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { exportInvoicePdf, renderInvoicePdfUrl, type InvoicePdfData, type InvoiceBranding } from "@/lib/invoice-pdf"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { formatMoney } from "@/lib/money"
+import { InvoiceTopBar } from "../_components/invoice-shell"
+import { InvoiceDocument } from "../_components/invoice-document"
+import { daysOverdue } from "../_lib/aging"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400" },
@@ -142,158 +149,211 @@ function InvoiceDetailInner({ id }: { id: string }) {
   }
 
   if (isLoading) {
-    return <div className="p-8 max-w-3xl mx-auto"><Skeleton className="h-96 w-full rounded-2xl" /></div>
+    return (
+      <div className={cn(PAGE_WIDTH, "py-6")}>
+        <div className="mx-auto w-full max-w-[820px] space-y-5">
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-[32rem] w-full rounded-2xl" />
+        </div>
+      </div>
+    )
   }
   if (!inv) {
-    return <div className="p-8 max-w-3xl mx-auto text-center text-sm text-muted-foreground">{t("invoices.notFound")}</div>
+    return (
+      <div className={cn(PAGE_WIDTH, "py-16 text-center text-sm text-muted-foreground")}>
+        {t("invoices.notFound")}
+      </div>
+    )
   }
 
-  const status = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
+  const style = STATUS_STYLES[inv.status] || STATUS_STYLES.DRAFT!
+  const statusLabel = t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)
+
+  /*
+    WHAT A PERSON OPENED THIS PAGE TO KNOW.
+
+    ⚠️ The total used to be the last line of a table at the bottom of the sheet,
+    and the state was a 10px chip beside the number. So the two questions an
+    invoice is opened for — how much, and where does it stand — were the two
+    hardest things on the page to find. The document is still the document; this
+    says the answer above it.
+  */
+  const late = daysOverdue(inv.dueDate)
+  const settled = inv.status === "PAID"
+  // Cancelled: no longer owed and no longer chased. REFUNDED has a style in
+  // the map but is not in `InvoiceStatus` — the map predates the union.
+  const dead = inv.status === "CANCELED"
+  const overdue = !settled && !dead && late !== null && late > 0
+
+  const standing = settled
+    ? { text: t("invoices.detail.paidOn", { date: fmtDate(inv.paidAt) }), tone: "text-green-700 dark:text-green-400" }
+    : dead
+      ? { text: statusLabel, tone: "text-muted-foreground" }
+      : overdue
+        ? { text: t("invoices.detail.overdueBy", { count: late! }), tone: "text-red-600 dark:text-red-400" }
+        : inv.dueDate
+          ? {
+              text: late === 0
+                ? t("invoices.detail.dueToday")
+                : t("invoices.detail.dueIn", { count: Math.abs(late ?? 0) }),
+              tone: "text-muted-foreground",
+            }
+          : { text: t("invoices.create.onReceipt"), tone: "text-muted-foreground" }
+
+  const periodLabel = inv.servicePeriodFrom && inv.servicePeriodTo
+    ? `${fmtDate(inv.servicePeriodFrom)} – ${fmtDate(inv.servicePeriodTo)}`
+    : inv.servicePeriodFrom
+      ? t("invoices.create.periodFromOnly", { from: fmtDate(inv.servicePeriodFrom) })
+      : inv.servicePeriodTo
+        ? t("invoices.create.periodToOnly", { to: fmtDate(inv.servicePeriodTo) })
+        : ""
+
+  const canEdit = isAdmin && inv.status === "DRAFT"
+  const canCancel = isAdmin && (inv.status === "SENT" || inv.status === "OVERDUE")
 
   return (
     <div className="min-h-full bg-background">
-      <div className="p-8 max-w-3xl mx-auto">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => router.back()}>
-              <ArrowLeft className="size-4" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold font-mono text-foreground">{inv.invoiceNumber}</h1>
-                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", status.bg, status.text)}>
-                  {t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">{inv.clientName}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={print}>
-              <Printer className="size-3.5" /> {t("invoices.actions.print")}
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={download}>
-              {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />} {t("invoices.actions.pdf")}
-            </Button>
-            {isAdmin && inv.status === "DRAFT" && (
-              <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("SENT")}>
-                <FileCheck className="size-3.5" /> {t("invoices.actions.send")}
-              </Button>
-            )}
-            {isAdmin && (inv.status === "SENT" || inv.status === "OVERDUE") && (
-              <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("PAID")}>
-                <CheckCircle className="size-3.5" /> {t("invoices.actions.markPaid")}
-              </Button>
-            )}
-          </div>
-        </div>
+      <InvoiceTopBar
+        title={inv.invoiceNumber}
+        subtitle={inv.clientName}
+        status={{ label: statusLabel, className: cn(style.bg, style.text) }}
+        onBack={() => router.back()}
+      >
+        <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={print}>
+          <Printer className="size-3.5" />
+          <span className="hidden sm:inline">{t("invoices.actions.print")}</span>
+        </Button>
+        <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={download}>
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+          <span className="hidden sm:inline">{t("invoices.actions.pdf")}</span>
+        </Button>
 
-        {/* Invoice preview */}
-        <div className="bg-card rounded-2xl border border-border p-8">
-          {/* Letterhead */}
-          <div className="flex items-start justify-between mb-8">
-            <div>
-              {branding.logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={branding.logoUrl} alt="" className="h-10 mb-2 object-contain" />
+        {/*
+          ⚠️ ONE primary action, decided by where the invoice stands. A draft is
+          sent; a sent invoice is paid. Showing both at once would ask somebody
+          to work out which one this invoice is up to.
+        */}
+        {isAdmin && inv.status === "DRAFT" && (
+          <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("SENT")}>
+            <FileCheck className="size-3.5" /> {t("invoices.actions.send")}
+          </Button>
+        )}
+        {isAdmin && (inv.status === "SENT" || inv.status === "OVERDUE") && (
+          <Button size="sm" className="gap-1.5" onClick={() => statusMutation.mutate("PAID")}>
+            <CheckCircle className="size-3.5" /> {t("invoices.actions.markPaid")}
+          </Button>
+        )}
+
+        {/*
+          ⚠️ Edit, cancel and delete used to float under the sheet in a bare row
+          with no container — three ghost buttons adrift at the bottom of the
+          page, two of them destructive and one of them red next to "Edit".
+          They belong with the other actions, and behind one more click.
+        */}
+        {(canEdit || canCancel) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="size-8 shrink-0" aria-label={t("common.more", "More")}>
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canEdit && (
+                <DropdownMenuItem onClick={() => router.push(`/invoices/${id}/edit`)}>
+                  <Pencil className="mr-2 size-3.5" /> {t("common.edit", "Edit")}
+                </DropdownMenuItem>
               )}
-              <p className="text-lg font-semibold text-foreground">{branding.name || "—"}</p>
-              {branding.vatId && <p className="text-xs text-muted-foreground">VAT / UID: {branding.vatId}</p>}
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-brand-600">{t("invoices.create.title").toUpperCase()}</p>
-              <p className="text-sm font-mono text-foreground mt-1">{inv.invoiceNumber}</p>
-            </div>
-          </div>
+              {canCancel && (
+                <DropdownMenuItem className="text-red-600" onClick={() => statusMutation.mutate("CANCELED")}>
+                  <XCircle className="mr-2 size-3.5" /> {t("invoices.actions.cancelInvoice", "Cancel invoice")}
+                </DropdownMenuItem>
+              )}
+              {canEdit && (
+                <DropdownMenuItem className="text-red-600" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="mr-2 size-3.5" /> {t("common.delete")}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </InvoiceTopBar>
 
-          {/* Bill to + dates */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div>
-              <p className="text-[11px] font-semibold text-brand-600 uppercase tracking-wider mb-1">{t("invoices.detail.billTo")}</p>
-              <p className="text-sm font-medium text-foreground">{inv.clientName}</p>
-              {inv.clientAddress && <p className="text-xs text-muted-foreground whitespace-pre-line">{inv.clientAddress}</p>}
-              {inv.clientEmail && <p className="text-xs text-muted-foreground">{inv.clientEmail}</p>}
+      <div className={cn(PAGE_WIDTH, "py-6")}>
+        <div className="mx-auto w-full max-w-[820px] space-y-5">
+          {/* ── The answer, above the document ─────────────────────────── */}
+          <div className="flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4 sm:px-6">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {settled ? t("invoices.detail.amountPaid") : t("invoices.create.amountDue")}
+              </p>
+              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+                {money(inv.total, inv.currency)}
+              </p>
+              <p className={cn("mt-1 text-xs", standing.tone)}>{standing.text}</p>
             </div>
-            <div className="text-right space-y-1">
-              <div className="flex justify-between"><span className="text-xs text-muted-foreground">{t("invoices.create.issueDate")}</span><span className="text-xs font-medium">{fmtDate(inv.issueDate)}</span></div>
-              <div className="flex justify-between"><span className="text-xs text-muted-foreground">{t("invoices.create.dueDate")}</span><span className="text-xs font-medium">{fmtDate(inv.dueDate)}</span></div>
-              {(inv.servicePeriodFrom || inv.servicePeriodTo) && (
-                <div className="flex justify-between gap-4">
-                  <span className="text-xs text-muted-foreground">{t("invoices.create.servicePeriod")}</span>
-                  <span className="text-xs font-medium">
-                    {inv.servicePeriodFrom && inv.servicePeriodTo
-                      ? `${fmtDate(inv.servicePeriodFrom)} – ${fmtDate(inv.servicePeriodTo)}`
-                      : inv.servicePeriodFrom
-                        ? t("invoices.create.periodFromOnly", { from: fmtDate(inv.servicePeriodFrom) })
-                        : t("invoices.create.periodToOnly", { to: fmtDate(inv.servicePeriodTo) })}
-                  </span>
+
+            <dl className="grid gap-1 text-right text-xs">
+              <div className="flex justify-between gap-6">
+                <dt className="text-muted-foreground">{t("invoices.create.issueDate")}</dt>
+                <dd className="tabular-nums">{fmtDate(inv.issueDate)}</dd>
+              </div>
+              <div className="flex justify-between gap-6">
+                <dt className="text-muted-foreground">{t("invoices.create.dueDate")}</dt>
+                <dd className="tabular-nums">
+                  {inv.dueDate ? fmtDate(inv.dueDate) : t("invoices.create.onReceipt")}
+                </dd>
+              </div>
+              {periodLabel && (
+                <div className="flex justify-between gap-6">
+                  <dt className="text-muted-foreground">{t("invoices.create.servicePeriod")}</dt>
+                  <dd className="tabular-nums">{periodLabel}</dd>
                 </div>
               )}
-              {inv.paidAt && <div className="flex justify-between"><span className="text-xs text-muted-foreground">{t("invoices.statuses.paid")}</span><span className="text-xs font-medium">{fmtDate(inv.paidAt)}</span></div>}
-            </div>
+            </dl>
           </div>
 
-          {/* Items */}
-          <div className="rounded-xl border border-border overflow-hidden mb-6">
-            <div className="grid grid-cols-[1fr_70px_100px_100px] gap-2 px-4 py-2 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              <div>{t("invoices.columns.description")}</div>
-              <div className="text-right">{t("invoices.create.qty")}</div>
-              <div className="text-right">{t("invoices.create.unitPrice")}</div>
-              <div className="text-right">{t("invoices.columns.amount")}</div>
-            </div>
-            {(inv.items || []).map((it) => (
-              <div key={it.id} className="grid grid-cols-[1fr_70px_100px_100px] gap-2 px-4 py-2 border-t border-border/20 text-sm items-center">
-                <div className="text-foreground">{it.description}</div>
-                <div className="text-right tabular-nums text-muted-foreground">{it.quantity}</div>
-                <div className="text-right tabular-nums text-muted-foreground">{money(it.unitPrice, inv.currency)}</div>
-                <div className="text-right tabular-nums font-medium">{money(it.amount, inv.currency)}</div>
-              </div>
-            ))}
-            {(!inv.items || inv.items.length === 0) && (
-              <div className="px-4 py-6 text-center text-xs text-muted-foreground border-t border-border/20">{t("invoices.detail.noItems")}</div>
-            )}
-          </div>
+          {/*
+            THE DOCUMENT — the same one the create and edit screens render.
 
-          {/* Totals */}
-          <div className="flex justify-end">
-            <div className="w-full max-w-xs space-y-1.5">
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("invoices.create.subtotal")}</span><span className="tabular-nums">{money(inv.subtotal, inv.currency)}</span></div>
-              {inv.discount > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("invoices.create.discount")}</span><span className="tabular-nums">- {money(inv.discount, inv.currency)}</span></div>}
-              {inv.taxRate ? <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("invoices.create.tax")} ({Math.round((inv.taxRate || 0) * 100)}%)</span><span className="tabular-nums">{money(inv.taxAmount, inv.currency)}</span></div> : null}
-              <div className="flex justify-between text-base font-semibold pt-2 border-t border-border"><span>{t("invoices.create.total")}</span><span className="tabular-nums">{money(inv.total, inv.currency)}</span></div>
-            </div>
-          </div>
+            ⚠️ This page used to draw a THIRD version of it, and a poorer one:
+            no payment block, no company address, its own table markup, and a
+            letterhead reading "NEW INVOICE" because it uppercased the page
+            title. Somebody printed that. A document a customer receives cannot
+            have three implementations.
 
-          {inv.notes && (
-            <div className="mt-8 pt-4 border-t border-border">
-              <p className="text-[11px] font-semibold text-brand-600 uppercase tracking-wider mb-1">{t("invoices.create.notes")}</p>
-              <p className="text-xs text-muted-foreground whitespace-pre-line">{inv.notes}</p>
-            </div>
-          )}
+            ⚠️ `frames="client"` — the working view is a BUILDING aid. An issued
+            invoice has one true form, and offering a second rendering of it
+            invites the question of which one the client got.
+          */}
+          <InvoiceDocument
+            view="client"
+            onView={() => {}}
+            frames="client"
+            clientName={inv.clientName}
+            clientEmail={inv.clientEmail ?? ""}
+            clientAddress={inv.clientAddress ?? ""}
+            issueDate={inv.issueDate}
+            dueDate={inv.dueDate ?? undefined}
+            periodLabel={periodLabel}
+            currency={inv.currency}
+            taxPct={inv.taxRate ? String(Math.round(inv.taxRate * 100)) : ""}
+            discount={String(inv.discount ?? 0)}
+            notes={inv.notes ?? ""}
+            items={(inv.items ?? []).map((i) => ({
+              description: i.description,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+            }))}
+            subtotal={inv.subtotal}
+            taxAmount={inv.taxAmount}
+            total={inv.total}
+            invoiceNumber={inv.invoiceNumber}
+            org={org}
+            logoUrl={branding.logoUrl}
+          />
         </div>
-
-        {/* Danger / secondary actions */}
-        {isAdmin && (
-          <div className="flex justify-end gap-2 mt-4">
-            {(inv.status === "SENT" || inv.status === "OVERDUE") && (
-              <Button variant="ghost" size="sm" className="text-red-600 gap-1.5" onClick={() => statusMutation.mutate("CANCELED")}>
-                <XCircle className="size-3.5" /> {t("common.cancel")}
-              </Button>
-            )}
-            {inv.status === "DRAFT" && (
-              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.push(`/invoices/${id}/edit`)}>
-                <Pencil className="size-3.5" /> {t("common.edit", "Edit")}
-              </Button>
-            )}
-            {inv.status === "DRAFT" && (
-              <Button variant="ghost" size="sm" className="text-red-600 gap-1.5" disabled={deleteMutation.isPending} onClick={() => setConfirmDelete(true)}>
-                <Trash2 className="size-3.5" /> {t("common.delete")}
-              </Button>
-            )}
-          </div>
-        )}
       </div>
+
 
       {/* ── Delete confirmation ─────────────────────────────────────────── */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

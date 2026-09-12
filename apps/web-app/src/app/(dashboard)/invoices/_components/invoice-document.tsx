@@ -63,6 +63,15 @@ export function fmtDate(d?: string | null) {
 export interface InvoiceDocumentProps {
   view: DocumentView
   onView: (view: DocumentView) => void
+  /**
+   * Which frames this screen offers.
+   *
+   * ⚠️ `client` alone for an invoice that has already been issued. The working
+   * view is a BUILDING aid — it answers "are these the right lines"; a document
+   * that exists has one true form, and offering a second rendering of it
+   * invites the question of which one the client got.
+   */
+  frames?: "both" | "client"
 
   clientName: string
   clientEmail?: string
@@ -85,6 +94,8 @@ export interface InvoiceDocumentProps {
   /** The number, once it exists. A draft being created has none yet. */
   invoiceNumber?: string | null
   org?: OrganizationProfile
+  /** The real letterhead, where the organisation has uploaded one. */
+  logoUrl?: string | null
 }
 
 /** The toggle — one document, two frames. */
@@ -119,17 +130,18 @@ function ViewToggle({ view, onView }: { view: DocumentView; onView: (v: Document
 export function InvoiceDocument(props: InvoiceDocumentProps) {
   const { t } = useTranslation()
   const {
-    view, onView, clientName, clientEmail = "", clientAddress = "",
+    view, onView, frames = "both", clientName, clientEmail = "", clientAddress = "",
     issueDate, dueDate, periodLabel, currency, taxPct, discount, notes = "",
-    items, subtotal, taxAmount, total, invoiceNumber, org,
+    items, subtotal, taxAmount, total, invoiceNumber, org, logoUrl,
   } = props
+  const showing: DocumentView = frames === "client" ? "client" : view
 
   const lineAmount = (row: DocumentRow) => (row.quantity || 0) * (row.unitPrice || 0)
   const hasDiscount = Number(discount) > 0
 
   return (
     <>
-      <ViewToggle view={view} onView={onView} />
+      {frames === "both" && <ViewToggle view={view} onView={onView} />}
 
       {/*
         ⚠️ BOTH SHEETS ARE RENDERED AND ONE IS HIDDEN, rather than swapped.
@@ -137,7 +149,7 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
         position — and a mounted-then-unmounted table is also where a
         "preview" acquires its own state.
       */}
-      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-sm", view !== "build" && "hidden")}>
+      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-sm", showing !== "build" && "hidden")}>
         {/* ── The head band: who, when, how much ─────────────────────── */}
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-7 sm:py-6">
           <div className="min-w-0">
@@ -256,15 +268,25 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
         dashboard rather than at a bill. It carries what a real invoice has to
         carry: a letterhead, a number, both parties, terms, and how to pay.
       */}
-      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-sm", view !== "client" && "hidden")}>
+      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-sm", showing !== "client" && "hidden")}>
         <div className="px-6 py-8 sm:px-12 sm:py-11">
           {/* Letterhead */}
           <div className="flex flex-wrap justify-between gap-6">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="grid size-7 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white">
-                  {(org?.name ?? "H").slice(0, 1).toUpperCase()}
-                </span>
+                {/*
+                  The real mark where there is one — this is the letterhead a
+                  client receives, and a placeholder initial on an issued
+                  invoice is the app showing through the document.
+                */}
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="" className="h-7 max-w-[9rem] object-contain" />
+                ) : (
+                  <span className="grid size-7 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white">
+                    {(org?.name ?? "H").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
                 <span className="text-[17px] font-bold tracking-tight text-foreground">
                   {org?.name ?? t("invoices.create.yourCompany")}
                 </span>
@@ -305,12 +327,19 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                   <dt className="text-muted-foreground">{t("invoices.create.issueDate")}</dt>
                   <dd className="tabular-nums">{fmtDate(issueDate)}</dd>
                 </div>
-                {dueDate && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">{t("invoices.create.dueDate")}</dt>
-                    <dd className="tabular-nums">{fmtDate(dueDate)}</dd>
-                  </div>
-                )}
+                {/*
+                  ⚠️ ALWAYS STATED, never absent and never an em-dash. An
+                  invoice with no term is payable on receipt — a real and common
+                  arrangement — and it has to be SAID. A customer cannot act on
+                  a dash, and an unanswered "when" is the line an unpaid invoice
+                  is argued over.
+                */}
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{t("invoices.create.dueDate")}</dt>
+                  <dd className="tabular-nums">
+                    {dueDate ? fmtDate(dueDate) : t("invoices.create.onReceipt")}
+                  </dd>
+                </div>
                 {periodLabel && (
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">{t("invoices.create.servicePeriod")}</dt>

@@ -240,7 +240,7 @@ function EditInvoiceInner({ id }: { id: string }) {
       <InvoiceTopBar
         title={t("invoices.edit.title", "Edit invoice")}
         subtitle={inv.invoiceNumber}
-        status={t("invoices.status.draft", "Draft")}
+        status={{ label: t("invoices.status.draft", "Draft") }}
         onBack={() => router.push(`/invoices/${id}`)}
       >
         <Button variant="outline" className="shrink-0" onClick={() => router.push(`/invoices/${id}`)}>

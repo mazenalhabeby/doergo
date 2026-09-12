@@ -547,7 +547,7 @@ function NewInvoiceInner() {
       <InvoiceTopBar
         title={t("invoices.create.title")}
         subtitle={clientName.trim() || t("invoices.create.noClientYet")}
-        status={t("invoices.status.draft", "Draft")}
+        status={{ label: t("invoices.status.draft", "Draft") }}
         onBack={() => router.back()}
       >
         <Button
