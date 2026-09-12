@@ -1,3 +1,4 @@
+import { cleanRateCents } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -957,7 +958,7 @@ export class OnboardingService {
   async updateOrgProfile(organizationId: string, updates: any) {
     // `usesExternalWorkers` (the in-house/external field-worker capability) is
     // settable directly by the Settings toggle.
-    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'enabledModules'];
+    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'costRateCents', 'enabledModules'];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -967,9 +968,19 @@ export class OnboardingService {
     }
 
     // Billable rate: coerce to a non-negative integer (EUR cents) or null to clear.
+    /*
+      ⚠️ BLANK CLEARS, ZERO IS A RATE — and `n > 0 ? round : null` conflated
+      them, so an organisation deliberately billing nothing was unexpressible.
+
+      The ladder in shared draws that line all the way down: null means
+      "inherit", 0 means "€0 an hour". Two rules about the same column is how
+      one of them quietly stops being true, so both ends use `cleanRateCents`.
+    */
     if (data.billableRateCents !== undefined) {
-      const n = Number(data.billableRateCents);
-      data.billableRateCents = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+      data.billableRateCents = cleanRateCents(data.billableRateCents);
+    }
+    if (data.costRateCents !== undefined) {
+      data.costRateCents = cleanRateCents(data.costRateCents);
     }
 
     if (Object.keys(data).length === 0) {

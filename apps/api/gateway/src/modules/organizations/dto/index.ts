@@ -181,6 +181,13 @@ export class UpdateOrgProfileDto {
   @Max(100000000)
   billableRateCents?: number;
 
+  @ApiPropertyOptional({ description: 'Default hourly COST, in EUR cents. Setting one anywhere turns the product into a two-rate business.' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1000000)
+  costRateCents?: number | null;
+
   @ApiPropertyOptional({ description: 'Enabled modules', type: [String] })
   @IsOptional()
   @IsString({ each: true })
@@ -256,6 +263,28 @@ export class UpdateSecuritySettingsDto {
  * Update member profile, role, and permissions DTO
  */
 export class UpdateMemberDto {
+  /*
+    What this person bills and costs, per hour, in integer cents.
+
+    ⚠️ Null is not zero. Null means "inherit from the level above" — which for
+    most people is the right answer for the BILL, because the contract rate
+    lives on the client. Zero is a real rate of nothing. `cleanRateCents` keeps
+    both whole and bounded on the way in.
+  */
+  @ApiPropertyOptional({ description: 'What this person BILLS per hour, in EUR cents. Null inherits; 0 is a real rate.' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1000000)
+  billRateCents?: number | null;
+
+  @ApiPropertyOptional({ description: 'What this person COSTS per hour, in EUR cents. Setting one turns the product two-rate.' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1000000)
+  costRateCents?: number | null;
+
   @ApiPropertyOptional({ description: "Annual vacation days for this member. Null = use the organization's default; 0 = no paid leave." })
   @IsOptional()
   leaveAllowance?: number | null;

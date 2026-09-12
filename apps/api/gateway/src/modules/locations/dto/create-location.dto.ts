@@ -198,6 +198,13 @@ export class CreateLocationDto {
   @IsOptional()
   billableRateCents?: number;
 
+  @ApiPropertyOptional({ description: 'What an hour here COSTS, in EUR cents. Null clears; 0 is a real rate of nothing.' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1000000)
+  costRateCents?: number | null;
+
   @ApiPropertyOptional({
     example: ['time_tracking', 'sprints'],
     description: 'Enabled modules for this space (overrides org defaults)',

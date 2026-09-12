@@ -1,4 +1,4 @@
-import { memberScopeFilter } from '@hbcfield/shared';
+import { memberScopeFilter, cleanRateCents } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -681,6 +681,21 @@ export class UsersService {
           employmentStartDate: (dto as any).employmentStartDate
             ? new Date((dto as any).employmentStartDate)
             : null,
+        }),
+        /*
+          What this person bills and costs per hour.
+          
+          ⚠️ Undefined is "not mentioned" and leaves the column alone; null is
+          "clear it, inherit from the level above"; 0 is a real rate of nothing.
+          All three are distinct, and collapsing any pair breaks the ladder in
+          shared — which is the only place the order of the four levels is
+          written down.
+        */
+        ...((dto as any).billRateCents !== undefined && {
+          billRateCents: cleanRateCents((dto as any).billRateCents),
+        }),
+        ...((dto as any).costRateCents !== undefined && {
+          costRateCents: cleanRateCents((dto as any).costRateCents),
         }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         ...(dto.rating !== undefined && { rating: dto.rating }),

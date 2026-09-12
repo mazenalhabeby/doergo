@@ -12,7 +12,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   validateGeofencePolygon,
   type GeofencePolygonError,
 } from '@hbcfield/shared';
-import { isGeofencePolicy, validateMinCover } from '@hbcfield/shared';
+import { isGeofencePolicy, validateMinCover, cleanRateCents } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -72,7 +72,8 @@ export class LocationsService {
     contactName?: string;
     contactEmail?: string;
     contactPhone?: string;
-    billableRateCents?: number;
+    billableRateCents?: number | null;
+    costRateCents?: number | null;
     enabledModules?: string[];
     workflowId?: string;
     organizationId: string;
@@ -124,10 +125,8 @@ export class LocationsService {
         contactName: data.contactName ?? undefined,
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,
-        billableRateCents:
-          data.billableRateCents != null && data.billableRateCents > 0
-            ? Math.round(data.billableRateCents)
-            : undefined,
+        billableRateCents: cleanRateCents(data.billableRateCents),
+        costRateCents: cleanRateCents(data.costRateCents),
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
@@ -394,7 +393,8 @@ export class LocationsService {
     contactName?: string;
     contactEmail?: string;
     contactPhone?: string;
-    billableRateCents?: number;
+    billableRateCents?: number | null;
+    costRateCents?: number | null;
     notifyRoleIds?: string[];
     contactRoleIds?: string[];
   }) {
